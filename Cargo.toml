@@ -1,13 +1,7 @@
-[profile.release]
-overflow-checks = true # Enable integer overflow checks.
-
-[profile.release-with-debug]
-inherits = "release"
-debug = true
-
 # The profile used for CI in pull requests.
-# External dependencies are built with optimization enabled, while crates in this workspace are built
-# with `dev` profile and full debug info. This is a trade-off between build time and e2e test time.
+# External dependencies are built with optimisation enabled,
+# while crates in this workspace are built with `dev` profile and full debug info.
+# This is a trade-off between build time and e2e test time.
 [profile.ci-dev]
 inherits = "dev"
 incremental = false
@@ -16,7 +10,6 @@ opt-level = 1
 [profile.ci-dev.package."tokio"]
 opt-level = 3
 [profile.ci-dev.package."bimap"]
-
 opt-level = 3
 [profile.ci-dev.package."rust-analyzer-salsa"]
 opt-level = 3
@@ -24,54 +17,9 @@ opt-level = 3
 [workspace]
 resolver = "2"
 members = [
-    "crates/cairo-lang-casm",
-    "crates/cairo-lang-compiler",
-    "crates/cairo-lang-debug",
-    "crates/cairo-lang-defs",
-    "crates/cairo-lang-diagnostics",
-    "crates/cairo-lang-doc",
-    "crates/cairo-lang-eq-solver",
-    "crates/cairo-lang-filesystem",
-    "crates/cairo-lang-formatter",
     "crates/cairo-lang-language-server",
-    "crates/cairo-lang-lowering",
-    "crates/cairo-lang-parser",
-    "crates/cairo-lang-plugins",
-    "crates/cairo-lang-proc-macros",
-    "crates/cairo-lang-project",
-    "crates/cairo-lang-runnable-utils",
-    "crates/cairo-lang-runnable",
-    "crates/cairo-lang-runner",
-    "crates/cairo-lang-semantic",
-    "crates/cairo-lang-sierra",
-    "crates/cairo-lang-sierra-ap-change",
-    "crates/cairo-lang-sierra-gas",
-    "crates/cairo-lang-sierra-generator",
-    "crates/cairo-lang-sierra-to-casm",
-    "crates/cairo-lang-sierra-type-size",
-    "crates/cairo-lang-starknet",
-    "crates/cairo-lang-starknet-classes",
-    "crates/cairo-lang-syntax",
-    "crates/cairo-lang-syntax-codegen",
-    "crates/cairo-lang-test-plugin",
-    "crates/cairo-lang-test-runner",
-    "crates/cairo-lang-utils",
-    "crates/bin/cairo-compile",
-    "crates/bin/cairo-format",
     "crates/bin/cairo-language-server",
-    "crates/bin/cairo-prove",
-    "crates/bin/cairo-run",
-    "crates/bin/cairo-test",
-    "crates/bin/generate-syntax",
-    "crates/bin/sierra-compile",
-    "crates/bin/starknet-compile",
-    "crates/bin/starknet-sierra-compile",
-    "crates/bin/starknet-sierra-extract-code",
-    "crates/bin/get-lowering",
-    "crates/bin/starknet-sierra-upgrade-validate",
-    "tests",
 ]
-exclude = ["ensure-no_std"]
 
 [workspace.package]
 version = "2.8.5"
@@ -88,7 +36,7 @@ ark-secp256r1 = "0.4.0"
 ark-std = "0.4.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
-cairo-vm = { version = "1.0.1", features = ["mod_builtin"]}
+cairo-vm = { version = "1.0.1", features = ["mod_builtin"] }
 clap = { version = "4.5.4", features = ["derive"] }
 colored = "2.1.0"
 const-fnv1a-hash = "1.1.0"
@@ -112,9 +60,7 @@ log = "0.4.21"
 num-bigint = { version = "0.4.5", default-features = false }
 num-integer = "0.1.46"
 num-traits = { version = "0.2.19", default-features = false }
-parity-scale-codec = { version = "3.6.9", default-features = false, features = [
-    "derive",
-] }
+parity-scale-codec = { version = "3.6.9", default-features = false, features = ["derive"] }
 path-clean = "1.0.1"
 pretty_assertions = "1.4.0"
 proc-macro2 = "1.0.82"
@@ -130,24 +76,15 @@ serde_json = "1.0.116"
 sha2 = "0.10.8"
 sha3 = "0.10.8"
 smol_str = { version = "0.2.0", features = ["serde"] }
-starknet-types-core = { version = "0.1.0", features = [
-    "hash",
-    "prime-bigint",
-    "serde",
-] }
+starknet-types-core = { version = "0.1.0", features = ["hash", "prime-bigint", "serde"] }
 syn = { version = "2.0.61", features = ["full", "extra-traits"] }
 test-case = "3.3.1"
 test-case-macros = "3.3.1"
 test-log = "0.2.16"
 thiserror = "1.0.60"
-time = { version = "0.3.36", features = [
-    "formatting",
-    "macros",
-    "local-offset",
-] }
+time = { version = "0.3.36", features = ["formatting", "macros", "local-offset"] }
 tokio = { version = "1.37.0", features = ["full", "sync"] }
 toml = "0.8.12"
 unescaper = "0.1.2"
 xshell = "0.2.6"
-
 openssl = { version = "0.10.35" }
