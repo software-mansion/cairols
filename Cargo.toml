@@ -2,16 +2,16 @@
 # External dependencies are built with optimisation enabled,
 # while crates in this workspace are built with `dev` profile and full debug info.
 # This is a trade-off between build time and e2e test time.
-[profile.ci-dev]
+[profile.ci]
 inherits = "dev"
 incremental = false
-[profile.ci-dev.package."*"] # external dependencies
+[profile.ci.package."*"] # external dependencies
 opt-level = 1
-[profile.ci-dev.package."tokio"]
+[profile.ci.package."tokio"]
 opt-level = 3
-[profile.ci-dev.package."bimap"]
+[profile.ci.package."bimap"]
 opt-level = 3
-[profile.ci-dev.package."rust-analyzer-salsa"]
+[profile.ci.package."rust-analyzer-salsa"]
 opt-level = 3
 
 [workspace]
