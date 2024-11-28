@@ -33,13 +33,6 @@ pub fn try_to_init_unmanaged_core(
 pub fn find_unmanaged_core(config: &Config, scarb: &ScarbToolchain) -> Option<PathBuf> {
     find_core_at_config_path(config)
         .or_else(|| find_scarb_managed_core(scarb))
-        .or_else(|| {
-            if cfg!(feature = "testing") {
-                cairo_lang_filesystem::detect::detect_corelib()
-            } else {
-                None
-            }
-        })
         .and_then(ensure_absolute)
 }
 

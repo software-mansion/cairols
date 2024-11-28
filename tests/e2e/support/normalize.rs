@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use crate::support::fixture::Fixture;
+use crate::support::scarb::scarb_registry_std_path;
 
 /// Performs various normalization steps of the input data, to remove any runtime-specific artifacts
 /// and make comparisons in test assertions deterministic.
@@ -19,8 +20,10 @@ fn normalize_well_known_paths(fixture: &Fixture, data: String) -> String {
         data = data.replace(&normalize_path(&pwd), "[PWD]");
     }
 
-    let cairo_source = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().parent().unwrap();
-    data = data.replace(&normalize_path(cairo_source), "[CAIRO_SOURCE]");
+    let cairols_source = Path::new(env!("CARGO_MANIFEST_DIR"));
+    data = data.replace(&normalize_path(cairols_source), "[CAIROLS_SOURCE]");
+
+    data = data.replace(&normalize_path(scarb_registry_std_path()), "[SCARB_REGISTRY_STD]");
 
     data
 }
