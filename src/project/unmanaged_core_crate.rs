@@ -27,7 +27,7 @@ pub fn try_to_init_unmanaged_core(
 }
 
 /// Try to find a Cairo `core` crate in various well-known places, for use in project backends that
-/// do not manage the `core` crate (i.e., anything non-Scarb).
+/// do not manage the `core` crate (i.e. anything non-Scarb).
 ///
 /// The path is guaranteed to be absolute, so it can be safely used as a `FileId` in LS Salsa DB.
 pub fn find_unmanaged_core(config: &Config, scarb: &ScarbToolchain) -> Option<PathBuf> {
@@ -108,7 +108,7 @@ fn find_scarb_managed_core(scarb: &ScarbToolchain) -> Option<PathBuf> {
         let metadata = scarb.silent().metadata(&scarb_toml).inspect_err(|e| warn!("{e:?}")).ok()?;
 
         // Ensure the workspace directory is deleted after running Scarb.
-        // We are ignoring the error, leaving doing proper cleanup to the OS.
+        // We are ignoring the error, leaving doing proper clean-up to the OS.
         let _ = workspace
             .close()
             .context("failed to wipe temporary directory")
