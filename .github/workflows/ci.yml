@@ -2,170 +2,77 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
   merge_group:
-    types: [ checks_requested ]
 
 jobs:
-  ensure-no_std:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly-2024-11-23
-          targets: wasm32-unknown-unknown
-      - uses: Swatinem/rust-cache@v2
-      - run: |
-          cd ensure-no_std && cargo build
-
-  parallel-tests:
-    runs-on: ubuntu-latest
+  build-test:
+    name: build test ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.os }}
     strategy:
+      fail-fast: false
       matrix:
-        cmd:
-          - test --profile=ci -p cairo-lang-casm --features=serde,parity-scale-codec,schemars
-          - test --profile=ci -p cairo-lang-casm --no-default-features --features=serde,parity-scale-codec
-          - test --profile=ci -p cairo-lang-compiler
-          - test --profile=ci -p cairo-lang-debug
-          - test --profile=ci -p cairo-lang-defs
-          - test --profile=ci -p cairo-lang-diagnostics
-          - test --profile=ci -p cairo-lang-doc
-          - test --profile=ci -p cairo-lang-eq-solver
-          - test --profile=ci -p cairo-lang-filesystem
-          - test --profile=ci -p cairo-lang-formatter
-          - test --profile=ci -p cairo-lang-language-server
-          - test --profile=ci -p cairo-lang-lowering
-          - test --profile=ci -p cairo-lang-parser
-          - test --profile=ci -p cairo-lang-plugins
-          - test --profile=ci -p cairo-lang-proc-macros
-          - test --profile=ci -p cairo-lang-project
-          - test --profile=ci -p cairo-lang-runnable
-          - test --profile=ci -p cairo-lang-runnable-utils
-          - test --profile=ci -p cairo-lang-runner
-          - test --profile=ci -p cairo-lang-semantic
-          - test --profile=ci -p cairo-lang-sierra
-          - test --profile=ci -p cairo-lang-sierra-ap-change
-          - test --profile=ci -p cairo-lang-sierra-gas
-          - test --profile=ci -p cairo-lang-sierra-generator
-          - test --profile=ci -p cairo-lang-sierra-to-casm
-          - test --profile=ci -p cairo-lang-sierra-type-size
-          - test --profile=ci -p cairo-lang-starknet-classes
-          - test --profile=ci -p cairo-lang-starknet
-          - test --profile=ci -p cairo-lang-syntax
-          - test --profile=ci -p cairo-lang-syntax-codegen
-          - test --profile=ci -p cairo-lang-test-plugin
-          - test --profile=ci -p cairo-lang-test-runner
-          - test --profile=ci -p cairo-lang-test-utils
-          - test --profile=ci -p cairo-lang-utils --features=serde,parity-scale-codec,schemars,testing,env_logger
-          - test --profile=ci -p cairo-lang-utils --no-default-features --features=serde,parity-scale-codec
-          - test --profile=ci -p tests
+        platform:
+          - name: linux x86-64
+            os: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          components: rustfmt
-          toolchain: nightly-2024-11-23
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Install nextest
-        uses: taiki-e/install-action@nextest
-      # Validates that the number of commands in the matrix is equal to the number of crates in the
-      # workspace + 2 (for the crates which have multiple commands)
-      - run: |
-          CRATES_COUNT=$(find {crates/*,tests}/Cargo.toml | wc -l)
-          COMMANDS_COUNT=${{ strategy.job-total }}
-          if [ $((CRATES_COUNT + 2)) -ne $COMMANDS_COUNT ]; then
-            echo "CRATES_COUNT: $CRATES_COUNT"
-            echo "COMMANDS_COUNT: $COMMANDS_COUNT"
-            echo "The number of commands in the matrix is not equal to the number of crates in the workspace + 2"
-            exit 1
-          fi
-      - run: |
-          cargo ${{ matrix.cmd }}
+      - uses: taiki-e/install-action@nextest
+      - name: nextest archive
+        run: cargo nextest archive --workspace --all-features --cargo-profile ci --archive-file 'nextest-archive-${{ matrix.platform.os }}.tar.zst'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nextest-archive-${{ matrix.platform.os }}
+          path: nextest-archive-${{ matrix.platform.os }}.tar.zst
+
   test:
-    if: ${{ always() }}
-    needs: parallel-tests
-    runs-on: ubuntu-latest
+    name: test ${{ matrix.platform.name }} ${{ matrix.partition }}/8
+    runs-on: ${{ matrix.platform.os }}
+    needs:
+      - build-test
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: linux x86-64
+            os: ubuntu-latest
+        partition: [ 1, 2, 3, 4, 5, 6, 7, 8 ]
     steps:
-      - if: needs.parallel-tests.result == 'success'
-        run: exit 0
-      - if: needs.parallel-tests.result != 'success'
-        run: exit 1
-  rustfmt:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@nextest
+      - uses: actions/download-artifact@v4
+        with:
+          name: nextest-archive-${{ matrix.platform.os }}
+      - name: nextest partition ${{ matrix.partition }}/8
+        run: cargo nextest run --partition 'count:${{ matrix.partition }}/8' --archive-file 'nextest-archive-${{ matrix.platform.os }}.tar.zst'
+
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          components: rustfmt
           toolchain: nightly-2024-11-23
-      - uses: Swatinem/rust-cache@v2
-      - run: scripts/rust_fmt.sh --check
-
-  # Checks all .cairo files in the repo are formatted correctly.
-  cairofmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+          components: rustfmt
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: scripts/cairo_fmt.sh --check
+      - run: cargo +nightly-2024-11-23 fmt --check
+      - run: cargo clippy --all-targets --all-features -- --no-deps
+        env:
+          # Make sure CI fails on all warnings, including Clippy lints.
+          RUSTFLAGS: "-Dwarnings"
+      - run: cargo doc --all-features --no-deps
+        env:
+          # Make sure CI fails on all warnings, including Clippy lints.
+          RUSTDOCFLAGS: "-Dwarnings"
 
-  # Checks all cairo corelib tests run correctly.
-  cairotest:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: scripts/cairo_test.sh
-      - run: scripts/starknet_test.sh
-
-  # Check for unnecessary dependencies.
   udeps:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Machete
-        uses: bnjbvr/cargo-machete@main
-
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          components: clippy
-          toolchain: nightly-2024-11-23
-      - uses: Swatinem/rust-cache@v2
-      - run: >
-          scripts/clippy.sh
-
-  typos:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: crate-ci/typos@v1.27.0
-
-  docs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly-2024-11-23
-      - uses: Swatinem/rust-cache@v2
-      - run: >
-          scripts/docs.sh
-
-  sierra-updated-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: '0'
-      - run: >
-          scripts/sierra_update_check.sh origin/$GITHUB_BASE_REF origin/$GITHUB_HEAD_REF
+      - uses: bnjbvr/cargo-machete@main
