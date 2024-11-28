@@ -1,4 +1,4 @@
-use cairo_lang_language_server::lsp;
+use cairo_language_server::lsp;
 use indoc::indoc;
 use lsp_types::{ExecuteCommandParams, lsp_request};
 use pretty_assertions::assert_eq;

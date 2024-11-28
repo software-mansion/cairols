@@ -4,7 +4,7 @@ use std::path::Path;
 use std::time::Duration;
 use std::{fmt, mem, process};
 
-use cairo_lang_language_server::build_service_for_e2e_tests;
+use cairo_language_server::build_service_for_e2e_tests;
 use lsp_server::{Message, Notification, Request, Response};
 use lsp_types::request::{RegisterCapability, Request as LspRequest};
 use lsp_types::{lsp_notification, lsp_request};
