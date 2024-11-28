@@ -67,8 +67,7 @@ test-log = "0.2.16"
 # while crates in this workspace are built with `dev` profile and full debug info.
 # This is a trade-off between build time and e2e test time.
 [profile.ci]
-inherits = "dev"
-incremental = false
+inherits = "test"
 [profile.ci.package."*"] # external dependencies
 opt-level = 1
 [profile.ci.package."rust-analyzer-salsa"]
