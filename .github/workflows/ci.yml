@@ -44,6 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: software-mansion/setup-scarb@v1
       - uses: taiki-e/install-action@nextest
       - uses: actions/download-artifact@v4
         with:

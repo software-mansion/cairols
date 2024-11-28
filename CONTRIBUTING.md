@@ -15,8 +15,10 @@ email, or any other method with the owners of this repository before making a ch
 
 ## Environment setup
 
-The latest stable Rust is the only thing you really need.
-It is recommended to use [rustup](https://rustup.rs/) for getting it.
+Install the latest stable Rust via [rustup](https://rustup.rs/).
+
+Install [Scarb via ASDF](https://docs.swmansion.com/scarb/download.html#install-via-asdf)
+and ensure you have installed the version we require in our [ `.tool-versions`](.tool-versions).
 
 This document assumes that you are using Visual Studio Code with
 the [Cairo extension](https://marketplace.visualstudio.com/items?itemName=starkware.cairo1) as the
