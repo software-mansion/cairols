@@ -4,6 +4,7 @@ pub mod fixture;
 pub mod jsonrpc;
 mod mock_client;
 pub mod normalize;
+pub mod scarb;
 
 pub use self::cursor::cursors;
 pub use self::mock_client::MockClient;

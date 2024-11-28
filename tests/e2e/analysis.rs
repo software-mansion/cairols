@@ -39,7 +39,7 @@ fn cairo_projects() {
     assert_eq!(normalize(&ls, output), indoc! {r#"
             # Analyzed Crates
 
-            - `core`: `["[CAIRO_SOURCE]/corelib/src/lib.cairo"]`
+            - `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
                     name: None,

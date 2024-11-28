@@ -6,6 +6,7 @@ use anyhow::{Context, Result, bail};
 use lsp_types::notification::Notification;
 use scarb_metadata::{Metadata, MetadataCommand};
 use tracing::{error, warn};
+use which::which;
 
 use crate::env_config;
 use crate::lsp::ext::ScarbMetadataFailed;
@@ -47,6 +48,15 @@ impl ScarbToolchain {
     fn discover(&self) -> Option<&Path> {
         self.scarb_path_cell
             .get_or_init(|| {
+                // While running tests, we do not have SCARB env set,
+                // but we expect `scarb` binary to be in the PATH.
+                if cfg!(feature = "testing") {
+                    return Some(
+                        which("scarb")
+                            .expect("running tests requires a `scarb` binary available in `PATH`"),
+                    );
+                }
+
                 let path = env_config::scarb_path();
                 // TODO(mkaput): Perhaps we should display this notification again after reloading?
                 if path.is_none() {

@@ -5,6 +5,7 @@ use lsp_types::request::Request as _;
 use serde_json::json;
 
 use crate::support::sandbox;
+use crate::support::scarb::scarb_core_path;
 
 /// The LS used to panic when some files in Salsa database were interned with a relative path.
 /// The panic happened while trying to create a `file://` URL to affected file.
@@ -18,7 +19,7 @@ use crate::support::sandbox;
 #[test]
 fn relative_path_to_core() {
     let core_path = {
-        let detected = cairo_lang_filesystem::detect::detect_corelib().unwrap();
+        let detected = scarb_core_path();
         let pwd = std::env::current_dir().unwrap();
         let path = pathdiff::diff_paths(detected, pwd).unwrap();
         assert!(path.is_relative());
