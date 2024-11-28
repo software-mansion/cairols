@@ -52,7 +52,7 @@ To do so, paste the following into your `.vscode/settings.json`:
 ```json
 {
     "cairo1.languageServerExtraEnv": {
-        "CAIRO_LS_LOG": "cairo_lang_language_server=debug",
+        "CAIRO_LS_LOG": "cairo_language_server=debug",
         "RUST_BACKTRACE": "1"
     }
 }

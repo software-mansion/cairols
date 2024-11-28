@@ -10,7 +10,7 @@
 //! ```no_run
 //! # #![allow(clippy::needless_doctest_main)]
 //! fn main() {
-//!     cairo_lang_language_server::start();
+//!     cairo_language_server::start();
 //! }
 //! ```
 //!
@@ -25,7 +25,7 @@
 //!
 //! ```no_run
 //! # #![allow(clippy::needless_doctest_main)]
-//! use cairo_lang_language_server::Tricks;
+//! use cairo_language_server::Tricks;
 //!
 //! # fn dojo_plugin_suite() -> cairo_lang_semantic::plugin::PluginSuite {
 //! #    // Returning something realistic, to make sure restrictive trait bounds do compile.
@@ -34,7 +34,7 @@
 //! fn main() {
 //!     let mut tricks = Tricks::default();
 //!     tricks.extra_plugin_suites = Some(&|| vec![dojo_plugin_suite()]);
-//!     cairo_lang_language_server::start_with_tricks(tricks);
+//!     cairo_language_server::start_with_tricks(tricks);
 //! }
 //! ```
 
