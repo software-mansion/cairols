@@ -48,9 +48,9 @@ impl State {
             scarb_toolchain: scarb_toolchain.clone(),
             db_swapper: AnalysisDatabaseSwapper::new(),
             tricks: Owned::new(tricks.into()),
-            diagnostics_controller: DiagnosticsController::new(notifier),
+            diagnostics_controller: DiagnosticsController::new(notifier.clone()),
             proc_macro_controller,
-            project_controller: ProjectController::initialize(scarb_toolchain),
+            project_controller: ProjectController::initialize(scarb_toolchain, notifier),
         }
     }
 
