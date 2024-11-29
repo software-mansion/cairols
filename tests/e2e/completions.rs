@@ -43,7 +43,7 @@ fn test_completions_text_edits(
         }
     };
 
-    ls.open("src/lib.cairo");
+    ls.open_and_wait_for_project_update("src/lib.cairo");
 
     let mut completions = OrderedHashMap::default();
 

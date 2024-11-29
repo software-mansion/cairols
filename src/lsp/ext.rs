@@ -75,3 +75,17 @@ impl Notification for ProcMacroServerInitializationFailed {
     type Params = ProcMacroServerInitializationFailedParams;
     const METHOD: &'static str = "cairo/procMacroServerInitializationFailed";
 }
+
+#[cfg(feature = "testing")]
+pub mod testing {
+    use lsp_types::notification::Notification;
+
+    /// Notifies about the end of project updating.
+    #[derive(Debug)]
+    pub struct ProjectUpdatingFinished;
+
+    impl Notification for ProjectUpdatingFinished {
+        type Params = ();
+        const METHOD: &'static str = "cairo/projectUpdatingFinished";
+    }
+}
