@@ -105,9 +105,6 @@ impl ProjectController {
         if let Err(result) = validate_corelib(db) {
             notifier.notify::<CorelibVersionMismatch>(result.to_string());
         }
-
-        #[cfg(feature = "testing")]
-        notifier.notify::<crate::lsp::ext::testing::ProjectUpdatingFinished>(());
     }
 
     /// Sends an action request to the background thread.
