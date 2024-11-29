@@ -28,8 +28,7 @@ the [Cairo extension's contributing guidelines](https://github.com/software-mans
 
 ## Testing
 
-We are building an extensive end-to-end tests suite for
-CairoLS [here](crates/cairo-lang-language-server/tests/e2e).
+We are building an extensive end-to-end tests suite for CairoLS [here](./tests/e2e).
 These tests implement a simple language client that you can control (like put a cursor at certain
 position, send a request to the server, etc.).
 Check out existing tests for examples of what you can do.
