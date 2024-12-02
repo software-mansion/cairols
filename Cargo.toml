@@ -13,20 +13,20 @@ testing = []
 
 [dependencies]
 anyhow = "1"
-cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-diagnostics = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-doc = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-formatter = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-lowering = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-project = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-starknet = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-syntax = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-test-plugin = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
-cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308" }
+cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-diagnostics = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-doc = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-formatter = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-lowering = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-project = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-starknet = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-syntax = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-test-plugin = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
+cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174" }
 cairo-lang-macro = "0.1.1"
 convert_case = "0.6.0"
 crossbeam = "0.8.4"
@@ -57,7 +57,7 @@ libc = "0.2.155"
 [dev-dependencies]
 assert_fs = "1.1"
 cairo-language-server = { path = ".", features = ["testing"] }
-cairo-lang-test-utils = { git = "https://github.com/starkware-libs/cairo", rev = "6512b4bf99d49afd6d50129ee5d1f8f4f6fbc308", features = ["testing"] }
+cairo-lang-test-utils = { git = "https://github.com/starkware-libs/cairo", rev = "0b86ece404b0922b76caca5d07a94ed41407f174", features = ["testing"] }
 pathdiff = "0.2"
 pretty_assertions = "1.4.0"
 test-log = "0.2.16"
