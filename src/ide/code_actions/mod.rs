@@ -14,6 +14,7 @@ mod add_missing_trait;
 mod create_module_file;
 mod expand_macro;
 mod fill_struct_fields;
+mod fill_trait_members;
 mod rename_unused_variable;
 
 /// Compute commands for a given text document and range. These commands are typically code fixes to
@@ -86,6 +87,9 @@ fn get_code_actions_for_diagnostics(
                 add_missing_trait::add_missing_trait(db, node, params.text_document.uri.clone())
             }
             "E0003" => fill_struct_fields::fill_struct_fields(db, node.clone(), params)
+                .map(|result| vec![result])
+                .unwrap_or_default(),
+            "E0004" => fill_trait_members::fill_trait_members(db, node.clone(), params)
                 .map(|result| vec![result])
                 .unwrap_or_default(),
             "E0005" => create_module_file::create_module_file(
