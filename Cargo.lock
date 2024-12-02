@@ -754,6 +754,7 @@ dependencies = [
  "smol_str",
  "tempfile",
  "test-log",
+ "toml",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
