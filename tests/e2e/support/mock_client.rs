@@ -9,7 +9,7 @@ use lsp_server::{Message, Notification, Request, Response};
 use lsp_types::request::{RegisterCapability, Request as LspRequest};
 use lsp_types::{lsp_notification, lsp_request};
 use serde_json::Value;
-
+use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
 use crate::support::fixture::Fixture;
 use crate::support::jsonrpc::RequestIdGenerator;
 
@@ -291,8 +291,9 @@ impl MockClient {
         lsp_types::TextDocumentIdentifier { uri: self.fixture.file_url(path) }
     }
 
-    /// Sends `textDocument/didOpen` notification to the server.
-    pub fn open(&mut self, path: impl AsRef<Path>) {
+    /// Sends `textDocument/didOpen` notification to the server and
+    /// wait for `cairo/projectUpdatingFinished` to be sent.
+    pub fn open_and_wait_for_project_update(&mut self, path: impl AsRef<Path>) {
         // Poor man's attempt at guessing the language ID
         // by assuming that file extension represents it.
         let language_id = self
@@ -312,7 +313,9 @@ impl MockClient {
                     text: self.fixture.read_file(&path),
                 },
             },
-        )
+        );
+
+        self.wait_for_notification::<ProjectUpdatingFinished>(|_| true);
     }
 
     /// Waits for `textDocument/publishDiagnostics` notification for the given file.
@@ -326,14 +329,14 @@ impl MockClient {
         )
     }
 
-    /// Sends `textDocument/didOpen` notification to the server and then waits for matching
-    /// `textDocument/publishDiagnostics` notification.
+    /// Sends `textDocument/didOpen` notification to the server and then waits for
+    /// `cairo/projectUpdatingFinished` and matching `textDocument/publishDiagnostics` notification.
     pub fn open_and_wait_for_diagnostics(
         &mut self,
         path: impl AsRef<Path>,
     ) -> lsp_types::PublishDiagnosticsParams {
         let path = path.as_ref();
-        self.open(path);
+        self.open_and_wait_for_project_update(path);
         self.wait_for_diagnostics(path)
     }
 }

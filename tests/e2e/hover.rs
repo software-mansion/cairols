@@ -58,7 +58,7 @@ fn test_hover(
         client_capabilities = caps;
     };
 
-    ls.open("src/lib.cairo");
+    ls.open_and_wait_for_project_update("src/lib.cairo");
 
     let mut hovers = OrderedHashMap::default();
 
