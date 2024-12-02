@@ -316,7 +316,7 @@ impl MockClient {
             },
         );
 
-        self.wait_for_notification::<ProjectUpdatingFinished>(|_| true);
+        self.wait_for_project_update();
     }
 
     /// Waits for `textDocument/publishDiagnostics` notification for the given file.
@@ -339,6 +339,11 @@ impl MockClient {
         let path = path.as_ref();
         self.open_and_wait_for_project_update(path);
         self.wait_for_diagnostics(path)
+    }
+
+    /// Waits for `cairo/projectUpdatingFinished` notification.
+    pub fn wait_for_project_update(&mut self) {
+        self.wait_for_notification::<ProjectUpdatingFinished>(|_| true);
     }
 }
 
