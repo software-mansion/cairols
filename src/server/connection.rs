@@ -147,4 +147,10 @@ impl ClientSender {
 
         Ok(sender.send(msg)?)
     }
+
+    #[cfg(test)]
+    /// Creates a mock `ClientSender` that swallows all messages.
+    pub fn black_hole() -> Self {
+        Self { weak_sender: Default::default() }
+    }
 }
