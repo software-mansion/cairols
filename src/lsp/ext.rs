@@ -91,6 +91,22 @@ impl Notification for ProjectConfigParsingFailed {
     const METHOD: &'static str = "cairo/projectConfigParsingFailed";
 }
 
+/// Notifies that both `cairo_project.toml` and `Scarb.toml` were found for the crate.
+#[derive(Debug)]
+pub struct ProjectManifestsConflict;
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectManifestsConflictParams {
+    pub project_config_path: String,
+    pub scarb_manifest_path: String,
+}
+
+impl Notification for ProjectManifestsConflict {
+    type Params = ProjectManifestsConflictParams;
+    const METHOD: &'static str = "cairo/projectManifestsConflict";
+}
+
 #[cfg(feature = "testing")]
 pub mod testing {
     use lsp_types::notification::Notification;

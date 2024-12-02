@@ -2,7 +2,11 @@ use std::path::{Path, PathBuf};
 use std::{fmt, fs};
 
 use cairo_lang_project::PROJECT_FILE_NAME;
+use serde::Deserialize;
+use tracing::error;
 
+use crate::lsp::ext::{ProjectManifestsConflict, ProjectManifestsConflictParams};
+use crate::server::client::Notifier;
 use crate::toolchain::scarb::SCARB_TOML;
 
 #[cfg(test)]
@@ -36,13 +40,54 @@ impl ProjectManifestPath {
     ///
     /// This precedence rule also applies to manifest files themselves.
     /// If there are all `cairo_project.toml`, `Scarb.toml` and `Scarb.lock`
-    /// files in the same directory, the `cairo_project.toml` file will be chosen for each.
-    pub fn discover(path: &Path) -> Option<ProjectManifestPath> {
-        return find_in_parent_dirs(path.to_path_buf(), PROJECT_FILE_NAME)
+    /// files in the same directory, the `cairo_project.toml` file will be chosen for each
+    /// and a notification with a warning will be sent to the client.
+    /// The last step will be skipped for `core` crate to prevent notification spam.
+    pub fn discover(path: &Path, notifier: &Notifier) -> Option<ProjectManifestPath> {
+        let project_config_path = find_in_parent_dirs(path.to_path_buf(), PROJECT_FILE_NAME);
+        let scarb_manifest_path = find_in_parent_dirs(path.to_path_buf(), SCARB_TOML);
+
+        if project_config_path.is_some() && scarb_manifest_path.is_some() {
+            let is_core = match fs::read_to_string(scarb_manifest_path.as_ref().unwrap()) {
+                Ok(content) => {
+                    toml::from_str::<CoreManifest>(&content).unwrap_or_default().package.no_core
+                }
+                Err(err) => {
+                    error!("{err:?}");
+                    false
+                }
+            };
+
+            if !is_core {
+                notifier.notify::<ProjectManifestsConflict>(ProjectManifestsConflictParams {
+                    project_config_path: project_config_path
+                        .clone()
+                        .unwrap()
+                        .to_string_lossy()
+                        .into(),
+                    scarb_manifest_path: scarb_manifest_path
+                        .clone()
+                        .unwrap()
+                        .to_string_lossy()
+                        .into(),
+                });
+            }
+        }
+
+        return project_config_path
             .map(ProjectManifestPath::CairoProject)
-            .or_else(|| {
-                find_in_parent_dirs(path.to_path_buf(), SCARB_TOML).map(ProjectManifestPath::Scarb)
-            });
+            .or(scarb_manifest_path.map(ProjectManifestPath::Scarb));
+
+        #[derive(Default, Deserialize)]
+        struct CoreManifest {
+            package: Package,
+        }
+
+        #[derive(Default, Deserialize)]
+        #[serde(rename_all = "kebab-case")]
+        struct Package {
+            no_core: bool,
+        }
 
         fn find_in_parent_dirs(mut path: PathBuf, target_file_name: &str) -> Option<PathBuf> {
             for _ in 0..MAX_CRATE_DETECTION_DEPTH {
