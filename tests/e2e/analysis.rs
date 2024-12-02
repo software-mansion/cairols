@@ -128,6 +128,7 @@ fn test_reload() {
         command: "cairo.reload".into(),
         ..Default::default()
     });
+    ls.wait_for_project_update();
 
     let actual = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
