@@ -1,0 +1,64 @@
+//! > Test creating module file if file is missing.
+
+//! > test_runner_name
+test_quick_fix
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+mo<caret>d some_mo<caret>dule;<caret>
+
+m<caret>od a<caret>(){<caret>}
+
+//! > Code action #0
+mo<caret>d some_module;
+Title: Create module file `some_module`
+Document changes json: [
+  {
+    "kind": "create",
+    "uri": "file:///src/some_module.cairo"
+  }
+]
+
+//! > Code action #1
+mod some_mo<caret>dule;
+Title: Create module file `some_module`
+Document changes json: [
+  {
+    "kind": "create",
+    "uri": "file:///src/some_module.cairo"
+  }
+]
+
+//! > Code action #2
+mod some_module;<caret>
+Title: Create module file `some_module`
+Document changes json: [
+  {
+    "kind": "create",
+    "uri": "file:///src/some_module.cairo"
+  }
+]
+
+//! > Code action #3
+m<caret>od a(){}
+Title: Create module file `a`
+Document changes json: [
+  {
+    "kind": "create",
+    "uri": "file:///src/a.cairo"
+  }
+]
+
+//! > Code action #4
+mod a<caret>(){}
+No code actions.
+
+//! > Code action #5
+mod a(){<caret>}
+No code actions.
