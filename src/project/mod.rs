@@ -10,7 +10,9 @@ use tracing::{debug, error, trace, warn};
 
 pub use self::crate_data::Crate;
 pub use self::project_manifest_path::*;
-use crate::lsp::ext::CorelibVersionMismatch;
+use crate::lsp::ext::{
+    CorelibVersionMismatch, ProjectConfigParsingFailed, ProjectConfigParsingFailedParams,
+};
 use crate::project::scarb::{extract_crates, get_workspace_members_manifests};
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::Notifier;
@@ -41,12 +43,16 @@ impl ProjectController {
     ///
     /// The background thread is responsible for fetching changes to the project model: check
     /// [`ProjectControllerThread::send_project_update_for_file`] for more information.
-    pub fn initialize(scarb_toolchain: ScarbToolchain) -> Self {
+    pub fn initialize(scarb_toolchain: ScarbToolchain, notifier: Notifier) -> Self {
         let (requests_sender, requests_receiver) = crossbeam::channel::unbounded();
         let (response_sender, response_receiver) = crossbeam::channel::unbounded();
 
-        let thread =
-            ProjectControllerThread::spawn(requests_receiver, response_sender, scarb_toolchain);
+        let thread = ProjectControllerThread::spawn(
+            requests_receiver,
+            response_sender,
+            scarb_toolchain,
+            notifier,
+        );
 
         ProjectController { requests_sender, response_receiver, _thread: thread }
     }
@@ -132,6 +138,7 @@ struct ProjectControllerThread {
     requests_receiver: Receiver<ProjectControllerRequest>,
     response_sender: Sender<ProjectUpdate>,
     scarb_toolchain: ScarbToolchain,
+    notifier: Notifier,
 }
 
 impl ProjectControllerThread {
@@ -140,12 +147,14 @@ impl ProjectControllerThread {
         requests_receiver: Receiver<ProjectControllerRequest>,
         response_sender: Sender<ProjectUpdate>,
         scarb_toolchain: ScarbToolchain,
+        notifier: Notifier,
     ) -> JoinHandle {
         let this = Self {
             loaded_scarb_manifests: Default::default(),
             requests_receiver,
             response_sender,
             scarb_toolchain,
+            notifier,
         };
 
         thread::Builder::new(ThreadPriority::Worker)
@@ -211,8 +220,14 @@ impl ProjectControllerThread {
                 assert!(config_path.is_absolute());
 
                 let maybe_project_config = ProjectConfig::from_file(&config_path)
-                    // TODO: send failure notification
-                    .inspect_err(|err| error!("{err:?}"))
+                    .inspect_err(|err| {
+                        error!("{err:?}");
+                        self.notifier.notify::<ProjectConfigParsingFailed>(
+                            ProjectConfigParsingFailedParams {
+                                project_config_path: config_path.to_string_lossy().into(),
+                            },
+                        );
+                    })
                     .ok();
                 ProjectUpdate::CairoProjectToml(maybe_project_config)
             }

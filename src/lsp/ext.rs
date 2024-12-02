@@ -76,6 +76,21 @@ impl Notification for ProcMacroServerInitializationFailed {
     const METHOD: &'static str = "cairo/procMacroServerInitializationFailed";
 }
 
+/// Notifies about `cairo_project.toml` parsing failure.
+#[derive(Debug)]
+pub struct ProjectConfigParsingFailed;
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectConfigParsingFailedParams {
+    pub project_config_path: String,
+}
+
+impl Notification for ProjectConfigParsingFailed {
+    type Params = ProjectConfigParsingFailedParams;
+    const METHOD: &'static str = "cairo/projectConfigParsingFailed";
+}
+
 #[cfg(feature = "testing")]
 pub mod testing {
     use lsp_types::notification::Notification;
