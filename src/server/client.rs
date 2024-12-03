@@ -71,6 +71,12 @@ impl Notifier {
             error!("failed to send `{method}` notification: {err:?}")
         }
     }
+
+    #[cfg(test)]
+    /// Mock for unit testing purposes.
+    pub fn black_hole() -> Self {
+        Self(ClientSender::black_hole())
+    }
 }
 
 impl Responder {
