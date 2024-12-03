@@ -51,46 +51,6 @@ impl Notification for CorelibVersionMismatch {
     const METHOD: &'static str = "cairo/corelib-version-mismatch";
 }
 
-/// Notifies about scarb metadata failure.
-#[derive(Debug)]
-pub struct ScarbMetadataFailed;
-
-impl Notification for ScarbMetadataFailed {
-    type Params = ();
-    const METHOD: &'static str = "cairo/scarb-metadata-failed";
-}
-
-/// Notifies about `proc-macro-server` fatal fail.
-#[derive(Debug)]
-pub struct ProcMacroServerInitializationFailed;
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", rename_all_fields = "camelCase", tag = "reason")]
-pub enum ProcMacroServerInitializationFailedParams {
-    NoMoreRetries { retries: u32, in_minutes: u64 },
-    SpawnFail,
-}
-
-impl Notification for ProcMacroServerInitializationFailed {
-    type Params = ProcMacroServerInitializationFailedParams;
-    const METHOD: &'static str = "cairo/procMacroServerInitializationFailed";
-}
-
-/// Notifies about `cairo_project.toml` parsing failure.
-#[derive(Debug)]
-pub struct ProjectConfigParsingFailed;
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProjectConfigParsingFailedParams {
-    pub project_config_path: String,
-}
-
-impl Notification for ProjectConfigParsingFailed {
-    type Params = ProjectConfigParsingFailedParams;
-    const METHOD: &'static str = "cairo/projectConfigParsingFailed";
-}
-
 #[cfg(feature = "testing")]
 pub mod testing {
     use lsp_types::notification::Notification;
