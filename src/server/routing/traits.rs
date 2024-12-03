@@ -185,6 +185,14 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
         for change in &params.changes {
             if is_cairo_file_path(&change.uri) {
                 let Some(file) = state.db.file_for_url(&change.uri) else { continue };
+                // Invalidating the `priv_raw_file_content` query to be
+                // recomputed, works similar to manually triggering a low-durability synthetic
+                // write (this is what
+                // [`crate::lang::db::AnalysisDatabase::cancel_all`] does) to refresh it.
+                //
+                // We opt for this approach instead of using
+                // [`crate::lang::db::AnalysisDatabase::cancel_all`] because it is
+                // more descriptive and precise in targeting what we aim to achieve here.
                 PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
             }
         }
