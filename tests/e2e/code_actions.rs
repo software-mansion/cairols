@@ -15,6 +15,7 @@ cairo_lang_test_utils::test_file_test!(
         missing_trait: "missing_trait.txt",
         macro_expand: "macro_expand.txt",
         fill_struct_fields: "fill_struct_fields.txt",
+        create_module_file: "create_module_file.txt",
     },
     test_quick_fix
 );
@@ -57,6 +58,7 @@ fn test_quick_fix(
     let diagnostics = ls.open_and_wait_for_diagnostics("src/lib.cairo");
 
     let mut actions = OrderedHashMap::default();
+    let root_path = ls.as_ref().root_path().to_string_lossy().to_string();
 
     for (n, position) in cursors.carets().into_iter().enumerate() {
         let mut report = String::new();
@@ -76,7 +78,7 @@ fn test_quick_fix(
         let code_actions =
             ls.send_request::<lsp_request!("textDocument/codeAction")>(code_action_params);
         if let Some(code_actions) = code_actions {
-            report.push_str(&render_code_actions_or_commands(code_actions));
+            report.push_str(&render_code_actions_or_commands(code_actions, &root_path));
         } else {
             panic!("Code actions request failed.");
         }
@@ -86,23 +88,39 @@ fn test_quick_fix(
     TestRunnerResult::success(actions)
 }
 
-fn render_code_actions_or_commands(code_actions_or_commands: Vec<CodeActionOrCommand>) -> String {
+fn render_code_actions_or_commands(
+    code_actions_or_commands: Vec<CodeActionOrCommand>,
+    root_path: &str,
+) -> String {
     if code_actions_or_commands.is_empty() {
         return "No code actions.\n".to_string();
     }
     let mut result = String::new();
     for code_action_or_command in code_actions_or_commands {
-        result.push_str(&render_code_action_or_command(&code_action_or_command));
+        result.push_str(&render_code_action_or_command(&code_action_or_command, root_path));
     }
     result
 }
 
-fn render_code_action_or_command(code_action_or_command: &CodeActionOrCommand) -> String {
+fn render_code_action_or_command(
+    code_action_or_command: &CodeActionOrCommand,
+    root_path: &str,
+) -> String {
     let mut result = String::new();
     match code_action_or_command {
         CodeActionOrCommand::Command(_) => todo!("Not implemented yet"),
         CodeActionOrCommand::CodeAction(code_action) => {
             result.push_str(&format!("Title: {}\n", code_action.title));
+
+            if let Some(document_changes) =
+                code_action.edit.as_ref().and_then(|edit| edit.document_changes.as_ref())
+            {
+                result.push_str(&format!(
+                    "Document changes json: {}\n",
+                    serde_json::to_string_pretty(&document_changes).unwrap().replace(root_path, "")
+                ));
+            }
+
             let Some(changes) = code_action.edit.as_ref().and_then(|edit| edit.changes.as_ref())
             else {
                 return result;
