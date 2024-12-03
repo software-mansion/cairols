@@ -746,7 +746,6 @@ dependencies = [
  "pathdiff",
  "pretty_assertions",
  "rust-analyzer-salsa",
- "rustc-hash",
  "scarb-metadata",
  "scarb-proc-macro-server-types",
  "scarb-stable-hash",

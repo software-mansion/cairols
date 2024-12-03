@@ -6,11 +6,11 @@
 // +-----------------------------------------------------+
 
 use std::any::TypeId;
+use std::collections::HashMap;
 
 use anyhow::Result;
 use lsp_server::{Notification, RequestId, Response};
 use lsp_types::notification::Notification as NotificationTrait;
-use rustc_hash::FxHashMap;
 use serde_json::Value;
 use tracing::error;
 
@@ -35,7 +35,7 @@ pub struct Responder(ClientSender);
 pub struct Requester<'s> {
     sender: ClientSender,
     next_request_id: i32,
-    response_handlers: FxHashMap<RequestId, ResponseBuilder<'s>>,
+    response_handlers: HashMap<RequestId, ResponseBuilder<'s>>,
 }
 
 impl Client<'_> {
@@ -46,7 +46,7 @@ impl Client<'_> {
             requester: Requester {
                 sender,
                 next_request_id: 1,
-                response_handlers: FxHashMap::default(),
+                response_handlers: Default::default(),
             },
         }
     }
