@@ -22,7 +22,7 @@ use lsp_types::{
     DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
     DocumentFormattingParams, ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse,
     Hover, HoverParams, SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent,
-    TextDocumentPositionParams, TextEdit, Url,
+    TextDocumentPositionParams, TextEdit,
 };
 use serde_json::Value;
 use tracing::error;
@@ -181,14 +181,6 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
         requester: &mut Requester<'_>,
         params: DidChangeWatchedFilesParams,
     ) -> LSPResult<()> {
-        // Invalidate changed cairo files.
-        for change in &params.changes {
-            if is_cairo_file_path(&change.uri) {
-                let Some(file) = state.db.file_for_url(&change.uri) else { continue };
-                PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
-            }
-        }
-
         // Reload workspace if a config file has changed.
         for change in params.changes {
             let changed_file_path = change.uri.to_file_path().unwrap_or_default();
@@ -347,8 +339,4 @@ impl BackgroundDocumentRequestHandler for ExpandMacro {
     ) -> LSPResult<Option<String>> {
         Ok(ide::macros::expand::expand_macro(&snapshot.db, &params))
     }
-}
-
-fn is_cairo_file_path(file_path: &Url) -> bool {
-    file_path.path().ends_with(".cairo")
 }
