@@ -46,7 +46,7 @@ impl Client<'_> {
             requester: Requester {
                 sender,
                 next_request_id: 1,
-                response_handlers: HashMap::default(),
+                response_handlers: Default::default(),
             },
         }
     }
