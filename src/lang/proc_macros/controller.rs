@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::Duration;
@@ -8,6 +9,8 @@ use crossbeam::channel::{Receiver, Sender};
 use governor::clock::QuantaClock;
 use governor::state::{InMemoryState, NotKeyed};
 use governor::{Quota, RateLimiter};
+use lsp_types::notification::ShowMessage;
+use lsp_types::{MessageType, ShowMessageParams};
 use scarb_proc_macro_server_types::jsonrpc::RpcResponse;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use tracing::error;
@@ -19,9 +22,6 @@ use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suite;
-use crate::lsp::ext::{
-    ProcMacroServerInitializationFailed, ProcMacroServerInitializationFailedParams,
-};
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 
@@ -91,10 +91,7 @@ impl ProcMacroClientController {
     /// Check if an error was reported. If so, try to restart.
     pub fn handle_error(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         if !self.try_initialize(db, config) {
-            self.fatal_failed(db, ProcMacroServerInitializationFailedParams::NoMoreRetries {
-                retries: RATE_LIMITER_RETRIES,
-                in_minutes: RATE_LIMITER_PERIOD_SEC / 60,
-            });
+            self.fatal_failed(db, InitializationFailedInfo::NoMoreRetries);
         }
     }
 
@@ -163,7 +160,7 @@ impl ProcMacroClientController {
             Err(err) => {
                 error!("spawning proc-macro-server failed: {err:?}");
 
-                self.fatal_failed(db, ProcMacroServerInitializationFailedParams::SpawnFail);
+                self.fatal_failed(db, InitializationFailedInfo::SpawnFail);
             }
         }
     }
@@ -171,11 +168,14 @@ impl ProcMacroClientController {
     fn fatal_failed(
         &self,
         db: &mut AnalysisDatabase,
-        params: ProcMacroServerInitializationFailedParams,
+        initialization_failed_info: InitializationFailedInfo,
     ) {
         db.set_proc_macro_client_status(ClientStatus::Crashed);
 
-        self.notifier.notify::<ProcMacroServerInitializationFailed>(params);
+        self.notifier.notify::<ShowMessage>(ShowMessageParams {
+            typ: MessageType::ERROR,
+            message: initialization_failed_info.to_string(),
+        });
     }
 
     fn apply_responses(
@@ -271,5 +271,33 @@ impl ProcMacroChannels {
         let (error_sender, error_receiver) = crossbeam::channel::bounded(1);
 
         Self { response_sender, response_receiver, error_sender, error_receiver }
+    }
+}
+
+enum InitializationFailedInfo {
+    NoMoreRetries,
+    SpawnFail,
+}
+
+impl Display for InitializationFailedInfo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InitializationFailedInfo::NoMoreRetries => {
+                write!(
+                    f,
+                    "Starting proc-macro-server failed {RATE_LIMITER_RETRIES} times in {} minutes.",
+                    RATE_LIMITER_PERIOD_SEC / 60
+                )
+            }
+            InitializationFailedInfo::SpawnFail => {
+                write!(f, "Starting proc-macro-server failed fatally.")
+            }
+        }?;
+
+        write!(
+            f,
+            " The proc-macro-server will not be restarted, procedural macros will not be \
+             analyzed. See the output for more information"
+        )
     }
 }

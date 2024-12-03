@@ -3,13 +3,13 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, OnceLock};
 
 use anyhow::{Context, Result, bail};
-use lsp_types::notification::Notification;
+use lsp_types::notification::{Notification, ShowMessage};
+use lsp_types::{MessageType, ShowMessageParams};
 use scarb_metadata::{Metadata, MetadataCommand};
 use tracing::{error, warn};
 use which::which;
 
 use crate::env_config;
-use crate::lsp::ext::ScarbMetadataFailed;
 use crate::server::client::Notifier;
 
 pub const SCARB_TOML: &str = "Scarb.toml";
@@ -139,7 +139,12 @@ impl ScarbToolchain {
             self.notifier.notify::<ScarbResolvingFinish>(());
 
             if result.is_err() {
-                self.notifier.notify::<ScarbMetadataFailed>(());
+                self.notifier.notify::<ShowMessage>(ShowMessageParams {
+                    typ: MessageType::ERROR,
+                    message: "`scarb metadata` failed. Check if your project builds correctly via \
+                              `scarb build`."
+                        .to_string(),
+                });
             }
         }
 
