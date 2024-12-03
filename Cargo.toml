@@ -37,7 +37,6 @@ itertools = "0.12.1"
 jod-thread = "0.1.2"
 lsp-server = "0.7.7"
 lsp-types = "=0.95.0"
-rustc-hash = "1.1.0"
 salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
 scarb-metadata = "1.13"
 scarb-proc-macro-server-types = "0.1"
