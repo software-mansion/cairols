@@ -23,6 +23,7 @@ jobs:
       - uses: software-mansion/setup-scarb@v1
         with:
           scarb-version: nightly
+          cache: false
 
       - name: Build xtasks
         run: cargo build -p xtask
