@@ -5,6 +5,7 @@ use assert_fs::prelude::*;
 use cairo_lang_project::PROJECT_FILE_NAME;
 
 use super::ProjectManifestPath;
+use crate::server::client::Notifier;
 use crate::toolchain::scarb::SCARB_TOML;
 
 fn check_some(
@@ -14,12 +15,15 @@ fn check_some(
 ) {
     let source = source.as_ref();
     let manifest = manifest.as_ref().to_path_buf();
-    assert_eq!(ProjectManifestPath::discover(source), Some(constructor(manifest)));
+    assert_eq!(
+        ProjectManifestPath::discover(source, &Notifier::black_hole()),
+        Some(constructor(manifest))
+    );
 }
 
 fn check_none(source: impl AsRef<Path>) {
     let source = source.as_ref();
-    assert_eq!(ProjectManifestPath::discover(source), None);
+    assert_eq!(ProjectManifestPath::discover(source, &Notifier::black_hole()), None);
 }
 
 #[test]

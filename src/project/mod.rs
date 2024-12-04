@@ -186,7 +186,7 @@ impl ProjectControllerThread {
     /// It is meant to be run only in the background thread.
     #[tracing::instrument(skip_all)]
     fn fetch_project_update_for_file(&mut self, file_path: &Path) -> Option<ProjectUpdate> {
-        let project_update = match ProjectManifestPath::discover(file_path) {
+        let project_update = match ProjectManifestPath::discover(file_path, &self.notifier) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
                 if self.loaded_scarb_manifests.contains(&manifest_path) {
                     trace!("scarb project is already loaded: {}", manifest_path.display());
