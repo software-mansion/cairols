@@ -194,14 +194,15 @@ impl MockClient {
         Ok(message)
     }
 
-    /// Looks for a message that satisfies the given predicate in message trace or waits for a new
-    /// one.
+    /// Looks for a message that satisfies the given predicate in message trace and removes it from
+    /// it or waits for a new one.
     fn wait_for_message<T>(
         &mut self,
         predicate: impl Fn(&Message) -> Option<T>,
     ) -> Result<T, RecvError> {
-        for message in &self.trace {
+        for (index, message) in self.trace.iter().enumerate() {
             if let Some(ret) = predicate(message) {
+                self.trace.remove(index);
                 return Ok(ret);
             }
         }
