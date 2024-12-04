@@ -6,13 +6,13 @@ use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
+use lsp_types::notification::ShowMessage;
+use lsp_types::{MessageType, ShowMessageParams};
 use tracing::{debug, error, trace, warn};
 
 pub use self::crate_data::Crate;
 pub use self::project_manifest_path::*;
-use crate::lsp::ext::{
-    CorelibVersionMismatch, ProjectConfigParsingFailed, ProjectConfigParsingFailedParams,
-};
+use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::scarb::{extract_crates, get_workspace_members_manifests};
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::Notifier;
@@ -221,12 +221,15 @@ impl ProjectControllerThread {
 
                 let maybe_project_config = ProjectConfig::from_file(&config_path)
                     .inspect_err(|err| {
-                        error!("{err:?}");
-                        self.notifier.notify::<ProjectConfigParsingFailed>(
-                            ProjectConfigParsingFailedParams {
-                                project_config_path: config_path.to_string_lossy().into(),
-                            },
-                        );
+                        let config_path_lossy = config_path.to_string_lossy();
+                        error!("parsing {config_path_lossy} failed: {err:?}");
+                        self.notifier.notify::<ShowMessage>(ShowMessageParams {
+                            typ: MessageType::ERROR,
+                            message: format!(
+                                "Failed to parse: {config_path_lossy}. Project analysis will not \
+                                 be available.",
+                            ),
+                        });
                     })
                     .ok();
                 ProjectUpdate::CairoProjectToml(maybe_project_config)
