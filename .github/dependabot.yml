@@ -15,6 +15,7 @@ updates:
           - "*"
         exclude-patterns:
           - "cairo-lang-*"
+          - "lsp-types"
           - "salsa"
           - "scarb-*"
     ignore:
