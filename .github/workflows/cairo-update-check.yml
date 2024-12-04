@@ -1,0 +1,49 @@
+name: Cairo Update Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      slack:
+        description: "Send Slack notification on failure"
+        type: boolean
+        default: true
+  schedule:
+    - cron: '0 0 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: nightly
+
+      - name: Build xtasks
+        run: cargo build -p xtask
+
+      - name: Upgrade Cairo to latest main commit
+        run: |
+          CAIRO_REV=$(git ls-remote --refs "https://github.com/starkware-libs/cairo" main | awk '{print $1}')
+          echo "::notice::Checking Cairo commit: https://github.com/starkware-libs/cairo/commit/$CAIRO_REV"
+          cargo xtask set-cairo-version --rev "$CAIRO_REV"
+
+      - run: cargo test --profile=ci --no-fail-fast
+
+  notify_failed:
+    runs-on: ubuntu-latest
+    if: always() && inputs.slack && needs.check.result == 'failure'
+    needs: check
+    steps:
+      - name: Notify the team about workflow failure
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_CAIRO_UPDATE_CHECK_FAILURE_WEBHOOK_URL }}
+          webhook-type: webhook-trigger
+          payload: |
+            url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
