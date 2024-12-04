@@ -36,7 +36,7 @@ crossbeam = "0.8.4"
 governor = { version = "0.7.0", default-features = false, features = ["std", "quanta"] }
 indent = "0.1.1"
 indoc = "2"
-itertools = "0.12.1"
+itertools = "0.13.0"
 jod-thread = "0.1.2"
 lsp-server = "0.7.7"
 lsp-types = "=0.95.0"
@@ -55,7 +55,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 which = "7.0.0"
 
 [target.'cfg(target_vendor = "apple")'.dependencies]
-libc = "0.2.155"
+libc = "0.2.167"
 
 [dev-dependencies]
 assert_fs = "1.1"
