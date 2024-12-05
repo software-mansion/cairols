@@ -25,8 +25,10 @@ use crate::lang::proc_macros::plugins::proc_macro_plugin_suite;
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 
-const RATE_LIMITER_PERIOD_SEC: u64 = 180;
-const RATE_LIMITER_RETRIES: u32 = 5;
+const RESTART_RATE_LIMITER_PERIOD_SEC: u64 = 180;
+const RESTART_RATE_LIMITER_RETRIES: u32 = 5;
+
+const RESPONSE_RATE_LIMITER_PERIOD_SEC: u64 = 3;
 
 /// Manages lifecycle of proc-macro-server client.
 ///
@@ -52,6 +54,7 @@ pub struct ProcMacroClientController {
     notifier: Notifier,
     plugin_suite: Option<PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
+    response_resolving_limiter: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     channels: ProcMacroChannels,
 }
 
@@ -67,13 +70,21 @@ impl ProcMacroClientController {
             plugin_suite: Default::default(),
             initialization_retries: RateLimiter::direct(
                 Quota::with_period(Duration::from_secs(
-                    RATE_LIMITER_PERIOD_SEC / RATE_LIMITER_RETRIES as u64,
+                    RESTART_RATE_LIMITER_PERIOD_SEC / RESTART_RATE_LIMITER_RETRIES as u64,
                 ))
                 .unwrap()
                 .allow_burst(
                     // All retries can be used as fast as possible.
-                    NonZeroU32::new(RATE_LIMITER_RETRIES).unwrap(),
+                    NonZeroU32::new(RESTART_RATE_LIMITER_RETRIES).unwrap(),
                 ),
+            ),
+            response_resolving_limiter: RateLimiter::direct(
+                Quota::with_period(Duration::from_secs(RESPONSE_RATE_LIMITER_PERIOD_SEC))
+                    .unwrap()
+                    .allow_burst(
+                        // Don't allow any burst.
+                        NonZeroU32::new(1).unwrap(),
+                    ),
             ),
             channels: ProcMacroChannels::new(),
         }
@@ -116,6 +127,11 @@ impl ProcMacroClientController {
 
     /// If the client is ready, apply all available responses.
     pub fn on_response(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+        if self.response_resolving_limiter.check().is_err() {
+            let _ = self.channels.response_sender.try_send(());
+            return;
+        }
+
         match db.proc_macro_client_status() {
             ClientStatus::Starting(client) => {
                 let Ok(defined_macros) = client.finish_initialize() else {
@@ -310,8 +326,9 @@ impl Display for InitializationFailedInfo {
             InitializationFailedInfo::NoMoreRetries => {
                 write!(
                     f,
-                    "Starting proc-macro-server failed {RATE_LIMITER_RETRIES} times in {} minutes.",
-                    RATE_LIMITER_PERIOD_SEC / 60
+                    "Starting proc-macro-server failed {RESTART_RATE_LIMITER_RETRIES} times in {} \
+                     minutes.",
+                    RESTART_RATE_LIMITER_PERIOD_SEC / 60
                 )
             }
             InitializationFailedInfo::SpawnFail => {
