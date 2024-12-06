@@ -108,6 +108,22 @@ to push further changes to your commits.
 Our policy is to not accept PRs that only fix typos in the documentation and code.
 We appreciate your effort, but we encourage you to focus on bugs and features instead.
 
+## Tips
+
+### Testing custom Cairo compiler changes
+
+Sometimes you may happen to work on a feature to the Cairo compiler,
+and you would like to test how it works in CairoLS.
+
+We have a script that edits the `Cargo.toml` file to use a local checkout of the Cairo compiler.
+To use this tool, run:
+
+```shell
+cargo xtask set-cairo-version --path ../path/to/cairo
+```
+
+And then you can `cargo build` CairoLS with your custom Cairo compiler changes.
+
 ---
 
 Thanks! ❤️ ❤️ ❤️
