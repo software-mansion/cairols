@@ -2,10 +2,6 @@ use std::collections::HashSet;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
-use lsp_types::{ClientCapabilities, Url};
-use salsa::ParallelDatabase;
-
-use crate::Tricks;
 use crate::config::Config;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
@@ -14,6 +10,9 @@ use crate::project::ProjectController;
 use crate::server::client::Client;
 use crate::server::connection::ClientSender;
 use crate::toolchain::scarb::ScarbToolchain;
+use crate::Tricks;
+use lsp_types::{ClientCapabilities, Url};
+use salsa::ParallelDatabase;
 
 /// State of Language server.
 pub struct State {
@@ -55,16 +54,58 @@ impl State {
     }
 
     pub fn snapshot(&self) -> StateSnapshot {
-        StateSnapshot {
+        Beacon::wrap(SnapshotInternal {
             db: self.db.snapshot(),
             open_files: self.open_files.snapshot(),
             config: self.config.snapshot(),
+        })
+    }
+}
+
+pub struct Beacon<T> {
+    value: T,
+    drop_hook: Option<Box<dyn FnOnce() -> () + Send>>,
+}
+
+impl<T> Beacon<T>
+where
+    T: Send,
+{
+    // Constructor to wrap a value
+    pub fn wrap(value: T) -> Self {
+        Self { value, drop_hook: None }
+    }
+
+    // Set the drop hook
+    pub fn on_drop<F>(&mut self, drop_hook: F)
+    where
+        F: FnOnce() + Send + Sync + 'static,
+    {
+        self.drop_hook = Some(Box::new(drop_hook));
+    }
+}
+
+impl<T> Drop for Beacon<T> {
+    fn drop(&mut self) {
+        // take the hook, replacing with None
+        if let Some(hook) = self.drop_hook.take() {
+            hook(); // call the hook
         }
     }
 }
 
+impl<T> Deref for Beacon<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+pub type StateSnapshot = Beacon<SnapshotInternal>;
+
 /// Readonly snapshot of Language server state.
-pub struct StateSnapshot {
+pub struct SnapshotInternal {
     pub db: salsa::Snapshot<AnalysisDatabase>,
     pub open_files: Snapshot<HashSet<Url>>,
     pub config: Snapshot<Config>,

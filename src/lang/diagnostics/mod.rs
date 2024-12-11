@@ -2,9 +2,11 @@ use std::collections::HashSet;
 use std::iter;
 use std::iter::zip;
 use std::num::NonZero;
-use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::sync::{Arc, Mutex};
 
 use cairo_lang_filesystem::ids::FileId;
+use lsp_types::notification::Notification;
 use lsp_types::Url;
 use tracing::{error, trace};
 
@@ -37,25 +39,79 @@ pub struct DiagnosticsController {
     trigger: trigger::Sender<StateSnapshots>,
     _thread: JoinHandle,
     state_snapshots_props: StateSnapshotsProps,
+    active_snapshots: Arc<Mutex<HashSet<usize>>>,
+    notifier: Notifier,
 }
 
 impl DiagnosticsController {
     /// Creates a new diagnostics controller.
     pub fn new(notifier: Notifier) -> Self {
         let (trigger, receiver) = trigger();
-        let (thread, parallelism) = DiagnosticsControllerThread::spawn(receiver, notifier);
+        let (thread, parallelism) = DiagnosticsControllerThread::spawn(receiver, notifier.clone());
         Self {
             trigger,
             _thread: thread,
             state_snapshots_props: StateSnapshotsProps { parallelism },
+            active_snapshots: Arc::new(Mutex::new(HashSet::default())),
+            notifier,
         }
     }
 
     /// Schedules diagnostics refreshing on snapshot(s) of the current state.
     pub fn refresh(&self, state: &State) {
-        let state_snapshots = StateSnapshots::new(state, &self.state_snapshots_props);
+        let mut state_snapshots = StateSnapshots::new(state, &self.state_snapshots_props);
+        self.register_beacons(&mut state_snapshots);
+
+        DiagnosticsController::notify_start_analysis(self.notifier.clone());
         self.trigger.activate(state_snapshots);
     }
+
+    fn register_beacons(&self, state_snapshots: &mut StateSnapshots) {
+        let active_snapshots_ref = self.active_snapshots.clone();
+        (active_snapshots_ref.lock().unwrap()).clear();
+
+        state_snapshots.0.iter_mut().enumerate().for_each(|(i, beacon)| {
+            let mut active_snapshots = active_snapshots_ref.lock().unwrap();
+            active_snapshots.insert(i);
+
+            let active_snapshots_ref_2 = self.active_snapshots.clone();
+            let notifer_ref = self.notifier.clone();
+            beacon.on_drop(move || {
+                let mut active_snapshots = active_snapshots_ref_2.lock().unwrap();
+
+                active_snapshots.remove(&i);
+                if active_snapshots.is_empty() {
+                    DiagnosticsController::notify_stop_analysis(notifer_ref);
+                }
+            });
+        });
+    }
+
+    fn notify_stop_analysis(notifier: Notifier) {
+        notifier.notify::<DiagnosticsCalculationFinish>(());
+    }
+
+    fn notify_start_analysis(notifier: Notifier) {
+        notifier.notify::<DiagnosticsCalculationStart>(());
+    }
+}
+
+/// Notifies about diagnostics round which is beginning to calculate
+#[derive(Debug)]
+pub struct DiagnosticsCalculationStart;
+
+impl Notification for DiagnosticsCalculationStart {
+    type Params = ();
+    const METHOD: &'static str = "cairo/diagnosticsCalculationStart";
+}
+
+/// Notifies about diagnostics round which ended calulating
+#[derive(Debug)]
+pub struct DiagnosticsCalculationFinish;
+
+impl Notification for DiagnosticsCalculationFinish {
+    type Params = ();
+    const METHOD: &'static str = "cairo/diagnosticsCalculationFinish";
 }
 
 /// Stores entire state of diagnostics controller's worker thread.
