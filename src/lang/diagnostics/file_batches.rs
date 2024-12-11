@@ -17,10 +17,7 @@ pub fn find_primary_files(db: &AnalysisDatabase, open_files: &HashSet<Url>) -> H
 
 /// Finds all analyzable files in `db` that are **not** primary.
 #[tracing::instrument(skip_all)]
-pub fn find_secondary_files(
-    db: &AnalysisDatabase,
-    primary_files: &HashSet<FileId>,
-) -> HashSet<FileId> {
+pub fn find_secondary_files(db: &AnalysisDatabase, primary_files: &HashSet<FileId>) -> Vec<FileId> {
     let mut result = HashSet::new();
     for crate_id in db.crates() {
         for module_id in db.crate_modules(crate_id).iter() {
@@ -33,17 +30,14 @@ pub fn find_secondary_files(
             }
         }
     }
-    result
+    result.into_iter().collect()
 }
 
 /// Returns `n` optimally distributed batches of the input.
-pub fn batches<'a>(
-    input: impl IntoIterator<Item = &'a FileId> + Clone + 'a,
-    n: NonZero<usize>,
-) -> Vec<Vec<FileId>> {
+pub fn batches(input: &[FileId], n: NonZero<usize>) -> Vec<Vec<FileId>> {
     let n = n.get();
     let batches = (1..=n)
-        .map(|offset| input.clone().into_iter().copied().skip(offset - 1).step_by(n).collect())
+        .map(|offset| input.iter().copied().skip(offset - 1).step_by(n).collect())
         .collect::<Vec<_>>();
     debug_assert_eq!(batches.len(), n);
     batches

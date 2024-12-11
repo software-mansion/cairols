@@ -111,10 +111,11 @@ impl DiagnosticsControllerThread {
     fn diagnostics_controller_tick(&self, state_snapshots: StateSnapshots) {
         let (state, primary_snapshots, secondary_snapshots) = state_snapshots.split();
 
-        let primary = find_primary_files(&state.db, &state.open_files);
+        let primary_set = find_primary_files(&state.db, &state.open_files);
+        let primary: Vec<_> = primary_set.iter().copied().collect();
         self.spawn_refresh_worker(&primary, primary_snapshots);
 
-        let secondary = find_secondary_files(&state.db, &primary);
+        let secondary = find_secondary_files(&state.db, &primary_set);
         self.spawn_refresh_worker(&secondary, secondary_snapshots);
 
         let files_to_preserve: HashSet<Url> = primary
@@ -146,7 +147,7 @@ impl DiagnosticsControllerThread {
     }
 
     /// Makes batches out of `files` and spawns workers to run [`refresh_diagnostics`] on them.
-    fn spawn_refresh_worker(&self, files: &HashSet<FileId>, state_snapshots: Vec<StateSnapshot>) {
+    fn spawn_refresh_worker(&self, files: &[FileId], state_snapshots: Vec<StateSnapshot>) {
         let files_batches = batches(files, self.pool.parallelism());
         assert_eq!(files_batches.len(), state_snapshots.len());
         for (batch, state) in zip(files_batches, state_snapshots) {
