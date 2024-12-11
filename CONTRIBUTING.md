@@ -119,7 +119,7 @@ We have a script that edits the `Cargo.toml` file to use a local checkout of the
 To use this tool, run:
 
 ```shell
-cargo xtask set-cairo-version --path ../path/to/cairo
+cargo xtask upgrade cairo --path ../path/to/cairo
 ```
 
 And then you can `cargo build` CairoLS with your custom Cairo compiler changes.

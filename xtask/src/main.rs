@@ -21,7 +21,7 @@ macro_rules! command {
     }
 }
 
-command!(Command(set_cairo_version, set_version,));
+command!(Command(sync_version, upgrade,));
 
 #[derive(Parser)]
 struct Args {

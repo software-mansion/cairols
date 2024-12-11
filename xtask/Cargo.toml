@@ -5,7 +5,5 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
+cairo-toolchain-xtasks = "1"
 clap = { version = "4.5", features = ["derive"] }
-semver = "1"
-toml_edit = "0.22.22"
-xshell = "0.2.7"
