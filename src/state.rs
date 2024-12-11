@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::default::Default;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
@@ -7,6 +8,7 @@ use salsa::ParallelDatabase;
 
 use crate::Tricks;
 use crate::config::Config;
+use crate::ide::analysis_progress::{AnalysisProgressController, ProcMacroRequestTracker};
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
@@ -27,6 +29,7 @@ pub struct State {
     pub diagnostics_controller: DiagnosticsController,
     pub proc_macro_controller: ProcMacroClientController,
     pub project_controller: ProjectController,
+    pub analysis_progress_controller: AnalysisProgressController,
 }
 
 impl State {
@@ -37,8 +40,19 @@ impl State {
     ) -> Self {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
-        let proc_macro_controller =
-            ProcMacroClientController::new(scarb_toolchain.clone(), notifier.clone());
+
+        let proc_macro_request_tracker = ProcMacroRequestTracker::new();
+
+        let analysis_progress_controller =
+            AnalysisProgressController::new(notifier.clone(), proc_macro_request_tracker.clone());
+        let proc_macro_controller = ProcMacroClientController::new(
+            scarb_toolchain.clone(),
+            notifier.clone(),
+            proc_macro_request_tracker,
+        );
+
+        let diagnostics_controller =
+            DiagnosticsController::new(notifier.clone(), analysis_progress_controller.clone());
 
         Self {
             db: AnalysisDatabase::new(&tricks),
@@ -48,7 +62,8 @@ impl State {
             scarb_toolchain: scarb_toolchain.clone(),
             db_swapper: AnalysisDatabaseSwapper::new(),
             tricks: Owned::new(tricks.into()),
-            diagnostics_controller: DiagnosticsController::new(notifier.clone()),
+            diagnostics_controller,
+            analysis_progress_controller,
             proc_macro_controller,
             project_controller: ProjectController::initialize(scarb_toolchain, notifier),
         }

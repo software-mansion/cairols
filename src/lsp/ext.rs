@@ -87,6 +87,24 @@ pub mod testing {
         type Params = ();
         const METHOD: &'static str = "cairo/projectUpdatingFinished";
     }
+
+    /// Notifies about diagnostics generation which is beginning to calculate.
+    #[derive(Debug)]
+    pub struct DiagnosticsCalculationStart;
+
+    impl Notification for DiagnosticsCalculationStart {
+        type Params = ();
+        const METHOD: &'static str = "cairo/diagnosticsCalculationStart";
+    }
+
+    /// Notifies about diagnostics generation which ended calculating.
+    #[derive(Debug)]
+    pub struct DiagnosticsCalculationFinish;
+
+    impl Notification for DiagnosticsCalculationFinish {
+        type Params = ();
+        const METHOD: &'static str = "cairo/diagnosticsCalculationFinish";
+    }
 }
 
 #[derive(Debug)]

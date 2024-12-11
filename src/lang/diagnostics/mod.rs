@@ -10,6 +10,7 @@ use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
 use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
+use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
@@ -41,9 +42,10 @@ pub struct DiagnosticsController {
 
 impl DiagnosticsController {
     /// Creates a new diagnostics controller.
-    pub fn new(notifier: Notifier) -> Self {
+    pub fn new(notifier: Notifier, analysis_progress_tracker: AnalysisProgressController) -> Self {
         let (trigger, receiver) = trigger::trigger();
-        let (thread, parallelism) = DiagnosticsControllerThread::spawn(receiver, notifier);
+        let (thread, parallelism) =
+            DiagnosticsControllerThread::spawn(receiver, notifier, analysis_progress_tracker);
         Self {
             trigger,
             _thread: thread,
@@ -53,8 +55,7 @@ impl DiagnosticsController {
 
     /// Schedules diagnostics refreshing on snapshot(s) of the current state.
     pub fn refresh(&self, state: &State) {
-        let state_snapshots = StateSnapshots::new(state, &self.state_snapshots_props);
-        self.trigger.activate(state_snapshots);
+        self.trigger.activate(StateSnapshots::new(state, &self.state_snapshots_props));
     }
 }
 
@@ -64,6 +65,7 @@ struct DiagnosticsControllerThread {
     notifier: Notifier,
     pool: thread::Pool,
     project_diagnostics: ProjectDiagnostics,
+    analysis_progress_controller: AnalysisProgressController,
     worker_handles: Vec<TaskHandle>,
 }
 
@@ -73,10 +75,12 @@ impl DiagnosticsControllerThread {
     fn spawn(
         receiver: trigger::Receiver<StateSnapshots>,
         notifier: Notifier,
+        analysis_progress_controller: AnalysisProgressController,
     ) -> (JoinHandle, NonZero<usize>) {
         let mut this = Self {
             receiver,
             notifier,
+            analysis_progress_controller,
             pool: thread::Pool::new(),
             project_diagnostics: ProjectDiagnostics::new(),
             worker_handles: Vec::new(),
@@ -96,6 +100,8 @@ impl DiagnosticsControllerThread {
     fn event_loop(&mut self) {
         while let Some(state_snapshots) = self.receiver.wait() {
             assert!(self.worker_handles.is_empty());
+            self.analysis_progress_controller.try_start_analysis();
+
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
                 self.diagnostics_controller_tick(state_snapshots);
             })) {
@@ -108,6 +114,7 @@ impl DiagnosticsControllerThread {
             }
 
             self.join_and_clear_workers();
+            self.analysis_progress_controller.try_stop_analysis();
         }
     }
 

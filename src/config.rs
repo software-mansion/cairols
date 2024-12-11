@@ -101,6 +101,7 @@ impl Config {
                 debug!("reloaded configuration: {:#?}", state.config);
 
                 state.proc_macro_controller.on_config_change(&mut state.db, &state.config);
+                state.analysis_progress_controller.on_config_change(&state.config);
             })
         };
 
