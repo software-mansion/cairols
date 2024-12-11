@@ -124,7 +124,7 @@ impl DiagnosticsControllerThread {
             .collect();
 
         self.spawn_worker(move |project_diagnostics, notifier| {
-            clear_old_diagnostics(&state.db, files_to_preserve, project_diagnostics, notifier);
+            clear_old_diagnostics(files_to_preserve, project_diagnostics, notifier);
         });
     }
 

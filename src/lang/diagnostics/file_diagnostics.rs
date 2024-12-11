@@ -113,40 +113,37 @@ impl FileDiagnostics {
     }
 
     /// Constructs a new [`lsp_types::PublishDiagnosticsParams`] from this `FileDiagnostics`.
+    ///
+    /// NOTE: `file_id` must correspond to the url at the current time slice.
     pub fn to_lsp(
         &self,
         db: &AnalysisDatabase,
+        file_id: FileId,
         trace_macro_diagnostics: bool,
-    ) -> Option<lsp_types::PublishDiagnosticsParams> {
-        let file = db.file_for_url(&self.url)?;
-
+    ) -> lsp_types::PublishDiagnosticsParams {
         let mut diagnostics = Vec::new();
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
             &mut diagnostics,
             &self.parser,
-            file,
+            file_id,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
             &mut diagnostics,
             &self.semantic,
-            file,
+            file_id,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
             &mut diagnostics,
             &self.lowering,
-            file,
+            file_id,
             trace_macro_diagnostics,
         );
 
-        Some(lsp_types::PublishDiagnosticsParams {
-            uri: self.url.clone(),
-            diagnostics,
-            version: None,
-        })
+        lsp_types::PublishDiagnosticsParams { uri: self.url.clone(), diagnostics, version: None }
     }
 }
