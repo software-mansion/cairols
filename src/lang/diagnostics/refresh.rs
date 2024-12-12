@@ -2,8 +2,8 @@ use std::collections::HashSet;
 
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::FileId;
-use lsp_types::Url;
 use lsp_types::notification::PublishDiagnostics;
+use lsp_types::{PublishDiagnosticsParams, Url};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FileDiagnostics;
@@ -35,6 +35,10 @@ pub fn refresh_diagnostics(
 }
 
 /// Refresh diagnostics for a single file.
+///
+/// IMPORTANT: keep updating diagnostics state between server and client ATOMIC!
+/// I.e, if diagnostics are updated on the server side they MUST be sent successfully to the
+/// client (and vice-versa).
 #[tracing::instrument(skip_all, fields(url = tracing_file_url(db, file)))]
 fn refresh_file_diagnostics(
     db: &AnalysisDatabase,
@@ -48,17 +52,21 @@ fn refresh_file_diagnostics(
         return;
     };
 
+    // IMPORTANT: DO NOT change the order of operations here. `to_lsp` may panic, so it has to come
+    // before `insert`. It is to make sure that if `insert` succeeds, `notify` executes as well.
+    let params = new_file_diagnostics.to_lsp(db, file, trace_macro_diagnostics);
     if project_diagnostics.insert(new_file_diagnostics.clone()) {
-        if let Some(params) = new_file_diagnostics.to_lsp(db, trace_macro_diagnostics) {
-            notifier.notify::<PublishDiagnostics>(params);
-        }
+        notifier.notify::<PublishDiagnostics>(params);
     }
 }
 
 /// Wipes diagnostics for any files not present in the preserve set.
+///
+/// IMPORTANT: keep updating diagnostics state between server and client ATOMIC!
+/// I.e, if diagnostics are updated on the server side they MUST be sent successfully to the
+/// client (and vice-versa).
 #[tracing::instrument(skip_all)]
 pub fn clear_old_diagnostics(
-    db: &AnalysisDatabase,
     files_to_preserve: HashSet<Url>,
     project_diagnostics: ProjectDiagnostics,
     notifier: Notifier,
@@ -71,11 +79,12 @@ pub fn clear_old_diagnostics(
         // to preserve any extra state it might contain.
         file_diagnostics.clear();
 
-        // We can safely assume `trace_macro_diagnostics` = false here, as we are explicitly
-        // sending a "no diagnostics" message.
-        if let Some(params) = file_diagnostics.to_lsp(db, false) {
-            notifier.notify::<PublishDiagnostics>(params);
-        }
+        let params = PublishDiagnosticsParams {
+            uri: file_diagnostics.url,
+            diagnostics: vec![],
+            version: None,
+        };
+        notifier.notify::<PublishDiagnostics>(params);
     }
 }
 
