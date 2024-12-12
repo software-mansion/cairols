@@ -210,6 +210,7 @@ impl MockClient {
         loop {
             let message = self.recv()?.ok_or(RecvError::NoMessage)?;
             if let Some(ret) = predicate(&message) {
+                self.trace.pop();
                 return Ok(ret);
             }
         }
