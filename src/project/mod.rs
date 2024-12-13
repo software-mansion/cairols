@@ -99,7 +99,11 @@ impl ProjectController {
                 state.project_controller.loaded_scarb_manifests.update(loaded_manifests);
 
                 for cr in crates {
-                    cr.apply(db);
+                    let proc_macro_plugin_suite = state
+                        .proc_macro_controller
+                        .proc_macro_plugin_suite_for_crate(cr.crate_long_id());
+
+                    cr.apply(db, state.config.enable_linter, proc_macro_plugin_suite.cloned());
                 }
             }
             ProjectUpdate::ScarbMetadataFailed => {

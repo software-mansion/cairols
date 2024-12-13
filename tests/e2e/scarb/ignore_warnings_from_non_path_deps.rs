@@ -47,8 +47,12 @@ fn test_ignore_warnings_from_non_path_deps() {
             "src/lib.cairo" => cairo,
         }
         client_capabilities = caps;
+        // TODO (#339) - remove `enableProcMacros` from here.
+        // The `enableProcMacros` option must be set manually since
+        // providing a `workspace_configuration` overrides the whole default.
         workspace_configuration = json!({
             "cairo1": {
+                "enableProcMacros": false,
                 "enableLinter": true,
             }
         });

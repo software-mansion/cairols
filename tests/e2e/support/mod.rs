@@ -42,15 +42,16 @@ macro_rules! sandbox {
         #[allow(unused_assignments, unused_mut)]
         let mut workspace_configuration = serde_json::json!({
             "cairo1": {
+                "enableProcMacros": false,
                 "enableLinter": false
             }
         });
 
         $(
             workspace_configuration = $workspace_configuration;
-            client_capabilities =
-                client_capabilities::with_workspace_configuration(client_capabilities, true);
         )?
+        client_capabilities =
+                client_capabilities::with_workspace_configuration(client_capabilities, true);
 
         $(
             client_capabilities = $client_capabilities(client_capabilities);
