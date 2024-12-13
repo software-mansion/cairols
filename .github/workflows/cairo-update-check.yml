@@ -32,7 +32,7 @@ jobs:
         run: |
           CAIRO_REV=$(git ls-remote --refs "https://github.com/starkware-libs/cairo" main | awk '{print $1}')
           echo "::notice::Checking Cairo commit: https://github.com/starkware-libs/cairo/commit/$CAIRO_REV"
-          cargo xtask set-cairo-version --rev "$CAIRO_REV"
+          cargo xtask upgrade cairo --rev "$CAIRO_REV"
 
       - run: cargo test --profile=ci --no-fail-fast
 
