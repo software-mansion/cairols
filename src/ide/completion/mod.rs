@@ -79,6 +79,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     }
 
     let ctx = AnalysisContext::from_node(db, node.clone())?;
+    let crate_id = ctx.module_id.owning_crate(db);
 
     let trigger_kind =
         params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED);
@@ -143,7 +144,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     if_chain!(
         if let Some(node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath);
         if let Some(attr) = node.parent_of_type::<Attribute>(db);
-        if let Some(attr_completions) = attribute_completions(db, attr);
+        if let Some(attr_completions) = attribute_completions(db, attr, crate_id);
 
         then {
             completions.extend(attr_completions);
@@ -155,7 +156,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath);
         if let Some(node) = path_node.parent_of_kind(db, SyntaxKind::ArgClauseUnnamed);
         if let Some(attr) = node.ancestor_of_type::<Attribute>(db);
-        if let Some(derive_completions) = derive_completions(db, &path_node.get_text(db), attr);
+        if let Some(derive_completions) = derive_completions(db, &path_node.get_text(db), attr, crate_id);
 
         then {
             completions.extend(derive_completions);
@@ -166,7 +167,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     if_chain!(
         if node.ancestor_of_kind(db, SyntaxKind::Arg).is_none();
         if let Some(attr) = node.ancestor_of_type::<Attribute>(db);
-        if let Some(derive_completions) = derive_completions(db, "", attr);
+        if let Some(derive_completions) = derive_completions(db, "", attr, crate_id);
 
         then {
             completions.extend(derive_completions);

@@ -19,6 +19,7 @@ struct DiagnosticsReport {
 }
 
 #[test]
+#[ignore = "Requires a Scarb binary with changes from https://github.com/software-mansion/scarb/pull/1921"]
 fn test_custom_macro() {
     let mut ls = sandbox! {
         files {
