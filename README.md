@@ -5,7 +5,7 @@ Cairo is the first Turing-complete language for creating provable programs for g
 
 ## Quick start
 
-CairoLS is distributed along the [Scarb] package manager.
+CairoLS is distributed along with the [Scarb] package manager.
 To get started, install Scarb and the Cairo extension for your editor.
 
 For Visual Studio Code, install
