@@ -28,8 +28,6 @@ use crate::toolchain::scarb::ScarbToolchain;
 const RESTART_RATE_LIMITER_PERIOD_SEC: u64 = 180;
 const RESTART_RATE_LIMITER_RETRIES: u32 = 5;
 
-const RESPONSE_RATE_LIMITER_PERIOD_SEC: u64 = 3;
-
 /// Manages lifecycle of proc-macro-server client.
 ///
 /// The following diagram describes the lifecycle of proc-macro-server.
@@ -54,7 +52,6 @@ pub struct ProcMacroClientController {
     notifier: Notifier,
     plugin_suite: Option<PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
-    response_resolving_limiter: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     channels: ProcMacroChannels,
 }
 
@@ -77,14 +74,6 @@ impl ProcMacroClientController {
                     // All retries can be used as fast as possible.
                     NonZeroU32::new(RESTART_RATE_LIMITER_RETRIES).unwrap(),
                 ),
-            ),
-            response_resolving_limiter: RateLimiter::direct(
-                Quota::with_period(Duration::from_secs(RESPONSE_RATE_LIMITER_PERIOD_SEC))
-                    .unwrap()
-                    .allow_burst(
-                        // Don't allow any burst.
-                        NonZeroU32::new(1).unwrap(),
-                    ),
             ),
             channels: ProcMacroChannels::new(),
         }
@@ -127,11 +116,6 @@ impl ProcMacroClientController {
 
     /// If the client is ready, apply all available responses.
     pub fn on_response(&mut self, db: &mut AnalysisDatabase, config: &Config) {
-        if self.response_resolving_limiter.check().is_err() {
-            let _ = self.channels.response_sender.try_send(());
-            return;
-        }
-
         match db.proc_macro_client_status() {
             ClientStatus::Starting(client) => {
                 let Ok(defined_macros) = client.finish_initialize() else {
@@ -294,7 +278,7 @@ pub struct ProcMacroChannels {
     pub response_receiver: Receiver<()>,
 
     // A single element queue is used to notify when the response queue is pushed.
-    response_sender: Sender<()>,
+    pub response_sender: Sender<()>,
 
     // A single element queue is used to notify when client occurred an error.
     pub error_receiver: Receiver<()>,

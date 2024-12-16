@@ -38,10 +38,11 @@
 //! }
 //! ```
 
+use std::num::NonZeroU32;
 use std::panic::RefUnwindSafe;
 use std::path::PathBuf;
 use std::process::ExitCode;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 use std::{io, panic};
 
 use anyhow::Result;
@@ -49,6 +50,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use crossbeam::channel::{Receiver, select_biased};
+use governor::{Quota, RateLimiter};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use tracing::{debug, error, info};
@@ -350,6 +352,12 @@ impl Backend {
     ) -> Result<()> {
         let incoming = connection.incoming();
 
+        let response_resolving_limiter =
+            RateLimiter::direct(Quota::with_period(Duration::from_secs(3)).unwrap().allow_burst(
+                // Don't allow any burst.
+                NonZeroU32::new(1).unwrap(),
+            ));
+
         loop {
             select_biased! {
                 // Project updates may significantly change the state, therefore
@@ -376,7 +384,11 @@ impl Backend {
                 recv(proc_macro_channels.response_receiver) -> response => {
                     let Ok(()) = response else { break };
 
-                    scheduler.local(Self::on_proc_macro_response);
+                    if response_resolving_limiter.check().is_ok() {
+                        scheduler.local(Self::on_proc_macro_response);
+                    } else {
+                        let _ = proc_macro_channels.response_sender.try_send(());
+                    }
                 }
                 recv(proc_macro_channels.error_receiver) -> error => {
                     let Ok(()) = error else { break };
