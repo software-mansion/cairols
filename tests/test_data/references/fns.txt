@@ -1,0 +1,106 @@
+//! > Test references of function.
+
+//! > test_runner_name
+test_references(include_declaration: false)
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+fn pow<caret>2(x: felt252) -> felt252 { x * x }
+
+fn main() {
+    let x = po<caret>w2(2) + pow2(3);
+}
+
+//! > References #0
+fn pow<caret>2(x: felt252) -> felt252 { x * x }
+none response
+
+//! > References #1
+    let x = po<caret>w2(2) + pow2(3);
+none response
+
+//! > ==========================================================================
+
+//! > Test references of function including declaration.
+
+//! > test_runner_name
+test_references(include_declaration: true)
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+fn pow<caret>2(x: felt252) -> felt252 { x * x }
+
+fn main() {
+    let x = po<caret>w2(2) + pow2(3);
+}
+
+//! > References #0
+fn pow<caret>2(x: felt252) -> felt252 { x * x }
+none response
+
+//! > References #1
+    let x = po<caret>w2(2) + pow2(3);
+none response
+
+//! > ==========================================================================
+
+//! > Test unused function.
+
+//! > test_runner_name
+test_references(include_declaration: false)
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+fn pow<caret>2(x: felt252) -> felt252 { x * x }
+
+fn main() {
+    let pow2 = 2;  // bad
+    let x = pow2 + pow2; // bad
+}
+
+//! > References #0
+fn pow<caret>2(x: felt252) -> felt252 { x * x }
+none response
+
+//! > ==========================================================================
+
+//! > Test multiple function usages in single line.
+
+//! > test_runner_name
+test_references(include_declaration: false)
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+fn pow<caret>2(x: felt252) -> felt252 { x * x }
+
+fn main() {
+    let x = pow2(2) + pow2(3);
+}
+
+//! > References #0
+fn pow<caret>2(x: felt252) -> felt252 { x * x }
+none response

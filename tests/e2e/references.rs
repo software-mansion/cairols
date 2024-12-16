@@ -1,0 +1,83 @@
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use lsp_types::{
+    ClientCapabilities, ReferenceClientCapabilities, ReferenceContext, ReferenceParams,
+    TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
+};
+
+use crate::support::cursor::{peek_caret, peek_selection};
+use crate::support::{cursors, sandbox};
+
+cairo_lang_test_utils::test_file_test!(
+    references,
+    "tests/test_data/references",
+    {
+        fns: "fns.txt",
+    },
+    test_references
+);
+
+fn caps(base: ClientCapabilities) -> ClientCapabilities {
+    ClientCapabilities {
+        text_document: base.text_document.or_else(Default::default).map(|it| {
+            TextDocumentClientCapabilities {
+                references: Some(ReferenceClientCapabilities { dynamic_registration: Some(false) }),
+                ..it
+            }
+        }),
+        ..base
+    }
+}
+
+fn test_references(
+    inputs: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let (cairo, cursors) = cursors(&inputs["cairo_code"]);
+
+    let mut ls = sandbox! {
+        files {
+            "cairo_project.toml" => inputs["cairo_project.toml"].clone(),
+            "src/lib.cairo" => cairo.clone(),
+        }
+        client_capabilities = caps;
+    };
+
+    ls.open_all_cairo_files_and_wait_for_project_update();
+
+    let mut outputs = OrderedHashMap::default();
+    for (n, position) in cursors.carets().into_iter().enumerate() {
+        let mut report = String::new();
+        report.push_str(&peek_caret(&cairo, position));
+
+        let params = ReferenceParams {
+            text_document_position: TextDocumentPositionParams {
+                text_document: ls.doc_id("src/lib.cairo"),
+                position,
+            },
+            context: ReferenceContext {
+                include_declaration: args["include_declaration"] == "true",
+            },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+        };
+        let response = ls.send_request::<lsp_request!("textDocument/references")>(params);
+
+        if let Some(mut locations) = response {
+            // LS does not guarantee any order of the results.
+            locations
+                .sort_by_key(|loc| (loc.uri.as_str().to_owned(), loc.range.start, loc.range.end));
+
+            report.push_str("---");
+            for location in locations {
+                report.push('\n');
+                report.push_str(&peek_selection(&cairo, &location.range));
+            }
+        } else {
+            report.push_str("none response")
+        }
+
+        outputs.insert(format!("References #{n}"), report);
+    }
+    TestRunnerResult::success(outputs)
+}
