@@ -94,6 +94,10 @@ pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> 
             .code_action_dynamic_registration()
             .not()
             .then_some(CodeActionProviderCapability::Simple(true)),
+        references_provider: client_capabilities
+            .references_provider_dynamic_registration()
+            .not()
+            .then_some(OneOf::Left(true)),
         ..ServerCapabilities::default()
     }
 }
@@ -238,11 +242,18 @@ pub fn collect_dynamic_registrations(
 
     if client_capabilities.code_action_dynamic_registration() {
         let registration_options = CodeActionRegistrationOptions {
-            text_document_registration_options,
+            text_document_registration_options: text_document_registration_options.clone(),
             code_action_options: Default::default(),
         };
 
         registrations.push(create_registration("textDocument/codeAction", registration_options));
+    }
+
+    if client_capabilities.references_provider_dynamic_registration() {
+        registrations.push(create_registration(
+            "textDocument/references",
+            &text_document_registration_options,
+        ));
     }
 
     registrations
