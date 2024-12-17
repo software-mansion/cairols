@@ -42,7 +42,7 @@ fn main() {
         client_capabilities = caps;
     };
 
-    ls.open_and_wait_for_project_update("src/lib.cairo");
+    ls.open_all_cairo_files_and_wait_for_project_update();
 
     let res = ls
         .send_request::<lsp_request!("textDocument/semanticTokens/full")>(

@@ -31,7 +31,7 @@ fn test_macro_expand(
         }
     };
 
-    ls.open_and_wait_for_project_update("src/lib.cairo");
+    ls.open_all_cairo_files_and_wait_for_project_update();
 
     let mut results = OrderedHashMap::default();
 

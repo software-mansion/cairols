@@ -30,9 +30,7 @@ fn cairo_projects() {
         }
     };
 
-    ls.open_and_wait_for_diagnostics("project1/src/lib.cairo");
-    ls.open_and_wait_for_diagnostics("project2/src/lib.cairo");
-    ls.open_and_wait_for_diagnostics("project2/subproject/src/lib.cairo");
+    ls.open_all_cairo_files_and_wait_for_project_update();
 
     let output = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
@@ -120,7 +118,7 @@ fn test_reload() {
         }
     };
 
-    ls.open_and_wait_for_diagnostics("src/lib.cairo");
+    ls.open_all_cairo_files_and_wait_for_project_update();
 
     let expected = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 

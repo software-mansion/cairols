@@ -294,9 +294,8 @@ impl MockClient {
         lsp_types::TextDocumentIdentifier { uri: self.fixture.file_url(path) }
     }
 
-    /// Sends `textDocument/didOpen` notification to the server and
-    /// wait for `cairo/projectUpdatingFinished` to be sent.
-    pub fn open_and_wait_for_project_update(&mut self, path: impl AsRef<Path>) {
+    /// Sends `textDocument/didOpen` notification to the server.
+    pub fn open(&mut self, path: impl AsRef<Path>) {
         // Poor man's attempt at guessing the language ID
         // by assuming that file extension represents it.
         let language_id = self
@@ -317,7 +316,12 @@ impl MockClient {
                 },
             },
         );
+    }
 
+    /// Sends `textDocument/didOpen` notification to the server and
+    /// waits for `cairo/projectUpdatingFinished` to be sent.
+    pub fn open_and_wait_for_project_update(&mut self, path: impl AsRef<Path>) {
+        self.open(path);
         self.wait_for_project_update();
     }
 
@@ -346,6 +350,26 @@ impl MockClient {
     /// Waits for `cairo/projectUpdatingFinished` notification.
     pub fn wait_for_project_update(&mut self) {
         self.wait_for_notification::<ProjectUpdatingFinished>(|_| true);
+    }
+
+    /// Sends `textDocument/didChange` notification to the server for each `*.cairo` file in test
+    /// fixture and then waits for all corresponding `cairo/projectUpdatingFinished` notifications.
+    pub fn open_all_cairo_files_and_wait_for_project_update(&mut self) {
+        let cairo_files = self
+            .fixture
+            .files()
+            .iter()
+            .filter(|file| file.extension().is_some_and(|ext| ext == "cairo"))
+            .cloned()
+            .collect::<Vec<_>>();
+
+        for file in &cairo_files {
+            self.open(file);
+        }
+
+        for _ in &cairo_files {
+            self.wait_for_project_update();
+        }
     }
 }
 

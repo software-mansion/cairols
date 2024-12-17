@@ -52,7 +52,8 @@ fn test_goto_members(
         }
         client_capabilities = caps;
     };
-    ls.open_and_wait_for_diagnostics("src/lib.cairo");
+
+    ls.open_all_cairo_files_and_wait_for_project_update();
 
     let mut goto_definitions = OrderedHashMap::default();
 

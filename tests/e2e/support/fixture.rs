@@ -49,4 +49,9 @@ impl Fixture {
     pub fn read_file(&self, path: impl AsRef<Path>) -> String {
         fs::read_to_string(self.file_absolute_path(path)).unwrap()
     }
+
+    /// Returns all files paths in the fixture.
+    pub fn files(&self) -> &[PathBuf] {
+        &self.files
+    }
 }
