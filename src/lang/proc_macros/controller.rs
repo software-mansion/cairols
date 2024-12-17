@@ -4,7 +4,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow};
-use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::plugin::InternedPluginSuite;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use crossbeam::channel::{Receiver, Sender};
 use governor::clock::QuantaClock;
 use governor::state::{InMemoryState, NotKeyed};
@@ -52,7 +55,7 @@ const RESPONSE_RATE_LIMITER_PERIOD_SEC: u64 = 3;
 pub struct ProcMacroClientController {
     scarb: ScarbToolchain,
     notifier: Notifier,
-    plugin_suite: Option<PluginSuite>,
+    crate_plugin_suites: OrderedHashMap<CrateId, InternedPluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     response_resolving_limiter: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     channels: ProcMacroChannels,
@@ -67,7 +70,7 @@ impl ProcMacroClientController {
         Self {
             scarb,
             notifier,
-            plugin_suite: Default::default(),
+            crate_plugin_suites: Default::default(),
             initialization_retries: RateLimiter::direct(
                 Quota::with_period(Duration::from_secs(
                     RESTART_RATE_LIMITER_PERIOD_SEC / RESTART_RATE_LIMITER_RETRIES as u64,
@@ -111,8 +114,8 @@ impl ProcMacroClientController {
         // Otherwise we can get messages from old client after initialization of new one.
         self.channels.clear_all();
 
-        if let Some(plugin_suite) = self.plugin_suite.take() {
-            db.remove_plugin_suite(plugin_suite);
+        for (&crate_id, plugins) in self.crate_plugin_suites.iter() {
+            db.remove_crate_plugin_suite(crate_id, plugins);
         }
 
         self.try_initialize(db, config);
@@ -140,16 +143,26 @@ impl ProcMacroClientController {
                     return;
                 };
 
-                let new_plugin_suite = proc_macro_plugin_suite(defined_macros);
+                let new_crate_plugin_suites = proc_macro_plugin_suite(defined_macros);
 
-                // Store current plugins for identity comparison, so we can remove them if we
-                // restart proc-macro-server.
-                let previous_plugin_suite = self.plugin_suite.replace(new_plugin_suite.clone());
+                for (package_name, plugin_suite) in new_crate_plugin_suites {
+                    let crate_id: CrateId = CrateId::plain(db, package_name.as_str());
+                    let plugin_suite = db.intern_plugin_suite(plugin_suite);
 
-                if let Some(previous_plugin_suite) = previous_plugin_suite {
-                    db.replace_plugin_suite(previous_plugin_suite, new_plugin_suite);
-                } else {
-                    db.add_plugin_suite(new_plugin_suite);
+                    match self.crate_plugin_suites.entry(crate_id) {
+                        Entry::Occupied(mut entry) => {
+                            db.replace_crate_plugin_suite(
+                                crate_id,
+                                entry.get(),
+                                plugin_suite.clone(),
+                            );
+                            entry.insert(plugin_suite);
+                        }
+                        Entry::Vacant(entry) => {
+                            db.add_crate_plugin_suite(crate_id, plugin_suite.clone());
+                            entry.insert(plugin_suite);
+                        }
+                    }
                 }
 
                 db.set_proc_macro_client_status(ClientStatus::Ready(client));

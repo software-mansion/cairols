@@ -2,32 +2,43 @@ use std::sync::Arc;
 
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use downcast::unsafe_downcast_ref;
 use scarb::inline::inline_macro_generate_code;
 use scarb::regular::macro_generate_code;
 use scarb_proc_macro_server_types::methods::defined_macros::DefinedMacrosResponse;
+use smol_str::SmolStr;
 
 mod downcast;
 // TODO(#6666) Evict this module when this is possible.
 mod scarb;
 
-/// Creates [`PluginSuite`] for macros supported by proc-macro-server.
-pub fn proc_macro_plugin_suite(defined_macros: DefinedMacrosResponse) -> PluginSuite {
-    let mut plugin_suite = PluginSuite::default();
+/// Creates a mapping between Scarb package names and [`PluginSuite`]s of macros
+/// supported by the proc-macro-server, used by those packages.
+pub fn proc_macro_plugin_suite(
+    defined_macros: DefinedMacrosResponse,
+) -> OrderedHashMap<SmolStr, PluginSuite> {
+    defined_macros
+        .crate_macro_info
+        .into_iter()
+        .map(|(package_name, package_macros)| {
+            let mut plugin_suite = PluginSuite::default();
 
-    plugin_suite.add_plugin_ex(Arc::new(ProcMacroPlugin {
-        defined_attributes: defined_macros.attributes,
-        defined_derives: defined_macros.derives,
-        defined_executable_attributes: defined_macros.executables,
-    }));
+            plugin_suite.add_plugin_ex(Arc::new(ProcMacroPlugin {
+                defined_attributes: package_macros.attributes,
+                defined_derives: package_macros.derives,
+                defined_executable_attributes: package_macros.executables,
+            }));
 
-    let inline_plugin = Arc::new(InlineProcMacroPlugin);
+            let inline_plugin = Arc::new(InlineProcMacroPlugin);
 
-    for inline_macro in defined_macros.inline_macros {
-        plugin_suite.add_inline_macro_plugin_ex(&inline_macro, inline_plugin.clone());
-    }
+            for inline_macro in package_macros.inline_macros {
+                plugin_suite.add_inline_macro_plugin_ex(&inline_macro, inline_plugin.clone());
+            }
 
-    plugin_suite
+            (package_name, PluginSuite::from(plugin_suite))
+        })
+        .collect()
 }
 
 /// Macro plugin that searches for proc macros and forwards their resolution to the
