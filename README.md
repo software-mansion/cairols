@@ -9,7 +9,7 @@ CairoLS is distributed along with the [Scarb] package manager.
 To get started, install Scarb and the Cairo extension for your editor.
 
 For Visual Studio Code, install
-the [Cairo for Visual Studio Code extension](https://marketplace.visualstudio.com/items?itemName=starkware.cairo1)
+the Visual Studio Code [Cairo 1.0](https://marketplace.visualstudio.com/items?itemName=starkware.cairo1) extension
 from the marketplace.
 
 For other editors that support LSP,
