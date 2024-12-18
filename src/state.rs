@@ -7,6 +7,7 @@ use salsa::ParallelDatabase;
 
 use crate::Tricks;
 use crate::config::Config;
+use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
@@ -27,6 +28,7 @@ pub struct State {
     pub diagnostics_controller: DiagnosticsController,
     pub proc_macro_controller: ProcMacroClientController,
     pub project_controller: ProjectController,
+    pub analysis_progress_controller: AnalysisProgressController,
 }
 
 impl State {
@@ -37,8 +39,16 @@ impl State {
     ) -> Self {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
-        let proc_macro_controller =
-            ProcMacroClientController::new(scarb_toolchain.clone(), notifier.clone());
+
+        let analysis_progress_controller = AnalysisProgressController::new(notifier.clone());
+        let proc_macro_controller = ProcMacroClientController::new(
+            scarb_toolchain.clone(),
+            notifier.clone(),
+            analysis_progress_controller.clone(),
+        );
+
+        let diagnostics_controller =
+            DiagnosticsController::new(notifier.clone(), analysis_progress_controller.clone());
 
         Self {
             db: AnalysisDatabase::new(&tricks),
@@ -48,23 +58,63 @@ impl State {
             scarb_toolchain: scarb_toolchain.clone(),
             db_swapper: AnalysisDatabaseSwapper::new(),
             tricks: Owned::new(tricks.into()),
-            diagnostics_controller: DiagnosticsController::new(notifier.clone()),
+            diagnostics_controller,
+            analysis_progress_controller,
             proc_macro_controller,
             project_controller: ProjectController::initialize(scarb_toolchain, notifier),
         }
     }
 
     pub fn snapshot(&self) -> StateSnapshot {
-        StateSnapshot {
+        Beacon::wrap(SnapshotInternal {
             db: self.db.snapshot(),
             open_files: self.open_files.snapshot(),
             config: self.config.snapshot(),
+        })
+    }
+}
+
+pub struct Beacon<T> {
+    value: T,
+    signal_hook: Option<Box<dyn FnOnce() + Send>>,
+}
+
+impl<T> Beacon<T>
+where
+    T: Send,
+{
+    // Constructor to wrap a value
+    pub fn wrap(value: T) -> Self {
+        Self { value, signal_hook: None }
+    }
+
+    // Set the drop hook
+    pub fn on_signal<F>(&mut self, drop_hook: F)
+    where
+        F: FnOnce() + Send + Sync + 'static,
+    {
+        self.signal_hook = Some(Box::new(drop_hook));
+    }
+
+    pub fn signal(&mut self) {
+        if let Some(hook) = self.signal_hook.take() {
+            hook(); // call the hook
         }
     }
 }
 
+impl<T> Deref for Beacon<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+pub type StateSnapshot = Beacon<SnapshotInternal>;
+
 /// Readonly snapshot of Language server state.
-pub struct StateSnapshot {
+pub struct SnapshotInternal {
     pub db: salsa::Snapshot<AnalysisDatabase>,
     pub open_files: Snapshot<HashSet<Url>>,
     pub config: Snapshot<Config>,

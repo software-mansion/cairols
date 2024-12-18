@@ -26,7 +26,7 @@ pub struct Client<'s> {
     pub(super) requester: Requester<'s>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Notifier(ClientSender);
 
 #[derive(Clone)]
