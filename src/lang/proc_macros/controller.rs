@@ -82,6 +82,7 @@ impl ProcMacroClientController {
     /// Start proc-macro-server after config reload.
     /// Note that this will only try to go from `ClientStatus::Pending` to
     /// `ClientStatus::Starting` if config allows this.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn on_config_change(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         if db.proc_macro_client_status().is_pending() {
             self.try_initialize(db, config);
@@ -92,6 +93,7 @@ impl ProcMacroClientController {
     ///
     /// A new server instance is only started if there are available restart attempts left.
     /// This ensures that a fresh proc-macro-server is used.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn force_restart(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         // We have to make sure that snapshots will not report errors from previous client after we
         // create new one.
@@ -108,6 +110,7 @@ impl ProcMacroClientController {
     }
 
     /// Check if an error was reported. If so, try to restart.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn handle_error(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         if !self.try_initialize(db, config) {
             self.fatal_failed(db, InitializationFailedInfo::NoMoreRetries);
@@ -115,6 +118,7 @@ impl ProcMacroClientController {
     }
 
     /// If the client is ready, apply all available responses.
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn on_response(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         match db.proc_macro_client_status() {
             ClientStatus::Starting(client) => {
@@ -148,6 +152,7 @@ impl ProcMacroClientController {
     /// Tries starting proc-macro-server initialization process, if allowed by config.
     ///
     /// Returns value indicating if initialization was attempted.
+    #[tracing::instrument(level = "trace", skip_all)]
     fn try_initialize(&mut self, db: &mut AnalysisDatabase, config: &Config) -> bool {
         // Keep the rate limiter check as second condition when config doesn't allow it to make
         // sure it is not impacted.
@@ -161,6 +166,7 @@ impl ProcMacroClientController {
     }
 
     /// Spawns proc-macro-server.
+    #[tracing::instrument(level = "trace", skip_all)]
     fn spawn_server(&mut self, db: &mut AnalysisDatabase) {
         match self.scarb.proc_macro_server() {
             Ok(proc_macro_server) => {
@@ -184,6 +190,7 @@ impl ProcMacroClientController {
         }
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     fn fatal_failed(
         &self,
         db: &mut AnalysisDatabase,
@@ -197,6 +204,7 @@ impl ProcMacroClientController {
         });
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     fn apply_responses(
         &mut self,
         db: &mut AnalysisDatabase,

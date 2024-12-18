@@ -40,6 +40,7 @@ struct ProcMacroPlugin {
 }
 
 impl MacroPlugin for ProcMacroPlugin {
+    #[tracing::instrument(level = "trace", skip_all)]
     fn generate_code(
         &self,
         db: &dyn cairo_lang_syntax::node::db::SyntaxGroup,
@@ -66,6 +67,7 @@ impl MacroPlugin for ProcMacroPlugin {
 struct InlineProcMacroPlugin;
 
 impl InlineMacroExprPlugin for InlineProcMacroPlugin {
+    #[tracing::instrument(level = "trace", skip_all)]
     fn generate_code(
         &self,
         db: &dyn cairo_lang_syntax::node::db::SyntaxGroup,
