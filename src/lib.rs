@@ -71,6 +71,7 @@ use crate::state::State;
 
 mod config;
 mod env_config;
+mod id_generator;
 mod ide;
 mod lang;
 pub mod lsp;

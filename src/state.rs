@@ -2,7 +2,12 @@ use std::collections::HashSet;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
+use lsp_types::{ClientCapabilities, Url};
+use salsa::ParallelDatabase;
+
+use crate::Tricks;
 use crate::config::Config;
+use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
@@ -10,9 +15,6 @@ use crate::project::ProjectController;
 use crate::server::client::Client;
 use crate::server::connection::ClientSender;
 use crate::toolchain::scarb::ScarbToolchain;
-use crate::Tricks;
-use lsp_types::{ClientCapabilities, Url};
-use salsa::ParallelDatabase;
 
 /// State of Language server.
 pub struct State {
@@ -26,6 +28,7 @@ pub struct State {
     pub diagnostics_controller: DiagnosticsController,
     pub proc_macro_controller: ProcMacroClientController,
     pub project_controller: ProjectController,
+    pub analysis_progress_controller: AnalysisProgressController,
 }
 
 impl State {
@@ -36,8 +39,16 @@ impl State {
     ) -> Self {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
-        let proc_macro_controller =
-            ProcMacroClientController::new(scarb_toolchain.clone(), notifier.clone());
+
+        let analysis_progress_controller = AnalysisProgressController::new(notifier.clone());
+        let proc_macro_controller = ProcMacroClientController::new(
+            scarb_toolchain.clone(),
+            notifier.clone(),
+            analysis_progress_controller.clone(),
+        );
+
+        let diagnostics_controller =
+            DiagnosticsController::new(notifier.clone(), analysis_progress_controller.clone());
 
         Self {
             db: AnalysisDatabase::new(&tricks),
@@ -47,7 +58,8 @@ impl State {
             scarb_toolchain: scarb_toolchain.clone(),
             db_swapper: AnalysisDatabaseSwapper::new(),
             tricks: Owned::new(tricks.into()),
-            diagnostics_controller: DiagnosticsController::new(notifier.clone()),
+            diagnostics_controller,
+            analysis_progress_controller,
             proc_macro_controller,
             project_controller: ProjectController::initialize(scarb_toolchain, notifier),
         }
@@ -64,7 +76,7 @@ impl State {
 
 pub struct Beacon<T> {
     value: T,
-    drop_hook: Option<Box<dyn FnOnce() -> () + Send>>,
+    signal_hook: Option<Box<dyn FnOnce() + Send>>,
 }
 
 impl<T> Beacon<T>
@@ -73,22 +85,19 @@ where
 {
     // Constructor to wrap a value
     pub fn wrap(value: T) -> Self {
-        Self { value, drop_hook: None }
+        Self { value, signal_hook: None }
     }
 
     // Set the drop hook
-    pub fn on_drop<F>(&mut self, drop_hook: F)
+    pub fn on_signal<F>(&mut self, drop_hook: F)
     where
         F: FnOnce() + Send + Sync + 'static,
     {
-        self.drop_hook = Some(Box::new(drop_hook));
+        self.signal_hook = Some(Box::new(drop_hook));
     }
-}
 
-impl<T> Drop for Beacon<T> {
-    fn drop(&mut self) {
-        // take the hook, replacing with None
-        if let Some(hook) = self.drop_hook.take() {
+    pub fn signal(&mut self) {
+        if let Some(hook) = self.signal_hook.take() {
             hook(); // call the hook
         }
     }

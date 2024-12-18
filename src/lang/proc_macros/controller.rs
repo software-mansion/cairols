@@ -19,6 +19,7 @@ use super::client::connection::ProcMacroServerConnection;
 use super::client::status::ClientStatus;
 use super::client::{ProcMacroClient, RequestParams};
 use crate::config::Config;
+use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suite;
@@ -53,6 +54,7 @@ pub struct ProcMacroClientController {
     plugin_suite: Option<PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     channels: ProcMacroChannels,
+    analysis_progress_controller: AnalysisProgressController,
 }
 
 impl ProcMacroClientController {
@@ -60,10 +62,15 @@ impl ProcMacroClientController {
         self.channels.clone()
     }
 
-    pub fn new(scarb: ScarbToolchain, notifier: Notifier) -> Self {
+    pub fn new(
+        scarb: ScarbToolchain,
+        notifier: Notifier,
+        analysis_progress_controller: AnalysisProgressController,
+    ) -> Self {
         Self {
             scarb,
             notifier,
+            analysis_progress_controller,
             plugin_suite: Default::default(),
             initialization_retries: RateLimiter::direct(
                 Quota::with_period(Duration::from_secs(
@@ -170,10 +177,10 @@ impl ProcMacroClientController {
                         self.channels.response_sender.clone(),
                     ),
                     self.channels.error_sender.clone(),
+                    self.analysis_progress_controller.clone(),
                 );
 
                 client.start_initialize();
-
                 db.set_proc_macro_client_status(ClientStatus::Starting(Arc::new(client)));
             }
             Err(err) => {

@@ -2,17 +2,16 @@ use std::collections::HashSet;
 use std::iter;
 use std::iter::zip;
 use std::num::NonZero;
-use std::panic::{catch_unwind, AssertUnwindSafe};
-use std::sync::{Arc, Mutex};
+use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use cairo_lang_filesystem::ids::FileId;
-use lsp_types::notification::Notification;
 use lsp_types::Url;
 use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
 use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
 use self::trigger::trigger;
+use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
@@ -39,79 +38,32 @@ pub struct DiagnosticsController {
     trigger: trigger::Sender<StateSnapshots>,
     _thread: JoinHandle,
     state_snapshots_props: StateSnapshotsProps,
-    active_snapshots: Arc<Mutex<HashSet<usize>>>,
-    notifier: Notifier,
 }
 
 impl DiagnosticsController {
     /// Creates a new diagnostics controller.
-    pub fn new(notifier: Notifier) -> Self {
+    pub fn new(
+        notifier: Notifier,
+        analysis_progress_controller: AnalysisProgressController,
+    ) -> Self {
         let (trigger, receiver) = trigger();
-        let (thread, parallelism) = DiagnosticsControllerThread::spawn(receiver, notifier.clone());
+        let (thread, parallelism) = DiagnosticsControllerThread::spawn(
+            receiver,
+            notifier.clone(),
+            analysis_progress_controller,
+        );
+
         Self {
             trigger,
             _thread: thread,
             state_snapshots_props: StateSnapshotsProps { parallelism },
-            active_snapshots: Arc::new(Mutex::new(HashSet::default())),
-            notifier,
         }
     }
 
     /// Schedules diagnostics refreshing on snapshot(s) of the current state.
     pub fn refresh(&self, state: &State) {
-        let mut state_snapshots = StateSnapshots::new(state, &self.state_snapshots_props);
-        self.register_beacons(&mut state_snapshots);
-
-        DiagnosticsController::notify_start_analysis(self.notifier.clone());
-        self.trigger.activate(state_snapshots);
+        self.trigger.activate(StateSnapshots::new(state, &self.state_snapshots_props));
     }
-
-    fn register_beacons(&self, state_snapshots: &mut StateSnapshots) {
-        let active_snapshots_ref = self.active_snapshots.clone();
-        (active_snapshots_ref.lock().unwrap()).clear();
-
-        state_snapshots.0.iter_mut().enumerate().for_each(|(i, beacon)| {
-            let mut active_snapshots = active_snapshots_ref.lock().unwrap();
-            active_snapshots.insert(i);
-
-            let active_snapshots_ref_2 = self.active_snapshots.clone();
-            let notifer_ref = self.notifier.clone();
-            beacon.on_drop(move || {
-                let mut active_snapshots = active_snapshots_ref_2.lock().unwrap();
-
-                active_snapshots.remove(&i);
-                if active_snapshots.is_empty() {
-                    DiagnosticsController::notify_stop_analysis(notifer_ref);
-                }
-            });
-        });
-    }
-
-    fn notify_stop_analysis(notifier: Notifier) {
-        notifier.notify::<DiagnosticsCalculationFinish>(());
-    }
-
-    fn notify_start_analysis(notifier: Notifier) {
-        notifier.notify::<DiagnosticsCalculationStart>(());
-    }
-}
-
-/// Notifies about diagnostics round which is beginning to calculate
-#[derive(Debug)]
-pub struct DiagnosticsCalculationStart;
-
-impl Notification for DiagnosticsCalculationStart {
-    type Params = ();
-    const METHOD: &'static str = "cairo/diagnosticsCalculationStart";
-}
-
-/// Notifies about diagnostics round which ended calulating
-#[derive(Debug)]
-pub struct DiagnosticsCalculationFinish;
-
-impl Notification for DiagnosticsCalculationFinish {
-    type Params = ();
-    const METHOD: &'static str = "cairo/diagnosticsCalculationFinish";
 }
 
 /// Stores entire state of diagnostics controller's worker thread.
@@ -120,6 +72,7 @@ struct DiagnosticsControllerThread {
     notifier: Notifier,
     pool: thread::Pool,
     project_diagnostics: ProjectDiagnostics,
+    analysis_progress_controller: AnalysisProgressController,
 }
 
 impl DiagnosticsControllerThread {
@@ -128,10 +81,12 @@ impl DiagnosticsControllerThread {
     fn spawn(
         receiver: trigger::Receiver<StateSnapshots>,
         notifier: Notifier,
+        analysis_progress_controller: AnalysisProgressController,
     ) -> (JoinHandle, NonZero<usize>) {
         let this = Self {
             receiver,
             notifier,
+            analysis_progress_controller,
             pool: thread::Pool::new(),
             project_diagnostics: ProjectDiagnostics::new(),
         };
@@ -148,7 +103,8 @@ impl DiagnosticsControllerThread {
 
     /// Runs diagnostics controller's event loop.
     fn event_loop(&self) {
-        while let Some(state_snapshots) = self.receiver.wait() {
+        while let Some(mut state_snapshots) = self.receiver.wait() {
+            self.analysis_progress_controller.track_analysis(&mut state_snapshots.0);
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
                 self.diagnostics_controller_tick(state_snapshots);
             })) {
@@ -165,7 +121,7 @@ impl DiagnosticsControllerThread {
     /// Runs a single tick of the diagnostics controller's event loop.
     #[tracing::instrument(skip_all)]
     fn diagnostics_controller_tick(&self, state_snapshots: StateSnapshots) {
-        let (state, primary_snapshots, secondary_snapshots) = state_snapshots.split();
+        let (mut state, primary_snapshots, secondary_snapshots) = state_snapshots.split();
 
         let primary_set = find_primary_files(&state.db, &state.open_files);
         let primary: Vec<_> = primary_set.iter().copied().collect();
@@ -182,6 +138,7 @@ impl DiagnosticsControllerThread {
 
         self.spawn_worker(move |project_diagnostics, notifier| {
             clear_old_diagnostics(files_to_preserve, project_diagnostics, notifier);
+            state.signal();
         });
     }
 
@@ -206,7 +163,7 @@ impl DiagnosticsControllerThread {
     fn spawn_refresh_worker(&self, files: &[FileId], state_snapshots: Vec<StateSnapshot>) {
         let files_batches = batches(files, self.pool.parallelism());
         assert_eq!(files_batches.len(), state_snapshots.len());
-        for (batch, state) in zip(files_batches, state_snapshots) {
+        for (batch, mut state) in zip(files_batches, state_snapshots) {
             self.spawn_worker(move |project_diagnostics, notifier| {
                 refresh_diagnostics(
                     &state.db,
@@ -215,6 +172,7 @@ impl DiagnosticsControllerThread {
                     project_diagnostics,
                     notifier,
                 );
+                state.signal();
             });
         }
     }
