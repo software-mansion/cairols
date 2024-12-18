@@ -45,18 +45,22 @@ impl ProcMacroClient {
         }
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_attribute(&self, params: ExpandAttributeParams) {
         self.send_request::<ExpandAttribute>(params, RequestParams::Attribute)
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_derives(&self, params: ExpandDeriveParams) {
         self.send_request::<ExpandDerive>(params, RequestParams::Derive)
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_inline_macros(&self, params: ExpandInlineMacroParams) {
         self.send_request::<ExpandInline>(params, RequestParams::Inline)
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn start_initialize(&self) {
         if let Err(err) = self.request_defined_macros() {
             error!("failed to request defined macros: {err:?}");
@@ -65,6 +69,7 @@ impl ProcMacroClient {
         }
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn finish_initialize(&self) -> Result<DefinedMacrosResponse> {
         self.handle_defined_macros()
             .inspect_err(|err| error!("failed to fetch defined macros: {err:?}"))
@@ -151,6 +156,7 @@ impl ProcMacroClient {
         }
     }
 
+    #[tracing::instrument(level = "trace", skip_all)]
     fn failed(&self) {
         let _ = self.error_channel.try_send(());
     }
