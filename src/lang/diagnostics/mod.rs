@@ -49,7 +49,7 @@ impl DiagnosticsController {
         let (trigger, receiver) = trigger();
         let (thread, parallelism) = DiagnosticsControllerThread::spawn(
             receiver,
-            notifier.clone(),
+            notifier,
             analysis_progress_controller,
         );
 
