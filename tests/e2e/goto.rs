@@ -2,8 +2,7 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use lsp_types::{
     ClientCapabilities, GotoCapability, GotoDefinitionParams, GotoDefinitionResponse,
-    TextDocumentClientCapabilities, TextDocumentIdentifier, TextDocumentPositionParams,
-    lsp_request,
+    TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
 };
 
 use crate::support::cursor::{peek_caret, peek_selection};
@@ -63,7 +62,7 @@ fn test_goto_members(
         report.push_str(&peek_caret(&cairo, position));
         let code_action_params = GotoDefinitionParams {
             text_document_position_params: TextDocumentPositionParams {
-                text_document: TextDocumentIdentifier { uri: ls.doc_id("src/lib.cairo").uri },
+                text_document: ls.doc_id("src/lib.cairo"),
                 position,
             },
             work_done_progress_params: Default::default(),
