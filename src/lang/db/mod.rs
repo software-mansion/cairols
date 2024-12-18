@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -11,7 +11,9 @@ use cairo_lang_filesystem::ids::VirtualFile;
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
-use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::db::{
+    PluginSuiteInput, SemanticDatabase, SemanticGroup, init_semantic_group,
+};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
 use cairo_lang_starknet::starknet_plugin_suite;
@@ -52,6 +54,8 @@ impl AnalysisDatabase {
         let mut db = Self { storage: Default::default() };
 
         init_files_group(&mut db);
+        init_defs_group(&mut db);
+        init_semantic_group(&mut db);
         init_lowering_group(&mut db, InliningStrategy::Default);
         // proc-macro-server can be restarted many times but we want to keep these data across
         // multiple server starts, so init it once per database, not per server.
@@ -73,7 +77,9 @@ impl AnalysisDatabase {
             acc.add(suite);
             acc
         });
-        db.apply_plugin_suite(plugin_suite);
+
+        let plugin_suite = db.intern_plugin_suite(plugin_suite);
+        db.set_default_plugins_from_suite(plugin_suite);
 
         db
     }
@@ -96,13 +102,6 @@ impl AnalysisDatabase {
     /// Trigger cancellation in any background tasks that might still be running.
     pub fn cancel_all(&mut self) {
         self.salsa_runtime_mut().synthetic_write(Durability::LOW);
-    }
-
-    /// Shortcut for settings compiler plugins from a [`PluginSuite`].
-    fn apply_plugin_suite(&mut self, plugin_suite: PluginSuite) {
-        self.set_macro_plugins(plugin_suite.plugins);
-        self.set_inline_macro_plugins(plugin_suite.inline_macro_plugins.into());
-        self.set_analyzer_plugins(plugin_suite.analyzer_plugins);
     }
 
     /// Updates the plugin list in the database.

@@ -101,9 +101,13 @@ impl AnalysisDatabaseSwapper {
 
     /// Copies current proc macro state into new db.
     fn migrate_proc_macro_state(&self, new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
-        new_db.set_macro_plugins(old_db.macro_plugins());
-        new_db.set_inline_macro_plugins(old_db.inline_macro_plugins());
-        new_db.set_analyzer_plugins(old_db.analyzer_plugins());
+        new_db.set_default_macro_plugins(old_db.default_macro_plugins());
+        new_db.set_default_inline_macro_plugins(old_db.default_inline_macro_plugins());
+        new_db.set_default_analyzer_plugins(old_db.default_analyzer_plugins());
+
+        new_db.set_macro_plugin_overrides(old_db.macro_plugin_overrides());
+        new_db.set_inline_macro_plugin_overrides(old_db.inline_macro_plugin_overrides());
+        new_db.set_analyzer_plugin_overrides(old_db.analyzer_plugin_overrides());
 
         new_db.set_proc_macro_client_status(old_db.proc_macro_client_status());
 
