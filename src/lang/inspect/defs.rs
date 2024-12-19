@@ -17,10 +17,10 @@ use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{Binding, Expr, Mutability, TypeLongId};
-use cairo_lang_syntax::node::ast::{Param, PatternIdentifier, PatternPtr, TerminalIdentifier};
+use cairo_lang_syntax::node::ast::{ExprPath, Param, PatternIdentifier, TerminalIdentifier};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
+use cairo_lang_syntax::node::utils::{is_grandparent_of_kind, is_parent_of_kind};
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
@@ -179,20 +179,25 @@ impl VariableDef {
     fn new(db: &AnalysisDatabase, definition_node: SyntaxNode) -> Option<Self> {
         match definition_node.kind(db.upcast()) {
             SyntaxKind::TerminalIdentifier => {
-                let definition_node = definition_node.parent()?;
-                match definition_node.kind(db.upcast()) {
-                    SyntaxKind::PatternIdentifier => {
-                        let pattern_identifier =
-                            PatternIdentifier::from_syntax_node(db.upcast(), definition_node);
-                        Self::new_pattern_identifier(db, pattern_identifier)
-                    }
-                    kind => {
-                        error!(
-                            "variable definition node parent is not an pattern identifier: \
-                             {kind:?}"
-                        );
-                        None
-                    }
+                let pattern_node = definition_node.parent()?;
+                let kind = pattern_node.kind(db.upcast());
+                if let SyntaxKind::PatternIdentifier = kind {
+                    let pattern_identifier =
+                        PatternIdentifier::from_syntax_node(db.upcast(), pattern_node);
+                    Self::new_pattern_identifier(db, pattern_identifier)
+                } else if is_parent_of_kind(db, &pattern_node, SyntaxKind::ExprPath) {
+                    let expr_path = ExprPath::from_syntax_node(
+                        db.upcast(),
+                        pattern_node.parent().expect("Grandparent already exists"),
+                    );
+                    let terminal_identifier =
+                        TerminalIdentifier::from_syntax_node(db.upcast(), definition_node);
+                    Self::new_expr_path(db, expr_path, terminal_identifier)
+                } else {
+                    error!(
+                        "variable definition node parent is not an pattern identifier: {kind:?}"
+                    );
+                    None
                 }
             }
 
@@ -215,24 +220,22 @@ impl VariableDef {
     ) -> Option<Self> {
         let name = pattern_identifier.name(db.upcast()).text(db.upcast());
 
-        // Get the function which contains the variable/parameter.
-        let function_id =
-            db.find_lookup_item(&pattern_identifier.as_syntax_node())?.function_with_body()?;
+        let var =
+            lookup_binding_for_pattern(db, ast::Pattern::Identifier(pattern_identifier), &name)?;
 
-        // Get the semantic model for the pattern.
-        let pattern = {
-            let pattern_ptr = PatternPtr::from(pattern_identifier.stable_ptr());
-            let id = db.lookup_pattern_by_ptr(function_id, pattern_ptr).ok()?;
-            db.pattern_semantic(function_id, id)
-        };
+        Some(Self { name, var })
+    }
 
-        // Extract variable semantic from the found pattern.
-        let var = pattern
-            .variables(&QueryPatternVariablesFromDb(db.upcast(), function_id))
-            .into_iter()
-            .find(|pv| pv.name == name)?
-            .var
-            .into();
+    /// Constructs a new [`VariableDef`] instance for a [`TerminalIdentifier`]
+    /// that is a segment of an [`ExprPath`].
+    fn new_expr_path(
+        db: &AnalysisDatabase,
+        expr_path: ExprPath,
+        terminal_identifier: TerminalIdentifier,
+    ) -> Option<Self> {
+        let name = terminal_identifier.text(db.upcast());
+
+        let var = lookup_binding_for_pattern(db, ast::Pattern::Path(expr_path), &name)?;
 
         Some(Self { name, var })
     }
@@ -562,4 +565,33 @@ fn resolved_generic_item_def(
         }
         ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(defs_db),
     })
+}
+
+/// Extracts variable semantic (a binding) from the given pattern syntax node.
+///
+/// The `name` has to be the name of the variable (which is always known in advance when calling
+/// this function but hard to reverse lookup).
+fn lookup_binding_for_pattern(
+    db: &AnalysisDatabase,
+    pattern: ast::Pattern,
+    name: &str,
+) -> Option<Binding> {
+    // Get the function which contains the variable/parameter.
+    let function_id = db.find_lookup_item(&pattern.as_syntax_node())?.function_with_body()?;
+
+    // Get the semantic model for the pattern.
+    let pattern = db.pattern_semantic(
+        function_id,
+        db.lookup_pattern_by_ptr(function_id, pattern.stable_ptr()).ok()?,
+    );
+
+    // Extract the binding from the found pattern.
+    let binding = pattern
+        .variables(&QueryPatternVariablesFromDb(db.upcast(), function_id))
+        .into_iter()
+        .find(|pv| pv.name == name)?
+        .var
+        .into();
+
+    Some(binding)
 }
