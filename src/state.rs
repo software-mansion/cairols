@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::default::Default;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
@@ -44,11 +45,11 @@ impl State {
         let proc_macro_controller = ProcMacroClientController::new(
             scarb_toolchain.clone(),
             notifier.clone(),
-            analysis_progress_controller.clone(),
+            analysis_progress_controller.tracker(),
         );
 
         let diagnostics_controller =
-            DiagnosticsController::new(notifier.clone(), analysis_progress_controller.clone());
+            DiagnosticsController::new(notifier.clone(), analysis_progress_controller.tracker());
 
         Self {
             db: AnalysisDatabase::new(&tricks),
@@ -66,28 +67,22 @@ impl State {
     }
 
     pub fn snapshot(&self) -> StateSnapshot {
-        Beacon::wrap(SnapshotInternal {
+        StateSnapshot {
             db: self.db.snapshot(),
             open_files: self.open_files.snapshot(),
             config: self.config.snapshot(),
-        })
+            beacon: Default::default(),
+        }
     }
 }
-
-pub struct Beacon<T> {
-    value: T,
+/// Struct which allows setting a callback - which can be triggered afterward
+/// by the function which has the reference.
+#[derive(Default)]
+pub struct Beacon {
     signal_hook: Option<Box<dyn FnOnce() + Send>>,
 }
 
-impl<T> Beacon<T>
-where
-    T: Send,
-{
-    // Constructor to wrap a value
-    pub fn wrap(value: T) -> Self {
-        Self { value, signal_hook: None }
-    }
-
+impl Beacon {
     // Set the drop hook
     pub fn on_signal<F>(&mut self, drop_hook: F)
     where
@@ -103,21 +98,19 @@ where
     }
 }
 
-impl<T> Deref for Beacon<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.value
-    }
-}
-
-pub type StateSnapshot = Beacon<SnapshotInternal>;
-
 /// Readonly snapshot of Language server state.
-pub struct SnapshotInternal {
+pub struct StateSnapshot {
     pub db: salsa::Snapshot<AnalysisDatabase>,
     pub open_files: Snapshot<HashSet<Url>>,
     pub config: Snapshot<Config>,
+    /// Beacon to signal when the snapshot is no longer used
+    pub beacon: Beacon,
+}
+
+impl StateSnapshot {
+    pub(crate) fn signal_finish(&mut self) {
+        self.beacon.signal();
+    }
 }
 
 impl std::panic::UnwindSafe for StateSnapshot {}

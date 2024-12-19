@@ -1,4 +1,5 @@
 use std::collections::{HashMap, VecDeque};
+use std::fmt::{Debug, Formatter};
 use std::sync::{Mutex, MutexGuard};
 
 use anyhow::{Context, Result, anyhow, ensure};
@@ -17,7 +18,7 @@ pub use status::ClientStatus;
 use tracing::error;
 
 use crate::id_generator;
-use crate::ide::analysis_progress::AnalysisProgressController;
+use crate::ide::analysis_progress::AnalysisProgressTracker;
 
 pub mod connection;
 pub mod status;
@@ -29,27 +30,26 @@ pub enum RequestParams {
     Inline(ExpandInlineMacroParams),
 }
 
-#[derive(Debug)]
 pub struct ProcMacroClient {
     connection: ProcMacroServerConnection,
     id_generator: id_generator::IdGenerator,
     requests_params: Mutex<HashMap<RequestId, RequestParams>>,
     error_channel: Sender<()>,
-    analysis_progress_controller: AnalysisProgressController,
+    analysis_progress_tracker: AnalysisProgressTracker,
 }
 
 impl ProcMacroClient {
     pub fn new(
         connection: ProcMacroServerConnection,
         error_channel: Sender<()>,
-        analysis_progress_controller: AnalysisProgressController,
+        analysis_progress_tracker: AnalysisProgressTracker,
     ) -> Self {
         Self {
             connection,
             id_generator: Default::default(),
             requests_params: Default::default(),
             error_channel,
-            analysis_progress_controller,
+            analysis_progress_tracker,
         }
     }
 
@@ -150,7 +150,7 @@ impl ProcMacroClient {
         match self.send_request_untracked::<M>(id, &params) {
             Ok(()) => {
                 requests_params.insert(id, map(params));
-                self.analysis_progress_controller.register_procmacro_request();
+                self.analysis_progress_tracker.register_procmacro_request();
             }
             Err(err) => {
                 error!("Sending request to proc-macro-server failed: {err:?}");
@@ -162,6 +162,17 @@ impl ProcMacroClient {
 
     fn failed(&self) {
         let _ = self.error_channel.try_send(());
+    }
+}
+
+impl Debug for ProcMacroClient {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ProcMacroClient")
+            .field("connection", &self.connection)
+            .field("id_generator", &self.id_generator)
+            .field("requests_params", &self.requests_params)
+            .field("error_channel", &self.error_channel)
+            .finish()
     }
 }
 
