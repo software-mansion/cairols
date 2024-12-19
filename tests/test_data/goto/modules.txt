@@ -1,0 +1,64 @@
+//! > Test goto definition of a module.
+
+//! > test_runner_name
+test_goto_definition
+
+//! > cairo_code
+fn main() {
+    modu<caret>le::ba<caret>r::foo();
+}
+
+mod module {
+    // good
+    mod module {
+        // bad
+    }
+
+    mod bar { // good
+        fn foo() {}
+    }
+}
+
+//! > Goto definition #0
+    modu<caret>le::bar::foo();
+---
+mod module <sel>{
+    // good
+    mod module {
+        // bad
+    }
+
+    mod bar { // good
+        fn foo() {}
+    }
+}</sel>
+
+//! > Goto definition #1
+    module::ba<caret>r::foo();
+---
+    mod bar <sel>{ // good
+        fn foo() {}
+    }</sel>
+
+//! > ==========================================================================
+
+//! > Test goto definition of a function in a submodule.
+
+//! > test_runner_name
+test_goto_definition
+
+//! > cairo_code
+fn main() {
+    module::fo<caret>o();
+}
+
+fn foo() {} // bad
+
+mod module {
+    fn foo() {} // good
+}
+
+//! > Goto definition #0
+    module::fo<caret>o();
+---
+    <sel>fn foo() {}</sel> // good

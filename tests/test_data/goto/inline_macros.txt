@@ -1,0 +1,17 @@
+//! > Test goto definition on inline macro.
+
+//! > test_runner_name
+test_goto_definition
+
+//! > cairo_code
+// FIXME(#116): This is wrong.
+fn main() {
+    prin<caret>t!("Hello, world!");
+}
+
+//! > Goto definition #0
+    prin<caret>t!("Hello, world!");
+---
+<sel>fn main() {
+    print!("Hello, world!");
+}</sel>

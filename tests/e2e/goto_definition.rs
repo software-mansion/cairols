@@ -1,5 +1,6 @@
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use indoc::indoc;
 use lsp_types::{
     ClientCapabilities, GotoCapability, GotoDefinitionParams, GotoDefinitionResponse,
     TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
@@ -9,12 +10,17 @@ use crate::support::cursor::{peek_caret, peek_selection};
 use crate::support::{cursors, sandbox};
 
 cairo_lang_test_utils::test_file_test!(
-    goto,
+    goto_definition,
     "tests/test_data/goto",
     {
+        enum_variants: "enum_variants.txt",
+        inline_macros: "inline_macros.txt",
+        items: "items.txt",
+        modules: "modules.txt",
         struct_members: "struct_members.txt",
+        variables: "variables.txt",
     },
-    test_goto_members
+    test_goto_definition
 );
 
 fn caps(base: ClientCapabilities) -> ClientCapabilities {
@@ -32,13 +38,7 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
     }
 }
 
-/// Perform hover test.
-///
-/// This function spawns a sandbox language server with the given code in the `src/lib.cairo` file.
-/// The Cairo source code is expected to contain caret markers.
-/// The function then requests goto definition information at each caret position and compares
-/// the result with the expected hover information from the snapshot file.
-fn test_goto_members(
+fn test_goto_definition(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
@@ -46,7 +46,13 @@ fn test_goto_members(
 
     let mut ls = sandbox! {
         files {
-            "cairo_project.toml" => inputs["cairo_project.toml"].clone(),
+            "cairo_project.toml" => indoc! {r#"
+                [crate_roots]
+                hello = "src"
+
+                [config.global]
+                edition = "2024_07"
+            "#},
             "src/lib.cairo" => cairo.clone(),
         }
         client_capabilities = caps;
@@ -68,17 +74,26 @@ fn test_goto_members(
             work_done_progress_params: Default::default(),
             partial_result_params: Default::default(),
         };
-        let goto_definition_response =
+        let response =
             ls.send_request::<lsp_request!("textDocument/definition")>(code_action_params);
 
-        if let Some(goto_definition_response) = goto_definition_response {
-            if let GotoDefinitionResponse::Scalar(location) = goto_definition_response {
+        match response {
+            Some(GotoDefinitionResponse::Scalar(location)) => {
+                report.push_str("---\n");
                 report.push_str(&peek_selection(&cairo, &location.range));
-            } else {
-                panic!("Unexpected GotoDefinitionResponse variant.")
             }
-        } else {
-            panic!("Goto definition request failed.");
+            Some(GotoDefinitionResponse::Array(locations)) => {
+                for location in locations {
+                    report.push_str("---\n");
+                    report.push_str(&peek_selection(&cairo, &location.range));
+                }
+            }
+            Some(GotoDefinitionResponse::Link(_)) => {
+                panic!("unexpected GotoDefinitionResponse::Link");
+            }
+            None => {
+                report.push_str("None");
+            }
         }
         goto_definitions.insert(format!("Goto definition #{}", n), report);
     }
