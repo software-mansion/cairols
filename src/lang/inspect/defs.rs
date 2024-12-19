@@ -42,21 +42,8 @@ pub enum SymbolDef {
     Module(ModuleDef),
 }
 
-/// Information about a struct member.
-pub struct MemberDef {
-    pub member: MemberId,
-    pub structure: ItemDef,
-}
-
-/// Either [`ResolvedGenericItem`], [`ResolvedConcreteItem`] or [`MemberId`].
-pub enum ResolvedItem {
-    Generic(ResolvedGenericItem),
-    Concrete(ResolvedConcreteItem),
-    Member(MemberId),
-}
-
 impl SymbolDef {
-    /// Finds definition of the symbol referred by the given identifier.
+    /// Finds definition of the symbol referred to by the given identifier.
     pub fn find(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
         if let Some(parent) = identifier.as_syntax_node().parent() {
             if parent.kind(db.upcast()) == SyntaxKind::PathSegmentSimple
@@ -188,7 +175,7 @@ pub struct VariableDef {
 }
 
 impl VariableDef {
-    /// Constructs new [`VariableDef`] instance.
+    /// Constructs a new [`VariableDef`] instance.
     fn new(db: &AnalysisDatabase, definition_node: SyntaxNode) -> Option<Self> {
         match definition_node.kind(db.upcast()) {
             SyntaxKind::TerminalIdentifier => {
@@ -221,7 +208,7 @@ impl VariableDef {
         }
     }
 
-    /// Constructs new [`VariableDef`] instance for [`PatternIdentifier`].
+    /// Constructs a new [`VariableDef`] instance for [`PatternIdentifier`].
     fn new_pattern_identifier(
         db: &AnalysisDatabase,
         pattern_identifier: PatternIdentifier,
@@ -232,7 +219,7 @@ impl VariableDef {
         let function_id =
             db.find_lookup_item(&pattern_identifier.as_syntax_node())?.function_with_body()?;
 
-        // Get semantic model for the pattern.
+        // Get the semantic model for the pattern.
         let pattern = {
             let pattern_ptr = PatternPtr::from(pattern_identifier.stable_ptr());
             let id = db.lookup_pattern_by_ptr(function_id, pattern_ptr).ok()?;
@@ -298,6 +285,12 @@ impl VariableDef {
     }
 }
 
+/// Information about a struct member.
+pub struct MemberDef {
+    pub member: MemberId,
+    pub structure: ItemDef,
+}
+
 /// Information about the definition of a module.
 pub struct ModuleDef {
     id: ModuleId,
@@ -308,14 +301,15 @@ pub struct ModuleDef {
 }
 
 impl ModuleDef {
-    /// Constructs new [`ModuleDef`] instance.
+    /// Constructs a new [`ModuleDef`] instance.
     pub fn new(db: &AnalysisDatabase, id: ModuleId) -> Self {
         let name = id.name(db);
         let parent_full_path = id
             .full_path(db)
             .strip_suffix(name.as_str())
             .unwrap()
-            .strip_suffix("::")  // Fails when path lacks `::`, i.e. when we import from a crate root.
+            // Fails when the path lacks `::`, i.e. when we import from a crate root.
+            .strip_suffix("::")
             .map(String::from);
 
         ModuleDef { id, name, parent_full_path }
@@ -328,7 +322,7 @@ impl ModuleDef {
         format!("{prefix} {}", self.name)
     }
 
-    /// Gets the full path of a parent module of the current module.
+    /// Gets the full path of the parent module.
     pub fn definition_path(&self) -> String {
         self.parent_full_path.clone().unwrap_or_default()
     }
@@ -346,10 +340,17 @@ impl ModuleDef {
     }
 }
 
+/// Either [`ResolvedGenericItem`], [`ResolvedConcreteItem`] or [`MemberId`].
+pub enum ResolvedItem {
+    Generic(ResolvedGenericItem),
+    Concrete(ResolvedConcreteItem),
+    Member(MemberId),
+}
+
 // TODO(mkaput): make private.
 pub fn find_definition(
     db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
+    identifier: &TerminalIdentifier,
     lookup_items: &[LookupItemId],
 ) -> Option<(ResolvedItem, SyntaxStablePtrId)> {
     if let Some(parent) = identifier.as_syntax_node().parent() {
@@ -421,11 +422,11 @@ pub fn find_definition(
     }
 }
 
-/// Extracts [`MemberId`] if the [`ast::TerminalIdentifier`] is used as a struct member
+/// Extracts [`MemberId`] if the [`TerminalIdentifier`] is used as a struct member
 /// in [`ast::ExprStructCtorCall`].
 fn try_extract_member_from_constructor(
     db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
+    identifier: &TerminalIdentifier,
     lookup_items: &[LookupItemId],
 ) -> Option<MemberId> {
     let function_id = lookup_items.first()?.function_with_body()?;
@@ -456,11 +457,11 @@ fn try_extract_member_from_constructor(
         .find_map(|(id, _)| struct_member_name.eq(id.name(db).as_str()).then_some(*id))
 }
 
-/// Extracts [`MemberId`] if the [`ast::TerminalIdentifier`] points to
+/// Extracts [`MemberId`] if the [`TerminalIdentifier`] points to
 /// right-hand side of access member expression e.g., to `xyz` in `self.xyz`.
 fn try_extract_member(
     db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
+    identifier: &TerminalIdentifier,
     lookup_items: &[LookupItemId],
 ) -> Option<MemberId> {
     let syntax_node = identifier.as_syntax_node();
