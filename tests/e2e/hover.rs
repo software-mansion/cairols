@@ -19,6 +19,7 @@ cairo_lang_test_utils::test_file_test!(
         literals: "literals.txt",
         structs: "structs.txt",
         paths: "paths.txt",
+        variables: "variables.txt",
     },
     test_hover
 );
