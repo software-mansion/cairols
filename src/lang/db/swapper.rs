@@ -82,7 +82,7 @@ impl AnalysisDatabaseSwapper {
         project_controller: &mut ProjectController,
     ) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
-            project_controller.request_clearing_loaded_workspaces();
+            project_controller.clear_loaded_workspaces();
 
             let mut new_db = AnalysisDatabase::new(tricks);
             self.migrate_proc_macro_state(&mut new_db, db);

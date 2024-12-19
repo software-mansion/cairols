@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use anyhow::Context;
 use cairo_lang_compiler::db::validate_corelib;
@@ -18,7 +18,7 @@ use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::Notifier;
 use crate::server::schedule::thread;
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
-use crate::state::State;
+use crate::state::{Owned, Snapshot, State};
 use crate::toolchain::scarb::ScarbToolchain;
 
 mod crate_data;
@@ -27,11 +27,12 @@ mod scarb;
 mod unmanaged_core_crate;
 
 pub struct ProjectController {
+    loaded_scarb_manifests: Owned<HashSet<PathBuf>>,
     // NOTE: Member order matters here.
     //   The request sender MUST be dropped before controller's thread join handle.
     //   Otherwise, the controller thread will never stop, and the controller's
     //   JoinHandle drop will cause deadlock by waiting for the thread to join.
-    requests_sender: Sender<ProjectControllerRequest>,
+    requests_sender: Sender<ProjectUpdateRequest>,
     response_receiver: Receiver<ProjectUpdate>,
     _thread: JoinHandle,
 }
@@ -54,7 +55,12 @@ impl ProjectController {
             notifier,
         );
 
-        ProjectController { requests_sender, response_receiver, _thread: thread }
+        ProjectController {
+            loaded_scarb_manifests: Default::default(),
+            requests_sender,
+            response_receiver,
+            _thread: thread,
+        }
     }
 
     pub fn response_receiver(&self) -> Receiver<ProjectUpdate> {
@@ -62,11 +68,14 @@ impl ProjectController {
     }
 
     pub fn request_updating_project_for_file(&self, file_path: PathBuf) {
-        self.send_request(ProjectControllerRequest::SendProjectUpdate(file_path))
+        self.send_request(ProjectUpdateRequest {
+            file_path,
+            loaded_manifests: self.loaded_scarb_manifests.snapshot(),
+        })
     }
 
-    pub fn request_clearing_loaded_workspaces(&self) {
-        self.send_request(ProjectControllerRequest::ClearLoadedWorkspaces)
+    pub fn clear_loaded_workspaces(&mut self) {
+        self.loaded_scarb_manifests.clear();
     }
 
     /// Handles project update by applying necessary changes to the database.
@@ -77,17 +86,18 @@ impl ProjectController {
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
         let db = &mut state.db;
         match project_update {
-            ProjectUpdate::Scarb(crates) => {
-                if let Some(crates) = crates {
-                    debug!("updating crate roots from scarb metadata: {crates:#?}");
+            ProjectUpdate::Scarb { crates, loaded_manifests } => {
+                debug!("updating crate roots from scarb metadata: {crates:#?}");
 
-                    for cr in crates {
-                        cr.apply(db);
-                    }
-                } else {
-                    // Try to set up a corelib at least.
-                    try_to_init_unmanaged_core(db, &state.config, &state.scarb_toolchain);
+                state.project_controller.loaded_scarb_manifests.extend(loaded_manifests);
+
+                for cr in crates {
+                    cr.apply(db);
                 }
+            }
+            ProjectUpdate::ScarbMetadataFailed => {
+                // Try to set up a corelib at least.
+                try_to_init_unmanaged_core(db, &state.config, &state.scarb_toolchain);
             }
             ProjectUpdate::CairoProjectToml(maybe_project_config) => {
                 try_to_init_unmanaged_core(db, &state.config, &state.scarb_toolchain);
@@ -117,7 +127,7 @@ impl ProjectController {
     }
 
     /// Sends an action request to the background thread.
-    fn send_request(&self, request: ProjectControllerRequest) {
+    fn send_request(&self, request: ProjectUpdateRequest) {
         self.requests_sender
             .send(request)
             .expect("project controller thread should not have panicked or dropped the receiver")
@@ -127,15 +137,15 @@ impl ProjectController {
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
 pub enum ProjectUpdate {
-    Scarb(Option<Vec<Crate>>),
+    Scarb { crates: Vec<Crate>, loaded_manifests: HashSet<PathBuf> },
+    ScarbMetadataFailed,
     CairoProjectToml(Option<ProjectConfig>),
     NoConfig(PathBuf),
 }
 
 /// Stores entire state of project controller thread.
 struct ProjectControllerThread {
-    loaded_scarb_manifests: HashSet<PathBuf>,
-    requests_receiver: Receiver<ProjectControllerRequest>,
+    requests_receiver: Receiver<ProjectUpdateRequest>,
     response_sender: Sender<ProjectUpdate>,
     scarb_toolchain: ScarbToolchain,
     notifier: Notifier,
@@ -144,18 +154,12 @@ struct ProjectControllerThread {
 impl ProjectControllerThread {
     /// Spawns a new project controller thread and returns a handle to it.
     fn spawn(
-        requests_receiver: Receiver<ProjectControllerRequest>,
+        requests_receiver: Receiver<ProjectUpdateRequest>,
         response_sender: Sender<ProjectUpdate>,
         scarb_toolchain: ScarbToolchain,
         notifier: Notifier,
     ) -> JoinHandle {
-        let this = Self {
-            loaded_scarb_manifests: Default::default(),
-            requests_receiver,
-            response_sender,
-            scarb_toolchain,
-            notifier,
-        };
+        let this = Self { requests_receiver, response_sender, scarb_toolchain, notifier };
 
         thread::Builder::new(ThreadPriority::Worker)
             .name("cairo-ls:project-controller".into())
@@ -166,16 +170,9 @@ impl ProjectControllerThread {
     /// Runs project controller's event loop.
     fn event_loop(mut self) {
         while let Ok(request) = self.requests_receiver.recv() {
-            match request {
-                ProjectControllerRequest::SendProjectUpdate(file_path) => {
-                    let project_update = self.fetch_project_update_for_file(&file_path);
-                    if let Some(project_update) = project_update {
-                        self.send_project_update(project_update);
-                    }
-                }
-                ProjectControllerRequest::ClearLoadedWorkspaces => {
-                    self.loaded_scarb_manifests.clear()
-                }
+            let project_update = self.fetch_project_update_for_file(request);
+            if let Some(project_update) = project_update {
+                self.send_project_update(project_update);
             }
         }
     }
@@ -185,10 +182,16 @@ impl ProjectControllerThread {
     /// NOTE: this function is potentially expensive as it may call `scarb metadata`.
     /// It is meant to be run only in the background thread.
     #[tracing::instrument(skip_all)]
-    fn fetch_project_update_for_file(&mut self, file_path: &Path) -> Option<ProjectUpdate> {
-        let project_update = match ProjectManifestPath::discover(file_path, &self.notifier) {
+    fn fetch_project_update_for_file(
+        &mut self,
+        project_update_request: ProjectUpdateRequest,
+    ) -> Option<ProjectUpdate> {
+        let project_update = match ProjectManifestPath::discover(
+            &project_update_request.file_path,
+            &self.notifier,
+        ) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                if self.loaded_scarb_manifests.contains(&manifest_path) {
+                if project_update_request.loaded_manifests.contains(&manifest_path) {
                     trace!("scarb project is already loaded: {}", manifest_path.display());
                     return None;
                 }
@@ -204,14 +207,12 @@ impl ProjectControllerThread {
                     })
                     .ok();
 
-                let maybe_crates = if let Some(metadata) = metadata {
-                    self.loaded_scarb_manifests.extend(get_workspace_members_manifests(&metadata));
-                    Some(extract_crates(&metadata))
-                } else {
-                    None
-                };
-
-                ProjectUpdate::Scarb(maybe_crates)
+                metadata
+                    .map(|metadata| ProjectUpdate::Scarb {
+                        crates: extract_crates(&metadata),
+                        loaded_manifests: get_workspace_members_manifests(&metadata),
+                    })
+                    .unwrap_or(ProjectUpdate::ScarbMetadataFailed)
             }
 
             Some(ProjectManifestPath::CairoProject(config_path)) => {
@@ -235,7 +236,7 @@ impl ProjectControllerThread {
                 ProjectUpdate::CairoProjectToml(maybe_project_config)
             }
 
-            None => ProjectUpdate::NoConfig(file_path.to_path_buf()),
+            None => ProjectUpdate::NoConfig(project_update_request.file_path),
         };
 
         Some(project_update)
@@ -249,7 +250,7 @@ impl ProjectControllerThread {
     }
 }
 
-enum ProjectControllerRequest {
-    SendProjectUpdate(PathBuf),
-    ClearLoadedWorkspaces,
+struct ProjectUpdateRequest {
+    file_path: PathBuf,
+    loaded_manifests: Snapshot<HashSet<PathBuf>>,
 }
