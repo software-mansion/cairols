@@ -1,14 +1,7 @@
-//! > Test simple goto definition on struct members.
+//! > Test goto definition on struct member access.
 
 //! > test_runner_name
-test_goto_members
-
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2024_07"
+test_goto_definition
 
 //! > cairo_code
 #[derive(Drop)]
@@ -23,16 +16,48 @@ fn calculate_area(rectangle: Rectangle) -> u64 {
 
 //! > Goto definition #0
     rec<caret>tangle.width * rectangle.height
+---
 fn calculate_area(<sel>rectangle: Rectangle</sel>) -> u64 {
 
 //! > Goto definition #1
     rectangle.wi<caret>dth * rectangle.height
+---
     <sel>width: u64</sel>,
 
 //! > Goto definition #2
     rectangle.width * rectangle<caret>.height
+---
 fn calculate_area(<sel>rectangle: Rectangle</sel>) -> u64 {
 
 //! > Goto definition #3
     rectangle.width * rectangle.<caret>height
+---
+    <sel>height: u64</sel>,
+
+//! > ==========================================================================
+
+//! > Test goto definition on struct member constructor.
+
+//! > test_runner_name
+test_goto_definition
+
+//! > cairo_code
+#[derive(Drop)]
+struct Rectangle {
+    width: u64,
+    height: u64,
+}
+
+fn main() {
+    let rectangle = Rectangle { wid<caret>th: 0, heig<caret>ht: 0 };
+}
+
+//! > Goto definition #0
+    let rectangle = Rectangle { wid<caret>th: 0, height: 0 };
+---
+    <sel>width: u64</sel>,
+
+//! > Goto definition #1
+    let rectangle = Rectangle { width: 0, heig<caret>ht: 0 };
+---
     <sel>height: u64</sel>,
