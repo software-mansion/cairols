@@ -8,6 +8,9 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_doc::db::DocGroup;
 use cairo_lang_doc::documentable_item::DocumentableItemId;
+use cairo_lang_filesystem::db::get_originating_location;
+use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
@@ -28,7 +31,6 @@ use smol_str::SmolStr;
 use tracing::error;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
-use crate::lang::inspect::defs::SymbolDef::Member;
 
 /// Keeps information about the symbol that is being searched for/inspected.
 ///
@@ -86,21 +88,46 @@ impl SymbolDef {
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Module(id)) => {
-                Some(Self::Module(ModuleDef::new(db, id)))
+                Some(Self::Module(ModuleDef::new(db, id, definition_node)))
             }
 
             ResolvedItem::Concrete(ResolvedConcreteItem::Module(id)) => {
-                Some(Self::Module(ModuleDef::new(db, id)))
+                Some(Self::Module(ModuleDef::new(db, id, definition_node)))
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Variable(_)) => {
                 VariableDef::new(db, definition_node).map(Self::Variable)
             }
-            ResolvedItem::Member(member_id) => Some(Member(MemberDef {
-                member: member_id,
-                structure: ItemDef::new(db, &definition_node)?,
-            })),
+            ResolvedItem::Member(member_id) => {
+                MemberDef::new(db, member_id, definition_node).map(Self::Member)
+            }
         }
+    }
+
+    /// Gets a stable pointer to the "most interesting" syntax node of the symbol.
+    ///
+    /// Typically, this is this symbol's name node.
+    pub fn definition_stable_ptr(&self) -> Option<SyntaxStablePtrId> {
+        match self {
+            Self::Item(d) => Some(d.definition_stable_ptr),
+            Self::Variable(d) => Some(d.definition_stable_ptr),
+            Self::ExprInlineMacro(_) => None,
+            Self::Member(d) => Some(d.definition_stable_ptr),
+            Self::Module(d) => Some(d.definition_stable_ptr),
+        }
+    }
+
+    /// Gets the [`FileId`] and [`TextSpan`] of symbol's definition node's originating location.
+    pub fn definition_location(&self, db: &AnalysisDatabase) -> Option<(FileId, TextSpan)> {
+        let stable_ptr = self.definition_stable_ptr()?;
+        let node = stable_ptr.lookup(db.upcast());
+        let found_file = stable_ptr.file_id(db.upcast());
+        let span = node.span_without_trivia(db.upcast());
+        let width = span.width();
+        let (file_id, mut span) =
+            get_originating_location(db.upcast(), found_file, span.start_only(), None);
+        span.end = span.end.add_width(width);
+        Some((file_id, span))
     }
 }
 
@@ -117,6 +144,8 @@ pub struct ItemDef {
     /// This reference allows including simplified signatures of such contexts alongside
     /// the signature of this item.
     context_items: Vec<LookupItemId>,
+
+    definition_stable_ptr: SyntaxStablePtrId,
 }
 
 impl ItemDef {
@@ -141,7 +170,11 @@ impl ItemDef {
             })
             .collect();
 
-        Some(Self { lookup_item_id, context_items })
+        Some(Self {
+            lookup_item_id,
+            context_items,
+            definition_stable_ptr: definition_node.stable_ptr(),
+        })
     }
 
     /// Get item signature without its body including signatures of its contexts.
@@ -172,6 +205,7 @@ impl ItemDef {
 pub struct VariableDef {
     name: SmolStr,
     var: Binding,
+    definition_stable_ptr: SyntaxStablePtrId,
 }
 
 impl VariableDef {
@@ -220,10 +254,12 @@ impl VariableDef {
     ) -> Option<Self> {
         let name = pattern_identifier.name(db.upcast()).text(db.upcast());
 
+        let definition_stable_ptr = pattern_identifier.stable_ptr().untyped();
+
         let var =
             lookup_binding_for_pattern(db, ast::Pattern::Identifier(pattern_identifier), &name)?;
 
-        Some(Self { name, var })
+        Some(Self { name, var, definition_stable_ptr })
     }
 
     /// Constructs a new [`VariableDef`] instance for a [`TerminalIdentifier`]
@@ -235,9 +271,11 @@ impl VariableDef {
     ) -> Option<Self> {
         let name = terminal_identifier.text(db.upcast());
 
+        let definition_stable_ptr = terminal_identifier.stable_ptr().untyped();
+
         let var = lookup_binding_for_pattern(db, ast::Pattern::Path(expr_path), &name)?;
 
-        Some(Self { name, var })
+        Some(Self { name, var, definition_stable_ptr })
     }
 
     /// Constructs new [`VariableDef`] instance for [`Param`].
@@ -253,12 +291,12 @@ impl VariableDef {
         // Extract parameter semantic from the found signature.
         let var = signature.params.into_iter().find(|p| p.name == name)?.into();
 
-        Some(Self { name, var })
+        Some(Self { name, var, definition_stable_ptr: param.stable_ptr().untyped() })
     }
 
     /// Gets variable signature, which tries to resemble the way how it is defined in code.
     pub fn signature(&self, db: &AnalysisDatabase) -> String {
-        let Self { name, var } = self;
+        let Self { name, var, .. } = self;
 
         let prefix = match var {
             Binding::LocalVar(_) => "let ",
@@ -290,8 +328,31 @@ impl VariableDef {
 
 /// Information about a struct member.
 pub struct MemberDef {
-    pub member: MemberId,
-    pub structure: ItemDef,
+    member_id: MemberId,
+    structure: ItemDef,
+    definition_stable_ptr: SyntaxStablePtrId,
+}
+
+impl MemberDef {
+    /// Constructs a new [`MemberDef`] instance.
+    pub fn new(
+        db: &AnalysisDatabase,
+        member_id: MemberId,
+        definition_node: SyntaxNode,
+    ) -> Option<Self> {
+        let structure = ItemDef::new(db, &definition_node)?;
+        Some(Self { member_id, structure, definition_stable_ptr: definition_node.stable_ptr() })
+    }
+
+    /// Gets [`MemberId`] associated with this symbol.
+    pub fn member_id(&self) -> MemberId {
+        self.member_id
+    }
+
+    /// Gets a definition of the structure which this symbol is a member of.
+    pub fn structure(&self) -> &ItemDef {
+        &self.structure
+    }
 }
 
 /// Information about the definition of a module.
@@ -301,11 +362,12 @@ pub struct ModuleDef {
     /// A full path to the parent module if [`ModuleId`] points to a submodule,
     /// None otherwise (i.e. for a crate root).
     parent_full_path: Option<String>,
+    definition_stable_ptr: SyntaxStablePtrId,
 }
 
 impl ModuleDef {
     /// Constructs a new [`ModuleDef`] instance.
-    pub fn new(db: &AnalysisDatabase, id: ModuleId) -> Self {
+    pub fn new(db: &AnalysisDatabase, id: ModuleId, definition_node: SyntaxNode) -> Self {
         let name = id.name(db);
         let parent_full_path = id
             .full_path(db)
@@ -315,7 +377,12 @@ impl ModuleDef {
             .strip_suffix("::")
             .map(String::from);
 
-        ModuleDef { id, name, parent_full_path }
+        ModuleDef {
+            id,
+            name,
+            parent_full_path,
+            definition_stable_ptr: definition_node.stable_ptr(),
+        }
     }
 
     /// Gets the module signature: a name preceded by a qualifier: "mod" for submodule
@@ -344,14 +411,13 @@ impl ModuleDef {
 }
 
 /// Either [`ResolvedGenericItem`], [`ResolvedConcreteItem`] or [`MemberId`].
-pub enum ResolvedItem {
+enum ResolvedItem {
     Generic(ResolvedGenericItem),
     Concrete(ResolvedConcreteItem),
     Member(MemberId),
 }
 
-// TODO(mkaput): make private.
-pub fn find_definition(
+fn find_definition(
     db: &AnalysisDatabase,
     identifier: &TerminalIdentifier,
     lookup_items: &[LookupItemId],
