@@ -97,6 +97,9 @@ impl Config {
                     response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or_default();
                 state.config.enable_proc_macros =
                     response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or(false);
+                state
+                    .analysis_progress_controller
+                    .set_procmacros_enabled(state.config.enable_proc_macros);
 
                 debug!("reloaded configuration: {:#?}", state.config);
 

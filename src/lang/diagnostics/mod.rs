@@ -11,12 +11,13 @@ use tracing::{error, trace};
 use self::project_diagnostics::ProjectDiagnostics;
 use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
 use self::trigger::trigger;
+use crate::ide::analysis_progress::AnalysisProgressTracker;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
-use crate::state::{State, StateSnapshot};
+use crate::state::{Beacon, State, StateSnapshot};
 
 mod file_batches;
 mod file_diagnostics;
@@ -41,9 +42,11 @@ pub struct DiagnosticsController {
 
 impl DiagnosticsController {
     /// Creates a new diagnostics controller.
-    pub fn new(notifier: Notifier) -> Self {
+    pub fn new(notifier: Notifier, analysis_progress_tracker: AnalysisProgressTracker) -> Self {
         let (trigger, receiver) = trigger();
-        let (thread, parallelism) = DiagnosticsControllerThread::spawn(receiver, notifier);
+        let (thread, parallelism) =
+            DiagnosticsControllerThread::spawn(receiver, notifier, analysis_progress_tracker);
+
         Self {
             trigger,
             _thread: thread,
@@ -53,8 +56,7 @@ impl DiagnosticsController {
 
     /// Schedules diagnostics refreshing on snapshot(s) of the current state.
     pub fn refresh(&self, state: &State) {
-        let state_snapshots = StateSnapshots::new(state, &self.state_snapshots_props);
-        self.trigger.activate(state_snapshots);
+        self.trigger.activate(StateSnapshots::new(state, &self.state_snapshots_props));
     }
 }
 
@@ -64,6 +66,7 @@ struct DiagnosticsControllerThread {
     notifier: Notifier,
     pool: thread::Pool,
     project_diagnostics: ProjectDiagnostics,
+    analysis_progress_tracker: AnalysisProgressTracker,
 }
 
 impl DiagnosticsControllerThread {
@@ -72,10 +75,12 @@ impl DiagnosticsControllerThread {
     fn spawn(
         receiver: trigger::Receiver<StateSnapshots>,
         notifier: Notifier,
+        analysis_progress_tracker: AnalysisProgressTracker,
     ) -> (JoinHandle, NonZero<usize>) {
         let this = Self {
             receiver,
             notifier,
+            analysis_progress_tracker,
             pool: thread::Pool::new(),
             project_diagnostics: ProjectDiagnostics::new(),
         };
@@ -92,7 +97,8 @@ impl DiagnosticsControllerThread {
 
     /// Runs diagnostics controller's event loop.
     fn event_loop(&self) {
-        while let Some(state_snapshots) = self.receiver.wait() {
+        while let Some(mut state_snapshots) = self.receiver.wait() {
+            self.analysis_progress_tracker.track_analysis(&mut state_snapshots.beacons());
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
                 self.diagnostics_controller_tick(state_snapshots);
             })) {
@@ -109,7 +115,7 @@ impl DiagnosticsControllerThread {
     /// Runs a single tick of the diagnostics controller's event loop.
     #[tracing::instrument(skip_all)]
     fn diagnostics_controller_tick(&self, state_snapshots: StateSnapshots) {
-        let (state, primary_snapshots, secondary_snapshots) = state_snapshots.split();
+        let (mut state, primary_snapshots, secondary_snapshots) = state_snapshots.split();
 
         let primary_set = find_primary_files(&state.db, &state.open_files);
         let primary: Vec<_> = primary_set.iter().copied().collect();
@@ -126,6 +132,7 @@ impl DiagnosticsControllerThread {
 
         self.spawn_worker(move |project_diagnostics, notifier| {
             clear_old_diagnostics(files_to_preserve, project_diagnostics, notifier);
+            state.signal_finish();
         });
     }
 
@@ -150,7 +157,7 @@ impl DiagnosticsControllerThread {
     fn spawn_refresh_worker(&self, files: &[FileId], state_snapshots: Vec<StateSnapshot>) {
         let files_batches = batches(files, self.pool.parallelism());
         assert_eq!(files_batches.len(), state_snapshots.len());
-        for (batch, state) in zip(files_batches, state_snapshots) {
+        for (batch, mut state) in zip(files_batches, state_snapshots) {
             self.spawn_worker(move |project_diagnostics, notifier| {
                 refresh_diagnostics(
                     &state.db,
@@ -159,6 +166,7 @@ impl DiagnosticsControllerThread {
                     project_diagnostics,
                     notifier,
                 );
+                state.signal_finish();
             });
         }
     }
@@ -189,6 +197,10 @@ impl StateSnapshots {
         assert_eq!(snapshots.len() % 2, 0);
         let secondary = snapshots.split_off(snapshots.len() / 2);
         (control, snapshots, secondary)
+    }
+
+    fn beacons(&mut self) -> impl Iterator<Item = &mut Beacon> {
+        self.0.iter_mut().map(|snapshot| &mut snapshot.beacon)
     }
 }
 
