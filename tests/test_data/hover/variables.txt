@@ -1,0 +1,73 @@
+//! > Hover for variables
+
+//! > test_runner_name
+test_hover
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2023_11"
+
+//! > cairo_code
+fn main() {
+    let ab<caret>c: felt252 = 0;
+    let xy<caret>z = 3;
+    let mut de<caret>f = ab<caret>c * 2;
+    let _ = de<caret>f * xy<caret>z;
+}
+
+//! > hover #0
+// = source context
+    let ab<caret>c: felt252 = 0;
+// = highlight
+No highlight information.
+// = popover
+Type: `core::felt252`
+
+//! > hover #1
+// = source context
+    let xy<caret>z = 3;
+// = highlight
+No highlight information.
+// = popover
+Type: `core::felt252`
+
+//! > hover #2
+// = source context
+    let mut de<caret>f = abc * 2;
+// = highlight
+No highlight information.
+// = popover
+Type: `core::felt252`
+
+//! > hover #3
+// = source context
+    let mut def = ab<caret>c * 2;
+// = highlight
+    let mut def = <sel>abc</sel> * 2;
+// = popover
+```cairo
+let abc: core::felt252
+```
+
+//! > hover #4
+// = source context
+    let _ = de<caret>f * xyz;
+// = highlight
+    let _ = <sel>def</sel> * xyz;
+// = popover
+```cairo
+let mut def: core::felt252
+```
+
+//! > hover #5
+// = source context
+    let _ = def * xy<caret>z;
+// = highlight
+    let _ = def * <sel>xyz</sel>;
+// = popover
+```cairo
+let xyz: core::felt252
+```
