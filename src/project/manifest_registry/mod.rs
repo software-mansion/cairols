@@ -1,14 +1,18 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::path::PathBuf;
+
+use self::member_config::MemberConfig;
+
+pub mod member_config;
 
 #[derive(Debug, Default, Clone)]
 pub struct ManifestRegistry {
-    manifests: HashSet<PathBuf>,
+    manifests: HashMap<PathBuf, MemberConfig>,
 }
 
 impl ManifestRegistry {
     pub fn contains_manifest(&self, path: &PathBuf) -> bool {
-        self.manifests.contains(path)
+        self.manifests.contains_key(path)
     }
 
     pub fn clear(&mut self) {
@@ -21,11 +25,11 @@ impl ManifestRegistry {
 }
 
 pub struct ManifestRegistryUpdate {
-    manifests: HashSet<PathBuf>,
+    manifests: HashMap<PathBuf, MemberConfig>,
 }
 
-impl From<HashSet<PathBuf>> for ManifestRegistryUpdate {
-    fn from(manifests: HashSet<PathBuf>) -> Self {
+impl From<HashMap<PathBuf, MemberConfig>> for ManifestRegistryUpdate {
+    fn from(manifests: HashMap<PathBuf, MemberConfig>) -> Self {
         Self { manifests }
     }
 }
