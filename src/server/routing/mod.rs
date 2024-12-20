@@ -16,7 +16,7 @@ use lsp_types::notification::{
 };
 use lsp_types::request::{
     CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
-    Request as RequestTrait, SemanticTokensFullRequest,
+    References, Request as RequestTrait, SemanticTokensFullRequest,
 };
 use tracing::{error, trace, warn};
 
@@ -57,6 +57,9 @@ pub fn request<'a>(request: Request) -> Task<'a> {
             request,
             BackgroundSchedule::LatencySensitive,
         ),
+        References::METHOD => {
+            background_request_task::<References>(request, BackgroundSchedule::LatencySensitive)
+        }
         SemanticTokensFullRequest::METHOD => background_request_task::<SemanticTokensFullRequest>(
             request,
             BackgroundSchedule::Worker,

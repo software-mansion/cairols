@@ -4,6 +4,7 @@ mod completions;
 mod goto_definition;
 mod hover;
 mod macro_expand;
+mod references;
 mod semantic_tokens;
 mod support;
 mod workspace_configuration;
