@@ -64,6 +64,10 @@ impl ProjectController {
         }
     }
 
+    pub fn manifests_registry(&self) -> Snapshot<ManifestRegistry> {
+        self.loaded_scarb_manifests.snapshot()
+    }
+
     pub fn response_receiver(&self) -> Receiver<ProjectUpdate> {
         self.response_receiver.clone()
     }
