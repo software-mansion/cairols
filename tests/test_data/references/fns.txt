@@ -4,6 +4,7 @@
 test_references(include_declaration: false)
 
 //! > cairo_code
+// FIXME(#129): definition stable ptr for functions is wrong and causes declaration slipping here.
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
 
 fn main() {
@@ -13,10 +14,20 @@ fn main() {
 //! > References #0
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
 ---
+fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
+
+    let x = <sel>pow2</sel>(2) + pow2(3);
+
+    let x = pow2(2) + <sel>pow2</sel>(3);
 
 //! > References #1
     let x = po<caret>w2(2) + pow2(3);
 ---
+fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
+
+    let x = <sel>pow2</sel>(2) + pow2(3);
+
+    let x = pow2(2) + <sel>pow2</sel>(3);
 
 //! > ==========================================================================
 
@@ -37,10 +48,22 @@ fn pow<caret>2(x: felt252) -> felt252 { x * x }
 ---
 <sel>fn pow2(x: felt252) -> felt252 { x * x }</sel>
 
+fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
+
+    let x = <sel>pow2</sel>(2) + pow2(3);
+
+    let x = pow2(2) + <sel>pow2</sel>(3);
+
 //! > References #1
     let x = po<caret>w2(2) + pow2(3);
 ---
 <sel>fn pow2(x: felt252) -> felt252 { x * x }</sel>
+
+fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
+
+    let x = <sel>pow2</sel>(2) + pow2(3);
+
+    let x = pow2(2) + <sel>pow2</sel>(3);
 
 //! > ==========================================================================
 
@@ -53,13 +76,16 @@ test_references(include_declaration: false)
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
 
 fn main() {
-    let pow2 = 2;  // bad
+    let pow2 = 2;  // bad  // FIXME(mkaput): Why this?
     let x = pow2 + pow2; // bad
 }
 
 //! > References #0
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
 ---
+fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
+
+    let <sel>pow2</sel> = 2;  // bad  // FIXME(mkaput): Why this?
 
 //! > ==========================================================================
 
@@ -78,3 +104,8 @@ fn main() {
 //! > References #0
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
 ---
+fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
+
+    let x = <sel>pow2</sel>(2) + pow2(3);
+
+    let x = pow2(2) + <sel>pow2</sel>(3);

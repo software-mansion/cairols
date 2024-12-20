@@ -744,6 +744,7 @@ dependencies = [
  "libc",
  "lsp-server",
  "lsp-types",
+ "memchr",
  "pathdiff",
  "pretty_assertions",
  "rust-analyzer-salsa",
