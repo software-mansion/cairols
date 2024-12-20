@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use self::member_config::MemberConfig;
 
@@ -11,6 +11,19 @@ pub struct ManifestRegistry {
 }
 
 impl ManifestRegistry {
+    pub fn config_for_file(&self, path: &Path) -> Option<MemberConfig> {
+        self.manifests.iter().find_map(|(manifest_path, config)| {
+            let mut manifest_dir = (*manifest_path).to_owned();
+
+            // Should be always true but better safe than sorry.
+            if manifest_dir.ends_with("Scarb.toml") {
+                manifest_dir.pop();
+            }
+
+            path.starts_with(manifest_dir).then(|| config.clone())
+        })
+    }
+
     pub fn contains_manifest(&self, path: &PathBuf) -> bool {
         self.manifests.contains_key(path)
     }

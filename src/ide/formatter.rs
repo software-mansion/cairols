@@ -1,17 +1,22 @@
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_formatter::{FormatterConfig, get_formatted_file};
+use cairo_lang_formatter::get_formatted_file;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_utils::Upcast;
 use lsp_types::{DocumentFormattingParams, Position, Range, TextEdit};
 use tracing::error;
 
-use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
+use crate::state::StateSnapshot;
 
 /// Format a whole document.
-pub fn format(params: DocumentFormattingParams, db: &AnalysisDatabase) -> Option<Vec<TextEdit>> {
+pub fn format(params: DocumentFormattingParams, state: StateSnapshot) -> Option<Vec<TextEdit>> {
+    let db = &*state.db;
     let file_uri = params.text_document.uri;
     let file = db.file_for_url(&file_uri)?;
+
+    let path = file_uri.to_file_path().ok()?;
+
+    let config = state.loaded_scarb_manifests.config_for_file(&path).unwrap_or_default();
 
     let Ok(node) = db.file_syntax(file) else {
         error!("formatting failed: file '{file_uri}' does not exist");
@@ -23,7 +28,7 @@ pub fn format(params: DocumentFormattingParams, db: &AnalysisDatabase) -> Option
         return None;
     }
 
-    let new_text = get_formatted_file(db.upcast(), &node, FormatterConfig::default());
+    let new_text = get_formatted_file(db.upcast(), &node, config.fmt);
 
     let Some(file_summary) = db.file_summary(file) else {
         error!("formatting failed: cannot get summary for file '{file_uri}'");
