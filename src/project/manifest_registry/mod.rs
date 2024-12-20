@@ -11,6 +11,16 @@ pub struct ManifestRegistry {
 }
 
 impl ManifestRegistry {
+    pub fn config_for_file(&self, path: &str) -> Option<MemberConfig> {
+        self.manifests.iter().find_map(|(manifest_path, config)| {
+            let mut manifest_dir = (*manifest_path).to_owned();
+            manifest_dir.pop(); // Remove Scarb.toml from path
+            let manifest_dir = manifest_dir.to_str()?;
+
+            path.starts_with(manifest_dir).then(|| config.clone())
+        })
+    }
+
     pub fn contains_manifest(&self, path: &PathBuf) -> bool {
         self.manifests.contains_key(path)
     }

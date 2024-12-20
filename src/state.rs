@@ -69,7 +69,6 @@ pub struct StateSnapshot {
     pub db: salsa::Snapshot<AnalysisDatabase>,
     pub open_files: Snapshot<HashSet<Url>>,
     pub config: Snapshot<Config>,
-    #[allow(dead_code)] // TODO remove in next PR
     pub loaded_scarb_manifests: Snapshot<ManifestRegistry>,
 }
 
