@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::plugin::MacroPluginMetadata;
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin, MacroPluginMetadata};
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
@@ -39,7 +39,7 @@ pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) 
 
     let metadata = MacroPluginMetadata {
         cfg_set: &cfg_set,
-        declared_derives: &db.declared_derives(),
+        declared_derives: &db.declared_derives(crate_id),
         allowed_features: &Default::default(),
         edition,
     };
@@ -98,11 +98,14 @@ fn expanded_macro_files(
     let mut module_queue = VecDeque::from([(module_file, vec![item])]);
     let mut files = VecDeque::new();
 
+    let crate_id = db.file_modules(module_file).ok()?.first()?.owning_crate(db);
+
     while let Some((module_file, item_asts)) = module_queue.pop_front() {
         files.push_back(module_file);
 
         for item_ast in item_asts {
-            for plugin in db.macro_plugins() {
+            for &plugin_id in db.crate_macro_plugins(crate_id).iter() {
+                let plugin = db.lookup_intern_macro_plugin(plugin_id);
                 let result = plugin.generate_code(db.upcast(), item_ast.clone(), metadata);
 
                 if let Some(generated) = result.code {
@@ -251,7 +254,9 @@ fn expand_inline_macros_in_single_file(
     output: &mut String,
     mut config: FileProcessorConfig,
 ) -> Option<()> {
-    let plugins = db.inline_macro_plugins();
+    let crate_id = db.file_modules(file).ok()?.first()?.owning_crate(db);
+
+    let plugins = db.crate_inline_macro_plugins(crate_id);
 
     if config.macros.is_empty() {
         append_file_with_header(db, file, &config.content, output);
@@ -260,7 +265,8 @@ fn expand_inline_macros_in_single_file(
         for node in config.macros.into_iter().rev() {
             let inline_macro = ExprInlineMacro::from_syntax_node(db, node.clone());
             let code = plugins
-                .get(&inline_macro.path(db).as_syntax_node().get_text_without_trivia(db))?
+                .get(&inline_macro.path(db).as_syntax_node().get_text_without_trivia(db))
+                .map(|&id| db.lookup_intern_inline_macro_plugin(id))?
                 .generate_code(db, &inline_macro, metadata)
                 .code?
                 .content;
