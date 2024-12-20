@@ -10,7 +10,7 @@ use crate::config::Config;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
-use crate::project::ProjectController;
+use crate::project::{ManifestRegistry, ProjectController};
 use crate::server::client::Client;
 use crate::server::connection::ClientSender;
 use crate::toolchain::scarb::ScarbToolchain;
@@ -59,6 +59,7 @@ impl State {
             db: self.db.snapshot(),
             open_files: self.open_files.snapshot(),
             config: self.config.snapshot(),
+            loaded_scarb_manifests: self.project_controller.manifests_registry(),
         }
     }
 }
@@ -68,6 +69,8 @@ pub struct StateSnapshot {
     pub db: salsa::Snapshot<AnalysisDatabase>,
     pub open_files: Snapshot<HashSet<Url>>,
     pub config: Snapshot<Config>,
+    #[allow(dead_code)] // TODO remove in next PR
+    pub loaded_scarb_manifests: Snapshot<ManifestRegistry>,
 }
 
 impl std::panic::UnwindSafe for StateSnapshot {}
