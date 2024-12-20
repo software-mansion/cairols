@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::path::PathBuf;
 
 use anyhow::Context;
@@ -11,6 +10,7 @@ use lsp_types::{MessageType, ShowMessageParams};
 use tracing::{debug, error, trace, warn};
 
 pub use self::crate_data::Crate;
+pub use self::manifest_registry::{ManifestRegistry, ManifestRegistryUpdate};
 pub use self::project_manifest_path::*;
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::scarb::{extract_crates, get_workspace_members_manifests};
@@ -22,12 +22,13 @@ use crate::state::{Owned, Snapshot, State};
 use crate::toolchain::scarb::ScarbToolchain;
 
 mod crate_data;
+mod manifest_registry;
 mod project_manifest_path;
 mod scarb;
 mod unmanaged_core_crate;
 
 pub struct ProjectController {
-    loaded_scarb_manifests: Owned<HashSet<PathBuf>>,
+    loaded_scarb_manifests: Owned<ManifestRegistry>,
     // NOTE: Member order matters here.
     //   The request sender MUST be dropped before controller's thread join handle.
     //   Otherwise, the controller thread will never stop, and the controller's
@@ -90,7 +91,7 @@ impl ProjectController {
                 if let Some((crates, manifests)) = crates {
                     debug!("updating crate roots from scarb metadata: {crates:#?}");
 
-                    state.project_controller.loaded_scarb_manifests.extend(manifests);
+                    state.project_controller.loaded_scarb_manifests.update(manifests);
 
                     for cr in crates {
                         cr.apply(db);
@@ -138,7 +139,7 @@ impl ProjectController {
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
 pub enum ProjectUpdate {
-    Scarb(Option<(Vec<Crate>, HashSet<PathBuf>)>),
+    Scarb(Option<(Vec<Crate>, ManifestRegistryUpdate)>),
     CairoProjectToml(Option<ProjectConfig>),
     NoConfig(PathBuf),
 }
@@ -191,7 +192,7 @@ impl ProjectControllerThread {
             &self.notifier,
         ) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                if project_update_request.loaded_manifests.contains(&manifest_path) {
+                if project_update_request.loaded_manifests.contains_manifest(&manifest_path) {
                     trace!("scarb project is already loaded: {}", manifest_path.display());
                     return None;
                 }
@@ -208,7 +209,7 @@ impl ProjectControllerThread {
                     .ok();
 
                 let maybe_crates = metadata.map(|metadata| {
-                    (extract_crates(&metadata), get_workspace_members_manifests(&metadata))
+                    (extract_crates(&metadata), get_workspace_members_manifests(&metadata).into())
                 });
 
                 ProjectUpdate::Scarb(maybe_crates)
@@ -251,5 +252,5 @@ impl ProjectControllerThread {
 
 struct ProjectUpdateRequest {
     file_path: PathBuf,
-    loaded_manifests: Snapshot<HashSet<PathBuf>>,
+    loaded_manifests: Snapshot<ManifestRegistry>,
 }
