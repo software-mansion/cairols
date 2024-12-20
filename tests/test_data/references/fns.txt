@@ -19,11 +19,11 @@ fn main() {
 
 //! > References #0
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
-none response
+---
 
 //! > References #1
     let x = po<caret>w2(2) + pow2(3);
-none response
+---
 
 //! > ==========================================================================
 
@@ -48,11 +48,13 @@ fn main() {
 
 //! > References #0
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
-none response
+---
+<sel>fn pow2(x: felt252) -> felt252 { x * x }</sel>
 
 //! > References #1
     let x = po<caret>w2(2) + pow2(3);
-none response
+---
+<sel>fn pow2(x: felt252) -> felt252 { x * x }</sel>
 
 //! > ==========================================================================
 
@@ -78,7 +80,7 @@ fn main() {
 
 //! > References #0
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
-none response
+---
 
 //! > ==========================================================================
 
@@ -103,4 +105,4 @@ fn main() {
 
 //! > References #0
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
-none response
+---
