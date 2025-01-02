@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, OnceLock};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result, bail, ensure};
 use lsp_types::notification::{Notification, ShowMessage};
 use lsp_types::{MessageType, ShowMessageParams};
 use scarb_metadata::{Metadata, MetadataCommand};
@@ -14,7 +14,6 @@ use crate::server::client::Notifier;
 
 pub const SCARB_TOML: &str = "Scarb.toml";
 
-// TODO(mkaput): Collect `scarb --version` and display it in the editor UI.
 /// The ultimate object for invoking Scarb.
 ///
 /// This object tries to maintain good UX when doing any Scarb operations, for example, by sending
@@ -25,6 +24,9 @@ pub const SCARB_TOML: &str = "Scarb.toml";
 pub struct ScarbToolchain {
     /// Cached path to the `scarb` executable.
     scarb_path_cell: Arc<OnceLock<Option<PathBuf>>>,
+
+    /// Cached scarb version.
+    version: Arc<OnceLock<Option<String>>>,
 
     /// The notifier object used to send notifications to the language client.
     notifier: Notifier,
@@ -38,14 +40,19 @@ pub struct ScarbToolchain {
 impl ScarbToolchain {
     /// Constructs a new [`ScarbToolchain`].
     pub fn new(notifier: Notifier) -> Self {
-        ScarbToolchain { scarb_path_cell: Default::default(), notifier, is_silent: false }
+        ScarbToolchain {
+            scarb_path_cell: Default::default(),
+            version: Default::default(),
+            notifier,
+            is_silent: false,
+        }
     }
 
     /// Finds the path to the `scarb` executable to use.
     ///
     /// This method may send notifications to the language client if there are any actionable issues
     /// with the found `scarb` installation or if it could not be found.
-    fn discover(&self) -> Option<&Path> {
+    pub fn discover(&self) -> Option<&Path> {
         self.scarb_path_cell
             .get_or_init(|| {
                 // While running tests, we do not have SCARB env set,
@@ -101,6 +108,8 @@ impl ScarbToolchain {
                     Some(_) => self.scarb_path_cell.clone(),
                     None => Default::default(),
                 },
+
+                version: self.version.clone(),
 
                 notifier: self.notifier.clone(),
 
@@ -165,6 +174,24 @@ impl ScarbToolchain {
             .spawn()?;
 
         Ok(proc_macro_server)
+    }
+
+    pub fn version(&self) -> Option<String> {
+        self.version
+            .get_or_init(|| self.fetch_version().inspect_err(|err| error!("{err:#?}")).ok())
+            .clone()
+    }
+
+    fn fetch_version(&self) -> Result<String> {
+        let Some(scarb_path) = self.discover() else { bail!("failed to get scarb path") };
+
+        let output = Command::new(scarb_path).arg("--version").output()?;
+
+        ensure!(output.status.success(), "failed to get scarb version");
+
+        let version = String::from_utf8_lossy(&output.stdout).to_string();
+
+        Ok(version)
     }
 }
 

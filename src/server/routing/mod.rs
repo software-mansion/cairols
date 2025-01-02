@@ -21,7 +21,7 @@ use lsp_types::request::{
 use tracing::{error, trace, warn};
 
 use super::client::Responder;
-use crate::lsp::ext::{ExpandMacro, ProvideVirtualFile, ViewAnalyzedCrates};
+use crate::lsp::ext::{ExpandMacro, ProvideVirtualFile, ToolchainInfo, ViewAnalyzedCrates};
 use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::{BackgroundSchedule, Task};
@@ -61,6 +61,9 @@ pub fn request<'a>(request: Request) -> Task<'a> {
             request,
             BackgroundSchedule::Worker,
         ),
+        ToolchainInfo::METHOD => {
+            background_request_task::<ToolchainInfo>(request, BackgroundSchedule::Worker)
+        }
         ViewAnalyzedCrates::METHOD => {
             background_request_task::<ViewAnalyzedCrates>(request, BackgroundSchedule::Worker)
         }

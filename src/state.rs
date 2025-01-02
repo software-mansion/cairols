@@ -57,6 +57,7 @@ impl State {
     pub fn snapshot(&self) -> StateSnapshot {
         StateSnapshot {
             db: self.db.snapshot(),
+            scarb_toolchain: self.scarb_toolchain.clone(),
             open_files: self.open_files.snapshot(),
             config: self.config.snapshot(),
         }
@@ -66,6 +67,7 @@ impl State {
 /// Readonly snapshot of Language server state.
 pub struct StateSnapshot {
     pub db: salsa::Snapshot<AnalysisDatabase>,
+    pub scarb_toolchain: ScarbToolchain,
     pub open_files: Snapshot<HashSet<Url>>,
     pub config: Snapshot<Config>,
 }
