@@ -30,12 +30,13 @@ use tracing::error;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
-    ViewAnalyzedCrates,
+    ToolchainInfo, ToolchainInfoResponse, ViewAnalyzedCrates,
 };
 use crate::lsp::result::{LSPError, LSPResult};
 use crate::server::client::{Notifier, Requester};
 use crate::server::commands::ServerCommands;
 use crate::state::{State, StateSnapshot};
+use crate::toolchain::info::toolchain_info;
 use crate::{Backend, ide, lang};
 
 /// A request handler that needs mutable access to the session.
@@ -356,6 +357,17 @@ impl BackgroundDocumentRequestHandler for ExpandMacro {
         params: TextDocumentPositionParams,
     ) -> LSPResult<Option<String>> {
         Ok(ide::macros::expand::expand_macro(&snapshot.db, &params))
+    }
+}
+
+impl BackgroundDocumentRequestHandler for ToolchainInfo {
+    #[tracing::instrument(name = "cairo/toolchainInfo", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        _params: (),
+    ) -> LSPResult<ToolchainInfoResponse> {
+        toolchain_info(snapshot)
     }
 }
 

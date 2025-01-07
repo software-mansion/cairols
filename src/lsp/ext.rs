@@ -1,5 +1,7 @@
 //! CairoLS extensions to the Language Server Protocol.
 
+use std::path::PathBuf;
+
 use lsp_types::notification::Notification;
 use lsp_types::request::Request;
 use lsp_types::{TextDocumentPositionParams, Url};
@@ -49,6 +51,28 @@ pub struct CorelibVersionMismatch;
 impl Notification for CorelibVersionMismatch {
     type Params = String;
     const METHOD: &'static str = "cairo/corelib-version-mismatch";
+}
+
+/// Collects versions of LS and it's dependencies.
+#[derive(Debug)]
+pub struct ToolchainInfo;
+
+#[derive(Serialize, Deserialize)]
+pub struct PathAndVersion {
+    pub path: PathBuf,
+    pub version: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ToolchainInfoResponse {
+    pub ls: PathAndVersion,
+    pub scarb: Option<PathAndVersion>,
+}
+
+impl Request for ToolchainInfo {
+    type Params = ();
+    type Result = ToolchainInfoResponse;
+    const METHOD: &'static str = "cairo/toolchainInfo";
 }
 
 #[cfg(feature = "testing")]
