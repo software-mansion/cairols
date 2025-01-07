@@ -51,7 +51,7 @@ const WRONG_TYPE_CONST: u8 = 123_<caret>felt252; // FIXME(#139)
 const WRONG_TYPE_CONST: u8 = <sel>123_felt252</sel>; // FIXME(#139)
 // = popover
 ```cairo
-<missing>
+core::felt252
 ```
 ---
 value of literal: `123 (0x7b | 0b1111011)`
