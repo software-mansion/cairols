@@ -7,10 +7,6 @@ on:
   pull_request:
   merge_group:
 
-concurrency:
-  group: ${{ github.head_ref }}
-  cancel-in-progress: ${{ github.head_ref != 'main' }}
-
 jobs:
   build-test:
     name: build test ${{ matrix.platform.name }}
