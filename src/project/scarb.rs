@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -15,16 +15,25 @@ use scarb_metadata::{
 use smol_str::ToSmolStr;
 use tracing::{debug, error, warn};
 
+use super::manifest_registry::member_config::MemberConfig;
 use crate::lang::db::AnalysisDatabase;
 use crate::project::crate_data::Crate;
 
 /// Get paths to manifests of the workspace members.
-pub fn get_workspace_members_manifests(metadata: &Metadata) -> HashSet<PathBuf> {
+pub fn get_workspace_members_manifests(metadata: &Metadata) -> HashMap<PathBuf, MemberConfig> {
     metadata
         .workspace
         .members
         .iter()
-        .map(|package_id| metadata[package_id].manifest_path.clone().into())
+        .map(|package_id| {
+            let pkg = &metadata[package_id];
+
+            let manifest = pkg.manifest_path.clone().into();
+
+            let member_config = MemberConfig::from_pkg(pkg);
+
+            (manifest, member_config)
+        })
         .collect()
 }
 
