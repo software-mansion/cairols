@@ -12,7 +12,7 @@ edition = "2023_11"
 
 //! > cairo_code
 const SOME_CONST: felt252 = 0x<caret>123;
-const WRONG_TYPE_CONST: u8 = 123_<caret>felt252; // FIXME(#139)
+const WRONG_TYPE_CONST: u8 = 123_<caret>felt252;
 
 /// Declares many variables and does nothing.
 fn many_variables() {
@@ -46,9 +46,9 @@ value of literal: `291 (0x123 | 0b100100011)`
 
 //! > hover #1
 // = source context
-const WRONG_TYPE_CONST: u8 = 123_<caret>felt252; // FIXME(#139)
+const WRONG_TYPE_CONST: u8 = 123_<caret>felt252;
 // = highlight
-const WRONG_TYPE_CONST: u8 = <sel>123_felt252</sel>; // FIXME(#139)
+const WRONG_TYPE_CONST: u8 = <sel>123_felt252</sel>;
 // = popover
 ```cairo
 <missing>
