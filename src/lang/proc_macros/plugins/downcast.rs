@@ -36,7 +36,7 @@ mod unsafe_downcast_ref_tests {
 
     #[test]
     fn cast_succeed() {
-        let mut db = AnalysisDatabase::new(&Default::default());
+        let mut db = AnalysisDatabase::new();
 
         let input = ExpandAttributeParams {
             attr: "asd".to_string(),

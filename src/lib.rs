@@ -42,6 +42,7 @@ use std::num::NonZeroU32;
 use std::panic::RefUnwindSafe;
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::OnceLock;
 use std::time::{Duration, SystemTime};
 use std::{io, panic};
 
@@ -79,6 +80,9 @@ mod server;
 mod state;
 mod toolchain;
 
+/// A container to store global customizations initialized upon launch.
+pub static TRICKS: OnceLock<Tricks> = OnceLock::new();
+
 /// Carries various customizations that can be applied to CairoLS.
 ///
 /// See [the top-level documentation][lib] documentation for usage examples.
@@ -114,7 +118,9 @@ pub fn start_with_tricks(tricks: Tricks) -> ExitCode {
     info!("language server starting");
     env_config::report_to_logs();
 
-    let exit_code = match Backend::new(tricks) {
+    let _ = TRICKS.set(tricks);
+
+    let exit_code = match Backend::new() {
         Ok(backend) => {
             if let Err(err) = backend.run().map(|handle| handle.join()) {
                 error!("language server encountered an unrecoverable error: {err}");
@@ -233,9 +239,10 @@ impl BackendForTesting {
     ) -> (Box<dyn FnOnce() -> BackendForTesting + Send>, lsp_server::Connection) {
         let (connection_initializer, client) = ConnectionInitializer::memory();
 
-        let init = Box::new(|| {
-            BackendForTesting(Backend::initialize(tricks, connection_initializer).unwrap())
-        });
+        let _ = TRICKS.set(tricks);
+
+        let init =
+            Box::new(|| BackendForTesting(Backend::initialize(connection_initializer).unwrap()));
 
         (init, client)
     }
@@ -246,23 +253,23 @@ impl BackendForTesting {
 }
 
 impl Backend {
-    fn new(tricks: Tricks) -> Result<Self> {
+    fn new() -> Result<Self> {
         let connection_initializer = ConnectionInitializer::stdio();
 
-        Self::initialize(tricks, connection_initializer)
+        Self::initialize(connection_initializer)
     }
 
     /// Initializes the connection and crate a ready to run [`Backend`] instance.
     ///
     /// As part of the initialization flow, this function exchanges client and server capabilities.
-    fn initialize(tricks: Tricks, connection_initializer: ConnectionInitializer) -> Result<Self> {
+    fn initialize(connection_initializer: ConnectionInitializer) -> Result<Self> {
         let (id, init_params) = connection_initializer.initialize_start()?;
 
         let client_capabilities = init_params.capabilities;
         let server_capabilities = collect_server_capabilities(&client_capabilities);
 
         let connection = connection_initializer.initialize_finish(id, server_capabilities)?;
-        let state = State::new(connection.make_sender(), client_capabilities, tricks);
+        let state = State::new(connection.make_sender(), client_capabilities);
 
         Ok(Self { connection, state })
     }
@@ -418,7 +425,6 @@ impl Backend {
         state.db_swapper.maybe_swap(
             &mut state.db,
             &state.open_files,
-            &state.tricks,
             &mut state.project_controller,
         );
     }

@@ -26,7 +26,7 @@ pub use self::semantic::*;
 pub use self::swapper::*;
 pub use self::syntax::*;
 use super::proc_macros::db::{ProcMacroDatabase, init_proc_macro_group};
-use crate::Tricks;
+use crate::TRICKS;
 
 mod semantic;
 mod swapper;
@@ -49,7 +49,7 @@ pub struct AnalysisDatabase {
 
 impl AnalysisDatabase {
     /// Creates a new instance of the database.
-    pub fn new(tricks: &Tricks) -> Self {
+    pub fn new() -> Self {
         let mut db = Self { storage: Default::default() };
 
         init_files_group(&mut db);
@@ -59,6 +59,8 @@ impl AnalysisDatabase {
         init_proc_macro_group(&mut db);
 
         db.set_cfg_set(Self::initial_cfg_set().into());
+
+        let tricks = TRICKS.get_or_init(Default::default);
 
         let plugin_suite = [
             get_default_plugin_suite(),
