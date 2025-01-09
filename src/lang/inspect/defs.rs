@@ -39,7 +39,7 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 pub enum SymbolDef {
     Item(ItemDef),
     Variable(VariableDef),
-    ExprInlineMacro(String),
+    ExprInlineMacro(SmolStr),
     Member(MemberDef),
     Module(ModuleDef),
 }
@@ -55,7 +55,8 @@ impl SymbolDef {
                     parent
                         .parent()
                         .expect("Grandparent already exists")
-                        .get_text_without_trivia(db.upcast()),
+                        .get_text_without_trivia(db.upcast())
+                        .into(),
                 ));
             }
         }
