@@ -9,7 +9,7 @@ use lsp_types::Hover;
 use crate::ide::hover::markdown_contents;
 use crate::ide::hover::render::markdown::{RULE, fenced_code_block};
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::inspect::defs::{MemberDef, SymbolDef};
+use crate::lang::inspect::defs::SymbolDef;
 use crate::lang::lsp::ToLsp;
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.
@@ -52,15 +52,15 @@ pub fn definition(
             }
             md
         }
-        SymbolDef::Member(MemberDef { member, structure }) => {
+        SymbolDef::Member(member) => {
             let mut md = String::new();
 
             // Signature is the signature of the struct, so it makes sense that the definition
             // path is too.
-            md += &fenced_code_block(&structure.definition_path(db));
-            md += &fenced_code_block(&structure.signature(db));
+            md += &fenced_code_block(&member.structure().definition_path(db));
+            md += &fenced_code_block(&member.structure().signature(db));
 
-            if let Some(doc) = db.get_item_documentation((*member).into()) {
+            if let Some(doc) = db.get_item_documentation(member.member_id().into()) {
                 md += RULE;
                 md += &doc;
             }
