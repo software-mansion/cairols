@@ -14,15 +14,15 @@ use lsp_types::notification::{
 };
 use lsp_types::request::{
     CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
-    Request, SemanticTokensFullRequest,
+    References, Request, SemanticTokensFullRequest,
 };
 use lsp_types::{
     CodeActionParams, CodeActionResponse, CompletionParams, CompletionResponse,
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
     DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
     DocumentFormattingParams, ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse,
-    Hover, HoverParams, SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent,
-    TextDocumentPositionParams, TextEdit, Url,
+    Hover, HoverParams, ReferenceParams, SemanticTokensParams, SemanticTokensResult,
+    TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url,
 };
 use serde_json::Value;
 use tracing::error;
@@ -368,6 +368,17 @@ impl BackgroundDocumentRequestHandler for ToolchainInfo {
         _params: (),
     ) -> LSPResult<ToolchainInfoResponse> {
         toolchain_info(snapshot)
+    }
+}
+
+impl BackgroundDocumentRequestHandler for References {
+    #[tracing::instrument(name = "textDocument/references", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: ReferenceParams,
+    ) -> LSPResult<Option<Vec<lsp_types::Location>>> {
+        Ok(ide::navigation::references::references(params, &snapshot.db))
     }
 }
 

@@ -38,6 +38,9 @@ pub trait ClientCapabilitiesExt {
 
     /// The client supports dynamic registration for code action capabilities.
     fn code_action_dynamic_registration(&self) -> bool;
+
+    /// The client supports dynamic registration for references provider capabilities.
+    fn references_provider_dynamic_registration(&self) -> bool;
 }
 
 impl ClientCapabilitiesExt for ClientCapabilities {
@@ -87,5 +90,9 @@ impl ClientCapabilitiesExt for ClientCapabilities {
 
     fn code_action_dynamic_registration(&self) -> bool {
         try_or_default!(self.text_document.as_ref()?.code_action.as_ref()?.dynamic_registration?)
+    }
+
+    fn references_provider_dynamic_registration(&self) -> bool {
+        try_or_default!(self.text_document.as_ref()?.references.as_ref()?.dynamic_registration?)
     }
 }
