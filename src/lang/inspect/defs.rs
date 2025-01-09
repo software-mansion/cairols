@@ -359,7 +359,6 @@ impl MemberDef {
 /// Information about the definition of a module.
 pub struct ModuleDef {
     id: ModuleId,
-    name: SmolStr,
     /// A full path to the parent module if [`ModuleId`] points to a submodule,
     /// None otherwise (i.e. for a crate root).
     parent_full_path: Option<String>,
@@ -369,28 +368,22 @@ pub struct ModuleDef {
 impl ModuleDef {
     /// Constructs a new [`ModuleDef`] instance.
     pub fn new(db: &AnalysisDatabase, id: ModuleId, definition_node: SyntaxNode) -> Self {
-        let name = id.name(db);
         let parent_full_path = id
             .full_path(db)
-            .strip_suffix(name.as_str())
+            .strip_suffix(id.name(db).as_str())
             .unwrap()
             // Fails when the path lacks `::`, i.e. when we import from a crate root.
             .strip_suffix("::")
             .map(String::from);
 
-        ModuleDef {
-            id,
-            name,
-            parent_full_path,
-            definition_stable_ptr: definition_node.stable_ptr(),
-        }
+        ModuleDef { id, parent_full_path, definition_stable_ptr: definition_node.stable_ptr() }
     }
 
     /// Gets the module signature: a name preceded by a qualifier: "mod" for submodule
     /// and "crate" for crate root.
-    pub fn signature(&self) -> String {
+    pub fn signature(&self, db: &AnalysisDatabase) -> String {
         let prefix = if self.parent_full_path.is_some() { "mod" } else { "crate" };
-        format!("{prefix} {}", self.name)
+        format!("{prefix} {}", self.id.name(db))
     }
 
     /// Gets the full path of the parent module.
