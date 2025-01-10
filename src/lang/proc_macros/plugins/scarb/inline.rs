@@ -1,6 +1,6 @@
 use cairo_lang_defs::plugin::{InlinePluginResult, PluginGeneratedFile};
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_macro::TokenStream;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use scarb_proc_macro_server_types::methods::expand::ExpandInlineMacroParams;
@@ -34,13 +34,7 @@ pub fn inline_macro_generate_code(
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
                 name: "inline_proc_macro".into(),
-                code_mappings: vec![CodeMapping {
-                    origin,
-                    span: TextSpan {
-                        start: TextOffset::default(),
-                        end: TextOffset::default().add_width(TextWidth::from_str(&content)),
-                    },
-                }],
+                code_mappings: vec![CodeMapping { origin, span: TextSpan::from_str(&content) }],
                 content,
                 aux_data: None,
                 diagnostics_note: Default::default(),
