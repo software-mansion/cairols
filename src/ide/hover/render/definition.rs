@@ -35,7 +35,7 @@ pub fn definition(
         SymbolDef::Module(module) => {
             let mut md = String::new();
             md += &fenced_code_block(&module.definition_path());
-            md += &fenced_code_block(&module.signature());
+            md += &fenced_code_block(&module.signature(db));
             if let Some(doc) = module.documentation(db) {
                 md += RULE;
                 md += &doc;
