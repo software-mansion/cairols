@@ -14,7 +14,7 @@ pub fn normalize(fixture: impl AsRef<Fixture>, data: impl ToString) -> String {
 fn normalize_well_known_paths(fixture: &Fixture, data: String) -> String {
     let mut data = data
         .replace(&fixture.root_url().to_string(), "[ROOT_URL]")
-        .replace(&normalize_path(fixture.root_path()), "[ROOT]");
+        .replace(&normalize_path(&fixture.root_path()), "[ROOT]");
 
     if let Ok(pwd) = std::env::current_dir() {
         data = data.replace(&normalize_path(&pwd), "[PWD]");

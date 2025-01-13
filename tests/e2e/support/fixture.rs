@@ -30,8 +30,8 @@ impl Fixture {
 
 /// Introspection methods.
 impl Fixture {
-    pub fn root_path(&self) -> &Path {
-        self.t.path()
+    pub fn root_path(&self) -> PathBuf {
+        self.t.path().canonicalize().unwrap()
     }
 
     pub fn root_url(&self) -> Url {
