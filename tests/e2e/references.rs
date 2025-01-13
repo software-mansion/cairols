@@ -14,6 +14,7 @@ cairo_lang_test_utils::test_file_test!(
     "tests/test_data/references",
     {
         fns: "fns.txt",
+        inline_macros: "inline_macros.txt",
     },
     test_references
 );
@@ -65,13 +66,29 @@ fn test_references(
         let response = ls.send_request::<lsp_request!("textDocument/references")>(params);
 
         if let Some(mut locations) = response {
+            report.push_str("---\n");
+
             // LS does not guarantee any order of the results.
             locations
                 .sort_by_key(|loc| (loc.uri.as_str().to_owned(), loc.range.start, loc.range.end));
 
-            report.push_str("---");
+            // Remove any references found in the core crate.
+            // We do not want to test core crate contents here, but we want to note that they exist.
+            let mut found_core_refs = false;
+            locations.retain(|loc| {
+                let path = loc.uri.path();
+                if path.contains("/core/src/") || path.contains("/corelib/src/") {
+                    found_core_refs = true;
+                    false
+                } else {
+                    true
+                }
+            });
+            if found_core_refs {
+                report.push_str("found several references in the core crate\n");
+            }
+
             for location in locations {
-                report.push('\n');
                 report.push_str(&peek_selection(&cairo, &location.range));
             }
         } else {

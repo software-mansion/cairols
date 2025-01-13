@@ -1,0 +1,28 @@
+//! > Test references of inline macro.
+
+//! > test_runner_name
+test_references(include_declaration: false)
+
+//! > cairo_code
+fn main() {
+    print!("Hello world!");
+    let arr = arr<caret>ay![1, 2, 3, 4, 5];
+}
+
+fn bar() {
+    let forty_two = arr<caret>ay![42];
+}
+
+//! > References #0
+    let arr = arr<caret>ay![1, 2, 3, 4, 5];
+---
+found several references in the core crate
+    let arr = <sel>array</sel>![1, 2, 3, 4, 5];
+    let forty_two = <sel>array</sel>![42];
+
+//! > References #1
+    let forty_two = arr<caret>ay![42];
+---
+found several references in the core crate
+    let arr = <sel>array</sel>![1, 2, 3, 4, 5];
+    let forty_two = <sel>array</sel>![42];

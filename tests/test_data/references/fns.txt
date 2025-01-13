@@ -15,18 +15,14 @@ fn main() {
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
 ---
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
-
     let x = <sel>pow2</sel>(2) + pow2(3);
-
     let x = pow2(2) + <sel>pow2</sel>(3);
 
 //! > References #1
     let x = po<caret>w2(2) + pow2(3);
 ---
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
-
     let x = <sel>pow2</sel>(2) + pow2(3);
-
     let x = pow2(2) + <sel>pow2</sel>(3);
 
 //! > ==========================================================================
@@ -47,22 +43,16 @@ fn main() {
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
 ---
 <sel>fn pow2(x: felt252) -> felt252 { x * x }</sel>
-
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
-
     let x = <sel>pow2</sel>(2) + pow2(3);
-
     let x = pow2(2) + <sel>pow2</sel>(3);
 
 //! > References #1
     let x = po<caret>w2(2) + pow2(3);
 ---
 <sel>fn pow2(x: felt252) -> felt252 { x * x }</sel>
-
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
-
     let x = <sel>pow2</sel>(2) + pow2(3);
-
     let x = pow2(2) + <sel>pow2</sel>(3);
 
 //! > ==========================================================================
@@ -84,7 +74,6 @@ fn main() {
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
 ---
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
-
     let <sel>pow2</sel> = 2;  // bad  // FIXME(mkaput): Why this?
 
 //! > ==========================================================================
@@ -105,7 +94,5 @@ fn main() {
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
 ---
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
-
     let x = <sel>pow2</sel>(2) + pow2(3);
-
     let x = pow2(2) + <sel>pow2</sel>(3);

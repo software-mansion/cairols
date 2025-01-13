@@ -10,6 +10,7 @@ use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 use memchr::memmem::Finder;
+use smol_str::format_smolstr;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::inspect::defs::SymbolDef;
@@ -61,7 +62,12 @@ impl<'a> FindUsages<'a> {
     pub fn search(self, sink: &mut dyn FnMut(FoundUsage) -> ControlFlow<(), ()>) {
         let db = self.db;
 
-        let needle = self.symbol.name(db);
+        let needle = match self.symbol {
+            // Small optimisation for inline macros: we can be sure that any usages will have a `!`
+            // at the end, so we do not need to search for occurrences without it.
+            SymbolDef::ExprInlineMacro(macro_name) => format_smolstr!("{macro_name}!"),
+            symbol => symbol.name(db),
+        };
 
         let finder = Finder::new(needle.as_bytes());
 
