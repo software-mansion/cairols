@@ -318,6 +318,10 @@ impl MockClient {
         );
     }
 
+    pub fn edit_file(&mut self, path: impl AsRef<Path>, contents: &str) {
+        self.fixture.edit_file(path, contents);
+    }
+
     /// Sends `textDocument/didOpen` notification to the server and
     /// waits for `cairo/projectUpdatingFinished` to be sent.
     pub fn open_and_wait_for_project_update(&mut self, path: impl AsRef<Path>) {

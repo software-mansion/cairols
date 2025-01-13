@@ -24,6 +24,10 @@ impl Fixture {
     /// Creates a new file in the fixture with provided contents.
     pub fn add_file(&mut self, path: impl AsRef<Path>, contents: impl AsRef<str>) {
         self.files.push(path.as_ref().to_owned());
+        self.edit_file(path, contents);
+    }
+
+    pub fn edit_file(&mut self, path: impl AsRef<Path>, contents: impl AsRef<str>) {
         self.t.child(path).write_str(contents.as_ref().trim()).unwrap();
     }
 }
@@ -35,7 +39,7 @@ impl Fixture {
     }
 
     pub fn root_url(&self) -> Url {
-        Url::from_directory_path(self.t.path()).unwrap()
+        Url::from_directory_path(self.t.path().canonicalize().unwrap()).unwrap()
     }
 
     pub fn file_absolute_path(&self, path: impl AsRef<Path>) -> PathBuf {
