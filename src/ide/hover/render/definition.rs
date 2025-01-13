@@ -46,7 +46,7 @@ pub fn definition(
         SymbolDef::Variable(var) => fenced_code_block(&var.signature(db)),
         SymbolDef::ExprInlineMacro(macro_name) => {
             let mut md = fenced_code_block(macro_name);
-            if let Some(doc) = db.inline_macro_plugins().get(macro_name)?.documentation() {
+            if let Some(doc) = db.inline_macro_plugins().get(macro_name.as_str())?.documentation() {
                 md += RULE;
                 md += &doc;
             }
