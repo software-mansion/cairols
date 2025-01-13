@@ -1,7 +1,7 @@
 //! > Test references of function.
 
 //! > test_runner_name
-test_references(include_declaration: false)
+test_references
 
 //! > cairo_code
 // FIXME(#129): definition stable ptr for functions is wrong and causes declaration slipping here.
@@ -13,44 +13,22 @@ fn main() {
 
 //! > References #0
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
----
+
+DECLARATIONS:
+<sel>fn pow2(x: felt252) -> felt252 { x * x }</sel>
+
+USAGES:
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
     let x = <sel>pow2</sel>(2) + pow2(3);
     let x = pow2(2) + <sel>pow2</sel>(3);
 
 //! > References #1
     let x = po<caret>w2(2) + pow2(3);
----
-fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
-    let x = <sel>pow2</sel>(2) + pow2(3);
-    let x = pow2(2) + <sel>pow2</sel>(3);
 
-//! > ==========================================================================
-
-//! > Test references of function including declaration.
-
-//! > test_runner_name
-test_references(include_declaration: true)
-
-//! > cairo_code
-fn pow<caret>2(x: felt252) -> felt252 { x * x }
-
-fn main() {
-    let x = po<caret>w2(2) + pow2(3);
-}
-
-//! > References #0
-fn pow<caret>2(x: felt252) -> felt252 { x * x }
----
+DECLARATIONS:
 <sel>fn pow2(x: felt252) -> felt252 { x * x }</sel>
-fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
-    let x = <sel>pow2</sel>(2) + pow2(3);
-    let x = pow2(2) + <sel>pow2</sel>(3);
 
-//! > References #1
-    let x = po<caret>w2(2) + pow2(3);
----
-<sel>fn pow2(x: felt252) -> felt252 { x * x }</sel>
+USAGES:
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
     let x = <sel>pow2</sel>(2) + pow2(3);
     let x = pow2(2) + <sel>pow2</sel>(3);
@@ -60,7 +38,7 @@ fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
 //! > Test unused function.
 
 //! > test_runner_name
-test_references(include_declaration: false)
+test_references
 
 //! > cairo_code
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
@@ -72,16 +50,20 @@ fn main() {
 
 //! > References #0
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
----
+
+DECLARATIONS:
+<sel>fn pow2(x: felt252) -> felt252 { x * x }</sel>
+
+USAGES:
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
     let <sel>pow2</sel> = 2;  // bad  // FIXME(mkaput): Why this?
 
 //! > ==========================================================================
 
-//! > Test multiple function usages in single line.
+//! > Test multiple function usages in a single line.
 
 //! > test_runner_name
-test_references(include_declaration: false)
+test_references
 
 //! > cairo_code
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
@@ -92,7 +74,11 @@ fn main() {
 
 //! > References #0
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
----
+
+DECLARATIONS:
+<sel>fn pow2(x: felt252) -> felt252 { x * x }</sel>
+
+USAGES:
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
     let x = <sel>pow2</sel>(2) + pow2(3);
     let x = pow2(2) + <sel>pow2</sel>(3);
@@ -102,7 +88,7 @@ fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
 //! > Test references of function parameter.
 
 //! > test_runner_name
-test_references(include_declaration: true)
+test_references
 
 //! > cairo_code
 fn pow(nu<caret>m: felt252) -> felt252 {
@@ -111,16 +97,22 @@ fn pow(nu<caret>m: felt252) -> felt252 {
 
 //! > References #0
 fn pow(nu<caret>m: felt252) -> felt252 {
----
+
+DECLARATIONS:
 <sel>fn pow(num: felt252) -> felt252 {
     num * num
 }</sel>
+
+USAGES:
 fn <sel>pow</sel>(num: felt252) -> felt252 {
 
 //! > References #1
     nu<caret>m * num
----
+
+DECLARATIONS:
 fn pow(<sel>num: felt252</sel>) -> felt252 {
+
+USAGES:
     <sel>num</sel> * num
     num * <sel>num</sel>
 
@@ -129,7 +121,7 @@ fn pow(<sel>num: felt252</sel>) -> felt252 {
 //! > Test references of function parameter captured by a closure.
 
 //! > test_runner_name
-test_references(include_declaration: true)
+test_references
 
 //! > cairo_code
 fn pow(num: felt252) -> felt252 {
@@ -139,16 +131,22 @@ fn pow(num: felt252) -> felt252 {
 
 //! > References #0
     let f = |x| nu<caret>m * x;
----
+
+DECLARATIONS:
 fn pow(<sel>num: felt252</sel>) -> felt252 {
+
+USAGES:
     let f = |x| <sel>num</sel> * x;
     <sel>num</sel> * f(num)
     num * f(<sel>num</sel>)
 
 //! > References #1
     nu<caret>m * f(num)
----
+
+DECLARATIONS:
 fn pow(<sel>num: felt252</sel>) -> felt252 {
+
+USAGES:
     let f = |x| <sel>num</sel> * x;
     <sel>num</sel> * f(num)
     num * f(<sel>num</sel>)

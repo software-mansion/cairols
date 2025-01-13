@@ -1,7 +1,7 @@
 //! > Test references of methods.
 
 //! > test_runner_name
-test_references(include_declaration: true)
+test_references
 
 //! > cairo_code
 #[derive(Drop)]
@@ -35,33 +35,45 @@ fn main() {
 
 //! > References #0
     fn are<caret>a(self: @Foo) -> u64;
----
+
+DECLARATIONS:
     <sel>fn area(self: @Foo) -> u64;</sel>
+
+USAGES:
     fn <sel>area</sel>(self: @Foo) -> u64;
     let x = foo.<sel>area</sel>();
     let y = FooTrait::<sel>area</sel>(foo);
 
 //! > References #1
     fn are<caret>a(self: @Foo) -> u64 { 0 }
----
+
+DECLARATIONS:
 <sel>impl FooImpl of FooTrait {
     // FIXME(#170): Does not work as expected.
     fn area(self: @Foo) -> u64 { 0 }
 }</sel>
+
+USAGES:
 impl <sel>FooImpl</sel> of FooTrait {
 
 //! > References #2
     let x = foo.are<caret>a();
----
+
+DECLARATIONS:
     <sel>fn area(self: @Foo) -> u64;</sel>
+
+USAGES:
     fn <sel>area</sel>(self: @Foo) -> u64;
     let x = foo.<sel>area</sel>();
     let y = FooTrait::<sel>area</sel>(foo);
 
 //! > References #3
     let y = FooTrait::are<caret>a(foo);
----
+
+DECLARATIONS:
     <sel>fn area(self: @Foo) -> u64;</sel>
+
+USAGES:
     fn <sel>area</sel>(self: @Foo) -> u64;
     let x = foo.<sel>area</sel>();
     let y = FooTrait::<sel>area</sel>(foo);

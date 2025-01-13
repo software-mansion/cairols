@@ -1,7 +1,7 @@
 //! > Test find references of a struct.
 
 //! > test_runner_name
-test_references(include_declaration: true)
+test_references
 
 //! > cairo_code
 struct Fo<caret>o {
@@ -21,10 +21,13 @@ mod rectangle {
 
 //! > References #0
 struct Fo<caret>o {
----
+
+DECLARATIONS:
 <sel>struct Foo {
     field: felt252,
 }</sel>
+
+USAGES:
 struct <sel>Foo</sel> {
     let foo = <sel>Foo</sel> { field: 0 };
     let foobar: <sel>Foo</sel> = foo;
@@ -33,10 +36,13 @@ fn calc(foo: <sel>Foo</sel>) {}
 
 //! > References #1
     let foo = Fo<caret>o { field: 0 };
----
+
+DECLARATIONS:
 <sel>struct Foo {
     field: felt252,
 }</sel>
+
+USAGES:
 struct <sel>Foo</sel> {
     let foo = <sel>Foo</sel> { field: 0 };
     let foobar: <sel>Foo</sel> = foo;
@@ -45,10 +51,13 @@ fn calc(foo: <sel>Foo</sel>) {}
 
 //! > References #2
     let foobar: Fo<caret>o = foo;
----
+
+DECLARATIONS:
 <sel>struct Foo {
     field: felt252,
 }</sel>
+
+USAGES:
 struct <sel>Foo</sel> {
     let foo = <sel>Foo</sel> { field: 0 };
     let foobar: <sel>Foo</sel> = foo;
@@ -57,10 +66,13 @@ fn calc(foo: <sel>Foo</sel>) {}
 
 //! > References #3
 fn calc(foo: Fo<caret>o) {}
----
+
+DECLARATIONS:
 <sel>struct Foo {
     field: felt252,
 }</sel>
+
+USAGES:
 struct <sel>Foo</sel> {
     let foo = <sel>Foo</sel> { field: 0 };
     let foobar: <sel>Foo</sel> = foo;
@@ -69,10 +81,13 @@ fn calc(foo: <sel>Foo</sel>) {}
 
 //! > References #4
     use super::Fo<caret>o;
----
+
+DECLARATIONS:
 <sel>struct Foo {
     field: felt252,
 }</sel>
+
+USAGES:
 struct <sel>Foo</sel> {
     let foo = <sel>Foo</sel> { field: 0 };
     let foobar: <sel>Foo</sel> = foo;
