@@ -4,7 +4,7 @@ use cairo_lang_filesystem::span::TextPosition;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal};
 use cairo_lang_utils::Upcast;
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
@@ -38,11 +38,7 @@ pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
 
         let find = |position: TextPosition| {
             let node = self.find_syntax_node_at_position(file, position)?;
-            if node.kind(syntax_db) == SyntaxKind::TokenIdentifier {
-                Some(TerminalIdentifier::from_syntax_node(syntax_db, node.parent()?))
-            } else {
-                None
-            }
+            TerminalIdentifier::cast_token(syntax_db, node)
         };
 
         find(position).or_else(|| {

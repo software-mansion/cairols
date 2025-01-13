@@ -1,7 +1,7 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_macro::{TokenStream, TokenStreamMetadata};
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::ast::{
@@ -470,10 +470,7 @@ fn expand_derives(
                     name: "proc_macro_derive".into(),
                     code_mappings: vec![CodeMapping {
                         origin: CodeOrigin::Span(span),
-                        span: TextSpan {
-                            start: TextOffset::default(),
-                            end: TextOffset::default().add_width(TextWidth::from_str(&content)),
-                        },
+                        span: TextSpan::from_str(&content),
                     }],
                     content,
                     aux_data: None,
@@ -542,10 +539,7 @@ fn expand_attribute(
             name: file_name.into(),
             code_mappings: vec![CodeMapping {
                 origin: CodeOrigin::Span(span),
-                span: TextSpan {
-                    start: TextOffset::default(),
-                    end: TextOffset::default().add_width(TextWidth::from_str(&content)),
-                },
+                span: TextSpan::from_str(&content),
             }],
             content,
             aux_data: None,
