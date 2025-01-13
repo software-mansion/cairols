@@ -1,0 +1,86 @@
+//! > Test find references of an enum.
+
+//! > test_runner_name
+test_references(include_declaration: true)
+
+//! > cairo_code
+enum Fo<caret>o {
+    Bar,
+    Baz,
+}
+
+fn main() {
+    let foo = Fo<caret>o::Bar;
+    let foobar: Fo<caret>o = foo;
+}
+
+fn calc(foo: Fo<caret>o) {}
+
+mod rectangle {
+    use super::Fo<caret>o;
+}
+
+//! > References #0
+enum Fo<caret>o {
+---
+<sel>enum Foo {
+    Bar,
+    Baz,
+}</sel>
+enum <sel>Foo</sel> {
+    let foo = <sel>Foo</sel>::Bar;
+    let foobar: <sel>Foo</sel> = foo;
+fn calc(foo: <sel>Foo</sel>) {}
+    use super::<sel>Foo</sel>;
+
+//! > References #1
+    let foo = Fo<caret>o::Bar;
+---
+<sel>enum Foo {
+    Bar,
+    Baz,
+}</sel>
+enum <sel>Foo</sel> {
+    let foo = <sel>Foo</sel>::Bar;
+    let foobar: <sel>Foo</sel> = foo;
+fn calc(foo: <sel>Foo</sel>) {}
+    use super::<sel>Foo</sel>;
+
+//! > References #2
+    let foobar: Fo<caret>o = foo;
+---
+<sel>enum Foo {
+    Bar,
+    Baz,
+}</sel>
+enum <sel>Foo</sel> {
+    let foo = <sel>Foo</sel>::Bar;
+    let foobar: <sel>Foo</sel> = foo;
+fn calc(foo: <sel>Foo</sel>) {}
+    use super::<sel>Foo</sel>;
+
+//! > References #3
+fn calc(foo: Fo<caret>o) {}
+---
+<sel>enum Foo {
+    Bar,
+    Baz,
+}</sel>
+enum <sel>Foo</sel> {
+    let foo = <sel>Foo</sel>::Bar;
+    let foobar: <sel>Foo</sel> = foo;
+fn calc(foo: <sel>Foo</sel>) {}
+    use super::<sel>Foo</sel>;
+
+//! > References #4
+    use super::Fo<caret>o;
+---
+<sel>enum Foo {
+    Bar,
+    Baz,
+}</sel>
+enum <sel>Foo</sel> {
+    let foo = <sel>Foo</sel>::Bar;
+    let foobar: <sel>Foo</sel> = foo;
+fn calc(foo: <sel>Foo</sel>) {}
+    use super::<sel>Foo</sel>;

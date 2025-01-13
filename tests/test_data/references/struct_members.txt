@@ -1,0 +1,63 @@
+//! > Test references of struct members.
+
+//! > test_runner_name
+test_references(include_declaration: false)
+
+//! > cairo_code
+#[derive(Drop)]
+struct Rectangle {
+    // FIXME(#129): The results for this are very off.
+    wid<caret>th: u64,
+    height: u64,
+}
+
+fn main() {
+    let rectangle = Rectangle { wid<caret>th: 0, height: 0 };
+}
+
+fn calculate_area(rectangle: Rectangle) -> u64 {
+    rectangle.wi<caret>dth * rectangle.height
+}
+
+//! > References #0
+    wid<caret>th: u64,
+---
+struct <sel>Rectangle</sel> {
+    let rectangle = <sel>Rectangle</sel> { width: 0, height: 0 };
+fn calculate_area(rectangle: <sel>Rectangle</sel>) -> u64 {
+
+//! > References #1
+    let rectangle = Rectangle { wid<caret>th: 0, height: 0 };
+---
+    let rectangle = Rectangle { <sel>width</sel>: 0, height: 0 };
+    rectangle.<sel>width</sel> * rectangle.height
+
+//! > References #2
+    rectangle.wi<caret>dth * rectangle.height
+---
+    let rectangle = Rectangle { <sel>width</sel>: 0, height: 0 };
+    rectangle.<sel>width</sel> * rectangle.height
+
+//! > ==========================================================================
+
+//! > Test references of struct members including declaration.
+
+//! > test_runner_name
+test_references(include_declaration: true)
+
+//! > cairo_code
+#[derive(Drop)]
+struct Rectangle {
+    width: u64,
+    height: u64,
+}
+
+fn calculate_area(rectangle: Rectangle) -> u64 {
+    rectangle.wi<caret>dth * rectangle.height
+}
+
+//! > References #0
+    rectangle.wi<caret>dth * rectangle.height
+---
+    <sel>width: u64</sel>,
+    rectangle.<sel>width</sel> * rectangle.height

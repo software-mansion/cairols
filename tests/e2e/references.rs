@@ -13,8 +13,15 @@ cairo_lang_test_utils::test_file_test!(
     references,
     "tests/test_data/references",
     {
+        enum_variants: "enum_variants.txt",
+        enums: "enums.txt",
         fns: "fns.txt",
         inline_macros: "inline_macros.txt",
+        methods: "methods.txt",
+        struct_members: "struct_members.txt",
+        structs: "structs.txt",
+        traits: "traits.txt",
+        variables: "variables.txt",
     },
     test_references
 );
