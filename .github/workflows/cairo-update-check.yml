@@ -3,10 +3,10 @@ name: Cairo Update Check
 on:
   workflow_dispatch:
     inputs:
-      slack:
-        description: "Send Slack notification on failure"
+      no_slack:
+        description: "Skip sending Slack notification on failure"
         type: boolean
-        default: true
+        default: false
   schedule:
     - cron: '0 0 * * *'
 
@@ -38,7 +38,7 @@ jobs:
 
   notify_failed:
     runs-on: ubuntu-latest
-    if: always() && inputs.slack && needs.check.result == 'failure'
+    if: always() && !(inputs.no_slack) && needs.check.result == 'failure'
     needs: check
     steps:
       - name: Notify the team about workflow failure
