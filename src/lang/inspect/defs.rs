@@ -130,6 +130,18 @@ impl SymbolDef {
         span.end = span.end.add_width(width);
         Some((file_id, span))
     }
+
+    /// Gets the name of the symbol.
+    #[expect(unused)]
+    pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
+        match self {
+            SymbolDef::Item(it) => it.name(db),
+            SymbolDef::Variable(it) => it.name(),
+            SymbolDef::ExprInlineMacro(name) => name.clone(),
+            SymbolDef::Member(it) => it.name(db),
+            SymbolDef::Module(it) => it.name(db),
+        }
+    }
 }
 
 /// Information about the definition of an item (function, trait, impl, module, etc.).
@@ -198,6 +210,16 @@ impl ItemDef {
             LookupItemId::ModuleItem(item) => item.parent_module(defs_db).full_path(defs_db),
             LookupItemId::TraitItem(item) => item.trait_id(defs_db).full_path(defs_db),
             LookupItemId::ImplItem(item) => item.impl_def_id(defs_db).full_path(defs_db),
+        }
+    }
+
+    /// Gets the name of the item.
+    pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
+        let defs_db = db.upcast();
+        match self.lookup_item_id {
+            LookupItemId::ModuleItem(item) => item.name(defs_db),
+            LookupItemId::TraitItem(item) => item.name(defs_db),
+            LookupItemId::ImplItem(item) => item.name(defs_db),
         }
     }
 }
@@ -325,6 +347,11 @@ impl VariableDef {
 
         format!("{prefix}{mutability}{name}: {ty}")
     }
+
+    /// Gets this variable's name.
+    pub fn name(&self) -> SmolStr {
+        self.name.clone()
+    }
 }
 
 /// Information about a struct member.
@@ -353,6 +380,11 @@ impl MemberDef {
     /// Gets a definition of the structure which this symbol is a member of.
     pub fn structure(&self) -> &ItemDef {
         &self.structure
+    }
+
+    /// Gets member's name.
+    pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
+        self.member_id.name(db)
     }
 }
 
@@ -401,6 +433,11 @@ impl ModuleDef {
         };
 
         db.get_item_documentation(doc_id)
+    }
+
+    /// Gets the name of the module.
+    pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
+        self.id.name(db)
     }
 }
 
