@@ -3,13 +3,6 @@
 //! > test_runner_name
 test_hover
 
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2023_11"
-
 //! > cairo_code
 fn main() {
     let mut x<caret> = 5;
@@ -23,9 +16,9 @@ fn main() {
 }
 
 /// `add_two` documentation.
-fn add_t<caret>wo(x: u32) -> u32 { 
+fn add_t<caret>wo(x: u32) -> u32 {
   //! Adds 2 to an unsigned argument.
-  x + 2 
+  x + 2
 }
 
 /// Rectangle struct.
@@ -283,9 +276,9 @@ Calculate the area of the rectangle.
 
 //! > hover #14
 // = source context
-fn add_t<caret>wo(x: u32) -> u32 { 
+fn add_t<caret>wo(x: u32) -> u32 {
 // = highlight
-fn <sel>add_two</sel>(x: u32) -> u32 { 
+fn <sel>add_two</sel>(x: u32) -> u32 {
 // = popover
 ```cairo
 hello

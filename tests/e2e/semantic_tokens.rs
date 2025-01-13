@@ -1,5 +1,6 @@
 use lsp_types::lsp_request;
 
+use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2023_11;
 use crate::support::sandbox;
 
 fn caps(base: lsp_types::ClientCapabilities) -> lsp_types::ClientCapabilities {
@@ -25,13 +26,7 @@ fn caps(base: lsp_types::ClientCapabilities) -> lsp_types::ClientCapabilities {
 fn highlights_multiline_tokens() {
     let mut ls = sandbox! {
         files {
-            "cairo_project.toml" => r#"
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2023_11"
-"#,
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2023_11,
             "src/lib.cairo" => r#"
 fn main() {
     let _ = "

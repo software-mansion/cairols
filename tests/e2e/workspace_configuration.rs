@@ -1,9 +1,9 @@
-use indoc::indoc;
 use lsp_server::Message;
 use lsp_types::lsp_request;
 use lsp_types::request::Request as _;
 use serde_json::json;
 
+use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML;
 use crate::support::sandbox;
 use crate::support::scarb::scarb_core_path;
 
@@ -28,10 +28,7 @@ fn relative_path_to_core() {
 
     let mut ls = sandbox! {
         files {
-            "cairo_project.toml" => indoc! {r#"
-                [crate_roots]
-                hello = "src"
-            "#},
+            "cairo_project.toml" => CAIRO_PROJECT_TOML,
             "src/lib.cairo" => r#"fn main() -> u8 { 42 }"#,
         }
         workspace_configuration = json!({

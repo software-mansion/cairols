@@ -2,6 +2,7 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use lsp_types::{CompletionParams, TextDocumentPositionParams, lsp_request};
 
+use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::cursor::peek_caret;
 use crate::support::{cursors, sandbox};
 
@@ -38,7 +39,7 @@ fn test_completions_text_edits(
 
     let mut ls = sandbox! {
         files {
-            "cairo_project.toml" => inputs["cairo_project.toml"].clone(),
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
             "src/lib.cairo" => cairo.clone(),
         }
     };

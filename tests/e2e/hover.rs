@@ -5,6 +5,7 @@ use lsp_types::{
     MarkupKind, TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
 };
 
+use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2023_11;
 use crate::support::cursor::{peek_caret, peek_selection};
 use crate::support::{cursors, sandbox};
 
@@ -53,7 +54,7 @@ fn test_hover(
 
     let mut ls = sandbox! {
         files {
-            "cairo_project.toml" => inputs["cairo_project.toml"].clone(),
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2023_11,
             "src/lib.cairo" => cairo.clone(),
         }
         client_capabilities = caps;

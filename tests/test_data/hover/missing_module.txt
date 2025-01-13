@@ -3,13 +3,6 @@
 //! > test_runner_name
 test_hover
 
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2023_11"
-
 //! > cairo_code
 m<caret>od<caret> mis<caret>sing;
 
