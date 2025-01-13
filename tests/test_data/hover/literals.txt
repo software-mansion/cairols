@@ -3,13 +3,6 @@
 //! > test_runner_name
 test_hover
 
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2023_11"
-
 //! > cairo_code
 const SOME_CONST: felt252 = 0x<caret>123;
 const WRONG_TYPE_CONST: u8 = 123_<caret>felt252;

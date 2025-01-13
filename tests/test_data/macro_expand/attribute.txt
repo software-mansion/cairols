@@ -3,13 +3,6 @@
 //! > test_runner_name
 test_macro_expand
 
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2024_07"
-
 //! > cairo_code
 struct A {
     a: felt252

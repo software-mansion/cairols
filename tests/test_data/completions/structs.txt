@@ -3,13 +3,6 @@
 //! > test_runner_name
 test_completions_text_edits(detail: true)
 
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2024_07"
-
 //! > cairo_code
 mod some_module {
     pub struct Struct {

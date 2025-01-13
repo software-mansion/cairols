@@ -3,13 +3,6 @@
 //! > test_runner_name
 test_references(include_declaration: false)
 
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2024_07"
-
 //! > cairo_code
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
 
@@ -31,13 +24,6 @@ fn pow<caret>2(x: felt252) -> felt252 { x * x }
 
 //! > test_runner_name
 test_references(include_declaration: true)
-
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2024_07"
 
 //! > cairo_code
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
@@ -63,13 +49,6 @@ fn pow<caret>2(x: felt252) -> felt252 { x * x }
 //! > test_runner_name
 test_references(include_declaration: false)
 
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2024_07"
-
 //! > cairo_code
 fn pow<caret>2(x: felt252) -> felt252 { x * x }
 
@@ -88,13 +67,6 @@ fn pow<caret>2(x: felt252) -> felt252 { x * x }
 
 //! > test_runner_name
 test_references(include_declaration: false)
-
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2024_07"
 
 //! > cairo_code
 fn pow<caret>2(x: felt252) -> felt252 { x * x }

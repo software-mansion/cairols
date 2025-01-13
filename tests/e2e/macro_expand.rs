@@ -3,6 +3,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_language_server::lsp::ext::ExpandMacro;
 use lsp_types::{TextDocumentIdentifier, TextDocumentPositionParams};
 
+use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::cursor::peek_caret;
 use crate::support::{cursors, sandbox};
 
@@ -26,7 +27,7 @@ fn test_macro_expand(
 
     let mut ls = sandbox! {
         files {
-            "cairo_project.toml" => inputs["cairo_project.toml"].clone(),
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
             "src/lib.cairo" => cairo.clone(),
         }
     };

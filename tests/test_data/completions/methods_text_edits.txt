@@ -3,13 +3,6 @@
 //! > test_runner_name
 test_completions_text_edits(edit: true, insert: true)
 
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2024_07"
-
 //! > cairo_code
 mod hidden_trait {
     pub trait ATrait1<T> {
@@ -140,13 +133,6 @@ Text edit: use super::ATrait1;
 
 //! > test_runner_name
 test_completions_text_edits(edit: true, insert: true)
-
-//! > cairo_project.toml
-[crate_roots]
-hello = "src"
-
-[config.global]
-edition = "2024_07"
 
 //! > cairo_code
 mod hidden_trait {

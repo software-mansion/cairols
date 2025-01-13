@@ -3,6 +3,7 @@ use indoc::indoc;
 use lsp_types::{ExecuteCommandParams, lsp_request};
 use pretty_assertions::assert_eq;
 
+use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML;
 use crate::support::normalize::normalize;
 use crate::support::sandbox;
 
@@ -110,10 +111,7 @@ fn cairo_projects() {
 fn test_reload() {
     let mut ls = sandbox! {
         files {
-            "cairo_project.toml" => indoc! {r#"
-                [crate_roots]
-                hello = "src"
-            "#},
+            "cairo_project.toml" => CAIRO_PROJECT_TOML,
             "src/lib.cairo" => "fn main() {}",
         }
     };
