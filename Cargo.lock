@@ -754,6 +754,7 @@ dependencies = [
  "scarb-stable-hash",
  "serde",
  "serde_json",
+ "similar",
  "smol_str",
  "tempfile",
  "test-log",
