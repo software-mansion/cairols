@@ -9,7 +9,7 @@ use lsp_types::Hover;
 use crate::ide::hover::markdown_contents;
 use crate::ide::hover::render::markdown::{RULE, fenced_code_block};
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::inspect::defs::SymbolDef;
+use crate::lang::defs::SymbolDef;
 use crate::lang::lsp::ToLsp;
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.

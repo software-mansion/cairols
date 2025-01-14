@@ -15,8 +15,8 @@ use lsp_types::{CodeAction, CodeActionKind, Range, TextEdit, Url, WorkspaceEdit}
 use tracing::debug;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
-use crate::lang::inspect::methods::find_methods_for_type;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
+use crate::lang::methods::find_methods_for_type;
 
 /// Create a Quick Fix code action to add a missing trait given a `CannotCallMethod` diagnostic.
 pub fn add_missing_trait(db: &AnalysisDatabase, node: &SyntaxNode, uri: Url) -> Vec<CodeAction> {

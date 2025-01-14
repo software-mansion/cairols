@@ -2,7 +2,7 @@ use cairo_lang_utils::Upcast;
 use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location};
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::inspect::defs::SymbolDef;
+use crate::lang::defs::SymbolDef;
 use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
 
 /// Get the definition location of a symbol at a given text document position.

@@ -1,5 +1,7 @@
 pub mod db;
+pub mod defs;
 pub mod diagnostics;
-pub mod inspect;
 pub mod lsp;
+pub mod methods;
 pub mod proc_macros;
+pub mod usages;
