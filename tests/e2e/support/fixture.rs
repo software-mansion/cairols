@@ -24,6 +24,10 @@ impl Fixture {
     /// Creates a new file in the fixture with provided contents.
     pub fn add_file(&mut self, path: impl AsRef<Path>, contents: impl AsRef<str>) {
         self.files.push(path.as_ref().to_owned());
+        self.edit_file(path, contents);
+    }
+
+    pub fn edit_file(&mut self, path: impl AsRef<Path>, contents: impl AsRef<str>) {
         self.t.child(path).write_str(contents.as_ref().trim()).unwrap();
     }
 }
