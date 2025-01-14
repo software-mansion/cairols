@@ -16,6 +16,7 @@ cairo_lang_test_utils::test_file_test!(
         enum_variants: "enum_variants.txt",
         inline_macros: "inline_macros.txt",
         items: "items.txt",
+        kw_crate: "kw_crate.txt",
         modules: "modules.txt",
         struct_members: "struct_members.txt",
         variables: "variables.txt",
