@@ -1,9 +1,5 @@
-use std::collections::HashMap;
 use std::ops::ControlFlow;
-use std::sync::Arc;
 
-use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
@@ -15,6 +11,8 @@ use smol_str::format_smolstr;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::inspect::defs::SymbolDef;
 
+pub mod search_scope;
+
 macro_rules! flow {
     ($expr:expr) => {
         let ControlFlow::Continue(()) = $expr else {
@@ -23,7 +21,6 @@ macro_rules! flow {
     };
 }
 
-// TODO(mkaput): Implement search scopes: for example, variables will never be used in other files.
 // TODO(mkaput): Deal with `crate` keyword.
 /// An implementation of the find-usages functionality.
 ///
@@ -61,6 +58,10 @@ impl<'a> FindUsages<'a> {
     pub fn search(self, sink: &mut dyn FnMut(FoundUsage) -> ControlFlow<(), ()>) {
         let db = self.db;
 
+        // TODO(mkaput): When needed, allow setting search scope externally, via a field in
+        //   FindUsages and set_scope/in_scope methods like RA does.
+        let search_scope = self.symbol.search_scope(db);
+
         let needle = match self.symbol {
             // Small optimisation for inline macros: we can be sure that any usages will have a `!`
             // at the end, so we do not need to search for occurrences without it.
@@ -70,9 +71,9 @@ impl<'a> FindUsages<'a> {
 
         let finder = Finder::new(needle.as_bytes());
 
-        for (file, text) in Self::scope_files(db) {
+        for (file, text, search_span) in search_scope.files_contents_and_spans(db) {
             // Search occurrences of the symbol's name.
-            for offset in Self::match_offsets(&finder, &text) {
+            for offset in Self::match_offsets(&finder, &text, search_span) {
                 if let Some(node) = db.find_syntax_node_at_offset(file, offset) {
                     if let Some(identifier) = TerminalIdentifier::cast_token(db.upcast(), node) {
                         flow!(self.found_identifier(identifier, sink));
@@ -82,27 +83,17 @@ impl<'a> FindUsages<'a> {
         }
     }
 
-    fn scope_files(db: &AnalysisDatabase) -> impl Iterator<Item = (FileId, Arc<str>)> + '_ {
-        let mut files = HashMap::new();
-        for crate_id in db.crates() {
-            for &module_id in db.crate_modules(crate_id).iter() {
-                if let Ok(file_id) = db.module_main_file(module_id) {
-                    if let Some(text) = db.file_content(file_id) {
-                        files.insert(file_id, text);
-                    }
-                }
-            }
-        }
-        files.into_iter()
-    }
-
     fn match_offsets<'b>(
         finder: &'b Finder<'b>,
         text: &'b str,
+        search_span: Option<TextSpan>,
     ) -> impl Iterator<Item = TextOffset> + use<'b> {
         finder
             .find_iter(text.as_bytes())
             .map(|offset| TextWidth::at(text, offset).as_offset())
+            .filter(move |&offset| {
+                search_span.is_none_or(|span| span.start <= offset && offset <= span.end)
+            })
             .filter(|offset| {
                 // Reject matches that are not at word boundaries - for example, an identifier
                 // `core` will never be a direct usage of a needle `or`.

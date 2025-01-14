@@ -32,6 +32,7 @@ use tracing::error;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::inspect::usages::FindUsages;
+use crate::lang::inspect::usages::search_scope::SearchScope;
 
 /// Keeps information about the symbol that is being searched for/inspected.
 ///
@@ -142,6 +143,12 @@ impl SymbolDef {
             SymbolDef::Member(it) => it.name(db),
             SymbolDef::Module(it) => it.name(db),
         }
+    }
+
+    /// Builds a search scope for finding usages of this symbol.
+    pub fn search_scope(&self, db: &AnalysisDatabase) -> SearchScope {
+        // TODO(mkaput): Narrow down the scope as much as possible for particular symbol kinds.
+        SearchScope::everything(db)
     }
 
     /// Starts a find-usages search for this symbol.
