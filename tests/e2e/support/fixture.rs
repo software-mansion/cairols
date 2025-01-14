@@ -35,7 +35,7 @@ impl Fixture {
     }
 
     pub fn root_url(&self) -> Url {
-        Url::from_directory_path(self.t.path()).unwrap()
+        Url::from_directory_path(self.t.path().canonicalize().unwrap()).unwrap()
     }
 
     pub fn file_absolute_path(&self, path: impl AsRef<Path>) -> PathBuf {

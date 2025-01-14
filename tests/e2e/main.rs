@@ -5,6 +5,7 @@ mod goto_definition;
 mod hover;
 mod macro_expand;
 mod references;
+mod scarb;
 mod semantic_tokens;
 mod support;
 mod workspace_configuration;
