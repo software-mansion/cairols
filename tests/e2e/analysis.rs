@@ -35,76 +35,7 @@ fn cairo_projects() {
 
     let output = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
-    assert_eq!(normalize(&ls, output), indoc! {r#"
-            # Analyzed Crates
-
-            - `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
-                ```rust
-                CrateSettings {
-                    name: None,
-                    edition: V2024_07,
-                    version: Some(
-                        Version {
-                            major: 2,
-                            minor: 9,
-                            patch: 2,
-                        },
-                    ),
-                    cfg_set: None,
-                    dependencies: {},
-                    experimental_features: ExperimentalFeaturesConfig {
-                        negative_impls: true,
-                        associated_item_constraints: true,
-                        coupons: true,
-                    },
-                }
-                ```
-            - `project1`: `["[ROOT]/project1/src/lib.cairo"]`
-                ```rust
-                CrateSettings {
-                    name: None,
-                    edition: V2023_01,
-                    version: None,
-                    cfg_set: None,
-                    dependencies: {},
-                    experimental_features: ExperimentalFeaturesConfig {
-                        negative_impls: false,
-                        associated_item_constraints: false,
-                        coupons: false,
-                    },
-                }
-                ```
-            - `project2`: `["[ROOT]/project2/src/lib.cairo"]`
-                ```rust
-                CrateSettings {
-                    name: None,
-                    edition: V2023_01,
-                    version: None,
-                    cfg_set: None,
-                    dependencies: {},
-                    experimental_features: ExperimentalFeaturesConfig {
-                        negative_impls: false,
-                        associated_item_constraints: false,
-                        coupons: false,
-                    },
-                }
-                ```
-            - `subproject`: `["[ROOT]/project2/subproject/src/lib.cairo"]`
-                ```rust
-                CrateSettings {
-                    name: None,
-                    edition: V2023_01,
-                    version: None,
-                    cfg_set: None,
-                    dependencies: {},
-                    experimental_features: ExperimentalFeaturesConfig {
-                        negative_impls: false,
-                        associated_item_constraints: false,
-                        coupons: false,
-                    },
-                }
-                ```
-        "#});
+    insta::assert_snapshot!("view_analyzed_crates", normalize(&ls, output));
 }
 
 #[test]

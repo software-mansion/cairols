@@ -310,7 +310,7 @@ dependencies = [
  "semver",
  "serde",
  "smol_str",
- "toml",
+ "toml 0.8.19",
 ]
 
 [[package]]
@@ -446,7 +446,7 @@ dependencies = [
  "cairo-lang-utils",
  "serde",
  "thiserror",
- "toml",
+ "toml 0.8.19",
 ]
 
 [[package]]
@@ -472,7 +472,7 @@ dependencies = [
  "rust-analyzer-salsa",
  "sha3",
  "smol_str",
- "toml",
+ "toml 0.8.19",
 ]
 
 [[package]]
@@ -739,6 +739,7 @@ dependencies = [
  "governor",
  "indent",
  "indoc",
+ "insta",
  "itertools 0.14.0",
  "jod-thread",
  "libc",
@@ -756,7 +757,7 @@ dependencies = [
  "smol_str",
  "tempfile",
  "test-log",
- "toml",
+ "toml 0.8.19",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -845,6 +846,18 @@ checksum = "cbf2150cce219b664a8a70df7a1f933836724b503f8a413af9365b4dcc4d90b8"
 dependencies = [
  "lazy_static",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "console"
+version = "0.15.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea3c6ecd8059b57859df5c69830340ed3c41d30e3da0c1cbed90a96ac853041b"
+dependencies = [
+ "encode_unicode",
+ "libc",
+ "once_cell",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1069,6 +1082,12 @@ checksum = "3d248bdd43ce613d87415282f69b9bb99d947d290b10962dd6c56233312c2ad5"
 dependencies = [
  "log",
 ]
+
+[[package]]
+name = "encode_unicode"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34aa73646ffb006b8f5147f3dc182bd4bcb190227ce861fc4a4844bf8e3cb2c0"
 
 [[package]]
 name = "env_filter"
@@ -1531,6 +1550,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b248f5224d1d606005e02c97f5aa4e88eeb230488bcc03bc9ca4d7991399f2b5"
 
 [[package]]
+name = "insta"
+version = "1.42.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6513e4067e16e69ed1db5ab56048ed65db32d10ba5fc1217f5393f8f17d8b5a5"
+dependencies = [
+ "console",
+ "linked-hash-map",
+ "once_cell",
+ "serde",
+ "similar",
+ "toml 0.5.11",
+]
+
+[[package]]
 name = "is_terminal_polyfill"
 version = "1.70.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1667,6 +1700,12 @@ dependencies = [
  "bitflags 2.6.0",
  "libc",
 ]
+
+[[package]]
+name = "linked-hash-map"
+version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 
 [[package]]
 name = "linkme"
@@ -2448,6 +2487,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "similar"
+version = "2.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1de1d4f81173b03af4c0cbed3c898f6bff5b870e4a7f5d6f4057d62a7a4b686e"
+
+[[package]]
 name = "siphasher"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2677,6 +2722,15 @@ checksum = "9117f5d4db391c1cf6927e7bea3db74b9a1c1add8f7eda9ffd5364f40f57b82f"
 dependencies = [
  "displaydoc",
  "zerovec",
+]
+
+[[package]]
+name = "toml"
+version = "0.5.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4f7f0dd8d50a853a531c426359045b1998f04219d88799810762cd4ad314234"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
