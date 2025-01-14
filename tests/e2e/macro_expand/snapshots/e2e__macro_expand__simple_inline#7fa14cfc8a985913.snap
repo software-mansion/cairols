@@ -1,0 +1,45 @@
+---
+source: tests/e2e/macro_expand/mod.rs
+expression: report
+---
+source_contexts = '''
+fn fib<caret>(mut n: u32) -> u32 {
+
+    println!("some text")<caret>;
+
+    println!("some text");<caret>
+
+    while n != 0<caret> {
+
+        a = t<caret>emp;
+'''
+expansion = '''
+// lib.cairo
+// ---------
+
+fn fib(mut n: u32) -> u32 {
+    {
+        let mut __formatter_for_print_macros__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error,
+        >::unwrap(
+            {
+                core::byte_array::ByteArrayTrait::append_word(
+                    ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10,
+                );
+                core::result::Result::<(), core::fmt::Error>::Ok(())
+            },
+        );
+        core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    };
+    let mut a: u32 = 0;
+    let mut b: u32 = 1;
+    while n != 0 {
+        n = n - 1;
+        let temp = b;
+        b = a + b;
+        a = temp;
+    };
+    a
+}'''

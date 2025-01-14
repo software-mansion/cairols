@@ -1,0 +1,4 @@
+#[d<caret>erive(Drop,<caret> Serde)]<caret>
+struct <caret>A {
+    a: felt252
+}

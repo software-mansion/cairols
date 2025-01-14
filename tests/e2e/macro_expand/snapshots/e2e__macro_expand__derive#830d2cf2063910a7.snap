@@ -1,0 +1,34 @@
+---
+source: tests/e2e/macro_expand/mod.rs
+expression: report
+---
+source_contexts = '''
+#[d<caret>erive(Drop, Serde)]
+
+#[derive(Drop,<caret> Serde)]
+
+#[derive(Drop, Serde)]<caret>
+
+struct <caret>A {
+'''
+expansion = '''
+// lib.cairo
+// ---------
+
+#[derive(Drop, Serde)]
+struct A {
+    a: felt252,
+}
+
+// impls
+// -----
+
+impl ADrop of core::traits::Drop<A>;
+impl ASerde of core::serde::Serde<A> {
+    fn serialize(self: @A, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.a, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<A> {
+        core::option::Option::Some(A { a: core::serde::Serde::deserialize(ref serialized)? })
+    }
+}'''

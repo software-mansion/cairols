@@ -1,0 +1,11 @@
+struct A {
+    a: felt252
+}
+
+#[genera<caret>te_trait]
+impl ImplA of A<caret>Trait {
+    fn c(self: A) -> felt252 {
+        print<caret>ln!("a");<caret>
+        self.a + 1
+    }
+}
