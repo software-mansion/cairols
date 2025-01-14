@@ -22,11 +22,13 @@ pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<
     // For all cases we cover here, definition == declaration.
     let declaration = symbol.definition_location(db);
 
+    // Locations where the searched symbol is used.
+    let usages = symbol.usages(db).collect();
+
     let locations = {
         let declaration = declaration.filter(|_| include_declaration);
 
-        // TODO(mkaput): Implement this.
-        let references = vec![];
+        let references = usages.into_iter().map(|usage| (usage.file, usage.span));
 
         declaration.into_iter().chain(references)
     }

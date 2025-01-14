@@ -31,11 +31,13 @@ use smol_str::SmolStr;
 use tracing::error;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::inspect::usages::FindUsages;
 
 /// Keeps information about the symbol that is being searched for/inspected.
 ///
 /// This is an ephemeral data structure.
 /// Do not store it in any kind of state.
+#[derive(Eq, PartialEq)]
 pub enum SymbolDef {
     Item(ItemDef),
     Variable(VariableDef),
@@ -132,7 +134,6 @@ impl SymbolDef {
     }
 
     /// Gets the name of the symbol.
-    #[expect(unused)]
     pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
         match self {
             SymbolDef::Item(it) => it.name(db),
@@ -142,9 +143,15 @@ impl SymbolDef {
             SymbolDef::Module(it) => it.name(db),
         }
     }
+
+    /// Starts a find-usages search for this symbol.
+    pub fn usages<'a>(&'a self, db: &'a AnalysisDatabase) -> FindUsages<'a> {
+        FindUsages::new(self, db)
+    }
 }
 
 /// Information about the definition of an item (function, trait, impl, module, etc.).
+#[derive(Eq, PartialEq)]
 pub struct ItemDef {
     /// The [`LookupItemId`] associated with the item.
     lookup_item_id: LookupItemId,
@@ -225,6 +232,7 @@ impl ItemDef {
 }
 
 /// Information about the definition of a variable (local, function parameter).
+#[derive(Eq, PartialEq)]
 pub struct VariableDef {
     name: SmolStr,
     var: Binding,
@@ -355,6 +363,7 @@ impl VariableDef {
 }
 
 /// Information about a struct member.
+#[derive(Eq, PartialEq)]
 pub struct MemberDef {
     member_id: MemberId,
     structure: ItemDef,
@@ -389,6 +398,7 @@ impl MemberDef {
 }
 
 /// Information about the definition of a module.
+#[derive(Eq, PartialEq)]
 pub struct ModuleDef {
     id: ModuleId,
     /// A full path to the parent module if [`ModuleId`] points to a submodule,

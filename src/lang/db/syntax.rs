@@ -1,6 +1,6 @@
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::TextPosition;
+use cairo_lang_filesystem::span::{TextOffset, TextPosition};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -8,9 +8,15 @@ use cairo_lang_syntax::node::{SyntaxNode, Terminal};
 use cairo_lang_utils::Upcast;
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
-/// Language server-specific extensions to the syntax group of the Cairo compiler.
+/// LS-specific extensions to the syntax group of the Cairo compiler.
 pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
-    /// Finds the most specific [`SyntaxNode`] at the given [`TextPosition`] in file.
+    /// Finds the most specific [`SyntaxNode`] at the given [`TextOffset`] in the file.
+    fn find_syntax_node_at_offset(&self, file: FileId, offset: TextOffset) -> Option<SyntaxNode> {
+        let db = self.upcast();
+        Some(db.file_syntax(file).to_option()?.lookup_offset(db.upcast(), offset))
+    }
+
+    /// Finds the most specific [`SyntaxNode`] at the given [`TextPosition`] in the file.
     fn find_syntax_node_at_position(
         &self,
         file: FileId,
@@ -20,11 +26,11 @@ pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
         Some(db.file_syntax(file).to_option()?.lookup_position(db.upcast(), position))
     }
 
-    /// Finds a [`TerminalIdentifier`] at the given [`TextPosition`] in file.
+    /// Finds a [`TerminalIdentifier`] at the given [`TextPosition`] in the file.
     ///
     /// The lookup for identifiers is slightly more sophisticated than just looking for an arbitrary
-    /// syntax node, because identifiers are usually what the user is interested in.
-    /// In case when user position is `ident<caret>()`, while regular syntax node lookup would
+    /// syntax node because identifiers usually are what the user is interested in.
+    /// In case when the user position is `ident<caret>()`, while regular syntax node lookup would
     /// return the left paren, a much better UX would be to correct the lookup to the identifier.
     /// Such corrections are always valid and deterministic, because grammar-wise it is not possible
     /// to have two identifiers/keywords being glued to each other.
@@ -48,10 +54,10 @@ pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
         })
     }
 
-    /// Traverse tree in root direction.
+    /// Traverse a tree in the root direction.
     ///
-    /// Finds first node with specified kind.
-    /// Returns it's respective child that is the ancestor of `node`.
+    /// Finds the first node with a specified kind.
+    /// Returns its respective child that is the ancestor of `node`.
     fn first_ancestor_of_kind_respective_child(
         &self,
         mut node: SyntaxNode,
