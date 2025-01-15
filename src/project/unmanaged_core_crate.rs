@@ -4,21 +4,27 @@ use std::{fs, path};
 
 use anyhow::Context;
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, init_dev_corelib};
+use cairo_lang_filesystem::ids::CrateId;
 use indoc::indoc;
 use tempfile::tempdir;
 use tracing::{error, warn};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
+use crate::project::Crate;
 use crate::toolchain::scarb::{SCARB_TOML, ScarbToolchain};
 
 /// Try to find a Cairo `core` crate (see [`find_unmanaged_core`]) and initialize it in the
 /// provided database.
-pub fn try_to_init_unmanaged_core(
+pub fn try_to_init_unmanaged_core_if_not_present(
     db: &mut AnalysisDatabase,
     config: &Config,
     scarb: &ScarbToolchain,
 ) {
+    if Crate::reconstruct(db, CrateId::core(db)).is_some() {
+        return;
+    }
+
     if let Some(path) = find_unmanaged_core(config, scarb) {
         init_dev_corelib(db, path);
     } else {

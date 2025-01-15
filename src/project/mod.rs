@@ -14,7 +14,7 @@ pub use self::manifest_registry::{ManifestRegistry, ManifestRegistryUpdate};
 pub use self::project_manifest_path::*;
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::scarb::{extract_crates, get_workspace_members_manifests};
-use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
+use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core_if_not_present;
 use crate::server::client::Notifier;
 use crate::server::schedule::thread;
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
@@ -101,18 +101,30 @@ impl ProjectController {
                 }
             }
             ProjectUpdate::ScarbMetadataFailed => {
-                // Try to set up a corelib at least.
-                try_to_init_unmanaged_core(db, &state.config, &state.scarb_toolchain);
+                // Try to set up a corelib at least if it is not in the db already.
+                try_to_init_unmanaged_core_if_not_present(
+                    db,
+                    &state.config,
+                    &state.scarb_toolchain,
+                );
             }
             ProjectUpdate::CairoProjectToml(maybe_project_config) => {
-                try_to_init_unmanaged_core(db, &state.config, &state.scarb_toolchain);
+                try_to_init_unmanaged_core_if_not_present(
+                    db,
+                    &state.config,
+                    &state.scarb_toolchain,
+                );
 
                 if let Some(project_config) = maybe_project_config {
                     update_crate_roots_from_project_config(db, &project_config);
                 }
             }
             ProjectUpdate::NoConfig(file_path) => {
-                try_to_init_unmanaged_core(db, &state.config, &state.scarb_toolchain);
+                try_to_init_unmanaged_core_if_not_present(
+                    db,
+                    &state.config,
+                    &state.scarb_toolchain,
+                );
 
                 if let Err(err) = setup_project(&mut *db, &file_path) {
                     error!(
