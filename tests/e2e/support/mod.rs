@@ -2,6 +2,7 @@ pub mod cairo_project_toml;
 pub mod client_capabilities;
 pub mod cursor;
 pub mod fixture;
+pub mod insta;
 pub mod jsonrpc;
 mod mock_client;
 pub mod normalize;

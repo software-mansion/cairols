@@ -122,6 +122,26 @@ pub fn peek_selection(text: &str, range: &Range) -> String {
         + "\n"
 }
 
+/// Adds selection markers for all ranges to the source text.
+pub fn render_selections(text: &str, ranges: &[Range]) -> String {
+    let mut text = text.to_owned();
+    ranges
+        .iter()
+        .flat_map(|range| {
+            assert!(range.start <= range.end);
+            [
+                (index_in_text(&text, range.start), "<sel>"),
+                (index_in_text(&text, range.end), "</sel>"),
+            ]
+        })
+        .sorted_by_key(|(idx, _)| *idx)
+        .fold(0, |offset, (idx, marker)| {
+            text.insert_str(idx + offset, marker);
+            offset + marker.len()
+        });
+    text
+}
+
 /// Converts a [`Position`] to a char-bounded index in the text.
 ///
 /// This function assumes UTF-8 position encoding.
