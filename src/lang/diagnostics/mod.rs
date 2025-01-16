@@ -66,6 +66,11 @@ struct DiagnosticsControllerThread {
     project_diagnostics: ProjectDiagnostics,
 }
 
+#[derive(PartialEq)]
+enum WorkerStatus {
+    Stopped,
+}
+
 impl DiagnosticsControllerThread {
     /// Spawns a new diagnostics controller worker thread
     /// and returns a handle to it and the amount of parallelism it provides.
@@ -109,14 +114,17 @@ impl DiagnosticsControllerThread {
     /// Runs a single tick of the diagnostics controller's event loop.
     #[tracing::instrument(skip_all)]
     fn diagnostics_controller_tick(&self, state_snapshots: StateSnapshots) {
+        let jobs_number = state_snapshots.0.len();
+        let (worker_status_sender, worker_status_receiver) =
+            crossbeam::channel::bounded(jobs_number);
         let (state, primary_snapshots, secondary_snapshots) = state_snapshots.split();
 
         let primary_set = find_primary_files(&state.db, &state.open_files);
         let primary: Vec<_> = primary_set.iter().copied().collect();
-        self.spawn_refresh_worker(&primary, primary_snapshots);
+        self.spawn_refresh_worker(&primary, primary_snapshots, worker_status_sender.clone());
 
         let secondary = find_secondary_files(&state.db, &primary_set);
-        self.spawn_refresh_worker(&secondary, secondary_snapshots);
+        self.spawn_refresh_worker(&secondary, secondary_snapshots, worker_status_sender.clone());
 
         let files_to_preserve: HashSet<Url> = primary
             .into_iter()
@@ -124,14 +132,23 @@ impl DiagnosticsControllerThread {
             .flat_map(|file| state.db.url_for_file(file))
             .collect();
 
-        self.spawn_worker(move |project_diagnostics, notifier| {
-            clear_old_diagnostics(files_to_preserve, project_diagnostics, notifier);
-        });
+        self.spawn_worker(
+            move |project_diagnostics, notifier| {
+                clear_old_diagnostics(files_to_preserve, project_diagnostics, notifier);
+            },
+            worker_status_sender.clone(),
+        );
+
+        worker_status_receiver.iter().nth(jobs_number - 1);
     }
 
     /// Shortcut for spawning a worker task which does the boilerplate around cloning state parts
     /// and catching panics.
-    fn spawn_worker(&self, f: impl FnOnce(ProjectDiagnostics, Notifier) + Send + 'static) {
+    fn spawn_worker(
+        &self,
+        f: impl FnOnce(ProjectDiagnostics, Notifier) + Send + 'static,
+        sender: crossbeam::channel::Sender<WorkerStatus>,
+    ) {
         let project_diagnostics = self.project_diagnostics.clone();
         let notifier = self.notifier.clone();
         let worker_fn = move || f(project_diagnostics, notifier);
@@ -143,23 +160,32 @@ impl DiagnosticsControllerThread {
                     error!("caught panic in diagnostics worker");
                 }
             }
+            sender.send(WorkerStatus::Stopped).unwrap();
         });
     }
 
     /// Makes batches out of `files` and spawns workers to run [`refresh_diagnostics`] on them.
-    fn spawn_refresh_worker(&self, files: &[FileId], state_snapshots: Vec<StateSnapshot>) {
+    fn spawn_refresh_worker(
+        &self,
+        files: &[FileId],
+        state_snapshots: Vec<StateSnapshot>,
+        worker_status_sender: crossbeam::channel::Sender<WorkerStatus>,
+    ) {
         let files_batches = batches(files, self.pool.parallelism());
         assert_eq!(files_batches.len(), state_snapshots.len());
         for (batch, state) in zip(files_batches, state_snapshots) {
-            self.spawn_worker(move |project_diagnostics, notifier| {
-                refresh_diagnostics(
-                    &state.db,
-                    batch,
-                    state.config.trace_macro_diagnostics,
-                    project_diagnostics,
-                    notifier,
-                );
-            });
+            self.spawn_worker(
+                move |project_diagnostics, notifier| {
+                    refresh_diagnostics(
+                        &state.db,
+                        batch,
+                        state.config.trace_macro_diagnostics,
+                        project_diagnostics,
+                        notifier,
+                    );
+                },
+                worker_status_sender.clone(),
+            );
         }
     }
 }
