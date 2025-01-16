@@ -52,8 +52,6 @@ struct Job {
 
 #[derive(Clone)]
 pub struct TaskHandle(trigger::Receiver<()>);
-// NOTE: Do not clone this or #[derive(Clone)], as this might result in unexpected behavior on
-// receiver end
 pub struct TaskTracker(trigger::Sender<()>);
 
 impl TaskTracker {
