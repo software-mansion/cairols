@@ -185,10 +185,7 @@ fn main() {
 
 //! > Code action #0
     let _y = x.upda<caret>te(3_felt252);
-Title: Import core::hash::HashStateTrait
-Add new text: "use core::hash::HashStateTrait;
-"
-At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+No code actions.
 
 //! > Code action #1
     let _y = x.update(3_felt252<caret>);
@@ -232,8 +229,8 @@ mod hello_starknet {
 
 //! > Code action #0
             self.balance.rea<caret>d()
-Title: Import starknet::storage::StoragePointerReadAccess
-Add new text: "use starknet::storage::StoragePointerReadAccess;
+Title: Import core::starknet::storage::StoragePointerReadAccess
+Add new text: "use core::starknet::storage::StoragePointerReadAccess;
 "
 At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
 
@@ -305,7 +302,4 @@ fn func() {
 
 //! > Code action #0
     let (_x, _): (u8, bool) = 5_i8.abs_an<caret>d_sign();
-Title: Import core::integer::AbsAndSign
-Add new text: "use core::integer::AbsAndSign;
-"
-At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+No code actions.
