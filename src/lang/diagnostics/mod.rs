@@ -23,7 +23,7 @@ mod file_diagnostics;
 mod lsp;
 mod project_diagnostics;
 mod refresh;
-mod trigger;
+pub mod trigger;
 
 /// Schedules refreshing of diagnostics in a background thread.
 ///

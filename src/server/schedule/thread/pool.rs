@@ -23,12 +23,14 @@
 //! the threading utilities in [`crate::server::schedule::thread`].
 
 use std::num::NonZero;
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::Arc;
 use std::thread::available_parallelism;
 
 use crossbeam::channel;
 
 use super::{Builder, JoinHandle, ThreadPriority};
+use crate::lang::diagnostics::trigger;
+use crate::server::schedule::thread::pool::trigger::trigger;
 
 pub struct Pool {
     // `_handles` is never read: the field is present
@@ -49,34 +51,25 @@ struct Job {
     f: Box<dyn FnOnce() + Send + 'static>,
 }
 
-struct TaskState {
-    finished: bool,
-}
-
 #[derive(Clone)]
 pub struct TaskHandle {
-    state: Arc<(Mutex<TaskState>, Condvar)>,
+    state: Arc<(trigger::Sender<()>, trigger::Receiver<()>)>,
 }
 
 impl TaskHandle {
     pub fn new() -> Self {
-        let state = TaskState { finished: false };
-        TaskHandle { state: Arc::new((Mutex::new(state), Condvar::new())) }
+        let state = trigger::<()>();
+        TaskHandle { state: Arc::new(state) }
     }
 
     pub fn signal_finish(&self) {
-        let (lock, cvar) = &*self.state;
-        let mut task_state = lock.lock().unwrap();
-        task_state.finished = true;
-        cvar.notify_all();
+        let (sender, _) = &*self.state;
+        sender.activate(());
     }
 
     pub fn join(&self) {
-        let (lock, cvar) = &*self.state;
-        let mut task_state = lock.lock().unwrap();
-        while !task_state.finished {
-            task_state = cvar.wait(task_state).unwrap();
-        }
+        let (_, receiver) = &*self.state;
+        receiver.wait();
     }
 }
 
