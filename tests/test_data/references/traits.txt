@@ -1,7 +1,7 @@
 //! > Test find references of a trait.
 
 //! > test_runner_name
-test_references(include_declaration: true)
+test_references
 
 //! > cairo_code
 pub trait ShapeGeometry<T> {
@@ -28,10 +28,13 @@ fn main() {
 
 //! > References #0
     use super::Sha<caret>peGeometry;
----
+
+DECLARATIONS:
 <sel>pub trait ShapeGeometry<T> {
     fn area(self: T) -> u64;
 }</sel>
+
+USAGES:
 pub trait <sel>ShapeGeometry</sel><T> {
     use super::<sel>ShapeGeometry</sel>;
     impl RectangleGeometry of <sel>ShapeGeometry</sel><Rectangle> {
@@ -39,10 +42,13 @@ pub trait <sel>ShapeGeometry</sel><T> {
 
 //! > References #1
     impl RectangleGeometry of ShapeGe<caret>ometry<Rectangle> {
----
+
+DECLARATIONS:
 <sel>pub trait ShapeGeometry<T> {
     fn area(self: T) -> u64;
 }</sel>
+
+USAGES:
 pub trait <sel>ShapeGeometry</sel><T> {
     use super::<sel>ShapeGeometry</sel>;
     impl RectangleGeometry of <sel>ShapeGeometry</sel><Rectangle> {
@@ -50,10 +56,13 @@ pub trait <sel>ShapeGeometry</sel><T> {
 
 //! > References #2
     let area = ShapeGeo<caret>metry::area(rect);
----
+
+DECLARATIONS:
 <sel>pub trait ShapeGeometry<T> {
     fn area(self: T) -> u64;
 }</sel>
+
+USAGES:
 pub trait <sel>ShapeGeometry</sel><T> {
     use super::<sel>ShapeGeometry</sel>;
     impl RectangleGeometry of <sel>ShapeGeometry</sel><Rectangle> {

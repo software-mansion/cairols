@@ -1,7 +1,7 @@
 //! > Test references of inline macro.
 
 //! > test_runner_name
-test_references(include_declaration: false)
+test_references
 
 //! > cairo_code
 fn main() {
@@ -10,19 +10,15 @@ fn main() {
 }
 
 fn bar() {
-    let forty_two = arr<caret>ay![42];
+    let forty_two = array![42];
 }
 
 //! > References #0
     let arr = arr<caret>ay![1, 2, 3, 4, 5];
----
-found several references in the core crate
-    let arr = <sel>array</sel>![1, 2, 3, 4, 5];
-    let forty_two = <sel>array</sel>![42];
 
-//! > References #1
-    let forty_two = arr<caret>ay![42];
----
+DECLARATIONS:
+
+USAGES:
 found several references in the core crate
     let arr = <sel>array</sel>![1, 2, 3, 4, 5];
     let forty_two = <sel>array</sel>![42];
