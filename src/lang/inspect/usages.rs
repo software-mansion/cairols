@@ -5,7 +5,7 @@ use std::sync::Arc;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::{TextSpan, TextWidth};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
@@ -23,7 +23,6 @@ macro_rules! flow {
     };
 }
 
-// TODO(mkaput): Reject text matches that are not word boundaries.
 // TODO(mkaput): Implement search scopes: for example, variables will never be used in other files.
 // TODO(mkaput): Deal with `crate` keyword.
 /// An implementation of the find-usages functionality.
@@ -73,8 +72,7 @@ impl<'a> FindUsages<'a> {
 
         for (file, text) in Self::scope_files(db) {
             // Search occurrences of the symbol's name.
-            for offset in finder.find_iter(text.as_bytes()) {
-                let offset = TextWidth::at(&text, offset).as_offset();
+            for offset in Self::match_offsets(&finder, &text) {
                 if let Some(node) = db.find_syntax_node_at_offset(file, offset) {
                     if let Some(identifier) = TerminalIdentifier::cast_token(db.upcast(), node) {
                         flow!(self.found_identifier(identifier, sink));
@@ -96,6 +94,28 @@ impl<'a> FindUsages<'a> {
             }
         }
         files.into_iter()
+    }
+
+    fn match_offsets<'b>(
+        finder: &'b Finder<'b>,
+        text: &'b str,
+    ) -> impl Iterator<Item = TextOffset> + use<'b> {
+        finder
+            .find_iter(text.as_bytes())
+            .map(|offset| TextWidth::at(text, offset).as_offset())
+            .filter(|offset| {
+                // Reject matches that are not at word boundaries - for example, an identifier
+                // `core` will never be a direct usage of a needle `or`.
+                // This speeds up short identifiers significantly.
+                let idx = offset.as_u32() as usize;
+                !{
+                    let char_before = text[..idx].chars().next_back();
+                    char_before.is_some_and(|ch| ch.is_alphabetic() || ch == '_')
+                } && !{
+                    let char_after = text[idx + finder.needle().len()..].chars().next();
+                    char_after.is_some_and(|ch| ch.is_alphanumeric() || ch == '_')
+                }
+            })
     }
 
     fn found_identifier(
