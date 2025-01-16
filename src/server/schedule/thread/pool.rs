@@ -51,24 +51,29 @@ struct Job {
 }
 
 #[derive(Clone)]
-pub struct TaskHandle {
-    sender: trigger::Sender<()>,
-    receiver: trigger::Receiver<()>,
+pub struct TaskHandle(trigger::Receiver<()>);
+// NOTE: Do not clone this or #[derive(Clone)], as this might result in unexpected behavior on
+// receiver end
+pub struct TaskTracker(trigger::Sender<()>);
+
+impl TaskTracker {
+    /// Signals that a task finished executing.
+    pub fn signal_finish(&self) {
+        self.0.activate(());
+    }
 }
 
 impl TaskHandle {
-    pub fn new() -> Self {
-        let (sender, receiver) = trigger::<()>();
-        TaskHandle { sender, receiver }
-    }
-
-    pub fn signal_finish(&self) {
-        self.sender.activate(());
-    }
-
+    /// Waits until tasks finishes executing.
     pub fn join(&self) {
-        self.receiver.wait();
+        self.0.wait();
     }
+}
+
+/// Creates single message channel for making it possible to wait for finishing tasks execution.
+pub fn task_progress_monitor() -> (TaskTracker, TaskHandle) {
+    let (sender, receiver) = trigger::<()>();
+    (TaskTracker(sender), TaskHandle(receiver))
 }
 
 impl Pool {
@@ -121,14 +126,14 @@ impl Pool {
     where
         F: FnOnce() + Send + 'static,
     {
-        let handle = TaskHandle::new();
-        let handle_clone = handle.clone();
+        let (tracker, handle) = task_progress_monitor();
+
         let f = Box::new(move || {
             if cfg!(debug_assertions) {
                 priority.assert_is_used_on_current_thread();
             }
             f();
-            handle_clone.signal_finish();
+            tracker.signal_finish();
         });
 
         let job = Job { requested_priority: priority, f };
