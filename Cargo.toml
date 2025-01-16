@@ -35,6 +35,7 @@ cairo-lang-compiler = "*"
 cairo-lang-defs = "*"
 cairo-lang-diagnostics = "*"
 cairo-lang-doc = "*"
+cairo-lang-executable = "*"
 cairo-lang-filesystem = "*"
 cairo-lang-formatter = "*"
 cairo-lang-lowering = "*"
@@ -96,6 +97,7 @@ cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo", rev = "dff3
 cairo-lang-diagnostics = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
 cairo-lang-doc = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
 cairo-lang-eq-solver = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
+cairo-lang-executable = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
 cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
 cairo-lang-formatter = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
 cairo-lang-lowering = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
@@ -103,6 +105,7 @@ cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo", rev = "df
 cairo-lang-plugins = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
 cairo-lang-proc-macros = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
 cairo-lang-project = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
+cairo-lang-runnable-utils = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
 cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
 cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }
 cairo-lang-sierra-ap-change = { git = "https://github.com/starkware-libs/cairo", rev = "dff35c09bfaa1ae0969c48ce4e103bad46d5fe50" }

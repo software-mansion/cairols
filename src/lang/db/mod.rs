@@ -3,6 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_doc::db::DocDatabase;
+use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_files_group,
@@ -66,6 +67,7 @@ impl AnalysisDatabase {
             //   Same for other plugins.
             //   Right now this code will conflict with procmacros.
             test_plugin_suite(),
+            executable_plugin_suite(),
         ]
         .into_iter()
         .chain(tricks.extra_plugin_suites.iter().flat_map(|f| f()))
