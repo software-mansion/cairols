@@ -15,7 +15,7 @@ use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_s
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
-use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
+use crate::server::schedule::thread::{self, JoinHandle, TaskHandle, ThreadPriority};
 use crate::state::{State, StateSnapshot};
 
 mod file_batches;
@@ -66,11 +66,6 @@ struct DiagnosticsControllerThread {
     project_diagnostics: ProjectDiagnostics,
 }
 
-#[derive(PartialEq)]
-enum WorkerStatus {
-    Stopped,
-}
-
 impl DiagnosticsControllerThread {
     /// Spawns a new diagnostics controller worker thread
     /// and returns a handle to it and the amount of parallelism it provides.
@@ -114,17 +109,15 @@ impl DiagnosticsControllerThread {
     /// Runs a single tick of the diagnostics controller's event loop.
     #[tracing::instrument(skip_all)]
     fn diagnostics_controller_tick(&self, state_snapshots: StateSnapshots) {
-        let jobs_number = state_snapshots.0.len();
-        let (worker_status_sender, worker_status_receiver) =
-            crossbeam::channel::bounded(jobs_number);
+        let mut worker_handles = Vec::new();
         let (state, primary_snapshots, secondary_snapshots) = state_snapshots.split();
 
         let primary_set = find_primary_files(&state.db, &state.open_files);
         let primary: Vec<_> = primary_set.iter().copied().collect();
-        self.spawn_refresh_worker(&primary, primary_snapshots, worker_status_sender.clone());
+        worker_handles.extend(self.spawn_refresh_worker(&primary, primary_snapshots));
 
         let secondary = find_secondary_files(&state.db, &primary_set);
-        self.spawn_refresh_worker(&secondary, secondary_snapshots, worker_status_sender.clone());
+        worker_handles.extend(self.spawn_refresh_worker(&secondary, secondary_snapshots));
 
         let files_to_preserve: HashSet<Url> = primary
             .into_iter()
@@ -132,14 +125,13 @@ impl DiagnosticsControllerThread {
             .flat_map(|file| state.db.url_for_file(file))
             .collect();
 
-        self.spawn_worker(
-            move |project_diagnostics, notifier| {
-                clear_old_diagnostics(files_to_preserve, project_diagnostics, notifier);
-            },
-            worker_status_sender.clone(),
-        );
+        worker_handles.push(self.spawn_worker(move |project_diagnostics, notifier| {
+            clear_old_diagnostics(files_to_preserve, project_diagnostics, notifier);
+        }));
 
-        worker_status_receiver.iter().nth(jobs_number - 1);
+        for handle in worker_handles {
+            handle.join();
+        }
     }
 
     /// Shortcut for spawning a worker task which does the boilerplate around cloning state parts
@@ -147,8 +139,7 @@ impl DiagnosticsControllerThread {
     fn spawn_worker(
         &self,
         f: impl FnOnce(ProjectDiagnostics, Notifier) + Send + 'static,
-        sender: crossbeam::channel::Sender<WorkerStatus>,
-    ) {
+    ) -> TaskHandle {
         let project_diagnostics = self.project_diagnostics.clone();
         let notifier = self.notifier.clone();
         let worker_fn = move || f(project_diagnostics, notifier);
@@ -160,8 +151,7 @@ impl DiagnosticsControllerThread {
                     error!("caught panic in diagnostics worker");
                 }
             }
-            sender.send(WorkerStatus::Stopped).unwrap();
-        });
+        })
     }
 
     /// Makes batches out of `files` and spawns workers to run [`refresh_diagnostics`] on them.
@@ -169,24 +159,23 @@ impl DiagnosticsControllerThread {
         &self,
         files: &[FileId],
         state_snapshots: Vec<StateSnapshot>,
-        worker_status_sender: crossbeam::channel::Sender<WorkerStatus>,
-    ) {
+    ) -> Vec<TaskHandle> {
         let files_batches = batches(files, self.pool.parallelism());
         assert_eq!(files_batches.len(), state_snapshots.len());
+        let mut handles = Vec::new();
         for (batch, state) in zip(files_batches, state_snapshots) {
-            self.spawn_worker(
-                move |project_diagnostics, notifier| {
-                    refresh_diagnostics(
-                        &state.db,
-                        batch,
-                        state.config.trace_macro_diagnostics,
-                        project_diagnostics,
-                        notifier,
-                    );
-                },
-                worker_status_sender.clone(),
-            );
+            let task = self.spawn_worker(move |project_diagnostics, notifier| {
+                refresh_diagnostics(
+                    &state.db,
+                    batch,
+                    state.config.trace_macro_diagnostics,
+                    project_diagnostics,
+                    notifier,
+                );
+            });
+            handles.push(task);
         }
+        handles
     }
 }
 

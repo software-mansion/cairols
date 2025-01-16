@@ -23,6 +23,7 @@
 //! the threading utilities in [`crate::server::schedule::thread`].
 
 use std::num::NonZero;
+use std::sync::{Arc, Condvar, Mutex};
 use std::thread::available_parallelism;
 
 use crossbeam::channel;
@@ -46,6 +47,37 @@ pub struct Pool {
 struct Job {
     requested_priority: ThreadPriority,
     f: Box<dyn FnOnce() + Send + 'static>,
+}
+
+struct TaskState {
+    finished: bool,
+}
+
+#[derive(Clone)]
+pub struct TaskHandle {
+    state: Arc<(Mutex<TaskState>, Condvar)>,
+}
+
+impl TaskHandle {
+    pub fn new() -> Self {
+        let state = TaskState { finished: false };
+        TaskHandle { state: Arc::new((Mutex::new(state), Condvar::new())) }
+    }
+
+    pub fn signal_finish(&self) {
+        let (lock, cvar) = &*self.state;
+        let mut task_state = lock.lock().unwrap();
+        task_state.finished = true;
+        cvar.notify_all();
+    }
+
+    pub fn join(&self) {
+        let (lock, cvar) = &*self.state;
+        let mut task_state = lock.lock().unwrap();
+        while !task_state.finished {
+            task_state = cvar.wait(task_state).unwrap();
+        }
+    }
 }
 
 impl Pool {
@@ -94,19 +126,23 @@ impl Pool {
         Pool { _handles: handles, job_sender, parallelism: NonZero::new(threads).unwrap() }
     }
 
-    pub fn spawn<F>(&self, priority: ThreadPriority, f: F)
+    pub fn spawn<F>(&self, priority: ThreadPriority, f: F) -> TaskHandle
     where
         F: FnOnce() + Send + 'static,
     {
+        let handle = TaskHandle::new();
+        let handle_clone = handle.clone();
         let f = Box::new(move || {
             if cfg!(debug_assertions) {
                 priority.assert_is_used_on_current_thread();
             }
             f();
+            handle_clone.signal_finish();
         });
 
         let job = Job { requested_priority: priority, f };
         self.job_sender.send(job).unwrap();
+        handle
     }
 
     /// Returns a number of tasks that this pool can run concurrently.

@@ -38,7 +38,7 @@ use std::fmt;
 mod pool;
 mod priority;
 
-pub use self::pool::Pool;
+pub use self::pool::{Pool, TaskHandle};
 pub use self::priority::ThreadPriority;
 
 pub struct Builder {
