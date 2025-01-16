@@ -23,7 +23,6 @@
 //! the threading utilities in [`crate::server::schedule::thread`].
 
 use std::num::NonZero;
-use std::sync::Arc;
 use std::thread::available_parallelism;
 
 use crossbeam::channel;
@@ -53,23 +52,22 @@ struct Job {
 
 #[derive(Clone)]
 pub struct TaskHandle {
-    state: Arc<(trigger::Sender<()>, trigger::Receiver<()>)>,
+    sender: trigger::Sender<()>,
+    receiver: trigger::Receiver<()>,
 }
 
 impl TaskHandle {
     pub fn new() -> Self {
-        let state = trigger::<()>();
-        TaskHandle { state: Arc::new(state) }
+        let (sender, receiver) = trigger::<()>();
+        TaskHandle { sender, receiver }
     }
 
     pub fn signal_finish(&self) {
-        let (sender, _) = &*self.state;
-        sender.activate(());
+        self.sender.activate(());
     }
 
     pub fn join(&self) {
-        let (_, receiver) = &*self.state;
-        receiver.wait();
+        self.receiver.wait();
     }
 }
 

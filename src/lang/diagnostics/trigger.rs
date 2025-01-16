@@ -10,11 +10,13 @@ const POISON_PANIC: &str = "invariant error: trigger mutex should never become p
 /// The writer side of a trigger sender-receiver pair.
 ///
 /// See [`trigger`] for more information.
+#[derive(Clone)]
 pub struct Sender<T>(Arc<Inner<T>>);
 
 /// The reader side of a trigger sender-receiver pair.
 ///
 /// See [`trigger`] for more information.
+#[derive(Clone)]
 pub struct Receiver<T>(Arc<Inner<T>>);
 
 /// Creates a new trigger, returning the sender/receiver halves.

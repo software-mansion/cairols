@@ -107,10 +107,7 @@ impl DiagnosticsControllerThread {
                 }
             }
 
-            for handle in self.worker_handles.iter() {
-                handle.join();
-            }
-            self.worker_handles.clear();
+            self.join_and_clear_workers();
         }
     }
 
@@ -170,6 +167,13 @@ impl DiagnosticsControllerThread {
                 );
             });
         }
+    }
+
+    fn join_and_clear_workers(&mut self) {
+        for handle in self.worker_handles.iter() {
+            handle.join();
+        }
+        self.worker_handles.clear();
     }
 }
 
