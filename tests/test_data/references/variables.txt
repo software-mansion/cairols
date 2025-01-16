@@ -1,0 +1,100 @@
+//! > Test references of variables.
+
+//! > test_runner_name
+test_references(include_declaration: false)
+
+//! > cairo_code
+fn main() {
+    let foo<caret>bar = 1233; // bad
+    let x = foo<caret>bar + 1; // good
+    bar();
+    let y = x + foobar * foobar; // good
+}
+
+fn bar() {
+    let foobar = 42; // bad
+}
+
+//! > References #0
+    let foo<caret>bar = 1233; // bad
+none response
+
+//! > References #1
+    let x = foo<caret>bar + 1; // good
+---
+    let x = <sel>foobar</sel> + 1; // good
+    let y = x + <sel>foobar</sel> * foobar; // good
+    let y = x + foobar * <sel>foobar</sel>; // good
+
+//! > ==========================================================================
+
+//! > Test references of variables including declaration.
+
+//! > test_runner_name
+test_references(include_declaration: true)
+
+//! > cairo_code
+fn main() {
+    // FIXME(#164): This should work for the caret on declaration.
+    let foo<caret>bar = 1233; // good
+    let x = foo<caret>bar + foobar; // good
+}
+
+//! > References #0
+    let foo<caret>bar = 1233; // good
+none response
+
+//! > References #1
+    let x = foo<caret>bar + foobar; // good
+---
+    let <sel>foobar</sel> = 1233; // good
+    let x = <sel>foobar</sel> + foobar; // good
+    let x = foobar + <sel>foobar</sel>; // good
+
+//! > ==========================================================================
+
+//! > Test references of variable declared via a complex pattern.
+
+//! > test_runner_name
+test_references(include_declaration: true)
+
+//! > cairo_code
+fn main() {
+    let (foobar, foobar2) = (1, 2); // good
+    let x = foo<caret>bar + foobar2; // good
+    let y = foobar2 * foobar2; // bad
+    let z = foobar2 + foobar; // good
+}
+
+//! > References #0
+    let x = foo<caret>bar + foobar2; // good
+---
+    let (<sel>foobar</sel>, foobar2) = (1, 2); // good
+    let x = <sel>foobar</sel> + foobar2; // good
+    let z = foobar2 + <sel>foobar</sel>; // good
+
+//! > ==========================================================================
+
+//! > Test references of variable captured by a closure;
+
+//! > test_runner_name
+test_references(include_declaration: false)
+
+//! > cairo_code
+fn main() {
+    let foobar = 1;
+    let x = foo<caret>bar + 1;
+    let f = |y| x + y + foo<caret>bar;
+}
+
+//! > References #0
+    let x = foo<caret>bar + 1;
+---
+    let x = <sel>foobar</sel> + 1;
+    let f = |y| x + y + <sel>foobar</sel>;
+
+//! > References #1
+    let f = |y| x + y + foo<caret>bar;
+---
+    let x = <sel>foobar</sel> + 1;
+    let f = |y| x + y + <sel>foobar</sel>;

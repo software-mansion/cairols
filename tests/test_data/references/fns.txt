@@ -96,3 +96,59 @@ fn pow<caret>2(x: felt252) -> felt252 { x * x }
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
     let x = <sel>pow2</sel>(2) + pow2(3);
     let x = pow2(2) + <sel>pow2</sel>(3);
+
+//! > ==========================================================================
+
+//! > Test references of function parameter.
+
+//! > test_runner_name
+test_references(include_declaration: true)
+
+//! > cairo_code
+fn pow(nu<caret>m: felt252) -> felt252 {
+    nu<caret>m * num
+}
+
+//! > References #0
+fn pow(nu<caret>m: felt252) -> felt252 {
+---
+<sel>fn pow(num: felt252) -> felt252 {
+    num * num
+}</sel>
+fn <sel>pow</sel>(num: felt252) -> felt252 {
+
+//! > References #1
+    nu<caret>m * num
+---
+fn pow(<sel>num: felt252</sel>) -> felt252 {
+    <sel>num</sel> * num
+    num * <sel>num</sel>
+
+//! > ==========================================================================
+
+//! > Test references of function parameter captured by a closure.
+
+//! > test_runner_name
+test_references(include_declaration: true)
+
+//! > cairo_code
+fn pow(num: felt252) -> felt252 {
+    let f = |x| nu<caret>m * x;
+    nu<caret>m * f(num)
+}
+
+//! > References #0
+    let f = |x| nu<caret>m * x;
+---
+fn pow(<sel>num: felt252</sel>) -> felt252 {
+    let f = |x| <sel>num</sel> * x;
+    <sel>num</sel> * f(num)
+    num * f(<sel>num</sel>)
+
+//! > References #1
+    nu<caret>m * f(num)
+---
+fn pow(<sel>num: felt252</sel>) -> felt252 {
+    let f = |x| <sel>num</sel> * x;
+    <sel>num</sel> * f(num)
+    num * f(<sel>num</sel>)
