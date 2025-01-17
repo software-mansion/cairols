@@ -3,7 +3,7 @@ use itertools::Itertools;
 use lsp_types::{Location, ReferenceParams};
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::inspect::defs::SymbolDef;
+use crate::lang::defs::SymbolDef;
 use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
 
 pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<Location>> {

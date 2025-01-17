@@ -9,7 +9,7 @@ use memchr::memmem::Finder;
 use smol_str::format_smolstr;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::inspect::defs::SymbolDef;
+use crate::lang::defs::SymbolDef;
 
 pub mod search_scope;
 

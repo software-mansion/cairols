@@ -24,8 +24,8 @@ use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat, Position, 
 use tracing::debug;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::lang::inspect::methods::find_methods_for_type;
 use crate::lang::lsp::ToLsp;
+use crate::lang::methods::find_methods_for_type;
 
 pub fn generic_completions(
     db: &AnalysisDatabase,

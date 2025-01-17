@@ -37,7 +37,7 @@ use crate::server::client::{Notifier, Requester};
 use crate::server::commands::ServerCommands;
 use crate::state::{State, StateSnapshot};
 use crate::toolchain::info::toolchain_info;
-use crate::{Backend, ide, lang};
+use crate::{Backend, ide};
 
 /// A request handler that needs mutable access to the session.
 /// This will block the main message receiver loop, meaning that no
@@ -345,7 +345,7 @@ impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
         _notifier: Notifier,
         _params: (),
     ) -> LSPResult<String> {
-        Ok(lang::inspect::crates::inspect_analyzed_crates(&snapshot.db))
+        Ok(ide::introspection::crates::inspect_analyzed_crates(&snapshot.db))
     }
 }
 

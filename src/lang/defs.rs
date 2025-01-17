@@ -31,8 +31,8 @@ use smol_str::SmolStr;
 use tracing::error;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
-use crate::lang::inspect::usages::FindUsages;
-use crate::lang::inspect::usages::search_scope::SearchScope;
+use crate::lang::usages::FindUsages;
+use crate::lang::usages::search_scope::SearchScope;
 
 /// Keeps information about the symbol that is being searched for/inspected.
 ///
