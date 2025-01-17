@@ -150,12 +150,20 @@ impl SymbolDef {
     pub fn search_scope(&self, db: &AnalysisDatabase) -> SearchScope {
         match &self {
             Self::Variable(var) => {
-                match db.first_ancestor_of_kind(var.syntax_node(db), SyntaxKind::FunctionWithBody) {
-                    Some(owning_function) => SearchScope::file_span(
+                if let Some(owning_function) =
+                    iter::successors(Some(var.syntax_node(db)), SyntaxNode::parent).find(|node| {
+                        matches!(
+                            node.kind(db.upcast()),
+                            SyntaxKind::FunctionWithBody | SyntaxKind::TraitItemFunction
+                        )
+                    })
+                {
+                    SearchScope::file_span(
                         owning_function.stable_ptr().file_id(db.upcast()),
                         owning_function.span(db.upcast()),
-                    ),
-                    None => SearchScope::file(var.definition_stable_ptr.file_id(db.upcast())),
+                    )
+                } else {
+                    SearchScope::file(var.definition_stable_ptr.file_id(db.upcast()))
                 }
             }
 

@@ -166,3 +166,28 @@ fn param_captured_by_closure() {
     }
     ")
 }
+
+#[test]
+fn var_in_trait_function_default_body() {
+    test_transform!(find_references, r#"
+    trait Foo<T> {
+        fn foo() {
+            let foobar = 42;
+            let x = foo<caret>bar + 1;
+        }
+    }
+    fn bar() {
+        let foobar = 42;
+    }
+    "#, @r"
+    trait Foo<T> {
+        fn foo() {
+            let <sel=declaration>foobar</sel> = 42;
+            let x = <sel>foobar</sel> + 1;
+        }
+    }
+    fn bar() {
+        let foobar = 42;
+    }
+    ")
+}
