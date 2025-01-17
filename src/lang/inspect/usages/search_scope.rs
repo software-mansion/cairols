@@ -35,6 +35,16 @@ impl SearchScope {
         this
     }
 
+    /// Builds a search scope spanning an entire single file.
+    pub fn file(file: FileId) -> Self {
+        Self { entries: [(file, None)].into() }
+    }
+
+    /// Builds a search scope spanning a slice of a single file.
+    pub fn file_span(file: FileId, span: TextSpan) -> Self {
+        Self { entries: [(file, Some(span))].into() }
+    }
+
     /// Creates an iterator over all files and the optional search scope text spans.
     pub fn files_and_spans(&self) -> impl Iterator<Item = (FileId, Option<TextSpan>)> + use<'_> {
         self.entries.iter().map(|(&file, &span)| (file, span))

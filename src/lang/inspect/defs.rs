@@ -137,18 +137,31 @@ impl SymbolDef {
     /// Gets the name of the symbol.
     pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
         match self {
-            SymbolDef::Item(it) => it.name(db),
-            SymbolDef::Variable(it) => it.name(),
-            SymbolDef::ExprInlineMacro(name) => name.clone(),
-            SymbolDef::Member(it) => it.name(db),
-            SymbolDef::Module(it) => it.name(db),
+            Self::Item(it) => it.name(db),
+            Self::Variable(it) => it.name(),
+            Self::ExprInlineMacro(name) => name.clone(),
+            Self::Member(it) => it.name(db),
+            Self::Module(it) => it.name(db),
         }
     }
 
     /// Builds a search scope for finding usages of this symbol.
+    #[tracing::instrument(skip_all)]
     pub fn search_scope(&self, db: &AnalysisDatabase) -> SearchScope {
-        // TODO(mkaput): Narrow down the scope as much as possible for particular symbol kinds.
-        SearchScope::everything(db)
+        match &self {
+            Self::Variable(var) => {
+                match db.first_ancestor_of_kind(var.syntax_node(db), SyntaxKind::FunctionWithBody) {
+                    Some(owning_function) => SearchScope::file_span(
+                        owning_function.stable_ptr().file_id(db.upcast()),
+                        owning_function.span(db.upcast()),
+                    ),
+                    None => SearchScope::file(var.definition_stable_ptr.file_id(db.upcast())),
+                }
+            }
+
+            // TODO(#195): Use visibility information to narrow down search scopes.
+            _ => SearchScope::everything(db),
+        }
     }
 
     /// Starts a find-usages search for this symbol.
@@ -330,6 +343,11 @@ impl VariableDef {
         let var = signature.params.into_iter().find(|p| p.name == name)?.into();
 
         Some(Self { name, var, definition_stable_ptr: param.stable_ptr().untyped() })
+    }
+
+    /// Gets the syntax node of the variable definition.
+    pub fn syntax_node(&self, db: &AnalysisDatabase) -> SyntaxNode {
+        self.definition_stable_ptr.lookup(db.upcast())
     }
 
     /// Gets variable signature, which tries to resemble the way how it is defined in code.
