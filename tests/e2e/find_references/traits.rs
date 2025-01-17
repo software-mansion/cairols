@@ -68,7 +68,7 @@ fn trait_method_via_definition() {
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        <sel=declaration>fn <sel>area</sel>(self: @Foo) -> u64;</sel>
+        fn <sel=declaration>area</sel>(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
         fn area(self: @Foo) -> u64 { 0 }
@@ -117,7 +117,7 @@ fn trait_method_via_dot_call() {
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        <sel=declaration>fn <sel>area</sel>(self: @Foo) -> u64;</sel>
+        fn <sel=declaration>area</sel>(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
         fn area(self: @Foo) -> u64 { 0 }
@@ -166,7 +166,7 @@ fn trait_method_via_path_call() {
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        <sel=declaration>fn <sel>area</sel>(self: @Foo) -> u64;</sel>
+        fn <sel=declaration>area</sel>(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
         fn area(self: @Foo) -> u64 { 0 }

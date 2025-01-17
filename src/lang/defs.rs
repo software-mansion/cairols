@@ -2,8 +2,8 @@ use std::iter;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, LanguageElementId, LookupItemId, MemberId, ModuleId, ModuleItemId,
-    NamedLanguageElementId, SubmoduleLongId, TopLevelLanguageElementId, TraitItemId,
+    LanguageElementId, LookupItemId, MemberId, ModuleId, ModuleItemId, NamedLanguageElementId,
+    SubmoduleLongId, TopLevelLanguageElementId, TraitItemId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_doc::db::DocGroup;
@@ -680,6 +680,7 @@ fn resolved_generic_item_def(
 ) -> Option<SyntaxStablePtrId> {
     Some(match item {
         ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(db.upcast()),
+
         ResolvedGenericItem::Module(module_id) => {
             match module_id {
                 ModuleId::CrateRoot(_) => {
@@ -699,28 +700,48 @@ fn resolved_generic_item_def(
                 }
             }
         }
+
         ResolvedGenericItem::GenericFunction(item) => {
-            let title = match item {
-                GenericFunctionId::Free(id) => FunctionTitleId::Free(id),
-                GenericFunctionId::Extern(id) => FunctionTitleId::Extern(id),
-                GenericFunctionId::Impl(id) => {
-                    // Note: Only the trait title is returned.
-                    FunctionTitleId::Trait(id.function)
+            let declaration: ast::FunctionDeclaration = match item {
+                GenericFunctionId::Free(id) => {
+                    id.stable_ptr(db.upcast()).lookup(db.upcast()).declaration(db.upcast())
                 }
+                GenericFunctionId::Extern(id) => {
+                    id.stable_ptr(db.upcast()).lookup(db.upcast()).declaration(db.upcast())
+                }
+                GenericFunctionId::Impl(id) => match id.impl_function(db.upcast()) {
+                    Ok(Some(id)) => {
+                        id.stable_ptr(db.upcast()).lookup(db.upcast()).declaration(db.upcast())
+                    }
+                    // It is possible (Marek didn't find out how it happens), that we hop into a
+                    // situation where concrete impl is not inferred yet, so we can't find the
+                    // declaration. Fall back to trait function in such cases.
+                    _ => id
+                        .function
+                        .stable_ptr(db.upcast())
+                        .lookup(db.upcast())
+                        .declaration(db.upcast()),
+                },
             };
-            title.untyped_stable_ptr(db.upcast())
+            declaration.name(db.upcast()).stable_ptr().untyped()
         }
+
         ResolvedGenericItem::GenericType(generic_type) => {
             generic_type.untyped_stable_ptr(db.upcast())
         }
+
         ResolvedGenericItem::GenericTypeAlias(type_alias) => {
             type_alias.untyped_stable_ptr(db.upcast())
         }
+
         ResolvedGenericItem::GenericImplAlias(impl_alias) => {
             impl_alias.untyped_stable_ptr(db.upcast())
         }
+
         ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(db.upcast()).untyped(),
+
         ResolvedGenericItem::Trait(trt) => trt.stable_ptr(db.upcast()).untyped(),
+
         ResolvedGenericItem::Impl(imp) => imp.stable_ptr(db.upcast()).untyped(),
         ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(db.upcast()),
     })

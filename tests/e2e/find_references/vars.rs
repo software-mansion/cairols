@@ -133,9 +133,9 @@ fn param_via_binding() {
         num * num
     }
     "#, @r"
-    <sel=declaration>fn <sel>pow</sel>(num: felt252) -> felt252 {
+    fn <sel=declaration>pow</sel>(num: felt252) -> felt252 {
         num * num
-    }</sel>
+    }
     ")
 }
 

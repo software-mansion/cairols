@@ -61,7 +61,7 @@ fn fn_in_submodule() {
     }
     fn foo() {} // bad
     mod module {
-        <sel>fn foo() {}</sel> // good
+        fn <sel>foo</sel>() {} // good
     }
     ")
 }
