@@ -7,15 +7,22 @@ use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig,
 };
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
+use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_test_plugin::{test_assert_suite, test_plugin_suite};
 use itertools::Itertools;
 use scarb_metadata::{
-    CompilationUnitComponentDependencyMetadata, CompilationUnitComponentId, Metadata,
-    PackageMetadata,
+    CompilationUnitCairoPluginMetadata, CompilationUnitComponentDependencyMetadata,
+    CompilationUnitComponentId, Metadata, PackageMetadata,
 };
 use smol_str::ToSmolStr;
 use tracing::{debug, error, warn};
 
+use super::builtin_plugins::BuiltinPlugin;
 use super::manifest_registry::member_config::MemberConfig;
+use crate::TRICKS;
+#[cfg(doc)]
+use crate::Tricks;
 use crate::lang::db::AnalysisDatabase;
 use crate::project::crate_data::Crate;
 
@@ -183,12 +190,41 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
 
             let custom_main_file_stems = (file_stem != "lib").then_some(vec![file_stem.into()]);
 
+            let plugin_dependencies = component
+                .dependencies
+                .as_ref()
+                .map(|dependencies| {
+                    dependencies
+                        .iter()
+                        .filter_map(|dependency| {
+                            compilation_unit.cairo_plugins.iter().find(|plugin| {
+                                match plugin.component_dependency_id {
+                                    Some(ref id) => id == &dependency.id,
+                                    None => false,
+                                }
+                            })
+                        })
+                        .collect_vec()
+                })
+                .unwrap_or_default();
+
+            // We collect and instantiate only the built-in plugins.
+            // Procedural macros are handled separately in the `proc_macro_controller`.
+
+            let builtin_plugins = if package.map(|p| p.name == "core").unwrap_or_default() {
+                // Corelib is a special case because it is described by `cairo_project.toml`.
+                plugin_suite_for_corelib()
+            } else {
+                plugin_suite_from_dependencies(metadata, &plugin_dependencies)
+            };
+
             let cr = Crate {
                 name: crate_name.into(),
                 discriminator: component.discriminator.as_ref().map(ToSmolStr::to_smolstr),
                 root: root.into(),
                 custom_main_file_stems,
                 settings,
+                builtin_plugins,
             };
 
             if compilation_unit.package == component.package {
@@ -240,6 +276,8 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
         let name = first_crate.name.clone();
         let discriminator = first_crate.discriminator.clone();
 
+        let builtin_plugins = first_crate.builtin_plugins.clone();
+
         let custom_main_file_stems =
             crs.into_iter().flat_map(|cr| cr.custom_main_file_stems.unwrap()).collect();
 
@@ -249,6 +287,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
             root,
             custom_main_file_stems: Some(custom_main_file_stems),
             settings,
+            builtin_plugins,
         });
     }
 
@@ -347,4 +386,47 @@ fn scarb_package_experimental_features(
         associated_item_constraints: contains("associated_item_constraints"),
         coupons: contains("coupons"),
     }
+}
+
+/// Returns the extra [`PluginSuite`]s injected as [`Tricks`].
+fn tricks() -> Vec<PluginSuite> {
+    TRICKS
+        .get_or_init(Default::default)
+        .extra_plugin_suites
+        .map(|provider| provider())
+        .unwrap_or_default()
+}
+
+/// Returns all plugins required by the `core` crate.
+fn plugin_suite_for_corelib() -> PluginSuite {
+    [get_default_plugin_suite(), test_plugin_suite(), test_assert_suite()]
+        .into_iter()
+        .chain(tricks()) // All crates should receive the `Tricks`.
+        .fold(PluginSuite::default(), |mut acc, suite| {
+            acc.add(suite);
+            acc
+        })
+}
+
+/// Returns all built-in plugins described by `dependencies`.
+fn plugin_suite_from_dependencies(
+    metadata: &Metadata,
+    dependencies: &[&CompilationUnitCairoPluginMetadata],
+) -> PluginSuite {
+    dependencies
+        .iter()
+        .filter_map(|plugin_metadata| {
+            let builtin_plugin =
+                BuiltinPlugin::from_plugin_metadata(metadata, plugin_metadata)?;
+
+            Some(builtin_plugin.suite())
+        })
+        .chain(tricks()) // All crates should receive the `Tricks`.
+        .fold(
+            get_default_plugin_suite(), // All crates have basic plugins set by default.
+            |mut acc, suite| {
+                acc.add(suite);
+                acc
+            },
+        )
 }
