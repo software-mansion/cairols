@@ -22,23 +22,12 @@ mod module {
 //! > Goto definition #0
     modu<caret>le::bar::foo();
 ---
-mod module <sel>{
-    // good
-    mod module {
-        // bad
-    }
-
-    mod bar { // good
-        fn foo() {}
-    }
-}</sel>
+mod <sel>module</sel> {
 
 //! > Goto definition #1
     module::ba<caret>r::foo();
 ---
-    mod bar <sel>{ // good
-        fn foo() {}
-    }</sel>
+    mod <sel>bar</sel> { // good
 
 //! > ==========================================================================
 

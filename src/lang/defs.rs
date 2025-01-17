@@ -657,22 +657,26 @@ fn resolved_generic_item_def(
     db: &AnalysisDatabase,
     item: ResolvedGenericItem,
 ) -> Option<SyntaxStablePtrId> {
-    let defs_db = db.upcast();
     Some(match item {
-        ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(db.upcast()),
         ResolvedGenericItem::Module(module_id) => {
-            // Check if the module is an inline submodule.
-            if let ModuleId::Submodule(submodule_id) = module_id {
-                if let ast::MaybeModuleBody::Some(submodule_id) =
-                    submodule_id.stable_ptr(defs_db).lookup(db.upcast()).body(db.upcast())
-                {
-                    // Inline module.
-                    return Some(submodule_id.stable_ptr().untyped());
+            match module_id {
+                ModuleId::CrateRoot(_) => {
+                    // For crate root files (src/lib.cairo), the definition node is the file itself.
+                    let module_file = db.module_main_file(module_id).ok()?;
+                    let file_syntax = db.file_module_syntax(module_file).ok()?;
+                    file_syntax.as_syntax_node().stable_ptr()
+                }
+                ModuleId::Submodule(submodule_id) => {
+                    // For submodules, the definition node is the identifier in `mod <ident> .*`.
+                    submodule_id
+                        .stable_ptr(db.upcast())
+                        .lookup(db.upcast())
+                        .name(db.upcast())
+                        .stable_ptr()
+                        .untyped()
                 }
             }
-            let module_file = db.module_main_file(module_id).ok()?;
-            let file_syntax = db.file_module_syntax(module_file).ok()?;
-            file_syntax.as_syntax_node().stable_ptr()
         }
         ResolvedGenericItem::GenericFunction(item) => {
             let title = match item {
@@ -684,18 +688,24 @@ fn resolved_generic_item_def(
                 }
                 GenericFunctionId::Trait(id) => FunctionTitleId::Trait(id.trait_function(db)),
             };
-            title.untyped_stable_ptr(defs_db)
+            title.untyped_stable_ptr(db.upcast())
         }
-        ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(defs_db),
-        ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(defs_db),
-        ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(defs_db),
-        ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(defs_db).untyped(),
-        ResolvedGenericItem::Trait(trt) => trt.stable_ptr(defs_db).untyped(),
-        ResolvedGenericItem::Impl(imp) => imp.stable_ptr(defs_db).untyped(),
+        ResolvedGenericItem::GenericType(generic_type) => {
+            generic_type.untyped_stable_ptr(db.upcast())
+        }
+        ResolvedGenericItem::GenericTypeAlias(type_alias) => {
+            type_alias.untyped_stable_ptr(db.upcast())
+        }
+        ResolvedGenericItem::GenericImplAlias(impl_alias) => {
+            impl_alias.untyped_stable_ptr(db.upcast())
+        }
+        ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(db.upcast()).untyped(),
+        ResolvedGenericItem::Trait(trt) => trt.stable_ptr(db.upcast()).untyped(),
+        ResolvedGenericItem::Impl(imp) => imp.stable_ptr(db.upcast()).untyped(),
         ResolvedGenericItem::TraitFunction(trait_function) => {
-            trait_function.stable_ptr(defs_db).untyped()
+            trait_function.stable_ptr(db.upcast()).untyped()
         }
-        ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(db.upcast()),
     })
 }
 

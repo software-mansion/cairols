@@ -26,6 +26,11 @@ No hover information.
 // = source context
 mod mis<caret>sing;
 // = highlight
-No highlight information.
+mod <sel>missing</sel>;
 // = popover
-No hover information.
+```cairo
+hello
+```
+```cairo
+mod missing
+```
