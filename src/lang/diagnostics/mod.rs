@@ -10,12 +10,13 @@ use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
 use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
-use self::trigger::trigger;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
-use crate::server::schedule::thread::{self, JoinHandle, TaskHandle, ThreadPriority};
+use crate::server::schedule::thread::task_progress_monitor::TaskHandle;
+use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
+use crate::server::trigger;
 use crate::state::{State, StateSnapshot};
 
 mod file_batches;
@@ -23,7 +24,6 @@ mod file_diagnostics;
 mod lsp;
 mod project_diagnostics;
 mod refresh;
-pub mod trigger;
 
 /// Schedules refreshing of diagnostics in a background thread.
 ///
@@ -42,7 +42,7 @@ pub struct DiagnosticsController {
 impl DiagnosticsController {
     /// Creates a new diagnostics controller.
     pub fn new(notifier: Notifier) -> Self {
-        let (trigger, receiver) = trigger();
+        let (trigger, receiver) = trigger::trigger();
         let (thread, parallelism) = DiagnosticsControllerThread::spawn(receiver, notifier);
         Self {
             trigger,
@@ -140,7 +140,7 @@ impl DiagnosticsControllerThread {
         let project_diagnostics = self.project_diagnostics.clone();
         let notifier = self.notifier.clone();
         let worker_fn = move || f(project_diagnostics, notifier);
-        let worker_handle = self.pool.spawn(ThreadPriority::Worker, move || {
+        let worker_handle = self.pool.spawn_with_tracking(ThreadPriority::Worker, move || {
             if let Err(err) = catch_unwind(AssertUnwindSafe(worker_fn)) {
                 if let Ok(err) = cancelled_anyhow(err, "diagnostics worker has been cancelled") {
                     trace!("{err:?}");
