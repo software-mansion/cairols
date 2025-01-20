@@ -20,7 +20,7 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
 
     let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
-    pretty_assertions::assert_eq!(normalize(&ls, analyzed_crates), indoc! {r#"
+    insta::assert_snapshot!(normalize(&ls, analyzed_crates), @r#"
             # Analyzed Crates
 
             - `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
@@ -44,5 +44,5 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
                     },
                 }
                 ```
-        "#});
+        "#);
 }
