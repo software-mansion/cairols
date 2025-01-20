@@ -15,11 +15,12 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
-use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use cairo_lang_semantic::items::generics::generic_params_to_args;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{Binding, Expr, Mutability, TypeLongId};
+use cairo_lang_semantic::{Binding, ConcreteTraitLongId, Expr, Mutability, TypeLongId};
 use cairo_lang_syntax::node::ast::{ExprPath, Param, PatternIdentifier, TerminalIdentifier};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -539,7 +540,24 @@ fn find_definition(
                 ResolvedGenericItem::from_module_item(db, item).to_option()?
             }
             LookupItemId::TraitItem(trait_item) => {
-                ResolvedGenericItem::Trait(trait_item.trait_id(db))
+                if let TraitItemId::Function(trait_function_id) = trait_item {
+                    let parent_trait = trait_item.trait_id(db);
+                    let generic_parameters = db.trait_generic_params(parent_trait).to_option()?;
+                    let concrete_trait = ConcreteTraitLongId {
+                        trait_id: parent_trait,
+                        generic_args: generic_params_to_args(&generic_parameters, db),
+                    };
+                    let concrete_trait = db.intern_concrete_trait(concrete_trait);
+
+                    ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(
+                        ImplGenericFunctionId {
+                            impl_id: ImplLongId::SelfImpl(concrete_trait).intern(db),
+                            function: trait_function_id,
+                        },
+                    ))
+                } else {
+                    ResolvedGenericItem::Trait(trait_item.trait_id(db))
+                }
             }
             LookupItemId::ImplItem(impl_item) => {
                 ResolvedGenericItem::Impl(impl_item.impl_def_id(db))
