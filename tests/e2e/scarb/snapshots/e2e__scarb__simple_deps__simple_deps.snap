@@ -1,43 +1,7 @@
-//! > Test simple Scarb deps.
-
-//! > test_runner_name
-test_simple_deps
-
-//! > a/Scarb.toml
-[package]
-name = "a"
-version = "0.1.0"
-edition = "2024_07"
-
-[dependencies]
-b = { path = "../b" }
-
-//! > a/src/lib.cairo
-use b::Foo;
-
-fn main() {
-    let foo = Foo::Bar;
-    match foo {
-        Foo::Baz => {},
-        _ => {}
-    }
-}
-
-//! > b/Scarb.toml
-[package]
-name = "b"
-version = "0.1.0"
-edition = "2024_07"
-
-//! > b/src/lib.cairo
-pub enum Foo {
-    Bar,
-    Baz,
-}
-
-mod non_existent;
-
-//! > Analyzed crates
+---
+source: tests/e2e/scarb/simple_deps.rs
+expression: "normalize(&ls, analyzed_crates)"
+---
 # Analyzed Crates
 
 - `a`: `["[ROOT]/a/src/lib.cairo"]`

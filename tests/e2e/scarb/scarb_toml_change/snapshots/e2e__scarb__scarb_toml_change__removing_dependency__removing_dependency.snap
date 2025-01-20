@@ -1,37 +1,8 @@
-//! > Test removing member from Scarb workspace.
-
-//! > test_runner_name
-test_removing_member
-
-//! > Scarb.toml
-[workspace]
-members = [
-    "a",
-    "b"
-]
-
-//! > Scarb.toml with removed member
-[workspace]
-members = [
-    "a",
-]
-
-//! > a/Scarb.toml
-[package]
-name = "a"
-version = "0.1.0"
-edition = "2024_07"
-
-[dependencies]
-b = { path = "../b" }
-
-//! > b/Scarb.toml
-[package]
-name = "b"
-version = "0.1.0"
-edition = "2024_07"
-
-//! > Analyzed crates
+---
+source: tests/e2e/scarb/scarb_toml_change/removing_dependency.rs
+expression: "RemovingDependencyResult { analyzed_crates, analyzed_crates_diff }"
+---
+analyzed_crates = '''
 # Analyzed Crates
 
 - `a`: `["[ROOT]/a/src/lib.cairo"]`
@@ -95,7 +66,6 @@ edition = "2024_07"
             CfgSet(
                 target: "lib",
                 target: "test",
-                test,
             ),
         ),
         dependencies: {
@@ -147,37 +117,22 @@ edition = "2024_07"
         },
     }
     ```
-
-//! > Analyzed crates diff after member removal
-@@ -49,31 +49,30 @@
-         name: Some(
-             "b",
-         ),
-         edition: V2024_07,
-         version: Some(
-             Version {
-                 major: 0,
-                 minor: 1,
-                 patch: 0,
-             },
-         ),
-         cfg_set: Some(
-             CfgSet(
-                 target: "lib",
-                 target: "test",
--                test,
-             ),
-         ),
-         dependencies: {
-             "b": DependencySettings {
+'''
+analyzed_crates_diff = '''
+@@ -25,15 +25,10 @@
+             "a": DependencySettings {
                  discriminator: Some(
-                     "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)",
+                     "a 0.1.0 (path+[ROOT_URL]a/Scarb.toml)",
                  ),
              },
+-            "b": DependencySettings {
+-                discriminator: Some(
+-                    "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)",
+-                ),
+-            },
              "core": DependencySettings {
                  discriminator: None,
              },
          },
          experimental_features: ExperimentalFeaturesConfig {
-             negative_impls: false,
-             associated_item_constraints: false,
+'''

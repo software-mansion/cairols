@@ -1,30 +1,48 @@
-use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_language_server::lsp;
+use indoc::indoc;
 use lsp_types::NumberOrString;
 
 use crate::support::normalize::normalize;
 use crate::support::sandbox;
 
-cairo_lang_test_utils::test_file_test!(
-    simple_deps,
-    "tests/test_data/scarb",
-    {
-        simple_deps: "simple_deps.txt"
-    },
-    test_simple_deps
-);
-
-fn test_simple_deps(
-    inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
-) -> TestRunnerResult {
+#[test]
+fn test_simple_deps() {
     let mut ls = sandbox! {
         files {
-            "a/Scarb.toml" => &inputs["a/Scarb.toml"],
-            "a/src/lib.cairo" => &inputs["a/src/lib.cairo"],
-            "b/Scarb.toml" => &inputs["b/Scarb.toml"],
-            "b/src/lib.cairo" => &inputs["b/src/lib.cairo"],
+            "a/Scarb.toml" => indoc! (r#"
+                [package]
+                name = "a"
+                version = "0.1.0"
+                edition = "2024_07"
+
+                [dependencies]
+                b = { path = "../b" }
+            "#),
+            "a/src/lib.cairo" => indoc!(r#"
+                use b::Foo;
+
+                fn main() {
+                    let foo = Foo::Bar;
+                    match foo {
+                        Foo::Baz => {},
+                        _ => {}
+                    }
+                }
+            "#),
+            "b/Scarb.toml" => indoc!(r#"
+                [package]
+                name = "b"
+                version = "0.1.0"
+                edition = "2024_07"
+            "#),
+            "b/src/lib.cairo" => indoc!(r#"
+                pub enum Foo {
+                    Bar,
+                    Baz,
+                }
+
+                mod non_existent;
+            "#),
         }
     };
 
@@ -39,8 +57,5 @@ fn test_simple_deps(
 
     let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
-    TestRunnerResult::success(OrderedHashMap::from([(
-        "Analyzed crates".to_string(),
-        normalize(&ls, analyzed_crates),
-    )]))
+    insta::assert_snapshot!(normalize(&ls, analyzed_crates))
 }

@@ -1,30 +1,8 @@
-//! > Test removing dependency in Scarb project.
-
-//! > test_runner_name
-test_removing_dependency
-
-//! > a/Scarb.toml
-[package]
-name = "a"
-version = "0.1.0"
-edition = "2024_07"
-
-[dependencies]
-b = { path = "../b" }
-
-//! > a/Scarb.toml after dependency removal
-[package]
-name = "a"
-version = "0.1.0"
-edition = "2024_07"
-
-//! > b/Scarb.toml
-[package]
-name = "b"
-version = "0.1.0"
-edition = "2024_07"
-
-//! > Analyzed crates
+---
+source: tests/e2e/scarb/scarb_toml_change/removing_member.rs
+expression: "AnalyzedCratesResult { analyzed_crates, analyzed_crates_diff }"
+---
+analyzed_crates = '''
 # Analyzed Crates
 
 - `a`: `["[ROOT]/a/src/lib.cairo"]`
@@ -88,6 +66,7 @@ edition = "2024_07"
             CfgSet(
                 target: "lib",
                 target: "test",
+                test,
             ),
         ),
         dependencies: {
@@ -139,21 +118,38 @@ edition = "2024_07"
         },
     }
     ```
-
-//! > Analyzed crates diff after dependency removal
-@@ -25,15 +25,10 @@
-             "a": DependencySettings {
+'''
+analyzed_crates_diff = '''
+@@ -49,31 +49,30 @@
+         name: Some(
+             "b",
+         ),
+         edition: V2024_07,
+         version: Some(
+             Version {
+                 major: 0,
+                 minor: 1,
+                 patch: 0,
+             },
+         ),
+         cfg_set: Some(
+             CfgSet(
+                 target: "lib",
+                 target: "test",
+-                test,
+             ),
+         ),
+         dependencies: {
+             "b": DependencySettings {
                  discriminator: Some(
-                     "a 0.1.0 (path+[ROOT_URL]a/Scarb.toml)",
+                     "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)",
                  ),
              },
--            "b": DependencySettings {
--                discriminator: Some(
--                    "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)",
--                ),
--            },
              "core": DependencySettings {
                  discriminator: None,
              },
          },
          experimental_features: ExperimentalFeaturesConfig {
+             negative_impls: false,
+             associated_item_constraints: false,
+'''
