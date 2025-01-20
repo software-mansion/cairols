@@ -74,7 +74,6 @@ impl SymbolDef {
         match definition_item {
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericFunction(_))
-            | ResolvedItem::Generic(ResolvedGenericItem::TraitFunction(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericType(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericTypeAlias(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericImplAlias(_))
@@ -83,11 +82,11 @@ impl SymbolDef {
             | ResolvedItem::Generic(ResolvedGenericItem::Impl(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Constant(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Function(_))
-            | ResolvedItem::Concrete(ResolvedConcreteItem::TraitFunction(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Type(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Variant(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
-            | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_)) => {
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_)) => {
                 ItemDef::new(db, &definition_node).map(Self::Item)
             }
 
@@ -540,11 +539,7 @@ fn find_definition(
                 ResolvedGenericItem::from_module_item(db, item).to_option()?
             }
             LookupItemId::TraitItem(trait_item) => {
-                if let TraitItemId::Function(trait_fn) = trait_item {
-                    ResolvedGenericItem::TraitFunction(trait_fn)
-                } else {
-                    ResolvedGenericItem::Trait(trait_item.trait_id(db))
-                }
+                ResolvedGenericItem::Trait(trait_item.trait_id(db))
             }
             LookupItemId::ImplItem(impl_item) => {
                 ResolvedGenericItem::Impl(impl_item.impl_def_id(db))
@@ -686,7 +681,6 @@ fn resolved_generic_item_def(
                     // Note: Only the trait title is returned.
                     FunctionTitleId::Trait(id.function)
                 }
-                GenericFunctionId::Trait(id) => FunctionTitleId::Trait(id.trait_function(db)),
             };
             title.untyped_stable_ptr(db.upcast())
         }
@@ -702,9 +696,6 @@ fn resolved_generic_item_def(
         ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(db.upcast()).untyped(),
         ResolvedGenericItem::Trait(trt) => trt.stable_ptr(db.upcast()).untyped(),
         ResolvedGenericItem::Impl(imp) => imp.stable_ptr(db.upcast()).untyped(),
-        ResolvedGenericItem::TraitFunction(trait_function) => {
-            trait_function.stable_ptr(db.upcast()).untyped()
-        }
         ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(db.upcast()),
     })
 }
