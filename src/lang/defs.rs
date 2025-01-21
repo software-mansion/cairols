@@ -15,11 +15,12 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
-use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use cairo_lang_semantic::items::generics::generic_params_to_args;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{Binding, Expr, Mutability, TypeLongId};
+use cairo_lang_semantic::{Binding, ConcreteTraitLongId, Expr, Mutability, TypeLongId};
 use cairo_lang_syntax::node::ast::{ExprPath, Param, PatternIdentifier, TerminalIdentifier};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -74,7 +75,6 @@ impl SymbolDef {
         match definition_item {
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericFunction(_))
-            | ResolvedItem::Generic(ResolvedGenericItem::TraitFunction(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericType(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericTypeAlias(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericImplAlias(_))
@@ -83,11 +83,11 @@ impl SymbolDef {
             | ResolvedItem::Generic(ResolvedGenericItem::Impl(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Constant(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Function(_))
-            | ResolvedItem::Concrete(ResolvedConcreteItem::TraitFunction(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Type(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Variant(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
-            | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_)) => {
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_)) => {
                 ItemDef::new(db, &definition_node).map(Self::Item)
             }
 
@@ -540,8 +540,21 @@ fn find_definition(
                 ResolvedGenericItem::from_module_item(db, item).to_option()?
             }
             LookupItemId::TraitItem(trait_item) => {
-                if let TraitItemId::Function(trait_fn) = trait_item {
-                    ResolvedGenericItem::TraitFunction(trait_fn)
+                if let TraitItemId::Function(trait_function_id) = trait_item {
+                    let parent_trait = trait_item.trait_id(db);
+                    let generic_parameters = db.trait_generic_params(parent_trait).to_option()?;
+                    let concrete_trait = ConcreteTraitLongId {
+                        trait_id: parent_trait,
+                        generic_args: generic_params_to_args(&generic_parameters, db),
+                    };
+                    let concrete_trait = db.intern_concrete_trait(concrete_trait);
+
+                    ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(
+                        ImplGenericFunctionId {
+                            impl_id: ImplLongId::SelfImpl(concrete_trait).intern(db),
+                            function: trait_function_id,
+                        },
+                    ))
                 } else {
                     ResolvedGenericItem::Trait(trait_item.trait_id(db))
                 }
@@ -686,7 +699,6 @@ fn resolved_generic_item_def(
                     // Note: Only the trait title is returned.
                     FunctionTitleId::Trait(id.function)
                 }
-                GenericFunctionId::Trait(id) => FunctionTitleId::Trait(id.trait_function(db)),
             };
             title.untyped_stable_ptr(db.upcast())
         }
@@ -702,9 +714,6 @@ fn resolved_generic_item_def(
         ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(db.upcast()).untyped(),
         ResolvedGenericItem::Trait(trt) => trt.stable_ptr(db.upcast()).untyped(),
         ResolvedGenericItem::Impl(imp) => imp.stable_ptr(db.upcast()).untyped(),
-        ResolvedGenericItem::TraitFunction(trait_function) => {
-            trait_function.stable_ptr(db.upcast()).untyped()
-        }
         ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(db.upcast()),
     })
 }

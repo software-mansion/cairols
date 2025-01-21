@@ -143,8 +143,7 @@ impl SemanticTokenKind {
                     return Some(match item {
                         ResolvedGenericItem::GenericConstant(_) => SemanticTokenKind::EnumMember,
                         ResolvedGenericItem::Module(_) => SemanticTokenKind::Namespace,
-                        ResolvedGenericItem::GenericFunction(_)
-                        | ResolvedGenericItem::TraitFunction(_) => SemanticTokenKind::Function,
+                        ResolvedGenericItem::GenericFunction(_) => SemanticTokenKind::Function,
                         ResolvedGenericItem::GenericType(_)
                         | ResolvedGenericItem::GenericTypeAlias(_) => SemanticTokenKind::Type,
                         ResolvedGenericItem::Variant(_) => SemanticTokenKind::EnumMember,
@@ -161,11 +160,12 @@ impl SemanticTokenKind {
                     return Some(match item {
                         ResolvedConcreteItem::Constant(_) => SemanticTokenKind::EnumMember,
                         ResolvedConcreteItem::Module(_) => SemanticTokenKind::Namespace,
-                        ResolvedConcreteItem::Function(_)
-                        | ResolvedConcreteItem::TraitFunction(_) => SemanticTokenKind::Function,
+                        ResolvedConcreteItem::Function(_) => SemanticTokenKind::Function,
                         ResolvedConcreteItem::Type(_) => SemanticTokenKind::Type,
                         ResolvedConcreteItem::Variant(_) => SemanticTokenKind::EnumMember,
-                        ResolvedConcreteItem::Trait(_) => SemanticTokenKind::Interface,
+                        ResolvedConcreteItem::Trait(_) | ResolvedConcreteItem::SelfTrait(_) => {
+                            SemanticTokenKind::Interface
+                        }
                         ResolvedConcreteItem::Impl(_) => SemanticTokenKind::Class,
                     });
                 }
