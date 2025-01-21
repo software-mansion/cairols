@@ -75,6 +75,19 @@ impl Request for ToolchainInfo {
     const METHOD: &'static str = "cairo/toolchainInfo";
 }
 
+pub struct ViewSyntaxTree;
+
+#[derive(Serialize, Deserialize)]
+pub struct ViewSyntaxTreeParams {
+    pub uri: Url,
+}
+
+impl Request for ViewSyntaxTree {
+    type Params = ViewSyntaxTreeParams;
+    type Result = Option<String>;
+    const METHOD: &'static str = "cairo/viewSyntaxTree";
+}
+
 #[cfg(feature = "testing")]
 pub mod testing {
     use lsp_types::notification::Notification;

@@ -30,7 +30,7 @@ use tracing::error;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
-    ToolchainInfo, ToolchainInfoResponse, ViewAnalyzedCrates,
+    ToolchainInfo, ToolchainInfoResponse, ViewAnalyzedCrates, ViewSyntaxTree, ViewSyntaxTreeParams,
 };
 use crate::lsp::result::{LSPError, LSPResult};
 use crate::server::client::{Notifier, Requester};
@@ -379,6 +379,17 @@ impl BackgroundDocumentRequestHandler for References {
         params: ReferenceParams,
     ) -> LSPResult<Option<Vec<lsp_types::Location>>> {
         Ok(ide::navigation::references::references(params, &snapshot.db))
+    }
+}
+
+impl BackgroundDocumentRequestHandler for ViewSyntaxTree {
+    #[tracing::instrument(name = "cairo/viewSyntaxTree", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: ViewSyntaxTreeParams,
+    ) -> LSPResult<Option<String>> {
+        Ok(ide::introspection::syntax_tree::get_syntax_tree_for_file(&snapshot.db, params.uri))
     }
 }
 
