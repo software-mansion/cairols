@@ -1,10 +1,10 @@
 mod analysis;
 mod code_actions;
 mod completions;
+mod find_references;
 mod goto_definition;
 mod hover;
 mod macro_expand;
-mod references;
 mod scarb;
 mod semantic_tokens;
 mod support;

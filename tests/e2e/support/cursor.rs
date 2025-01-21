@@ -124,19 +124,33 @@ pub fn peek_selection(text: &str, range: &Range) -> String {
 
 /// Adds selection markers for all ranges to the source text.
 pub fn render_selections(text: &str, ranges: &[Range]) -> String {
+    render_selections_with_attrs(
+        text,
+        &ranges.iter().map(|range| (*range, None)).collect::<Vec<_>>(),
+    )
+}
+
+/// Adds selection markers for all ranges to the source text with optional attributes to attach.
+pub fn render_selections_with_attrs(text: &str, ranges: &[(Range, Option<String>)]) -> String {
     let mut text = text.to_owned();
     ranges
         .iter()
-        .flat_map(|range| {
+        .flat_map(|(range, attr)| {
             assert!(range.start <= range.end);
             [
-                (index_in_text(&text, range.start), "<sel>"),
-                (index_in_text(&text, range.end), "</sel>"),
+                (
+                    index_in_text(&text, range.start),
+                    format!(
+                        "<sel{attr}>",
+                        attr = attr.as_ref().map(|val| format!("={val}")).unwrap_or_default()
+                    ),
+                ),
+                (index_in_text(&text, range.end), "</sel>".to_owned()),
             ]
         })
         .sorted_by_key(|(idx, _)| *idx)
         .fold(0, |offset, (idx, marker)| {
-            text.insert_str(idx + offset, marker);
+            text.insert_str(idx + offset, &marker);
             offset + marker.len()
         });
     text
