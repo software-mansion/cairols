@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
-use completions::struct_constructor_completions;
+use completions::{attribute_completions, struct_constructor_completions};
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind, Position};
 use tracing::debug;
 
@@ -38,7 +38,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     let trigger_kind =
         params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED);
 
-    match completion_kind(db, node, position, file_id) {
+    match completion_kind(db, node.clone(), position, file_id) {
         CompletionKind::Dot(expr) => {
             dot_completions(db, file_id, lookup_items, expr).map(CompletionResponse::Array)
         }
@@ -51,7 +51,10 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
                 .map(CompletionResponse::Array)
         }
         _ if trigger_kind == CompletionTriggerKind::INVOKED => {
-            Some(CompletionResponse::Array(generic_completions(db, module_file_id, lookup_items)))
+            let result = attribute_completions(db, node)
+                .unwrap_or_else(|| generic_completions(db, module_file_id, lookup_items));
+
+            Some(CompletionResponse::Array(result))
         }
         _ => None,
     }

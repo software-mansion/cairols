@@ -5,6 +5,8 @@ test_completions_text_edits(detail: true)
 
 //! > cairo_code
 mod some_module {
+    #[derive(D<caret>)]
+    #[d<caret>]
     pub struct Struct {
         x: u32,
         pub y: felt252,
@@ -54,6 +56,18 @@ mod unhappy_cases {
 }
 
 //! > Completions #0
+    #[derive(D<caret>)]
+
+//! > Completions #1
+    #[d<caret>]
+--------------------------
+Completion: derive
+--------------------------
+Completion: default
+--------------------------
+Completion: doc
+
+//! > Completions #2
         let a = Struct { <caret> };
 --------------------------
 Completion: x
@@ -65,7 +79,7 @@ Detail: core::felt252
 Completion: z
 Detail: core::integer::i16
 
-//! > Completions #1
+//! > Completions #3
         let b = Struct { x: 0x0, <caret> };
 --------------------------
 Completion: y
@@ -74,7 +88,7 @@ Detail: core::felt252
 Completion: z
 Detail: core::integer::i16
 
-//! > Completions #2
+//! > Completions #4
             <caret>
 --------------------------
 Completion: y
@@ -83,7 +97,7 @@ Detail: core::felt252
 Completion: z
 Detail: core::integer::i16
 
-//! > Completions #3
+//! > Completions #5
             <caret>..s
 --------------------------
 Completion: core
@@ -93,6 +107,42 @@ Completion: hello
 Completion: Struct
 --------------------------
 Completion: build_struct
+--------------------------
+Completion: array!
+--------------------------
+Completion: assert!
+--------------------------
+Completion: consteval_int!
+--------------------------
+Completion: format!
+--------------------------
+Completion: panic!
+--------------------------
+Completion: print!
+--------------------------
+Completion: println!
+--------------------------
+Completion: write!
+--------------------------
+Completion: writeln!
+--------------------------
+Completion: selector!
+--------------------------
+Completion: get_dep_component!
+--------------------------
+Completion: get_dep_component_mut!
+--------------------------
+Completion: assert_eq!
+--------------------------
+Completion: assert_ne!
+--------------------------
+Completion: assert_lt!
+--------------------------
+Completion: assert_le!
+--------------------------
+Completion: assert_gt!
+--------------------------
+Completion: assert_ge!
 --------------------------
 Completion: s
 --------------------------
@@ -106,7 +156,7 @@ Completion: d
 --------------------------
 Completion: e
 
-//! > Completions #4
+//! > Completions #6
         let e = Struct { <caret>..s };
 --------------------------
 Completion: x
@@ -118,7 +168,7 @@ Detail: core::felt252
 Completion: z
 Detail: core::integer::i16
 
-//! > Completions #5
+//! > Completions #7
         let a = Struct { <caret> };
 --------------------------
 Completion: y
@@ -127,17 +177,17 @@ Detail: core::felt252
 Completion: z
 Detail: core::integer::i16
 
-//! > Completions #6
+//! > Completions #8
         let b = Struct { y: 0x0, <caret> };
 --------------------------
 Completion: z
 Detail: core::integer::i16
 
-//! > Completions #7
+//! > Completions #9
         let c = Struct { y: 0x0, x: 0x0, <caret> }
 --------------------------
 Completion: z
 Detail: core::integer::i16
 
-//! > Completions #8
+//! > Completions #10
         let a = NonexsitentStruct { <caret> };

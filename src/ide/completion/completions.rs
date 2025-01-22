@@ -17,15 +17,100 @@ use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
-use cairo_lang_syntax::node::ast::PathSegment;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::ast::{
+    ArgClause, Attribute, Expr, OptionArgListParenthesized, PathSegment,
+};
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{LookupIntern, Upcast};
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit};
 use tracing::debug;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::ToLsp;
 use crate::lang::methods::find_methods_for_type;
+
+pub fn attribute_completions(
+    db: &AnalysisDatabase,
+    origin_node: SyntaxNode,
+) -> Option<Vec<CompletionItem>> {
+    fn macro_completion(name: String) -> CompletionItem {
+        CompletionItem {
+            label: name,
+            kind: Some(CompletionItemKind::FUNCTION),
+            ..Default::default()
+        }
+    }
+
+    let node =
+        db.first_ancestor_of_kind_respective_child(origin_node.clone(), SyntaxKind::Attribute)?;
+
+    let attribute = Attribute::from_syntax_node(db, node.parent().unwrap());
+
+    let plugins = db.macro_plugins();
+
+    let attr = attribute.attr(db);
+    let attr_node = attr.as_syntax_node();
+    let attr_name = attr_node.get_text(db);
+
+    // Check if cursor is on attribute name.
+    // #[my_a<cursor>ttr(arg1, args2: 1234)]
+    if attr_node == node {
+        return Some(
+            plugins
+                .iter()
+                .flat_map(|plugin| plugin.declared_attributes())
+                .filter(|name| {
+                    // Don't suggest already typed one.
+                    name.starts_with(&attr_name) && name != &attr_name
+                })
+                .map(macro_completion)
+                .collect(),
+        );
+    };
+
+    // If we are not on attribute name, check if cursor is on `#[derive(Arg1, Ar<cursor>)]`
+    // arguments list.
+
+    let arguments = attribute.arguments(db);
+
+    if attr_name != "derive" || arguments.as_syntax_node() != node {
+        return None;
+    }
+
+    let OptionArgListParenthesized::ArgListParenthesized(args_list) = arguments else {
+        return None;
+    };
+
+    for arg in args_list.arguments(db).elements(db) {
+        let ArgClause::Unnamed(arg) = arg.arg_clause(db) else {
+            continue;
+        };
+
+        let Expr::Path(path) = arg.value(db) else {
+            continue;
+        };
+
+        let path_node = path.as_syntax_node();
+
+        if std::iter::successors(Some(origin_node.clone()), SyntaxNode::parent)
+            .any(|node| node == path_node)
+        {
+            let derive_name = path_node.get_text(db);
+
+            return Some(
+                plugins
+                    .iter()
+                    .flat_map(|plugin| plugin.declared_derives())
+                    .filter(|name| name.starts_with(&derive_name) && name != &derive_name)
+                    .map(macro_completion)
+                    .collect(),
+            );
+        }
+    }
+
+    Default::default()
+}
 
 pub fn generic_completions(
     db: &AnalysisDatabase,
@@ -75,6 +160,17 @@ pub fn generic_completions(
     let Ok(body) = db.function_body(function_id) else {
         return completions;
     };
+
+    let inline_plugins = db.inline_macro_plugins();
+
+    let inline_macros = inline_plugins.iter().map(|plugin| CompletionItem {
+        label: format!("{}!", plugin.0),
+        kind: Some(CompletionItemKind::FUNCTION),
+        ..CompletionItem::default()
+    });
+
+    completions.extend(inline_macros);
+
     for (_id, pat) in &body.arenas.patterns {
         if let Pattern::Variable(var) = pat {
             completions.push(CompletionItem {
