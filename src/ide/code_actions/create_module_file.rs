@@ -3,8 +3,8 @@ use cairo_lang_syntax::node::ast::{ItemModule, MaybeModuleBody};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use lsp_types::{
-    CodeAction, CreateFile, DocumentChangeOperation, DocumentChanges, ResourceOp, Url,
-    WorkspaceEdit,
+    CodeAction, CodeActionKind, CreateFile, DocumentChangeOperation, DocumentChanges, ResourceOp,
+    Url, WorkspaceEdit,
 };
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
@@ -46,6 +46,7 @@ pub fn create_module_file(
 
     Some(CodeAction {
         title: format!("Create module file `{module_name}`"),
+        kind: Some(CodeActionKind::QUICKFIX),
         edit: Some(WorkspaceEdit {
             document_changes: Some(DocumentChanges::Operations(vec![DocumentChangeOperation::Op(
                 ResourceOp::Create(CreateFile { uri: url, annotation_id: None, options: None }),
