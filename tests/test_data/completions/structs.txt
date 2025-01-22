@@ -57,6 +57,14 @@ mod unhappy_cases {
 
 //! > Completions #0
     #[derive(D<caret>)]
+--------------------------
+Completion: Drop
+--------------------------
+Completion: Debug
+--------------------------
+Completion: Default
+--------------------------
+Completion: Destruct
 
 //! > Completions #1
     #[d<caret>]
