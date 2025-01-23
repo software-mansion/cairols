@@ -125,7 +125,7 @@ Text edit: use core::to_byte_array::FormatAsByteArray;
 --------------------------
 Completion: some_method()
 Insert text: some_method($0)
-Text edit: use super::ATrait1;
+Text edit: use crate::ATrait1;
 
 //! > ==========================================================================
 
@@ -257,4 +257,4 @@ Text edit: use core::to_byte_array::FormatAsByteArray;
 --------------------------
 Completion: some_method()
 Insert text: some_method($0)
-Text edit: use super::ATrait1;
+Text edit: use crate::ATrait1;
