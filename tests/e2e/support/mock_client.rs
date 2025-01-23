@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::ffi::OsStr;
 use std::path::Path;
 use std::time::Duration;
@@ -8,7 +8,7 @@ use cairo_language_server::build_service_for_e2e_tests;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
 use lsp_server::{Message, Notification, Request, Response};
 use lsp_types::request::{RegisterCapability, Request as LspRequest};
-use lsp_types::{lsp_notification, lsp_request};
+use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url, lsp_notification, lsp_request};
 use serde_json::Value;
 
 use crate::support::fixture::Fixture;
@@ -24,6 +24,8 @@ use crate::support::jsonrpc::RequestIdGenerator;
 /// blocking tasks are given a small period of time to complete.
 pub struct MockClient {
     fixture: Fixture,
+    // Keeps last diagnostics generation for each file
+    diagnostics: HashMap<Url, Vec<Diagnostic>>,
     req_id: RequestIdGenerator,
     client: lsp_server::Connection,
     trace: Vec<Message>,
@@ -52,6 +54,7 @@ impl MockClient {
             trace: Vec::new(),
             workspace_configuration,
             expect_request_handlers: Default::default(),
+            diagnostics: Default::default(),
         };
 
         std::thread::spawn(|| init().run_for_tests());
@@ -162,6 +165,12 @@ impl MockClient {
     pub fn trace(&self) -> &[Message] {
         &self.trace
     }
+
+    /// Gets state of diagnostics from previous round for the given file
+    pub fn get_diagnostics_for_file(&self, path: impl AsRef<Path>) -> Vec<Diagnostic> {
+        let url = self.fixture.file_url(&path);
+        self.diagnostics.get(&url).cloned().unwrap_or_default()
+    }
 }
 
 #[derive(Debug)]
@@ -187,6 +196,20 @@ impl MockClient {
             if let Message::Request(request) = &message {
                 if request.method == <lsp_request!("workspace/configuration")>::METHOD {
                     self.auto_respond_to_workspace_configuration_request(request);
+                }
+            }
+            if let Message::Notification(Notification { method, params }) = &message {
+                match method.as_str() {
+                    "textDocument/publishDiagnostics" => {
+                        let params: PublishDiagnosticsParams =
+                            serde_json::from_value(params.clone())
+                                .expect("failed to parse `textDocument/publishDiagnostics` params");
+                        self.diagnostics.insert(params.uri, params.diagnostics);
+                    }
+                    "cairo/diagnosticsCalculationStart" => {
+                        self.diagnostics.clear();
+                    }
+                    _ => {}
                 }
             }
         }
@@ -243,6 +266,58 @@ impl MockClient {
                 .expect("failed to parse notification params");
             predicate(&params).then_some(params)
         })
+    }
+
+    fn wait_for_notification_sequence(&mut self, notifications: Vec<&str>) {
+        // Block which checks if the notification matches the next expected one in the sequence
+        let try_advance_sequence = |message: &Message, current_seq: &mut usize| {
+            let mut advanced = false;
+            if *current_seq < notifications.len() {
+                if let Message::Notification(Notification { method, params: _ }) = message {
+                    if notifications[*current_seq] == method.as_str() {
+                        *current_seq += 1;
+                        advanced = true;
+                    }
+                }
+            }
+            advanced
+        };
+
+        let mut seq: usize = 0;
+        // Check for sequence in existing trace
+        let mut message_matched = vec![];
+        for message in self.trace.iter() {
+            if try_advance_sequence(message, &mut seq) {
+                message_matched.push(true);
+            } else {
+                message_matched.push(false);
+            }
+        }
+
+        // Remove matched messages from the trace
+        self.trace = self
+            .trace
+            .iter()
+            .zip(message_matched.iter())
+            .filter_map(|(msg, matched)| if *matched { None } else { Some(msg.clone()) })
+            .collect();
+
+        // Check if sequence wasn't whole in the trace
+        if seq == notifications.len() {
+            return;
+        }
+
+        // Wait for next messages in sequence
+        while let Some(message) = self.recv().expect("No message received") {
+            if try_advance_sequence(&message, &mut seq) && seq == notifications.len() {
+                return;
+            }
+        }
+    }
+
+    // Remove messages from the trace that satisfy the given predicate
+    fn remove_messages_from_trace(&mut self, predicate: impl Fn(&Message) -> bool) {
+        self.trace = self.trace.iter().filter(|a| !predicate(a)).cloned().collect()
     }
 }
 
@@ -332,26 +407,21 @@ impl MockClient {
         self.wait_for_project_update();
     }
 
-    /// Waits for `textDocument/publishDiagnostics` notification for the given file.
-    pub fn wait_for_diagnostics(
-        &mut self,
-        path: impl AsRef<Path>,
-    ) -> lsp_types::PublishDiagnosticsParams {
-        let uri = self.fixture.file_url(&path);
-        self.wait_for_notification::<lsp_notification!("textDocument/publishDiagnostics")>(
-            |params| params.uri == uri,
-        )
+    pub fn wait_for_diagnostics_round(&mut self) {
+        self.wait_for_notification_sequence(vec![
+            "cairo/diagnosticsCalculationStart",
+            "cairo/diagnosticsCalculationFinish",
+        ]);
     }
-
     /// Sends `textDocument/didOpen` notification to the server and then waits for
-    /// `cairo/projectUpdatingFinished` and matching `textDocument/publishDiagnostics` notification.
-    pub fn open_and_wait_for_diagnostics(
-        &mut self,
-        path: impl AsRef<Path>,
-    ) -> lsp_types::PublishDiagnosticsParams {
+    /// `cairo/projectUpdatingFinished` and the next diagnostics round,
+    /// denoted by `cairo/diagnosticsCalculationStart` and `cairo/diagnosticsCalculationFinish`.
+    pub fn open_and_wait_for_diagnostics(&mut self, path: impl AsRef<Path>) -> Vec<Diagnostic> {
         let path = path.as_ref();
         self.open_and_wait_for_project_update(path);
-        self.wait_for_diagnostics(path)
+        self.clear_diagnostics_events_from_trace();
+        self.wait_for_diagnostics_round();
+        self.get_diagnostics_for_file(path)
     }
 
     /// Waits for `cairo/projectUpdatingFinished` notification.
@@ -377,6 +447,22 @@ impl MockClient {
         for _ in &cairo_files {
             self.wait_for_project_update();
         }
+    }
+
+    // It's important to clear the diagnostics events from the trace before waiting for the next
+    fn clear_diagnostics_events_from_trace(&mut self) {
+        self.remove_messages_from_trace(|msg| {
+            if let Message::Notification(Notification { method, params: _ }) = msg {
+                matches!(
+                    method.as_str(),
+                    "textDocument/publishDiagnostics"
+                        | "cairo/diagnosticsCalculationFinish"
+                        | "cairo/diagnosticsCalculationStart"
+                )
+            } else {
+                false
+            }
+        });
     }
 }
 
