@@ -3,13 +3,14 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, OnceLock};
 
 use anyhow::{Context, Result, bail, ensure};
-use lsp_types::notification::{Notification, ShowMessage};
+use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
 use scarb_metadata::{Metadata, MetadataCommand};
 use tracing::{error, warn};
 use which::which;
 
 use crate::env_config;
+use crate::lsp::ext::{ScarbPathMissing, ScarbResolvingFinish, ScarbResolvingStart};
 use crate::server::client::Notifier;
 
 pub const SCARB_TOML: &str = "Scarb.toml";
@@ -193,28 +194,4 @@ impl ScarbToolchain {
 
         Ok(version)
     }
-}
-
-#[derive(Debug)]
-struct ScarbPathMissing {}
-
-impl Notification for ScarbPathMissing {
-    type Params = ();
-    const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
-}
-
-#[derive(Debug)]
-struct ScarbResolvingStart {}
-
-impl Notification for ScarbResolvingStart {
-    type Params = ();
-    const METHOD: &'static str = "scarb/resolving-start";
-}
-
-#[derive(Debug)]
-struct ScarbResolvingFinish {}
-
-impl Notification for ScarbResolvingFinish {
-    type Params = ();
-    const METHOD: &'static str = "scarb/resolving-finish";
 }

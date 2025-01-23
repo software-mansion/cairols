@@ -88,3 +88,27 @@ pub mod testing {
         const METHOD: &'static str = "cairo/projectUpdatingFinished";
     }
 }
+
+#[derive(Debug)]
+pub struct ScarbPathMissing {}
+
+impl Notification for ScarbPathMissing {
+    type Params = ();
+    const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
+}
+
+#[derive(Debug)]
+pub struct ScarbResolvingStart {}
+
+impl Notification for ScarbResolvingStart {
+    type Params = ();
+    const METHOD: &'static str = "scarb/resolving-start";
+}
+
+#[derive(Debug)]
+pub struct ScarbResolvingFinish {}
+
+impl Notification for ScarbResolvingFinish {
+    type Params = ();
+    const METHOD: &'static str = "scarb/resolving-finish";
+}
