@@ -27,8 +27,8 @@ mod inner_mod {
 
 //! > Code action #0
         x.some_me<caret>thod();
-Title: Import super::ATrait
-Add new text: "use super::ATrait;
+Title: Import crate::ATrait
+Add new text: "use crate::ATrait;
 "
 At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
 
@@ -107,12 +107,12 @@ mod inner_mod {
 
 //! > Code action #0
         x.some_me<caret>thod();
-Title: Import super::ATrait1
-Add new text: "use super::ATrait1;
+Title: Import crate::ATrait1
+Add new text: "use crate::ATrait1;
 "
 At: Range { start: Position { line: 14, character: 4 }, end: Position { line: 14, character: 4 } }
-Title: Import super::ATrait2
-Add new text: "use super::ATrait2;
+Title: Import crate::ATrait2
+Add new text: "use crate::ATrait2;
 "
 At: Range { start: Position { line: 14, character: 4 }, end: Position { line: 14, character: 4 } }
 
@@ -154,8 +154,8 @@ mod inner_mod {
 
 //! > Code action #0
         x.some_me<caret>thod();
-Title: Import super::ATrait1
-Add new text: "use super::ATrait1;
+Title: Import crate::ATrait1
+Add new text: "use crate::ATrait1;
 "
 At: Range { start: Position { line: 11, character: 4 }, end: Position { line: 11, character: 4 } }
 
@@ -274,8 +274,8 @@ mod inner_mod {
 
 //! > Code action #0
         x.some_me<caret>thod();
-Title: Import super::hidden_trait::ATrait1
-Add new text: "use super::hidden_trait::ATrait1;
+Title: Import crate::hidden_trait::ATrait1
+Add new text: "use crate::hidden_trait::ATrait1;
 "
 At: Range { start: Position { line: 10, character: 4 }, end: Position { line: 10, character: 4 } }
 
