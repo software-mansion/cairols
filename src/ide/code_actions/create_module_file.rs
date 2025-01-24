@@ -31,6 +31,10 @@ pub fn create_module_file(
     };
 
     let module_name = item_module.name(db).text(db);
+    if module_name.is_empty() {
+        return None;
+    }
+
     let file = url.path_segments()?.last()?;
     let extra_folder = file.strip_suffix(".cairo").unwrap_or(file).to_owned();
 

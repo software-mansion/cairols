@@ -46,3 +46,13 @@ fn on_inline_module_name() {
 fn on_inline_module_body() {
     test_transform!(quick_fix, "mod abc {<caret>}", @"No code actions.");
 }
+
+#[test]
+fn without_module_name() {
+    test_transform!(quick_fix, "mod<caret>;", @"No code actions.");
+}
+
+#[test]
+fn without_module_name_and_semicolon() {
+    test_transform!(quick_fix, "mod <caret>", @"No code actions.");
+}
