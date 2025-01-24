@@ -16,7 +16,6 @@ cairo_lang_test_utils::test_file_test!(
         macro_expand: "macro_expand.txt",
         fill_struct_fields: "fill_struct_fields.txt",
         fill_trait_members: "fill_trait_members.txt",
-        create_module_file: "create_module_file.txt",
     },
     test_quick_fix
 );
