@@ -1,5 +1,6 @@
 mod analysis;
 mod code_actions;
+mod code_actions_old;
 mod completions;
 mod find_references;
 mod goto_definition;
