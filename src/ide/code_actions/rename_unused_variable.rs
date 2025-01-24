@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_utils::Upcast;
-use lsp_types::{CodeAction, Diagnostic, TextEdit, Url, WorkspaceEdit};
+use lsp_types::{CodeAction, CodeActionKind, Diagnostic, TextEdit, Url, WorkspaceEdit};
 
 use crate::lang::db::AnalysisDatabase;
 
@@ -15,6 +15,7 @@ pub fn rename_unused_variable(
 ) -> CodeAction {
     CodeAction {
         title: format!("Rename to `_{}`", node.get_text(db.upcast())),
+        kind: Some(CodeActionKind::QUICKFIX),
         edit: Some(WorkspaceEdit {
             changes: Some(HashMap::from_iter([(
                 uri,
