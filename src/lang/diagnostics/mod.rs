@@ -10,12 +10,13 @@ use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
 use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
-use self::trigger::trigger;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
+use crate::server::schedule::thread::task_progress_monitor::TaskHandle;
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
+use crate::server::trigger;
 use crate::state::{State, StateSnapshot};
 
 mod file_batches;
@@ -23,7 +24,6 @@ mod file_diagnostics;
 mod lsp;
 mod project_diagnostics;
 mod refresh;
-mod trigger;
 
 /// Schedules refreshing of diagnostics in a background thread.
 ///
@@ -42,7 +42,7 @@ pub struct DiagnosticsController {
 impl DiagnosticsController {
     /// Creates a new diagnostics controller.
     pub fn new(notifier: Notifier) -> Self {
-        let (trigger, receiver) = trigger();
+        let (trigger, receiver) = trigger::trigger();
         let (thread, parallelism) = DiagnosticsControllerThread::spawn(receiver, notifier);
         Self {
             trigger,
@@ -64,6 +64,7 @@ struct DiagnosticsControllerThread {
     notifier: Notifier,
     pool: thread::Pool,
     project_diagnostics: ProjectDiagnostics,
+    worker_handles: Vec<TaskHandle>,
 }
 
 impl DiagnosticsControllerThread {
@@ -73,11 +74,12 @@ impl DiagnosticsControllerThread {
         receiver: trigger::Receiver<StateSnapshots>,
         notifier: Notifier,
     ) -> (JoinHandle, NonZero<usize>) {
-        let this = Self {
+        let mut this = Self {
             receiver,
             notifier,
             pool: thread::Pool::new(),
             project_diagnostics: ProjectDiagnostics::new(),
+            worker_handles: Vec::new(),
         };
 
         let parallelism = this.pool.parallelism();
@@ -91,8 +93,9 @@ impl DiagnosticsControllerThread {
     }
 
     /// Runs diagnostics controller's event loop.
-    fn event_loop(&self) {
+    fn event_loop(&mut self) {
         while let Some(state_snapshots) = self.receiver.wait() {
+            assert!(self.worker_handles.is_empty());
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
                 self.diagnostics_controller_tick(state_snapshots);
             })) {
@@ -103,20 +106,22 @@ impl DiagnosticsControllerThread {
                     error!("caught panic while refreshing diagnostics");
                 }
             }
+
+            self.join_and_clear_workers();
         }
     }
 
     /// Runs a single tick of the diagnostics controller's event loop.
     #[tracing::instrument(skip_all)]
-    fn diagnostics_controller_tick(&self, state_snapshots: StateSnapshots) {
+    fn diagnostics_controller_tick(&mut self, state_snapshots: StateSnapshots) {
         let (state, primary_snapshots, secondary_snapshots) = state_snapshots.split();
 
         let primary_set = find_primary_files(&state.db, &state.open_files);
         let primary: Vec<_> = primary_set.iter().copied().collect();
-        self.spawn_refresh_worker(&primary, primary_snapshots);
+        self.spawn_refresh_workers(&primary, primary_snapshots);
 
         let secondary = find_secondary_files(&state.db, &primary_set);
-        self.spawn_refresh_worker(&secondary, secondary_snapshots);
+        self.spawn_refresh_workers(&secondary, secondary_snapshots);
 
         let files_to_preserve: HashSet<Url> = primary
             .into_iter()
@@ -131,11 +136,11 @@ impl DiagnosticsControllerThread {
 
     /// Shortcut for spawning a worker task which does the boilerplate around cloning state parts
     /// and catching panics.
-    fn spawn_worker(&self, f: impl FnOnce(ProjectDiagnostics, Notifier) + Send + 'static) {
+    fn spawn_worker(&mut self, f: impl FnOnce(ProjectDiagnostics, Notifier) + Send + 'static) {
         let project_diagnostics = self.project_diagnostics.clone();
         let notifier = self.notifier.clone();
         let worker_fn = move || f(project_diagnostics, notifier);
-        self.pool.spawn(ThreadPriority::Worker, move || {
+        let worker_handle = self.pool.spawn_with_tracking(ThreadPriority::Worker, move || {
             if let Err(err) = catch_unwind(AssertUnwindSafe(worker_fn)) {
                 if let Ok(err) = cancelled_anyhow(err, "diagnostics worker has been cancelled") {
                     trace!("{err:?}");
@@ -144,10 +149,11 @@ impl DiagnosticsControllerThread {
                 }
             }
         });
+        self.worker_handles.push(worker_handle);
     }
 
     /// Makes batches out of `files` and spawns workers to run [`refresh_diagnostics`] on them.
-    fn spawn_refresh_worker(&self, files: &[FileId], state_snapshots: Vec<StateSnapshot>) {
+    fn spawn_refresh_workers(&mut self, files: &[FileId], state_snapshots: Vec<StateSnapshot>) {
         let files_batches = batches(files, self.pool.parallelism());
         assert_eq!(files_batches.len(), state_snapshots.len());
         for (batch, state) in zip(files_batches, state_snapshots) {
@@ -161,6 +167,13 @@ impl DiagnosticsControllerThread {
                 );
             });
         }
+    }
+
+    fn join_and_clear_workers(&mut self) {
+        for handle in self.worker_handles.iter() {
+            handle.join();
+        }
+        self.worker_handles.clear();
     }
 }
 

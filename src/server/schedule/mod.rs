@@ -82,7 +82,7 @@ impl<'s> Scheduler<'s> {
                         self.background_pool.spawn(ThreadPriority::Worker, task);
                     }
                     BackgroundSchedule::LatencySensitive => {
-                        self.background_pool.spawn(ThreadPriority::LatencySensitive, task)
+                        self.background_pool.spawn(ThreadPriority::LatencySensitive, task);
                     }
                 }
             }

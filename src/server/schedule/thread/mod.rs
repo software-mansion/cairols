@@ -37,6 +37,7 @@ use std::fmt;
 
 mod pool;
 mod priority;
+pub mod task_progress_monitor;
 
 pub use self::pool::Pool;
 pub use self::priority::ThreadPriority;

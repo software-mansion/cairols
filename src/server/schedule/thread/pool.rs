@@ -27,7 +27,8 @@ use std::thread::available_parallelism;
 
 use crossbeam::channel;
 
-use super::{Builder, JoinHandle, ThreadPriority};
+use super::{Builder, JoinHandle, ThreadPriority, task_progress_monitor};
+use crate::server::schedule::thread::task_progress_monitor::TaskHandle;
 
 pub struct Pool {
     // `_handles` is never read: the field is present
@@ -98,14 +99,48 @@ impl Pool {
     where
         F: FnOnce() + Send + 'static,
     {
-        let f = Box::new(move || {
+        self.spawn_internal(priority, f, false);
+    }
+
+    pub fn spawn_with_tracking<F>(&self, priority: ThreadPriority, f: F) -> TaskHandle
+    where
+        F: FnOnce() + Send + 'static,
+    {
+        self.spawn_internal(priority, f, true).unwrap()
+    }
+
+    fn spawn_internal<F>(
+        &self,
+        priority: ThreadPriority,
+        f: F,
+        enable_tracking: bool,
+    ) -> Option<TaskHandle>
+    where
+        F: FnOnce() + Send + 'static,
+    {
+        let untracked_f = move || {
             if cfg!(debug_assertions) {
                 priority.assert_is_used_on_current_thread();
             }
             f();
-        });
+        };
 
-        let job = Job { requested_priority: priority, f };
+        if enable_tracking {
+            let (tracker, handle) = task_progress_monitor::task_progress_monitor();
+            let tracked_f = Box::new(move || {
+                untracked_f();
+                tracker.signal_finish();
+            });
+            self.send_job(priority, tracked_f);
+            Some(handle)
+        } else {
+            self.send_job(priority, Box::new(untracked_f));
+            None
+        }
+    }
+
+    fn send_job(&self, priority: ThreadPriority, f: Box<dyn FnOnce() + Send + 'static>) {
+        let job = Job { requested_priority: priority, f: Box::new(f) };
         self.job_sender.send(job).unwrap();
     }
 
