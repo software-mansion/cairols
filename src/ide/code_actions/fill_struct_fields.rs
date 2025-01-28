@@ -12,8 +12,9 @@ use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, WorkspaceEdit};
 use tracing::error;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
+use crate::lang::syntax::SyntaxNodeExt;
 
 /// Generates a completion adding all visible struct members that have not yet been specified
 /// to the constructor call, filling their values with a placeholder unit type.
@@ -27,13 +28,12 @@ pub fn fill_struct_fields(
     let file_id = module_file_id.file_id(db).ok()?;
     let function_id = db.find_lookup_item(&node)?.function_with_body()?;
 
-    let constructor = db.first_ancestor_of_kind(node, SyntaxKind::ExprStructCtorCall)?;
-    let constructor_expr = ExprStructCtorCall::from_syntax_node(db, constructor.clone());
+    let constructor_expr = node.parent_of_type::<ExprStructCtorCall>(db)?;
 
     let mut last_important_element = None;
     let mut has_trailing_comma = false;
 
-    for node in constructor.descendants(db) {
+    for node in constructor_expr.as_syntax_node().descendants(db) {
         match node.kind(db) {
             SyntaxKind::TokenComma => {
                 has_trailing_comma = true;

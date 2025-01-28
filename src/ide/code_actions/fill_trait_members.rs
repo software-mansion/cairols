@@ -11,13 +11,13 @@ use cairo_lang_semantic::substitution::{
 };
 use cairo_lang_semantic::{ConcreteTraitId, GenericArgumentId, GenericParam, Parameter};
 use cairo_lang_syntax::node::ast::{ImplItem, ItemImpl, MaybeImplBody};
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use itertools::{Itertools, chain};
 use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, WorkspaceEdit};
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
+use crate::lang::syntax::SyntaxNodeExt;
 
 /// Generates a completion adding all trait members that have not yet been specified.
 /// Functions are added with empty bodies, consts with placeholder values.
@@ -28,8 +28,7 @@ pub fn fill_trait_members(
 ) -> Option<CodeAction> {
     let file = db.find_module_file_containing_node(&node)?.file_id(db).ok()?;
 
-    let item_impl_node = db.first_ancestor_of_kind(node, SyntaxKind::ItemImpl)?;
-    let item_impl = ItemImpl::from_syntax_node(db, item_impl_node);
+    let item_impl = node.parent_of_type::<ItemImpl>(db)?;
 
     // Do not complete `impl`s without braces.
     let MaybeImplBody::Some(impl_body) = item_impl.body(db) else {

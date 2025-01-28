@@ -75,11 +75,6 @@ pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
         }
         None
     }
-
-    /// Finds first ancestor of a given kind.
-    fn first_ancestor_of_kind(&self, node: SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
-        self.first_ancestor_of_kind_respective_child(node, kind).and_then(|node| node.parent())
-    }
 }
 
 impl<T> LsSyntaxGroup for T where T: Upcast<dyn ParserGroup> + ?Sized {}

@@ -14,6 +14,7 @@ use tracing::debug;
 use self::completions::{colon_colon_completions, dot_completions, generic_completions};
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lang::syntax::SyntaxNodeExt;
 
 mod completions;
 mod mod_item;
@@ -155,12 +156,8 @@ fn completion_kind(
             }
         }
         SyntaxKind::TerminalLBrace | SyntaxKind::TerminalRBrace | SyntaxKind::TerminalComma => {
-            if let Some(constructor_node) =
-                db.first_ancestor_of_kind(node, SyntaxKind::ExprStructCtorCall)
-            {
-                return CompletionKind::StructConstructor(
-                    ast::ExprStructCtorCall::from_syntax_node(db, constructor_node),
-                );
+            if let Some(constructor) = node.parent_of_type::<ast::ExprStructCtorCall>(db) {
+                return CompletionKind::StructConstructor(constructor);
             }
         }
         // Show completions only if struct tail is separated from the cursor by a newline.
@@ -188,12 +185,8 @@ fn completion_kind(
             }
 
             if generate_completion {
-                if let Some(constructor_node) =
-                    db.first_ancestor_of_kind(node, SyntaxKind::ExprStructCtorCall)
-                {
-                    return CompletionKind::StructConstructor(
-                        ast::ExprStructCtorCall::from_syntax_node(db, constructor_node),
-                    );
+                if let Some(constructor) = node.parent_of_type::<ast::ExprStructCtorCall>(db) {
+                    return CompletionKind::StructConstructor(constructor);
                 }
             }
         }
