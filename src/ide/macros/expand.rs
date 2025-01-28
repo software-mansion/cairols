@@ -20,6 +20,7 @@ use lsp_types::TextDocumentPositionParams;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lang::syntax::SyntaxNodeExt;
 
 /// Tries to expand macro, returns it as string.
 pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) -> Option<String> {
@@ -52,7 +53,7 @@ pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) 
 
     let (node_to_expand, top_level_macro_kind) = match (item_ast_node, macro_ast_node) {
         (Some(item_ast_node), Some(macro_ast_node)) => {
-            if node_depth(item_ast_node.clone()) > node_depth(macro_ast_node.clone()) {
+            if item_ast_node.is_descendant(&macro_ast_node) {
                 (item_ast_node, TopLevelMacroKind::Attribute)
             } else {
                 (macro_ast_node, TopLevelMacroKind::Inline)
@@ -131,11 +132,6 @@ fn expanded_macro_files(
     }
 
     Some(files)
-}
-
-/// Finds the depth of the node in tree.
-fn node_depth(node: SyntaxNode) -> usize {
-    std::iter::successors(Some(node), SyntaxNode::parent).count()
 }
 
 /// Expands inline macros for each file.

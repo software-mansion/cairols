@@ -29,6 +29,7 @@ use tracing::debug;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::ToLsp;
 use crate::lang::methods::find_methods_for_type;
+use crate::lang::syntax::SyntaxNodeExt;
 
 pub fn attribute_completions(
     db: &AnalysisDatabase,
@@ -93,9 +94,7 @@ pub fn attribute_completions(
 
         let path_node = path.as_syntax_node();
 
-        if std::iter::successors(Some(origin_node.clone()), SyntaxNode::parent)
-            .any(|node| node == path_node)
-        {
+        if origin_node.is_descendant_or_self(&path_node) {
             let derive_name = path_node.get_text(db);
 
             return Some(
