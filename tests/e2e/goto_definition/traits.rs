@@ -91,7 +91,7 @@ fn dot_method_in_expr() {
     }
     ", @r"
     pub trait Foo<T> {
-        <sel>fn foo(self: T);</sel>
+        fn <sel>foo</sel>(self: T);
     }
     #[derive(Copy, Drop)]
     pub struct Bar {}
@@ -122,7 +122,7 @@ fn full_path_method_in_expr() {
     }
     ", @r"
     pub trait Foo<T> {
-        <sel>fn foo(self: T);</sel>
+        fn <sel>foo</sel>(self: T);
     }
     #[derive(Copy, Drop)]
     pub struct Bar {}

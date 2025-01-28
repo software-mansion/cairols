@@ -11,7 +11,7 @@ fn fn_call() {
     }
     ", @r"
     fn main() { foo(); }
-    <sel>fn foo() {}</sel> // good
+    fn <sel>foo</sel>() {} // good
     mod bar {
         fn foo() {} // bad
     }

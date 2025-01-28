@@ -10,7 +10,7 @@ fn fn_via_definition() {
         let x = pow2(2) + pow2(3);
     }
     "#, @r"
-    <sel=declaration>fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }</sel>
+    fn <sel=declaration>pow2</sel>(x: felt252) -> felt252 { x * x }
     fn main() {
         let x = <sel>pow2</sel>(2) + <sel>pow2</sel>(3);
     }
@@ -26,7 +26,7 @@ fn fn_via_call() {
         let x = po<caret>w2(2) + pow2(3);
     }
     "#, @r"
-    <sel=declaration>fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }</sel>
+    fn <sel=declaration>pow2</sel>(x: felt252) -> felt252 { x * x }
     fn main() {
         let x = <sel>pow2</sel>(2) + <sel>pow2</sel>(3);
     }
@@ -43,7 +43,7 @@ fn unused_function() {
         let x = pow2 + pow2;
     }
     "#, @r"
-    <sel=declaration>fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }</sel>
+    fn <sel=declaration>pow2</sel>(x: felt252) -> felt252 { x * x }
     fn main() {
         let <sel>pow2</sel> = 2;
         let x = pow2 + pow2;
