@@ -26,7 +26,7 @@ use cairo_lang_utils::{LookupIntern, Upcast};
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit};
 use tracing::debug;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
 use crate::lang::methods::find_methods_for_type;
 use crate::lang::syntax::SyntaxNodeExt;
@@ -43,8 +43,9 @@ pub fn attribute_completions(
         }
     }
 
-    let node =
-        db.first_ancestor_of_kind_respective_child(origin_node.clone(), SyntaxKind::Attribute)?;
+    let node = origin_node
+        .ancestors_with_self()
+        .find(|node| node.parent_kind(db) == Some(SyntaxKind::Attribute))?;
 
     let attribute = Attribute::from_syntax_node(db, node.parent().unwrap());
 

@@ -5,12 +5,12 @@ use cairo_lang_semantic::resolve::{
     CRATE_KW, ResolvedConcreteItem, ResolvedGenericItem, SELF_TYPE_KW, SUPER_KW,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::utils::grandparent_kind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use lsp_types::SemanticTokenType;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::syntax::SyntaxNodeExt;
 
 #[allow(dead_code)]
 pub enum SemanticTokenKind {
@@ -47,7 +47,7 @@ impl SemanticTokenKind {
             SyntaxKind::TokenLiteralNumber => return Some(SemanticTokenKind::Number),
             SyntaxKind::TokenNot
                 if matches!(
-                    grandparent_kind(syntax_db, &node),
+                    node.grandparent_kind(syntax_db),
                     Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
                 ) =>
             {
@@ -55,7 +55,7 @@ impl SemanticTokenKind {
             }
             SyntaxKind::TokenPlus
                 if matches!(
-                    grandparent_kind(syntax_db, &node),
+                    node.grandparent_kind(syntax_db),
                     Some(SyntaxKind::GenericParamImplAnonymous)
                 ) =>
             {
@@ -100,7 +100,7 @@ impl SemanticTokenKind {
             SyntaxKind::FunctionDeclaration => return Some(SemanticTokenKind::Function),
             SyntaxKind::GenericParamType => return Some(SemanticTokenKind::TypeParameter),
             SyntaxKind::PathSegmentSimple | SyntaxKind::PathSegmentWithGenericArgs => {
-                match grandparent_kind(syntax_db, &parent_node) {
+                match parent_node.grandparent_kind(syntax_db) {
                     Some(SyntaxKind::GenericParamImplAnonymous) => {
                         return Some(SemanticTokenKind::GenericParamImpl);
                     }
