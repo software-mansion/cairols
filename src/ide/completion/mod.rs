@@ -8,6 +8,7 @@ use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use completions::{attribute_completions, struct_constructor_completions};
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind, Position};
+use mod_::mod_completions;
 use tracing::debug;
 
 use self::completions::{colon_colon_completions, dot_completions, generic_completions};
@@ -15,6 +16,7 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod completions;
+mod mod_;
 
 /// Compute completion items at a given cursor position.
 pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<CompletionResponse> {
@@ -51,7 +53,8 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
                 .map(CompletionResponse::Array)
         }
         _ if trigger_kind == CompletionTriggerKind::INVOKED => {
-            let result = attribute_completions(db, node)
+            let result = attribute_completions(db, node.clone())
+                .or_else(|| mod_completions(db, node, file_id))
                 .unwrap_or_else(|| generic_completions(db, module_file_id, lookup_items));
 
             Some(CompletionResponse::Array(result))
