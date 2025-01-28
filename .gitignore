@@ -3,3 +3,5 @@
 /.idea
 .spr.yml
 .DS_Store
+*.pending-snap
+*.snap.new
