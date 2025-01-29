@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use completions::{attribute_completions, struct_constructor_completions};
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind, Position};
-use mod_::mod_completions;
+use mod_item::mod_completions;
 use tracing::debug;
 
 use self::completions::{colon_colon_completions, dot_completions, generic_completions};
@@ -16,7 +16,7 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod completions;
-mod mod_;
+mod mod_item;
 
 /// Compute completion items at a given cursor position.
 pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<CompletionResponse> {
