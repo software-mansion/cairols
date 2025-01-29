@@ -7,6 +7,7 @@ use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::{cursors, sandbox};
 
 mod create_module_file;
+mod remove_unused_variable;
 
 fn caps(base: ClientCapabilities) -> ClientCapabilities {
     ClientCapabilities {
