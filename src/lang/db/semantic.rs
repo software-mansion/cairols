@@ -1,5 +1,3 @@
-use std::iter;
-
 use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
@@ -14,6 +12,8 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, Upcast};
+
+use crate::lang::syntax::SyntaxNodeExt;
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// Language server-specific extensions to the semantic group.
@@ -36,8 +36,7 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
         let module_file_id = self.find_module_file_containing_node(node)?;
         let db = self.upcast();
 
-        iter::successors(Some(node.clone()), SyntaxNode::parent)
-            .find_map(|node| lookup_item_from_ast(db, module_file_id, node))
+        node.ancestors_with_self().find_map(|node| lookup_item_from_ast(db, module_file_id, node))
     }
 
     /// Returns [`LookupItemId`]s corresponding to the node and its parents all the way up to syntax
@@ -50,7 +49,7 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
 
         let db = self.upcast();
         Some(
-            iter::successors(Some(node.clone()), SyntaxNode::parent)
+            node.ancestors_with_self()
                 .flat_map(|node| lookup_item_from_ast(db, module_file_id, node).unwrap_or_default())
                 .collect(),
         )
@@ -94,7 +93,7 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
 
         // Get the stack (bottom-up) of submodule names in the file containing the node, in the main
         // module, that lead to the node.
-        iter::successors(node.parent(), SyntaxNode::parent)
+        node.ancestors()
             .filter(|node| node.kind(syntax_db) == SyntaxKind::ItemModule)
             .map(|node| {
                 ItemModule::from_syntax_node(syntax_db, node)

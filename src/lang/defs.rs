@@ -32,6 +32,7 @@ use smol_str::SmolStr;
 use tracing::error;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::syntax::SyntaxNodeExt;
 use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
 
@@ -151,7 +152,7 @@ impl SymbolDef {
         match &self {
             Self::Variable(var) => {
                 if let Some(owning_function) =
-                    iter::successors(Some(var.syntax_node(db)), SyntaxNode::parent).find(|node| {
+                    var.syntax_node(db).ancestors_with_self().find(|node| {
                         matches!(
                             node.kind(db.upcast()),
                             SyntaxKind::FunctionWithBody | SyntaxKind::TraitItemFunction
