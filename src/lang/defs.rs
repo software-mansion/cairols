@@ -31,7 +31,7 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 use tracing::error;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::syntax::SyntaxNodeExt;
 use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
@@ -151,14 +151,10 @@ impl SymbolDef {
     pub fn search_scope(&self, db: &AnalysisDatabase) -> SearchScope {
         match &self {
             Self::Variable(var) => {
-                if let Some(owning_function) =
-                    var.syntax_node(db).ancestors_with_self().find(|node| {
-                        matches!(
-                            node.kind(db.upcast()),
-                            SyntaxKind::FunctionWithBody | SyntaxKind::TraitItemFunction
-                        )
-                    })
-                {
+                if let Some(owning_function) = var.syntax_node(db).parent_of_kinds(db, &[
+                    SyntaxKind::FunctionWithBody,
+                    SyntaxKind::TraitItemFunction,
+                ]) {
                     SearchScope::file_span(
                         owning_function.stable_ptr().file_id(db.upcast()),
                         owning_function.span(db.upcast()),
@@ -543,7 +539,7 @@ fn find_definition(
     }
 
     // Skip variable definition, otherwise we would get parent ModuleItem for variable.
-    if db.first_ancestor_of_kind(identifier.as_syntax_node(), SyntaxKind::StatementLet).is_none() {
+    if identifier.as_syntax_node().parent_of_kind(db, SyntaxKind::StatementLet).is_none() {
         let item = match lookup_items.first().copied()? {
             LookupItemId::ModuleItem(item) => {
                 ResolvedGenericItem::from_module_item(db, item).to_option()?
@@ -590,9 +586,7 @@ fn try_extract_member_from_constructor(
 
     let identifier_node = identifier.as_syntax_node();
 
-    let constructor =
-        db.first_ancestor_of_kind(identifier_node.clone(), SyntaxKind::ExprStructCtorCall)?;
-    let constructor_expr = ast::ExprStructCtorCall::from_syntax_node(db, constructor);
+    let constructor_expr = identifier_node.parent_of_type::<ast::ExprStructCtorCall>(db)?;
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr().into()).ok()?;
 
@@ -602,8 +596,7 @@ fn try_extract_member_from_constructor(
         return None;
     };
 
-    let struct_member = db.first_ancestor_of_kind(identifier_node, SyntaxKind::StructArgSingle)?;
-    let struct_member = ast::StructArgSingle::from_syntax_node(db, struct_member);
+    let struct_member = identifier_node.parent_of_type::<ast::StructArgSingle>(db)?;
 
     let struct_member_name =
         struct_member.identifier(db).as_syntax_node().get_text_without_trivia(db);
@@ -622,9 +615,7 @@ fn try_extract_member(
     lookup_items: &[LookupItemId],
 ) -> Option<MemberId> {
     let syntax_node = identifier.as_syntax_node();
-    let binary_expr_syntax_node =
-        db.first_ancestor_of_kind(syntax_node.clone(), SyntaxKind::ExprBinary)?;
-    let binary_expr = ast::ExprBinary::from_syntax_node(db, binary_expr_syntax_node);
+    let binary_expr = syntax_node.parent_of_type::<ast::ExprBinary>(db)?;
 
     let function_with_body = lookup_items.first()?.function_with_body()?;
 

@@ -12,6 +12,7 @@ use lsp_types::{CompletionItem, CompletionItemKind, Url};
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::LsProtoGroup;
+use crate::lang::syntax::SyntaxNodeExt;
 
 pub fn mod_completions(
     db: &AnalysisDatabase,
@@ -22,7 +23,7 @@ pub fn mod_completions(
         db.first_ancestor_of_kind_respective_child(origin_node.clone(), SyntaxKind::ItemModule)?;
 
     // We are in nested mod, we should not show completions for file modules.
-    if db.first_ancestor_of_kind(node.parent().unwrap(), SyntaxKind::ItemModule).is_some() {
+    if node.parent_of_kind(db, SyntaxKind::ItemModule).is_some() {
         return Some(Vec::new());
     }
 

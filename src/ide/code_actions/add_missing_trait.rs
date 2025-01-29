@@ -8,15 +8,15 @@ use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
 use cairo_lang_semantic::resolve::Resolver;
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use lsp_types::{CodeAction, CodeActionKind, Range, TextEdit, Url, WorkspaceEdit};
 use tracing::debug;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 use crate::lang::methods::find_methods_for_type;
+use crate::lang::syntax::SyntaxNodeExt;
 
 /// Create a Quick Fix code action to add a missing trait given a `CannotCallMethod` diagnostic.
 pub fn add_missing_trait(db: &AnalysisDatabase, node: &SyntaxNode, uri: Url) -> Vec<CodeAction> {
@@ -46,11 +46,8 @@ fn missing_traits_actions(
         db,
         resolver_data.as_ref().clone_with_inference_id(db, InferenceId::NoContext),
     );
-    let expr_node = node.clone();
-    let binary_expr_node = db.first_ancestor_of_kind(expr_node, SyntaxKind::ExprBinary)?;
 
-    let expr_node =
-        ast::ExprBinary::from_syntax_node(db.upcast(), binary_expr_node).lhs(db.upcast());
+    let expr_node = node.parent_of_type::<ast::ExprBinary>(db)?.lhs(db);
     let stable_ptr = expr_node.stable_ptr().untyped();
     // Get its semantic model.
     let expr_id = db.lookup_expr_by_ptr(function_with_body, expr_node.stable_ptr()).ok()?;

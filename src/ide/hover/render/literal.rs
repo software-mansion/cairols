@@ -13,8 +13,9 @@ use indoc::formatdoc;
 use lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
+use crate::lang::syntax::SyntaxNodeExt;
 
 /// Narrows down [`SyntaxNode`] to [`TerminalLiteralNumber`], [`TerminalString`] or
 /// [`TerminalShortString`] if it represents some literal
@@ -69,8 +70,7 @@ fn find_type_in_function_context(
 fn find_type_in_const_declaration(db: &AnalysisDatabase, node: SyntaxNode) -> Option<String> {
     let module_file_id = db.find_module_file_containing_node(&node)?;
 
-    let const_node = db.first_ancestor_of_kind(node, SyntaxKind::ItemConstant)?;
-    let const_item = ItemConstant::from_syntax_node(db, const_node);
+    let const_item = node.parent_of_type::<ItemConstant>(db)?;
     let const_item_id = ConstantLongId(module_file_id, const_item.stable_ptr()).intern(db);
 
     Some(db.constant_const_type(const_item_id).ok()?.format(db))

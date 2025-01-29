@@ -1,6 +1,8 @@
 use std::iter;
 
-use cairo_lang_syntax::node::SyntaxNode;
+use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 pub trait SyntaxNodeExt {
     /// Creates an iterator that yields ancestors of this syntax node.
@@ -20,6 +22,15 @@ pub trait SyntaxNodeExt {
 
     /// Checks whether this syntax node is or is under the given syntax node in the syntax tree.
     fn is_descendant_or_self(&self, node: &SyntaxNode) -> bool;
+
+    /// Finds the first parent of a given kind.
+    fn parent_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode>;
+
+    /// Finds the first parent of a given kind and returns it in typed form.
+    fn parent_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T>;
+
+    /// Finds the first parent of one of the kinds.
+    fn parent_of_kinds(&self, db: &dyn SyntaxGroup, kinds: &[SyntaxKind]) -> Option<SyntaxNode>;
 }
 
 impl SyntaxNodeExt for SyntaxNode {
@@ -46,5 +57,17 @@ impl SyntaxNodeExt for SyntaxNode {
 
     fn is_descendant_or_self(&self, node: &SyntaxNode) -> bool {
         node.is_ancestor_or_self(self)
+    }
+
+    fn parent_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode> {
+        self.ancestors().find(|node| node.kind(db) == kind)
+    }
+
+    fn parent_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T> {
+        self.ancestors().find_map(|node| T::cast(db, node))
+    }
+
+    fn parent_of_kinds(&self, db: &dyn SyntaxGroup, kinds: &[SyntaxKind]) -> Option<SyntaxNode> {
+        self.ancestors().find(|node| kinds.contains(&node.kind(db)))
     }
 }

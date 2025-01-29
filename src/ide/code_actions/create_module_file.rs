@@ -1,13 +1,13 @@
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_syntax::node::ast::{ItemModule, MaybeModuleBody};
-use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal};
 use lsp_types::{
     CodeAction, CodeActionKind, CreateFile, DocumentChangeOperation, DocumentChanges, ResourceOp,
     Url, WorkspaceEdit,
 };
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::syntax::SyntaxNodeExt;
 
 /// Code actions for missing module file.
 pub fn create_module_file(
@@ -15,8 +15,7 @@ pub fn create_module_file(
     node: SyntaxNode,
     mut url: Url,
 ) -> Option<CodeAction> {
-    let item_module = db.first_ancestor_of_kind(node.clone(), SyntaxKind::ItemModule)?;
-    let item_module = ItemModule::from_syntax_node(db, item_module);
+    let item_module = node.parent_of_type::<ItemModule>(db)?;
 
     if !matches!(item_module.body(db), MaybeModuleBody::None(_)) {
         return None;
