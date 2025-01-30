@@ -30,7 +30,9 @@ pub struct Receiver<T>(Arc<Inner<T>>);
 /// ## Disconnecting
 /// Dropping either the sender or the receiver will bring the trigger into a _disconnected_ state.
 /// In this state, activating the trigger will be a no-op, while waiting on the receiver will
-/// immediately return `None`, signalling that the worker thread should disconnect immediately.
+/// immediately return `None` (if the value was not `Activated` before disconnecting),
+/// or previously activated value (if it was).
+///
 ///
 /// ## Poisoning
 /// This primitive uses a mutex internally, but care has been taken to never panic while holding
@@ -50,13 +52,13 @@ impl<T> Sender<T> {
     ///
     /// This method will be a no-op if the trigger has been disconnected.
     pub fn activate(&self, value: T) {
-        self.0.set_state(State::Activated(value));
+        self.0.activate(value);
     }
 }
 
 impl<T> Drop for Sender<T> {
     fn drop(&mut self) {
-        self.0.set_state(State::Disconnected);
+        self.0.disconnect();
     }
 }
 
@@ -73,14 +75,14 @@ impl<T> Receiver<T> {
 
 impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
-        self.0.set_state(State::Disconnected);
+        self.0.disconnect();
     }
 }
 
 enum State<T> {
     Pending,
     Activated(T),
-    Disconnected,
+    Disconnected(Option<T>),
 }
 
 struct Inner<T> {
@@ -89,17 +91,35 @@ struct Inner<T> {
 }
 
 impl<T> Inner<T> {
-    fn set_state(&self, state: State<T>) {
+    fn disconnect(&self) {
         let &Inner { state_mutex, condvar } = &self;
-
         let mut state_guard = state_mutex.lock().expect(POISON_PANIC);
-
-        if let State::Disconnected = *state_guard {
+        if let State::Disconnected(_) = *state_guard {
             // Cannot go back from disconnected state.
             return;
         }
 
-        *state_guard = state;
+        // Use a temporary dummy `State::Pending`, in order to allow reusing
+        // the inner `Activate` value without enforcing `Copy` on `T`.
+        let state = mem::replace(&mut *state_guard, State::Pending);
+        let disconnect_value = if let State::Activated(value) = state { Some(value) } else { None };
+
+        *state_guard = State::Disconnected(disconnect_value);
+
+        // Wake up a thread blocked by waiting on the corresponding receiver.
+        condvar.notify_one();
+    }
+
+    fn activate(&self, value: T) {
+        let &Inner { state_mutex, condvar } = &self;
+
+        let mut state_guard = state_mutex.lock().expect(POISON_PANIC);
+        if let State::Disconnected(_) = *state_guard {
+            // Cannot go back from disconnected state.
+            return;
+        }
+
+        *state_guard = State::Activated(value);
 
         // Wake up a thread blocked by waiting on the corresponding receiver.
         condvar.notify_one();
@@ -115,7 +135,7 @@ impl<T> Inner<T> {
             let idle = match &*state_guard {
                 State::Pending => State::Pending,
                 State::Activated(_) => State::Pending,
-                State::Disconnected => State::Disconnected,
+                State::Disconnected(_) => State::Disconnected(None),
             };
             match mem::replace(&mut *state_guard, idle) {
                 State::Pending => {
@@ -123,7 +143,7 @@ impl<T> Inner<T> {
                     state_guard = condvar.wait(state_guard).expect(POISON_PANIC);
                 }
                 State::Activated(value) => return Some(value),
-                State::Disconnected => return None,
+                State::Disconnected(value) => return value,
             }
         }
     }
