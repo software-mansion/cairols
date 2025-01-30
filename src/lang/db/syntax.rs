@@ -3,7 +3,6 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal};
 use cairo_lang_utils::Upcast;
 
@@ -52,28 +51,6 @@ pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
             let col = position.col.checked_sub(1)?;
             find(TextPosition { col, ..position })
         })
-    }
-
-    /// Traverse a tree in the root direction.
-    ///
-    /// Finds the first node with a specified kind.
-    /// Returns its respective child that is the ancestor of `node`.
-    fn first_ancestor_of_kind_respective_child(
-        &self,
-        mut node: SyntaxNode,
-        kind: SyntaxKind,
-    ) -> Option<SyntaxNode> {
-        let db = self.upcast();
-        let syntax_db = db.upcast();
-
-        while let Some(parent) = node.parent() {
-            if parent.kind(syntax_db) == kind {
-                return Some(node);
-            } else {
-                node = parent;
-            }
-        }
-        None
     }
 }
 

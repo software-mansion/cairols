@@ -47,8 +47,9 @@ pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) 
 
     let module_file = db.module_main_file(module_id).ok()?;
 
-    let item_ast_node =
-        db.first_ancestor_of_kind_respective_child(node.clone(), SyntaxKind::ModuleItemList);
+    let item_ast_node = node
+        .ancestors_with_self()
+        .find(|node| node.parent_kind(db) == Some(SyntaxKind::ModuleItemList));
     let macro_ast_node = node.parent_of_kind(db, SyntaxKind::ExprInlineMacro);
 
     let (node_to_expand, top_level_macro_kind) = match (item_ast_node, macro_ast_node) {

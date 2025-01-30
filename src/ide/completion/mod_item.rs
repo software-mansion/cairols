@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind, Url};
 
-use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::syntax::SyntaxNodeExt;
 
@@ -19,8 +19,9 @@ pub fn mod_completions(
     origin_node: SyntaxNode,
     file: FileId,
 ) -> Option<Vec<CompletionItem>> {
-    let node =
-        db.first_ancestor_of_kind_respective_child(origin_node.clone(), SyntaxKind::ItemModule)?;
+    let node = origin_node
+        .ancestors_with_self()
+        .find(|node| node.parent_kind(db) == Some(SyntaxKind::ItemModule))?;
 
     // We are in nested mod, we should not show completions for file modules.
     if node.parent_of_kind(db, SyntaxKind::ItemModule).is_some() {

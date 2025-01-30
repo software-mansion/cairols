@@ -31,6 +31,12 @@ pub trait SyntaxNodeExt {
 
     /// Finds the first parent of one of the kinds.
     fn parent_of_kinds(&self, db: &dyn SyntaxGroup, kinds: &[SyntaxKind]) -> Option<SyntaxNode>;
+
+    /// Gets the kind of the given node's parent if it exists.
+    fn parent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind>;
+
+    /// Gets the kind of the given node's grandparent if it exists.
+    fn grandparent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind>;
 }
 
 impl SyntaxNodeExt for SyntaxNode {
@@ -69,5 +75,13 @@ impl SyntaxNodeExt for SyntaxNode {
 
     fn parent_of_kinds(&self, db: &dyn SyntaxGroup, kinds: &[SyntaxKind]) -> Option<SyntaxNode> {
         self.ancestors().find(|node| kinds.contains(&node.kind(db)))
+    }
+
+    fn parent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind> {
+        Some(self.parent()?.kind(db))
+    }
+
+    fn grandparent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind> {
+        Some(self.parent()?.parent()?.kind(db))
     }
 }
