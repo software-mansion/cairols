@@ -17,6 +17,15 @@ fn test_sync() {
 }
 
 #[test]
+fn test_preserve_value_after_disconnect() {
+    let (sender, receiver) = trigger();
+    sender.activate(43);
+    drop(sender);
+
+    assert_eq!(receiver.wait(), Some(43));
+}
+
+#[test]
 fn test_threaded() {
     let (sender, receiver) = trigger();
     thread::scope(|s| {
