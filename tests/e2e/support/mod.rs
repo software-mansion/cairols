@@ -7,7 +7,6 @@ pub mod insta;
 pub mod jsonrpc;
 mod mock_client;
 pub mod normalize;
-pub mod quick_hash;
 pub mod scarb;
 
 pub use self::cursor::cursors;
