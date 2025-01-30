@@ -15,7 +15,9 @@ use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_s
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
-use crate::server::schedule::thread::task_progress_monitor::TaskHandle;
+use crate::server::schedule::thread::task_progress_monitor::{
+    TaskHandle, TaskResult, task_progress_monitor,
+};
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 use crate::server::trigger;
 use crate::state::{State, StateSnapshot};
@@ -102,19 +104,24 @@ impl DiagnosticsControllerThread {
             assert!(self.worker_handles.is_empty());
             self.analysis_progress_controller.try_start_analysis();
 
+            let mut controller_cancelled = false;
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
                 self.diagnostics_controller_tick(state_snapshots);
             })) {
                 if let Ok(err) = cancelled_anyhow(err, "diagnostics refreshing has been cancelled")
                 {
                     trace!("{err:?}");
+                    controller_cancelled = true;
                 } else {
                     error!("caught panic while refreshing diagnostics");
                 }
             }
 
-            self.join_and_clear_workers();
-            self.analysis_progress_controller.try_stop_analysis();
+            let diagnostics_results = self.join_and_clear_workers();
+            let diagnostics_cancelled =
+                controller_cancelled || diagnostics_results.contains(&TaskResult::Cancelled);
+
+            self.analysis_progress_controller.try_stop_analysis(diagnostics_cancelled);
         }
     }
 
@@ -147,16 +154,22 @@ impl DiagnosticsControllerThread {
         let project_diagnostics = self.project_diagnostics.clone();
         let notifier = self.notifier.clone();
         let worker_fn = move || f(project_diagnostics, notifier);
-        let worker_handle = self.pool.spawn_with_tracking(ThreadPriority::Worker, move || {
+        let (tracker, handle) = task_progress_monitor();
+        self.pool.spawn(ThreadPriority::Worker, move || {
             if let Err(err) = catch_unwind(AssertUnwindSafe(worker_fn)) {
                 if let Ok(err) = cancelled_anyhow(err, "diagnostics worker has been cancelled") {
+                    tracker.signal_finish(TaskResult::Cancelled);
                     trace!("{err:?}");
                 } else {
+                    // Does not matter for us if the task was finished or panicked.
+                    tracker.signal_finish(TaskResult::Done);
                     error!("caught panic in diagnostics worker");
                 }
+            } else {
+                tracker.signal_finish(TaskResult::Done);
             }
         });
-        self.worker_handles.push(worker_handle);
+        self.worker_handles.push(handle);
     }
 
     /// Makes batches out of `files` and spawns workers to run [`refresh_diagnostics`] on them.
@@ -176,11 +189,8 @@ impl DiagnosticsControllerThread {
         }
     }
 
-    fn join_and_clear_workers(&mut self) {
-        for handle in self.worker_handles.iter() {
-            handle.join();
-        }
-        self.worker_handles.clear();
+    fn join_and_clear_workers(&mut self) -> Vec<TaskResult> {
+        self.worker_handles.drain(..).map(|handle| handle.join()).collect()
     }
 }
 

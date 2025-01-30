@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use crate::config::Config;
+use crate::lsp::ext::{ServerStatus, ServerStatusEvent, ServerStatusParams};
 use crate::server::client::Notifier;
 
 /// A struct that allows to track procmacro requests.
@@ -46,11 +47,13 @@ impl AnalysisProgressController {
         self.state.lock().unwrap().try_start_analysis()
     }
 
-    pub fn try_stop_analysis(&self) {
-        self.state
-            .lock()
-            .unwrap()
-            .try_stop_analysis(self.request_tracker.get_did_submit_procmacro_request());
+    pub fn try_stop_analysis(&self, diagnostics_cancelled: bool) {
+        if !diagnostics_cancelled {
+            self.state
+                .lock()
+                .unwrap()
+                .try_stop_analysis(self.request_tracker.get_did_submit_procmacro_request());
+        }
     }
 }
 
@@ -87,11 +90,10 @@ impl AnalysisProgressControllerState {
     fn try_start_analysis(&mut self) {
         if !self.analysis_in_progress {
             self.analysis_in_progress = true;
-            #[cfg(feature = "testing")]
-            {
-                use crate::lsp::ext::testing::DiagnosticsCalculationStart;
-                self.notifier.notify::<DiagnosticsCalculationStart>(());
-            }
+            self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                event: ServerStatusEvent::AnalysisStarted,
+                idle: false,
+            });
         }
     }
 
@@ -103,11 +105,10 @@ impl AnalysisProgressControllerState {
             && self.analysis_in_progress
         {
             self.analysis_in_progress = false;
-            #[cfg(feature = "testing")]
-            {
-                use crate::lsp::ext::testing::DiagnosticsCalculationFinish;
-                self.notifier.notify::<DiagnosticsCalculationFinish>(());
-            }
+            self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                event: ServerStatusEvent::AnalysisFinished,
+                idle: true,
+            });
         }
     }
 }
