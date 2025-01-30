@@ -40,9 +40,9 @@ fn test_removing_member() {
         client_capabilities = caps;
     };
 
-    assert!(ls.open_and_wait_for_diagnostics("a/src/lib.cairo").diagnostics.is_empty());
+    assert!(ls.open_and_wait_for_diagnostics("a/src/lib.cairo").is_empty());
     // Check if opening `a` triggers calculating diagnostics for `b`.
-    assert!(ls.wait_for_diagnostics("b/src/lib.cairo").diagnostics.is_empty());
+    assert!(ls.get_diagnostics_for_file("b/src/lib.cairo").is_empty());
 
     let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
     let analyzed_crates = normalize(&ls, analyzed_crates);

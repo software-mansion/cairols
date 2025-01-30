@@ -39,7 +39,7 @@ fn relative_path_to_core() {
     };
 
     let diags = ls.open_and_wait_for_diagnostics("src/lib.cairo");
-    assert!(diags.diagnostics.is_empty());
+    assert!(diags.is_empty());
 
     assert_eq!(
         ls.trace()

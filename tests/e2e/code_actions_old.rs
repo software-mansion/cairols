@@ -68,7 +68,7 @@ fn test_quick_fix(
             text_document: ls.doc_id("src/lib.cairo"),
             range: Range { start: position, end: position },
             context: CodeActionContext {
-                diagnostics: diagnostics.diagnostics.clone(),
+                diagnostics: diagnostics.clone(),
                 only: None,
                 trigger_kind: None,
             },

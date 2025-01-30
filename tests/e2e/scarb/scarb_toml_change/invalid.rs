@@ -21,7 +21,7 @@ fn test_invalid_scarb_toml_change() {
         client_capabilities = caps;
     };
 
-    assert!(ls.open_and_wait_for_diagnostics("src/lib.cairo").diagnostics.is_empty());
+    assert!(ls.open_and_wait_for_diagnostics("src/lib.cairo").is_empty());
 
     let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
