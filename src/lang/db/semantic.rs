@@ -2,11 +2,14 @@ use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, ImplAliasLongId, ImplDefLongId, ImplFunctionLongId, ImplItemId,
-    LookupItemId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasLongId, StructLongId,
-    TraitFunctionLongId, TraitItemId, TraitLongId, UseLongId,
+    LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasLongId,
+    StructLongId, TraitFunctionLongId, TraitItemId, TraitLongId, UseLongId, VarId,
 };
+use cairo_lang_semantic::Binding;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_syntax::node::ast::ItemModule;
+use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
+use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
@@ -95,7 +98,7 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
         node.ancestors()
             .filter(|node| node.kind(syntax_db) == SyntaxKind::ItemModule)
             .map(|node| {
-                ItemModule::from_syntax_node(syntax_db, node)
+                ast::ItemModule::from_syntax_node(syntax_db, node)
                     .stable_ptr()
                     .name_green(syntax_db)
                     .identifier(syntax_db)
@@ -112,6 +115,62 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
                 };
                 Some(ModuleId::Submodule(submodule))
             })
+    }
+
+    /// Reverse lookups [`VarId`] to get a [`Binding`] associated with it.
+    ///
+    /// While [`VarId`] is basically an ID of a [`Binding`],
+    /// no mapping from the former to the latter is being maintained in [`SemanticGroup`].
+    /// This forces us to perform elaborate reverse lookups,
+    /// which makes life here much harder than needed.
+    fn lookup_binding(&self, var_id: VarId) -> Option<Binding> {
+        let db = self.upcast();
+        match var_id {
+            VarId::Param(param_id) => {
+                // Get param's syntax node.
+                let param = param_id.untyped_stable_ptr(db.upcast()).lookup(db.upcast());
+
+                // Get the function which contains the variable/parameter.
+                let function_id = db.find_lookup_item(&param)?.function_with_body()?;
+
+                // Get function signature.
+                let signature = db.function_with_body_signature(function_id).ok()?;
+
+                // Find the binding in the function's signature.
+                signature.params.into_iter().find(|p| p.id == param_id).map(Into::into)
+            }
+
+            VarId::Local(local_var_id) => {
+                // Get the Pattern syntax node which defines the variable.
+                let identifier = local_var_id.untyped_stable_ptr(db.upcast()).lookup(db.upcast());
+                let pattern = identifier.parent_of_type::<ast::Pattern>(db.upcast())?;
+
+                // Get the function which contains the variable/parameter.
+                let function_id =
+                    db.find_lookup_item(&pattern.as_syntax_node())?.function_with_body()?;
+
+                // Get the semantic model for the pattern.
+                let pattern = db.pattern_semantic(
+                    function_id,
+                    db.lookup_pattern_by_ptr(function_id, pattern.stable_ptr()).ok()?,
+                );
+
+                // Extract the binding from the found pattern.
+                let binding = pattern
+                    .variables(&QueryPatternVariablesFromDb(db.upcast(), function_id))
+                    .into_iter()
+                    .find(|pv| pv.var.id == local_var_id)?
+                    .var
+                    .into();
+
+                Some(binding)
+            }
+
+            VarId::Item(_stmt_item_id) => {
+                // TODO(#59): Implement this.
+                None
+            }
+        }
     }
 }
 
