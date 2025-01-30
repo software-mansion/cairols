@@ -1,12 +1,11 @@
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_language_server::lsp::ext::ExpandMacro;
-use itertools::Itertools;
 use lsp_types::{TextDocumentIdentifier, TextDocumentPositionParams};
 use serde::Serialize;
 
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::cursor::peek_caret;
 use crate::support::data::data;
-use crate::support::quick_hash::quick_hash;
 use crate::support::{cursors, sandbox};
 
 #[test]
@@ -41,29 +40,26 @@ fn check(code: String, case_name: &str) {
 
     ls.open_all_cairo_files_and_wait_for_project_update();
 
-    for (expansion, source_contexts) in cursors
-        .carets()
-        .into_iter()
-        .map(|position| {
-            let source_context = peek_caret(&cairo, position);
+    let mut ordered_hash_map: OrderedHashMap<String, Vec<String>> = OrderedHashMap::default();
+    cursors.carets().into_iter().for_each(|position| {
+        let source_context = peek_caret(&cairo, position);
 
-            let macro_expansion = ls.send_request::<ExpandMacro>(TextDocumentPositionParams {
-                position,
-                text_document: TextDocumentIdentifier { uri: ls.doc_id("src/lib.cairo").uri },
-            });
+        let macro_expansion = ls.send_request::<ExpandMacro>(TextDocumentPositionParams {
+            position,
+            text_document: TextDocumentIdentifier { uri: ls.doc_id("src/lib.cairo").uri },
+        });
 
-            let expansion =
-                macro_expansion.unwrap_or_else(|| String::from("No expansion information.\n"));
+        let expansion =
+            macro_expansion.unwrap_or_else(|| String::from("No expansion information.\n"));
 
-            (expansion, source_context)
-        })
-        .into_group_map()
-    {
-        let hash = quick_hash(&expansion);
+        ordered_hash_map.entry(expansion).or_default().push(source_context);
+    });
+
+    for (snap_seq, (expansion, source_contexts)) in ordered_hash_map.into_iter().enumerate() {
         let source_contexts = source_contexts.join("\n");
         let report = MacroExpandReport { source_contexts, expansion };
 
-        insta::assert_toml_snapshot!(format!("{case_name}#{hash:x}"), report);
+        insta::assert_toml_snapshot!(format!("{case_name}#snap_{snap_seq}"), report);
     }
 }
 

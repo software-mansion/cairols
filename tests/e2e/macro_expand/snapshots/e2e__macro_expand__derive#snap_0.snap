@@ -1,6 +1,7 @@
 ---
 source: tests/e2e/macro_expand/mod.rs
 expression: report
+snapshot_kind: text
 ---
 source_contexts = '''
 #[d<caret>erive(Drop, Serde)]
