@@ -78,10 +78,9 @@ libc = "0.2.169"
 assert_fs = "1.1"
 cairo-lang-test-utils = { version = "*", features = ["testing"] }
 cairo-language-server = { path = ".", features = ["testing"] }
-insta = { version = "1.42.0", features = ["toml"] }
+insta = { version = "1.42", features = ["toml"] }
 pathdiff = "0.2"
-pretty_assertions = "1.4.0"
-similar = "2.6.0"
+similar = "2.7"
 test-log = "0.2.16"
 
 # Here we specify real dependency specifications for Cairo crates *if* currently we want to use

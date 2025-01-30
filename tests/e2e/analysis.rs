@@ -1,7 +1,6 @@
 use cairo_language_server::lsp;
 use indoc::indoc;
 use lsp_types::{ExecuteCommandParams, lsp_request};
-use pretty_assertions::assert_eq;
 
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML;
 use crate::support::normalize::normalize;

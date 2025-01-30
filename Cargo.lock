@@ -922,7 +922,6 @@ dependencies = [
  "lsp-types",
  "memchr",
  "pathdiff",
- "pretty_assertions",
  "rust-analyzer-salsa",
  "scarb-metadata",
  "scarb-proc-macro-server-types",
