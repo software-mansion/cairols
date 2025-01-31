@@ -2,8 +2,8 @@ use std::iter;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    LanguageElementId, LookupItemId, MemberId, ModuleId, ModuleItemId, NamedLanguageElementId,
-    SubmoduleLongId, TopLevelLanguageElementId, TraitItemId, VarId,
+    LanguageElementId, LocalVarLongId, LookupItemId, MemberId, ModuleId, ModuleItemId,
+    NamedLanguageElementId, SubmoduleLongId, TopLevelLanguageElementId, TraitItemId, VarId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_doc::db::DocGroup;
@@ -444,7 +444,7 @@ fn find_definition(
         return Some((ResolvedItem::Member(member_id), member_id.untyped_stable_ptr(db)));
     }
 
-    for lookup_item_id in lookup_items.iter().copied() {
+    for &lookup_item_id in lookup_items {
         if let Some(item) =
             db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
@@ -462,41 +462,41 @@ fn find_definition(
         }
     }
 
-    // Skip variable definition, otherwise we would get parent ModuleItem for variable.
-    if identifier.as_syntax_node().parent_of_kind(db, SyntaxKind::StatementLet).is_none() {
-        let item = match lookup_items.first().copied()? {
-            LookupItemId::ModuleItem(item) => {
-                ResolvedGenericItem::from_module_item(db, item).to_option()?
-            }
-            LookupItemId::TraitItem(trait_item) => {
-                if let TraitItemId::Function(trait_function_id) = trait_item {
-                    let parent_trait = trait_item.trait_id(db);
-                    let generic_parameters = db.trait_generic_params(parent_trait).to_option()?;
-                    let concrete_trait = ConcreteTraitLongId {
-                        trait_id: parent_trait,
-                        generic_args: generic_params_to_args(&generic_parameters, db),
-                    };
-                    let concrete_trait = db.intern_concrete_trait(concrete_trait);
-
-                    ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(
-                        ImplGenericFunctionId {
-                            impl_id: ImplLongId::SelfImpl(concrete_trait).intern(db),
-                            function: trait_function_id,
-                        },
-                    ))
-                } else {
-                    ResolvedGenericItem::Trait(trait_item.trait_id(db))
-                }
-            }
-            LookupItemId::ImplItem(impl_item) => {
-                ResolvedGenericItem::Impl(impl_item.impl_def_id(db))
-            }
-        };
-
-        Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?))
-    } else {
-        None
+    if let Some(var_id) = try_extract_variable_declaration(db, identifier, lookup_items) {
+        let item = ResolvedGenericItem::Variable(var_id);
+        return Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?));
     }
+
+    // FIXME(mkaput): This logic always kicks in if we're finding definition of undefined symbol
+    //   which is very wrong in such cases.
+    let item = match lookup_items.first().copied()? {
+        LookupItemId::ModuleItem(item) => {
+            ResolvedGenericItem::from_module_item(db, item).to_option()?
+        }
+        LookupItemId::TraitItem(trait_item) => {
+            if let TraitItemId::Function(trait_function_id) = trait_item {
+                let parent_trait = trait_item.trait_id(db);
+                let generic_parameters = db.trait_generic_params(parent_trait).to_option()?;
+                let concrete_trait = ConcreteTraitLongId {
+                    trait_id: parent_trait,
+                    generic_args: generic_params_to_args(&generic_parameters, db),
+                };
+                let concrete_trait = db.intern_concrete_trait(concrete_trait);
+
+                ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(
+                    ImplGenericFunctionId {
+                        impl_id: ImplLongId::SelfImpl(concrete_trait).intern(db),
+                        function: trait_function_id,
+                    },
+                ))
+            } else {
+                ResolvedGenericItem::Trait(trait_item.trait_id(db))
+            }
+        }
+        LookupItemId::ImplItem(impl_item) => ResolvedGenericItem::Impl(impl_item.impl_def_id(db)),
+    };
+
+    Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?))
 }
 
 /// Extracts [`MemberId`] if the [`TerminalIdentifier`] is used as a struct member
@@ -565,6 +565,56 @@ fn try_extract_member(
     } else {
         None
     }
+}
+
+/// Lookups if the identifier is a declaration of a variable/param in one of the lookup items.
+///
+/// Declaration identifiers aren't kept in `ResolvedData`, which is searched for by
+/// `lookup_resolved_generic_item_by_ptr` and `lookup_resolved_concrete_item_by_ptr`.
+/// Therefore, we have to look for these ourselves.
+fn try_extract_variable_declaration(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<VarId> {
+    let function_id = lookup_items.first()?.function_with_body()?;
+
+    // Look at function parameters.
+    if let Some(param) = identifier.as_syntax_node().parent_of_kind(db, SyntaxKind::Param) {
+        // Closures have different semantic model structures than regular functions.
+        let params = if let Some(expr_closure_ast) = param.parent_of_type::<ast::ExprClosure>(db) {
+            let expr_id =
+                db.lookup_expr_by_ptr(function_id, expr_closure_ast.stable_ptr().into()).ok()?;
+            let Expr::ExprClosure(expr_closure_semantic) = db.expr_semantic(function_id, expr_id)
+            else {
+                unreachable!("expected semantic for ast::ExprClosure to be Expr::ExprClosure");
+            };
+            expr_closure_semantic.params
+        } else {
+            let signature = db.function_with_body_signature(function_id).ok()?;
+            signature.params
+        };
+
+        if let Some(param) =
+            params.into_iter().find(|param| param.stable_ptr == identifier.stable_ptr())
+        {
+            return Some(VarId::Param(param.id));
+        }
+    }
+
+    // Look at patterns in the function body.
+    if let Some(pattern) = identifier.as_syntax_node().parent_of_type::<ast::Pattern>(db) {
+        // Bail out if the pattern happens to not exist in the semantic model.
+        // We don't need semantics for returning, though, due to the way how local variables are
+        // identified there, so we're happily ignoring the result value.
+        db.lookup_pattern_by_ptr(function_id, pattern.stable_ptr()).ok()?;
+
+        return Some(VarId::Local(
+            LocalVarLongId(function_id.module_file_id(db), identifier.stable_ptr()).intern(db),
+        ));
+    }
+
+    None
 }
 
 fn resolved_concrete_item_def(

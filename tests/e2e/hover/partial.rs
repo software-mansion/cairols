@@ -11,7 +11,14 @@ fn uninfered_mut_ident() {
     source_context = """
         let mut xy<caret>z = unknown_function();
     """
-    popover = "Type: `<missing>`"
+    highlight = """
+        let mut <sel>xyz</sel> = unknown_function();
+    """
+    popover = """
+    ```cairo
+    let mut xyz: <missing>
+    ```
+    """
     "#)
 }
 
@@ -25,9 +32,15 @@ fn uninfered_value() {
     source_context = """
         let mut xyz = unkn<caret>own_function();
     """
+    highlight = """
+        let mut xyz = <sel>unknown_function</sel>();
+    """
     popover = """
     ```cairo
-    <missing>
+    hello
+    ```
+    ```cairo
+    fn main()
     ```
     """
     "#)
@@ -70,10 +83,7 @@ fn missing_type_param() {
     """
     popover = """
     ```cairo
-    hello
-    ```
-    ```cairo
-    fn f(abc) -> felt252
+    abc: <missing>
     ```
     """
     "#)

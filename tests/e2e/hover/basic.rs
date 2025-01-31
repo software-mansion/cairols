@@ -11,7 +11,14 @@ fn let_mut() {
     source_context = """
         let mut x<caret> = 5;
     """
-    popover = "Type: `core::felt252`"
+    highlight = """
+        let mut <sel>x</sel> = 5;
+    """
+    popover = """
+    ```cairo
+    let mut x: core::felt252
+    ```
+    """
     "#)
 }
 
@@ -278,10 +285,7 @@ fn param_name() {
     """
     popover = """
     ```cairo
-    hello
-    ```
-    ```cairo
-    fn value_in_cents(coin: Coin) -> felt252
+    coin: hello::Coin
     ```
     """
     "#)
