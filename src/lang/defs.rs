@@ -24,7 +24,6 @@ use cairo_lang_semantic::{Binding, ConcreteTraitLongId, Expr, Mutability, TypeLo
 use cairo_lang_syntax::node::ast::{ExprPath, Param, PatternIdentifier, TerminalIdentifier};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::utils::{is_grandparent_of_kind, is_parent_of_kind};
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
@@ -54,7 +53,7 @@ impl SymbolDef {
     pub fn find(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
         if let Some(parent) = identifier.as_syntax_node().parent() {
             if parent.kind(db.upcast()) == SyntaxKind::PathSegmentSimple
-                && is_grandparent_of_kind(db, &parent, SyntaxKind::ExprInlineMacro)
+                && parent.grandparent_kind(db) == Some(SyntaxKind::ExprInlineMacro)
             {
                 return Some(Self::ExprInlineMacro(
                     parent
@@ -275,7 +274,7 @@ impl VariableDef {
                     let pattern_identifier =
                         PatternIdentifier::from_syntax_node(db.upcast(), pattern_node);
                     Self::new_pattern_identifier(db, pattern_identifier)
-                } else if is_parent_of_kind(db, &pattern_node, SyntaxKind::ExprPath) {
+                } else if pattern_node.parent_kind(db) == Some(SyntaxKind::ExprPath) {
                     let expr_path = ExprPath::from_syntax_node(
                         db.upcast(),
                         pattern_node.parent().expect("Grandparent already exists"),

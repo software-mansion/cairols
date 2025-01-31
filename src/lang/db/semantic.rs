@@ -9,7 +9,6 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax::node::ast::ItemModule;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, Upcast};
 
@@ -136,7 +135,7 @@ fn lookup_item_from_ast(
             .intern(db),
         ))],
         SyntaxKind::FunctionWithBody => {
-            if is_grandparent_of_kind(syntax_db, &node, SyntaxKind::ImplBody) {
+            if node.grandparent_kind(syntax_db) == Some(SyntaxKind::ImplBody) {
                 vec![LookupItemId::ImplItem(ImplItemId::Function(
                     ImplFunctionLongId(
                         module_file_id,
