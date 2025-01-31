@@ -1,6 +1,6 @@
 use cairo_lang_semantic::items::us::get_use_path_segments;
 use cairo_lang_semantic::resolve::AsSegments;
-use cairo_lang_syntax::node::ast::{ExprStructCtorCall, PathSegment};
+use cairo_lang_syntax::node::ast::{BinaryOperator, ExprBinary, ExprStructCtorCall, PathSegment};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
@@ -52,8 +52,18 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         }
     );
 
+    if_chain!(
+        if let Some(binary_expression) = node.ancestor_of_type::<ExprBinary>(db);
+        if let BinaryOperator::Dot(_) = binary_expression.op(db);
+        if node.is_descendant(&binary_expression.rhs(db).as_syntax_node());
+        if let Some(dot_completions) = dot_completions(db, file_id, lookup_items.clone(), binary_expression);
+
+        then {
+            completions.extend(dot_completions);
+        }
+    );
+
     let old_way_completions = match completion_kind(db, node.clone()) {
-        CompletionKind::Dot(expr) => dot_completions(db, file_id, lookup_items, expr),
         CompletionKind::ColonColon(segments) if !segments.is_empty() => {
             colon_colon_completions(db, module_file_id, lookup_items, segments)
         }
@@ -75,19 +85,12 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 }
 
 enum CompletionKind {
-    Dot(ast::ExprBinary),
     ColonColon(Vec<PathSegment>),
 }
 
 fn completion_kind(db: &AnalysisDatabase, node: SyntaxNode) -> CompletionKind {
     debug!("node.kind: {:#?}", node.kind(db));
     match node.kind(db) {
-        SyntaxKind::TerminalDot => {
-            let parent = node.parent().unwrap();
-            if parent.kind(db) == SyntaxKind::ExprBinary {
-                return CompletionKind::Dot(ast::ExprBinary::from_syntax_node(db, parent));
-            }
-        }
         SyntaxKind::TerminalColonColon => {
             let parent = node.parent().unwrap();
             debug!("parent.kind: {:#?}", parent.kind(db));
@@ -126,25 +129,12 @@ fn completion_kind(db: &AnalysisDatabase, node: SyntaxNode) -> CompletionKind {
             debug!("parent.kind: {:#?}", parent.kind(db));
             let grandparent = parent.parent().unwrap();
             debug!("grandparent.kind: {:#?}", grandparent.kind(db));
-            if grandparent.kind(db) == SyntaxKind::ExprPath {
-                if db.get_children(grandparent.clone())[0].stable_ptr() != parent.stable_ptr() {
-                    // Not the first segment.
-                    debug!("Not first segment");
-                    return completion_kind_from_path_node(db, grandparent);
-                }
-                // First segment.
-                let grandgrandparent = grandparent.parent().unwrap();
-                debug!("grandgrandparent.kind: {:#?}", grandgrandparent.kind(db));
-                if grandgrandparent.kind(db) == SyntaxKind::ExprBinary {
-                    let expr = ast::ExprBinary::from_syntax_node(db, grandgrandparent.clone());
-                    if matches!(
-                        ast::ExprBinary::from_syntax_node(db, grandgrandparent).op(db),
-                        ast::BinaryOperator::Dot(_)
-                    ) {
-                        debug!("Dot");
-                        return CompletionKind::Dot(expr);
-                    }
-                }
+            if grandparent.kind(db) == SyntaxKind::ExprPath
+                && db.get_children(grandparent.clone())[0].stable_ptr() != parent.stable_ptr()
+            {
+                // Not the first segment.
+                debug!("Not first segment");
+                return completion_kind_from_path_node(db, grandparent);
             }
             if grandparent.kind(db) == SyntaxKind::UsePathLeaf {
                 let use_ast = ast::UsePathLeaf::from_syntax_node(db, grandparent);
