@@ -7,6 +7,7 @@ use std::{fmt, mem, process};
 use cairo_language_server::build_service_for_e2e_tests;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
 use lsp_server::{Message, Notification, Request, Response};
+use lsp_types::notification::PublishDiagnostics;
 use lsp_types::request::{RegisterCapability, Request as LspRequest};
 use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url, lsp_notification, lsp_request};
 use serde_json::Value;
@@ -268,6 +269,8 @@ impl MockClient {
         })
     }
 
+    // TODO: Rework this method and use instead of current waiting methods
+    #[allow(dead_code)]
     fn wait_for_notification_sequence(&mut self, notifications: Vec<&str>) {
         // Block which checks if the notification matches the next expected one in the sequence
         let try_advance_sequence = |message: &Message, current_seq: &mut usize| {
@@ -407,12 +410,6 @@ impl MockClient {
         self.wait_for_project_update();
     }
 
-    pub fn wait_for_diagnostics_round(&mut self) {
-        self.wait_for_notification_sequence(vec![
-            "cairo/diagnosticsCalculationStart",
-            "cairo/diagnosticsCalculationFinish",
-        ]);
-    }
     /// Sends `textDocument/didOpen` notification to the server and then waits for
     /// `cairo/projectUpdatingFinished` and the next diagnostics round,
     /// denoted by `cairo/diagnosticsCalculationStart` and `cairo/diagnosticsCalculationFinish`.
@@ -420,8 +417,16 @@ impl MockClient {
         let path = path.as_ref();
         self.open_and_wait_for_project_update(path);
         self.clear_diagnostics_events_from_trace();
-        self.wait_for_diagnostics_round();
-        self.get_diagnostics_for_file(path)
+        self.wait_for_diagnostics(path)
+    }
+
+    /// Waits for `textDocument/publishDiagnostics` notification for the given file.
+    pub fn wait_for_diagnostics(&mut self, path: impl AsRef<Path>) -> Vec<Diagnostic> {
+        let url = self.fixture.file_url(path);
+        self.wait_for_notification::<PublishDiagnostics>(|params: &PublishDiagnosticsParams| {
+            params.uri == url
+        })
+        .diagnostics
     }
 
     /// Waits for `cairo/projectUpdatingFinished` notification.
