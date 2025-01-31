@@ -135,76 +135,12 @@ fn after_prop_before_spread_same_line() {
     """
 
     [[completions]]
-    completion_label = "core"
+    completion_label = "y"
+    detail = "core::felt252"
 
     [[completions]]
-    completion_label = "hello"
-
-    [[completions]]
-    completion_label = "Struct"
-
-    [[completions]]
-    completion_label = "build_struct"
-
-    [[completions]]
-    completion_label = "array!"
-
-    [[completions]]
-    completion_label = "assert!"
-
-    [[completions]]
-    completion_label = "consteval_int!"
-
-    [[completions]]
-    completion_label = "format!"
-
-    [[completions]]
-    completion_label = "panic!"
-
-    [[completions]]
-    completion_label = "print!"
-
-    [[completions]]
-    completion_label = "println!"
-
-    [[completions]]
-    completion_label = "write!"
-
-    [[completions]]
-    completion_label = "writeln!"
-
-    [[completions]]
-    completion_label = "selector!"
-
-    [[completions]]
-    completion_label = "get_dep_component!"
-
-    [[completions]]
-    completion_label = "get_dep_component_mut!"
-
-    [[completions]]
-    completion_label = "assert_eq!"
-
-    [[completions]]
-    completion_label = "assert_ne!"
-
-    [[completions]]
-    completion_label = "assert_lt!"
-
-    [[completions]]
-    completion_label = "assert_le!"
-
-    [[completions]]
-    completion_label = "assert_gt!"
-
-    [[completions]]
-    completion_label = "assert_ge!"
-
-    [[completions]]
-    completion_label = "s"
-
-    [[completions]]
-    completion_label = "d"
+    completion_label = "z"
+    detail = "core::integer::i16"
     "#);
 }
 
