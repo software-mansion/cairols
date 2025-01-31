@@ -47,8 +47,9 @@ fn test_simple_deps() {
     };
 
     assert!(ls.open_and_wait_for_diagnostics("a/src/lib.cairo").is_empty());
+
     // Check if opening `a` triggers calculating diagnostics for `b`.
-    let diagnostics_from_b = ls.get_diagnostics_for_file("b/src/lib.cairo");
+    let diagnostics_from_b = ls.wait_for_diagnostics("b/src/lib.cairo");
     assert_eq!(diagnostics_from_b.len(), 1);
     assert_eq!(diagnostics_from_b[0].code, Some(NumberOrString::String("E0005".to_string())));
 
