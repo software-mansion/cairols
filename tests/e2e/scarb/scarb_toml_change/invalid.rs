@@ -39,5 +39,5 @@ fn test_invalid_scarb_toml_change() {
 
     let analyzed_crates_after_failed_metadata = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
-    pretty_assertions::assert_eq!(analyzed_crates, analyzed_crates_after_failed_metadata);
+    assert_eq!(analyzed_crates, analyzed_crates_after_failed_metadata);
 }
