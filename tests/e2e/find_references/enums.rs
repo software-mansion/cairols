@@ -46,7 +46,7 @@ fn enum_name() {
     ")
 }
 
-// FIXME(#164): Pattern should also be selected.
+// FIXME(#129): Pattern should also be selected.
 #[test]
 fn enum_variants() {
     test_transform!(find_references, r#"

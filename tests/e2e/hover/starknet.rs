@@ -70,10 +70,7 @@ fn constructor_ref_self() {
     """
     popover = """
     ```cairo
-    hello::Balance
-    ```
-    ```cairo
-    fn constructor(ref self: ContractState, value_: u128)
+    ref self: hello::Balance::ContractState
     ```
     """
     "#)

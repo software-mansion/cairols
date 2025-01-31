@@ -502,9 +502,15 @@ fn struct_constructor_with_path_first() {
     source_context = """
             let _ = <caret>super::some_module::internal_module::nested_internal_module::PublicStruct {};
     """
+    highlight = """
+            let _ = <sel>super</sel>::some_module::internal_module::nested_internal_module::PublicStruct {};
+    """
     popover = """
     ```cairo
-    hello::some_module::internal_module::nested_internal_module::PublicStruct
+    hello::happy_cases
+    ```
+    ```cairo
+    fn constructor_with_path()
     ```
     """
     "#)

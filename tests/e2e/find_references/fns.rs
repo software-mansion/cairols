@@ -33,7 +33,6 @@ fn fn_via_call() {
     ")
 }
 
-// FIXME(#164): Pattern should not match here.
 #[test]
 fn unused_function() {
     test_transform!(find_references, r#"
@@ -45,7 +44,7 @@ fn unused_function() {
     "#, @r"
     fn <sel=declaration>pow2</sel>(x: felt252) -> felt252 { x * x }
     fn main() {
-        let <sel>pow2</sel> = 2;
+        let pow2 = 2;
         let x = pow2 + pow2;
     }
     ")
