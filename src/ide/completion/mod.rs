@@ -1,10 +1,10 @@
 use attribute::{attribute_completions, derive_completions};
-use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{
-    self, Attribute, BinaryOperator, ExprBinary, ExprPath, ExprStructCtorCall, UsePathLeaf,
-    UsePathSingle,
+    self, Attribute, BinaryOperator, ExprBinary, ExprPath, ExprStructCtorCall, ItemModule,
+    TokenIdentifier, UsePathLeaf, UsePathSingle,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
 use colon_colon::{expr_path, use_statement};
 use completions::{dot_completions, struct_constructor_completions};
 use if_chain::if_chain;
@@ -133,9 +133,39 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         }
     );
 
-    if completions.is_empty() && trigger_kind == CompletionTriggerKind::INVOKED && !was_single {
-        let result = mod_completions(db, node, file_id)
-            .unwrap_or_else(|| generic_completions(db, module_file_id, lookup_items));
+    if_chain!(
+        if let Some(ident) = TokenIdentifier::cast(db, node.clone());
+        if let Some(module_item) = node.parent_of_type::<ItemModule>(db);
+        // We are in nested mod, we should not show completions for file modules.
+        if module_item.as_syntax_node().ancestor_of_kind(db, SyntaxKind::ItemModule).is_none();
+        if let Some(mod_names_completions) = mod_completions(db, module_item, file_id, &ident.text(db));
+
+        then {
+            completions.extend(mod_names_completions);
+        }
+    );
+
+    if_chain!(
+        // if there is no name `mod <cursor>` we will be on `mod`.
+        if node.kind(db) == SyntaxKind::TokenModule;
+        if let Some(module_item) = node.parent_of_type::<ItemModule>(db);
+        // We are in nested mod, we should not show completions for file modules.
+        if module_item.as_syntax_node().ancestor_of_kind(db, SyntaxKind::ItemModule).is_none();
+        // use "" as typed text in this case.
+        if let Some(mod_names_completions) = mod_completions(db, module_item, file_id, "");
+
+        then {
+            completions.extend(mod_names_completions);
+        }
+    );
+
+    if completions.is_empty()
+        && trigger_kind == CompletionTriggerKind::INVOKED
+        && !was_single
+        // Another quickfix, `generic_completions` must be split into smaller parts to fit into system.
+        && node.ancestor_of_kind(db, SyntaxKind::ExprStructCtorCall).is_none()
+    {
+        let result = generic_completions(db, module_file_id, lookup_items);
 
         completions.extend(result);
     }
