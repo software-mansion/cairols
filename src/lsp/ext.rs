@@ -100,24 +100,28 @@ pub mod testing {
         type Params = ();
         const METHOD: &'static str = "cairo/projectUpdatingFinished";
     }
+}
 
-    /// Notifies about diagnostics generation which is beginning to calculate.
-    #[derive(Debug)]
-    pub struct DiagnosticsCalculationStart;
+// Server status notifications.
+#[derive(Debug)]
+pub struct ServerStatus;
 
-    impl Notification for DiagnosticsCalculationStart {
-        type Params = ();
-        const METHOD: &'static str = "cairo/diagnosticsCalculationStart";
-    }
+impl Notification for ServerStatus {
+    type Params = ServerStatusParams;
+    const METHOD: &'static str = "cairo/serverStatus";
+}
 
-    /// Notifies about diagnostics generation which ended calculating.
-    #[derive(Debug)]
-    pub struct DiagnosticsCalculationFinish;
+#[derive(Serialize, Deserialize, PartialEq)]
+pub enum ServerStatusEvent {
+    AnalysisStarted,
+    AnalysisFinished,
+}
 
-    impl Notification for DiagnosticsCalculationFinish {
-        type Params = ();
-        const METHOD: &'static str = "cairo/diagnosticsCalculationFinish";
-    }
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServerStatusParams {
+    pub event: ServerStatusEvent,
+    pub idle: bool,
 }
 
 #[derive(Debug)]
