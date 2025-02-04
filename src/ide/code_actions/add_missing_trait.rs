@@ -84,10 +84,13 @@ fn missing_traits_actions(
                     title: format!("Import {}", trait_path),
                     kind: Some(CodeActionKind::QUICKFIX),
                     edit: Some(WorkspaceEdit {
-                        changes: Some(HashMap::from_iter([(uri.clone(), vec![TextEdit {
-                            range: Range::new(module_start_position, module_start_position),
-                            new_text: format!("use {};\n", trait_path),
-                        }])])),
+                        changes: Some(HashMap::from_iter([(
+                            uri.clone(),
+                            vec![TextEdit {
+                                range: Range::new(module_start_position, module_start_position),
+                                new_text: format!("use {};\n", trait_path),
+                            }],
+                        )])),
                         document_changes: None,
                         change_annotations: None,
                     }),
