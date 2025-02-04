@@ -26,7 +26,6 @@ fn struct_by_name() {
     ")
 }
 
-// FIXME(#129): The results for this are very off.
 #[test]
 fn struct_member_via_definition() {
     test_transform!(find_references, r#"
@@ -38,10 +37,10 @@ fn struct_member_via_definition() {
     }
     "#, @r"
     #[derive(Drop)]
-    struct <sel=declaration>Foo</sel> { width: u64 }
+    struct Foo { <sel=declaration>width</sel>: u64 }
     fn main() {
-        let foo = <sel>Foo</sel> { width: 0 };
-        let x = foo.width * 2;
+        let foo = Foo { <sel>width</sel>: 0 };
+        let x = foo.<sel>width</sel> * 2;
     }
     ")
 }
@@ -57,7 +56,7 @@ fn struct_member_via_constructor() {
     }
     "#, @r"
     #[derive(Drop)]
-    struct Foo { <sel=declaration>width: u64</sel> }
+    struct Foo { <sel=declaration>width</sel>: u64 }
     fn main() {
         let foo = Foo { <sel>width</sel>: 0 };
         let x = foo.<sel>width</sel> * 2;
@@ -76,7 +75,7 @@ fn struct_member_via_field_access() {
     }
     "#, @r"
     #[derive(Drop)]
-    struct Foo { <sel=declaration>width: u64</sel> }
+    struct Foo { <sel=declaration>width</sel>: u64 }
     fn main() {
         let foo = Foo { <sel>width</sel>: 0 };
         let x = foo.<sel>width</sel> * 2;

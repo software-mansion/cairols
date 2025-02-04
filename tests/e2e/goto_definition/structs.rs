@@ -37,7 +37,7 @@ fn struct_member_via_field_access() {
     }
     ", @r"
     #[derive(Drop)]
-    struct Circle { <sel>radius: u64</sel> }
+    struct Circle { <sel>radius</sel>: u64 }
     fn foo(circle: Circle) -> u64 {
         circle.radius
     }
@@ -54,7 +54,7 @@ fn struct_member_in_constructor() {
     }
     ", @r"
     #[derive(Drop)]
-    struct Circle { <sel>radius: u64</sel> }
+    struct Circle { <sel>radius</sel>: u64 }
     fn main() {
         let circle = Circle { radius: 42 };
     }
