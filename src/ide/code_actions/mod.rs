@@ -74,7 +74,7 @@ fn get_code_actions_for_diagnostics(
         .flat_map(|(code, diagnostics)| match code.as_str() {
             "E0001" => diagnostics
                 .into_iter()
-                .map(|diagnostic| {
+                .filter_map(|diagnostic| {
                     rename_unused_variable::rename_unused_variable(
                         db,
                         node,

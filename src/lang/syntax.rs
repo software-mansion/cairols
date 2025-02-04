@@ -33,7 +33,6 @@ pub trait SyntaxNodeExt {
     fn ancestor_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T>;
 
     /// Finds the parent of a given kind.
-    #[allow(dead_code)]
     fn parent_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode>;
 
     /// Finds the parent of a given kind and returns it in typed form.

@@ -7,11 +7,7 @@ fn on_let_keyword() {
     fn a() {
         le<caret>t b = 1234;
     }
-    ", @r#"
-    Title: Rename to `_let`
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -34,7 +30,7 @@ fn after_name() {
         let b<caret> = 1234;
     }
     ", @r#"
-    Title: Rename to `_ `
+    Title: Rename to `_b`
     Add new text: "_"
     At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
     "#);
@@ -46,11 +42,7 @@ fn before_value() {
     fn a() {
         let b = <caret>1234;
     }
-    ", @r#"
-    Title: Rename to `_1234`
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -59,11 +51,7 @@ fn on_value() {
     fn a() {
         let b = 12<caret>34;
     }
-    ", @r#"
-    Title: Rename to `_1234`
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -72,11 +60,7 @@ fn after_value() {
     fn a() {
         let b = 1234<caret>;
     }
-    ", @r#"
-    Title: Rename to `_;`
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -85,12 +69,7 @@ fn after_let_statement() {
     fn a() {
         let b = 1234;<caret>
     }
-    ", @r#"
-    Title: Rename to `_
-    `
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -99,11 +78,7 @@ fn on_let_keyword_when_mut() {
     fn a() {
         le<caret>t mut b = 1234;
     }
-    ", @r#"
-    Title: Rename to `_let`
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -126,7 +101,7 @@ fn after_name_when_mut() {
         let mut b<caret> = 1234;
     }
     ", @r#"
-    Title: Rename to `_ `
+    Title: Rename to `_b`
     Add new text: "_"
     At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
     "#);
@@ -138,11 +113,7 @@ fn before_value_when_mut() {
     fn a() {
         let mut b = <caret>1234;
     }
-    ", @r#"
-    Title: Rename to `_1234`
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -151,11 +122,7 @@ fn on_value_when_mut() {
     fn a() {
         let mut b = 12<caret>34;
     }
-    ", @r#"
-    Title: Rename to `_1234`
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -164,11 +131,7 @@ fn after_value_when_mut() {
     fn a() {
         let mut b = 1234<caret>;
     }
-    ", @r#"
-    Title: Rename to `_;`
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -177,10 +140,5 @@ fn after_let_statement_when_mut() {
     fn a() {
         let mut b = 1234;<caret>
     }
-    ", @r#"
-    Title: Rename to `_
-    `
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
-    "#);
+    ", @"No code actions.");
 }
