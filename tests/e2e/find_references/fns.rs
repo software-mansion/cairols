@@ -1,7 +1,6 @@
 use crate::find_references::find_references;
 use crate::support::insta::test_transform;
 
-// FIXME(#129): definition stable ptr for functions is wrong and causes declaration slipping here.
 #[test]
 fn fn_via_definition() {
     test_transform!(find_references, r#"
@@ -17,7 +16,6 @@ fn fn_via_definition() {
     ")
 }
 
-// FIXME(#129): definition stable ptr for functions is wrong and causes declaration slipping here.
 #[test]
 fn fn_via_call() {
     test_transform!(find_references, r#"
