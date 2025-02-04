@@ -12,9 +12,9 @@ fn trait_name_in_impl() {
         fn foo(self: Bar) {}
     }
     ", @r"
-    <sel>pub trait Foo<T> {
+    pub trait <sel>Foo</sel><T> {
         fn foo(self: T);
-    }</sel>
+    }
     pub struct Bar {}
     impl FooBar of Foo<Bar> {
         fn foo(self: Bar) {}
@@ -38,9 +38,9 @@ fn full_path_trait_name_in_expr() {
         Fo<caret>o::foo(bar);
     }
     ", @r"
-    <sel>pub trait Foo<T> {
+    pub trait <sel>Foo</sel><T> {
         fn foo(self: T);
-    }</sel>
+    }
     #[derive(Copy, Drop)]
     pub struct Bar {}
     impl FooBar of Foo<Bar> {
@@ -68,9 +68,9 @@ fn method_in_impl() {
         fn foo(self: T);
     }
     pub struct Bar {}
-    <sel>impl FooBar of Foo<Bar> {
+    impl <sel>FooBar</sel> of Foo<Bar> {
         fn foo(self: Bar) {}
-    }</sel>
+    }
     ")
 }
 

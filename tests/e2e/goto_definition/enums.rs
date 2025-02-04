@@ -30,10 +30,10 @@ fn enum_item_in_expr() {
 #[test]
 fn enum_variant_in_expr() {
     test_transform!(goto_definition, r#"
-    enum Foo { Bar }
+    enum Foo { Bar: felt252 }
     fn main() { let foo = Foo::Ba<caret>r; }
     "#, @r"
-    enum Foo { <sel>Bar</sel> }
+    enum Foo { <sel>Bar</sel>: felt252 }
     fn main() { let foo = Foo::Bar; }
     ");
 }
