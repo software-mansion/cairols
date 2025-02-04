@@ -146,7 +146,7 @@ fn param_via_use() {
         nu<caret>m * num
     }
     "#, @r"
-    fn pow(<sel=declaration>num: felt252</sel>) -> felt252 {
+    fn pow(<sel=declaration>num</sel>: felt252) -> felt252 {
         <sel>num</sel> * <sel>num</sel>
     }
     ")
@@ -160,7 +160,7 @@ fn param_captured_by_closure() {
         num * f(num)
     }
     "#, @r"
-    fn pow(<sel=declaration>num: felt252</sel>) -> felt252 {
+    fn pow(<sel=declaration>num</sel>: felt252) -> felt252 {
         let f = |x| <sel>num</sel> * x;
         <sel>num</sel> * f(<sel>num</sel>)
     }
@@ -188,6 +188,19 @@ fn var_in_trait_function_default_body() {
     }
     fn bar() {
         let foobar = 42;
+    }
+    ")
+}
+
+#[test]
+fn closure_param_via_use() {
+    test_transform!(find_references, r#"
+    fn main() {
+        let f = |abc: felt252| a<caret>bc + 1;
+    }
+    "#, @r"
+    fn main() {
+        let f = |<sel=declaration>abc</sel>: felt252| <sel>abc</sel> + 1;
     }
     ")
 }

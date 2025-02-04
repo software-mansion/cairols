@@ -3,7 +3,7 @@ use std::iter;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MemberId, ModuleId, ModuleItemId, NamedLanguageElementId,
-    SubmoduleLongId, TopLevelLanguageElementId, TraitItemId,
+    SubmoduleLongId, TopLevelLanguageElementId, TraitItemId, VarId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_doc::db::DocGroup;
@@ -13,7 +13,6 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::generics::generic_params_to_args;
@@ -21,7 +20,6 @@ use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{Binding, ConcreteTraitLongId, Expr, Mutability, TypeLongId};
-use cairo_lang_syntax::node::ast::{ExprPath, Param, PatternIdentifier, TerminalIdentifier};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -50,7 +48,7 @@ pub enum SymbolDef {
 
 impl SymbolDef {
     /// Finds definition of the symbol referred to by the given identifier.
-    pub fn find(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
+    pub fn find(db: &AnalysisDatabase, identifier: &ast::TerminalIdentifier) -> Option<Self> {
         if let Some(parent) = identifier.as_syntax_node().parent() {
             if parent.kind(db.upcast()) == SyntaxKind::PathSegmentSimple
                 && parent.grandparent_kind(db) == Some(SyntaxKind::ExprInlineMacro)
@@ -99,9 +97,10 @@ impl SymbolDef {
                 Some(Self::Module(ModuleDef::new(db, id, definition_node)))
             }
 
-            ResolvedItem::Generic(ResolvedGenericItem::Variable(_)) => {
-                VariableDef::new(db, definition_node).map(Self::Variable)
+            ResolvedItem::Generic(ResolvedGenericItem::Variable(var_id)) => {
+                Some(Self::Variable(VariableDef::new(db, var_id, definition_node)))
             }
+
             ResolvedItem::Member(member_id) => {
                 MemberDef::new(db, member_id, definition_node).map(Self::Member)
             }
@@ -114,7 +113,7 @@ impl SymbolDef {
     pub fn definition_stable_ptr(&self) -> Option<SyntaxStablePtrId> {
         match self {
             Self::Item(d) => Some(d.definition_stable_ptr),
-            Self::Variable(d) => Some(d.definition_stable_ptr),
+            Self::Variable(d) => Some(d.definition_stable_ptr()),
             Self::ExprInlineMacro(_) => None,
             Self::Member(d) => Some(d.definition_stable_ptr),
             Self::Module(d) => Some(d.definition_stable_ptr),
@@ -138,7 +137,7 @@ impl SymbolDef {
     pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
         match self {
             Self::Item(it) => it.name(db),
-            Self::Variable(it) => it.name(),
+            Self::Variable(it) => it.name(db),
             Self::ExprInlineMacro(name) => name.clone(),
             Self::Member(it) => it.name(db),
             Self::Module(it) => it.name(db),
@@ -150,7 +149,7 @@ impl SymbolDef {
     pub fn search_scope(&self, db: &AnalysisDatabase) -> SearchScope {
         match &self {
             Self::Variable(var) => {
-                if let Some(owning_function) = var.syntax_node(db).parent_of_kinds(db, &[
+                if let Some(owning_function) = var.definition_node().parent_of_kinds(db, &[
                     SyntaxKind::FunctionWithBody,
                     SyntaxKind::TraitItemFunction,
                 ]) {
@@ -159,7 +158,7 @@ impl SymbolDef {
                         owning_function.span(db.upcast()),
                     )
                 } else {
-                    SearchScope::file(var.definition_stable_ptr.file_id(db.upcast()))
+                    SearchScope::file(var.definition_stable_ptr().file_id(db.upcast()))
                 }
             }
 
@@ -258,113 +257,39 @@ impl ItemDef {
 /// Information about the definition of a variable (local, function parameter).
 #[derive(Eq, PartialEq)]
 pub struct VariableDef {
-    name: SmolStr,
-    var: Binding,
-    definition_stable_ptr: SyntaxStablePtrId,
+    var_id: VarId,
+    identifier: ast::TerminalIdentifier,
 }
 
 impl VariableDef {
     /// Constructs a new [`VariableDef`] instance.
-    fn new(db: &AnalysisDatabase, definition_node: SyntaxNode) -> Option<Self> {
-        match definition_node.kind(db.upcast()) {
-            SyntaxKind::TerminalIdentifier => {
-                let pattern_node = definition_node.parent()?;
-                let kind = pattern_node.kind(db.upcast());
-                if let SyntaxKind::PatternIdentifier = kind {
-                    let pattern_identifier =
-                        PatternIdentifier::from_syntax_node(db.upcast(), pattern_node);
-                    Self::new_pattern_identifier(db, pattern_identifier)
-                } else if pattern_node.parent_kind(db) == Some(SyntaxKind::ExprPath) {
-                    let expr_path = ExprPath::from_syntax_node(
-                        db.upcast(),
-                        pattern_node.parent().expect("Grandparent already exists"),
-                    );
-                    let terminal_identifier =
-                        TerminalIdentifier::from_syntax_node(db.upcast(), definition_node);
-                    Self::new_expr_path(db, expr_path, terminal_identifier)
-                } else {
-                    error!(
-                        "variable definition node parent is not an pattern identifier: {kind:?}"
-                    );
-                    None
-                }
-            }
-
-            SyntaxKind::Param => {
-                let param = Param::from_syntax_node(db.upcast(), definition_node);
-                Self::new_param(db, param)
-            }
-
-            kind => {
-                error!("variable definition node is not an identifier nor param: {kind:?}");
-                None
-            }
-        }
+    fn new(db: &AnalysisDatabase, var_id: VarId, definition_node: SyntaxNode) -> Self {
+        let identifier = ast::TerminalIdentifier::from_syntax_node(db, definition_node);
+        Self { var_id, identifier }
     }
 
-    /// Constructs a new [`VariableDef`] instance for [`PatternIdentifier`].
-    fn new_pattern_identifier(
-        db: &AnalysisDatabase,
-        pattern_identifier: PatternIdentifier,
-    ) -> Option<Self> {
-        let name = pattern_identifier.name(db.upcast()).text(db.upcast());
-
-        let definition_stable_ptr = pattern_identifier.stable_ptr().untyped();
-
-        let var =
-            lookup_binding_for_pattern(db, ast::Pattern::Identifier(pattern_identifier), &name)?;
-
-        Some(Self { name, var, definition_stable_ptr })
+    /// Gets the syntax node which defines this variable.
+    pub fn definition_node(&self) -> SyntaxNode {
+        self.identifier.as_syntax_node()
     }
 
-    /// Constructs a new [`VariableDef`] instance for a [`TerminalIdentifier`]
-    /// that is a segment of an [`ExprPath`].
-    fn new_expr_path(
-        db: &AnalysisDatabase,
-        expr_path: ExprPath,
-        terminal_identifier: TerminalIdentifier,
-    ) -> Option<Self> {
-        let name = terminal_identifier.text(db.upcast());
-
-        let definition_stable_ptr = terminal_identifier.stable_ptr().untyped();
-
-        let var = lookup_binding_for_pattern(db, ast::Pattern::Path(expr_path), &name)?;
-
-        Some(Self { name, var, definition_stable_ptr })
-    }
-
-    /// Constructs new [`VariableDef`] instance for [`Param`].
-    fn new_param(db: &AnalysisDatabase, param: Param) -> Option<Self> {
-        let name = param.name(db.upcast()).text(db.upcast());
-
-        // Get the function which contains the variable/parameter.
-        let function_id = db.find_lookup_item(&param.as_syntax_node())?.function_with_body()?;
-
-        // Get function signature.
-        let signature = db.function_with_body_signature(function_id).ok()?;
-
-        // Extract parameter semantic from the found signature.
-        let var = signature.params.into_iter().find(|p| p.name == name)?.into();
-
-        Some(Self { name, var, definition_stable_ptr: param.stable_ptr().untyped() })
-    }
-
-    /// Gets the syntax node of the variable definition.
-    pub fn syntax_node(&self, db: &AnalysisDatabase) -> SyntaxNode {
-        self.definition_stable_ptr.lookup(db.upcast())
+    /// Gets the stable pointer to the syntax node which defines this variable.
+    pub fn definition_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.identifier.stable_ptr().untyped()
     }
 
     /// Gets variable signature, which tries to resemble the way how it is defined in code.
-    pub fn signature(&self, db: &AnalysisDatabase) -> String {
-        let Self { name, var, .. } = self;
+    pub fn signature(&self, db: &AnalysisDatabase) -> Option<String> {
+        let name = self.name(db);
+        let binding = db.lookup_binding(self.var_id)?;
 
-        let prefix = match var {
+        let prefix = match &binding {
             Binding::LocalVar(_) => "let ",
             Binding::LocalItem(_) => "const ",
             Binding::Param(_) => "",
         };
 
-        let mutability = match var {
+        let mutability = match &binding {
             Binding::LocalVar(local) => {
                 if local.is_mut {
                     "mut "
@@ -380,14 +305,14 @@ impl VariableDef {
             },
         };
 
-        let ty = var.ty().format(db.upcast());
+        let ty = binding.ty().format(db.upcast());
 
-        format!("{prefix}{mutability}{name}: {ty}")
+        Some(format!("{prefix}{mutability}{name}: {ty}"))
     }
 
     /// Gets this variable's name.
-    pub fn name(&self) -> SmolStr {
-        self.name.clone()
+    pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
+        self.identifier.text(db)
     }
 }
 
@@ -489,7 +414,7 @@ enum ResolvedItem {
 
 fn find_definition(
     db: &AnalysisDatabase,
-    identifier: &TerminalIdentifier,
+    identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
 ) -> Option<(ResolvedItem, SyntaxStablePtrId)> {
     if let Some(parent) = identifier.as_syntax_node().parent() {
@@ -578,7 +503,7 @@ fn find_definition(
 /// in [`ast::ExprStructCtorCall`].
 fn try_extract_member_from_constructor(
     db: &AnalysisDatabase,
-    identifier: &TerminalIdentifier,
+    identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
 ) -> Option<MemberId> {
     let function_id = lookup_items.first()?.function_with_body()?;
@@ -610,7 +535,7 @@ fn try_extract_member_from_constructor(
 /// right-hand side of access member expression e.g., to `xyz` in `self.xyz`.
 fn try_extract_member(
     db: &AnalysisDatabase,
-    identifier: &TerminalIdentifier,
+    identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
 ) -> Option<MemberId> {
     let syntax_node = identifier.as_syntax_node();
@@ -734,35 +659,16 @@ fn resolved_generic_item_def(
         ResolvedGenericItem::Trait(trt) => trt.stable_ptr(db.upcast()).untyped(),
 
         ResolvedGenericItem::Impl(imp) => imp.stable_ptr(db.upcast()).untyped(),
-        ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(db.upcast()),
+
+        ResolvedGenericItem::Variable(var) => match var {
+            VarId::Param(param) => param
+                .stable_ptr(db.upcast())
+                .lookup(db.upcast())
+                .name(db.upcast())
+                .stable_ptr()
+                .untyped(),
+            VarId::Local(var) => var.untyped_stable_ptr(db.upcast()),
+            VarId::Item(item) => item.name_stable_ptr(db.upcast()),
+        },
     })
-}
-
-/// Extracts variable semantic (a binding) from the given pattern syntax node.
-///
-/// The `name` has to be the name of the variable (which is always known in advance when calling
-/// this function but hard to reverse lookup).
-fn lookup_binding_for_pattern(
-    db: &AnalysisDatabase,
-    pattern: ast::Pattern,
-    name: &str,
-) -> Option<Binding> {
-    // Get the function which contains the variable/parameter.
-    let function_id = db.find_lookup_item(&pattern.as_syntax_node())?.function_with_body()?;
-
-    // Get the semantic model for the pattern.
-    let pattern = db.pattern_semantic(
-        function_id,
-        db.lookup_pattern_by_ptr(function_id, pattern.stable_ptr()).ok()?,
-    );
-
-    // Extract the binding from the found pattern.
-    let binding = pattern
-        .variables(&QueryPatternVariablesFromDb(db.upcast(), function_id))
-        .into_iter()
-        .find(|pv| pv.name == name)?
-        .var
-        .into();
-
-    Some(binding)
 }
