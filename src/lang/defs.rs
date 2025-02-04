@@ -417,6 +417,10 @@ fn find_definition(
     identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
 ) -> Option<(ResolvedItem, SyntaxStablePtrId)> {
+    // The lookup_resolved_*_item_by_ptr queries tend to sometimes return an encompassing item
+    // instead of actually resolving the identifier.
+    // The following series of heuristics resolve the identifier in alternative ways for such cases.
+
     if let Some(parent) = identifier.as_syntax_node().parent() {
         if parent.kind(db) == SyntaxKind::ItemModule {
             let Some(containing_module_file_id) = db.find_module_file_containing_node(&parent)
@@ -444,6 +448,11 @@ fn find_definition(
         return Some((ResolvedItem::Member(member_id), member_id.untyped_stable_ptr(db)));
     }
 
+    if let Some(var_id) = try_extract_variable_declaration(db, identifier, lookup_items) {
+        let item = ResolvedGenericItem::Variable(var_id);
+        return Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?));
+    }
+
     for &lookup_item_id in lookup_items {
         if let Some(item) =
             db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
@@ -460,11 +469,6 @@ fn find_definition(
             let stable_ptr = resolved_concrete_item_def(db.upcast(), item.clone())?;
             return Some((ResolvedItem::Concrete(item), stable_ptr));
         }
-    }
-
-    if let Some(var_id) = try_extract_variable_declaration(db, identifier, lookup_items) {
-        let item = ResolvedGenericItem::Variable(var_id);
-        return Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?));
     }
 
     // FIXME(mkaput): This logic always kicks in if we're finding definition of undefined symbol
