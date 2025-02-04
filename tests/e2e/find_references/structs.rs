@@ -14,8 +14,8 @@ fn struct_by_name() {
         use super::Foo;
     }
     "#, @r"
-    <sel=declaration>#[derive(Drop)]
-    struct <sel>Foo</sel> { field: felt252 }</sel>
+    #[derive(Drop)]
+    struct <sel=declaration>Foo</sel> { field: felt252 }
     fn main() {
         let foo: <sel>Foo</sel> = <sel>Foo</sel> { field: 0 };
     }
@@ -37,8 +37,8 @@ fn struct_member_via_definition() {
         let x = foo.width * 2;
     }
     "#, @r"
-    <sel=declaration>#[derive(Drop)]
-    struct <sel>Foo</sel> { width: u64 }</sel>
+    #[derive(Drop)]
+    struct <sel=declaration>Foo</sel> { width: u64 }
     fn main() {
         let foo = <sel>Foo</sel> { width: 0 };
         let x = foo.width * 2;

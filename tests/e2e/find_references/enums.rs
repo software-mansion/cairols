@@ -24,10 +24,10 @@ fn enum_name() {
         struct Foo {}
     }
     "#, @r"
-    <sel=declaration>enum <sel>Foo</sel> {
+    enum <sel=declaration>Foo</sel> {
         Bar,
         Baz,
-    }</sel>
+    }
 
     fn main() {
         let foo = <sel>Foo</sel>::Bar;
