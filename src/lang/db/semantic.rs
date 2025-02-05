@@ -167,7 +167,7 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
             }
 
             VarId::Item(_stmt_item_id) => {
-                // TODO(#59): Implement this.
+                // TODO(#58): Implement this.
                 None
             }
         }
