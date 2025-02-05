@@ -24,7 +24,7 @@ pub fn mod_completions(
         .find(|node| node.parent_kind(db) == Some(SyntaxKind::ItemModule))?;
 
     // We are in nested mod, we should not show completions for file modules.
-    if node.parent_of_kind(db, SyntaxKind::ItemModule).is_some() {
+    if node.ancestor_of_kind(db, SyntaxKind::ItemModule).is_some() {
         return Some(Vec::new());
     }
 

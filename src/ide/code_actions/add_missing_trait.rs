@@ -47,7 +47,7 @@ fn missing_traits_actions(
         resolver_data.as_ref().clone_with_inference_id(db, InferenceId::NoContext),
     );
 
-    let expr_node = node.parent_of_type::<ast::ExprBinary>(db)?.lhs(db);
+    let expr_node = node.ancestor_of_type::<ast::ExprBinary>(db)?.lhs(db);
     let stable_ptr = expr_node.stable_ptr().untyped();
     // Get its semantic model.
     let expr_id = db.lookup_expr_by_ptr(function_with_body, expr_node.stable_ptr()).ok()?;

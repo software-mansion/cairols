@@ -26,14 +26,22 @@ pub trait SyntaxNodeExt {
     /// Checks whether this syntax node is or is under the given syntax node in the syntax tree.
     fn is_descendant_or_self(&self, node: &SyntaxNode) -> bool;
 
-    /// Finds the first parent of a given kind.
+    /// Finds the first ancestor of a given kind.
+    fn ancestor_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode>;
+
+    /// Finds the first ancestor of a given kind and returns it in typed form.
+    fn ancestor_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T>;
+
+    /// Finds the parent of a given kind.
+    #[allow(dead_code)]
     fn parent_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode>;
 
-    /// Finds the first parent of a given kind and returns it in typed form.
+    /// Finds the parent of a given kind and returns it in typed form.
+    #[allow(dead_code)]
     fn parent_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T>;
 
     /// Finds the first parent of one of the kinds.
-    fn parent_of_kinds(&self, db: &dyn SyntaxGroup, kinds: &[SyntaxKind]) -> Option<SyntaxNode>;
+    fn ancestor_of_kinds(&self, db: &dyn SyntaxGroup, kinds: &[SyntaxKind]) -> Option<SyntaxNode>;
 
     /// Gets the kind of the given node's parent if it exists.
     fn parent_kind(&self, db: &dyn SyntaxGroup) -> Option<SyntaxKind>;
@@ -72,15 +80,23 @@ impl SyntaxNodeExt for SyntaxNode {
         node.is_ancestor_or_self(self)
     }
 
-    fn parent_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode> {
+    fn ancestor_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode> {
         self.ancestors().find(|node| node.kind(db) == kind)
     }
 
-    fn parent_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T> {
+    fn ancestor_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T> {
         self.ancestors().find_map(|node| T::cast(db, node))
     }
 
-    fn parent_of_kinds(&self, db: &dyn SyntaxGroup, kinds: &[SyntaxKind]) -> Option<SyntaxNode> {
+    fn parent_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode> {
+        self.parent().filter(|node| node.kind(db) == kind)
+    }
+
+    fn parent_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T> {
+        self.parent().and_then(|node| T::cast(db, node))
+    }
+
+    fn ancestor_of_kinds(&self, db: &dyn SyntaxGroup, kinds: &[SyntaxKind]) -> Option<SyntaxNode> {
         self.ancestors().find(|node| kinds.contains(&node.kind(db)))
     }
 

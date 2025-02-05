@@ -150,7 +150,7 @@ impl SymbolDef {
     pub fn search_scope(&self, db: &AnalysisDatabase) -> SearchScope {
         match &self {
             Self::Variable(var) => {
-                if let Some(owning_function) = var.definition_node().parent_of_kinds(
+                if let Some(owning_function) = var.definition_node().ancestor_of_kinds(
                     db,
                     &[SyntaxKind::FunctionWithBody, SyntaxKind::TraitItemFunction],
                 ) {
@@ -519,7 +519,7 @@ fn try_extract_member_from_constructor(
 
     let identifier_node = identifier.as_syntax_node();
 
-    let constructor_expr = identifier_node.parent_of_type::<ast::ExprStructCtorCall>(db)?;
+    let constructor_expr = identifier_node.ancestor_of_type::<ast::ExprStructCtorCall>(db)?;
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr().into()).ok()?;
 
@@ -529,7 +529,7 @@ fn try_extract_member_from_constructor(
         return None;
     };
 
-    let struct_member = identifier_node.parent_of_type::<ast::StructArgSingle>(db)?;
+    let struct_member = identifier_node.ancestor_of_type::<ast::StructArgSingle>(db)?;
 
     let struct_member_name =
         struct_member.identifier(db).as_syntax_node().get_text_without_trivia(db);
@@ -548,7 +548,7 @@ fn try_extract_member(
     lookup_items: &[LookupItemId],
 ) -> Option<MemberId> {
     let syntax_node = identifier.as_syntax_node();
-    let binary_expr = syntax_node.parent_of_type::<ast::ExprBinary>(db)?;
+    let binary_expr = syntax_node.ancestor_of_type::<ast::ExprBinary>(db)?;
 
     let function_with_body = lookup_items.first()?.function_with_body()?;
 
@@ -583,7 +583,7 @@ fn try_extract_member_declaration(
 ) -> Option<MemberId> {
     let member = identifier.as_syntax_node().parent()?.cast::<ast::Member>(db)?;
     assert_eq!(member.name(db), *identifier);
-    let item_struct = member.as_syntax_node().parent_of_type::<ast::ItemStruct>(db)?;
+    let item_struct = member.as_syntax_node().ancestor_of_type::<ast::ItemStruct>(db)?;
     let struct_id = StructLongId(
         db.find_module_file_containing_node(&item_struct.as_syntax_node())?,
         item_struct.stable_ptr(),
@@ -607,9 +607,10 @@ fn try_extract_variable_declaration(
     let function_id = lookup_items.first()?.function_with_body()?;
 
     // Look at function parameters.
-    if let Some(param) = identifier.as_syntax_node().parent_of_kind(db, SyntaxKind::Param) {
+    if let Some(param) = identifier.as_syntax_node().ancestor_of_kind(db, SyntaxKind::Param) {
         // Closures have different semantic model structures than regular functions.
-        let params = if let Some(expr_closure_ast) = param.parent_of_type::<ast::ExprClosure>(db) {
+        let params = if let Some(expr_closure_ast) = param.ancestor_of_type::<ast::ExprClosure>(db)
+        {
             let expr_id =
                 db.lookup_expr_by_ptr(function_id, expr_closure_ast.stable_ptr().into()).ok()?;
             let Expr::ExprClosure(expr_closure_semantic) = db.expr_semantic(function_id, expr_id)
@@ -630,7 +631,7 @@ fn try_extract_variable_declaration(
     }
 
     // Look at patterns in the function body.
-    if let Some(pattern) = identifier.as_syntax_node().parent_of_type::<ast::Pattern>(db) {
+    if let Some(pattern) = identifier.as_syntax_node().ancestor_of_type::<ast::Pattern>(db) {
         // Bail out if the pattern happens to not exist in the semantic model.
         // We don't need semantics for returning, though, due to the way how local variables are
         // identified there, so we're happily ignoring the result value.

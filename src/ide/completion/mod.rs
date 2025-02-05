@@ -156,7 +156,7 @@ fn completion_kind(
             }
         }
         SyntaxKind::TerminalLBrace | SyntaxKind::TerminalRBrace | SyntaxKind::TerminalComma => {
-            if let Some(constructor) = node.parent_of_type::<ast::ExprStructCtorCall>(db) {
+            if let Some(constructor) = node.ancestor_of_type::<ast::ExprStructCtorCall>(db) {
                 return CompletionKind::StructConstructor(constructor);
             }
         }
@@ -185,7 +185,7 @@ fn completion_kind(
             }
 
             if generate_completion {
-                if let Some(constructor) = node.parent_of_type::<ast::ExprStructCtorCall>(db) {
+                if let Some(constructor) = node.ancestor_of_type::<ast::ExprStructCtorCall>(db) {
                     return CompletionKind::StructConstructor(constructor);
                 }
             }

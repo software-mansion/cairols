@@ -143,7 +143,7 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
             VarId::Local(local_var_id) => {
                 // Get the Pattern syntax node which defines the variable.
                 let identifier = local_var_id.untyped_stable_ptr(db.upcast()).lookup(db.upcast());
-                let pattern = identifier.parent_of_type::<ast::Pattern>(db.upcast())?;
+                let pattern = identifier.ancestor_of_type::<ast::Pattern>(db.upcast())?;
 
                 // Get the function which contains the variable/parameter.
                 let function_id =

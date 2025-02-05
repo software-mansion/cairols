@@ -50,7 +50,7 @@ pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) 
     let item_ast_node = node
         .ancestors_with_self()
         .find(|node| node.parent_kind(db) == Some(SyntaxKind::ModuleItemList));
-    let macro_ast_node = node.parent_of_kind(db, SyntaxKind::ExprInlineMacro);
+    let macro_ast_node = node.ancestor_of_kind(db, SyntaxKind::ExprInlineMacro);
 
     let (node_to_expand, top_level_macro_kind) = match (item_ast_node, macro_ast_node) {
         (Some(item_ast_node), Some(macro_ast_node)) => {

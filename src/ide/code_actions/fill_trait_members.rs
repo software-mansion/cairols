@@ -26,7 +26,7 @@ pub fn fill_trait_members(
 ) -> Option<CodeAction> {
     let file = db.find_module_file_containing_node(&node)?.file_id(db).ok()?;
 
-    let item_impl = node.parent_of_type::<ItemImpl>(db)?;
+    let item_impl = node.ancestor_of_type::<ItemImpl>(db)?;
 
     // Do not complete `impl`s without braces.
     let MaybeImplBody::Some(impl_body) = item_impl.body(db) else {

@@ -28,7 +28,7 @@ pub fn fill_struct_fields(
     let file_id = module_file_id.file_id(db).ok()?;
     let function_id = db.find_lookup_item(&node)?.function_with_body()?;
 
-    let constructor_expr = node.parent_of_type::<ExprStructCtorCall>(db)?;
+    let constructor_expr = node.ancestor_of_type::<ExprStructCtorCall>(db)?;
 
     let mut last_important_element = None;
     let mut has_trailing_comma = false;
