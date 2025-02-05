@@ -77,13 +77,8 @@ impl Request for ToolchainInfo {
 
 pub struct ViewSyntaxTree;
 
-#[derive(Serialize, Deserialize)]
-pub struct ViewSyntaxTreeParams {
-    pub uri: Url,
-}
-
 impl Request for ViewSyntaxTree {
-    type Params = ViewSyntaxTreeParams;
+    type Params = TextDocumentPositionParams;
     type Result = Option<String>;
     const METHOD: &'static str = "cairo/viewSyntaxTree";
 }
