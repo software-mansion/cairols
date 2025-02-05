@@ -628,14 +628,14 @@ fn resolved_concrete_item_def(
     match item {
         ResolvedConcreteItem::Type(ty) => {
             if let TypeLongId::GenericParameter(param) = ty.lookup_intern(db) {
-                Some(param.untyped_stable_ptr(db.upcast()))
+                Some(param.untyped_stable_ptr(db))
             } else {
                 None
             }
         }
         ResolvedConcreteItem::Impl(imp) => {
             if let ImplLongId::GenericParameter(param) = imp.lookup_intern(db) {
-                Some(param.untyped_stable_ptr(db.upcast()))
+                Some(param.untyped_stable_ptr(db))
             } else {
                 None
             }
@@ -649,7 +649,7 @@ fn resolved_generic_item_def(
     item: ResolvedGenericItem,
 ) -> Option<SyntaxStablePtrId> {
     Some(match item {
-        ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(db.upcast()),
+        ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(db),
 
         ResolvedGenericItem::Module(module_id) => {
             match module_id {
@@ -661,68 +661,48 @@ fn resolved_generic_item_def(
                 }
                 ModuleId::Submodule(submodule_id) => {
                     // For submodules, the definition node is the identifier in `mod <ident> .*`.
-                    submodule_id
-                        .stable_ptr(db.upcast())
-                        .lookup(db.upcast())
-                        .name(db.upcast())
-                        .stable_ptr()
-                        .untyped()
+                    submodule_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
                 }
             }
         }
 
         ResolvedGenericItem::GenericFunction(item) => {
             let declaration: ast::FunctionDeclaration = match item {
-                GenericFunctionId::Free(id) => {
-                    id.stable_ptr(db.upcast()).lookup(db.upcast()).declaration(db.upcast())
-                }
-                GenericFunctionId::Extern(id) => {
-                    id.stable_ptr(db.upcast()).lookup(db.upcast()).declaration(db.upcast())
-                }
-                GenericFunctionId::Impl(id) => match id.impl_function(db.upcast()) {
-                    Ok(Some(id)) => {
-                        id.stable_ptr(db.upcast()).lookup(db.upcast()).declaration(db.upcast())
-                    }
+                GenericFunctionId::Free(id) => id.stable_ptr(db).lookup(db).declaration(db),
+                GenericFunctionId::Extern(id) => id.stable_ptr(db).lookup(db).declaration(db),
+                GenericFunctionId::Impl(id) => match id.impl_function(db) {
+                    Ok(Some(id)) => id.stable_ptr(db).lookup(db).declaration(db),
                     // It is possible (Marek didn't find out how it happens), that we hop into a
                     // situation where concrete impl is not inferred yet, so we can't find the
                     // declaration. Fall back to trait function in such cases.
-                    _ => id
-                        .function
-                        .stable_ptr(db.upcast())
-                        .lookup(db.upcast())
-                        .declaration(db.upcast()),
+                    _ => id.function.stable_ptr(db).lookup(db).declaration(db),
                 },
             };
-            declaration.name(db.upcast()).stable_ptr().untyped()
+            declaration.name(db).stable_ptr().untyped()
         }
 
-        ResolvedGenericItem::GenericType(generic_type) => {
-            generic_type.untyped_stable_ptr(db.upcast())
+        ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(db),
+
+        ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(db),
+
+        ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(db),
+
+        ResolvedGenericItem::Variant(variant) => {
+            variant.id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
         }
 
-        ResolvedGenericItem::GenericTypeAlias(type_alias) => {
-            type_alias.untyped_stable_ptr(db.upcast())
+        ResolvedGenericItem::Trait(trt) => {
+            trt.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
         }
 
-        ResolvedGenericItem::GenericImplAlias(impl_alias) => {
-            impl_alias.untyped_stable_ptr(db.upcast())
+        ResolvedGenericItem::Impl(imp) => {
+            imp.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
         }
-
-        ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(db.upcast()).untyped(),
-
-        ResolvedGenericItem::Trait(trt) => trt.stable_ptr(db.upcast()).untyped(),
-
-        ResolvedGenericItem::Impl(imp) => imp.stable_ptr(db.upcast()).untyped(),
 
         ResolvedGenericItem::Variable(var) => match var {
-            VarId::Param(param) => param
-                .stable_ptr(db.upcast())
-                .lookup(db.upcast())
-                .name(db.upcast())
-                .stable_ptr()
-                .untyped(),
-            VarId::Local(var) => var.untyped_stable_ptr(db.upcast()),
-            VarId::Item(item) => item.name_stable_ptr(db.upcast()),
+            VarId::Param(param) => param.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped(),
+            VarId::Local(var) => var.untyped_stable_ptr(db),
+            VarId::Item(item) => item.name_stable_ptr(db),
         },
     })
 }

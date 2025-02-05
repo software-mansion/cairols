@@ -21,9 +21,9 @@ fn trait_via_definition() {
         let area = ShapeGeo<caret>metry::area(rect);
     }
     "#, @r"
-    <sel=declaration>pub trait <sel>ShapeGeometry</sel><T> {
+    pub trait <sel=declaration>ShapeGeometry</sel><T> {
         fn area(self: T) -> u64;
-    }</sel>
+    }
     mod rectangle {
         use super::<sel>ShapeGeometry</sel>;
         #[derive(Copy, Drop)]
@@ -218,9 +218,9 @@ fn impl_method_via_definition() {
     trait FooTrait {
         fn area(self: @Foo) -> u64;
     }
-    <sel=declaration>impl <sel>FooImpl</sel> of FooTrait {
+    impl <sel=declaration>FooImpl</sel> of FooTrait {
         fn area(self: @Foo) -> u64 { 0 }
-    }</sel>
+    }
     #[derive(Drop)]
     struct Bar {}
     trait BarTrait {

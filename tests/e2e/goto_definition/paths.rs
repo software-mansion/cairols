@@ -129,9 +129,9 @@ fn use_item_via_crate() {
         use crate::Fo<caret>o;
     }
     ", @r"
-    <sel>pub trait Foo<T> {
+    pub trait <sel>Foo</sel><T> {
         fn foo(self: T);
-    }</sel>
+    }
     mod module {
         use crate::Foo;
     }
@@ -148,9 +148,9 @@ fn use_item_via_super() {
         use super::Fo<caret>o;
     }
     ", @r"
-    <sel>pub trait Foo<T> {
+    pub trait <sel>Foo</sel><T> {
         fn foo(self: T);
-    }</sel>
+    }
     mod module {
         use super::Foo;
     }
