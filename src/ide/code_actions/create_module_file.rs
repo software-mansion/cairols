@@ -34,7 +34,7 @@ pub fn create_module_file(
         return None;
     }
 
-    let file = url.path_segments()?.last()?;
+    let file = url.path_segments()?.next_back()?;
     let extra_folder = file.strip_suffix(".cairo").unwrap_or(file).to_owned();
 
     if let Ok(mut path) = url.path_segments_mut() {
