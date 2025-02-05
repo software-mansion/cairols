@@ -2,7 +2,7 @@ use std::iter;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    GenericTypeId, LanguageElementId, LocalVarLongId, LookupItemId, MemberId, ModuleId,
+    EnumLongId, GenericTypeId, LanguageElementId, LocalVarLongId, LookupItemId, MemberId, ModuleId,
     ModuleItemId, NamedLanguageElementId, StructLongId, SubmoduleLongId, TopLevelLanguageElementId,
     TraitItemId, VarId,
 };
@@ -20,7 +20,7 @@ use cairo_lang_semantic::items::generics::generic_params_to_args;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{Binding, ConcreteTraitLongId, Expr, Mutability, TypeLongId};
+use cairo_lang_semantic::{Binding, ConcreteTraitLongId, Expr, Mutability, TypeLongId, Variant};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -453,6 +453,11 @@ fn find_definition(
         ));
     }
 
+    if let Some(variant) = try_extract_variant_declaration(db, identifier) {
+        let item = ResolvedGenericItem::Variant(variant);
+        return Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?));
+    }
+
     if let Some(var_id) = try_extract_variable_declaration(db, identifier, lookup_items) {
         let item = ResolvedGenericItem::Variable(var_id);
         return Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?));
@@ -592,6 +597,25 @@ fn try_extract_member_declaration(
     let struct_members = db.struct_members(struct_id).ok()?;
     let member_semantic = struct_members.get(&member.name(db).text(db))?;
     Some(member_semantic.id)
+}
+
+/// Extracts [`VariantId`] if the [`TerminalIdentifier`] is a name of variant in enum declaration.
+fn try_extract_variant_declaration(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+) -> Option<Variant> {
+    let variant = identifier.as_syntax_node().ancestor_of_type::<ast::Variant>(db)?;
+    assert_eq!(variant.name(db), *identifier);
+    let item_enum = variant.as_syntax_node().ancestor_of_type::<ast::ItemEnum>(db)?;
+    let enum_id = EnumLongId(
+        db.find_module_file_containing_node(&item_enum.as_syntax_node())?,
+        item_enum.stable_ptr(),
+    )
+    .intern(db);
+    let enum_variants = db.enum_variants(enum_id).ok()?;
+    let variant_id = *enum_variants.get(&variant.name(db).text(db))?;
+    let variant = db.variant_semantic(enum_id, variant_id).ok()?;
+    Some(variant)
 }
 
 /// Lookups if the identifier is a declaration of a variable/param in one of the lookup items.
