@@ -8,18 +8,18 @@ fn enum_name() {
         Bar,
         Baz,
     }
-    
+
     fn main() {
         let foo = Foo::Bar;
         let foobar: Foo = foo;
     }
-    
+
     fn calc(foo: Foo) {}
-    
+
     mod rectangle {
         use super::Foo;
     }
-    
+
     mod trick {
         struct Foo {}
     }
@@ -46,24 +46,69 @@ fn enum_name() {
     ")
 }
 
-// FIXME(#129): Pattern should also be selected.
 #[test]
-fn enum_variants() {
+fn enum_variants_via_declaration() {
     test_transform!(find_references, r#"
-    enum Foo { Bar, Baz }
+    enum Foo { Ba<caret>r, Baz }
     fn main() {
-        let foo = Foo::Ba<caret>r;
+        let foo = Foo::Bar;
         match foo {
-            Foo::Bar => {}
+            Foo::Bar => {},
             _ => {}
         }
     }
     "#, @r"
     enum Foo { <sel=declaration>Bar</sel>, Baz }
     fn main() {
+        let foo = Foo::<sel>Bar</sel>;
+        match foo {
+            Foo::<sel>Bar</sel> => {},
+            _ => {}
+        }
+    }
+    ")
+}
+
+#[test]
+fn enum_variants_via_expr() {
+    test_transform!(find_references, r#"
+    enum Foo { Bar, Baz }
+    fn main() {
+        let foo = Foo::Ba<caret>r;
+        match foo {
+            Foo::Bar => {},
+            _ => {}
+        }
+    }
+    "#, @r"
+    enum Foo { <sel=declaration>Bar</sel>, Baz }
+    fn main() {
+        let foo = Foo::<sel>Bar</sel>;
+        match foo {
+            Foo::<sel>Bar</sel> => {},
+            _ => {}
+        }
+    }
+    ")
+}
+
+#[test]
+fn enum_variants_via_pattern() {
+    test_transform!(find_references, r#"
+    enum Foo { Bar, Baz }
+    fn main() {
         let foo = Foo::Bar;
         match foo {
-            Foo::Bar => {}
+            Foo::B<caret>ar => {},
+            _ => {}
+        }
+    }
+    "#, @r"
+    enum Foo { <sel=declaration>Bar</sel>, Baz }
+    fn main() {
+        let foo = Foo::<sel>Bar</sel>;
+        match foo {
+            Foo::<sel>Bar</sel> => {},
             _ => {}
         }
     }

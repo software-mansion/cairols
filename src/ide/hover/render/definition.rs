@@ -57,10 +57,24 @@ pub fn definition(
 
             // Signature is the signature of the struct, so it makes sense that the definition
             // path is too.
-            md += &fenced_code_block(&member.structure().definition_path(db));
-            md += &fenced_code_block(&member.structure().signature(db));
+            md += &fenced_code_block(&member.struct_item().definition_path(db));
+            md += &fenced_code_block(&member.struct_item().signature(db));
 
             if let Some(doc) = db.get_item_documentation(member.member_id().into()) {
+                md += RULE;
+                md += &doc;
+            }
+            md
+        }
+        SymbolDef::Variant(variant) => {
+            let mut md = String::new();
+
+            // Signature is the signature of the enum, so it makes sense that the definition
+            // path is too.
+            md += &fenced_code_block(&variant.enum_item().definition_path(db));
+            md += &fenced_code_block(&variant.enum_item().signature(db));
+
+            if let Some(doc) = db.get_item_documentation(variant.variant_id().into()) {
                 md += RULE;
                 md += &doc;
             }

@@ -4,7 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumLongId, GenericTypeId, LanguageElementId, LocalVarLongId, LookupItemId, MemberId, ModuleId,
     ModuleItemId, NamedLanguageElementId, StructLongId, SubmoduleLongId, TopLevelLanguageElementId,
-    TraitItemId, VarId,
+    TraitItemId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_doc::db::DocGroup;
@@ -44,6 +44,7 @@ pub enum SymbolDef {
     Variable(VariableDef),
     ExprInlineMacro(SmolStr),
     Member(MemberDef),
+    Variant(VariantDef),
     Module(ModuleDef),
 }
 
@@ -77,24 +78,19 @@ impl SymbolDef {
             | ResolvedItem::Generic(ResolvedGenericItem::GenericType(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericTypeAlias(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericImplAlias(_))
-            | ResolvedItem::Generic(ResolvedGenericItem::Variant(_))
             | ResolvedItem::Generic(ResolvedGenericItem::Trait(_))
             | ResolvedItem::Generic(ResolvedGenericItem::Impl(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Constant(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Function(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Type(_))
-            | ResolvedItem::Concrete(ResolvedConcreteItem::Variant(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_)) => {
                 ItemDef::new(db, &definition_node).map(Self::Item)
             }
 
-            ResolvedItem::Generic(ResolvedGenericItem::Module(id)) => {
-                Some(Self::Module(ModuleDef::new(db, id, definition_node)))
-            }
-
-            ResolvedItem::Concrete(ResolvedConcreteItem::Module(id)) => {
+            ResolvedItem::Generic(ResolvedGenericItem::Module(id))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Module(id)) => {
                 Some(Self::Module(ModuleDef::new(db, id, definition_node)))
             }
 
@@ -104,6 +100,14 @@ impl SymbolDef {
 
             ResolvedItem::Member(member_id) => {
                 MemberDef::new(db, member_id, definition_node).map(Self::Member)
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::Variant(variant)) => {
+                VariantDef::new(db, variant.id, definition_node).map(Self::Variant)
+            }
+
+            ResolvedItem::Concrete(ResolvedConcreteItem::Variant(concrete_variant)) => {
+                VariantDef::new(db, concrete_variant.id, definition_node).map(Self::Variant)
             }
         }
     }
@@ -117,6 +121,7 @@ impl SymbolDef {
             Self::Variable(d) => Some(d.definition_stable_ptr()),
             Self::ExprInlineMacro(_) => None,
             Self::Member(d) => Some(d.definition_stable_ptr),
+            Self::Variant(d) => Some(d.definition_stable_ptr),
             Self::Module(d) => Some(d.definition_stable_ptr),
         }
     }
@@ -141,6 +146,7 @@ impl SymbolDef {
             Self::Variable(it) => it.name(db),
             Self::ExprInlineMacro(name) => name.clone(),
             Self::Member(it) => it.name(db),
+            Self::Variant(it) => it.name(db),
             Self::Module(it) => it.name(db),
         }
     }
@@ -321,7 +327,7 @@ impl VariableDef {
 #[derive(Eq, PartialEq)]
 pub struct MemberDef {
     member_id: MemberId,
-    structure: ItemDef,
+    struct_item: ItemDef,
     definition_stable_ptr: SyntaxStablePtrId,
 }
 
@@ -333,7 +339,11 @@ impl MemberDef {
         definition_node: SyntaxNode,
     ) -> Option<Self> {
         let structure = ItemDef::new(db, &definition_node)?;
-        Some(Self { member_id, structure, definition_stable_ptr: definition_node.stable_ptr() })
+        Some(Self {
+            member_id,
+            struct_item: structure,
+            definition_stable_ptr: definition_node.stable_ptr(),
+        })
     }
 
     /// Gets [`MemberId`] associated with this symbol.
@@ -342,13 +352,48 @@ impl MemberDef {
     }
 
     /// Gets a definition of the structure which this symbol is a member of.
-    pub fn structure(&self) -> &ItemDef {
-        &self.structure
+    pub fn struct_item(&self) -> &ItemDef {
+        &self.struct_item
     }
 
     /// Gets member's name.
     pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
         self.member_id.name(db)
+    }
+}
+
+/// Information about an enum variant.
+#[derive(Eq, PartialEq)]
+pub struct VariantDef {
+    variant_id: VariantId,
+    enum_item: ItemDef,
+    definition_stable_ptr: SyntaxStablePtrId,
+}
+
+impl VariantDef {
+    /// Constructs a new [`VariantDef`] instance.
+    pub fn new(
+        db: &AnalysisDatabase,
+        variant_id: VariantId,
+        definition_node: SyntaxNode,
+    ) -> Option<Self> {
+        let enum_item = ItemDef::new(db, &definition_node)?;
+        Some(Self { variant_id, enum_item, definition_stable_ptr: definition_node.stable_ptr() })
+    }
+
+    /// Gets [`VariantId`] associated with this symbol.
+    pub fn variant_id(&self) -> VariantId {
+        self.variant_id
+    }
+
+    /// Gets a definition of the enum which this symbol is a variant of.
+    pub fn enum_item(&self) -> &ItemDef {
+        &self.enum_item
+    }
+
+    /// Gets variant's name.
+    pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
+        self.variant_id.name(db)
     }
 }
 
