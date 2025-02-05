@@ -72,7 +72,7 @@ pub fn mod_completions(
     let mut result: Vec<_> = Default::default();
 
     for cairo_file in read_dir(&search_dir)? {
-        let file = cairo_file.iter().last()?.to_string_lossy().to_string();
+        let file = cairo_file.iter().next_back()?.to_string_lossy().to_string();
 
         if !existing_modules_files.contains(&cairo_file.to_string_lossy().to_string()) {
             let file_name = file.strip_suffix(".cairo").unwrap_or(&file);
@@ -112,7 +112,7 @@ fn already_typed_text(
 }
 
 fn pop_path(url: &mut Url) -> Option<String> {
-    let file_name = url.path_segments()?.last()?.to_string();
+    let file_name = url.path_segments()?.next_back()?.to_string();
 
     if let Ok(mut path) = url.path_segments_mut() {
         path.pop();
