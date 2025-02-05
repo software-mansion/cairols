@@ -149,10 +149,10 @@ impl SymbolDef {
     pub fn search_scope(&self, db: &AnalysisDatabase) -> SearchScope {
         match &self {
             Self::Variable(var) => {
-                if let Some(owning_function) = var.definition_node().parent_of_kinds(db, &[
-                    SyntaxKind::FunctionWithBody,
-                    SyntaxKind::TraitItemFunction,
-                ]) {
+                if let Some(owning_function) = var.definition_node().parent_of_kinds(
+                    db,
+                    &[SyntaxKind::FunctionWithBody, SyntaxKind::TraitItemFunction],
+                ) {
                     SearchScope::file_span(
                         owning_function.stable_ptr().file_id(db.upcast()),
                         owning_function.span(db.upcast()),

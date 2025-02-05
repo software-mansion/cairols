@@ -25,12 +25,14 @@ fn test_invalid_scarb_toml_change() {
 
     let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
-    ls.edit_file("Scarb.toml", indoc! {r#"
-        [package]
-        version = "0.1.0"
-        edition = "2024_07"
-    "#
-    });
+    ls.edit_file(
+        "Scarb.toml",
+        indoc! {r#"
+            [package]
+            version = "0.1.0"
+            edition = "2024_07"
+        "#},
+    );
 
     ls.send_notification::<DidChangeWatchedFiles>(DidChangeWatchedFilesParams {
         changes: vec![FileEvent { uri: ls.doc_id("Scarb.toml").uri, typ: FileChangeType::CHANGED }],

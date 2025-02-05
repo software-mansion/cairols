@@ -150,12 +150,15 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                         .find(|component| component.id.as_ref() == Some(id));
 
                     if let Some(dependency_component) = dependency_component {
-                        Some((dependency_component.name.clone(), DependencySettings {
-                            discriminator: dependency_component
-                                .discriminator
-                                .as_ref()
-                                .map(ToSmolStr::to_smolstr),
-                        }))
+                        Some((
+                            dependency_component.name.clone(),
+                            DependencySettings {
+                                discriminator: dependency_component
+                                    .discriminator
+                                    .as_ref()
+                                    .map(ToSmolStr::to_smolstr),
+                            },
+                        ))
                     } else {
                         error!("component not found in metadata");
                         None
