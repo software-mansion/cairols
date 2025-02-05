@@ -11,7 +11,15 @@ fn var_via_binding() {
     fn bar() {
         let foobar = 42; // bad
     }
-    "#, @"none response")
+    "#, @r"
+    fn main() {
+        let <sel=declaration>foobar</sel> = 1233; // good
+        let x = <sel>foobar</sel> + 1; // good
+    }
+    fn bar() {
+        let foobar = 42; // bad
+    }
+    ")
 }
 
 #[test]
@@ -133,8 +141,8 @@ fn param_via_binding() {
         num * num
     }
     "#, @r"
-    fn <sel=declaration>pow</sel>(num: felt252) -> felt252 {
-        num * num
+    fn pow(<sel=declaration>num</sel>: felt252) -> felt252 {
+        <sel>num</sel> * <sel>num</sel>
     }
     ")
 }
@@ -197,6 +205,19 @@ fn closure_param_via_use() {
     test_transform!(find_references, r#"
     fn main() {
         let f = |abc: felt252| a<caret>bc + 1;
+    }
+    "#, @r"
+    fn main() {
+        let f = |<sel=declaration>abc</sel>: felt252| <sel>abc</sel> + 1;
+    }
+    ")
+}
+
+#[test]
+fn closure_param_via_binding() {
+    test_transform!(find_references, r#"
+    fn main() {
+        let f = |a<caret>bc: felt252| abc + 1;
     }
     "#, @r"
     fn main() {

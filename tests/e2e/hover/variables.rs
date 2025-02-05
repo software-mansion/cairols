@@ -11,7 +11,14 @@ fn ident_typed() {
     source_context = """
         let ab<caret>c: felt252 = 0;
     """
-    popover = "Type: `core::felt252`"
+    highlight = """
+        let <sel>abc</sel>: felt252 = 0;
+    """
+    popover = """
+    ```cairo
+    let abc: core::felt252
+    ```
+    """
     "#)
 }
 
@@ -25,7 +32,14 @@ fn ident() {
     source_context = """
         let xy<caret>z = 3;
     """
-    popover = "Type: `core::felt252`"
+    highlight = """
+        let <sel>xyz</sel> = 3;
+    """
+    popover = """
+    ```cairo
+    let xyz: core::felt252
+    ```
+    """
     "#)
 }
 
@@ -40,7 +54,14 @@ fn ident_mut() {
     source_context = """
         let mut de<caret>f = abc * 2;
     """
-    popover = "Type: `core::felt252`"
+    highlight = """
+        let mut <sel>def</sel> = abc * 2;
+    """
+    popover = """
+    ```cairo
+    let mut def: core::felt252
+    ```
+    """
     "#)
 }
 
