@@ -9,7 +9,7 @@ fn struct_item_in_constructor() {
         let foo = Fo<caret>o {};
     }
     ", @r"
-    <sel>struct Foo { }</sel>
+    struct <sel>Foo</sel> { }
     fn main() {
         let foo = Foo {};
     }
@@ -22,7 +22,7 @@ fn struct_item_in_type() {
     struct Foo { }
     fn calc(foo: Fo<caret>o) {}
     ", @r"
-    <sel>struct Foo { }</sel>
+    struct <sel>Foo</sel> { }
     fn calc(foo: Foo) {}
     ")
 }

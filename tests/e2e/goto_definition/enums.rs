@@ -7,7 +7,7 @@ fn enum_item_in_type() {
     enum Foo { Bar }
     fn calc(foo: Fo<caret>o) {}
     "#, @r"
-    <sel>enum Foo { Bar }</sel>
+    enum <sel>Foo</sel> { Bar }
     fn calc(foo: Foo) {}
     ");
 }
@@ -20,7 +20,7 @@ fn enum_item_in_expr() {
         let foo = Fo<caret>o::Bar;
     }
     "#, @r"
-    <sel>enum Foo { Bar }</sel>
+    enum <sel>Foo</sel> { Bar }
     fn main() {
         let foo = Foo::Bar;
     }

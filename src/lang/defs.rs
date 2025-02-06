@@ -2,8 +2,9 @@ use std::iter;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    LanguageElementId, LocalVarLongId, LookupItemId, MemberId, ModuleId, ModuleItemId,
-    NamedLanguageElementId, SubmoduleLongId, TopLevelLanguageElementId, TraitItemId, VarId,
+    GenericTypeId, LanguageElementId, LocalVarLongId, LookupItemId, MemberId, ModuleId,
+    ModuleItemId, NamedLanguageElementId, SubmoduleLongId, TopLevelLanguageElementId, TraitItemId,
+    VarId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_doc::db::DocGroup;
@@ -649,7 +650,9 @@ fn resolved_generic_item_def(
     item: ResolvedGenericItem,
 ) -> Option<SyntaxStablePtrId> {
     Some(match item {
-        ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(db),
+        ResolvedGenericItem::GenericConstant(item) => {
+            item.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+        }
 
         ResolvedGenericItem::Module(module_id) => {
             match module_id {
@@ -681,11 +684,25 @@ fn resolved_generic_item_def(
             declaration.name(db).stable_ptr().untyped()
         }
 
-        ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(db),
+        ResolvedGenericItem::GenericType(generic_type) => match generic_type {
+            GenericTypeId::Struct(struct_id) => {
+                struct_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+            }
+            GenericTypeId::Enum(enum_id) => {
+                enum_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+            }
+            GenericTypeId::Extern(extern_type_id) => {
+                extern_type_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+            }
+        },
 
-        ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(db),
+        ResolvedGenericItem::GenericTypeAlias(type_alias) => {
+            type_alias.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+        }
 
-        ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(db),
+        ResolvedGenericItem::GenericImplAlias(impl_alias) => {
+            impl_alias.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+        }
 
         ResolvedGenericItem::Variant(variant) => {
             variant.id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
