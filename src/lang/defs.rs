@@ -3,8 +3,8 @@ use std::iter;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     GenericTypeId, LanguageElementId, LocalVarLongId, LookupItemId, MemberId, ModuleId,
-    ModuleItemId, NamedLanguageElementId, SubmoduleLongId, TopLevelLanguageElementId, TraitItemId,
-    VarId,
+    ModuleItemId, NamedLanguageElementId, StructLongId, SubmoduleLongId, TopLevelLanguageElementId,
+    TraitItemId, VarId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_doc::db::DocGroup;
@@ -445,8 +445,12 @@ fn find_definition(
 
     if let Some(member_id) = try_extract_member(db, identifier, lookup_items)
         .or_else(|| try_extract_member_from_constructor(db, identifier, lookup_items))
+        .or_else(|| try_extract_member_declaration(db, identifier))
     {
-        return Some((ResolvedItem::Member(member_id), member_id.untyped_stable_ptr(db)));
+        return Some((
+            ResolvedItem::Member(member_id),
+            member_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped(),
+        ));
     }
 
     if let Some(var_id) = try_extract_variable_declaration(db, identifier, lookup_items) {
@@ -570,6 +574,24 @@ fn try_extract_member(
     } else {
         None
     }
+}
+
+/// Extracts [`MemberId`] if the [`TerminalIdentifier`] is a name of member in struct declaration.
+fn try_extract_member_declaration(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+) -> Option<MemberId> {
+    let member = identifier.as_syntax_node().parent()?.cast::<ast::Member>(db)?;
+    assert_eq!(member.name(db), *identifier);
+    let item_struct = member.as_syntax_node().parent_of_type::<ast::ItemStruct>(db)?;
+    let struct_id = StructLongId(
+        db.find_module_file_containing_node(&item_struct.as_syntax_node())?,
+        item_struct.stable_ptr(),
+    )
+    .intern(db);
+    let struct_members = db.struct_members(struct_id).ok()?;
+    let member_semantic = struct_members.get(&member.name(db).text(db))?;
+    Some(member_semantic.id)
 }
 
 /// Lookups if the identifier is a declaration of a variable/param in one of the lookup items.

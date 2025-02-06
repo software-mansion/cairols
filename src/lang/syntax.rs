@@ -5,6 +5,9 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 pub trait SyntaxNodeExt {
+    /// Mirror of [`TypedSyntaxNode::cast`].
+    fn cast<T: TypedSyntaxNode>(self, db: &dyn SyntaxGroup) -> Option<T>;
+
     /// Creates an iterator that yields ancestors of this syntax node.
     fn ancestors(&self) -> impl Iterator<Item = SyntaxNode>;
 
@@ -40,6 +43,10 @@ pub trait SyntaxNodeExt {
 }
 
 impl SyntaxNodeExt for SyntaxNode {
+    fn cast<T: TypedSyntaxNode>(self, db: &dyn SyntaxGroup) -> Option<T> {
+        T::cast(db, self)
+    }
+
     fn ancestors(&self) -> impl Iterator<Item = SyntaxNode> {
         // We aren't reusing `ancestors_with_self` here to avoid cloning this node.
         iter::successors(self.parent(), SyntaxNode::parent)

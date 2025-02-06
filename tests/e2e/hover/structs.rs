@@ -28,7 +28,7 @@ fn member_definition_name() {
     }
     ```
     ---
-    Docstring of Struct."""
+    Docstring of member1."""
     "#)
 }
 
