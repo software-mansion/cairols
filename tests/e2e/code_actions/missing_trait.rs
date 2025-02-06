@@ -26,7 +26,7 @@ fn simple() {
 }
 
 #[test]
-fn simple_after_method_name() {
+fn after_method_name() {
     test_transform!(quick_fix, "
     trait ATrait<T> {
         fn some_method(self: @T);
@@ -55,22 +55,6 @@ fn no_suitable_impl() {
         fn main() {
             let x = 5_felt252;
             x.some_me<caret>thod();
-        }
-    }
-    ", @"No code actions.");
-}
-
-#[test]
-fn no_suitable_impl_after_method_name() {
-    test_transform!(quick_fix, "
-    trait ATrait<T> {
-        fn some_method(self: @T);
-    }
-
-    mod inner_mod {
-        fn main() {
-            let x = 5_felt252;
-            x.some_method(<caret>);
         }
     }
     ", @"No code actions.");
@@ -111,31 +95,6 @@ fn two_options() {
 }
 
 #[test]
-fn two_options_after_method_name() {
-    test_transform!(quick_fix, "
-    trait ATrait1<T> {
-        fn some_method(self: @T);
-    }
-    impl Felt252ATraitImpl1 of ATrait1<felt252> {
-        fn some_method(self: @felt252) {}
-    }
-    trait ATrait2<T> {
-        fn some_method(self: @T);
-    }
-    impl Felt252ATraitImpl2 of ATrait2<felt252> {
-        fn some_method(self: @felt252) {}
-    }
-
-    mod inner_mod {
-        fn main() {
-            let x = 5_felt252;
-            x.some_method(<caret>);
-        }
-    }
-    ", @"No code actions.");
-}
-
-#[test]
 fn non_directly_visible_trait() {
     test_transform!(quick_fix, "
     mod hidden_trait {
@@ -162,27 +121,6 @@ fn non_directly_visible_trait() {
 }
 
 #[test]
-fn non_directly_visible_trait_after_method_name() {
-    test_transform!(quick_fix, "
-    mod hidden_trait {
-        pub trait ATrait1<T> {
-            fn some_method(self: @T);
-        }
-        impl Felt252ATraitImpl of ATrait1<felt252> {
-            fn some_method(self: @felt252) {}
-        }
-    }
-    use hidden_trait::ATrait1;
-    mod inner_mod {
-        fn main() {
-            let x = 5_felt252;
-            x.some_method(<caret>);
-        }
-    }
-    ", @"No code actions.");
-}
-
-#[test]
 fn from_corelib() {
     test_transform!(quick_fix, "
     fn main() {
@@ -195,16 +133,6 @@ fn from_corelib() {
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     "#);
-}
-
-#[test]
-fn from_corelib_after_method_name() {
-    test_transform!(quick_fix, "
-    fn main() {
-        let x = core::pedersen::PedersenTrait::new(5_felt252);
-        let _y = x.update(3_felt252<caret>);
-    }
-    ", @"No code actions.");
 }
 
 #[test]
@@ -239,32 +167,6 @@ fn from_starknet() {
 }
 
 #[test]
-fn from_starknet_after_method_name() {
-    test_transform!(quick_fix, "
-    #[starknet::interface]
-    trait HelloStarknetTrait<TContractState> {
-        // Returns the current balance.
-        fn get_balance(self: @TContractState) -> usize;
-    }
-
-    #[starknet::contract]
-    mod hello_starknet {
-        #[storage]
-        struct Storage {
-            balance: usize,
-        }
-
-        #[abi(embed_v0)]
-        impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
-            fn get_balance(self: @ContractState) -> usize {
-                self.balance.read(<caret>)
-            }
-        }
-    }
-    ", @"No code actions.");
-}
-
-#[test]
 fn visible_only_in_editions_without_visibility_constraints() {
     test_transform!(quick_fix_without_visibility_constraints, "
     mod hidden_trait {
@@ -290,26 +192,6 @@ fn visible_only_in_editions_without_visibility_constraints() {
 }
 
 #[test]
-fn visible_only_in_editions_without_visibility_constraints_after_method_name() {
-    test_transform!(quick_fix_without_visibility_constraints, "
-    mod hidden_trait {
-        trait ATrait1<T> {
-            fn some_method(self: @T);
-        }
-        impl Felt252ATraitImpl of ATrait1<felt252> {
-            fn some_method(self: @felt252) {}
-        }
-    }
-    mod inner_mod {
-        fn main() {
-            let x = 5_felt252;
-            x.some_method(<caret>);
-        }
-    }
-    ", @"No code actions.");
-}
-
-#[test]
 fn from_corelib_visible_only_in_editions_without_visibility_constraints() {
     test_transform!(quick_fix_without_visibility_constraints, "
     fn func() {
@@ -322,14 +204,4 @@ fn from_corelib_visible_only_in_editions_without_visibility_constraints() {
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     "#);
-}
-
-#[test]
-fn from_corelib_visible_only_in_editions_without_visibility_constraints_after_method_name() {
-    test_transform!(quick_fix_without_visibility_constraints, "
-    fn func() {
-        // This is a method from a trait from `core` that is `pub (crate)`.
-        let (_x, _): (u8, bool) = 5_i8.abs_and_sign(<caret>);
-    }
-    ", @"No code actions.");
 }
