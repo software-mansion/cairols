@@ -19,7 +19,7 @@ use super::client::connection::ProcMacroServerConnection;
 use super::client::status::ClientStatus;
 use super::client::{ProcMacroClient, RequestParams};
 use crate::config::Config;
-use crate::ide::analysis_progress::ProcMacroRequestTracker;
+use crate::ide::analysis_progress::{ProcMacroServerStatus, ProcMacroServerTracker};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suite;
@@ -54,7 +54,7 @@ pub struct ProcMacroClientController {
     plugin_suite: Option<PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     channels: ProcMacroChannels,
-    proc_macro_request_tracker: ProcMacroRequestTracker,
+    proc_macro_server_tracker: ProcMacroServerTracker,
 }
 
 impl ProcMacroClientController {
@@ -65,12 +65,12 @@ impl ProcMacroClientController {
     pub fn new(
         scarb: ScarbToolchain,
         notifier: Notifier,
-        proc_macro_request_tracker: ProcMacroRequestTracker,
+        proc_macro_server_tracker: ProcMacroServerTracker,
     ) -> Self {
         Self {
             scarb,
             notifier,
-            proc_macro_request_tracker,
+            proc_macro_server_tracker,
             plugin_suite: Default::default(),
             initialization_retries: RateLimiter::direct(
                 Quota::with_period(Duration::from_secs(
@@ -148,6 +148,7 @@ impl ProcMacroClientController {
                 }
 
                 db.set_proc_macro_client_status(ClientStatus::Ready(client));
+                self.proc_macro_server_tracker.set_server_status(ProcMacroServerStatus::Ready)
             }
             ClientStatus::Ready(client) => {
                 self.apply_responses(db, config, &client);
@@ -183,12 +184,13 @@ impl ProcMacroClientController {
                         self.channels.response_sender.clone(),
                     ),
                     self.channels.error_sender.clone(),
-                    self.proc_macro_request_tracker.clone(),
+                    self.proc_macro_server_tracker.clone(),
                 );
 
                 client.start_initialize();
 
                 db.set_proc_macro_client_status(ClientStatus::Starting(Arc::new(client)));
+                self.proc_macro_server_tracker.set_server_status(ProcMacroServerStatus::Starting);
             }
             Err(err) => {
                 error!("spawning proc-macro-server failed: {err:?}");
