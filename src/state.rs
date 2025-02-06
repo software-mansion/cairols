@@ -8,7 +8,7 @@ use salsa::ParallelDatabase;
 
 use crate::Tricks;
 use crate::config::Config;
-use crate::ide::analysis_progress::{AnalysisProgressController, ProcMacroRequestTracker};
+use crate::ide::analysis_progress::{AnalysisProgressController, ProcMacroServerTracker};
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
@@ -41,7 +41,7 @@ impl State {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
 
-        let proc_macro_request_tracker = ProcMacroRequestTracker::new();
+        let proc_macro_request_tracker = ProcMacroServerTracker::new();
 
         let analysis_progress_controller =
             AnalysisProgressController::new(notifier.clone(), proc_macro_request_tracker.clone());
