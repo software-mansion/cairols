@@ -10,7 +10,7 @@ pub fn expand_macro(db: &AnalysisDatabase, node: SyntaxNode) -> Vec<CodeAction> 
     let mut result = vec![];
     let command = "cairo.expandMacro".to_owned();
 
-    if node.parent_of_kind(db, SyntaxKind::ExprInlineMacro).is_some() {
+    if node.ancestor_of_kind(db, SyntaxKind::ExprInlineMacro).is_some() {
         let title = "Expand macro recursively at caret".to_owned();
 
         result.push(CodeAction {
@@ -18,7 +18,7 @@ pub fn expand_macro(db: &AnalysisDatabase, node: SyntaxNode) -> Vec<CodeAction> 
             command: Some(Command { title, command, ..Default::default() }),
             ..Default::default()
         });
-    } else if node.parent_of_kind(db, SyntaxKind::Attribute).is_some() {
+    } else if node.ancestor_of_kind(db, SyntaxKind::Attribute).is_some() {
         let title = "Recursively expand macros for item at caret".to_owned();
 
         result.push(CodeAction {
