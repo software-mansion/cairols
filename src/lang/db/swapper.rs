@@ -12,11 +12,11 @@ use cairo_lang_utils::{Intern, LookupIntern};
 use lsp_types::Url;
 use tracing::{error, warn};
 
+use crate::env_config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::project::ProjectController;
-use crate::{Tricks, env_config};
 
 /// Swaps entire [`AnalysisDatabase`] with empty one periodically.
 ///
@@ -52,7 +52,6 @@ impl AnalysisDatabaseSwapper {
         &mut self,
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
-        tricks: &Tricks,
         project_controller: &mut ProjectController,
     ) {
         let Ok(elapsed) = self.last_replace.elapsed() else {
@@ -69,7 +68,7 @@ impl AnalysisDatabaseSwapper {
             return;
         }
 
-        self.swap(db, open_files, tricks, project_controller)
+        self.swap(db, open_files, project_controller)
     }
 
     /// Swaps the database.
@@ -78,13 +77,12 @@ impl AnalysisDatabaseSwapper {
         &mut self,
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
-        tricks: &Tricks,
         project_controller: &mut ProjectController,
     ) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
             project_controller.clear_loaded_workspaces();
 
-            let mut new_db = AnalysisDatabase::new(tricks);
+            let mut new_db = AnalysisDatabase::new();
             self.migrate_proc_macro_state(&mut new_db, db);
             self.migrate_file_overrides(&mut new_db, db, open_files);
             self.update_project_for_open_files(open_files, project_controller);

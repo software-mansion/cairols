@@ -6,7 +6,6 @@ use std::sync::Arc;
 use lsp_types::{ClientCapabilities, Url};
 use salsa::ParallelDatabase;
 
-use crate::Tricks;
 use crate::config::Config;
 use crate::ide::analysis_progress::{AnalysisProgressController, ProcMacroRequestTracker};
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
@@ -25,7 +24,6 @@ pub struct State {
     pub client_capabilities: Owned<ClientCapabilities>,
     pub scarb_toolchain: ScarbToolchain,
     pub db_swapper: AnalysisDatabaseSwapper,
-    pub tricks: Owned<Tricks>,
     pub diagnostics_controller: DiagnosticsController,
     pub proc_macro_controller: ProcMacroClientController,
     pub project_controller: ProjectController,
@@ -33,11 +31,7 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(
-        sender: ClientSender,
-        client_capabilities: ClientCapabilities,
-        tricks: Tricks,
-    ) -> Self {
+    pub fn new(sender: ClientSender, client_capabilities: ClientCapabilities) -> Self {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
 
@@ -55,13 +49,12 @@ impl State {
             DiagnosticsController::new(notifier.clone(), analysis_progress_controller.clone());
 
         Self {
-            db: AnalysisDatabase::new(&tricks),
+            db: AnalysisDatabase::new(),
             open_files: Default::default(),
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
             scarb_toolchain: scarb_toolchain.clone(),
             db_swapper: AnalysisDatabaseSwapper::new(),
-            tricks: Owned::new(tricks.into()),
             diagnostics_controller,
             analysis_progress_controller,
             proc_macro_controller,
