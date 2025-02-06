@@ -6,6 +6,7 @@ use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 pub trait SyntaxNodeExt {
     /// Mirror of [`TypedSyntaxNode::cast`].
+    #[expect(dead_code)]
     fn cast<T: TypedSyntaxNode>(self, db: &dyn SyntaxGroup) -> Option<T>;
 
     /// Creates an iterator that yields ancestors of this syntax node.
@@ -36,7 +37,6 @@ pub trait SyntaxNodeExt {
     fn parent_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode>;
 
     /// Finds the parent of a given kind and returns it in typed form.
-    #[allow(dead_code)]
     fn parent_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T>;
 
     /// Finds the first parent of one of the kinds.
