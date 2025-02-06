@@ -1,10 +1,14 @@
+use std::cmp::PartialEq;
 use std::collections::{HashMap, VecDeque};
 use std::ffi::OsStr;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{fmt, mem, process};
 
 use cairo_language_server::build_service_for_e2e_tests;
+use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, AnalysisStarted};
+use cairo_language_server::lsp::ext::ServerStatusParams;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
 use lsp_server::{Message, Notification, Request, Response};
 use lsp_types::notification::PublishDiagnostics;
@@ -359,6 +363,14 @@ impl MockClient {
     }
 }
 
+#[derive(PartialEq)]
+enum StreamFlowControl {
+    Continue,
+    Stop,
+}
+
+type StreamConsumer<Elements> = Box<dyn Fn(Elements) -> StreamFlowControl>;
+
 /// Quality of life helpers for interacting with the server.
 impl MockClient {
     /// Returns a `TextDocumentIdentifier` for the given file.
@@ -426,6 +438,74 @@ impl MockClient {
             }),
         ]);
         self.get_diagnostics_for_file(path)
+    }
+
+    /// Opens the file and waits until all procmacros, and related diagnostics get resolved within
+    /// one generation span (until AnalysisStarted + AnalysisFinished get emitted via
+    /// `cairo/serverStatus` notification)
+    pub fn open_and_wait_for_diagnostics_generation(
+        &mut self,
+        path: impl AsRef<Path>,
+    ) -> HashMap<Url, Vec<Diagnostic>> {
+        let path = path.as_ref();
+        self.fixture.file_url(path);
+        self.open(path);
+
+        let in_progress_open = Arc::new(Mutex::new(false));
+        let project_updated = Arc::new(Mutex::new(false));
+
+        self.subscribe_notifications(Box::new(move |notification: Notification| {
+            let mut in_progress_open = in_progress_open.lock().unwrap();
+            let mut project_updated = project_updated.lock().unwrap();
+
+            if notification.method == "cairo/serverStatus" {
+                let params: ServerStatusParams =
+                    serde_json::from_value(notification.params).unwrap();
+
+                match params.event {
+                    AnalysisStarted => {
+                        *in_progress_open = true;
+                    }
+                    AnalysisFinished => {
+                        if *in_progress_open && *project_updated {
+                            return StreamFlowControl::Stop;
+                        }
+                    }
+                }
+            }
+            if notification.method == "cairo/projectUpdatingFinished" {
+                *project_updated = true;
+            }
+
+            StreamFlowControl::Continue
+        }));
+
+        // It should contain all accumulated diagnostics up to the end of the generation
+        self.diagnostics.clone()
+    }
+
+    fn subscribe_notifications(&mut self, stream_consumer: StreamConsumer<Notification>) {
+        let invoke_consumer = |msg: &Message| {
+            if let Message::Notification(notification) = msg {
+                let flow_control = stream_consumer(notification.clone());
+                return flow_control == StreamFlowControl::Stop;
+            }
+            false
+        };
+
+        for msg in self.trace() {
+            let end_stream = invoke_consumer(msg);
+            if end_stream {
+                return;
+            }
+        }
+
+        while let Some(msg) = self.recv().expect("Cannot read from the server") {
+            let end_stream = invoke_consumer(&msg);
+            if end_stream {
+                return;
+            }
+        }
     }
 
     /// Waits for `textDocument/publishDiagnostics` notification for the given file.

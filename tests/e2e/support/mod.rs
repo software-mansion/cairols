@@ -21,6 +21,7 @@ pub use self::mock_client::MockClient;
 macro_rules! sandbox {
     (
         $(files { $($file:expr => $content:expr),* $(,)? })?
+        $(cwd = $cwd:expr;)?
         $(client_capabilities = $client_capabilities:expr;)?
         $(workspace_configuration = $workspace_configuration:expr;)?
     ) => {{
@@ -33,6 +34,13 @@ macro_rules! sandbox {
         let mut fixture = Fixture::new();
 
         $($(fixture.add_file($file, $content);)*)?
+
+        $(
+            use std::env;
+            let mut p = fixture.root_path().into_os_string();
+            p.push($cwd);
+            env::set_current_dir(p).unwrap();
+        )?
 
         #[allow(unused_mut)]
         let mut client_capabilities = client_capabilities::base();
