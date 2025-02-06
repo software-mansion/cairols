@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 
-use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_utils::Upcast;
+use cairo_lang_syntax::node::ast::PatternIdentifier;
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
+use if_chain::if_chain;
 use lsp_types::{CodeAction, CodeActionKind, Diagnostic, TextEdit, Url, WorkspaceEdit};
 
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::syntax::SyntaxNodeExt;
 
 /// Create a code action that prefixes an unused variable with an `_`.
 pub fn rename_unused_variable(
@@ -12,9 +15,34 @@ pub fn rename_unused_variable(
     node: &SyntaxNode,
     diagnostic: Diagnostic,
     uri: Url,
-) -> CodeAction {
-    CodeAction {
-        title: format!("Rename to `_{}`", node.get_text(db.upcast())),
+) -> Option<CodeAction> {
+    let mut var_name = None;
+
+    if_chain!(
+        if let Some(node) = node.ancestor_of_kind(db, SyntaxKind::PathSegmentSimple);
+        if let Some(path) = node.parent_of_kind(db, SyntaxKind::ExprPath);
+        if let Some(_) = path.parent_of_kind(db, SyntaxKind::StatementLet);
+
+        then {
+           var_name = Some(path.get_text(db));
+        }
+    );
+
+    if_chain!(
+        if var_name.is_none();
+        if let Some(ident) = node.ancestor_of_type::<PatternIdentifier>(db);
+        if let Some(_) = ident.as_syntax_node().parent_of_kind(db, SyntaxKind::StatementLet);
+
+        then {
+            var_name = Some(ident.name(db).token(db).text(db).to_string());
+        }
+    );
+
+    let var_name = var_name?;
+    let var_name = var_name.trim();
+
+    Some(CodeAction {
+        title: format!("Rename to `_{var_name}`"),
         kind: Some(CodeActionKind::QUICKFIX),
         edit: Some(WorkspaceEdit {
             changes: Some(HashMap::from_iter([(
@@ -29,5 +57,5 @@ pub fn rename_unused_variable(
         }),
         diagnostics: Some(vec![diagnostic]),
         ..Default::default()
-    }
+    })
 }
