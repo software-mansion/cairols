@@ -1,10 +1,10 @@
 use attribute::{attribute_completions, derive_completions};
 use cairo_lang_syntax::node::ast::{
     self, Attribute, BinaryOperator, ExprBinary, ExprPath, ExprStructCtorCall, ItemModule,
-    TokenIdentifier, UsePathLeaf, UsePathSingle,
+    TerminalIdentifier, UsePathLeaf, UsePathSingle,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use colon_colon::{expr_path, use_statement};
 use completions::{dot_completions, struct_constructor_completions};
 use if_chain::if_chain;
@@ -134,7 +134,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     );
 
     if_chain!(
-        if let Some(ident) = TokenIdentifier::cast(db, node.clone());
+        if let Some(ident) = TerminalIdentifier::cast(db, node.clone());
         if let Some(module_item) = node.parent_of_type::<ItemModule>(db);
         // We are in nested mod, we should not show completions for file modules.
         if module_item.as_syntax_node().ancestor_of_kind(db, SyntaxKind::ItemModule).is_none();
@@ -147,7 +147,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
     if_chain!(
         // if there is no name `mod <cursor>` we will be on `mod`.
-        if node.kind(db) == SyntaxKind::TokenModule;
+        if node.kind(db) == SyntaxKind::TerminalModule;
         if let Some(module_item) = node.parent_of_type::<ItemModule>(db);
         // We are in nested mod, we should not show completions for file modules.
         if module_item.as_syntax_node().ancestor_of_kind(db, SyntaxKind::ItemModule).is_none();

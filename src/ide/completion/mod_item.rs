@@ -30,11 +30,14 @@ pub fn mod_completions(
 
     let mut url = db.url_for_file(file)?;
 
+    let current_file = url.path().to_string();
+
     let file_name = pop_path(&mut url)?;
 
     let module_files = db.file_modules(file).ok()?;
 
-    let existing_modules_files = collect_existing_modules(db, &module_files)?;
+    let mut existing_modules_files = collect_existing_modules(db, &module_files)?;
+    existing_modules_files.insert(current_file);
 
     let current_dir = url.to_file_path().ok()?;
 
@@ -91,9 +94,13 @@ fn collect_existing_modules(
             submodule_ids.iter().copied().map(ModuleId::Submodule).collect::<Vec<_>>()
         })
     {
-        // This sometimes returns paths like `[ROOT_DIR]/src/.cairo`
-        // This is not an issue for us as we can add this invalid paths to set here.
+        // This sometimes returns paths like `[ROOT_DIR]/src/.cairo`.
+        // It means we are on `mod <caret>;`
         let path = db.module_main_file(module).ok()?.full_path(db);
+
+        if path.ends_with("/.cairo") {
+            continue;
+        }
 
         existing_modules_files.insert(path);
     }
