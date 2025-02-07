@@ -256,6 +256,8 @@ pub fn collect_dynamic_registrations(
         ));
     }
 
+    registrations.push(create_registration("custom/ViewSyntaxTree", ()));
+
     registrations
 }
 
