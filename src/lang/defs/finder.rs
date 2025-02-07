@@ -15,8 +15,8 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTraitLongId, Expr, TypeLongId, Variant};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::{Intern, LookupIntern};
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::syntax::SyntaxNodeExt;
@@ -32,51 +32,45 @@ pub fn find_definition(
     db: &AnalysisDatabase,
     identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
-) -> Option<(ResolvedItem, SyntaxStablePtrId)> {
+) -> Option<ResolvedItem> {
     // The lookup_resolved_*_item_by_ptr queries tend to sometimes return an encompassing item
     // instead of actually resolving the identifier, or they just miss some data.
     // The following series of heuristics resolve the identifier in alternative ways for such cases.
 
     if let Some(submodule_id) = try_extract_submodule_name(db, identifier) {
-        let item = ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id));
-        return Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?));
+        return Some(ResolvedItem::Generic(ResolvedGenericItem::Module(ModuleId::Submodule(
+            submodule_id,
+        ))));
     }
 
     if let Some(member_id) = try_extract_member(db, identifier, lookup_items)
         .or_else(|| try_extract_member_from_constructor(db, identifier, lookup_items))
         .or_else(|| try_extract_member_declaration(db, identifier))
     {
-        return Some((
-            ResolvedItem::Member(member_id),
-            member_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped(),
-        ));
+        return Some(ResolvedItem::Member(member_id));
     }
 
     if let Some(variant) = try_extract_variant_declaration(db, identifier) {
         let item = ResolvedGenericItem::Variant(variant);
-        return Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?));
+        return Some(ResolvedItem::Generic(item));
     }
 
     if let Some(var_id) = try_extract_variable_declaration(db, identifier, lookup_items) {
         let item = ResolvedGenericItem::Variable(var_id);
-        return Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?));
+        return Some(ResolvedItem::Generic(item));
     }
 
     for &lookup_item_id in lookup_items {
         if let Some(item) =
             db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
-            return Some((
-                ResolvedItem::Generic(item.clone()),
-                resolved_generic_item_def(db, item)?,
-            ));
+            return Some(ResolvedItem::Generic(item));
         }
 
         if let Some(item) =
             db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
-            let stable_ptr = resolved_concrete_item_def(db.upcast(), item.clone())?;
-            return Some((ResolvedItem::Concrete(item), stable_ptr));
+            return Some(ResolvedItem::Concrete(item));
         }
     }
 
@@ -109,7 +103,7 @@ pub fn find_definition(
         LookupItemId::ImplItem(impl_item) => ResolvedGenericItem::Impl(impl_item.impl_def_id(db)),
     };
 
-    Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?))
+    Some(ResolvedItem::Generic(item))
 }
 
 /// Extracts [`SubmoduleId`] if the [`TerminalIdentifier`] is used as `mod ident`.
@@ -285,104 +279,119 @@ fn try_extract_variable_declaration(
     None
 }
 
-fn resolved_concrete_item_def(
-    db: &AnalysisDatabase,
-    item: ResolvedConcreteItem,
-) -> Option<SyntaxStablePtrId> {
-    match item {
-        ResolvedConcreteItem::Type(ty) => {
-            if let TypeLongId::GenericParameter(param) = ty.lookup_intern(db) {
-                Some(param.untyped_stable_ptr(db))
-            } else {
-                None
+impl ResolvedItem {
+    /// Finds a stable pointer to the syntax node which defines this resolved item.
+    pub fn definition_stable_ptr(&self, db: &AnalysisDatabase) -> Option<SyntaxStablePtrId> {
+        // TIP: This is a var so that highlighting exit points in IDEs of this function is usable.
+        let stable_ptr = match self {
+            // Concrete items.
+            ResolvedItem::Concrete(ResolvedConcreteItem::Type(ty)) => {
+                if let TypeLongId::GenericParameter(param) = ty.lookup_intern(db) {
+                    param.untyped_stable_ptr(db)
+                } else {
+                    return None;
+                }
             }
-        }
-        ResolvedConcreteItem::Impl(imp) => {
-            if let ImplLongId::GenericParameter(param) = imp.lookup_intern(db) {
-                Some(param.untyped_stable_ptr(db))
-            } else {
-                None
+
+            ResolvedItem::Concrete(ResolvedConcreteItem::Impl(imp)) => {
+                if let ImplLongId::GenericParameter(param) = imp.lookup_intern(db) {
+                    param.untyped_stable_ptr(db)
+                } else {
+                    return None;
+                }
             }
-        }
-        _ => None,
+
+            ResolvedItem::Concrete(_) => return None,
+
+            // Generic items.
+            ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(item)) => {
+                item.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::Module(module_id)) => {
+                match module_id {
+                    ModuleId::CrateRoot(_) => {
+                        // For crate root files (src/lib.cairo), the definition node is the file
+                        // itself.
+                        let module_file = db.module_main_file(*module_id).ok()?;
+                        let file_syntax = db.file_module_syntax(module_file).ok()?;
+                        file_syntax.as_syntax_node().stable_ptr()
+                    }
+                    ModuleId::Submodule(submodule_id) => {
+                        // For submodules, the definition node is the identifier in `mod <ident>
+                        // .*`.
+                        submodule_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    }
+                }
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::GenericFunction(item)) => {
+                let declaration: ast::FunctionDeclaration = match item {
+                    GenericFunctionId::Free(id) => id.stable_ptr(db).lookup(db).declaration(db),
+                    GenericFunctionId::Extern(id) => id.stable_ptr(db).lookup(db).declaration(db),
+                    GenericFunctionId::Impl(id) => match id.impl_function(db) {
+                        Ok(Some(id)) => id.stable_ptr(db).lookup(db).declaration(db),
+                        // It is possible (Marek didn't find out how it happens) that we hop into
+                        // a situation where concrete impl is not inferred yet, so we can't find the
+                        // declaration. Fall back to trait function in such cases.
+                        _ => id.function.stable_ptr(db).lookup(db).declaration(db),
+                    },
+                };
+                declaration.name(db).stable_ptr().untyped()
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::GenericType(generic_type)) => {
+                match generic_type {
+                    GenericTypeId::Struct(struct_id) => {
+                        struct_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    }
+                    GenericTypeId::Enum(enum_id) => {
+                        enum_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    }
+                    GenericTypeId::Extern(extern_type_id) => {
+                        extern_type_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    }
+                }
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::GenericTypeAlias(type_alias)) => {
+                type_alias.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::GenericImplAlias(impl_alias)) => {
+                impl_alias.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::Variant(variant)) => {
+                variant.id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::Trait(trt)) => {
+                trt.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::Impl(imp)) => {
+                imp.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::Variable(var)) => match var {
+                VarId::Param(param) => {
+                    param.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                }
+                VarId::Local(var) => var.untyped_stable_ptr(db),
+                VarId::Item(item) => item.name_stable_ptr(db),
+            },
+
+            // Other variants.
+            ResolvedItem::Member(member_id) => {
+                member_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+            }
+        };
+        Some(stable_ptr)
     }
-}
 
-fn resolved_generic_item_def(
-    db: &AnalysisDatabase,
-    item: ResolvedGenericItem,
-) -> Option<SyntaxStablePtrId> {
-    Some(match item {
-        ResolvedGenericItem::GenericConstant(item) => {
-            item.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
-        }
-
-        ResolvedGenericItem::Module(module_id) => {
-            match module_id {
-                ModuleId::CrateRoot(_) => {
-                    // For crate root files (src/lib.cairo), the definition node is the file itself.
-                    let module_file = db.module_main_file(module_id).ok()?;
-                    let file_syntax = db.file_module_syntax(module_file).ok()?;
-                    file_syntax.as_syntax_node().stable_ptr()
-                }
-                ModuleId::Submodule(submodule_id) => {
-                    // For submodules, the definition node is the identifier in `mod <ident> .*`.
-                    submodule_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
-                }
-            }
-        }
-
-        ResolvedGenericItem::GenericFunction(item) => {
-            let declaration: ast::FunctionDeclaration = match item {
-                GenericFunctionId::Free(id) => id.stable_ptr(db).lookup(db).declaration(db),
-                GenericFunctionId::Extern(id) => id.stable_ptr(db).lookup(db).declaration(db),
-                GenericFunctionId::Impl(id) => match id.impl_function(db) {
-                    Ok(Some(id)) => id.stable_ptr(db).lookup(db).declaration(db),
-                    // It is possible (Marek didn't find out how it happens) that we hop into a
-                    // situation where concrete impl is not inferred yet, so we can't find the
-                    // declaration. Fall back to trait function in such cases.
-                    _ => id.function.stable_ptr(db).lookup(db).declaration(db),
-                },
-            };
-            declaration.name(db).stable_ptr().untyped()
-        }
-
-        ResolvedGenericItem::GenericType(generic_type) => match generic_type {
-            GenericTypeId::Struct(struct_id) => {
-                struct_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
-            }
-            GenericTypeId::Enum(enum_id) => {
-                enum_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
-            }
-            GenericTypeId::Extern(extern_type_id) => {
-                extern_type_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
-            }
-        },
-
-        ResolvedGenericItem::GenericTypeAlias(type_alias) => {
-            type_alias.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
-        }
-
-        ResolvedGenericItem::GenericImplAlias(impl_alias) => {
-            impl_alias.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
-        }
-
-        ResolvedGenericItem::Variant(variant) => {
-            variant.id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
-        }
-
-        ResolvedGenericItem::Trait(trt) => {
-            trt.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
-        }
-
-        ResolvedGenericItem::Impl(imp) => {
-            imp.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
-        }
-
-        ResolvedGenericItem::Variable(var) => match var {
-            VarId::Param(param) => param.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped(),
-            VarId::Local(var) => var.untyped_stable_ptr(db),
-            VarId::Item(item) => item.name_stable_ptr(db),
-        },
-    })
+    /// Finds and returns the syntax node corresponding to the definition of the resolved item.
+    pub fn definition_node(&self, db: &AnalysisDatabase) -> Option<SyntaxNode> {
+        self.definition_stable_ptr(db).map(|stable_ptr| stable_ptr.lookup(db))
+    }
 }
