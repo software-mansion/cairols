@@ -389,7 +389,11 @@ impl BackgroundDocumentRequestHandler for ViewSyntaxTree {
         _notifier: Notifier,
         params: TextDocumentPositionParams,
     ) -> LSPResult<Option<String>> {
-        Ok(ide::introspection::syntax_tree::get_syntax_tree_for_file(&snapshot.db, params))
+        Ok(if is_cairo_file_path(&params.text_document.uri) {
+            ide::introspection::syntax_tree::get_syntax_tree_for_file(&snapshot.db, params)
+        } else {
+            None
+        })
     }
 }
 
