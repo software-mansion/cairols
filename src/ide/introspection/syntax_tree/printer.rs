@@ -2,12 +2,13 @@
 // https://github.com/starkware-libs/cairo/blob/932767340c4b8a762140bf9eba305f437587ac1b/crates/cairo-lang-parser/src/printer.rs.
 
 use cairo_lang_syntax::node::SyntaxNode;
+use cairo_lang_syntax::node::ast::SyntaxFile;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::green::GreenNodeDetails;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax_codegen::cairo_spec::get_spec;
 use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
-use cairo_lang_utils::Intern;
+use cairo_lang_utils::{Intern, LookupIntern};
 use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
 use smol_str::SmolStr;
@@ -38,7 +39,7 @@ pub fn syntax_tree_branch_above_leaf(
             GreenNodeDetails::Node { .. } => {
                 printer.print_only_internal_node(this, &field_description, green_node.kind);
             }
-            GreenNodeDetails::Token(_) => panic!("Only the last node is supposed to be the token"),
+            GreenNodeDetails::Token(_) => unreachable!("Only the last node can be the token"),
         }
 
         let child_green = child.green_node(db).intern(db);
@@ -52,7 +53,7 @@ pub fn syntax_tree_branch_above_leaf(
                     }
                 }
             }
-            GreenNodeDetails::Token(_) => panic!("Only the last node is supposed to be the token"),
+            GreenNodeDetails::Token(_) => unreachable!("Only the last node can be the token"),
         };
         let child_num = child_num.unwrap();
 
@@ -70,16 +71,29 @@ pub fn syntax_tree_branch_above_leaf(
                 let description = if child_num % 2 == 0 { "item" } else { "separator" };
                 field_description = format!("{description} #{}", child_num / 2);
             }
-            _ => panic!("This should never happen"),
+            _ => unreachable!("This should never happen"),
         }
     }
 
-    let green_node = syntax_tree_branch.last().unwrap().green_node(db);
+    let last = syntax_tree_branch.last().unwrap();
+    let green_node = last.green_node(db);
     match &green_node.details {
         GreenNodeDetails::Token(text) => {
             printer.print_token_node(&field_description, "", "", text.clone(), green_node.kind)
         }
-        _ => unreachable!("The last node is expected to be a token"),
+        GreenNodeDetails::Node { children, .. } => {
+            assert_eq!(green_node.kind, SyntaxKind::SyntaxFile);
+            printer.print_only_internal_node(last, &field_description, green_node.kind);
+
+            let eof_green =
+                children[SyntaxFile::INDEX_EOF].lookup_intern(db).children()[1].lookup_intern(db);
+            match &eof_green.details {
+                GreenNodeDetails::Token(text) => {
+                    printer.print_token_node("eof", "", "", text.clone(), eof_green.kind)
+                }
+                GreenNodeDetails::Node { .. } => unreachable!(),
+            }
+        }
     }
 
     printer.result
@@ -249,7 +263,7 @@ impl<'a> Printer<'a> {
                     );
                 }
             }
-            _ => panic!("This should never happen"),
+            _ => unreachable!("This should never happen"),
         }
     }
 
