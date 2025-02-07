@@ -1,19 +1,22 @@
+use attribute::{attribute_completions, derive_completions};
+use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{
-    BinaryOperator, ExprBinary, ExprPath, ExprStructCtorCall, UsePathLeaf, UsePathSingle,
+    self, Attribute, BinaryOperator, ExprBinary, ExprPath, ExprStructCtorCall, UsePathLeaf,
+    UsePathSingle,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use colon_colon::{expr_path, use_statement};
-use completions::{attribute_completions, struct_constructor_completions};
+use completions::{dot_completions, struct_constructor_completions};
 use if_chain::if_chain;
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
 use mod_item::mod_completions;
 
-use self::completions::{dot_completions, generic_completions};
+use self::completions::generic_completions;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::lang::syntax::SyntaxNodeExt;
 
+mod attribute;
 mod colon_colon;
 mod completions;
 mod mod_item;
@@ -96,9 +99,42 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         }
     );
 
+    // Check if cursor is on attribute name. `#[my_a<cursor>ttr(arg1, args2: 1234)]`
+    if_chain!(
+        if let Some(node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath);
+        if let Some(attr) = node.parent_of_type::<Attribute>(db);
+        if let Some(attr_completions) = attribute_completions(db, attr);
+
+        then {
+            completions.extend(attr_completions);
+        }
+    );
+
+    // Check if cursor is on `#[derive(Arg1, Ar<cursor>)]` arguments list.
+    if_chain!(
+        if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath);
+        if let Some(node) = path_node.parent_of_kind(db, SyntaxKind::ArgClauseUnnamed);
+        if let Some(attr) = node.ancestor_of_type::<Attribute>(db);
+        if let Some(derive_completions) = derive_completions(db, &path_node.get_text(db), attr);
+
+        then {
+            completions.extend(derive_completions);
+        }
+    );
+
+    // Check if cursor is on `#[derive(Arg1, <cursor>)]` arguments list.
+    if_chain!(
+        if node.ancestor_of_kind(db, SyntaxKind::Arg).is_none();
+        if let Some(attr) = node.ancestor_of_type::<Attribute>(db);
+        if let Some(derive_completions) = derive_completions(db, "", attr);
+
+        then {
+            completions.extend(derive_completions);
+        }
+    );
+
     if completions.is_empty() && trigger_kind == CompletionTriggerKind::INVOKED && !was_single {
-        let result = attribute_completions(db, node.clone())
-            .or_else(|| mod_completions(db, node, file_id))
+        let result = mod_completions(db, node, file_id)
             .unwrap_or_else(|| generic_completions(db, module_file_id, lookup_items));
 
         completions.extend(result);

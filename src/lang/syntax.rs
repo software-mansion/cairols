@@ -24,6 +24,7 @@ pub trait SyntaxNodeExt {
     fn is_ancestor_or_self(&self, node: &SyntaxNode) -> bool;
 
     /// Checks whether this syntax node is or is under the given syntax node in the syntax tree.
+    #[expect(dead_code)]
     fn is_descendant_or_self(&self, node: &SyntaxNode) -> bool;
 
     /// Finds the first ancestor of a given kind.
@@ -36,7 +37,6 @@ pub trait SyntaxNodeExt {
     fn parent_of_kind(&self, db: &dyn SyntaxGroup, kind: SyntaxKind) -> Option<SyntaxNode>;
 
     /// Finds the parent of a given kind and returns it in typed form.
-    #[allow(dead_code)]
     fn parent_of_type<T: TypedSyntaxNode>(&self, db: &dyn SyntaxGroup) -> Option<T>;
 
     /// Finds the first parent of one of the kinds.
