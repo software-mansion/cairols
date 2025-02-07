@@ -338,12 +338,9 @@ impl MemberDef {
         member_id: MemberId,
         definition_node: SyntaxNode,
     ) -> Option<Self> {
-        let structure = ItemDef::new(db, &definition_node)?;
-        Some(Self {
-            member_id,
-            struct_item: structure,
-            definition_stable_ptr: definition_node.stable_ptr(),
-        })
+        let struct_ast = definition_node.ancestor_of_type::<ast::ItemStruct>(db)?;
+        let struct_item = ItemDef::new(db, &struct_ast.name(db).as_syntax_node())?;
+        Some(Self { member_id, struct_item, definition_stable_ptr: definition_node.stable_ptr() })
     }
 
     /// Gets [`MemberId`] associated with this symbol.
@@ -377,7 +374,8 @@ impl VariantDef {
         variant_id: VariantId,
         definition_node: SyntaxNode,
     ) -> Option<Self> {
-        let enum_item = ItemDef::new(db, &definition_node)?;
+        let enum_ast = definition_node.ancestor_of_type::<ast::ItemEnum>(db)?;
+        let enum_item = ItemDef::new(db, &enum_ast.name(db).as_syntax_node())?;
         Some(Self { variant_id, enum_item, definition_stable_ptr: definition_node.stable_ptr() })
     }
 
