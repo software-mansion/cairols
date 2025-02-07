@@ -11,6 +11,7 @@ pub enum ProcMacroServerStatus {
     Pending,
     Starting,
     Ready,
+    Crashed,
 }
 
 /// A struct that allows to track procmacro requests.
