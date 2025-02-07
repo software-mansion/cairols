@@ -5,53 +5,28 @@ use std::path::{Path, PathBuf};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{ItemModule, MaybeModuleBody};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind, Url};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
-use crate::lang::syntax::SyntaxNodeExt;
 
 pub fn mod_completions(
     db: &AnalysisDatabase,
-    origin_node: SyntaxNode,
+    module: ItemModule,
     file: FileId,
+    typed_module_name: &str,
 ) -> Option<Vec<CompletionItem>> {
-    let node = origin_node
-        .ancestors_with_self()
-        .find(|node| node.parent_kind(db) == Some(SyntaxKind::ItemModule))?;
-
-    // We are in nested mod, we should not show completions for file modules.
-    if node.ancestor_of_kind(db, SyntaxKind::ItemModule).is_some() {
-        return Some(Vec::new());
-    }
-
-    let module = ItemModule::from_syntax_node(db, node.parent().unwrap());
-
     let semicolon_missing = match module.body(db) {
         MaybeModuleBody::None(semicolon) => {
             semicolon.token(db).as_syntax_node().kind(db) == SyntaxKind::TokenMissing
         }
         // If this module has body (ie. { /* some code */ }) we should not propose file names as
         // completion.
-        MaybeModuleBody::Some(body) => {
-            let body_node = body.as_syntax_node();
-
-            return if std::iter::successors(Some(origin_node.clone()), SyntaxNode::parent)
-                .any(|node| node == body_node)
-            {
-                // If we are in body allow other completions.
-                None
-            } else {
-                // Otherwise we are on keyword, name or semicolon, we should not complete anything.
-                Some(Vec::new())
-            };
-        }
+        MaybeModuleBody::Some(_) => return None,
     };
-
-    let typed_module_name = already_typed_text(db, module, node)?;
 
     let mut url = db.url_for_file(file)?;
 
@@ -77,7 +52,7 @@ pub fn mod_completions(
         if !existing_modules_files.contains(&cairo_file.to_string_lossy().to_string()) {
             let file_name = file.strip_suffix(".cairo").unwrap_or(&file);
 
-            if file_name.starts_with(&typed_module_name) {
+            if file_name.starts_with(typed_module_name) {
                 let label = file_name.strip_suffix(".cairo").unwrap_or(file_name);
                 let semicolon = semicolon_missing.then(|| ";".to_string()).unwrap_or_default();
 
@@ -91,24 +66,6 @@ pub fn mod_completions(
     }
 
     Some(result)
-}
-
-fn already_typed_text(
-    db: &AnalysisDatabase,
-    module: ItemModule,
-    node: SyntaxNode,
-) -> Option<String> {
-    if module.module_kw(db).as_syntax_node() == node {
-        Some(String::new())
-    } else {
-        let module_name = module.name(db);
-
-        if module_name.as_syntax_node() == node {
-            Some(module_name.token(db).text(db).to_string())
-        } else {
-            None
-        }
-    }
 }
 
 fn pop_path(url: &mut Url) -> Option<String> {
