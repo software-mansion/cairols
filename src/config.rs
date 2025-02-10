@@ -8,6 +8,7 @@ use lsp_types::{ClientCapabilities, ConfigurationItem, ConfigurationParams};
 use serde_json::Value;
 use tracing::{debug, error, warn};
 
+use crate::lang::linter::LinterController;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::result::{LSPResult, LSPResultEx};
 use crate::server::client::Requester;
@@ -43,15 +44,21 @@ pub struct Config {
     /// The property is set by the user under the `cairo1.enableProcMacros` key in client
     /// configuration.
     pub enable_proc_macros: bool,
+
+    /// Whether to include the cairo-lint in the analysis.
+    ///
+    /// The property is set by the user under the `cairo1.enableLinter` key in client
+    /// configuration.
+    pub enable_linter: bool,
 }
 
-#[expect(clippy::derivable_impls)] // Removed in the next PR
 impl Default for Config {
     fn default() -> Self {
         Self {
             unmanaged_core_path: None,
             trace_macro_diagnostics: false,
             enable_proc_macros: false,
+            enable_linter: true,
         }
     }
 }
@@ -81,6 +88,7 @@ impl Config {
                 scope_uri: None,
                 section: Some("cairo1.enableProcMacros".to_owned()),
             },
+            ConfigurationItem { scope_uri: None, section: Some("cairo1.enableLinter".to_owned()) },
         ];
         let expected_len = items.len();
 
@@ -115,10 +123,16 @@ impl Config {
                     state.config.enable_proc_macros = value;
                 }
 
+                if let Some(value) = response.pop_front().as_ref().and_then(Value::as_bool) {
+                    state.config.enable_linter = value;
+                }
+
                 debug!("reloaded configuration: {:#?}", state.config);
 
                 state.proc_macro_controller.on_config_change(&mut state.db, &state.config);
                 state.analysis_progress_controller.on_config_change(&state.config);
+
+                LinterController::on_config_change(&mut state.db, &state.config);
             })
         };
 

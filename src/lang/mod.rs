@@ -1,8 +1,10 @@
 pub mod db;
 pub mod defs;
 pub mod diagnostics;
+pub mod linter;
 pub mod lsp;
 pub mod methods;
+pub mod plugins;
 pub mod proc_macros;
 pub mod syntax;
 pub mod usages;
