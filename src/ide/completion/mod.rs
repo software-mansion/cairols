@@ -1,10 +1,13 @@
 use attribute::{attribute_completions, derive_completions};
+use cairo_lang_diagnostics::ToOption;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::{
     self, Attribute, BinaryOperator, ExprBinary, ExprPath, ExprStructCtorCall, ItemModule,
     TerminalIdentifier, UsePathLeaf, UsePathSingle,
 };
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use colon_colon::{expr_path, use_statement};
 use completions::{dot_completions, struct_constructor_completions};
 use if_chain::if_chain;
@@ -31,6 +34,35 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     let mut node = db.find_syntax_node_at_position(file_id, position.to_cairo())?;
     let lookup_items = db.collect_lookup_items_stack(&node)?;
     let module_file_id = db.find_module_file_containing_node(&node)?;
+
+    // There is no completions for these.
+    if matches!(
+        node.kind(db),
+        SyntaxKind::TokenSkipped
+            | SyntaxKind::TriviumSkippedNode
+            | SyntaxKind::TokenSingleLineComment
+    ) {
+        return None;
+    }
+
+    if matches!(
+        node.kind(db),
+        SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenSingleLineInnerComment
+    ) {
+        // TODO(#290) doc completions.
+        return None;
+    }
+
+    // In case we are on eof go back to last non-trivia non-missing node.
+    if node.kind(db) == SyntaxKind::SyntaxFile
+        || node.ancestor_of_kind(db, SyntaxKind::TerminalEndOfFile).is_some()
+    {
+        let syntax = db.file_module_syntax(file_id).to_option()?;
+
+        let last_item = syntax.items(db).elements(db).last()?.as_syntax_node();
+
+        node = find_last_meaning_node(db, last_item);
+    }
 
     // Skip trivia.
     while ast::Trivium::is_variant(node.kind(db))
@@ -171,4 +203,26 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     }
 
     Some(CompletionResponse::Array(completions))
+}
+
+fn find_last_meaning_node(db: &AnalysisDatabase, node: SyntaxNode) -> SyntaxNode {
+    for child in db.get_children(node.clone()).iter().rev() {
+        if child.kind(db) == SyntaxKind::Trivia {
+            continue;
+        }
+
+        if let Some(grand_child) = db
+            .get_children(child.clone())
+            .iter()
+            .find(|grand_child| grand_child.kind(db) != SyntaxKind::Trivia)
+        {
+            if grand_child.kind(db) == SyntaxKind::TokenMissing {
+                continue;
+            }
+        }
+
+        return find_last_meaning_node(db, child.clone());
+    }
+
+    node
 }
