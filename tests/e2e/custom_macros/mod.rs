@@ -22,19 +22,19 @@ struct DiagnosticsReport {
 fn test_custom_macro() {
     let mut ls = sandbox! {
         files {
-            "a/Scarb.toml" => indoc! (r#"
+            "a/Scarb.toml" => indoc! {r#"
                 [package]
                 name = "a"
                 version = "0.1.0"
                 edition = "2024_07"
                 [dependencies]
                 macros = { path = "../macros" }
-            "#),
-            "a/src/lib.cairo" => indoc!(r#"
+            "#},
+            "a/src/lib.cairo" => indoc! {r#"
                 #[decorate]
                 fn decorated() {}
-            "#),
-            "macros/Cargo.toml" => indoc!(r#"
+            "#},
+            "macros/Cargo.toml" => indoc! {r#"
                 [package]
                 name = "some_macro"
                 version = "0.1.0"
@@ -48,15 +48,15 @@ fn test_custom_macro() {
                 cairo-lang-macro = "0.1.1"
                 cairo-lang-parser = "2.7.0"
 
-            "#),
-            "macros/Scarb.toml" => indoc!(r#"
+            "#},
+            "macros/Scarb.toml" => indoc! {r#"
                 [package]
                 name = "macros"
                 version = "0.1.0"
 
                 [cairo-plugin]
-            "#),
-            "macros/src/lib.rs" => indoc!(r#"
+            "#},
+            "macros/src/lib.rs" => indoc! {r#"
                 use cairo_lang_macro::{ProcMacroResult, TokenStream, attribute_macro};
 
                 #[attribute_macro]
@@ -64,9 +64,9 @@ fn test_custom_macro() {
                     let new_res = format!("{} fn added_fun() {{ a = b; }}", item); // Syntax error
                     ProcMacroResult::new(TokenStream::new(new_res))
                 }
-            "#),
+            "#},
         }
-        cwd = "/a";
+        cwd = "a";
         workspace_configuration = json!({
             "cairo1": {
                 "enableProcMacros": true,

@@ -1,10 +1,10 @@
-use std::cmp::PartialEq;
 use std::collections::{HashMap, VecDeque};
 use std::ffi::OsStr;
-use std::path::Path;
+use std::ops::ControlFlow;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use std::{fmt, mem, process};
+use std::{env, fmt, mem, process};
 
 use cairo_language_server::build_service_for_e2e_tests;
 use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, AnalysisStarted};
@@ -36,6 +36,7 @@ pub struct MockClient {
     trace: Vec<Message>,
     workspace_configuration: Value,
     expect_request_handlers: VecDeque<ExpectRequestHandler>,
+    starting_cwd: PathBuf,
 }
 
 impl MockClient {
@@ -60,6 +61,7 @@ impl MockClient {
             workspace_configuration,
             expect_request_handlers: Default::default(),
             diagnostics: Default::default(),
+            starting_cwd: env::current_dir().expect("No CWD set"),
         };
 
         std::thread::spawn(|| init().run_for_tests());
@@ -67,6 +69,11 @@ impl MockClient {
         this.initialize(capabilities);
 
         this
+    }
+
+    pub fn set_cwd(&self, cwd: impl AsRef<Path>) {
+        let p = self.fixture.root_path().join(cwd);
+        env::set_current_dir(p).unwrap();
     }
 
     /// Performs the `initialize`/`initialized` handshake with the server synchronously.
@@ -363,13 +370,7 @@ impl MockClient {
     }
 }
 
-#[derive(PartialEq)]
-enum StreamFlowControl {
-    Continue,
-    Stop,
-}
-
-type StreamConsumer<Elements> = Box<dyn Fn(Elements) -> StreamFlowControl>;
+type StreamConsumer<Elements> = Box<dyn Fn(Elements) -> ControlFlow<()>>;
 
 /// Quality of life helpers for interacting with the server.
 impl MockClient {
@@ -442,7 +443,7 @@ impl MockClient {
 
     /// Opens the file and waits until all procmacros, and related diagnostics get resolved within
     /// one generation span (until AnalysisStarted + AnalysisFinished get emitted via
-    /// `cairo/serverStatus` notification)
+    /// `cairo/serverStatus` notification).
     pub fn open_and_wait_for_diagnostics_generation(
         &mut self,
         path: impl AsRef<Path>,
@@ -468,7 +469,7 @@ impl MockClient {
                     }
                     AnalysisFinished => {
                         if *in_progress_open && *project_updated {
-                            return StreamFlowControl::Stop;
+                            return ControlFlow::Break(());
                         }
                     }
                 }
@@ -477,31 +478,31 @@ impl MockClient {
                 *project_updated = true;
             }
 
-            StreamFlowControl::Continue
+            ControlFlow::Continue(())
         }));
 
-        // It should contain all accumulated diagnostics up to the end of the generation
+        // It should contain all accumulated diagnostics up to the end of the generation.
         self.diagnostics.clone()
     }
 
     fn subscribe_notifications(&mut self, stream_consumer: StreamConsumer<Notification>) {
-        let invoke_consumer = |msg: &Message| {
+        let consume_notification = |msg: &Message| {
             if let Message::Notification(notification) = msg {
                 let flow_control = stream_consumer(notification.clone());
-                return flow_control == StreamFlowControl::Stop;
+                return flow_control == ControlFlow::Break(());
             }
             false
         };
 
         for msg in self.trace() {
-            let end_stream = invoke_consumer(msg);
+            let end_stream = consume_notification(msg);
             if end_stream {
                 return;
             }
         }
 
         while let Some(msg) = self.recv().expect("Cannot read from the server") {
-            let end_stream = invoke_consumer(&msg);
+            let end_stream = consume_notification(&msg);
             if end_stream {
                 return;
             }
@@ -596,6 +597,11 @@ impl MockClient {
 impl AsRef<Fixture> for MockClient {
     fn as_ref(&self) -> &Fixture {
         &self.fixture
+    }
+}
+impl Drop for MockClient {
+    fn drop(&mut self) {
+        env::set_current_dir(self.starting_cwd.clone()).expect("Could not reset CWD")
     }
 }
 

@@ -35,12 +35,6 @@ macro_rules! sandbox {
 
         $($(fixture.add_file($file, $content);)*)?
 
-        $(
-            use std::env;
-            let mut p = fixture.root_path().into_os_string();
-            p.push($cwd);
-            env::set_current_dir(p).unwrap();
-        )?
 
         #[allow(unused_mut)]
         let mut client_capabilities = client_capabilities::base();
@@ -57,7 +51,11 @@ macro_rules! sandbox {
             client_capabilities = $client_capabilities(client_capabilities);
         )?
 
-        MockClient::start(fixture, client_capabilities, workspace_configuration)
+        let client = MockClient::start(fixture, client_capabilities, workspace_configuration);
+        $(
+            client.set_cwd($cwd);
+        )?
+        client
     }};
 }
 
