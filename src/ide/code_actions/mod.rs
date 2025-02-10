@@ -85,6 +85,7 @@ fn get_code_actions_for_diagnostics(
                 .collect_vec(),
             "E0002" => {
                 add_missing_trait::add_missing_trait(db, node, params.text_document.uri.clone())
+                    .unwrap_or_default()
             }
             "E0003" => fill_struct_fields::fill_struct_fields(db, node.clone(), params)
                 .map(|result| vec![result])

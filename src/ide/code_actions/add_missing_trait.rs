@@ -19,12 +19,16 @@ use crate::lang::methods::find_methods_for_type;
 use crate::lang::syntax::SyntaxNodeExt;
 
 /// Create a Quick Fix code action to add a missing trait given a `CannotCallMethod` diagnostic.
-pub fn add_missing_trait(db: &AnalysisDatabase, node: &SyntaxNode, uri: Url) -> Vec<CodeAction> {
-    let file_id = db.file_for_url(&uri).unwrap();
-    let lookup_items = db.collect_lookup_items_stack(node).unwrap();
+pub fn add_missing_trait(
+    db: &AnalysisDatabase,
+    node: &SyntaxNode,
+    uri: Url,
+) -> Option<Vec<CodeAction>> {
+    let file_id = db.file_for_url(&uri)?;
+    let lookup_items = db.collect_lookup_items_stack(node)?;
     let unknown_method_name = node.get_text(db.upcast());
+
     missing_traits_actions(db, file_id, lookup_items, node, &unknown_method_name, uri)
-        .unwrap_or_default()
 }
 
 /// Returns a list of code actions to add missing traits to the current module, or `None` if the
