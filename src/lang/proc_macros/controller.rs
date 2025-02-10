@@ -107,7 +107,7 @@ impl ProcMacroClientController {
         }
     }
 
-    fn set_procmacro_client_status(&self, db: &mut AnalysisDatabase, client_status: ClientStatus) {
+    fn set_proc_macro_client_status(&self, db: &mut AnalysisDatabase, client_status: ClientStatus) {
         let server_status = ProcMacroServerStatus::from(&client_status);
         db.set_proc_macro_client_status(client_status);
         self.proc_macro_server_tracker.set_server_status(server_status);
@@ -164,7 +164,7 @@ impl ProcMacroClientController {
                     db.add_plugin_suite(new_plugin_suite);
                 }
 
-                self.set_procmacro_client_status(db, ClientStatus::Ready(client));
+                self.set_proc_macro_client_status(db, ClientStatus::Ready(client));
             }
             ClientStatus::Ready(client) => {
                 self.apply_responses(db, config, &client);
@@ -205,7 +205,7 @@ impl ProcMacroClientController {
 
                 client.start_initialize();
 
-                self.set_procmacro_client_status(db, ClientStatus::Starting(Arc::new(client)));
+                self.set_proc_macro_client_status(db, ClientStatus::Starting(Arc::new(client)));
             }
             Err(err) => {
                 error!("spawning proc-macro-server failed: {err:?}");
@@ -221,7 +221,7 @@ impl ProcMacroClientController {
         db: &mut AnalysisDatabase,
         initialization_failed_info: InitializationFailedInfo,
     ) {
-        self.set_procmacro_client_status(db, ClientStatus::Crashed);
+        self.set_proc_macro_client_status(db, ClientStatus::Crashed);
 
         self.notifier.notify::<ShowMessage>(ShowMessageParams {
             typ: MessageType::ERROR,
