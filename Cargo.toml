@@ -81,7 +81,7 @@ libc = "0.2.169"
 assert_fs = "1.1"
 cairo-lang-test-utils = { version = "*", features = ["testing"] }
 cairo-language-server = { path = ".", features = ["testing"] }
-insta = { version = "1.42", features = ["toml"] }
+insta = { version = "1.42", features = ["toml", "json"] }
 pathdiff = "0.2"
 similar = "2.7"
 test-log = "0.2.16"

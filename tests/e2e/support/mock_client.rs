@@ -1,10 +1,13 @@
 use std::collections::{HashMap, VecDeque};
 use std::ffi::OsStr;
-use std::path::Path;
+use std::ops::ControlFlow;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
-use std::{fmt, mem, process};
+use std::{env, fmt, mem, process};
 
 use cairo_language_server::build_service_for_e2e_tests;
+use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, AnalysisStarted};
+use cairo_language_server::lsp::ext::ServerStatusParams;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
 use lsp_server::{Message, Notification, Request, Response};
 use lsp_types::notification::PublishDiagnostics;
@@ -32,6 +35,7 @@ pub struct MockClient {
     trace: Vec<Message>,
     workspace_configuration: Value,
     expect_request_handlers: VecDeque<ExpectRequestHandler>,
+    starting_cwd: PathBuf,
 }
 
 impl MockClient {
@@ -56,6 +60,7 @@ impl MockClient {
             workspace_configuration,
             expect_request_handlers: Default::default(),
             diagnostics: Default::default(),
+            starting_cwd: env::current_dir().expect("No CWD set"),
         };
 
         std::thread::spawn(|| init().run_for_tests());
@@ -63,6 +68,11 @@ impl MockClient {
         this.initialize(capabilities);
 
         this
+    }
+
+    pub fn set_cwd(&self, cwd: impl AsRef<Path>) {
+        let p = self.fixture.root_path().join(cwd);
+        env::set_current_dir(p).unwrap();
     }
 
     /// Performs the `initialize`/`initialized` handshake with the server synchronously.
@@ -359,6 +369,8 @@ impl MockClient {
     }
 }
 
+type StreamConsumer<Elements> = Box<dyn FnMut(Elements) -> ControlFlow<()>>;
+
 /// Quality of life helpers for interacting with the server.
 impl MockClient {
     /// Returns a `TextDocumentIdentifier` for the given file.
@@ -426,6 +438,65 @@ impl MockClient {
             }),
         ]);
         self.get_diagnostics_for_file(path)
+    }
+
+    /// Opens the file and waits until all procmacros, and related diagnostics get resolved within
+    /// one generation span (until AnalysisStarted + AnalysisFinished get emitted via
+    /// `cairo/serverStatus` notification).
+    pub fn open_and_wait_for_diagnostics_generation(
+        &mut self,
+        path: impl AsRef<Path>,
+    ) -> HashMap<Url, Vec<Diagnostic>> {
+        let path = path.as_ref();
+        self.fixture.file_url(path);
+        self.open(path);
+
+        let mut in_progress_open = false;
+        let mut project_updated = false;
+
+        self.subscribe_notifications(Box::new(move |notification: Notification| {
+            if notification.method == "cairo/serverStatus" {
+                let params: ServerStatusParams =
+                    serde_json::from_value(notification.params).unwrap();
+
+                match params.event {
+                    AnalysisStarted => {
+                        in_progress_open = true;
+                    }
+                    AnalysisFinished => {
+                        if in_progress_open && project_updated {
+                            return ControlFlow::Break(());
+                        }
+                    }
+                }
+            }
+            if notification.method == "cairo/projectUpdatingFinished" {
+                project_updated = true;
+            }
+
+            ControlFlow::Continue(())
+        }));
+
+        // It should contain all accumulated diagnostics up to the end of the generation.
+        self.diagnostics.clone()
+    }
+
+    fn subscribe_notifications(&mut self, mut stream_consumer: StreamConsumer<Notification>) {
+        for msg in self.trace() {
+            if let Message::Notification(notification) = msg {
+                if stream_consumer(notification.clone()).is_break() {
+                    return;
+                }
+            }
+        }
+
+        while let Some(msg) = self.recv().expect("Cannot read from the server") {
+            if let Message::Notification(notification) = msg {
+                if stream_consumer(notification).is_break() {
+                    return;
+                }
+            }
+        }
     }
 
     /// Waits for `textDocument/publishDiagnostics` notification for the given file.
@@ -516,6 +587,11 @@ impl MockClient {
 impl AsRef<Fixture> for MockClient {
     fn as_ref(&self) -> &Fixture {
         &self.fixture
+    }
+}
+impl Drop for MockClient {
+    fn drop(&mut self) {
+        env::set_current_dir(self.starting_cwd.clone()).expect("Could not reset CWD")
     }
 }
 
