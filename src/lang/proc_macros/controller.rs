@@ -19,7 +19,7 @@ use super::client::connection::ProcMacroServerConnection;
 use super::client::status::ClientStatus;
 use super::client::{ProcMacroClient, RequestParams};
 use crate::config::Config;
-use crate::ide::analysis_progress::ProcMacroRequestTracker;
+use crate::ide::analysis_progress::{ProcMacroServerStatus, ProcMacroServerTracker};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suite;
@@ -54,7 +54,18 @@ pub struct ProcMacroClientController {
     plugin_suite: Option<PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     channels: ProcMacroChannels,
-    proc_macro_request_tracker: ProcMacroRequestTracker,
+    proc_macro_server_tracker: ProcMacroServerTracker,
+}
+
+impl From<&ClientStatus> for ProcMacroServerStatus {
+    fn from(value: &ClientStatus) -> Self {
+        match value {
+            ClientStatus::Pending => ProcMacroServerStatus::Pending,
+            ClientStatus::Starting(_) => ProcMacroServerStatus::Starting,
+            ClientStatus::Ready(_) => ProcMacroServerStatus::Ready,
+            ClientStatus::Crashed => ProcMacroServerStatus::Crashed,
+        }
+    }
 }
 
 impl ProcMacroClientController {
@@ -65,12 +76,12 @@ impl ProcMacroClientController {
     pub fn new(
         scarb: ScarbToolchain,
         notifier: Notifier,
-        proc_macro_request_tracker: ProcMacroRequestTracker,
+        proc_macro_server_tracker: ProcMacroServerTracker,
     ) -> Self {
         Self {
             scarb,
             notifier,
-            proc_macro_request_tracker,
+            proc_macro_server_tracker,
             plugin_suite: Default::default(),
             initialization_retries: RateLimiter::direct(
                 Quota::with_period(Duration::from_secs(
@@ -94,6 +105,12 @@ impl ProcMacroClientController {
         if db.proc_macro_client_status().is_pending() {
             self.try_initialize(db, config);
         }
+    }
+
+    fn set_proc_macro_client_status(&self, db: &mut AnalysisDatabase, client_status: ClientStatus) {
+        let server_status = ProcMacroServerStatus::from(&client_status);
+        db.set_proc_macro_client_status(client_status);
+        self.proc_macro_server_tracker.set_server_status(server_status);
     }
 
     /// Forcibly restarts the proc-macro-server, shutting down any currently running instances.
@@ -147,7 +164,7 @@ impl ProcMacroClientController {
                     db.add_plugin_suite(new_plugin_suite);
                 }
 
-                db.set_proc_macro_client_status(ClientStatus::Ready(client));
+                self.set_proc_macro_client_status(db, ClientStatus::Ready(client));
             }
             ClientStatus::Ready(client) => {
                 self.apply_responses(db, config, &client);
@@ -183,12 +200,12 @@ impl ProcMacroClientController {
                         self.channels.response_sender.clone(),
                     ),
                     self.channels.error_sender.clone(),
-                    self.proc_macro_request_tracker.clone(),
+                    self.proc_macro_server_tracker.clone(),
                 );
 
                 client.start_initialize();
 
-                db.set_proc_macro_client_status(ClientStatus::Starting(Arc::new(client)));
+                self.set_proc_macro_client_status(db, ClientStatus::Starting(Arc::new(client)));
             }
             Err(err) => {
                 error!("spawning proc-macro-server failed: {err:?}");
@@ -204,7 +221,7 @@ impl ProcMacroClientController {
         db: &mut AnalysisDatabase,
         initialization_failed_info: InitializationFailedInfo,
     ) {
-        db.set_proc_macro_client_status(ClientStatus::Crashed);
+        self.set_proc_macro_client_status(db, ClientStatus::Crashed);
 
         self.notifier.notify::<ShowMessage>(ShowMessageParams {
             typ: MessageType::ERROR,

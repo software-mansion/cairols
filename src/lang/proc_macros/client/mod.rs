@@ -17,7 +17,7 @@ use scarb_proc_macro_server_types::methods::expand::{
 pub use status::ClientStatus;
 use tracing::error;
 
-use crate::ide::analysis_progress::ProcMacroRequestTracker;
+use crate::ide::analysis_progress::ProcMacroServerTracker;
 
 pub mod connection;
 mod id_generator;
@@ -35,21 +35,21 @@ pub struct ProcMacroClient {
     id_generator: id_generator::IdGenerator,
     requests_params: Mutex<HashMap<RequestId, RequestParams>>,
     error_channel: Sender<()>,
-    proc_macro_request_tracker: ProcMacroRequestTracker,
+    proc_macro_server_tracker: ProcMacroServerTracker,
 }
 
 impl ProcMacroClient {
     pub fn new(
         connection: ProcMacroServerConnection,
         error_channel: Sender<()>,
-        proc_macro_request_tracker: ProcMacroRequestTracker,
+        proc_macro_server_tracker: ProcMacroServerTracker,
     ) -> Self {
         Self {
             connection,
             id_generator: Default::default(),
             requests_params: Default::default(),
             error_channel,
-            proc_macro_request_tracker,
+            proc_macro_server_tracker,
         }
     }
 
@@ -154,7 +154,7 @@ impl ProcMacroClient {
 
         match self.send_request_untracked::<M>(id, &params) {
             Ok(()) => {
-                self.proc_macro_request_tracker.register_procmacro_request();
+                self.proc_macro_server_tracker.register_procmacro_request();
                 requests_params.insert(id, map(params));
             }
             Err(err) => {

@@ -1,3 +1,4 @@
+use std::cmp::PartialEq;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -5,15 +6,27 @@ use crate::config::Config;
 use crate::lsp::ext::{ServerStatus, ServerStatusEvent, ServerStatusParams};
 use crate::server::client::Notifier;
 
-/// A struct that allows to track procmacro requests.
-#[derive(Clone)]
-pub struct ProcMacroRequestTracker {
-    procmacro_request_submitted: Arc<AtomicBool>,
+#[derive(Clone, PartialEq)]
+pub enum ProcMacroServerStatus {
+    Pending,
+    Starting,
+    Ready,
+    Crashed,
 }
 
-impl ProcMacroRequestTracker {
+/// A struct that allows to track procmacro requests.
+#[derive(Clone)]
+pub struct ProcMacroServerTracker {
+    procmacro_request_submitted: Arc<AtomicBool>,
+    procmacro_server_status: Arc<Mutex<ProcMacroServerStatus>>,
+}
+
+impl ProcMacroServerTracker {
     pub fn new() -> Self {
-        Self { procmacro_request_submitted: Arc::new(AtomicBool::new(false)) }
+        Self {
+            procmacro_request_submitted: Arc::new(AtomicBool::new(false)),
+            procmacro_server_status: Arc::new(Mutex::new(ProcMacroServerStatus::Pending)),
+        }
     }
 
     /// Signals that a request to proc macro server was made during the current generation of
@@ -22,7 +35,16 @@ impl ProcMacroRequestTracker {
         self.procmacro_request_submitted.store(true, Ordering::SeqCst);
     }
 
-    pub fn reset(&self) {
+    pub fn set_server_status(&self, status: ProcMacroServerStatus) {
+        let mut guard = self.procmacro_server_status.lock().unwrap();
+        *guard = status;
+    }
+
+    pub fn get_server_status(&self) -> ProcMacroServerStatus {
+        (*(self.procmacro_server_status.lock().unwrap())).clone()
+    }
+
+    pub fn reset_request_tracker(&self) {
         self.procmacro_request_submitted.store(false, Ordering::SeqCst);
     }
 
@@ -34,7 +56,7 @@ impl ProcMacroRequestTracker {
 #[derive(Clone)]
 pub struct AnalysisProgressController {
     state: Arc<Mutex<AnalysisProgressControllerState>>,
-    request_tracker: ProcMacroRequestTracker,
+    server_tracker: ProcMacroServerTracker,
 }
 
 impl AnalysisProgressController {
@@ -43,24 +65,24 @@ impl AnalysisProgressController {
     }
 
     pub fn try_start_analysis(&self) {
-        self.request_tracker.reset();
+        self.server_tracker.reset_request_tracker();
         self.state.lock().unwrap().try_start_analysis()
     }
 
     pub fn try_stop_analysis(&self, diagnostics_cancelled: bool) {
         if !diagnostics_cancelled {
-            self.state
-                .lock()
-                .unwrap()
-                .try_stop_analysis(self.request_tracker.get_did_submit_procmacro_request());
+            self.state.lock().unwrap().try_stop_analysis(
+                self.server_tracker.get_did_submit_procmacro_request(),
+                self.server_tracker.get_server_status(),
+            );
         }
     }
 }
 
 impl AnalysisProgressController {
-    pub fn new(notifier: Notifier, request_tracker: ProcMacroRequestTracker) -> Self {
+    pub fn new(notifier: Notifier, server_tracker: ProcMacroServerTracker) -> Self {
         Self {
-            request_tracker,
+            server_tracker,
             state: Arc::new(Mutex::new(AnalysisProgressControllerState::new(notifier))),
         }
     }
@@ -97,9 +119,14 @@ impl AnalysisProgressControllerState {
         }
     }
 
-    fn try_stop_analysis(&mut self, did_submit_procmacro_request: bool) {
+    fn try_stop_analysis(
+        &mut self,
+        did_submit_procmacro_request: bool,
+        proc_macro_server_status: ProcMacroServerStatus,
+    ) {
         let config_not_loaded = self.procmacros_enabled.is_none();
-        if (!did_submit_procmacro_request
+        if ((!did_submit_procmacro_request
+            && proc_macro_server_status == ProcMacroServerStatus::Ready)
             || config_not_loaded
             || (self.procmacros_enabled == Some(false)))
             && self.analysis_in_progress
