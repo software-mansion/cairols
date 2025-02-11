@@ -1,11 +1,12 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    EnumLongId, GenericTypeId, LanguageElementId, LocalVarLongId, LookupItemId, MemberId, ModuleId,
+    EnumLongId, GenericTypeId, LanguageElementId, LookupItemId, MemberId, ModuleId,
     NamedLanguageElementId, StructLongId, SubmoduleLongId, TraitItemId, VarId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::generics::generic_params_to_args;
@@ -202,7 +203,7 @@ fn try_extract_member_declaration(
     db: &AnalysisDatabase,
     identifier: &ast::TerminalIdentifier,
 ) -> Option<MemberId> {
-    let member = identifier.as_syntax_node().parent()?.cast::<ast::Member>(db)?;
+    let member = identifier.as_syntax_node().parent_of_type::<ast::Member>(db)?;
     assert_eq!(member.name(db), *identifier);
     let item_struct = member.as_syntax_node().ancestor_of_type::<ast::ItemStruct>(db)?;
     let struct_id = StructLongId(
@@ -247,15 +248,19 @@ fn try_extract_variable_declaration(
     let function_id = lookup_items.first()?.function_with_body()?;
 
     // Look at function parameters.
-    if let Some(param) = identifier.as_syntax_node().ancestor_of_kind(db, SyntaxKind::Param) {
+    if let Some(param) = identifier.as_syntax_node().parent_of_type::<ast::Param>(db) {
+        assert_eq!(param.name(db), *identifier);
+
         // Closures have different semantic model structures than regular functions.
-        let params = if let Some(expr_closure_ast) = param.ancestor_of_type::<ast::ExprClosure>(db)
+        let params = if let Some(expr_closure_ast) =
+            param.as_syntax_node().ancestor_of_type::<ast::ExprClosure>(db)
         {
             let expr_id =
                 db.lookup_expr_by_ptr(function_id, expr_closure_ast.stable_ptr().into()).ok()?;
             let Expr::ExprClosure(expr_closure_semantic) = db.expr_semantic(function_id, expr_id)
             else {
-                unreachable!("expected semantic for ast::ExprClosure to be Expr::ExprClosure");
+                // Break in case Expr::Missing was here.
+                return None;
             };
             expr_closure_semantic.params
         } else {
@@ -270,16 +275,15 @@ fn try_extract_variable_declaration(
         }
     }
 
-    // Look at patterns in the function body.
-    if let Some(pattern) = identifier.as_syntax_node().ancestor_of_type::<ast::Pattern>(db) {
-        // Bail out if the pattern happens to not exist in the semantic model.
-        // We don't need semantics for returning, though, due to the way how local variables are
-        // identified there, so we're happily ignoring the result value.
-        db.lookup_pattern_by_ptr(function_id, pattern.stable_ptr()).ok()?;
-
-        return Some(VarId::Local(
-            LocalVarLongId(function_id.module_file_id(db), identifier.stable_ptr()).intern(db),
-        ));
+    // Look at identifier patterns in the function body.
+    if let Some(pattern_ast) = identifier.as_syntax_node().ancestor_of_type::<ast::Pattern>(db) {
+        let pattern_id = db.lookup_pattern_by_ptr(function_id, pattern_ast.stable_ptr()).ok()?;
+        let pattern = db.pattern_semantic(function_id, pattern_id);
+        let pattern_variable = pattern
+            .variables(&QueryPatternVariablesFromDb(db, function_id))
+            .into_iter()
+            .find(|var| var.name == identifier.text(db))?;
+        return Some(VarId::Local(pattern_variable.var.id));
     }
 
     None
