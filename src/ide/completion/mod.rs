@@ -1,4 +1,5 @@
-use attribute::{attribute_completions, derive_completions};
+use attribute::attribute_completions;
+use attribute::derive::derive_completions;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::{
@@ -8,21 +9,27 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
-use colon_colon::{expr_path, use_statement};
-use completions::{dot_completions, struct_constructor_completions};
 use if_chain::if_chain;
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
 use mod_item::mod_completions;
+use path::expr_path;
+use struct_constructor::struct_constructor_completions;
+use use_statement::use_statement;
 
-use self::completions::generic_completions;
+use self::dot_completions::dot_completions;
+use self::legacy_generic_completions::generic_completions;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::lang::syntax::SyntaxNodeExt;
 
 mod attribute;
-mod colon_colon;
-mod completions;
+mod dot_completions;
+mod helpers;
+mod legacy_generic_completions;
 mod mod_item;
+mod path;
+mod struct_constructor;
+mod use_statement;
 
 /// Compute completion items at a given cursor position.
 pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<CompletionResponse> {
