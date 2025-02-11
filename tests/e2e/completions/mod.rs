@@ -5,10 +5,11 @@ use serde::Serialize;
 
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::cursor::peek_caret;
-use crate::support::{cursors, sandbox};
+use crate::support::{MockClient, cursors, sandbox};
 
 mod attribute;
 mod methods_text_edits;
+mod mod_file;
 mod module_items;
 mod structs;
 
@@ -20,14 +21,24 @@ mod structs;
 /// The function then requests quick fixes at each caret position and compares the result with the
 /// expected quick fixes from the snapshot file.
 fn test_completions_text_edits(cairo_code: &str) -> Report {
+    test_completions_text_edits_inner(cairo_code, "src/lib.cairo", |cairo| {
+        sandbox! {
+            files {
+                "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+                "src/lib.cairo" => cairo,
+            }
+        }
+    })
+}
+
+fn test_completions_text_edits_inner(
+    cairo_code: &str,
+    file: &str,
+    ls: impl FnOnce(&str) -> MockClient,
+) -> Report {
     let (cairo, cursors) = cursors(cairo_code);
 
-    let mut ls = sandbox! {
-        files {
-            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-            "src/lib.cairo" => cairo.clone(),
-        }
-    };
+    let mut ls = ls(&cairo);
 
     ls.open_all_cairo_files_and_wait_for_project_update();
 
@@ -38,7 +49,7 @@ fn test_completions_text_edits(cairo_code: &str) -> Report {
 
     let completion_params = CompletionParams {
         text_document_position: TextDocumentPositionParams {
-            text_document: ls.doc_id("src/lib.cairo"),
+            text_document: ls.doc_id(file),
             position,
         },
         work_done_progress_params: Default::default(),
