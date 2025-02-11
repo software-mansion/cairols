@@ -53,7 +53,6 @@ fn lib_cairo_without_name_with_semicolon() {
 
 #[test]
 fn lib_cairo_without_name_without_semicolon() {
-    // TODO if caret is at eof we will incorrectly detect it as SyntaxFile
     test_transform!(lib_cairo,
     "mod cccc; mod <caret>",
     @r#"
@@ -62,16 +61,10 @@ fn lib_cairo_without_name_without_semicolon() {
     """
 
     [[completions]]
-    completion_label = "core"
+    completion_label = "bbbb;"
 
     [[completions]]
-    completion_label = "hello"
-
-    [[completions]]
-    completion_label = "cccc"
-
-    [[completions]]
-    completion_label = ""
+    completion_label = "aaaa;"
     "#);
 }
 
