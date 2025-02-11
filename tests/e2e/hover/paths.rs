@@ -312,15 +312,9 @@ fn function_with_path_super() {
     source_context = """
             <caret>super::some_module::internal_module::nested_internal_module::foo();
     """
-    highlight = """
-            <sel>super</sel>::some_module::internal_module::nested_internal_module::foo();
-    """
     popover = """
     ```cairo
-    hello::happy_cases
-    ```
-    ```cairo
-    fn function_with_path()
+    fn foo() -> ()
     ```
     """
     "#)
@@ -502,15 +496,9 @@ fn struct_constructor_with_path_first() {
     source_context = """
             let _ = <caret>super::some_module::internal_module::nested_internal_module::PublicStruct {};
     """
-    highlight = """
-            let _ = <sel>super</sel>::some_module::internal_module::nested_internal_module::PublicStruct {};
-    """
     popover = """
     ```cairo
-    hello::happy_cases
-    ```
-    ```cairo
-    fn constructor_with_path()
+    hello::some_module::internal_module::nested_internal_module::PublicStruct
     ```
     """
     "#)
