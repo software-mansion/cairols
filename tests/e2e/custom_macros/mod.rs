@@ -15,7 +15,7 @@ struct DiagnosticsWithUrl {
 
 #[derive(Serialize)]
 struct DiagnosticsReport {
-    diagnostics: String,
+    diagnostics: Vec<DiagnosticsWithUrl>,
 }
 
 #[test]
@@ -79,11 +79,8 @@ fn test_custom_macro() {
         .into_iter()
         .filter(|(url, _)| !url.path().contains("core/src"))
         .sorted_by(|(url_a, _), (url_b, _)| url_a.path().cmp(url_b.path()))
-        .map(|(url, diagnostics)| DiagnosticsWithUrl { url: url.to_string(), diagnostics })
+        .map(|(url, diagnostics)| DiagnosticsWithUrl { url: normalize(&ls, url), diagnostics })
         .collect();
 
-    let serialized_diags = serde_json::to_string_pretty(&sorted_diagnostics).unwrap();
-    let normalized_diags = normalize(&ls, serialized_diags);
-
-    insta::assert_toml_snapshot!(DiagnosticsReport { diagnostics: normalized_diags })
+    insta::assert_json_snapshot!(DiagnosticsReport { diagnostics: sorted_diagnostics })
 }

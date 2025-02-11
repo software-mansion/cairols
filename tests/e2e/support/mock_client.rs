@@ -2,7 +2,6 @@ use std::collections::{HashMap, VecDeque};
 use std::ffi::OsStr;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{env, fmt, mem, process};
 
@@ -370,7 +369,7 @@ impl MockClient {
     }
 }
 
-type StreamConsumer<Elements> = Box<dyn Fn(Elements) -> ControlFlow<()>>;
+type StreamConsumer<Elements> = Box<dyn FnMut(Elements) -> ControlFlow<()>>;
 
 /// Quality of life helpers for interacting with the server.
 impl MockClient {
@@ -452,30 +451,27 @@ impl MockClient {
         self.fixture.file_url(path);
         self.open(path);
 
-        let in_progress_open = Arc::new(Mutex::new(false));
-        let project_updated = Arc::new(Mutex::new(false));
+        let mut in_progress_open = false;
+        let mut project_updated = false;
 
         self.subscribe_notifications(Box::new(move |notification: Notification| {
-            let mut in_progress_open = in_progress_open.lock().unwrap();
-            let mut project_updated = project_updated.lock().unwrap();
-
             if notification.method == "cairo/serverStatus" {
                 let params: ServerStatusParams =
                     serde_json::from_value(notification.params).unwrap();
 
                 match params.event {
                     AnalysisStarted => {
-                        *in_progress_open = true;
+                        in_progress_open = true;
                     }
                     AnalysisFinished => {
-                        if *in_progress_open && *project_updated {
+                        if in_progress_open && project_updated {
                             return ControlFlow::Break(());
                         }
                     }
                 }
             }
             if notification.method == "cairo/projectUpdatingFinished" {
-                *project_updated = true;
+                project_updated = true;
             }
 
             ControlFlow::Continue(())
@@ -485,25 +481,22 @@ impl MockClient {
         self.diagnostics.clone()
     }
 
-    fn subscribe_notifications(&mut self, stream_consumer: StreamConsumer<Notification>) {
-        let consume_notification = |msg: &Message| {
+    fn subscribe_notifications(&mut self, mut stream_consumer: StreamConsumer<Notification>) {
+        let mut consume_notification = |msg: &Message| -> ControlFlow<()> {
             if let Message::Notification(notification) = msg {
-                let flow_control = stream_consumer(notification.clone());
-                return flow_control == ControlFlow::Break(());
+                return stream_consumer(notification.clone());
             }
-            false
+            ControlFlow::Continue(())
         };
 
         for msg in self.trace() {
-            let end_stream = consume_notification(msg);
-            if end_stream {
+            if consume_notification(msg).is_break() {
                 return;
             }
         }
 
         while let Some(msg) = self.recv().expect("Cannot read from the server") {
-            let end_stream = consume_notification(&msg);
-            if end_stream {
+            if consume_notification(&msg).is_break() {
                 return;
             }
         }
