@@ -7,7 +7,7 @@ use scarb_proc_macro_server_types::methods::expand::{
     ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
 };
 
-use super::client::ClientStatus;
+use super::client::ServerStatus;
 
 /// A set of queries that enable access to proc macro client from compiler plugins
 /// `.generate_code()` methods.
@@ -21,7 +21,7 @@ pub trait ProcMacroGroup {
     fn inline_macro_resolution(&self) -> Arc<HashMap<ExpandInlineMacroParams, ProcMacroResult>>;
 
     #[salsa::input]
-    fn proc_macro_client_status(&self) -> ClientStatus;
+    fn proc_macro_server_status(&self) -> ServerStatus;
 
     /// Returns the expansion of attribute macro.
     fn get_attribute_expansion(&self, params: ExpandAttributeParams) -> ProcMacroResult;
@@ -35,7 +35,7 @@ pub fn init_proc_macro_group(db: &mut dyn ProcMacroGroup) {
     db.set_attribute_macro_resolution(Default::default());
     db.set_derive_macro_resolution(Default::default());
     db.set_inline_macro_resolution(Default::default());
-    db.set_proc_macro_client_status(Default::default());
+    db.set_proc_macro_server_status(Default::default());
 }
 
 fn get_attribute_expansion(
@@ -45,7 +45,7 @@ fn get_attribute_expansion(
     db.attribute_macro_resolution().get(&params).cloned().unwrap_or_else(|| {
         let token_stream = params.item.clone();
 
-        if let Some(client) = db.proc_macro_client_status().ready() {
+        if let Some(client) = db.proc_macro_server_status().ready() {
             client.request_attribute(params);
         }
 
@@ -57,7 +57,7 @@ fn get_derive_expansion(db: &dyn ProcMacroGroup, params: ExpandDeriveParams) -> 
     db.derive_macro_resolution().get(&params).cloned().unwrap_or_else(|| {
         let token_stream = params.item.clone();
 
-        if let Some(client) = db.proc_macro_client_status().ready() {
+        if let Some(client) = db.proc_macro_server_status().ready() {
             client.request_derives(params);
         }
 
@@ -73,7 +73,7 @@ fn get_inline_macros_expansion(
         // we can't return original node because it will make infinite recursive resolving.
         let token_stream = TokenStream::new("()".to_string());
 
-        if let Some(client) = db.proc_macro_client_status().ready() {
+        if let Some(client) = db.proc_macro_server_status().ready() {
             client.request_inline_macros(params);
         }
 
