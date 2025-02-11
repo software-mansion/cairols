@@ -482,22 +482,19 @@ impl MockClient {
     }
 
     fn subscribe_notifications(&mut self, mut stream_consumer: StreamConsumer<Notification>) {
-        let mut consume_notification = |msg: &Message| -> ControlFlow<()> {
-            if let Message::Notification(notification) = msg {
-                stream_consumer(notification.clone())?
-            }
-            ControlFlow::Continue(())
-        };
-
         for msg in self.trace() {
-            if consume_notification(msg).is_break() {
-                return;
+            if let Message::Notification(notification) = msg {
+                if stream_consumer(notification.clone()).is_break() {
+                    return;
+                }
             }
         }
 
         while let Some(msg) = self.recv().expect("Cannot read from the server") {
-            if consume_notification(&msg).is_break() {
-                return;
+            if let Message::Notification(notification) = msg {
+                if stream_consumer(notification).is_break() {
+                    return;
+                }
             }
         }
     }
