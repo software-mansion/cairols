@@ -132,3 +132,24 @@ fn star_rhs() {
     """
     "#)
 }
+
+/// https://github.com/software-mansion/cairols/issues/80
+#[test]
+fn issue_80() {
+    test_transform!(test_hover,r#"
+    use core::to_byte_array::FormatAsByteArray;
+    pub fn to_base_16_string_no_padding(value: felt252) -> ByteArray {
+        let string = value.format_as_byte_array(16);
+        format!("0x{}", str<caret>ing)
+    }
+    "#,@r#"
+    source_context = '''
+        format!("0x{}", str<caret>ing)
+    '''
+    popover = """
+    ```cairo
+    core::byte_array::ByteArray
+    ```
+    """
+    "#)
+}

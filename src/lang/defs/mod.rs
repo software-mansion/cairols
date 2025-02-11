@@ -74,9 +74,9 @@ impl SymbolDef {
             | ResolvedItem::Concrete(ResolvedConcreteItem::Type(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
-            | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_)) => {
-                ItemDef::new(db, &definition_node).map(Self::Item)
-            }
+            | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_))
+            | ResolvedItem::TraitItem(_)
+            | ResolvedItem::ImplItem(_) => ItemDef::new(db, &definition_node).map(Self::Item),
 
             ResolvedItem::Generic(ResolvedGenericItem::Module(id))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Module(id)) => {

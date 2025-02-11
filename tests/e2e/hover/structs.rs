@@ -248,15 +248,9 @@ fn non_existent_struct_member_init() {
     source_context = """
             let _ = NonExistentStruct { mem<caret>ber: 0 };
     """
-    highlight = """
-            let _ = NonExistentStruct { <sel>member</sel>: 0 };
-    """
     popover = """
     ```cairo
-    hello::unhappy_cases
-    ```
-    ```cairo
-    fn non_existent_struct
+    <missing>
     ```
     """
     "#)

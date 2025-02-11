@@ -68,8 +68,8 @@ fn method_in_impl() {
         fn foo(self: T);
     }
     pub struct Bar {}
-    impl <sel>FooBar</sel> of Foo<Bar> {
-        fn foo(self: Bar) {}
+    impl FooBar of Foo<Bar> {
+        fn <sel>foo</sel>(self: Bar) {}
     }
     ")
 }
