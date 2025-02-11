@@ -484,7 +484,7 @@ impl MockClient {
     fn subscribe_notifications(&mut self, mut stream_consumer: StreamConsumer<Notification>) {
         let mut consume_notification = |msg: &Message| -> ControlFlow<()> {
             if let Message::Notification(notification) = msg {
-                return stream_consumer(notification.clone());
+                stream_consumer(notification.clone())?
             }
             ControlFlow::Continue(())
         };
