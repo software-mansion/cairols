@@ -32,15 +32,9 @@ fn uninfered_value() {
     source_context = """
         let mut xyz = unkn<caret>own_function();
     """
-    highlight = """
-        let mut xyz = <sel>unknown_function</sel>();
-    """
     popover = """
     ```cairo
-    hello
-    ```
-    ```cairo
-    fn main()
+    <missing>
     ```
     """
     "#)

@@ -1,19 +1,17 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumLongId, GenericTypeId, LanguageElementId, LookupItemId, MemberId, ModuleId,
-    NamedLanguageElementId, StructLongId, SubmoduleLongId, TraitItemId, VarId,
+    NamedLanguageElementId, StructLongId, SubmoduleLongId, VarId,
 };
-use cairo_lang_diagnostics::ToOption;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
-use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use cairo_lang_semantic::items::generics::generic_params_to_args;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{ConcreteTraitLongId, Expr, TypeLongId};
+use cairo_lang_semantic::{Expr, TypeLongId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern};
@@ -40,41 +38,7 @@ pub fn find_definition(
         .or_else(|| try_variant_declaration(db, identifier))
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items))
-        .or_else(|| {
-            // FIXME(mkaput): This logic always kicks in if we're finding definition of undefined
-            //   symbol which is very wrong in such cases.
-            let item = match lookup_items.first().copied()? {
-                LookupItemId::ModuleItem(item) => {
-                    ResolvedGenericItem::from_module_item(db, item).to_option()?
-                }
-                LookupItemId::TraitItem(trait_item) => {
-                    if let TraitItemId::Function(trait_function_id) = trait_item {
-                        let parent_trait = trait_item.trait_id(db);
-                        let generic_parameters =
-                            db.trait_generic_params(parent_trait).to_option()?;
-                        let concrete_trait = ConcreteTraitLongId {
-                            trait_id: parent_trait,
-                            generic_args: generic_params_to_args(&generic_parameters, db),
-                        };
-                        let concrete_trait = db.intern_concrete_trait(concrete_trait);
-
-                        ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(
-                            ImplGenericFunctionId {
-                                impl_id: ImplLongId::SelfImpl(concrete_trait).intern(db),
-                                function: trait_function_id,
-                            },
-                        ))
-                    } else {
-                        ResolvedGenericItem::Trait(trait_item.trait_id(db))
-                    }
-                }
-                LookupItemId::ImplItem(impl_item) => {
-                    ResolvedGenericItem::Impl(impl_item.impl_def_id(db))
-                }
-            };
-
-            Some(ResolvedItem::Generic(item))
-        })
+        .or_else(|| lookup_item_name(db, identifier, lookup_items))
 }
 
 /// Resolve `mod <ident>` syntax.
@@ -271,6 +235,22 @@ fn lookup_resolved_items(
         }
     }
     None
+}
+
+fn lookup_item_name(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<ResolvedItem> {
+    let lookup_item = lookup_items.first().copied()?;
+
+    if lookup_item.name_identifier(db).stable_ptr() != identifier.stable_ptr() {
+        return None;
+    }
+
+    let resolved_item_generic = ResolvedGenericItem::from_lookup_item(db, lookup_item).ok()?;
+
+    Some(ResolvedItem::Generic(resolved_item_generic))
 }
 
 impl ResolvedItem {
