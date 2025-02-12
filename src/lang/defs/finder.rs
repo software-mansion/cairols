@@ -1,7 +1,7 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumLongId, GenericTypeId, LanguageElementId, LookupItemId, MemberId, ModuleId,
-    NamedLanguageElementId, StructLongId, SubmoduleLongId, TraitItemId, VarId,
+    NamedLanguageElementId, StructLongId, SubmoduleId, SubmoduleLongId, TraitItemId, VarId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_parser::db::ParserGroup;
@@ -15,10 +15,8 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTraitLongId, Expr, TypeLongId, Variant};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
-use tracing::error;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::syntax::SyntaxNodeExt;
@@ -36,28 +34,12 @@ pub fn find_definition(
     lookup_items: &[LookupItemId],
 ) -> Option<(ResolvedItem, SyntaxStablePtrId)> {
     // The lookup_resolved_*_item_by_ptr queries tend to sometimes return an encompassing item
-    // instead of actually resolving the identifier.
+    // instead of actually resolving the identifier, or they just miss some data.
     // The following series of heuristics resolve the identifier in alternative ways for such cases.
 
-    if let Some(parent) = identifier.as_syntax_node().parent() {
-        if parent.kind(db) == SyntaxKind::ItemModule {
-            let Some(containing_module_file_id) = db.find_module_file_containing_node(&parent)
-            else {
-                error!("`find_definition` failed: could not find module");
-                return None;
-            };
-
-            let submodule_id = SubmoduleLongId(
-                containing_module_file_id,
-                ast::ItemModule::from_syntax_node(db, parent).stable_ptr(),
-            )
-            .intern(db);
-            let item = ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id));
-            return Some((
-                ResolvedItem::Generic(item.clone()),
-                resolved_generic_item_def(db, item)?,
-            ));
-        }
+    if let Some(submodule_id) = try_extract_submodule_name(db, identifier) {
+        let item = ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id));
+        return Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?));
     }
 
     if let Some(member_id) = try_extract_member(db, identifier, lookup_items)
@@ -128,6 +110,20 @@ pub fn find_definition(
     };
 
     Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?))
+}
+
+/// Extracts [`SubmoduleId`] if the [`TerminalIdentifier`] is used as `mod ident`.
+fn try_extract_submodule_name(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+) -> Option<SubmoduleId> {
+    let item_module = identifier.as_syntax_node().parent_of_type::<ast::ItemModule>(db)?;
+    assert_eq!(item_module.name(db), *identifier);
+    let containing_module_file_id =
+        db.find_module_file_containing_node(&item_module.as_syntax_node())?;
+    let submodule_id =
+        SubmoduleLongId(containing_module_file_id, item_module.stable_ptr()).intern(db);
+    Some(submodule_id)
 }
 
 /// Extracts [`MemberId`] if the [`TerminalIdentifier`] is used as a struct member
