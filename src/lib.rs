@@ -333,7 +333,7 @@ impl Backend {
             .request::<lsp_types::request::RegisterCapability>(
                 RegistrationParams { registrations },
                 |()| {
-                    debug!("configuration file watcher successfully registered");
+                    debug!("capabilities successfully registered dynamically");
                     Task::nothing()
                 },
             )
