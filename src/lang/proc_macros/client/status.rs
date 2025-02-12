@@ -3,7 +3,7 @@ use std::sync::Arc;
 use super::ProcMacroClient;
 
 #[derive(Debug, Default, Clone)]
-pub enum ClientStatus {
+pub enum ServerStatus {
     #[default]
     Pending,
     Starting(Arc<ProcMacroClient>),
@@ -13,7 +13,7 @@ pub enum ClientStatus {
     Crashed,
 }
 
-impl ClientStatus {
+impl ServerStatus {
     pub fn ready(&self) -> Option<&ProcMacroClient> {
         if let Self::Ready(client) = self { Some(client) } else { None }
     }

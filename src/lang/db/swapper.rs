@@ -103,7 +103,7 @@ impl AnalysisDatabaseSwapper {
         new_db.set_inline_macro_plugins(old_db.inline_macro_plugins());
         new_db.set_analyzer_plugins(old_db.analyzer_plugins());
 
-        new_db.set_proc_macro_client_status(old_db.proc_macro_client_status());
+        new_db.set_proc_macro_server_status(old_db.proc_macro_server_status());
 
         // TODO(#6646): Probably this should not be part of migration as it will be ever growing,
         // but diagnostics going crazy every 5 minutes are no better.
