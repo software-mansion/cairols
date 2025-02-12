@@ -1,18 +1,17 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    LanguageElementId, LookupItemId, ModuleFileId, ModuleId, NamedLanguageElementId,
-    TopLevelLanguageElementId, TraitFunctionId,
+    LanguageElementId, ModuleFileId, ModuleId, NamedLanguageElementId, TopLevelLanguageElementId,
+    TraitFunctionId,
 };
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_semantic::corelib::{core_submodule, get_submodule};
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::us::SemanticUseEx;
-use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
-use cairo_lang_semantic::resolve::{ResolvedGenericItem, Resolver};
+use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_semantic::resolve::ResolvedGenericItem;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
@@ -20,6 +19,7 @@ use cairo_lang_utils::Upcast;
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit};
 use tracing::debug;
 
+use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
 use crate::lang::methods::find_methods_for_type;
@@ -27,19 +27,14 @@ use crate::lang::methods::find_methods_for_type;
 pub fn dot_completions(
     db: &AnalysisDatabase,
     file_id: FileId,
-    lookup_items: Vec<LookupItemId>,
+    ctx: &AnalysisContext<'_>,
     expr: ast::ExprBinary,
 ) -> Option<Vec<CompletionItem>> {
     let syntax_db = db.upcast();
     // Get a resolver in the current context.
-    let lookup_item_id = lookup_items.into_iter().next()?;
-    let function_with_body = lookup_item_id.function_with_body()?;
+    let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let module_file_id = function_with_body.module_file_id(db.upcast());
-    let resolver_data = lookup_item_id.resolver_data(db).ok()?;
-    let resolver = Resolver::with_data(
-        db,
-        resolver_data.as_ref().clone_with_inference_id(db, InferenceId::NoContext),
-    );
+    let resolver = ctx.resolver(db);
 
     // Extract lhs node.
     let node = expr.lhs(syntax_db);

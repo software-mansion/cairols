@@ -18,7 +18,8 @@ use use_statement::use_statement;
 
 use self::dot_completions::dot_completions;
 use self::legacy_generic_completions::generic_completions;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::analysis_context::AnalysisContext;
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::lang::syntax::SyntaxNodeExt;
 
@@ -39,8 +40,6 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     position.character = position.character.saturating_sub(1);
 
     let mut node = db.find_syntax_node_at_position(file_id, position.to_cairo())?;
-    let lookup_items = db.collect_lookup_items_stack(&node)?;
-    let module_file_id = db.find_module_file_containing_node(&node)?;
 
     // There is no completions for these.
     if matches!(
@@ -79,6 +78,8 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         node = node.parent().unwrap_or(node);
     }
 
+    let ctx = AnalysisContext::from_node(db, node.clone())?;
+
     let trigger_kind =
         params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED);
 
@@ -86,7 +87,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
     if_chain!(
         if let Some(constructor) = node.ancestor_of_type::<ExprStructCtorCall>(db);
-        if let Some(struct_completions) = struct_constructor_completions(db, lookup_items.clone(), constructor);
+        if let Some(struct_completions) = struct_constructor_completions(db, &ctx, constructor);
 
         then {
             completions.extend(struct_completions);
@@ -97,7 +98,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         if let Some(binary_expression) = node.ancestor_of_type::<ExprBinary>(db);
         if let BinaryOperator::Dot(_) = binary_expression.op(db);
         if node.is_descendant(&binary_expression.rhs(db).as_syntax_node());
-        if let Some(dot_completions) = dot_completions(db, file_id, lookup_items.clone(), binary_expression);
+        if let Some(dot_completions) = dot_completions(db, file_id, &ctx, binary_expression);
 
         then {
             completions.extend(dot_completions);
@@ -109,7 +110,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
     if_chain!(
         if let Some(leaf) = node.ancestor_of_type::<UsePathLeaf>(db);
-        if let Some(use_completions) = use_statement(db, ast::UsePath::Leaf(leaf), module_file_id, lookup_items.clone());
+        if let Some(use_completions) = use_statement(db, ast::UsePath::Leaf(leaf), &ctx);
 
         then {
             completions.extend(use_completions);
@@ -122,7 +123,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
             was_single = true;
             true
         };
-        if let Some(use_completions) = use_statement(db, ast::UsePath::Single(single), module_file_id, lookup_items.clone());
+        if let Some(use_completions) = use_statement(db, ast::UsePath::Single(single), &ctx);
 
         then {
             completions.extend(use_completions);
@@ -131,7 +132,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
     if_chain!(
         if let Some(expr) = node.ancestor_of_type::<ExprPath>(db);
-        if let Some(expr_path_completions) = expr_path(db, &node, expr, module_file_id, lookup_items.clone());
+        if let Some(expr_path_completions) = expr_path(db, expr, &ctx);
 
         then {
             completions.extend(expr_path_completions);
@@ -204,7 +205,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         // Another quickfix, `generic_completions` must be split into smaller parts to fit into system.
         && node.ancestor_of_kind(db, SyntaxKind::ExprStructCtorCall).is_none()
     {
-        let result = generic_completions(db, module_file_id, lookup_items);
+        let result = generic_completions(db, &ctx);
 
         completions.extend(result);
     }
