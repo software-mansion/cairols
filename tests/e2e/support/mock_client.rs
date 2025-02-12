@@ -17,6 +17,7 @@ use serde_json::Value;
 
 use crate::support::fixture::Fixture;
 use crate::support::jsonrpc::RequestIdGenerator;
+use crate::support::mock_client::Action::{NoOp, RemoveFromTrace};
 
 /// A mock language client implementation that facilitates end-to-end testing language servers.
 ///
@@ -369,7 +370,11 @@ impl MockClient {
     }
 }
 
-type StreamConsumer<Elements> = Box<dyn FnMut(Elements) -> ControlFlow<()>>;
+type StreamConsumer<Elements> = Box<dyn FnMut(Elements) -> ControlFlow<(), Action>>;
+enum Action {
+    RemoveFromTrace,
+    NoOp,
+}
 
 /// Quality of life helpers for interacting with the server.
 impl MockClient {
@@ -417,7 +422,7 @@ impl MockClient {
     }
 
     /// Sends `textDocument/didOpen` notification to the server and then waits for
-    /// `cairo/projectUpdatingFinished` and the next `textDocument/publishDiagnostics` for given
+    /// `cairo/projectUpdatingFinished` and the next `textDocument/publishDiagnostics` for a given
     /// path.
     pub fn open_and_wait_for_diagnostics(&mut self, path: impl AsRef<Path>) -> Vec<Diagnostic> {
         let path = path.as_ref();
@@ -447,54 +452,77 @@ impl MockClient {
         &mut self,
         path: impl AsRef<Path>,
     ) -> HashMap<Url, Vec<Diagnostic>> {
-        let path = path.as_ref();
-        self.fixture.file_url(path);
         self.open(path);
 
         let mut in_progress_open = false;
         let mut project_updated = false;
 
-        self.subscribe_notifications(Box::new(move |notification: Notification| {
-            if notification.method == "cairo/serverStatus" {
-                let params: ServerStatusParams =
-                    serde_json::from_value(notification.params).unwrap();
+        self.subscribe_notifications(Box::new(
+            move |notification: Notification| match notification.method.as_str() {
+                "cairo/serverStatus" => {
+                    let params: ServerStatusParams =
+                        serde_json::from_value(notification.params).unwrap();
 
-                match params.event {
-                    AnalysisStarted => {
-                        in_progress_open = true;
-                    }
-                    AnalysisFinished => {
-                        if in_progress_open && project_updated {
-                            return ControlFlow::Break(());
+                    match params.event {
+                        AnalysisStarted => {
+                            in_progress_open = true;
+                            ControlFlow::Continue(RemoveFromTrace)
+                        }
+                        AnalysisFinished => {
+                            if in_progress_open && project_updated {
+                                ControlFlow::Break(())
+                            } else {
+                                ControlFlow::Continue(RemoveFromTrace)
+                            }
                         }
                     }
                 }
-            }
-            if notification.method == "cairo/projectUpdatingFinished" {
-                project_updated = true;
-            }
-
-            ControlFlow::Continue(())
-        }));
+                "cairo/projectUpdatingFinished" => {
+                    project_updated = true;
+                    ControlFlow::Continue(RemoveFromTrace)
+                }
+                _ => ControlFlow::Continue(NoOp),
+            },
+        ));
 
         // It should contain all accumulated diagnostics up to the end of the generation.
         self.diagnostics.clone()
     }
 
     fn subscribe_notifications(&mut self, mut stream_consumer: StreamConsumer<Notification>) {
-        for msg in self.trace() {
+        let mut already_removed = 0;
+        for (i, msg) in self.trace.clone().into_iter().enumerate() {
             if let Message::Notification(notification) = msg {
-                if stream_consumer(notification.clone()).is_break() {
-                    return;
-                }
+                match stream_consumer(notification) {
+                    ControlFlow::Continue(action) => match action {
+                        RemoveFromTrace => {
+                            self.trace.remove(i - already_removed);
+                            already_removed += 1;
+                        }
+                        NoOp => {}
+                    },
+                    ControlFlow::Break(()) => {
+                        self.trace.remove(i - already_removed);
+                        return;
+                    }
+                };
             }
         }
 
         while let Some(msg) = self.recv().expect("Cannot read from the server") {
             if let Message::Notification(notification) = msg {
-                if stream_consumer(notification).is_break() {
-                    return;
-                }
+                match stream_consumer(notification.clone()) {
+                    ControlFlow::Continue(action) => match action {
+                        RemoveFromTrace => {
+                            self.trace.pop();
+                        }
+                        NoOp => {}
+                    },
+                    ControlFlow::Break(()) => {
+                        self.trace.pop();
+                        return;
+                    }
+                };
             }
         }
     }

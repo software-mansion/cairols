@@ -43,7 +43,13 @@ impl Fixture {
     }
 
     pub fn file_absolute_path(&self, path: impl AsRef<Path>) -> PathBuf {
-        self.t.child(path).canonicalize().unwrap().to_owned()
+        let path = path.as_ref();
+
+        if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            self.t.child(path).canonicalize().unwrap().to_owned()
+        }
     }
 
     pub fn file_url(&self, path: impl AsRef<Path>) -> Url {
