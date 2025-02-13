@@ -70,6 +70,7 @@ fn test_custom_macro() {
         workspace_configuration = json!({
             "cairo1": {
                 "enableProcMacros": true,
+                "traceMacroDiagnostics": true,
             }
         });
     };
