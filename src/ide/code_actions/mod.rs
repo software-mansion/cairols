@@ -7,6 +7,7 @@ use lsp_types::{
 };
 use tracing::{debug, warn};
 
+use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
@@ -69,6 +70,8 @@ fn get_code_actions_for_diagnostics(
         }
     }
 
+    let ctx = AnalysisContext::from_node(db, node.clone()).unwrap();
+
     diagnostic_groups_by_codes
         .into_iter()
         .flat_map(|(code, diagnostics)| match code.as_str() {
@@ -84,13 +87,13 @@ fn get_code_actions_for_diagnostics(
                 })
                 .collect_vec(),
             "E0002" => {
-                add_missing_trait::add_missing_trait(db, node, params.text_document.uri.clone())
+                add_missing_trait::add_missing_trait(db, &ctx, params.text_document.uri.clone())
                     .unwrap_or_default()
             }
             "E0003" => fill_struct_fields::fill_struct_fields(db, node.clone(), params)
                 .map(|result| vec![result])
                 .unwrap_or_default(),
-            "E0004" => fill_trait_members::fill_trait_members(db, node.clone(), params)
+            "E0004" => fill_trait_members::fill_trait_members(db, &ctx, params)
                 .map(|result| vec![result])
                 .unwrap_or_default(),
             "E0005" => create_module_file::create_module_file(
