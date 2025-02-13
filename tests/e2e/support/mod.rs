@@ -40,7 +40,12 @@ macro_rules! sandbox {
         let mut client_capabilities = client_capabilities::base();
 
         #[allow(unused_assignments, unused_mut)]
-        let mut workspace_configuration = serde_json::Value::default();
+        let mut workspace_configuration = serde_json::json!({
+            "cairo1": {
+                "enableLinter": false
+            }
+        });
+
         $(
             workspace_configuration = $workspace_configuration;
             client_capabilities =
