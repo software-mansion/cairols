@@ -6,6 +6,8 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
+use itertools::Itertools;
+use lsp_types::Location;
 use smol_str::SmolStr;
 
 use self::finder::{ResolvedItem, find_definition};
@@ -15,6 +17,7 @@ pub use self::module::ModuleDef;
 pub use self::variable::VariableDef;
 pub use self::variant::VariantDef;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::lsp::{LsProtoGroup, ToLsp};
 use crate::lang::syntax::SyntaxNodeExt;
 use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
@@ -169,5 +172,29 @@ impl SymbolDef {
     /// Starts a find-usages search for this symbol.
     pub fn usages<'a>(&'a self, db: &'a AnalysisDatabase) -> FindUsages<'a> {
         FindUsages::new(self, db)
+    }
+
+    /// Finds all locations in which this symbol was used.
+    pub fn locations(&self, db: &AnalysisDatabase, include_declaration: bool) -> Vec<Location> {
+        // TODO(mkaput): Think about how to deal with `mod foo;` vs `mod foo { ... }`.
+        // Location where the searched symbol is declared.
+        // This can rarely be `None`, for example, for macros.
+        // For all cases we cover here, definition == declaration.
+        let declaration = self.definition_location(db).filter(|_| include_declaration);
+        let usages = self.usages(db).collect();
+
+        let references = usages.into_iter().map(|usage| (usage.file, usage.span));
+
+        declaration
+            .into_iter()
+            .chain(references)
+            .unique()
+            .filter_map(|(file, span)| {
+                let found_uri = db.url_for_file(file)?;
+                let range = span.position_in_file(db.upcast(), file)?.to_lsp();
+                let location = Location { uri: found_uri, range };
+                Some(location)
+            })
+            .collect()
     }
 }
