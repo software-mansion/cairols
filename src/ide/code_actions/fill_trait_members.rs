@@ -3,16 +3,15 @@ use std::collections::HashMap;
 use cairo_lang_defs::ids::{NamedLanguageElementId, TraitConstantId, TraitFunctionId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
-use cairo_lang_semantic::expr::inference::InferenceId;
-use cairo_lang_semantic::lookup_item::HasResolverData;
-use cairo_lang_semantic::resolve::{ResolvedConcreteItem, Resolver};
+use cairo_lang_semantic::resolve::ResolvedConcreteItem;
 use cairo_lang_semantic::substitution::GenericSubstitution;
 use cairo_lang_semantic::{ConcreteTraitId, GenericArgumentId, GenericParam, Parameter};
 use cairo_lang_syntax::node::ast::{ImplItem, ItemImpl, MaybeImplBody};
-use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
 use itertools::{Itertools, chain};
 use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, WorkspaceEdit};
 
+use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
 use crate::lang::syntax::SyntaxNodeExt;
@@ -21,12 +20,12 @@ use crate::lang::syntax::SyntaxNodeExt;
 /// Functions are added with empty bodies, consts with placeholder values.
 pub fn fill_trait_members(
     db: &AnalysisDatabase,
-    node: SyntaxNode,
+    ctx: &AnalysisContext<'_>,
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
-    let file = db.find_module_file_containing_node(&node)?.file_id(db).ok()?;
+    let file = db.find_module_file_containing_node(&ctx.node)?.file_id(db).ok()?;
 
-    let item_impl = node.ancestor_of_type::<ItemImpl>(db)?;
+    let item_impl = ctx.node.ancestor_of_type::<ItemImpl>(db)?;
 
     // Do not complete `impl`s without braces.
     let MaybeImplBody::Some(impl_body) = item_impl.body(db) else {
@@ -46,7 +45,7 @@ pub fn fill_trait_members(
         })
         .collect_vec();
 
-    let concrete_trait_id = find_concrete_trait_id(db, &item_impl)?;
+    let concrete_trait_id = find_concrete_trait_id(db, ctx, &item_impl)?;
     let trait_id = concrete_trait_id.trait_id(db);
 
     let mut trait_constants = db.trait_constants(trait_id).ok()?;
@@ -107,14 +106,12 @@ pub fn fill_trait_members(
 }
 
 /// Obtains semantic model of [`ItemImpl`] and returns a [`ConcreteTraitId`] it refers to.
-fn find_concrete_trait_id(db: &AnalysisDatabase, item_impl: &ItemImpl) -> Option<ConcreteTraitId> {
-    let lookup_item_id = db.find_lookup_item(&item_impl.as_syntax_node())?;
-    let resolver_data = lookup_item_id.resolver_data(db).ok()?;
-
-    let mut resolver = Resolver::with_data(
-        db,
-        resolver_data.as_ref().clone_with_inference_id(db, InferenceId::NoContext),
-    );
+fn find_concrete_trait_id(
+    db: &AnalysisDatabase,
+    ctx: &AnalysisContext<'_>,
+    item_impl: &ItemImpl,
+) -> Option<ConcreteTraitId> {
+    let mut resolver = ctx.resolver(db);
 
     let mut diagnostics = SemanticDiagnostics::default();
 
