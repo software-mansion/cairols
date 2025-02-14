@@ -13,25 +13,34 @@
 
 use std::ops::Not;
 
+use lsp_types::notification::{
+    DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument, DidOpenTextDocument,
+    DidSaveTextDocument, Notification,
+};
+use lsp_types::request::{
+    CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
+    References, Request,
+};
 use lsp_types::{
     ClientCapabilities, CodeActionProviderCapability, CompletionOptions,
     CompletionRegistrationOptions, DefinitionOptions, DidChangeWatchedFilesRegistrationOptions,
     DocumentFilter, ExecuteCommandOptions, ExecuteCommandRegistrationOptions, FileSystemWatcher,
-    GlobPattern, HoverProviderCapability, HoverRegistrationOptions, OneOf, Registration,
-    SaveOptions, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
-    SemanticTokensRegistrationOptions, ServerCapabilities, TextDocumentChangeRegistrationOptions,
-    TextDocumentRegistrationOptions, TextDocumentSaveRegistrationOptions,
-    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
-    TextDocumentSyncSaveOptions,
+    GlobPattern, HoverProviderCapability, HoverRegistrationOptions, OneOf, ReferencesOptions,
+    Registration, SaveOptions, SemanticTokensFullOptions, SemanticTokensLegend,
+    SemanticTokensOptions, SemanticTokensRegistrationOptions, ServerCapabilities,
+    TextDocumentChangeRegistrationOptions, TextDocumentRegistrationOptions,
+    TextDocumentSaveRegistrationOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
+    TextDocumentSyncOptions, TextDocumentSyncSaveOptions,
 };
 use missing_lsp_types::{
     CodeActionRegistrationOptions, DefinitionRegistrationOptions,
-    DocumentFormattingRegistrationOptions,
+    DocumentFormattingRegistrationOptions, ReferencesRegistrationOptions,
 };
 use serde::Serialize;
 
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
+use crate::lsp::ext::ViewSyntaxTree;
 
 /// Returns capabilities the server wants to register statically.
 pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCapabilities {
@@ -137,15 +146,17 @@ pub fn collect_dynamic_registrations(
         };
 
         registrations
-            .push(create_registration("workspace/didChangeWatchedFiles", registration_options));
+            .push(create_registration(DidChangeWatchedFiles::METHOD, registration_options));
     }
 
     if client_capabilities.text_document_synchronization_dynamic_registration() {
-        registrations
-            .push(create_registration("textDocument/didOpen", &text_document_registration_options));
+        registrations.push(create_registration(
+            DidOpenTextDocument::METHOD,
+            &text_document_registration_options,
+        ));
 
         registrations.push(create_registration(
-            "textDocument/didChange",
+            DidChangeTextDocument::METHOD,
             TextDocumentChangeRegistrationOptions {
                 document_selector,
                 sync_kind: 1, // TextDocumentSyncKind::FULL
@@ -153,7 +164,7 @@ pub fn collect_dynamic_registrations(
         ));
 
         registrations.push(create_registration(
-            "textDocument/didSave",
+            DidSaveTextDocument::METHOD,
             TextDocumentSaveRegistrationOptions {
                 include_text: Some(false),
                 text_document_registration_options: text_document_registration_options.clone(),
@@ -161,7 +172,7 @@ pub fn collect_dynamic_registrations(
         ));
 
         registrations.push(create_registration(
-            "textDocument/didClose",
+            DidCloseTextDocument::METHOD,
             &text_document_registration_options,
         ));
     }
@@ -178,7 +189,7 @@ pub fn collect_dynamic_registrations(
             },
         };
 
-        registrations.push(create_registration("textDocument/completion", registration_options));
+        registrations.push(create_registration(Completion::METHOD, registration_options));
     }
 
     if client_capabilities.execute_command_dynamic_registration() {
@@ -190,7 +201,7 @@ pub fn collect_dynamic_registrations(
             },
         };
 
-        registrations.push(create_registration("workspace/executeCommand", registration_options));
+        registrations.push(create_registration(ExecuteCommand::METHOD, registration_options));
     }
 
     if client_capabilities.semantic_tokens_dynamic_registration() {
@@ -217,7 +228,7 @@ pub fn collect_dynamic_registrations(
             document_formatting_options: Default::default(),
         };
 
-        registrations.push(create_registration("textDocument/formatting", registration_options));
+        registrations.push(create_registration(Formatting::METHOD, registration_options));
     }
 
     if client_capabilities.hover_dynamic_registration() {
@@ -226,7 +237,7 @@ pub fn collect_dynamic_registrations(
             hover_options: Default::default(),
         };
 
-        registrations.push(create_registration("textDocument/hover", registration_options));
+        registrations.push(create_registration(HoverRequest::METHOD, registration_options));
     }
 
     if client_capabilities.definition_dynamic_registration() {
@@ -237,7 +248,7 @@ pub fn collect_dynamic_registrations(
             },
         };
 
-        registrations.push(create_registration("textDocument/definition", registration_options));
+        registrations.push(create_registration(GotoDefinition::METHOD, registration_options));
     }
 
     if client_capabilities.code_action_dynamic_registration() {
@@ -246,17 +257,22 @@ pub fn collect_dynamic_registrations(
             code_action_options: Default::default(),
         };
 
-        registrations.push(create_registration("textDocument/codeAction", registration_options));
+        registrations.push(create_registration(CodeActionRequest::METHOD, registration_options));
     }
 
     if client_capabilities.references_provider_dynamic_registration() {
         registrations.push(create_registration(
-            "textDocument/references",
-            &text_document_registration_options,
+            References::METHOD,
+            ReferencesRegistrationOptions {
+                text_document_registration_options,
+                references_options: ReferencesOptions {
+                    work_done_progress_options: Default::default(),
+                },
+            },
         ));
     }
 
-    registrations.push(create_registration("cairo/viewSyntaxTree", ()));
+    registrations.push(create_registration(ViewSyntaxTree::METHOD, ()));
 
     registrations
 }
@@ -271,7 +287,7 @@ fn create_registration(method: &str, registration_options: impl Serialize) -> Re
 
 mod missing_lsp_types {
     use lsp_types::{
-        CodeActionOptions, DefinitionOptions, DocumentFormattingOptions,
+        CodeActionOptions, DefinitionOptions, DocumentFormattingOptions, ReferencesOptions,
         TextDocumentRegistrationOptions,
     };
     use serde::{Deserialize, Serialize};
@@ -304,5 +320,15 @@ mod missing_lsp_types {
 
         #[serde(flatten)]
         pub code_action_options: CodeActionOptions,
+    }
+
+    #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct ReferencesRegistrationOptions {
+        #[serde(flatten)]
+        pub text_document_registration_options: TextDocumentRegistrationOptions,
+
+        #[serde(flatten)]
+        pub references_options: ReferencesOptions,
     }
 }
