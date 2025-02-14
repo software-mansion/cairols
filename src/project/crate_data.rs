@@ -7,6 +7,7 @@ use cairo_lang_filesystem::db::{
     FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
+use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup};
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::{Intern, LookupIntern};
 use smol_str::SmolStr;
@@ -39,7 +40,6 @@ pub struct Crate {
     pub settings: CrateSettings,
 
     /// Built-in plugins required by the crate.
-    #[allow(dead_code)] // TODO: remove. The field is used later in the stack
     pub builtin_plugins: PluginSuite,
 }
 
@@ -67,7 +67,8 @@ impl Crate {
             inject_virtual_wrapper_lib(db, crate_id, file_stems);
         }
 
-        // TODO (later in the stack): Intern the plugin suite and set as override.
+        let interned_plugins = db.intern_plugin_suite(self.builtin_plugins.clone());
+        db.set_override_crate_plugins_from_suite(crate_id, interned_plugins);
     }
 
     /// Construct a [`Crate`] from data already applied to the [`AnalysisDatabase`].
@@ -86,9 +87,26 @@ impl Crate {
 
         let custom_main_file_stems = extract_custom_file_stems(db, crate_id);
 
-        // TODO (later in the stack): Extract plugins associated with this crate
-        // from db and store it in this suite.
-        let plugins = PluginSuite::default();
+        let macro_plugins = db
+            .crate_macro_plugins(crate_id)
+            .iter()
+            .map(|&id| db.lookup_intern_macro_plugin(id).0)
+            .collect();
+
+        let inline_macro_plugins = db
+            .crate_inline_macro_plugins(crate_id)
+            .iter()
+            .map(|(name, &id)| (name.clone(), db.lookup_intern_inline_macro_plugin(id).0))
+            .collect();
+
+        let analyzer_plugins = db
+            .crate_analyzer_plugins(crate_id)
+            .iter()
+            .map(|&id| db.lookup_intern_analyzer_plugin(id).0)
+            .collect();
+
+        let plugins =
+            PluginSuite { plugins: macro_plugins, inline_macro_plugins, analyzer_plugins };
 
         Some(Self {
             name,

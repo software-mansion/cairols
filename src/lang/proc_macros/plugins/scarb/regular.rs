@@ -14,6 +14,7 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use convert_case::{Case, Casing};
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use scarb_proc_macro_server_types::methods::expand::{ExpandAttributeParams, ExpandDeriveParams};
+use scarb_proc_macro_server_types::scope::ProcMacroScope;
 use scarb_stable_hash::StableHasher;
 
 use super::{FromSyntaxNode, into_cairo_diagnostics};
@@ -27,6 +28,7 @@ const DERIVE_ATTR: &str = "derive";
 /// removed `aux_data`.
 pub fn macro_generate_code(
     db: &AnalysisDatabase,
+    expansion_context: ProcMacroScope,
     item_ast: ast::ModuleItem,
     defined_attributes: &[String],
     defined_derives: &[String],
@@ -35,7 +37,7 @@ pub fn macro_generate_code(
 
     // Handle inner functions.
     if let InnerAttrExpansionResult::Some(result) =
-        expand_inner_attr(db, defined_attributes, item_ast.clone())
+        expand_inner_attr(db, expansion_context.clone(), defined_attributes, item_ast.clone())
     {
         return result;
     }
@@ -55,16 +57,29 @@ pub fn macro_generate_code(
     .map(|(name, args, stable_ptr, last)| {
         let token_stream = body.with_metadata(stream_metadata.clone());
         let span = item_ast.as_syntax_node().span(db);
-        expand_attribute(db, name, last, args, token_stream, span, stable_ptr)
+        expand_attribute(
+            db,
+            expansion_context.clone(),
+            name,
+            last,
+            args,
+            token_stream,
+            span,
+            stable_ptr,
+        )
     }) {
         return result;
     }
 
     // Expand all derives.
     // Note that all proc macro attributes should be already expanded at this point.
-    if let Some(result) =
-        expand_derives(db, defined_derives, item_ast.clone(), stream_metadata.clone())
-    {
+    if let Some(result) = expand_derives(
+        db,
+        expansion_context.clone(),
+        defined_derives,
+        item_ast.clone(),
+        stream_metadata.clone(),
+    ) {
         return result;
     }
 
@@ -74,6 +89,7 @@ pub fn macro_generate_code(
 
 fn expand_inner_attr(
     db: &AnalysisDatabase,
+    expansion_context: ProcMacroScope,
     defined_attributes: &[String],
     item_ast: ast::ModuleItem,
 ) -> InnerAttrExpansionResult {
@@ -117,6 +133,7 @@ fn expand_inner_attr(
                             && do_expand_inner_attr(
                                 db,
                                 &mut context,
+                                expansion_context.clone(),
                                 &mut item_builder,
                                 found,
                                 func,
@@ -172,6 +189,7 @@ fn expand_inner_attr(
                             && do_expand_inner_attr(
                                 db,
                                 &mut context,
+                                expansion_context.clone(),
                                 &mut item_builder,
                                 found,
                                 &func,
@@ -197,6 +215,7 @@ fn expand_inner_attr(
 fn do_expand_inner_attr(
     db: &AnalysisDatabase,
     context: &mut InnerAttrExpansionContext,
+    expansion_context: ProcMacroScope,
     item_builder: &mut PatchBuilder<'_>,
     found: AttrExpansionFound,
     func: &impl TypedSyntaxNode,
@@ -219,6 +238,7 @@ fn do_expand_inner_attr(
     };
 
     let result = db.get_attribute_expansion(ExpandAttributeParams {
+        context: expansion_context,
         attr: name,
         args: args.clone(),
         item: token_stream.clone(),
@@ -442,6 +462,7 @@ fn parse_derive(
 
 fn expand_derives(
     db: &AnalysisDatabase,
+    expansion_context: ProcMacroScope,
     defined_derives: &[String],
     item_ast: ast::ModuleItem,
     stream_metadata: TokenStreamMetadata,
@@ -457,7 +478,11 @@ fn expand_derives(
 
     if any_derives {
         // region: Modified scarb code
-        let result = db.get_derive_expansion(ExpandDeriveParams { derives, item: token_stream });
+        let result = db.get_derive_expansion(ExpandDeriveParams {
+            context: expansion_context,
+            derives,
+            item: token_stream,
+        });
         // endregion
 
         return Some(PluginResult {
@@ -487,8 +512,10 @@ fn expand_derives(
     None
 }
 
+#[allow(clippy::too_many_arguments)]
 fn expand_attribute(
     db: &AnalysisDatabase,
+    expansion_context: ProcMacroScope,
     name: String,
     last: bool,
     args: TokenStream,
@@ -498,6 +525,7 @@ fn expand_attribute(
 ) -> PluginResult {
     // region: Modified scarb code
     let result = db.get_attribute_expansion(ExpandAttributeParams {
+        context: expansion_context,
         args,
         attr: name.clone(),
         item: token_stream.clone(),

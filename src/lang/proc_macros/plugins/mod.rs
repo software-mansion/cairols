@@ -2,38 +2,66 @@ use std::sync::Arc;
 
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use downcast::unsafe_downcast_ref;
 use scarb::inline::inline_macro_generate_code;
 use scarb::regular::macro_generate_code;
-use scarb_proc_macro_server_types::methods::defined_macros::DefinedMacrosResponse;
+use scarb_proc_macro_server_types::methods::defined_macros::{
+    CompilationUnitDefinedMacrosInfo, DefinedMacrosResponse,
+};
+use scarb_proc_macro_server_types::scope::ProcMacroScope;
+use smol_str::SmolStr;
+use tracing::debug;
 
 mod downcast;
 // TODO(#6666) Evict this module when this is possible.
 mod scarb;
 
-/// Creates [`PluginSuite`] for macros supported by proc-macro-server.
-pub fn proc_macro_plugin_suite(defined_macros: DefinedMacrosResponse) -> PluginSuite {
-    let mut plugin_suite = PluginSuite::default();
+/// Creates a mapping between Scarb package names and [`PluginSuite`]s of macros
+/// supported by the proc-macro-server, used by those packages.
+pub fn proc_macro_plugin_suite(
+    defined_macros: DefinedMacrosResponse,
+) -> OrderedHashMap<SmolStr, PluginSuite> {
+    debug!("Defined macros: {defined_macros:#?}");
+    defined_macros
+        .workspace_macro_info
+        .iter()
+        .map(|(compilation_unit_main_component_id, component_plugins)| {
+            let CompilationUnitDefinedMacrosInfo {
+                attributes,
+                inline_macros,
+                derives,
+                executables,
+            } = component_plugins.clone();
+            let mut plugin_suite = PluginSuite::default();
 
-    plugin_suite.add_plugin_ex(Arc::new(ProcMacroPlugin {
-        defined_attributes: defined_macros.attributes,
-        defined_derives: defined_macros.derives,
-        defined_executable_attributes: defined_macros.executables,
-    }));
+            let plugin_scope = ProcMacroScope {
+                compilation_unit_main_component_id: compilation_unit_main_component_id.clone(),
+            };
 
-    let inline_plugin = Arc::new(InlineProcMacroPlugin);
+            plugin_suite.add_plugin_ex(Arc::new(ProcMacroPlugin {
+                scope: plugin_scope.clone(),
+                defined_attributes: attributes,
+                defined_derives: derives,
+                defined_executable_attributes: executables,
+            }));
 
-    for inline_macro in defined_macros.inline_macros {
-        plugin_suite.add_inline_macro_plugin_ex(&inline_macro, inline_plugin.clone());
-    }
+            let inline_plugin = Arc::new(InlineProcMacroPlugin { scope: plugin_scope });
 
-    plugin_suite
+            for inline_macro in inline_macros {
+                plugin_suite.add_inline_macro_plugin_ex(&inline_macro, inline_plugin.clone());
+            }
+
+            (compilation_unit_main_component_id.into(), plugin_suite)
+        })
+        .collect()
 }
 
 /// Macro plugin that searches for proc macros and forwards their resolution to the
 /// proc-macro-server.
 #[derive(Debug)]
 struct ProcMacroPlugin {
+    scope: ProcMacroScope,
     defined_attributes: Vec<String>,
     defined_derives: Vec<String>,
     defined_executable_attributes: Vec<String>,
@@ -50,7 +78,13 @@ impl MacroPlugin for ProcMacroPlugin {
         // Safety: We use this plugin only in AnalysisDatabase.
         let analysis_db = unsafe { unsafe_downcast_ref(db) };
 
-        macro_generate_code(analysis_db, item_ast, &self.defined_attributes, &self.defined_derives)
+        macro_generate_code(
+            analysis_db,
+            self.scope.clone(),
+            item_ast,
+            &self.defined_attributes,
+            &self.defined_derives,
+        )
     }
 
     fn declared_attributes(&self) -> Vec<String> {
@@ -64,7 +98,9 @@ impl MacroPlugin for ProcMacroPlugin {
 
 /// Inline macro plugin that forwards resolution to the proc-macro-server.
 #[derive(Debug)]
-struct InlineProcMacroPlugin;
+struct InlineProcMacroPlugin {
+    scope: ProcMacroScope,
+}
 
 impl InlineMacroExprPlugin for InlineProcMacroPlugin {
     #[tracing::instrument(level = "trace", skip_all)]
@@ -77,6 +113,6 @@ impl InlineMacroExprPlugin for InlineProcMacroPlugin {
         // Safety: We use this plugin only in AnalysisDatabase.
         let analysis_db = unsafe { unsafe_downcast_ref(db) };
 
-        inline_macro_generate_code(analysis_db, item_ast)
+        inline_macro_generate_code(analysis_db, self.scope.clone(), item_ast)
     }
 }
