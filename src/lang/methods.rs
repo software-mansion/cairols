@@ -1,13 +1,18 @@
-use cairo_lang_defs::ids::TraitFunctionId;
+use cairo_lang_defs::ids::{FileIndex, ModuleFileId, NamedLanguageElementId, TraitFunctionId};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
 use cairo_lang_semantic::expr::inference::solver::SolutionSet;
 use cairo_lang_semantic::expr::inference::{ImplVarTraitItemMappings, InferenceId};
+use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::TypeFilter;
 use cairo_lang_semantic::resolve::Resolver;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use tracing::debug;
 
+use super::analysis_context::AnalysisContext;
+use super::syntax::SyntaxNodeExt;
 use crate::lang::db::AnalysisDatabase;
 
 /// Finds all methods that can be called on a type.
@@ -62,4 +67,35 @@ pub fn find_methods_for_type(
         }
     }
     relevant_methods
+}
+
+/// Finds all available traits with method.
+/// Returns list of full qualified paths as strings.
+pub fn available_traits_for_method(
+    db: &AnalysisDatabase,
+    ctx: &AnalysisContext<'_>,
+) -> Option<Vec<String>> {
+    let stable_ptr = ctx.node.ancestor_of_type::<ast::ExprBinary>(db)?.lhs(db).stable_ptr();
+
+    // Get its semantic model.
+    let function_with_body = ctx.lookup_item_id?.function_with_body()?;
+    let expr_id = db.lookup_expr_by_ptr(function_with_body, stable_ptr).ok()?;
+
+    let ty = db.expr_semantic(function_with_body, expr_id).ty();
+
+    if ty.is_missing(db) {
+        return None;
+    }
+
+    let module_visible_traits =
+        db.visible_traits_from_module(ModuleFileId(ctx.module_id, FileIndex(0)))?;
+    let unknown_method_name = ctx.node.get_text(db);
+
+    Some(
+        find_methods_for_type(db, ctx.resolver(db), ty, stable_ptr.untyped())
+            .into_iter()
+            .filter(|method| method.name(db) == unknown_method_name)
+            .filter_map(|method| module_visible_traits.get(&method.trait_id(db)).cloned())
+            .collect(),
+    )
 }
