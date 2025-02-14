@@ -1,5 +1,4 @@
 use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use itertools::Itertools;
 use lsp_types::{
     CodeAction, CodeActionOrCommand, CodeActionParams, CodeActionResponse, Diagnostic,
@@ -54,30 +53,23 @@ fn get_code_actions_for_diagnostics(
     node: &SyntaxNode,
     params: &CodeActionParams,
 ) -> Vec<CodeAction> {
-    let mut diagnostic_groups_by_codes: OrderedHashMap<String, Vec<&Diagnostic>> =
-        OrderedHashMap::default();
+    let diagnostic_groups_by_codes = params
+        .context
+        .diagnostics
+        .iter()
+        .filter_map(|diagnostic| extract_code(diagnostic).map(|code| (code, diagnostic)))
+        .into_group_map();
 
-    for diagnostic in params.context.diagnostics.iter() {
-        if let Some(code) = extract_code(diagnostic) {
-            match diagnostic_groups_by_codes.entry(code.to_owned()) {
-                Entry::Occupied(mut entry) => {
-                    entry.get_mut().push(diagnostic);
-                }
-                Entry::Vacant(entry) => {
-                    entry.insert(vec![diagnostic]);
-                }
-            }
-        }
-    }
-
-    let ctx = AnalysisContext::from_node(db, node.clone()).unwrap();
+    let Some(ctx) = AnalysisContext::from_node(db, node.clone()) else { return Default::default() };
 
     diagnostic_groups_by_codes
         .into_iter()
-        .flat_map(|(code, diagnostics)| match code.as_str() {
+        .flat_map(|(code, diagnostics)| match code {
             "E0001" => diagnostics
                 .into_iter()
-                .filter_map(|diagnostic| {
+                // There should be exactly one diagnostic.
+                .next()
+                .and_then(|diagnostic| {
                     rename_unused_variable::rename_unused_variable(
                         db,
                         node,
@@ -85,30 +77,35 @@ fn get_code_actions_for_diagnostics(
                         params.text_document.uri.clone(),
                     )
                 })
-                .collect_vec(),
+                .to_vec(),
             "E0002" => {
                 add_missing_trait::add_missing_trait(db, &ctx, params.text_document.uri.clone())
                     .unwrap_or_default()
             }
-            "E0003" => fill_struct_fields::fill_struct_fields(db, node.clone(), params)
-                .map(|result| vec![result])
-                .unwrap_or_default(),
-            "E0004" => fill_trait_members::fill_trait_members(db, &ctx, params)
-                .map(|result| vec![result])
-                .unwrap_or_default(),
+            "E0003" => fill_struct_fields::fill_struct_fields(db, node.clone(), params).to_vec(),
+            "E0004" => fill_trait_members::fill_trait_members(db, &ctx, params).to_vec(),
             "E0005" => create_module_file::create_module_file(
                 db,
                 node.clone(),
                 params.text_document.uri.clone(),
             )
-            .map(|result| vec![result])
-            .unwrap_or_default(),
+            .to_vec(),
             _ => {
                 debug!("no code actions for diagnostic code: {code}");
                 vec![]
             }
         })
-        .collect_vec()
+        .collect()
+}
+
+trait VecExt<T> {
+    fn to_vec(self) -> Vec<T>;
+}
+
+impl<T> VecExt<T> for Option<T> {
+    fn to_vec(self) -> Vec<T> {
+        self.map(|result| vec![result]).unwrap_or_default()
+    }
 }
 
 /// Extracts [`Diagnostic`] code if it's given as a string, returns None otherwise.
