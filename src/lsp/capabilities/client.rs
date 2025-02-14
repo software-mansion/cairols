@@ -41,6 +41,9 @@ pub trait ClientCapabilitiesExt {
 
     /// The client supports dynamic registration for references provider capabilities.
     fn references_provider_dynamic_registration(&self) -> bool;
+
+    /// The client supports dynamic registration for rename provider capabilities.
+    fn rename_provider_dynamic_registration(&self) -> bool;
 }
 
 impl ClientCapabilitiesExt for ClientCapabilities {
@@ -94,5 +97,9 @@ impl ClientCapabilitiesExt for ClientCapabilities {
 
     fn references_provider_dynamic_registration(&self) -> bool {
         try_or_default!(self.text_document.as_ref()?.references.as_ref()?.dynamic_registration?)
+    }
+
+    fn rename_provider_dynamic_registration(&self) -> bool {
+        try_or_default!(self.text_document.as_ref()?.rename.as_ref()?.dynamic_registration?)
     }
 }
