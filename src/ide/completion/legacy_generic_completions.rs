@@ -1,5 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::{LookupItemId, ModuleFileId, NamedLanguageElementId};
+use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::Pattern;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -9,12 +9,12 @@ use cairo_lang_utils::{LookupIntern, Upcast};
 use lsp_types::{CompletionItem, CompletionItemKind};
 
 use super::helpers::completion_kind::resolved_generic_item_completion_kind;
+use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 
 pub fn generic_completions(
     db: &AnalysisDatabase,
-    module_file_id: ModuleFileId,
-    lookup_items: Vec<LookupItemId>,
+    ctx: &AnalysisContext<'_>,
 ) -> Vec<CompletionItem> {
     let mut completions = vec![];
 
@@ -26,7 +26,7 @@ pub fn generic_completions(
     }));
 
     // Module completions.
-    if let Ok(module_items) = db.module_items(module_file_id.0) {
+    if let Ok(module_items) = db.module_items(ctx.module_id) {
         completions.extend(module_items.iter().map(|item| {
             CompletionItem {
                 label: item.name(db.upcast()).to_string(),
@@ -39,7 +39,7 @@ pub fn generic_completions(
     }
 
     // Local variables and params.
-    let Some(lookup_item_id) = lookup_items.into_iter().next() else {
+    let Some(lookup_item_id) = ctx.lookup_item_id else {
         return completions;
     };
     let Some(function_id) = lookup_item_id.function_with_body() else {

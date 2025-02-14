@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{LanguageElementId, LookupItemId};
+use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::visibility::peek_visible_in;
@@ -6,17 +6,18 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use lsp_types::{CompletionItem, CompletionItemKind};
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::analysis_context::AnalysisContext;
+use crate::lang::db::AnalysisDatabase;
 
 /// Discovers struct members missing in the constructor call and returns completions containing
 /// their names with type hints.
 pub fn struct_constructor_completions(
     db: &AnalysisDatabase,
-    lookup_items: Vec<LookupItemId>,
+    ctx: &AnalysisContext<'_>,
     constructor: ast::ExprStructCtorCall,
 ) -> Option<Vec<CompletionItem>> {
-    let module_id = db.find_module_containing_node(&constructor.as_syntax_node())?;
-    let lookup_item_id = lookup_items.into_iter().next()?;
+    let module_id = ctx.module_id;
+    let lookup_item_id = ctx.lookup_item_id?;
     let function_id = lookup_item_id.function_with_body()?;
 
     let already_present_members = constructor
