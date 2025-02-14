@@ -2832,7 +2832,7 @@ dependencies = [
 [[package]]
 name = "scarb-metadata"
 version = "1.13.0"
-source = "git+https://github.com/software-mansion/scarb?branch=spr%2Fmain%2Fac416d0e#54c0312305ab401013bc53af5497a6695ec3ebcb"
+source = "git+https://github.com/software-mansion/scarb?branch=spr%2Fmain%2Fac416d0e#fef148fc68b195b5160a6056855ba57a16384649"
 dependencies = [
  "camino",
  "semver",
