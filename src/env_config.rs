@@ -16,6 +16,7 @@ pub const CAIRO_LS_DB_REPLACE_INTERVAL: &'_ str = "CAIRO_LS_DB_REPLACE_INTERVAL"
 pub const CAIRO_LS_LOG: &'_ str = "CAIRO_LS_LOG";
 pub const CAIRO_LS_PROFILE: &'_ str = "CAIRO_LS_PROFILE";
 pub const SCARB: &'_ str = "SCARB";
+const SCARB_CACHE: &'_ str = "SCARB_CACHE";
 
 /// Interval between compiler database regenerations (to free unused memory).
 pub fn db_replace_interval() -> Duration {
@@ -41,6 +42,12 @@ pub fn tracing_profile() -> bool {
 /// Path to the Scarb binary to call during analysis.
 pub fn scarb_path() -> Option<PathBuf> {
     env::var_os(SCARB).map(PathBuf::from)
+}
+
+/// Path to the Scarb cache directory.
+/// Available only when running LS via Scarb as an extension which is the standard use case.
+pub fn scarb_cache_path() -> Option<PathBuf> {
+    env::var_os(SCARB_CACHE).map(PathBuf::from)
 }
 
 /// Print all environment variables values (or defaults) as debug messages in logs.

@@ -45,8 +45,11 @@ impl State {
             proc_macro_request_tracker,
         );
 
-        let diagnostics_controller =
-            DiagnosticsController::new(notifier.clone(), analysis_progress_controller.clone());
+        let diagnostics_controller = DiagnosticsController::new(
+            notifier.clone(),
+            analysis_progress_controller.clone(),
+            scarb_toolchain.clone(),
+        );
 
         Self {
             db: AnalysisDatabase::new(),

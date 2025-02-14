@@ -21,6 +21,7 @@ use crate::server::schedule::thread::task_progress_monitor::{
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 use crate::server::trigger;
 use crate::state::{State, StateSnapshot};
+use crate::toolchain::scarb::ScarbToolchain;
 
 mod file_batches;
 mod file_diagnostics;
@@ -44,10 +45,18 @@ pub struct DiagnosticsController {
 
 impl DiagnosticsController {
     /// Creates a new diagnostics controller.
-    pub fn new(notifier: Notifier, analysis_progress_tracker: AnalysisProgressController) -> Self {
+    pub fn new(
+        notifier: Notifier,
+        analysis_progress_tracker: AnalysisProgressController,
+        scarb_toolchain: ScarbToolchain,
+    ) -> Self {
         let (trigger, receiver) = trigger::trigger();
-        let (thread, parallelism) =
-            DiagnosticsControllerThread::spawn(receiver, notifier, analysis_progress_tracker);
+        let (thread, parallelism) = DiagnosticsControllerThread::spawn(
+            receiver,
+            notifier,
+            analysis_progress_tracker,
+            scarb_toolchain,
+        );
         Self {
             trigger,
             _thread: thread,
@@ -69,6 +78,7 @@ struct DiagnosticsControllerThread {
     project_diagnostics: ProjectDiagnostics,
     analysis_progress_controller: AnalysisProgressController,
     worker_handles: Vec<TaskHandle>,
+    scarb_toolchain: ScarbToolchain,
 }
 
 impl DiagnosticsControllerThread {
@@ -78,6 +88,7 @@ impl DiagnosticsControllerThread {
         receiver: trigger::Receiver<StateSnapshots>,
         notifier: Notifier,
         analysis_progress_controller: AnalysisProgressController,
+        scarb_toolchain: ScarbToolchain,
     ) -> (JoinHandle, NonZero<usize>) {
         let mut this = Self {
             receiver,
@@ -86,6 +97,7 @@ impl DiagnosticsControllerThread {
             pool: thread::Pool::new(),
             project_diagnostics: ProjectDiagnostics::new(),
             worker_handles: Vec::new(),
+            scarb_toolchain,
         };
 
         let parallelism = this.pool.parallelism();
@@ -177,6 +189,7 @@ impl DiagnosticsControllerThread {
         let files_batches = batches(files, self.pool.parallelism());
         assert_eq!(files_batches.len(), state_snapshots.len());
         for (batch, state) in zip(files_batches, state_snapshots) {
+            let scarb_toolchain = self.scarb_toolchain.clone();
             self.spawn_worker(move |project_diagnostics, notifier| {
                 refresh_diagnostics(
                     &state.db,
@@ -184,6 +197,7 @@ impl DiagnosticsControllerThread {
                     state.config.trace_macro_diagnostics,
                     project_diagnostics,
                     notifier,
+                    scarb_toolchain,
                 );
             });
         }
