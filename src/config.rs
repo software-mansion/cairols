@@ -23,7 +23,7 @@ use crate::server::schedule::Task;
 /// Therefore, holding any references or copies of this struct or its values for
 /// longer periods of time should be avoided, unless the copy will be reactively updated on
 /// `workspace/didChangeConfiguration` requests.
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct Config {
     /// A user-provided path to the `core` crate source code for use in projects where `core` is
     /// unmanaged by the toolchain.
@@ -43,6 +43,17 @@ pub struct Config {
     /// The property is set by the user under the `cairo1.enableProcMacros` key in client
     /// configuration.
     pub enable_proc_macros: bool,
+}
+
+#[expect(clippy::derivable_impls)] // Removed in the next PR
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            unmanaged_core_path: None,
+            trace_macro_diagnostics: false,
+            enable_proc_macros: false,
+        }
+    }
 }
 
 impl Config {
@@ -87,16 +98,22 @@ impl Config {
             let mut response = VecDeque::from(response);
 
             Task::local(move |state, _, _, _| {
+                *state.config = Config::default();
+
                 state.config.unmanaged_core_path = response
                     .pop_front()
                     .as_ref()
                     .and_then(Value::as_str)
                     .filter(|s| !s.is_empty())
                     .map(Into::into);
-                state.config.trace_macro_diagnostics =
-                    response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or_default();
-                state.config.enable_proc_macros =
-                    response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or(false);
+
+                if let Some(value) = response.pop_front().as_ref().and_then(Value::as_bool) {
+                    state.config.trace_macro_diagnostics = value;
+                }
+
+                if let Some(value) = response.pop_front().as_ref().and_then(Value::as_bool) {
+                    state.config.enable_proc_macros = value;
+                }
 
                 debug!("reloaded configuration: {:#?}", state.config);
 
