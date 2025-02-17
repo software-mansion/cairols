@@ -7,15 +7,12 @@ use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, init_dev_corelib};
 use cairo_lang_filesystem::ids::CrateId;
 use indoc::indoc;
 use tempfile::tempdir;
-use tracing::{debug, error, warn};
+use tracing::{error, warn};
 
 use crate::config::Config;
-use crate::env_config::scarb_cache_path;
 use crate::lang::db::AnalysisDatabase;
 use crate::project::Crate;
 use crate::toolchain::scarb::{SCARB_TOML, ScarbToolchain};
-
-const SCARB_CACHE_DIR_NAME: &'_ str = "com.swmansion.scarb";
 
 /// Try to find a Cairo `core` crate (see [`find_unmanaged_core`]) and initialize it in the
 /// provided database.
@@ -43,39 +40,6 @@ pub fn find_unmanaged_core(config: &Config, scarb: &ScarbToolchain) -> Option<Pa
     find_core_at_config_path(config)
         .or_else(|| find_scarb_managed_core(scarb))
         .and_then(ensure_absolute)
-}
-
-/// Try to find the Scarb cache directory path.
-///
-/// It first checks the `SCARB_CACHE` environmental variable
-/// which will be set if the LS was run via Scarb as an extension (the standard use case).
-/// If the env is not set, it looks for the path in parent directories of the unmanaged core crate
-/// assuming the name of the directory [`SCARB_CACHE_DIR_NAME`].
-pub fn find_scarb_cache_path(scarb_toolchain: &ScarbToolchain) -> Option<PathBuf> {
-    static CACHE: OnceLock<Option<PathBuf>> = OnceLock::new();
-    CACHE
-        .get_or_init(|| {
-            let path = scarb_cache_path()
-                .or_else(|| {
-                    // If LS was not run via Scarb, then we look for the cache path in parent
-                    // directories of the core crate.
-                    find_scarb_managed_core(scarb_toolchain).and_then(|path| {
-                        path.ancestors().find_map(|p| {
-                            p.ends_with(SCARB_CACHE_DIR_NAME).then(|| p.to_path_buf())
-                        })
-                    })
-                })
-                .and_then(ensure_absolute);
-
-            if let Some(path) = &path {
-                debug!("Scarb cache path: {}", path.display());
-            } else {
-                warn!("Scarb cache path not found");
-            }
-
-            path
-        })
-        .clone()
 }
 
 /// Attempts to find the `core` crate source root at the path provided in the configuration.
@@ -173,10 +137,7 @@ fn find_scarb_managed_core(scarb: &ScarbToolchain) -> Option<PathBuf> {
 fn ensure_absolute(path: PathBuf) -> Option<PathBuf> {
     path::absolute(&path)
         .with_context(|| {
-            format!(
-                "failed to make `core` crate or scarb cache path absolute: {path}",
-                path = path.display()
-            )
+            format!("failed to make `core` crate path absolute: {path}", path = path.display())
         })
         .inspect_err(|e| error!("{e:?}"))
         .ok()

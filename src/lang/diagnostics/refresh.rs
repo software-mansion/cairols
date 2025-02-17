@@ -9,7 +9,6 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FileDiagnostics;
 use crate::lang::diagnostics::project_diagnostics::ProjectDiagnostics;
 use crate::lang::lsp::LsProtoGroup;
-use crate::project::find_scarb_cache_path;
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 
@@ -64,8 +63,9 @@ fn refresh_file_diagnostics(
     // We want to ensure better UX by avoiding showing anything but errors from code that is not
     // controlled by a user (dependencies from git/package register).
     // Therefore, we filter non-error diagnostics for files residing in Scarb cache.
-    let is_dependency = find_scarb_cache_path(scarb_toolchain)
-        .is_some_and(|cache_path| params.uri.to_file_path().unwrap().starts_with(cache_path));
+    let is_dependency = scarb_toolchain.cache_path().is_some_and(|cache_path| {
+        params.uri.to_file_path().is_ok_and(|p| p.starts_with(cache_path))
+    });
     if is_dependency {
         params.diagnostics.retain(|diag| diag.severity == Some(DiagnosticSeverity::ERROR));
     }

@@ -27,8 +27,6 @@ mod project_manifest_path;
 mod scarb;
 mod unmanaged_core_crate;
 
-pub use unmanaged_core_crate::find_scarb_cache_path;
-
 pub struct ProjectController {
     loaded_scarb_manifests: Owned<ManifestRegistry>,
     // NOTE: Member order matters here.
