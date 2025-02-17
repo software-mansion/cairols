@@ -56,7 +56,6 @@ DECLARATIONS:
 
 USAGES:
 fn <sel>pow2</sel>(x: felt252) -> felt252 { x * x }
-    let <sel>pow2</sel> = 2;  // bad  // FIXME(mkaput): Why this?
 
 //! > ==========================================================================
 
