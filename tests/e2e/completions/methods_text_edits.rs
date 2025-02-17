@@ -121,14 +121,6 @@ fn simple_trait() {
     """]
 
     [[completions]]
-    completion_label = "pow()"
-    detail = "core::num::traits::ops::pow::Pow"
-    insert_text = "pow($0)"
-    text_edits = ["""
-    use core::num::traits::Pow;
-    """]
-
-    [[completions]]
     completion_label = "add_assign()"
     detail = "core::ops::arith::AddAssign"
     insert_text = "add_assign($0)"
@@ -163,30 +155,6 @@ fn simple_trait() {
     insert_text = "print($0)"
 
     [[completions]]
-    completion_label = "fmt()"
-    detail = "core::fmt::Display"
-    insert_text = "fmt($0)"
-    text_edits = ["""
-    use core::fmt::Display;
-    """]
-
-    [[completions]]
-    completion_label = "fmt()"
-    detail = "core::fmt::Debug"
-    insert_text = "fmt($0)"
-    text_edits = ["""
-    use core::fmt::Debug;
-    """]
-
-    [[completions]]
-    completion_label = "fmt()"
-    detail = "core::fmt::LowerHex"
-    insert_text = "fmt($0)"
-    text_edits = ["""
-    use core::fmt::LowerHex;
-    """]
-
-    [[completions]]
     completion_label = "is_zero()"
     detail = "core::zeroable::Zeroable"
     insert_text = "is_zero($0)"
@@ -217,7 +185,7 @@ fn simple_trait() {
     detail = "hello::hidden_trait::ATrait1"
     insert_text = "some_method($0)"
     text_edits = ["""
-    use crate::ATrait1;
+    use super::ATrait1;
     """]
     "#);
 }
@@ -343,14 +311,6 @@ fn non_directly_visible_trait() {
     """]
 
     [[completions]]
-    completion_label = "pow()"
-    detail = "core::num::traits::ops::pow::Pow"
-    insert_text = "pow($0)"
-    text_edits = ["""
-    use core::num::traits::Pow;
-    """]
-
-    [[completions]]
     completion_label = "add_assign()"
     detail = "core::ops::arith::AddAssign"
     insert_text = "add_assign($0)"
@@ -385,30 +345,6 @@ fn non_directly_visible_trait() {
     insert_text = "print($0)"
 
     [[completions]]
-    completion_label = "fmt()"
-    detail = "core::fmt::Display"
-    insert_text = "fmt($0)"
-    text_edits = ["""
-    use core::fmt::Display;
-    """]
-
-    [[completions]]
-    completion_label = "fmt()"
-    detail = "core::fmt::Debug"
-    insert_text = "fmt($0)"
-    text_edits = ["""
-    use core::fmt::Debug;
-    """]
-
-    [[completions]]
-    completion_label = "fmt()"
-    detail = "core::fmt::LowerHex"
-    insert_text = "fmt($0)"
-    text_edits = ["""
-    use core::fmt::LowerHex;
-    """]
-
-    [[completions]]
     completion_label = "is_zero()"
     detail = "core::zeroable::Zeroable"
     insert_text = "is_zero($0)"
@@ -439,7 +375,7 @@ fn non_directly_visible_trait() {
     detail = "hello::hidden_trait::ATrait1"
     insert_text = "some_method($0)"
     text_edits = ["""
-    use crate::ATrait1;
+    use super::ATrait1;
     """]
     "#);
 }

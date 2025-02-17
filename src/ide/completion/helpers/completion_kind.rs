@@ -5,7 +5,9 @@ pub fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> Compl
     match item {
         ResolvedGenericItem::GenericConstant(_) => CompletionItemKind::CONSTANT,
         ResolvedGenericItem::Module(_) => CompletionItemKind::MODULE,
-        ResolvedGenericItem::GenericFunction(_) => CompletionItemKind::FUNCTION,
+        ResolvedGenericItem::GenericFunction(_) | ResolvedGenericItem::TraitFunction(_) => {
+            CompletionItemKind::FUNCTION
+        }
         ResolvedGenericItem::GenericType(_) | ResolvedGenericItem::GenericTypeAlias(_) => {
             CompletionItemKind::CLASS
         }

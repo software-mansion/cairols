@@ -18,8 +18,8 @@ fn simple() {
         }
     }
     ", @r#"
-    Title: Import crate::ATrait
-    Add new text: "use crate::ATrait;
+    Title: Import super::ATrait
+    Add new text: "use super::ATrait;
     "
     At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
     "#);
@@ -83,12 +83,12 @@ fn two_options() {
         }
     }
     ", @r#"
-    Title: Import crate::ATrait1
-    Add new text: "use crate::ATrait1;
+    Title: Import super::ATrait1
+    Add new text: "use super::ATrait1;
     "
     At: Range { start: Position { line: 14, character: 4 }, end: Position { line: 14, character: 4 } }
-    Title: Import crate::ATrait2
-    Add new text: "use crate::ATrait2;
+    Title: Import super::ATrait2
+    Add new text: "use super::ATrait2;
     "
     At: Range { start: Position { line: 14, character: 4 }, end: Position { line: 14, character: 4 } }
     "#);
@@ -113,8 +113,8 @@ fn non_directly_visible_trait() {
         }
     }
     ", @r#"
-    Title: Import crate::ATrait1
-    Add new text: "use crate::ATrait1;
+    Title: Import super::ATrait1
+    Add new text: "use super::ATrait1;
     "
     At: Range { start: Position { line: 10, character: 4 }, end: Position { line: 10, character: 4 } }
     "#);
@@ -127,12 +127,7 @@ fn from_corelib() {
         let x = core::pedersen::PedersenTrait::new(5_felt252);
         let _y = x.upda<caret>te(3_felt252);
     }
-    ", @r#"
-    Title: Import core::hash::HashStateTrait
-    Add new text: "use core::hash::HashStateTrait;
-    "
-    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -158,12 +153,7 @@ fn from_starknet() {
             }
         }
     }
-    ", @r#"
-    Title: Import starknet::storage::StoragePointerReadAccess
-    Add new text: "use starknet::storage::StoragePointerReadAccess;
-    "
-    At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -184,8 +174,8 @@ fn visible_only_in_editions_without_visibility_constraints() {
         }
     }
     ", @r#"
-    Title: Import crate::hidden_trait::ATrait1
-    Add new text: "use crate::hidden_trait::ATrait1;
+    Title: Import super::hidden_trait::ATrait1
+    Add new text: "use super::hidden_trait::ATrait1;
     "
     At: Range { start: Position { line: 9, character: 4 }, end: Position { line: 9, character: 4 } }
     "#);
@@ -198,10 +188,5 @@ fn from_corelib_visible_only_in_editions_without_visibility_constraints() {
         // This is a method from a trait from `core` that is `pub (crate)`.
         let (_x, _): (u8, bool) = 5_i8.abs_an<caret>d_sign();
     }
-    ", @r#"
-    Title: Import integer::AbsAndSign
-    Add new text: "use integer::AbsAndSign;
-    "
-    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
-    "#);
+    ", @"No code actions.");
 }

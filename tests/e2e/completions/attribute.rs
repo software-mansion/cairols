@@ -16,16 +16,13 @@ fn derive() {
     """
 
     [[completions]]
-    completion_label = "Drop"
+    completion_label = "core"
 
     [[completions]]
-    completion_label = "Debug"
+    completion_label = "hello"
 
     [[completions]]
-    completion_label = "Default"
-
-    [[completions]]
-    completion_label = "Destruct"
+    completion_label = "Struct"
     "#);
 }
 
@@ -42,36 +39,6 @@ fn derive_after_comma() {
     caret = """
     #[derive(D,<caret>)]
     """
-
-    [[completions]]
-    completion_label = "Copy"
-
-    [[completions]]
-    completion_label = "Drop"
-
-    [[completions]]
-    completion_label = "Clone"
-
-    [[completions]]
-    completion_label = "Debug"
-
-    [[completions]]
-    completion_label = "Default"
-
-    [[completions]]
-    completion_label = "Destruct"
-
-    [[completions]]
-    completion_label = "Hash"
-
-    [[completions]]
-    completion_label = "PanicDestruct"
-
-    [[completions]]
-    completion_label = "PartialEq"
-
-    [[completions]]
-    completion_label = "Serde"
 
     [[completions]]
     completion_label = "starknet::Event"

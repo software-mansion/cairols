@@ -351,11 +351,10 @@ fn read_in_interafce_impl() {
     """
     popover = """
     ```cairo
-    core::starknet::storage::StoragePointerReadAccess
+    hello::Balance
     ```
     ```cairo
-    pub trait StoragePointerReadAccess<T>
-    fn read(self: @T) -> Self::Value
+    impl Balance of super::IBalance<ContractState>
     ```
     """
     "#)

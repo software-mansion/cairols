@@ -68,7 +68,7 @@ fn trait_method_via_definition() {
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        fn <sel=declaration>area</sel>(self: @Foo) -> u64;
+        <sel=declaration>fn <sel>area</sel>(self: @Foo) -> u64;</sel>
     }
     impl FooImpl of FooTrait {
         fn area(self: @Foo) -> u64 { 0 }
@@ -83,8 +83,8 @@ fn trait_method_via_definition() {
     }
     fn main() {
         let foo = Foo {};
-        let x = foo.<sel>area</sel>();
-        let y = FooTrait::<sel>area</sel>(foo);
+        let x = foo.area();
+        let y = FooTrait::area(foo);
     }
     ")
 }

@@ -33,7 +33,7 @@ fn fib(mut n: u32) -> u32 {
             },
         );
         core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    }
+    };
     let mut a: u32 = 0;
     let mut b: u32 = 1;
     while n != 0 {
@@ -41,6 +41,6 @@ fn fib(mut n: u32) -> u32 {
         let temp = b;
         b = a + b;
         a = temp;
-    }
+    };
     a
 }'''

@@ -131,14 +131,11 @@ fn find_scarb_managed_core(scarb: &ScarbToolchain) -> Option<PathBuf> {
             .ok()?;
 
         let scarb_toml = workspace.path().join(SCARB_TOML);
-        fs::write(
-            &scarb_toml,
-            indoc! {r#"
+        fs::write(&scarb_toml, indoc! {r#"
                 [package]
                 name = "cairols_unmanaged_core_lookup"
                 version = "1.0.0"
-            "#},
-        )
+            "#})
         .context("failed to write Scarb.toml")
         .inspect_err(|e| warn!("{e:?}"))
         .ok()?;

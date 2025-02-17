@@ -67,6 +67,7 @@ impl SymbolDef {
         match definition_item {
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericFunction(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::TraitFunction(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericType(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericTypeAlias(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericImplAlias(_))
@@ -77,7 +78,7 @@ impl SymbolDef {
             | ResolvedItem::Concrete(ResolvedConcreteItem::Type(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
-            | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_)) => {
+            | ResolvedItem::Concrete(ResolvedConcreteItem::TraitFunction(_)) => {
                 ItemDef::new(db, &definition_node).map(Self::Item)
             }
 
@@ -148,10 +149,10 @@ impl SymbolDef {
     pub fn search_scope(&self, db: &AnalysisDatabase) -> SearchScope {
         match &self {
             Self::Variable(var) => {
-                if let Some(owning_function) = var.definition_node().ancestor_of_kinds(
-                    db,
-                    &[SyntaxKind::FunctionWithBody, SyntaxKind::TraitItemFunction],
-                ) {
+                if let Some(owning_function) = var.definition_node().ancestor_of_kinds(db, &[
+                    SyntaxKind::FunctionWithBody,
+                    SyntaxKind::TraitItemFunction,
+                ]) {
                     SearchScope::file_span(
                         owning_function.stable_ptr().file_id(db.upcast()),
                         owning_function.span(db.upcast()),

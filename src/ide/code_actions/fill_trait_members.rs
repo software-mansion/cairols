@@ -4,7 +4,9 @@ use cairo_lang_defs::ids::{NamedLanguageElementId, TraitConstantId, TraitFunctio
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::resolve::ResolvedConcreteItem;
-use cairo_lang_semantic::substitution::GenericSubstitution;
+use cairo_lang_semantic::substitution::{
+    GenericSubstitution, SemanticRewriter, SubstitutionRewriter,
+};
 use cairo_lang_semantic::{ConcreteTraitId, GenericArgumentId, GenericParam, Parameter};
 use cairo_lang_syntax::node::ast::{ImplItem, ItemImpl, MaybeImplBody};
 use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
@@ -63,18 +65,19 @@ pub fn fill_trait_members(
     let trait_generics = db.trait_generic_params(trait_id).ok()?;
     let specified_generics = concrete_trait_id.generic_args(db);
     let substitution = GenericSubstitution::new(&trait_generics, &specified_generics);
+    let mut type_concretizer = SubstitutionRewriter { db, substitution: &substitution };
 
     // Iterators borrowing SubstitutionRewriter mutably need an intermediate collection.
     let code = chain!(
         trait_types.values().map(|id| format!("type {} = ();", id.name(db))),
         trait_constants
             .values()
-            .filter_map(|&id| constant_code(db, id, &substitution))
+            .filter_map(|&id| constant_code(db, id, &mut type_concretizer))
             .collect_vec()
             .into_iter(),
         trait_functions
             .values()
-            .filter_map(|&id| function_code(db, id, &substitution))
+            .filter_map(|&id| function_code(db, id, &mut type_concretizer))
             .collect_vec()
             .into_iter()
     )
@@ -131,10 +134,10 @@ fn find_concrete_trait_id(
 fn constant_code(
     db: &AnalysisDatabase,
     id: TraitConstantId,
-    substitution: &GenericSubstitution,
+    type_concretizer: &mut SubstitutionRewriter<'_>,
 ) -> Option<String> {
     let name = id.name(db);
-    let ty = substitution.substitute(db, db.trait_constant_type(id).ok()?).ok()?.format(db);
+    let ty = type_concretizer.rewrite(db.trait_constant_type(id).ok()?).ok()?.format(db);
 
     Some(format!("const {name}: {ty} = ();"))
 }
@@ -146,7 +149,7 @@ fn constant_code(
 fn function_code(
     db: &AnalysisDatabase,
     id: TraitFunctionId,
-    substitution: &GenericSubstitution,
+    type_concretizer: &mut SubstitutionRewriter<'_>,
 ) -> Option<String> {
     // Do not complete functions that have default implementations.
     if db.trait_function_body(id).ok()?.is_some() {
@@ -161,7 +164,7 @@ fn function_code(
     } else {
         let formatted_parameters = generic_parameters
             .into_iter()
-            .map(|parameter| generic_parameter_code(db, parameter, substitution))
+            .map(|parameter| generic_parameter_code(db, parameter, type_concretizer))
             .collect::<Option<Vec<_>>>()?
             .join(", ");
 
@@ -171,14 +174,14 @@ fn function_code(
     let parameters = signature
         .params
         .iter()
-        .map(|parameter| function_parameter(db, parameter, substitution))
+        .map(|parameter| function_parameter(db, parameter, type_concretizer))
         .collect::<Option<Vec<_>>>()?
         .join(", ");
 
     let name = id.name(db);
     let title = Some(format!("fn {name}{generic_parameters_bracket}({parameters})"));
 
-    let return_type = substitution.substitute(db, signature.return_type).ok()?;
+    let return_type = type_concretizer.rewrite(signature.return_type).ok()?;
     let return_type =
         if return_type.is_unit(db) { None } else { Some(format!("-> {}", return_type.format(db))) };
 
@@ -200,7 +203,7 @@ fn function_code(
 fn generic_parameter_code(
     db: &AnalysisDatabase,
     parameter: GenericParam,
-    substitution: &GenericSubstitution,
+    type_concretizer: &mut SubstitutionRewriter<'_>,
 ) -> Option<String> {
     match parameter {
         GenericParam::Const(param) => {
@@ -217,7 +220,7 @@ fn generic_parameter_code(
             } else {
                 let formatted_arguments = trait_generic_arguments
                     .into_iter()
-                    .map(|argument| generic_argument_code(db, argument, substitution))
+                    .map(|argument| generic_argument_code(db, argument, type_concretizer))
                     .collect::<Option<Vec<_>>>()?
                     .join(", ");
 
@@ -243,11 +246,11 @@ fn generic_parameter_code(
 fn generic_argument_code(
     db: &AnalysisDatabase,
     argument: GenericArgumentId,
-    substitution: &GenericSubstitution,
+    type_concretizer: &mut SubstitutionRewriter<'_>,
 ) -> Option<String> {
     match argument {
         GenericArgumentId::Type(type_id) => {
-            Some(substitution.substitute(db, type_id).ok()?.format(db))
+            Some(type_concretizer.rewrite(type_id).ok()?.format(db))
         }
         GenericArgumentId::Constant(const_value) => Some(const_value.format(db)),
         // Trait constraint shouldn't appear as a generic argument
@@ -263,7 +266,7 @@ fn generic_argument_code(
 fn function_parameter(
     db: &AnalysisDatabase,
     parameter: &Parameter,
-    substitution: &GenericSubstitution,
+    type_concretizer: &mut SubstitutionRewriter<'_>,
 ) -> Option<String> {
     let prefix = match parameter.mutability {
         cairo_lang_semantic::Mutability::Immutable => "",
@@ -272,7 +275,7 @@ fn function_parameter(
     };
 
     let name = parameter.id.name(db);
-    let ty = substitution.substitute(db, parameter.ty).ok()?.format(db);
+    let ty = type_concretizer.rewrite(parameter.ty).ok()?.format(db);
 
     Some(format!("{prefix}{name}: {ty}"))
 }

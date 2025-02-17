@@ -35,7 +35,7 @@ fn const_initializer_value_wrong_type() {
     """
     popover = """
     ```cairo
-    <missing>
+    core::felt252
     ```
     ---
     value of literal: `123 (0x7b | 0b1111011)`

@@ -38,7 +38,7 @@ impl ImplA of ATrait {
                 },
             );
             core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-        }
+        };
         self.a + 1
     }
 }'''
