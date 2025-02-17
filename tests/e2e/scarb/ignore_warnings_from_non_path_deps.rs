@@ -57,7 +57,7 @@ fn test_ignore_warnings_from_non_path_deps() {
     // Test for lack of diagnostics in the entire project even though the dep contains lint errors.
     ls.open_and_wait_for_diagnostics_generation("src/lib.cairo")
         .values()
-        .for_each(|diags| assert!(diags.is_empty()));
+        .for_each(|diags| assert!(diags.is_empty(), "{:#?}", diags));
 
     // Goto is the easiest way to get an absolute path to a file from a dependency.
     let url_to_dependency_file_with_lint_errors = {
