@@ -1,3 +1,4 @@
+use std::path;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, OnceLock};
@@ -6,7 +7,7 @@ use anyhow::{Context, Result, bail, ensure};
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
 use scarb_metadata::{Metadata, MetadataCommand};
-use tracing::{error, warn};
+use tracing::{debug, error, warn};
 use which::which;
 
 use crate::env_config::{self, CAIRO_LS_LOG};
@@ -29,6 +30,9 @@ pub struct ScarbToolchain {
     /// Cached scarb version.
     version: Arc<OnceLock<Option<String>>>,
 
+    /// Cached scarb cache path version.
+    cache_path: Arc<OnceLock<Option<PathBuf>>>,
+
     /// The notifier object used to send notifications to the language client.
     notifier: Notifier,
 
@@ -44,6 +48,7 @@ impl ScarbToolchain {
         ScarbToolchain {
             scarb_path_cell: Default::default(),
             version: Default::default(),
+            cache_path: Default::default(),
             notifier,
             is_silent: false,
         }
@@ -109,11 +114,9 @@ impl ScarbToolchain {
                     Some(_) => self.scarb_path_cell.clone(),
                     None => Default::default(),
                 },
-
                 version: self.version.clone(),
-
+                cache_path: self.cache_path.clone(),
                 notifier: self.notifier.clone(),
-
                 is_silent: true,
             }
         }
@@ -185,6 +188,10 @@ impl ScarbToolchain {
             .clone()
     }
 
+    pub fn cache_path(&self) -> Option<PathBuf> {
+        self.cache_path.get_or_init(|| self.fetch_cache_path().ok()).clone()
+    }
+
     fn fetch_version(&self) -> Result<String> {
         let Some(scarb_path) = self.discover() else { bail!("failed to get scarb path") };
 
@@ -195,5 +202,22 @@ impl ScarbToolchain {
         let version = String::from_utf8_lossy(&output.stdout).to_string();
 
         Ok(version)
+    }
+
+    fn fetch_cache_path(&self) -> Result<PathBuf> {
+        let Some(scarb_path) = self.discover() else { bail!("failed to get scarb path") };
+
+        let output = Command::new(scarb_path).arg("cache").arg("path").output()?;
+
+        ensure!(output.status.success(), "failed to get scarb cache path");
+
+        let cache_path = PathBuf::from(String::from_utf8_lossy(&output.stdout).trim().to_string());
+
+        path::absolute(&cache_path)
+            .with_context(|| {
+                format!("failed to make scarb cache path absolute: {}", cache_path.display())
+            })
+            .inspect(|p| debug!("Scarb cache path: {}", p.display()))
+            .inspect_err(|err| error!("{err:#?}"))
     }
 }
