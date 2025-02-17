@@ -57,14 +57,11 @@ impl SymbolDef {
             }
         }
         // Get the resolved item info and the syntax node of the definition.
-        let (definition_item, definition_node) = {
-            let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
-            let (resolved_item, stable_ptr) = find_definition(db, identifier, &lookup_items)?;
-            let node = stable_ptr.lookup(db.upcast());
-            (resolved_item, node)
-        };
+        let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
+        let resolved_item = find_definition(db, identifier, &lookup_items)?;
+        let definition_node = resolved_item.definition_node(db)?;
 
-        match definition_item {
+        match resolved_item {
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericFunction(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericType(_))
