@@ -9,7 +9,7 @@ use scarb_metadata::{Metadata, MetadataCommand};
 use tracing::{error, warn};
 use which::which;
 
-use crate::env_config;
+use crate::env_config::{self, CAIRO_LS_LOG};
 use crate::lsp::ext::{ScarbPathMissing, ScarbResolvingFinish, ScarbResolvingStart};
 use crate::server::client::Notifier;
 
@@ -168,6 +168,8 @@ impl ScarbToolchain {
             .arg("--quiet") // If not set scarb will print all "Compiling ..." messages we don't need (and these can crash input parsing).
             .arg("proc-macro-server")
             .envs(std::env::var("RUST_BACKTRACE").map(|value| ("RUST_BACKTRACE", value)))
+            // This is tracing directive so we can just forward it to scarb.
+            .envs(std::env::var(CAIRO_LS_LOG).map(|value| ("SCARB_LOG", value)))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             // We use this channel for debugging.
