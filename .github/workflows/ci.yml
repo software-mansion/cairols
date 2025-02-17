@@ -12,6 +12,9 @@ concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: ${{ github.head_ref != 'main' }}
 
+env:
+  SCARB_CACHE: /home/runner/.cache/com.swmansion.scarb
+
 jobs:
   build-test:
     name: build test ${{ matrix.platform.name }}
@@ -45,7 +48,7 @@ jobs:
         platform:
           - name: linux x86-64
             os: ubuntu-latest
-        partition: [ 1, 2, 3, 4, 5, 6, 7, 8 ]
+        partition: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
