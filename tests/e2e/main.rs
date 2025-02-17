@@ -6,6 +6,7 @@ mod custom_macros;
 mod find_references;
 mod goto_definition;
 mod hover;
+mod linter;
 mod macro_expand;
 mod scarb;
 mod semantic_tokens;
