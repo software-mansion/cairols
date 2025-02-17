@@ -15,6 +15,7 @@ mod create_module_file;
 mod expand_macro;
 mod fill_struct_fields;
 mod fill_trait_members;
+mod missing_import;
 mod rename_unused_variable;
 
 /// Compute commands for a given text document and range. These commands are typically code fixes to
@@ -90,6 +91,8 @@ fn get_code_actions_for_diagnostics(
                 params.text_document.uri.clone(),
             )
             .to_vec(),
+            "E0006" => missing_import::missing_import(db, &ctx, params.text_document.uri.clone())
+                .unwrap_or_default(),
             _ => {
                 debug!("no code actions for diagnostic code: {code}");
                 vec![]
