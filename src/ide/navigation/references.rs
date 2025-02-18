@@ -1,10 +1,9 @@
-use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 use lsp_types::{Location, ReferenceParams};
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::SymbolDef;
-use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
+use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<Location>> {
     let include_declaration = params.context.include_declaration;
@@ -21,12 +20,7 @@ pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<
         .include_declaration(include_declaration)
         .locations()
         .unique()
-        .filter_map(|(file, span)| {
-            let found_uri = db.url_for_file(file)?;
-            let range = span.position_in_file(db.upcast(), file)?.to_lsp();
-            let location = Location { uri: found_uri, range };
-            Some(location)
-        })
+        .filter_map(|loc| db.lsp_location(loc))
         .collect();
 
     Some(locations)

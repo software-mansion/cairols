@@ -1,9 +1,12 @@
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
+use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::Upcast;
-use lsp_types::Url;
+use lsp_types::{Location, Url};
 use salsa::InternKey;
 use tracing::error;
+
+use crate::lang::lsp::ToLsp;
 
 #[cfg(test)]
 #[path = "ls_proto_group_test.rs"]
@@ -53,6 +56,15 @@ pub trait LsProtoGroup: Upcast<dyn FilesGroup> {
         url.set_host(Some(&file_id.as_intern_id().to_string())).unwrap();
         url.path_segments_mut().unwrap().push(&format!("{}.cairo", vf.name));
         Some(url)
+    }
+
+    /// Converts a [`FileId`]-[`TextSpan`] pair into a [`Location`].
+    fn lsp_location(&self, (file, span): (FileId, TextSpan)) -> Option<Location> {
+        let db = self.upcast();
+        let found_uri = db.url_for_file(file)?;
+        let range = span.position_in_file(db, file)?.to_lsp();
+        let location = Location { uri: found_uri, range };
+        Some(location)
     }
 }
 
