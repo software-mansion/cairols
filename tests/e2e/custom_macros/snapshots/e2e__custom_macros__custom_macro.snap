@@ -20,7 +20,25 @@ snapshot_kind: text
             }
           },
           "severity": 1,
-          "message": "Expected variable or constant, found module."
+          "message": "Expected variable or constant, found module.",
+          "relatedInformation": [
+            {
+              "location": {
+                "uri": "vfs://proc_macro_decorate.cairo",
+                "range": {
+                  "start": {
+                    "line": 0,
+                    "character": 35
+                  },
+                  "end": {
+                    "line": 0,
+                    "character": 36
+                  }
+                }
+              },
+              "message": "Diagnostic mapped from here."
+            }
+          ]
         },
         {
           "range": {
@@ -34,7 +52,25 @@ snapshot_kind: text
             }
           },
           "severity": 1,
-          "message": "Identifier not found."
+          "message": "Identifier not found.",
+          "relatedInformation": [
+            {
+              "location": {
+                "uri": "vfs://proc_macro_decorate.cairo",
+                "range": {
+                  "start": {
+                    "line": 0,
+                    "character": 39
+                  },
+                  "end": {
+                    "line": 0,
+                    "character": 40
+                  }
+                }
+              },
+              "message": "Diagnostic mapped from here."
+            }
+          ]
         },
         {
           "range": {
@@ -48,7 +84,25 @@ snapshot_kind: text
             }
           },
           "severity": 1,
-          "message": "Invalid left-hand side of assignment."
+          "message": "Invalid left-hand side of assignment.",
+          "relatedInformation": [
+            {
+              "location": {
+                "uri": "vfs://proc_macro_decorate.cairo",
+                "range": {
+                  "start": {
+                    "line": 0,
+                    "character": 35
+                  },
+                  "end": {
+                    "line": 0,
+                    "character": 36
+                  }
+                }
+              },
+              "message": "Diagnostic mapped from here."
+            }
+          ]
         }
       ]
     }

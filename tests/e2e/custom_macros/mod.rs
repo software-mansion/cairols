@@ -1,16 +1,15 @@
 use indoc::indoc;
-use itertools::Itertools;
 use lsp_types::Diagnostic;
 use serde::Serialize;
 use serde_json::json;
 
-use crate::support::normalize::normalize;
+use crate::support::normalize::normalize_diagnostics;
 use crate::support::sandbox;
 
 #[derive(Serialize)]
-struct DiagnosticsWithUrl {
-    url: String,
-    diagnostics: Vec<Diagnostic>,
+pub struct DiagnosticsWithUrl {
+    pub url: String,
+    pub diagnostics: Vec<Diagnostic>,
 }
 
 #[derive(Serialize)]
@@ -70,17 +69,13 @@ fn test_custom_macro() {
         workspace_configuration = json!({
             "cairo1": {
                 "enableProcMacros": true,
+                "traceMacroDiagnostics": true,
             }
         });
     };
 
     let newest_diagnostics = ls.open_and_wait_for_diagnostics_generation("a/src/lib.cairo");
-    let sorted_diagnostics: Vec<DiagnosticsWithUrl> = newest_diagnostics
-        .into_iter()
-        .filter(|(url, _)| !url.path().contains("core/src"))
-        .sorted_by(|(url_a, _), (url_b, _)| url_a.path().cmp(url_b.path()))
-        .map(|(url, diagnostics)| DiagnosticsWithUrl { url: normalize(&ls, url), diagnostics })
-        .collect();
+    let diagnostics_with_url = normalize_diagnostics(ls, newest_diagnostics);
 
-    insta::assert_json_snapshot!(DiagnosticsReport { diagnostics: sorted_diagnostics })
+    insta::assert_json_snapshot!(DiagnosticsReport { diagnostics: diagnostics_with_url })
 }
