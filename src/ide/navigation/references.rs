@@ -16,30 +16,18 @@ pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<
 
     let symbol = SymbolDef::find(db, &identifier)?;
 
-    // TODO(mkaput): Think about how to deal with `mod foo;` vs `mod foo { ... }`.
-    // Location where the searched symbol is declared.
-    // This can rarely be `None`, for example, for macros.
-    // For all cases we cover here, definition == declaration.
-    let declaration = symbol.definition_location(db);
-
-    // Locations where the searched symbol is used.
-    let usages = symbol.usages(db).collect();
-
-    let locations = {
-        let declaration = declaration.filter(|_| include_declaration);
-
-        let references = usages.into_iter().map(|usage| (usage.file, usage.span));
-
-        declaration.into_iter().chain(references)
-    }
-    .unique()
-    .filter_map(|(file, span)| {
-        let found_uri = db.url_for_file(file)?;
-        let range = span.position_in_file(db.upcast(), file)?.to_lsp();
-        let location = Location { uri: found_uri, range };
-        Some(location)
-    })
-    .collect();
+    let locations = symbol
+        .usages(db)
+        .include_declaration(include_declaration)
+        .locations()
+        .unique()
+        .filter_map(|(file, span)| {
+            let found_uri = db.url_for_file(file)?;
+            let range = span.position_in_file(db.upcast(), file)?.to_lsp();
+            let location = Location { uri: found_uri, range };
+            Some(location)
+        })
+        .collect();
 
     Some(locations)
 }
