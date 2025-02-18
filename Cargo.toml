@@ -85,6 +85,7 @@ insta = { version = "1.42", features = ["toml", "json"] }
 pathdiff = "0.2"
 similar = "2.7"
 test-log = "0.2.16"
+regex = "1.11.1"
 
 # Here we specify real dependency specifications for Cairo crates *if* currently we want to use
 # a particular unreleased commit (which is frequent mid-development).

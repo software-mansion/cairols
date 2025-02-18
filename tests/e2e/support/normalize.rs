@@ -1,5 +1,11 @@
 use std::path::Path;
+use std::str::FromStr;
 
+use itertools::Itertools;
+use lsp_types::{Diagnostic, DiagnosticRelatedInformation, Location, Url};
+use regex::Regex;
+
+use crate::custom_macros::DiagnosticsWithUrl;
 use crate::support::fixture::Fixture;
 use crate::support::scarb::scarb_registry_std_path;
 
@@ -25,6 +31,9 @@ fn normalize_well_known_paths(fixture: &Fixture, data: String) -> String {
 
     data = data.replace(&normalize_path(scarb_registry_std_path()), "[SCARB_REGISTRY_STD]");
 
+    let re = Regex::new(r"vfs://(\d+)/").unwrap();
+    data = re.replace_all(&data, "vfs://").to_string();
+
     data
 }
 
@@ -36,4 +45,48 @@ fn normalize_paths(data: String) -> String {
 /// Normalize a path to a consistent format.
 fn normalize_path(path: &Path) -> String {
     normalize_paths(path.to_string_lossy().to_string())
+}
+
+/// Normalizes paths, sorts the diagnostics by the URL, filters out corelib diagnostics
+pub fn normalize_diagnostics(
+    fixture: impl AsRef<Fixture>,
+    diagnostics: impl IntoIterator<Item = (Url, Vec<Diagnostic>)>,
+) -> Vec<DiagnosticsWithUrl> {
+    diagnostics
+        .into_iter()
+        .filter(|(url, _)| !url.path().contains("core/src"))
+        .sorted_by(|(url_a, _), (url_b, _)| url_a.path().cmp(url_b.path()))
+        .map(|(url, diagnostics)| DiagnosticsWithUrl {
+            url: normalize(&fixture, url),
+            diagnostics: diagnostics
+                .iter()
+                .map(|diag| Diagnostic {
+                    range: diag.range,
+                    severity: diag.severity,
+                    code: diag.code.clone(),
+                    code_description: diag.code_description.clone(),
+                    source: diag.source.clone(),
+                    message: diag.message.clone(),
+                    related_information: diag.related_information.clone().map(|infos| {
+                        infos
+                            .iter()
+                            .map(|x| DiagnosticRelatedInformation {
+                                location: Location {
+                                    uri: Url::from_str(&normalize(
+                                        &fixture,
+                                        x.location.uri.as_str(),
+                                    ))
+                                    .unwrap(),
+                                    range: x.location.range,
+                                },
+                                message: x.message.clone(),
+                            })
+                            .collect()
+                    }),
+                    tags: diag.tags.clone(),
+                    data: diag.data.clone(),
+                })
+                .collect(),
+        })
+        .collect()
 }

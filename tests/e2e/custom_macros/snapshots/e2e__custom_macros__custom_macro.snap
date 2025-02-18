@@ -24,7 +24,7 @@ snapshot_kind: text
           "relatedInformation": [
             {
               "location": {
-                "uri": "vfs://394/proc_macro_decorate.cairo",
+                "uri": "vfs://proc_macro_decorate.cairo",
                 "range": {
                   "start": {
                     "line": 0,
@@ -56,7 +56,7 @@ snapshot_kind: text
           "relatedInformation": [
             {
               "location": {
-                "uri": "vfs://394/proc_macro_decorate.cairo",
+                "uri": "vfs://proc_macro_decorate.cairo",
                 "range": {
                   "start": {
                     "line": 0,
@@ -88,7 +88,7 @@ snapshot_kind: text
           "relatedInformation": [
             {
               "location": {
-                "uri": "vfs://394/proc_macro_decorate.cairo",
+                "uri": "vfs://proc_macro_decorate.cairo",
                 "range": {
                   "start": {
                     "line": 0,
