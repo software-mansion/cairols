@@ -55,6 +55,7 @@ impl Crate {
         let crate_configuration = CrateConfiguration {
             root: Directory::Real(self.root.clone()),
             settings: self.settings.clone(),
+            cache_file: None,
         };
         db.set_crate_config(crate_id, Some(crate_configuration));
 
@@ -71,7 +72,7 @@ impl Crate {
             return None;
         };
 
-        let Some(CrateConfiguration { root: Directory::Real(root), settings }) =
+        let Some(CrateConfiguration { root: Directory::Real(root), settings, .. }) =
             db.crate_config(crate_id)
         else {
             return None;
