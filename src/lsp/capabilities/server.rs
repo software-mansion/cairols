@@ -26,7 +26,7 @@ use lsp_types::{
     CompletionRegistrationOptions, DefinitionOptions, DidChangeWatchedFilesRegistrationOptions,
     DocumentFilter, ExecuteCommandOptions, ExecuteCommandRegistrationOptions, FileSystemWatcher,
     GlobPattern, HoverProviderCapability, HoverRegistrationOptions, OneOf, ReferencesOptions,
-    Registration, SaveOptions, SemanticTokensFullOptions, SemanticTokensLegend,
+    Registration, RenameOptions, SaveOptions, SemanticTokensFullOptions, SemanticTokensLegend,
     SemanticTokensOptions, SemanticTokensRegistrationOptions, ServerCapabilities,
     TextDocumentChangeRegistrationOptions, TextDocumentRegistrationOptions,
     TextDocumentSaveRegistrationOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
@@ -35,6 +35,7 @@ use lsp_types::{
 use missing_lsp_types::{
     CodeActionRegistrationOptions, DefinitionRegistrationOptions,
     DocumentFormattingRegistrationOptions, ReferencesRegistrationOptions,
+    RenameRegistrationOptions,
 };
 use serde::Serialize;
 
@@ -105,6 +106,10 @@ pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> 
             .then_some(CodeActionProviderCapability::Simple(true)),
         references_provider: client_capabilities
             .references_provider_dynamic_registration()
+            .not()
+            .then_some(OneOf::Left(true)),
+        rename_provider: client_capabilities
+            .rename_provider_dynamic_registration()
             .not()
             .then_some(OneOf::Left(true)),
         ..ServerCapabilities::default()
@@ -264,8 +269,21 @@ pub fn collect_dynamic_registrations(
         registrations.push(create_registration(
             References::METHOD,
             ReferencesRegistrationOptions {
-                text_document_registration_options,
+                text_document_registration_options: text_document_registration_options.clone(),
                 references_options: ReferencesOptions {
+                    work_done_progress_options: Default::default(),
+                },
+            },
+        ));
+    }
+
+    if client_capabilities.rename_provider_dynamic_registration() {
+        registrations.push(create_registration(
+            "textDocument/rename",
+            RenameRegistrationOptions {
+                text_document_registration_options,
+                rename_options: RenameOptions {
+                    prepare_provider: Some(false),
                     work_done_progress_options: Default::default(),
                 },
             },
@@ -288,7 +306,7 @@ fn create_registration(method: &str, registration_options: impl Serialize) -> Re
 mod missing_lsp_types {
     use lsp_types::{
         CodeActionOptions, DefinitionOptions, DocumentFormattingOptions, ReferencesOptions,
-        TextDocumentRegistrationOptions,
+        RenameOptions, TextDocumentRegistrationOptions,
     };
     use serde::{Deserialize, Serialize};
 
@@ -330,5 +348,15 @@ mod missing_lsp_types {
 
         #[serde(flatten)]
         pub references_options: ReferencesOptions,
+    }
+
+    #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RenameRegistrationOptions {
+        #[serde(flatten)]
+        pub text_document_registration_options: TextDocumentRegistrationOptions,
+
+        #[serde(flatten)]
+        pub rename_options: RenameOptions,
     }
 }
