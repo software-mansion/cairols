@@ -5,7 +5,6 @@ use itertools::Itertools;
 use lsp_types::{Diagnostic, DiagnosticRelatedInformation, Location, Url};
 use regex::Regex;
 
-use crate::custom_macros::DiagnosticsWithUrl;
 use crate::support::fixture::Fixture;
 use crate::support::scarb::scarb_registry_std_path;
 
@@ -48,45 +47,50 @@ fn normalize_path(path: &Path) -> String {
 }
 
 /// Normalizes paths, sorts the diagnostics by the URL, filters out corelib diagnostics
+/// Returns a list of tuples containing: (Original URL, Normalized URL, Normalized Diagnostics for
+/// given URL)
 pub fn normalize_diagnostics(
-    fixture: impl AsRef<Fixture>,
+    fixture: &impl AsRef<Fixture>,
     diagnostics: impl IntoIterator<Item = (Url, Vec<Diagnostic>)>,
-) -> Vec<DiagnosticsWithUrl> {
+) -> Vec<(Url, String, Vec<Diagnostic>)> {
     diagnostics
         .into_iter()
         .filter(|(url, _)| !url.path().contains("core/src"))
         .sorted_by(|(url_a, _), (url_b, _)| url_a.path().cmp(url_b.path()))
-        .map(|(url, diagnostics)| DiagnosticsWithUrl {
-            url: normalize(&fixture, url),
-            diagnostics: diagnostics
-                .iter()
-                .map(|diag| Diagnostic {
-                    range: diag.range,
-                    severity: diag.severity,
-                    code: diag.code.clone(),
-                    code_description: diag.code_description.clone(),
-                    source: diag.source.clone(),
-                    message: diag.message.clone(),
-                    related_information: diag.related_information.clone().map(|infos| {
-                        infos
-                            .iter()
-                            .map(|x| DiagnosticRelatedInformation {
-                                location: Location {
-                                    uri: Url::from_str(&normalize(
-                                        &fixture,
-                                        x.location.uri.as_str(),
-                                    ))
-                                    .unwrap(),
-                                    range: x.location.range,
-                                },
-                                message: x.message.clone(),
-                            })
-                            .collect()
-                    }),
-                    tags: diag.tags.clone(),
-                    data: diag.data.clone(),
-                })
-                .collect(),
+        .map(|(url, diagnostics)| {
+            (
+                url.clone(),
+                normalize(fixture, &url),
+                diagnostics
+                    .iter()
+                    .map(|diag| Diagnostic {
+                        range: diag.range,
+                        severity: diag.severity,
+                        code: diag.code.clone(),
+                        code_description: diag.code_description.clone(),
+                        source: diag.source.clone(),
+                        message: diag.message.clone(),
+                        related_information: diag.related_information.clone().map(|infos| {
+                            infos
+                                .iter()
+                                .map(|x| DiagnosticRelatedInformation {
+                                    location: Location {
+                                        uri: Url::from_str(&normalize(
+                                            fixture,
+                                            x.location.uri.as_str(),
+                                        ))
+                                        .unwrap(),
+                                        range: x.location.range,
+                                    },
+                                    message: x.message.clone(),
+                                })
+                                .collect()
+                        }),
+                        tags: diag.tags.clone(),
+                        data: diag.data.clone(),
+                    })
+                    .collect(),
+            )
         })
         .collect()
 }

@@ -3,13 +3,20 @@ use lsp_types::Diagnostic;
 use serde::Serialize;
 use serde_json::json;
 
+use crate::support::diagnostics::get_related_diagnostic_code;
 use crate::support::normalize::normalize_diagnostics;
 use crate::support::sandbox;
 
 #[derive(Serialize)]
+pub struct DiagnosticAndRelatedInfo {
+    related_code: String,
+    diagnostic: Diagnostic,
+}
+
+#[derive(Serialize)]
 pub struct DiagnosticsWithUrl {
     pub url: String,
-    pub diagnostics: Vec<Diagnostic>,
+    pub diagnostics: Vec<DiagnosticAndRelatedInfo>,
 }
 
 #[derive(Serialize)]
@@ -75,7 +82,19 @@ fn test_custom_macro() {
     };
 
     let newest_diagnostics = ls.open_and_wait_for_diagnostics_generation("a/src/lib.cairo");
-    let diagnostics_with_url = normalize_diagnostics(ls, newest_diagnostics);
+    let diagnostics_with_url = normalize_diagnostics(&ls, newest_diagnostics.clone())
+        .into_iter()
+        .map(|(original_url, normalized_url, diagnostics)| DiagnosticsWithUrl {
+            url: normalized_url,
+            diagnostics: diagnostics
+                .into_iter()
+                .map(|diag| DiagnosticAndRelatedInfo {
+                    related_code: get_related_diagnostic_code(&ls, &diag, &original_url),
+                    diagnostic: diag,
+                })
+                .collect(),
+        })
+        .collect();
 
     insta::assert_json_snapshot!(DiagnosticsReport { diagnostics: diagnostics_with_url })
 }
