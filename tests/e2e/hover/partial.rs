@@ -32,11 +32,6 @@ fn uninfered_value() {
     source_context = """
         let mut xyz = unkn<caret>own_function();
     """
-    popover = """
-    ```cairo
-    <missing>
-    ```
-    """
     "#)
 }
 

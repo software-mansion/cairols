@@ -146,10 +146,5 @@ fn issue_80() {
     source_context = '''
         format!("0x{}", str<caret>ing)
     '''
-    popover = """
-    ```cairo
-    core::byte_array::ByteArray
-    ```
-    """
     "#)
 }

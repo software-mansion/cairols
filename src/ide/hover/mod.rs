@@ -19,7 +19,7 @@ pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
 
     if let Some(hover) = db
         .find_identifier_at_position(file_id, position)
-        .and_then(|ref id| render::definition(db, id, file_id).or_else(|| render::legacy(db, id)))
+        .and_then(|ref id| render::definition(db, id, file_id))
     {
         return Some(hover);
     }
