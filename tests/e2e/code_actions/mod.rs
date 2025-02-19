@@ -7,6 +7,7 @@ use crate::support::cairo_project_toml::{CAIRO_PROJECT_TOML, CAIRO_PROJECT_TOML_
 use crate::support::{cursors, sandbox};
 
 mod create_module_file;
+mod macro_expand;
 mod missing_trait;
 mod remove_unused_variable;
 
