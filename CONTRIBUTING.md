@@ -82,6 +82,23 @@ error.
 In Visual Studio Code you will find this output in the `Output` → `Cairo Language Server` panel.
 We're not copying these here because nobody will bother keeping this document in sync.
 
+### Custom commands
+
+Special commands for developers are available via Visual Studio Code [Command Palette][command-palette].
+These include:
+- Cairo: View currently analyzed crates
+- Cairo: View syntax tree of the current file content
+
+To make the best use of these add the following variable to `"cairo1.languageServerExtraEnv"`
+section in `.vscode/settings.json`:
+```json
+{
+    "cairo1.languageServerExtraEnv": {
+        "CLICOLOR_FORCE": "1"
+    }
+}
+```
+
 ### Use tests
 
 If you find a short reproduction of your problem, we strongly suggest writing an E2E test and
@@ -131,3 +148,4 @@ Thanks! ❤️ ❤️ ❤️
 CairoLS Team
 
 [env-filter-directives]: https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#directives
+[command-palette]: https://code.visualstudio.com/docs/getstarted/userinterface#_command-palette
