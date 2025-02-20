@@ -1,6 +1,5 @@
 mod analysis;
 mod code_actions;
-mod code_actions_old;
 mod completions;
 mod custom_macros;
 mod find_references;
