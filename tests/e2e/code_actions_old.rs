@@ -12,7 +12,6 @@ cairo_lang_test_utils::test_file_test!(
     quick_fix,
     "tests/test_data/code_actions",
     {
-        macro_expand: "macro_expand.txt",
         fill_struct_fields: "fill_struct_fields.txt",
         fill_trait_members: "fill_trait_members.txt",
     },
