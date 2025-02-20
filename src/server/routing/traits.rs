@@ -389,7 +389,7 @@ impl BackgroundDocumentRequestHandler for Rename {
         _notifier: Notifier,
         params: RenameParams,
     ) -> LSPResult<Option<WorkspaceEdit>> {
-        Ok(ide::navigation::rename::rename(params, &snapshot.db))
+        ide::navigation::rename::rename(params, &snapshot.db)
     }
 }
 
