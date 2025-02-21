@@ -14,17 +14,6 @@ use serde_json::Value;
 pub use self::cursor::cursors;
 pub use self::mock_client::MockClient;
 
-/// Merges `b`'s kv pairs into `a` (non recursively), potentially overriding the previous values
-pub(crate) fn merge_json_flat(a: &mut Value, b: Value) {
-    if let (Value::Object(a_map), Value::Object(b_map)) = (a, b) {
-        for (k, v) in b_map {
-            a_map.insert(k, v);
-        }
-    } else {
-        panic!("Non-object Value merging is not supported.");
-    }
-}
-
 /// Create a sandboxed environment for testing language server features.
 ///
 /// This macro creates a [`fixture::Fixture`] first and sets it up according to the provided
@@ -77,6 +66,18 @@ macro_rules! sandbox {
         )?
         client
     }};
+}
+
+#[doc(hidden)]
+/// Merges `b`'s kv pairs into `a` (non recursively), potentially overriding the previous values
+pub(crate) fn merge_json_flat(a: &mut Value, b: Value) {
+    if let (Value::Object(a_map), Value::Object(b_map)) = (a, b) {
+        for (k, v) in b_map {
+            a_map.insert(k, v);
+        }
+    } else {
+        panic!("Non-object Value merging is not supported.");
+    }
 }
 
 pub(crate) use sandbox;
