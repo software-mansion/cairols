@@ -9,8 +9,21 @@ mod mock_client;
 pub mod normalize;
 pub mod scarb;
 
+use serde_json::Value;
+
 pub use self::cursor::cursors;
 pub use self::mock_client::MockClient;
+
+/// Merges `b`'s kv pairs into `a` (non recursively), potentially overriding the previous values
+pub(crate) fn merge_json_flat(a: &mut Value, b: Value) {
+    if let (Value::Object(a_map), Value::Object(b_map)) = (a, b) {
+        for (k, v) in b_map {
+            a_map.insert(k, v);
+        }
+    } else {
+        panic!("Non-object Value merging is not supported.");
+    }
+}
 
 /// Create a sandboxed environment for testing language server features.
 ///
@@ -23,7 +36,7 @@ macro_rules! sandbox {
         $(files { $($file:expr => $content:expr),* $(,)? })?
         $(cwd = $cwd:expr;)?
         $(client_capabilities = $client_capabilities:expr;)?
-        $(workspace_configuration = $workspace_configuration:expr;)?
+        $(workspace_configuration = $overriding_workspace_configuration:expr;)?
     ) => {{
         use $crate::support::{
             client_capabilities,
@@ -47,7 +60,9 @@ macro_rules! sandbox {
         });
 
         $(
-            workspace_configuration = $workspace_configuration;
+            use $crate::support::merge_json_flat;
+
+            merge_json_flat(&mut workspace_configuration, $overriding_workspace_configuration);
             client_capabilities =
                 client_capabilities::with_workspace_configuration(client_capabilities, true);
         )?
