@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use cairo_lang_defs::db::DefsGroup;
@@ -10,6 +11,7 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_utils::{Intern, LookupIntern};
 use smol_str::SmolStr;
 
+use super::builtin_plugins::BuiltinPlugin;
 use crate::lang::db::AnalysisDatabase;
 
 /// A complete set of information needed to set up a real crate in the analysis database.
@@ -36,6 +38,10 @@ pub struct Crate {
 
     /// Crate settings.
     pub settings: CrateSettings,
+
+    /// Built-in plugins required by the crate.
+    #[allow(dead_code)] // TODO: remove. The field is used later in the stack
+    pub builtin_plugins: HashSet<BuiltinPlugin>,
 }
 
 impl Crate {
@@ -61,6 +67,9 @@ impl Crate {
         if let Some(file_stems) = &self.custom_main_file_stems {
             inject_virtual_wrapper_lib(db, crate_id, file_stems);
         }
+
+        // TODO (later in the stack): Construct the plugin suite
+        // from builtin_plugins and set as an override for the crate.
     }
 
     /// Construct a [`Crate`] from data already applied to the [`AnalysisDatabase`].
@@ -79,7 +88,11 @@ impl Crate {
 
         let custom_main_file_stems = extract_custom_file_stems(db, crate_id);
 
-        Some(Self { name, discriminator, root, custom_main_file_stems, settings })
+        // TODO (later in the stack): Extract plugins associated with this crate
+        // from db and store it in this set.
+        let builtin_plugins = HashSet::default();
+
+        Some(Self { name, discriminator, root, custom_main_file_stems, settings, builtin_plugins })
     }
 
     /// States whether this is the `core` crate.
