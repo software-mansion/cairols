@@ -24,10 +24,10 @@ fn test_simple_lint() {
         }
         "#,
         @r#"
-        [[diagnostics]]
-        severity = "Warning"
-        message = "Plugin diagnostic: you seem to be trying to use `loop` for iterating over a span. Consider using `for in`"
-        "#
+    [[diagnostics]]
+    severity = "Warning"
+    message = "Plugin diagnostic: you seem to be trying to use `loop` for iterating over a span. Consider using `for in`"
+    "#
     )
 }
 
@@ -48,14 +48,14 @@ fn test_two_simultaneous_lints() {
         }
         "#,
         @r#"
-        [[diagnostics]]
-        severity = "Warning"
-        message = "Plugin diagnostic: unnecessary double parentheses found after break. Consider removing them."
+    [[diagnostics]]
+    severity = "Warning"
+    message = "Plugin diagnostic: unnecessary double parentheses found after break. Consider removing them."
 
-        [[diagnostics]]
-        severity = "Warning"
-        message = "Plugin diagnostic: you seem to be trying to use `loop` for iterating over a span. Consider using `for in`"
-        "#
+    [[diagnostics]]
+    severity = "Warning"
+    message = "Plugin diagnostic: you seem to be trying to use `loop` for iterating over a span. Consider using `for in`"
+    "#
     )
 }
 

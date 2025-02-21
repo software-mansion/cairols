@@ -1,7 +1,6 @@
 ---
 source: tests/e2e/custom_macros/mod.rs
 expression: "DiagnosticsReport { diagnostics: sorted_diagnostics }"
-snapshot_kind: text
 ---
 {
   "diagnostics": [
@@ -52,6 +51,7 @@ snapshot_kind: text
             }
           },
           "severity": 1,
+          "code": "E0006",
           "message": "Identifier not found.",
           "relatedInformation": [
             {
