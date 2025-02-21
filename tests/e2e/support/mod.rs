@@ -12,18 +12,18 @@ pub mod scarb;
 use serde_json::Value;
 
 pub use self::cursor::cursors;
+pub(crate) use self::fixture::fixture;
 pub use self::mock_client::MockClient;
-
-pub const TOOL_VERSIONS: &str = include_str!("../../../.tool-versions");
 
 /// Create a sandboxed environment for testing language server features.
 ///
-/// This macro creates a [`fixture::Fixture`] first and sets it up according to the provided
+/// This macro creates a [`fixture::Fixture`] first and sets it up, according to the provided
 /// properties, and then runs a [`MockClient`] on it.
 ///
 /// See actual tests for usage examples.
 macro_rules! sandbox {
     (
+        $(fixture = $fixture:expr;)?
         $(files { $($file:expr => $content:expr),* $(,)? })?
         $(cwd = $cwd:expr;)?
         $(client_capabilities = $client_capabilities:expr;)?
@@ -35,9 +35,12 @@ macro_rules! sandbox {
             MockClient
         };
 
+        #[allow(unused_assignments, unused_mut)]
         let mut fixture = Fixture::new();
 
-        fixture.add_file(".tool-versions", crate::support::TOOL_VERSIONS);
+        $(fixture = $fixture;)?
+
+        fixture.add_tool_versions();
 
         $($(fixture.add_file($file, $content);)*)?
 

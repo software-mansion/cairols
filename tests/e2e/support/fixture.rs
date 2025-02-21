@@ -1,21 +1,24 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use assert_fs::TempDir;
 use assert_fs::prelude::*;
 use lsp_types::Url;
 
+const TOOL_VERSIONS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/.tool-versions"));
+
 /// A temporary directory that is a context for testing the language server.
 pub struct Fixture {
-    t: TempDir,
+    // This is put behind a LazyLock, so that Fixture::new calls are no-cost.
+    t: LazyLock<TempDir>,
     files: Vec<PathBuf>,
 }
 
 impl Fixture {
     /// Creates a new [`Fixture`] with an empty temporary directory.
     pub fn new() -> Self {
-        let t = TempDir::new().unwrap();
-        Self { t, files: Vec::new() }
+        Self { t: LazyLock::new(|| TempDir::new().unwrap()), files: Vec::new() }
     }
 }
 
@@ -29,6 +32,11 @@ impl Fixture {
 
     pub fn edit_file(&mut self, path: impl AsRef<Path>, contents: impl AsRef<str>) {
         self.t.child(path).write_str(contents.as_ref().trim()).unwrap();
+    }
+
+    /// Copies the `.tool-versions` file of this repo to the fixture directory.
+    pub fn add_tool_versions(&mut self) {
+        self.add_file(".tool-versions", TOOL_VERSIONS);
     }
 }
 
@@ -60,8 +68,37 @@ impl Fixture {
         fs::read_to_string(self.file_absolute_path(path)).unwrap()
     }
 
+    /// If the url refers to a file in this fixture, returns the path of this file
+    /// (relative to fixture root); otherwise, returns an error string.
+    pub fn url_path(&self, url: &Url) -> Result<PathBuf, String> {
+        let path = url.to_file_path().map_err(|()| format!("not a file url: {url}"))?;
+        let path = path
+            .strip_prefix(self.root_path())
+            .map_err(|_| format!("url leads to a file outside test fixture: {url}"))?;
+        Ok(path.to_path_buf())
+    }
+
     /// Returns all files paths in the fixture.
     pub fn files(&self) -> &[PathBuf] {
         &self.files
     }
 }
+
+/// Macro to create a [`Fixture`] with a set of predefined files and their contents.
+///
+/// # Usage
+///
+/// ```
+/// let fixture = fixture! {
+///     "file1.txt" => "Content of file 1",
+///     "file2.txt" => "Content of file 2",
+/// };
+/// ```
+macro_rules! fixture {
+    { $($file:expr => $content:expr),* $(,)? } => {{
+        let mut fixture = $crate::support::fixture::Fixture::new();
+        $(fixture.add_file($file, $content);)*
+        fixture
+    }};
+}
+pub(crate) use fixture;
