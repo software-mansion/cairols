@@ -15,8 +15,8 @@ mod literals;
 mod missing_module;
 mod partial;
 mod paths;
-mod starknet;
 mod structs;
+mod traits;
 mod variables;
 
 /// Perform hover test.
