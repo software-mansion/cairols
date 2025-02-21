@@ -918,7 +918,6 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-syntax-codegen",
  "cairo-lang-test-plugin",
- "cairo-lang-test-utils",
  "cairo-lang-utils",
  "cairo-language-server",
  "cairo-lint-core",
