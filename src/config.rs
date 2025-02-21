@@ -57,7 +57,7 @@ impl Default for Config {
         Self {
             unmanaged_core_path: None,
             trace_macro_diagnostics: false,
-            enable_proc_macros: false,
+            enable_proc_macros: true,
             enable_linter: true,
         }
     }

@@ -17,7 +17,10 @@ struct DiagnosticsReport {
     diagnostics: Vec<DiagnosticsWithUrl>,
 }
 
+// This test requires a version of Scarb which supports the new proc-macro-server.
+// It's currently unavailable in CI.
 #[test]
+#[ignore = "Issue #331"]
 fn test_custom_macro() {
     let mut ls = sandbox! {
         files {
