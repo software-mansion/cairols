@@ -31,6 +31,7 @@ mod unsafe_downcast_ref_tests {
     use cairo_lang_syntax::node::db::SyntaxGroup;
     use scarb_proc_macro_server_types::methods::ProcMacroResult;
     use scarb_proc_macro_server_types::methods::expand::ExpandAttributeParams;
+    use scarb_proc_macro_server_types::scope::ProcMacroScope;
 
     use super::unsafe_downcast_ref;
     use crate::lang::db::AnalysisDatabase;
@@ -40,7 +41,10 @@ mod unsafe_downcast_ref_tests {
     fn cast_succeed() {
         let mut db = AnalysisDatabase::new();
 
+        let context = ProcMacroScope { package_id: String::from("anything") };
+
         let input = ExpandAttributeParams {
+            context,
             attr: "asd".to_string(),
             args: TokenStream::new("asd".to_string()),
             item: TokenStream::new("asd".to_string()),

@@ -9,12 +9,13 @@ use cairo_lang_filesystem::db::{
 };
 use itertools::Itertools;
 use scarb_metadata::{
-    CompilationUnitComponentDependencyMetadata, CompilationUnitComponentId, Metadata,
-    PackageMetadata,
+    CompilationUnitCairoPluginMetadata, CompilationUnitComponentDependencyMetadata,
+    CompilationUnitComponentId, Metadata, PackageMetadata,
 };
 use smol_str::ToSmolStr;
 use tracing::{debug, error, warn};
 
+use super::builtin_plugins::BuiltinPlugin;
 use super::manifest_registry::member_config::MemberConfig;
 use crate::lang::db::AnalysisDatabase;
 use crate::project::crate_data::Crate;
@@ -149,20 +150,14 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                         .iter()
                         .find(|component| component.id.as_ref() == Some(id));
 
-                    if let Some(dependency_component) = dependency_component {
-                        Some((
-                            dependency_component.name.clone(),
+                    dependency_component.map(|c| {
+                        (
+                            c.name.clone(),
                             DependencySettings {
-                                discriminator: dependency_component
-                                    .discriminator
-                                    .as_ref()
-                                    .map(ToSmolStr::to_smolstr),
+                                discriminator: c.discriminator.as_ref().map(ToSmolStr::to_smolstr),
                             },
-                        ))
-                    } else {
-                        error!("component not found in metadata");
-                        None
-                    }
+                        )
+                    })
                 })
                 .chain(
                     crates_by_component_id
@@ -183,12 +178,46 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
 
             let custom_main_file_stems = (file_stem != "lib").then_some(vec![file_stem.into()]);
 
+            let plugin_dependencies = component
+                .dependencies
+                .as_ref()
+                .map(|dependencies| {
+                    dependencies
+                        .iter()
+                        .filter_map(|dependency| {
+                            let plugin = compilation_unit.cairo_plugins.iter().find(|plugin| {
+                                plugin.component_dependency_id.as_ref() == Some(&dependency.id)
+                            });
+
+                            plugin
+                        })
+                        .collect_vec()
+                })
+                .unwrap_or_default();
+
+            // We collect only the built-in plugins.
+            // Procedural macros are handled separately in the
+            // `crate::lang::proc_macros::controller`.
+
+            let mut builtin_plugins = crates_by_component_id
+                .get(&component_id)
+                .map(|cr| cr.builtin_plugins.clone())
+                .unwrap_or_default();
+
+            builtin_plugins.extend(if package.is_some_and(|p| p.name == "core") {
+                // Corelib is a special case because it is described by `cairo_project.toml`.
+                plugins_for_corelib()
+            } else {
+                plugins_from_dependencies(metadata, &plugin_dependencies)
+            });
+
             let cr = Crate {
                 name: crate_name.into(),
                 discriminator: component.discriminator.as_ref().map(ToSmolStr::to_smolstr),
                 root: root.into(),
                 custom_main_file_stems,
                 settings,
+                builtin_plugins,
             };
 
             if compilation_unit.package == component.package {
@@ -240,6 +269,8 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
         let name = first_crate.name.clone();
         let discriminator = first_crate.discriminator.clone();
 
+        let builtin_plugins = crs.iter().flat_map(|cr| cr.builtin_plugins.clone()).collect();
+
         let custom_main_file_stems =
             crs.into_iter().flat_map(|cr| cr.custom_main_file_stems.unwrap()).collect();
 
@@ -249,6 +280,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
             root,
             custom_main_file_stems: Some(custom_main_file_stems),
             settings,
+            builtin_plugins,
         });
     }
 
@@ -347,4 +379,22 @@ fn scarb_package_experimental_features(
         associated_item_constraints: contains("associated_item_constraints"),
         coupons: contains("coupons"),
     }
+}
+
+/// Returns all plugins required by the `core` crate.
+fn plugins_for_corelib() -> Vec<BuiltinPlugin> {
+    vec![BuiltinPlugin::CairoTest, BuiltinPlugin::Starknet]
+}
+
+/// Returns all built-in plugins described by `dependencies`.
+fn plugins_from_dependencies(
+    metadata: &Metadata,
+    dependencies: &[&CompilationUnitCairoPluginMetadata],
+) -> Vec<BuiltinPlugin> {
+    dependencies
+        .iter()
+        .filter_map(|plugin_metadata| {
+            BuiltinPlugin::from_plugin_metadata(metadata, plugin_metadata)
+        })
+        .collect()
 }

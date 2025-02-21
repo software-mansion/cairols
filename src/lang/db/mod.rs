@@ -1,25 +1,31 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
-use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
+use cairo_lang_defs::db::{
+    DefsDatabase, DefsGroup, DefsGroupEx, init_defs_group, try_ext_as_virtual_impl,
+};
+use cairo_lang_defs::ids::{InlineMacroExprPluginId, MacroPluginId};
 use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_files_group,
 };
-use cairo_lang_filesystem::ids::VirtualFile;
+use cairo_lang_filesystem::ids::{CrateId, VirtualFile};
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
-use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::db::{
+    PluginSuiteInput, SemanticDatabase, SemanticGroup, SemanticGroupEx, init_semantic_group,
+};
+use cairo_lang_semantic::ids::AnalyzerPluginId;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
-use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
+use cairo_lang_semantic::plugin::{InternedPluginSuite, PluginSuite};
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::Itertools;
 use salsa::{Database, Durability};
 
 pub use self::semantic::*;
@@ -53,6 +59,8 @@ impl AnalysisDatabase {
         let mut db = Self { storage: Default::default() };
 
         init_files_group(&mut db);
+        init_defs_group(&mut db);
+        init_semantic_group(&mut db);
         init_lowering_group(&mut db, InliningStrategy::Default);
         // proc-macro-server can be restarted many times but we want to keep these data across
         // multiple server starts, so init it once per database, not per server.
@@ -62,12 +70,10 @@ impl AnalysisDatabase {
 
         let tricks = TRICKS.get_or_init(Default::default);
 
-        let plugin_suite = [
+        // Those pluins are relevant for projects with `cairo_project.toml` (e.g. our tests).
+        let default_plugin_suite = [
             get_default_plugin_suite(),
             starknet_plugin_suite(),
-            // TODO(#6551): Test plugin should be only enabled for crates that indeed need it.
-            //   Same for other plugins.
-            //   Right now this code will conflict with procmacros.
             test_plugin_suite(),
             executable_plugin_suite(),
         ]
@@ -77,7 +83,9 @@ impl AnalysisDatabase {
             acc.add(suite);
             acc
         });
-        db.apply_plugin_suite(plugin_suite);
+
+        let default_plugin_suite = db.intern_plugin_suite(default_plugin_suite);
+        db.set_default_plugins_from_suite(default_plugin_suite);
 
         db
     }
@@ -102,97 +110,66 @@ impl AnalysisDatabase {
         self.salsa_runtime_mut().synthetic_write(Durability::LOW);
     }
 
-    /// Shortcut for settings compiler plugins from a [`PluginSuite`].
-    fn apply_plugin_suite(&mut self, plugin_suite: PluginSuite) {
-        self.set_macro_plugins(plugin_suite.plugins);
-        self.set_inline_macro_plugins(plugin_suite.inline_macro_plugins.into());
-        self.set_analyzer_plugins(plugin_suite.analyzer_plugins);
-    }
-
-    /// Updates the plugin list in the database.
-    ///
-    /// This function modifies the database by removing plugins specified in `plugins_to_remove`,
-    /// adding plugins from `plugins_to_add`, and retaining all other existing plugins. Plugins are
-    /// considered identical based on their [`Arc`] reference.
-    pub fn replace_plugin_suite(
-        &mut self,
-        plugins_to_remove: PluginSuite,
-        plugins_to_add: PluginSuite,
-    ) {
-        self.with_plugins_mut(move |macro_plugins, analyzer_plugins, inline_macro_plugins| {
-            remove_plugin_suite(
-                plugins_to_remove,
-                macro_plugins,
-                analyzer_plugins,
-                inline_macro_plugins,
-            );
-            add_plugin_suite(plugins_to_add, macro_plugins, analyzer_plugins, inline_macro_plugins);
-        })
-    }
-
-    /// Removes plugin suit from database.
-    pub fn remove_plugin_suite(&mut self, plugins: PluginSuite) {
-        self.with_plugins_mut(move |macro_plugins, analyzer_plugins, inline_macro_plugins| {
+    /// Removes the plugins from [`InternedPluginSuite`] for a crate with [`CrateId`].
+    pub fn remove_crate_plugin_suite(&mut self, crate_id: CrateId, plugins: &InternedPluginSuite) {
+        self.with_plugins_mut(crate_id, |macro_plugins, analyzer_plugins, inline_macro_plugins| {
             remove_plugin_suite(plugins, macro_plugins, analyzer_plugins, inline_macro_plugins)
         })
     }
 
     /// Adds plugin suit to database.
-    pub fn add_plugin_suite(&mut self, plugins: PluginSuite) {
-        self.with_plugins_mut(move |macro_plugins, analyzer_plugins, inline_macro_plugins| {
-            add_plugin_suite(plugins, macro_plugins, analyzer_plugins, inline_macro_plugins)
-        })
+    pub fn add_crate_plugin_suite(&mut self, crate_id: CrateId, plugins: InternedPluginSuite) {
+        self.with_plugins_mut(
+            crate_id,
+            move |macro_plugins, analyzer_plugins, inline_macro_plugins| {
+                add_plugin_suite(plugins, macro_plugins, analyzer_plugins, inline_macro_plugins)
+            },
+        )
     }
 
     fn with_plugins_mut(
         &mut self,
+        crate_id: CrateId,
         action: impl FnOnce(
-            &mut Vec<Arc<dyn MacroPlugin>>,
-            &mut Vec<Arc<dyn AnalyzerPlugin>>,
-            &mut OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
+            &mut Vec<MacroPluginId>,
+            &mut Vec<AnalyzerPluginId>,
+            &mut OrderedHashMap<String, InlineMacroExprPluginId>,
         ),
     ) {
-        let mut macro_plugins = self.macro_plugins();
-        let mut analyzer_plugins = self.analyzer_plugins();
-        let mut inline_macro_plugins = Arc::unwrap_or_clone(self.inline_macro_plugins());
+        let mut macro_plugins = self.crate_macro_plugins(crate_id).to_vec();
+        let mut analyzer_plugins = self.crate_analyzer_plugins(crate_id).to_vec();
+        let mut inline_macro_plugins =
+            Arc::unwrap_or_clone(self.crate_inline_macro_plugins(crate_id));
 
         action(&mut macro_plugins, &mut analyzer_plugins, &mut inline_macro_plugins);
 
-        self.set_macro_plugins(macro_plugins);
-        self.set_analyzer_plugins(analyzer_plugins);
-        self.set_inline_macro_plugins(Arc::new(inline_macro_plugins));
+        self.set_override_crate_macro_plugins(crate_id, macro_plugins.into_iter().collect());
+        self.set_override_crate_analyzer_plugins(crate_id, analyzer_plugins.into_iter().collect());
+        self.set_override_crate_inline_macro_plugins(crate_id, Arc::new(inline_macro_plugins));
     }
 }
 
 fn remove_plugin_suite(
-    plugins: PluginSuite,
-    macro_plugins: &mut Vec<Arc<dyn MacroPlugin>>,
-    analyzer_plugins: &mut Vec<Arc<dyn AnalyzerPlugin>>,
-    inline_macro_plugins: &mut OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
+    plugins: &InternedPluginSuite,
+    macro_plugins: &mut Vec<MacroPluginId>,
+    analyzer_plugins: &mut Vec<AnalyzerPluginId>,
+    inline_macro_plugins: &mut OrderedHashMap<String, InlineMacroExprPluginId>,
 ) {
-    macro_plugins.retain(|plugin| {
-        plugins.plugins.iter().all(|previous_plugin| !Arc::ptr_eq(previous_plugin, plugin))
-    });
-    analyzer_plugins.retain(|plugin| {
-        plugins.analyzer_plugins.iter().all(|previous_plugin| !Arc::ptr_eq(previous_plugin, plugin))
-    });
-    inline_macro_plugins.retain(|_, plugin| {
-        plugins
-            .inline_macro_plugins
-            .iter()
-            .all(|(_, previous_plugin)| !Arc::ptr_eq(previous_plugin, plugin))
-    });
+    macro_plugins.retain(|plugin| !plugins.macro_plugins.contains(plugin));
+    analyzer_plugins.retain(|plugin| !plugins.analyzer_plugins.contains(plugin));
+    inline_macro_plugins
+        .retain(|_, plugin| !plugins.inline_macro_plugins.values().contains(plugin));
 }
 
 fn add_plugin_suite(
-    plugins: PluginSuite,
-    macro_plugins: &mut Vec<Arc<dyn MacroPlugin>>,
-    analyzer_plugins: &mut Vec<Arc<dyn AnalyzerPlugin>>,
-    inline_macro_plugins: &mut OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
+    plugins: InternedPluginSuite,
+    macro_plugins: &mut Vec<MacroPluginId>,
+    analyzer_plugins: &mut Vec<AnalyzerPluginId>,
+    inline_macro_plugins: &mut OrderedHashMap<String, InlineMacroExprPluginId>,
 ) {
-    macro_plugins.extend(plugins.plugins);
-    analyzer_plugins.extend(plugins.analyzer_plugins);
-    inline_macro_plugins.extend(plugins.inline_macro_plugins);
+    macro_plugins.extend_from_slice(&plugins.macro_plugins);
+    analyzer_plugins.extend_from_slice(&plugins.analyzer_plugins);
+    inline_macro_plugins.extend(Arc::unwrap_or_clone(plugins.inline_macro_plugins));
 }
 
 impl salsa::Database for AnalysisDatabase {}

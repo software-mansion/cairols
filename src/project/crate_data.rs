@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use cairo_lang_defs::db::DefsGroup;
@@ -7,9 +8,16 @@ use cairo_lang_filesystem::db::{
     FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
+use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup};
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
+use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lint_core::plugin::cairo_lint_plugin_suite;
+use itertools::chain;
 use smol_str::SmolStr;
 
+use super::builtin_plugins::BuiltinPlugin;
+use crate::TRICKS;
 use crate::lang::db::AnalysisDatabase;
 
 /// A complete set of information needed to set up a real crate in the analysis database.
@@ -36,11 +44,19 @@ pub struct Crate {
 
     /// Crate settings.
     pub settings: CrateSettings,
+
+    /// Built-in plugins required by the crate.
+    pub builtin_plugins: HashSet<BuiltinPlugin>,
 }
 
 impl Crate {
     /// Applies this crate to the [`AnalysisDatabase`].
-    pub fn apply(&self, db: &mut AnalysisDatabase) {
+    pub fn apply(
+        &self,
+        db: &mut AnalysisDatabase,
+        enable_linter: bool,
+        proc_macro_plugin_suite: Option<PluginSuite>,
+    ) {
         assert!(
             (self.name == CORELIB_CRATE_NAME) ^ self.discriminator.is_some(),
             "invariant violation: only the `core` crate should have no discriminator"
@@ -55,12 +71,30 @@ impl Crate {
         let crate_configuration = CrateConfiguration {
             root: Directory::Real(self.root.clone()),
             settings: self.settings.clone(),
+            cache_file: None,
         };
         db.set_crate_config(crate_id, Some(crate_configuration));
 
         if let Some(file_stems) = &self.custom_main_file_stems {
             inject_virtual_wrapper_lib(db, crate_id, file_stems);
         }
+
+        let plugins = self.builtin_plugins
+            .iter()
+            .map(BuiltinPlugin::suite)
+            .chain(tricks()) // All crates should receive Tricks.
+            .chain(enable_linter.then(cairo_lint_plugin_suite))
+            .chain(proc_macro_plugin_suite)
+            .fold(
+                get_default_plugin_suite(),
+                |mut acc, suite| {
+                    acc.add(suite);
+                    acc
+                },
+            );
+
+        let interned_plugins = db.intern_plugin_suite(plugins);
+        db.set_override_crate_plugins_from_suite(crate_id, interned_plugins);
     }
 
     /// Construct a [`Crate`] from data already applied to the [`AnalysisDatabase`].
@@ -71,7 +105,7 @@ impl Crate {
             return None;
         };
 
-        let Some(CrateConfiguration { root: Directory::Real(root), settings }) =
+        let Some(CrateConfiguration { root: Directory::Real(root), settings, .. }) =
             db.crate_config(crate_id)
         else {
             return None;
@@ -79,7 +113,29 @@ impl Crate {
 
         let custom_main_file_stems = extract_custom_file_stems(db, crate_id);
 
-        Some(Self { name, discriminator, root, custom_main_file_stems, settings })
+        let macro_plugins = db.crate_macro_plugins(crate_id);
+        let inline_macro_plugins = db.crate_inline_macro_plugins(crate_id);
+        let analyzer_plugins = db.crate_analyzer_plugins(crate_id);
+
+        let builtin_plugins = chain!(
+            macro_plugins
+                .iter()
+                .map(|&id| db.lookup_intern_macro_plugin(id).0)
+                .filter_map(|plugin| BuiltinPlugin::try_from_compiler_macro_plugin(&*plugin)),
+            inline_macro_plugins
+                .values()
+                .map(|&id| db.lookup_intern_inline_macro_plugin(id).0)
+                .filter_map(|plugin| BuiltinPlugin::try_from_compiler_inline_macro_plugin(
+                    &*plugin
+                )),
+            analyzer_plugins
+                .iter()
+                .map(|&id| db.lookup_intern_analyzer_plugin(id).0)
+                .filter_map(|plugin| BuiltinPlugin::try_from_compiler_analyzer_plugin(&*plugin))
+        )
+        .collect();
+
+        Some(Self { name, discriminator, root, custom_main_file_stems, settings, builtin_plugins })
     }
 
     /// States whether this is the `core` crate.
@@ -95,6 +151,10 @@ impl Crate {
         };
 
         source_paths.into_iter().map(|filename| self.root.join(filename)).collect()
+    }
+
+    pub fn crate_long_id(&self) -> CrateLongId {
+        CrateLongId::Real { name: self.name.clone(), discriminator: self.discriminator.clone() }
     }
 }
 
@@ -138,4 +198,13 @@ fn extract_custom_file_stems(db: &AnalysisDatabase, crate_id: CrateId) -> Option
         .filter(|line| !line.is_empty())
         .map(|line| Some(line.strip_prefix("mod ")?.strip_suffix(';')?.into()))
         .collect::<Option<Vec<_>>>()
+}
+
+/// Returns the extra [`PluginSuite`]s injected as [`Tricks`].
+fn tricks() -> Vec<PluginSuite> {
+    TRICKS
+        .get_or_init(Default::default)
+        .extra_plugin_suites
+        .map(|provider| provider())
+        .unwrap_or_default()
 }

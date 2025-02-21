@@ -11,7 +11,7 @@ use cairo_language_server::lsp::ext::ServerStatusParams;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
 use lsp_server::{Message, Notification, Request, Response};
 use lsp_types::notification::PublishDiagnostics;
-use lsp_types::request::{RegisterCapability, Request as LspRequest};
+use lsp_types::request::{RegisterCapability, Request as LspRequest, WorkspaceConfiguration};
 use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url, lsp_notification, lsp_request};
 use serde_json::Value;
 
@@ -126,6 +126,13 @@ impl MockClient {
                 }
 
                 Message::Request(req) => {
+                    // FIXME(#338): Delete this hack.
+                    // This check prevents the LS from timing out when polling the client
+                    // for a workspace configuration in tests where MockClient
+                    // uses the default configuration from sandbox.
+                    if req.method == WorkspaceConfiguration::METHOD {
+                        continue;
+                    }
                     if does_expect_requests {
                         if let Some(handler) = expect_request_handlers.pop_front() {
                             let response = (handler.f)(&req);
