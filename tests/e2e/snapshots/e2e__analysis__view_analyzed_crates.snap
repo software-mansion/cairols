@@ -1,6 +1,5 @@
 ---
 source: tests/e2e/analysis.rs
-assertion_line: 38
 expression: "normalize(&ls, output)"
 ---
 # Analyzed Crates
@@ -13,8 +12,8 @@ expression: "normalize(&ls, output)"
         version: Some(
             Version {
                 major: 2,
-                minor: 9,
-                patch: 2,
+                minor: 10,
+                patch: 0,
             },
         ),
         cfg_set: None,

@@ -44,6 +44,7 @@ macro_rules! sandbox {
         #[allow(unused_assignments, unused_mut)]
         let mut workspace_configuration = serde_json::json!({
             "cairo1": {
+                "enableProcMacros": false,
                 "enableLinter": false
             }
         });
@@ -52,9 +53,9 @@ macro_rules! sandbox {
             use $crate::support::merge_json_flat;
 
             merge_json_flat(&mut workspace_configuration, $overriding_workspace_configuration);
-            client_capabilities =
-                client_capabilities::with_workspace_configuration(client_capabilities, true);
         )?
+        client_capabilities =
+                client_capabilities::with_workspace_configuration(client_capabilities, true);
 
         $(
             client_capabilities = $client_capabilities(client_capabilities);

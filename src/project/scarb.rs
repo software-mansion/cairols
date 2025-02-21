@@ -150,20 +150,14 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                         .iter()
                         .find(|component| component.id.as_ref() == Some(id));
 
-                    if let Some(dependency_component) = dependency_component {
-                        Some((
-                            dependency_component.name.clone(),
+                    dependency_component.map(|c| {
+                        (
+                            c.name.clone(),
                             DependencySettings {
-                                discriminator: dependency_component
-                                    .discriminator
-                                    .as_ref()
-                                    .map(ToSmolStr::to_smolstr),
+                                discriminator: c.discriminator.as_ref().map(ToSmolStr::to_smolstr),
                             },
-                        ))
-                    } else {
-                        error!("component not found in metadata");
-                        None
-                    }
+                        )
+                    })
                 })
                 .chain(
                     crates_by_component_id
@@ -194,13 +188,6 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                             let plugin = compilation_unit.cairo_plugins.iter().find(|plugin| {
                                 plugin.component_dependency_id.as_ref() == Some(&dependency.id)
                             });
-
-                            if plugin.is_none() {
-                                error!(
-                                    "Plugin dependency `{}` not found in Scarb metadata",
-                                    dependency.id
-                                );
-                            }
 
                             plugin
                         })

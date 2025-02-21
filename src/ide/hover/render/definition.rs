@@ -1,4 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::plugin::InlineMacroExprPlugin;
 use cairo_lang_doc::db::DocGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -45,8 +46,16 @@ pub fn definition(
 
         SymbolDef::Variable(var) => fenced_code_block(&var.signature(db)?),
         SymbolDef::ExprInlineMacro(macro_name) => {
+            let crate_id = db.file_modules(file_id).ok()?.first()?.owning_crate(db);
+
             let mut md = fenced_code_block(macro_name);
-            if let Some(doc) = db.inline_macro_plugins().get(macro_name.as_str())?.documentation() {
+
+            if let Some(doc) = db
+                .crate_inline_macro_plugins(crate_id)
+                .get(macro_name.as_str())
+                .map(|&id| db.lookup_intern_inline_macro_plugin(id))?
+                .documentation()
+            {
                 md += RULE;
                 md += &doc;
             }

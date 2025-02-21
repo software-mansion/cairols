@@ -1,10 +1,15 @@
 use std::fmt::{Display, Formatter};
+use std::mem;
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow};
+use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::CrateLongId;
+use cairo_lang_semantic::db::PluginSuiteInput;
 use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use crossbeam::channel::{Receiver, Sender};
 use governor::clock::QuantaClock;
 use governor::state::{InMemoryState, NotKeyed};
@@ -13,6 +18,7 @@ use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
 use scarb_proc_macro_server_types::jsonrpc::RpcResponse;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
+use smol_str::ToSmolStr;
 use tracing::error;
 
 use super::client::connection::ProcMacroServerConnection;
@@ -22,7 +28,7 @@ use crate::config::Config;
 use crate::ide::analysis_progress::{ProcMacroServerStatus, ProcMacroServerTracker};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::ProcMacroGroup;
-use crate::lang::proc_macros::plugins::proc_macro_plugin_suite;
+use crate::lang::proc_macros::plugins::proc_macro_plugin_suites;
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 
@@ -51,7 +57,7 @@ const RESTART_RATE_LIMITER_RETRIES: u32 = 5;
 pub struct ProcMacroClientController {
     scarb: ScarbToolchain,
     notifier: Notifier,
-    plugin_suite: Option<PluginSuite>,
+    crate_plugin_suites: OrderedHashMap<CrateLongId, PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     channels: ProcMacroChannels,
     proc_macro_server_tracker: ProcMacroServerTracker,
@@ -82,7 +88,7 @@ impl ProcMacroClientController {
             scarb,
             notifier,
             proc_macro_server_tracker,
-            plugin_suite: Default::default(),
+            crate_plugin_suites: Default::default(),
             initialization_retries: RateLimiter::direct(
                 Quota::with_period(Duration::from_secs(
                     RESTART_RATE_LIMITER_PERIOD_SEC / RESTART_RATE_LIMITER_RETRIES as u64,
@@ -126,8 +132,9 @@ impl ProcMacroClientController {
         // Otherwise we can get messages from old client after initialization of new one.
         self.channels.clear_all();
 
-        if let Some(plugin_suite) = self.plugin_suite.take() {
-            db.remove_plugin_suite(plugin_suite);
+        for (crate_id, plugins) in mem::take(&mut self.crate_plugin_suites) {
+            let interned_plugins = db.intern_plugin_suite(plugins);
+            db.remove_crate_plugin_suite(db.intern_crate(crate_id), &interned_plugins);
         }
 
         self.try_initialize(db, config);
@@ -152,16 +159,28 @@ impl ProcMacroClientController {
                     return;
                 };
 
-                let new_plugin_suite = proc_macro_plugin_suite(defined_macros);
+                self.remove_current_plugins_from_db(db);
 
-                // Store current plugins for identity comparison, so we can remove them if we
-                // restart proc-macro-server.
-                let previous_plugin_suite = self.plugin_suite.replace(new_plugin_suite.clone());
+                self.crate_plugin_suites = proc_macro_plugin_suites(defined_macros)
+                    .into_iter()
+                    .map(|(package_id, suite)| {
+                        // Here we rely on the implicit contract that keys of the
+                        // `DefinedMacrosResponse.macros_by_package_id` are of form
+                        // `PackageId.to_serialized_string()` which is always equal to
+                        // `scarb_metadata::CompilationUnitComponentId.repr` and has the form
+                        // "<crate-name> <version> (<source-path>)".
+                        let crate_name = package_id.split(' ').next().unwrap().to_smolstr();
+                        let crate_long_id =
+                            CrateLongId::Real { name: crate_name, discriminator: Some(package_id) };
 
-                if let Some(previous_plugin_suite) = previous_plugin_suite {
-                    db.replace_plugin_suite(previous_plugin_suite, new_plugin_suite);
-                } else {
-                    db.add_plugin_suite(new_plugin_suite);
+                        (crate_long_id, suite)
+                    })
+                    .collect();
+
+                for (crate_long_id, plugin_suite) in self.crate_plugin_suites.iter() {
+                    let crate_id = db.intern_crate(crate_long_id.clone());
+                    let interned_plugin_suite = db.intern_plugin_suite(plugin_suite.clone());
+                    db.add_crate_plugin_suite(crate_id, interned_plugin_suite);
                 }
 
                 self.set_proc_macro_server_status(db, ServerStatus::Ready(client));
@@ -170,6 +189,17 @@ impl ProcMacroClientController {
                 self.apply_responses(db, config, &client);
             }
             _ => {}
+        }
+    }
+
+    pub fn proc_macro_plugin_suite_for_crate(&self, id: CrateLongId) -> Option<&PluginSuite> {
+        self.crate_plugin_suites.get(&id)
+    }
+
+    fn remove_current_plugins_from_db(&self, db: &mut AnalysisDatabase) {
+        for (crate_id, suite) in self.crate_plugin_suites.iter() {
+            let interned_suite = db.intern_plugin_suite(suite.clone());
+            db.remove_crate_plugin_suite(db.intern_crate(crate_id.clone()), &interned_suite);
         }
     }
 
