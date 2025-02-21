@@ -1,6 +1,6 @@
 ---
 source: tests/e2e/scarb/scarb_toml_change/removing_dependency.rs
-expression: "RemovingDependencyResult { analyzed_crates, analyzed_crates_diff }"
+expression: "AnalyzedCratesResult { analyzed_crates, analyzed_crates_diff }"
 ---
 analyzed_crates = '''
 # Analyzed Crates
@@ -96,7 +96,7 @@ analyzed_crates = '''
             Version {
                 major: 2,
                 minor: 9,
-                patch: 2,
+                patch: 3,
             },
         ),
         cfg_set: Some(
