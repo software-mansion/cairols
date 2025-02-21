@@ -23,7 +23,7 @@ impl MemberConfig {
 }
 
 fn merge_serde_json_value(a: &mut Value, b: &Value) {
-    if let (Value::Object(ref mut a_map), Value::Object(ref b_map)) = (a, b) {
+    if let (Value::Object(a_map), Value::Object(b_map)) = (a, b) {
         for (b_key, b_val) in b_map {
             if let Some(a_val) = a_map.get_mut(b_key) {
                 if a_val.is_object() && b_val.is_object() {

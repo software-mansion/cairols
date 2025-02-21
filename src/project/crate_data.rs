@@ -79,19 +79,17 @@ impl Crate {
             inject_virtual_wrapper_lib(db, crate_id, file_stems);
         }
 
-        let plugins = self.builtin_plugins
+        let plugins = self
+            .builtin_plugins
             .iter()
             .map(BuiltinPlugin::suite)
             .chain(tricks()) // All crates should receive Tricks.
             .chain(enable_linter.then(cairo_lint_plugin_suite))
             .chain(proc_macro_plugin_suite)
-            .fold(
-                get_default_plugin_suite(),
-                |mut acc, suite| {
-                    acc.add(suite);
-                    acc
-                },
-            );
+            .fold(get_default_plugin_suite(), |mut acc, suite| {
+                acc.add(suite);
+                acc
+            });
 
         let interned_plugins = db.intern_plugin_suite(plugins);
         db.set_override_crate_plugins_from_suite(crate_id, interned_plugins);

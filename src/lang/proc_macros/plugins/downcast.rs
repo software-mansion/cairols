@@ -14,10 +14,12 @@ use crate::lang::db::AnalysisDatabase;
 /// Safety: This function MUST only be invoked with an object that is of type
 /// [AnalysisDatabase]. Using it with any other type leads to undefined behavior.
 pub(super) unsafe fn unsafe_downcast_ref(db: &dyn SyntaxGroup) -> &AnalysisDatabase {
-    // Replicated logic from `impl dyn Any downcast_ref_unchecked()`.
-    // This approach works as long as `impl dyn Any downcast_ref_unchecked()` implementation is
-    // unchanged and the caller can ensure that `db` is truly an instance of AnalysisDatabase.
-    &*(db as *const dyn SyntaxGroup as *const AnalysisDatabase)
+    unsafe {
+        // Replicated logic from `impl dyn Any downcast_ref_unchecked()`.
+        // This approach works as long as `impl dyn Any downcast_ref_unchecked()` implementation is
+        // unchanged and the caller can ensure that `db` is truly an instance of AnalysisDatabase.
+        &*(db as *const dyn SyntaxGroup as *const AnalysisDatabase)
+    }
 }
 
 #[cfg(test)]
