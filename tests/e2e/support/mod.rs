@@ -50,9 +50,9 @@ macro_rules! sandbox {
         });
 
         $(
-            use $crate::support::merge_json_flat;
+            use $crate::support::merge_json;
 
-            merge_json_flat(&mut workspace_configuration, $overriding_workspace_configuration);
+            merge_json(&mut workspace_configuration, &$overriding_workspace_configuration);
         )?
         client_capabilities =
                 client_capabilities::with_workspace_configuration(client_capabilities, true);
@@ -70,11 +70,19 @@ macro_rules! sandbox {
 }
 
 #[doc(hidden)]
-/// Merges `b`'s kv pairs into `a` (non recursively), potentially overriding the previous values
-pub(crate) fn merge_json_flat(a: &mut Value, b: Value) {
+/// Merges `b`'s kv pairs into `a`, potentially overriding the previous values
+/// It takes nested maps into account, descending recursively to achieve merging nested objects
+pub(crate) fn merge_json(a: &mut Value, b: &Value) {
     if let (Value::Object(a_map), Value::Object(b_map)) = (a, b) {
         for (k, v) in b_map {
-            a_map.insert(k, v);
+            let v_in_a = a_map.get_mut(k);
+            if let Some(value) = v_in_a {
+                if value.is_object() {
+                    merge_json(value, b_map.get(k).unwrap_or(&Value::Object(Default::default())));
+                    continue;
+                }
+            }
+            a_map.insert(k.clone(), v.clone());
         }
     } else {
         panic!("Non-object Value merging is not supported.");
