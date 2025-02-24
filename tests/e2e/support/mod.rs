@@ -9,6 +9,8 @@ mod mock_client;
 pub mod normalize;
 pub mod scarb;
 
+use serde_json::Value;
+
 pub use self::cursor::cursors;
 pub use self::mock_client::MockClient;
 
@@ -23,7 +25,7 @@ macro_rules! sandbox {
         $(files { $($file:expr => $content:expr),* $(,)? })?
         $(cwd = $cwd:expr;)?
         $(client_capabilities = $client_capabilities:expr;)?
-        $(workspace_configuration = $workspace_configuration:expr;)?
+        $(workspace_configuration = $overriding_workspace_configuration:expr;)?
     ) => {{
         use $crate::support::{
             client_capabilities,
@@ -48,7 +50,9 @@ macro_rules! sandbox {
         });
 
         $(
-            workspace_configuration = $workspace_configuration;
+            use $crate::support::merge_json;
+
+            merge_json(&mut workspace_configuration, &$overriding_workspace_configuration);
         )?
         client_capabilities =
                 client_capabilities::with_workspace_configuration(client_capabilities, true);
@@ -63,6 +67,26 @@ macro_rules! sandbox {
         )?
         client
     }};
+}
+
+#[doc(hidden)]
+/// Merges `b`'s kv pairs into `a`, potentially overriding the previous values
+/// It takes nested maps into account, descending recursively to achieve merging nested objects
+pub(crate) fn merge_json(a: &mut Value, b: &Value) {
+    if let (Value::Object(a_map), Value::Object(b_map)) = (a, b) {
+        for (k, v) in b_map {
+            let v_in_a = a_map.get_mut(k);
+            if let Some(value) = v_in_a {
+                if value.is_object() {
+                    merge_json(value, b_map.get(k).unwrap_or(&Value::Object(Default::default())));
+                    continue;
+                }
+            }
+            a_map.insert(k.clone(), v.clone());
+        }
+    } else {
+        panic!("Non-object Value merging is not supported.");
+    }
 }
 
 pub(crate) use sandbox;
