@@ -24,7 +24,7 @@ pub fn inline_macro_generate_code(
     // region: Modified scarb code
     let result = db.get_inline_macros_expansion(ExpandInlineMacroParams {
         context: expansion_context,
-        name: syntax.path(db).as_syntax_node().get_text(db),
+        name: syntax.path(db).as_syntax_node().get_text_without_trivia(db),
         args: token_stream,
     });
     // endregion
