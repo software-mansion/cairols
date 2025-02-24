@@ -63,13 +63,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly-2025-02-01
-          components: rustfmt
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo +nightly-2025-02-01 fmt --check
+      - run: cargo fmt --check
       - run: cargo lint
         env:
           # Make sure CI fails on all warnings, including Clippy lints.

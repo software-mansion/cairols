@@ -20,29 +20,29 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
 
     let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
-    insta::assert_snapshot!(normalize(&ls, analyzed_crates), @r#"
-            # Analyzed Crates
+    insta::assert_snapshot!(normalize(&ls, analyzed_crates), @r##"
+    # Analyzed Crates
 
-            - `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
-                ```rust
-                CrateSettings {
-                    name: None,
-                    edition: V2024_07,
-                    version: Some(
-                        Version {
-                            major: 2,
-                            minor: 10,
-                            patch: 0,
-                        },
-                    ),
-                    cfg_set: None,
-                    dependencies: {},
-                    experimental_features: ExperimentalFeaturesConfig {
-                        negative_impls: true,
-                        associated_item_constraints: true,
-                        coupons: true,
-                    },
-                }
-                ```
-        "#);
+    - `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
+        ```rust
+        CrateSettings {
+            name: None,
+            edition: V2024_07,
+            version: Some(
+                Version {
+                    major: 2,
+                    minor: 10,
+                    patch: 0,
+                },
+            ),
+            cfg_set: None,
+            dependencies: {},
+            experimental_features: ExperimentalFeaturesConfig {
+                negative_impls: true,
+                associated_item_constraints: true,
+                coupons: true,
+            },
+        }
+        ```
+    "##);
 }
