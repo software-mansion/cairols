@@ -95,8 +95,8 @@ analyzed_crates = '''
         version: Some(
             Version {
                 major: 2,
-                minor: 9,
-                patch: 3,
+                minor: 10,
+                patch: 1,
             },
         ),
         cfg_set: Some(
