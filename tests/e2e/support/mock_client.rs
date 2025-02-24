@@ -5,19 +5,18 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 use std::{env, fmt, mem, process};
 
-use cairo_language_server::build_service_for_e2e_tests;
+use crate::support::fixture::Fixture;
+use crate::support::jsonrpc::RequestIdGenerator;
+use crate::support::mock_client::Action::{NoOp, RemoveFromTrace};
 use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, AnalysisStarted};
 use cairo_language_server::lsp::ext::ServerStatusParams;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
+use cairo_language_server::testing::BackendForTesting;
 use lsp_server::{Message, Notification, Request, Response};
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::request::{RegisterCapability, Request as LspRequest, WorkspaceConfiguration};
 use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url, lsp_notification, lsp_request};
 use serde_json::Value;
-
-use crate::support::fixture::Fixture;
-use crate::support::jsonrpc::RequestIdGenerator;
-use crate::support::mock_client::Action::{NoOp, RemoveFromTrace};
 
 /// A mock language client implementation that facilitates end-to-end testing language servers.
 ///
@@ -51,7 +50,7 @@ impl MockClient {
         capabilities: lsp_types::ClientCapabilities,
         workspace_configuration: Value,
     ) -> Self {
-        let (init, client) = build_service_for_e2e_tests();
+        let (init, client) = BackendForTesting::new();
 
         let mut this = Self {
             fixture,
