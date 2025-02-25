@@ -44,10 +44,10 @@ fn lib_cairo_without_name_with_semicolon() {
     """
 
     [[completions]]
-    completion_label = "bbbb"
+    completion_label = "aaaa"
 
     [[completions]]
-    completion_label = "aaaa"
+    completion_label = "bbbb"
     "#);
 }
 
@@ -61,10 +61,10 @@ fn lib_cairo_without_name_without_semicolon() {
     """
 
     [[completions]]
-    completion_label = "bbbb;"
+    completion_label = "aaaa;"
 
     [[completions]]
-    completion_label = "aaaa;"
+    completion_label = "bbbb;"
     "#);
 }
 
@@ -241,10 +241,10 @@ fn nested_file_without_name_with_semicolon() {
     """
 
     [[completions]]
-    completion_label = "bbbb"
+    completion_label = "aaaa"
 
     [[completions]]
-    completion_label = "aaaa"
+    completion_label = "bbbb"
     "#);
 }
 

@@ -16,9 +16,6 @@ fn derive() {
     """
 
     [[completions]]
-    completion_label = "Drop"
-
-    [[completions]]
     completion_label = "Debug"
 
     [[completions]]
@@ -26,6 +23,9 @@ fn derive() {
 
     [[completions]]
     completion_label = "Destruct"
+
+    [[completions]]
+    completion_label = "Drop"
     "#);
 }
 
@@ -44,13 +44,10 @@ fn derive_after_comma() {
     """
 
     [[completions]]
-    completion_label = "Copy"
-
-    [[completions]]
-    completion_label = "Drop"
-
-    [[completions]]
     completion_label = "Clone"
+
+    [[completions]]
+    completion_label = "Copy"
 
     [[completions]]
     completion_label = "Debug"
@@ -60,6 +57,9 @@ fn derive_after_comma() {
 
     [[completions]]
     completion_label = "Destruct"
+
+    [[completions]]
+    completion_label = "Drop"
 
     [[completions]]
     completion_label = "Hash"
@@ -96,10 +96,10 @@ fn attribute() {
     """
 
     [[completions]]
-    completion_label = "derive"
+    completion_label = "default"
 
     [[completions]]
-    completion_label = "default"
+    completion_label = "derive"
 
     [[completions]]
     completion_label = "doc"
