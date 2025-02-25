@@ -6,6 +6,8 @@ use super::{MacroTest, SCARB_TEST_MACROS_PACKAGE};
 
 pub struct ProjectWithCustomMacros;
 pub struct ProjectWithMultipleCrates;
+pub struct ProjectWithSnforgeUnitTest;
+pub struct ProjectWithSnforgeIntegrationTest;
 
 impl MacroTest for ProjectWithCustomMacros {
     fn fixture() -> Fixture {
@@ -92,6 +94,54 @@ impl MacroTest for ProjectWithMultipleCrates {
                     ProcMacroResult::new(TokenStream::new(result))
                 }
             "##),
+        }
+    }
+}
+
+impl MacroTest for ProjectWithSnforgeUnitTest {
+    fn fixture() -> Fixture {
+        fixture! {
+            "test_package/Scarb.toml" => indoc!(r#"
+                [package]
+                name = "test_package"
+                version = "0.1.0"
+                edition = "2024_07"
+
+                [tool.scarb]
+                allow-prebuilt-plugins = ["snforge_scarb_plugin"]
+
+                [dev-dependencies]
+                assert_macros = "2.10.0"
+                snforge_std = "0.37.0"
+                snforge_scarb_plugin = "0.37.0"
+            "#),
+        }
+    }
+}
+
+impl MacroTest for ProjectWithSnforgeIntegrationTest {
+    fn fixture() -> Fixture {
+        fixture! {
+            "test_package/lib.cairo" => "",
+
+            "test_package/Scarb.toml" => indoc!(r#"
+                [package]
+                name = "test_package"
+                version = "0.1.0"
+                edition = "2024_07"
+
+                [dev-dependencies]
+                snforge_std = "0.37.0"
+                snforge_scarb_plugin = "0.37.0"
+
+                [tool.scarb]
+                allow-prebuilt-plugins = ["snforge_scarb_plugin"]
+
+                [[tool.snforge.fork]]
+                name = "SEPOLIA_LATEST"
+                url = "https://starknet-sepolia.public.blastapi.io/rpc/v0_7"
+                block_id.tag = "latest"
+            "#),
         }
     }
 }
