@@ -1,0 +1,27 @@
+---
+source: tests/e2e/macros/procedural/custom/mod.rs
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+    error<caret>_inline_macro!(10 + 10);
+    error_inline_macro!(10 +<caret> 10);
+"""
+generated_code = """
+No expansion information.
+"""
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: error_inline_macro!(10 + 10)
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 4
+        end:
+          line: 1
+          character: 32
+      severity: 1
+      message: 'Plugin diagnostic: Error from procedural macro'

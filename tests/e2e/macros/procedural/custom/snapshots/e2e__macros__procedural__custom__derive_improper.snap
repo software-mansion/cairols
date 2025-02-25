@@ -1,0 +1,177 @@
+---
+source: tests/e2e/macros/procedural/custom/mod.rs
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+#[derive<caret>(ImproperDeriveMacro)]
+#[derive(Improper<caret>DeriveMacro)]
+struct Empty<caret>Struct {}
+struct EmptyStruct {<caret>}
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+#[derive(ImproperDeriveMacro)]
+struct EmptyStruct {}
+
+// proc_macro_derive
+// -----------------
+
+fn generated_function() {
+    some < *> haskell <
+    $ > syntax
+}
+"""
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: |-
+      #[derive(ImproperDeriveMacro)]
+      struct EmptyStruct {}
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 0
+        end:
+          line: 1
+          character: 21
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 4
+            end:
+              line: 1
+              character: 8
+        message: Diagnostic mapped from here.
+  - related_code: |-
+      #[derive(ImproperDeriveMacro)]
+      struct EmptyStruct {}
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 0
+        end:
+          line: 1
+          character: 21
+      severity: 1
+      message: Are you missing a `::`?.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 9
+            end:
+              line: 1
+              character: 10
+        message: Diagnostic mapped from here.
+  - related_code: |-
+      #[derive(ImproperDeriveMacro)]
+      struct EmptyStruct {}
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 0
+        end:
+          line: 1
+          character: 21
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 13
+            end:
+              line: 1
+              character: 20
+        message: Diagnostic mapped from here.
+  - related_code: |-
+      #[derive(ImproperDeriveMacro)]
+      struct EmptyStruct {}
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 0
+        end:
+          line: 1
+          character: 21
+      severity: 1
+      message: Are you missing a `::`?.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 21
+            end:
+              line: 1
+              character: 22
+        message: Diagnostic mapped from here.
+  - related_code: |-
+      #[derive(ImproperDeriveMacro)]
+      struct EmptyStruct {}
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 0
+        end:
+          line: 1
+          character: 21
+      severity: 1
+      message: Missing semicolon
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 22
+            end:
+              line: 1
+              character: 22
+        message: Diagnostic mapped from here.
+  - related_code: |-
+      #[derive(ImproperDeriveMacro)]
+      struct EmptyStruct {}
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 0
+        end:
+          line: 1
+          character: 21
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 25
+            end:
+              line: 1
+              character: 31
+        message: Diagnostic mapped from here.
