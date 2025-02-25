@@ -32,7 +32,7 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
                 Version {
                     major: 2,
                     minor: 10,
-                    patch: 0,
+                    patch: 1,
                 },
             ),
             cfg_set: None,
