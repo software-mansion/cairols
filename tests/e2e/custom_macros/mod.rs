@@ -1,24 +1,13 @@
 use indoc::indoc;
 use insta::internals::Content;
-use lsp_types::Diagnostic;
 use serde::Serialize;
 use serde_json::json;
 
-use crate::support::diagnostics::get_related_diagnostic_code;
+use crate::support::diagnostics::{
+    DiagnosticAndRelatedInfo, DiagnosticsWithUrl, get_related_diagnostic_code,
+};
 use crate::support::normalize::normalize_diagnostics;
 use crate::support::sandbox;
-
-#[derive(Serialize)]
-pub struct DiagnosticAndRelatedInfo {
-    related_code: String,
-    diagnostic: Diagnostic,
-}
-
-#[derive(Serialize)]
-pub struct DiagnosticsWithUrl {
-    pub url: String,
-    pub diagnostics: Vec<DiagnosticAndRelatedInfo>,
-}
 
 #[derive(Serialize)]
 struct DiagnosticsReport {
