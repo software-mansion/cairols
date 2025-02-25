@@ -5,6 +5,7 @@ pub mod data;
 pub mod diagnostics;
 pub mod fixture;
 pub mod insta;
+pub mod itertools;
 pub mod jsonrpc;
 mod mock_client;
 pub mod normalize;
