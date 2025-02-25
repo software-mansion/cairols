@@ -626,8 +626,12 @@ impl AsRef<Fixture> for MockClient {
         &self.fixture
     }
 }
+
 impl Drop for MockClient {
     fn drop(&mut self) {
+        // Ensure that the LS event loop will terminate upon test completion.
+        self.send_notification::<lsp_notification!("exit")>(());
+
         env::set_current_dir(self.starting_cwd.clone()).expect("Could not reset CWD")
     }
 }
