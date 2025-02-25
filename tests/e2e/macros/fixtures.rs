@@ -5,6 +5,7 @@ use crate::support::fixture::{Fixture, fixture};
 use super::MacroTestFixture;
 
 pub struct SimpleProject;
+pub struct SnforgeUnitTestProject;
 
 impl MacroTestFixture for SimpleProject {
     const TEST_PACKAGE: &str = "test_package";
@@ -155,6 +156,26 @@ impl MacroTestFixture for SimpleProject {
                         .with_diagnostics(Diagnostic::error("Error from procedural macro").into())
                 }
             "##)
+        }
+    }
+}
+
+impl MacroTestFixture for SnforgeUnitTestProject {
+    const TEST_PACKAGE: &str = "test_package";
+
+    fn fixture() -> Fixture {
+        fixture! {
+            "test_package/Scarb.toml" => indoc!(r#"
+                [package]
+                name = "test_package"
+                version = "0.1.0"
+                edition = "2024_07"
+
+                [dev-dependencies]
+                assert_macros = "2.10.0"
+                snforge_std = "0.37.0"
+                snforge_scarb_plugin = "0.37.0"
+            "#),
         }
     }
 }
