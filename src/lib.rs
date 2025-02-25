@@ -388,8 +388,18 @@ impl Backend {
 
     /// Calls [`lang::proc_macros::controller::ProcMacroClientController::on_response`] to do its
     /// work.
-    fn on_proc_macro_response(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
-        state.proc_macro_controller.on_response(&mut state.db, &state.config);
+    fn on_proc_macro_response(
+        state: &mut State,
+        _: Notifier,
+        requester: &mut Requester<'_>,
+        _: Responder,
+    ) {
+        state.proc_macro_controller.on_response(
+            &mut state.db,
+            &state.config,
+            &state.client_capabilities,
+            requester,
+        );
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.

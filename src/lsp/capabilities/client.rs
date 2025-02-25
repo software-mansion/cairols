@@ -15,6 +15,9 @@ pub trait ClientCapabilitiesExt {
     /// The client supports `workspace/configuration` requests.
     fn workspace_configuration_support(&self) -> bool;
 
+    /// The client supports `workspace/semanticTokens/refresh` requests.
+    fn workspace_semantic_tokens_refresh_support(&self) -> bool;
+
     /// The client supports dynamic registration for text document synchronization capabilities.
     fn text_document_synchronization_dynamic_registration(&self) -> bool;
 
@@ -57,6 +60,10 @@ impl ClientCapabilitiesExt for ClientCapabilities {
         try_or_default! {
             self.workspace.as_ref()?.configuration?
         }
+    }
+
+    fn workspace_semantic_tokens_refresh_support(&self) -> bool {
+        try_or_default!(self.workspace.as_ref()?.semantic_tokens.as_ref()?.refresh_support?)
     }
 
     fn text_document_synchronization_dynamic_registration(&self) -> bool {
