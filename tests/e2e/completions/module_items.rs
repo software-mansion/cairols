@@ -32,10 +32,10 @@ fn helper_module() {
     """
 
     [[completions]]
-    completion_label = "Trait1"
+    completion_label = "CONST"
 
     [[completions]]
-    completion_label = "CONST"
+    completion_label = "Trait1"
 
     [[completions]]
     completion_label = "bar"

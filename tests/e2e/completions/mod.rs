@@ -60,12 +60,14 @@ fn test_completions_text_edits_inner(
     let caret_completions =
         ls.send_request::<lsp_request!("textDocument/completion")>(completion_params);
 
-    let completion_items = caret_completions
+    let mut completion_items = caret_completions
         .map(|completions| match completions {
             lsp_types::CompletionResponse::Array(items) => items,
             lsp_types::CompletionResponse::List(list) => list.items,
         })
         .unwrap_or_default();
+
+    completion_items.sort_by_key(|x| x.label.clone());
 
     Report {
         caret,
