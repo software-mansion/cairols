@@ -78,6 +78,8 @@ pub mod lsp;
 mod project;
 mod server;
 mod state;
+#[cfg(feature = "testing")]
+pub mod testing;
 mod toolchain;
 
 /// A container to store global customizations initialized upon launch.
@@ -137,13 +139,6 @@ pub fn start_with_tricks(tricks: Tricks) -> ExitCode {
 
     info!("language server stopped");
     exit_code
-}
-
-/// Special function to run the language server in end-to-end tests.
-#[cfg(feature = "testing")]
-pub fn build_service_for_e2e_tests()
--> (Box<dyn FnOnce() -> BackendForTesting + Send>, lsp_server::Connection) {
-    BackendForTesting::new_for_testing(Default::default())
 }
 
 /// Initialize logging infrastructure for the language server.
@@ -227,29 +222,6 @@ fn set_panic_hook() {
 struct Backend {
     connection: Connection,
     state: State,
-}
-
-#[cfg(feature = "testing")]
-pub struct BackendForTesting(Backend);
-
-#[cfg(feature = "testing")]
-impl BackendForTesting {
-    fn new_for_testing(
-        tricks: Tricks,
-    ) -> (Box<dyn FnOnce() -> BackendForTesting + Send>, lsp_server::Connection) {
-        let (connection_initializer, client) = ConnectionInitializer::memory();
-
-        let _ = TRICKS.set(tricks);
-
-        let init =
-            Box::new(|| BackendForTesting(Backend::initialize(connection_initializer).unwrap()));
-
-        (init, client)
-    }
-
-    pub fn run_for_tests(self) -> Result<JoinHandle<Result<()>>> {
-        self.0.run()
-    }
 }
 
 impl Backend {
