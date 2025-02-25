@@ -2866,8 +2866,9 @@ dependencies = [
 
 [[package]]
 name = "scarb-metadata"
-version = "1.13.0"
-source = "git+https://github.com/software-mansion/scarb?rev=3d791dc9c3f951cff158539e5f9164a53ce029e7#3d791dc9c3f951cff158539e5f9164a53ce029e7"
+version = "1.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f580d215bb85d42e9a1489aa869cae7878aff343384b73e235753334e8fb72b4"
 dependencies = [
  "camino",
  "semver",
@@ -2878,8 +2879,9 @@ dependencies = [
 
 [[package]]
 name = "scarb-proc-macro-server-types"
-version = "0.1.0"
-source = "git+https://github.com/software-mansion/scarb?branch=spr%2Fmain%2F43650dd0#c7f8f7b3410b07893f41576c5dad77c59111db60"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f795ee87a80ad7f8139bef66655f25e826e5a2c752cd8f907beb700d0c758fc"
 dependencies = [
  "cairo-lang-macro",
  "serde",
