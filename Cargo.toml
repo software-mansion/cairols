@@ -12,7 +12,7 @@ repository = "https://github.com/software-mansion/cairols"
 members = ["xtask"]
 
 [features]
-testing = []
+testing = ["parking_lot"]
 
 # Managing dependencies on crates from starkware-libs/cairo repository:
 #
@@ -61,6 +61,7 @@ jod-thread = "0.1.2"
 lsp-server = "0.7.8"
 lsp-types = "=0.95.1"
 memchr = "2.7.4"
+parking_lot = { version = "0.12.3", optional = true, features = ["arc_lock", "send_guard"] }
 salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
 scarb-metadata = "1.14.0"
 scarb-proc-macro-server-types = "0.2.0"

@@ -8,6 +8,7 @@ use std::{env, fmt, mem, process};
 use crate::support::fixture::Fixture;
 use crate::support::jsonrpc::RequestIdGenerator;
 use crate::support::mock_client::Action::{NoOp, RemoveFromTrace};
+use crate::support::{TestingConfig, shared_analysis_database};
 use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, AnalysisStarted};
 use cairo_language_server::lsp::ext::ServerStatusParams;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
@@ -47,10 +48,12 @@ impl MockClient {
     #[must_use]
     pub fn start(
         fixture: Fixture,
+        testing_config: TestingConfig,
         capabilities: lsp_types::ClientCapabilities,
         workspace_configuration: Value,
     ) -> Self {
-        let (init, client) = BackendForTesting::new();
+        let preinitialized_database = shared_analysis_database(testing_config);
+        let (init, client) = BackendForTesting::new(preinitialized_database);
 
         let mut this = Self {
             fixture,
@@ -63,7 +66,7 @@ impl MockClient {
             starting_cwd: env::current_dir().expect("No CWD set"),
         };
 
-        std::thread::spawn(|| init().run_for_tests());
+        std::thread::spawn(|| init().run());
 
         this.initialize(capabilities);
 

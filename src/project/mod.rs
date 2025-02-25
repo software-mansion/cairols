@@ -91,7 +91,7 @@ impl ProjectController {
     /// and received in the main [`event loop`](crate::Backend::event_loop).
     #[tracing::instrument(skip_all, fields(project_update))]
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
-        let db = &mut state.db;
+        let db = &mut *state.db;
         match project_update {
             ProjectUpdate::Scarb { crates, loaded_manifests } => {
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
@@ -132,7 +132,7 @@ impl ProjectController {
                     &state.scarb_toolchain,
                 );
 
-                if let Err(err) = setup_project(&mut *db, &file_path) {
+                if let Err(err) = setup_project(db, &file_path) {
                     error!(
                         "error loading file {} as a single crate: {err}",
                         file_path.to_string_lossy()

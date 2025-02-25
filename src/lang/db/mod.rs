@@ -172,6 +172,13 @@ fn add_plugin_suite(
     inline_macro_plugins.extend(Arc::unwrap_or_clone(plugins.inline_macro_plugins));
 }
 
+/// WARNING: This is a relatively expensive operation!
+impl Default for AnalysisDatabase {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl salsa::Database for AnalysisDatabase {}
 impl ExternalFiles for AnalysisDatabase {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {

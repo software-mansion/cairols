@@ -46,16 +46,7 @@ use std::sync::OnceLock;
 use std::time::{Duration, SystemTime};
 use std::{io, panic};
 
-use anyhow::Result;
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::FileLongId;
-use cairo_lang_semantic::plugin::PluginSuite;
-use crossbeam::channel::{Receiver, select_biased};
-use governor::{Quota, RateLimiter};
-use lsp_server::Message;
-use lsp_types::RegistrationParams;
-use tracing::{debug, error, info};
-
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros::controller::ProcMacroChannels;
 use crate::lsp::capabilities::server::{
@@ -68,12 +59,21 @@ use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
 use crate::server::schedule::{Scheduler, Task, event_loop_thread};
-use crate::state::State;
+use crate::state::{DbBox, State};
+use anyhow::Result;
+use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_semantic::plugin::PluginSuite;
+use crossbeam::channel::{Receiver, select_biased};
+use governor::{Quota, RateLimiter};
+use lsp_server::Message;
+use lsp_types::RegistrationParams;
+use tracing::{debug, error, info};
 
 mod config;
 mod env_config;
 mod ide;
-mod lang;
+pub mod lang;
 pub mod lsp;
 mod project;
 mod server;
@@ -227,21 +227,24 @@ struct Backend {
 impl Backend {
     fn new() -> Result<Self> {
         let connection_initializer = ConnectionInitializer::stdio();
-
-        Self::initialize(connection_initializer)
+        Self::initialize(connection_initializer, None)
     }
 
     /// Initializes the connection and crate a ready to run [`Backend`] instance.
     ///
     /// As part of the initialization flow, this function exchanges client and server capabilities.
-    fn initialize(connection_initializer: ConnectionInitializer) -> Result<Self> {
+    fn initialize(
+        connection_initializer: ConnectionInitializer,
+        preinitialized_database: Option<DbBox<AnalysisDatabase>>,
+    ) -> Result<Self> {
         let (id, init_params) = connection_initializer.initialize_start()?;
 
         let client_capabilities = init_params.capabilities;
         let server_capabilities = collect_server_capabilities(&client_capabilities);
 
         let connection = connection_initializer.initialize_finish(id, server_capabilities)?;
-        let state = State::new(connection.make_sender(), client_capabilities);
+        let state =
+            State::new(connection.make_sender(), client_capabilities, preinitialized_database);
 
         Ok(Self { connection, state })
     }

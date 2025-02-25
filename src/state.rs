@@ -16,9 +16,9 @@ use crate::server::client::Client;
 use crate::server::connection::ClientSender;
 use crate::toolchain::scarb::ScarbToolchain;
 
-/// State of Language server.
+/// State of the LS.
 pub struct State {
-    pub db: AnalysisDatabase,
+    pub db: DbBox<AnalysisDatabase>,
     pub open_files: Owned<HashSet<Url>>,
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
@@ -31,7 +31,11 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(sender: ClientSender, client_capabilities: ClientCapabilities) -> Self {
+    pub fn new(
+        sender: ClientSender,
+        client_capabilities: ClientCapabilities,
+        preinitialized_database: Option<DbBox<AnalysisDatabase>>,
+    ) -> Self {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
 
@@ -52,7 +56,7 @@ impl State {
         );
 
         Self {
-            db: AnalysisDatabase::new(),
+            db: preinitialized_database.unwrap_or_default(),
             open_files: Default::default(),
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
@@ -76,7 +80,7 @@ impl State {
     }
 }
 
-/// Readonly snapshot of Language server state.
+/// Readonly snapshot of the LS state.
 pub struct StateSnapshot {
     pub db: salsa::Snapshot<AnalysisDatabase>,
     pub scarb_toolchain: ScarbToolchain,
@@ -86,6 +90,15 @@ pub struct StateSnapshot {
 }
 
 impl std::panic::UnwindSafe for StateSnapshot {}
+
+/// A [`Box`]-like structure that holds state objects that can be shared among E2E test runs.
+///
+/// This is a conditionally compiled alias to a concrete implementation.
+/// It is required for such implementations to implement `Deref<T>`, `DerefMut<T>` and `Default`.
+#[cfg(feature = "testing")]
+pub type DbBox<T> = crate::testing::MaybeShared<T>;
+#[cfg(not(feature = "testing"))]
+pub type DbBox<T> = self::not_testing::TransparentDbBox<T>;
 
 /// Represents owned value that can be mutated.
 /// Allows creating snapshot from self.
@@ -101,7 +114,7 @@ impl<T: ?Sized> Owned<T> {
         Self(inner)
     }
 
-    /// Creates a snapshot of value's current state.
+    /// Creates a snapshot of the value's current state.
     pub fn snapshot(&self) -> Snapshot<T> {
         Snapshot(self.0.clone())
     }
@@ -126,5 +139,35 @@ impl<T: ?Sized> Deref for Snapshot<T> {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+#[cfg(not(feature = "testing"))]
+mod not_testing {
+    use std::ops::{Deref, DerefMut};
+
+    /// An implementation of [`super::DbBox`] contract that is transparent regarding memory layout.
+    ///
+    /// This is used in production code.
+    #[repr(transparent)]
+    pub struct TransparentDbBox<T>(T);
+
+    impl<T> Deref for TransparentDbBox<T> {
+        type Target = T;
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
+    }
+
+    impl<T> DerefMut for TransparentDbBox<T> {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            &mut self.0
+        }
+    }
+
+    impl<T: Default> Default for TransparentDbBox<T> {
+        fn default() -> Self {
+            TransparentDbBox(T::default())
+        }
     }
 }
