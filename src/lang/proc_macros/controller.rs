@@ -15,7 +15,8 @@ use governor::clock::QuantaClock;
 use governor::state::{InMemoryState, NotKeyed};
 use governor::{Quota, RateLimiter};
 use lsp_types::notification::ShowMessage;
-use lsp_types::{MessageType, ShowMessageParams};
+use lsp_types::request::SemanticTokensRefresh;
+use lsp_types::{ClientCapabilities, MessageType, ShowMessageParams};
 use scarb_proc_macro_server_types::jsonrpc::RpcResponse;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use smol_str::ToSmolStr;
@@ -29,7 +30,9 @@ use crate::ide::analysis_progress::{ProcMacroServerStatus, ProcMacroServerTracke
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suites;
-use crate::server::client::Notifier;
+use crate::lsp::capabilities::client::ClientCapabilitiesExt;
+use crate::server::client::{Notifier, Requester};
+use crate::server::schedule::Task;
 use crate::toolchain::scarb::ScarbToolchain;
 
 const RESTART_RATE_LIMITER_PERIOD_SEC: u64 = 180;
@@ -150,7 +153,13 @@ impl ProcMacroClientController {
 
     /// If the client is ready, apply all available responses.
     #[tracing::instrument(level = "trace", skip_all)]
-    pub fn on_response(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+    pub fn on_response(
+        &mut self,
+        db: &mut AnalysisDatabase,
+        config: &Config,
+        client_capabilities: &ClientCapabilities,
+        requester: &mut Requester,
+    ) {
         match db.proc_macro_server_status() {
             ServerStatus::Starting(client) => {
                 let Ok(defined_macros) = client.finish_initialize() else {
@@ -184,6 +193,11 @@ impl ProcMacroClientController {
                 }
 
                 self.set_proc_macro_server_status(db, ServerStatus::Ready(client));
+
+                ProcMacroClientController::on_supported_macros_response(
+                    client_capabilities,
+                    requester,
+                );
             }
             ServerStatus::Ready(client) => {
                 self.apply_responses(db, config, &client);
@@ -200,6 +214,22 @@ impl ProcMacroClientController {
         for (crate_id, suite) in self.crate_plugin_suites.iter() {
             let interned_suite = db.intern_plugin_suite(suite.clone());
             db.remove_crate_plugin_suite(db.intern_crate(crate_id.clone()), &interned_suite);
+        }
+    }
+
+    /// Sends `workspace/semanticTokens/refresh` if supported by the client to make sure macros
+    /// declared by proc macros are properly colored.
+    ///
+    /// Usage: should be called when the set of known macros is changed and all plugins with known
+    /// macros will be in the db before the mutable db reference is released.
+    fn on_supported_macros_response(
+        client_capabilities: &ClientCapabilities,
+        requester: &mut Requester,
+    ) {
+        if client_capabilities.workspace_semantic_tokens_refresh_support() {
+            if let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing()) {
+                error!("semantic tokens refresh failed: {err:#?}");
+            }
         }
     }
 
