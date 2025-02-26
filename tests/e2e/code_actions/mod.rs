@@ -58,7 +58,12 @@ fn quick_fix_general(cairo_code: &str, manifest_content: &str) -> String {
         text_document: ls.doc_id("src/lib.cairo"),
         range: Range { start: position, end: position },
         context: CodeActionContext {
-            diagnostics: diagnostics.clone(),
+            diagnostics: diagnostics
+                .into_iter()
+                .filter(|diagnostic| {
+                    diagnostic.range.start <= position && position <= diagnostic.range.end
+                })
+                .collect(),
             only: None,
             trigger_kind: None,
         },
