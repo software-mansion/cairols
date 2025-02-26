@@ -65,4 +65,5 @@ jobs:
         env:
           # Make sure CI fails on all warnings, including Clippy lints.
           RUSTDOCFLAGS: "-Dwarnings"
-      - uses: bnjbvr/cargo-machete@main
+      - uses: taiki-e/install-action@cargo-machete
+      - run: cargo machete
