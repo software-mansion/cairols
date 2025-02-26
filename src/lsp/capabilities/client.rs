@@ -1,4 +1,4 @@
-use lsp_types::ClientCapabilities;
+use lsp_types::{ClientCapabilities, ResourceOperationKind};
 
 macro_rules! try_or_default {
     ($expr:expr) => {
@@ -17,6 +17,9 @@ pub trait ClientCapabilitiesExt {
 
     /// The client supports `workspace/semanticTokens/refresh` requests.
     fn workspace_semantic_tokens_refresh_support(&self) -> bool;
+
+    /// The client supports renaming files and directories as a part of `WorkspaceEdit` requests.
+    fn workspace_edit_rename_resource_support(&self) -> bool;
 
     /// The client supports dynamic registration for text document synchronization capabilities.
     fn text_document_synchronization_dynamic_registration(&self) -> bool;
@@ -64,6 +67,13 @@ impl ClientCapabilitiesExt for ClientCapabilities {
 
     fn workspace_semantic_tokens_refresh_support(&self) -> bool {
         try_or_default!(self.workspace.as_ref()?.semantic_tokens.as_ref()?.refresh_support?)
+    }
+
+    fn workspace_edit_rename_resource_support(&self) -> bool {
+        try_or_default! {
+            self.workspace.as_ref()?.workspace_edit.as_ref()?
+            .resource_operations.as_ref()?.contains(&ResourceOperationKind::Rename)
+        }
     }
 
     fn text_document_synchronization_dynamic_registration(&self) -> bool {

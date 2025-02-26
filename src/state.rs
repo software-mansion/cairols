@@ -71,6 +71,7 @@ impl State {
             scarb_toolchain: self.scarb_toolchain.clone(),
             open_files: self.open_files.snapshot(),
             config: self.config.snapshot(),
+            client_capabilities: self.client_capabilities.snapshot(),
             loaded_scarb_manifests: self.project_controller.manifests_registry(),
         }
     }
@@ -82,6 +83,7 @@ pub struct StateSnapshot {
     pub scarb_toolchain: ScarbToolchain,
     pub open_files: Snapshot<HashSet<Url>>,
     pub config: Snapshot<Config>,
+    pub client_capabilities: Snapshot<ClientCapabilities>,
     pub loaded_scarb_manifests: Snapshot<ManifestRegistry>,
 }
 
