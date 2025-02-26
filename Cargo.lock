@@ -955,6 +955,7 @@ dependencies = [
  "scarb-metadata",
  "scarb-proc-macro-server-types",
  "scarb-stable-hash",
+ "semver",
  "serde",
  "serde_json",
  "similar",

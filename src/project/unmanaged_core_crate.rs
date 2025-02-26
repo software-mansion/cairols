@@ -3,9 +3,12 @@ use std::sync::OnceLock;
 use std::{fs, path};
 
 use anyhow::Context;
-use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, init_dev_corelib};
+use cairo_lang_filesystem::db::{
+    CORELIB_CRATE_NAME, CORELIB_VERSION, FilesGroup, FilesGroupEx, init_dev_corelib,
+};
 use cairo_lang_filesystem::ids::CrateId;
 use indoc::indoc;
+use semver::Version;
 use tempfile::tempdir;
 use tracing::{error, warn};
 
@@ -25,26 +28,43 @@ pub fn try_to_init_unmanaged_core_if_not_present(
         return;
     }
 
-    if let Some(path) = find_unmanaged_core(config, scarb) {
+    if let Some(UnmanagedCore { path, version }) = find_unmanaged_core(config, scarb) {
+        // Initialize with default config.
         init_dev_corelib(db, path);
+
+        let core_id = CrateId::core(db);
+
+        // Override the config with the correct version.
+        let mut core_settings = db.crate_config(core_id).unwrap();
+        core_settings.settings.version = Some(version);
+        db.set_crate_config(core_id, Some(core_settings));
     } else {
         warn!("failed to find unmanaged core crate")
     }
+}
+
+#[derive(Clone)]
+struct UnmanagedCore {
+    path: PathBuf,
+    version: Version,
 }
 
 /// Try to find a Cairo `core` crate in various well-known places, for use in project backends that
 /// do not manage the `core` crate (i.e. anything non-Scarb).
 ///
 /// The path is guaranteed to be absolute, so it can be safely used as a `FileId` in LS Salsa DB.
-pub fn find_unmanaged_core(config: &Config, scarb: &ScarbToolchain) -> Option<PathBuf> {
-    find_core_at_config_path(config)
-        .or_else(|| find_scarb_managed_core(scarb))
-        .and_then(ensure_absolute)
+fn find_unmanaged_core(config: &Config, scarb: &ScarbToolchain) -> Option<UnmanagedCore> {
+    find_core_at_config_path(config).or_else(|| find_scarb_managed_core(scarb)).and_then(
+        |UnmanagedCore { path, version }| {
+            Some(UnmanagedCore { path: ensure_absolute(path)?, version })
+        },
+    )
 }
 
 /// Attempts to find the `core` crate source root at the path provided in the configuration.
-fn find_core_at_config_path(config: &Config) -> Option<PathBuf> {
+fn find_core_at_config_path(config: &Config) -> Option<UnmanagedCore> {
     find_core_at_path(config.unmanaged_core_path.as_ref()?.as_path())
+        .map(|path| UnmanagedCore { path, version: Version::parse(CORELIB_VERSION).ok().unwrap() })
 }
 
 /// Attempts to find the `core` crate source root at a given path.
@@ -77,7 +97,6 @@ fn find_core_at_path(root_path: &Path) -> Option<PathBuf> {
     None
 }
 
-// TODO(#6246): Add tests for this logic. Pay attention to usage of silent mode in ScarbToolchain.
 /// Try to find a Scarb-managed `core` package if we have Scarb toolchain.
 ///
 /// The easiest way to do this is to create an empty Scarb package and run `scarb metadata` on it.
@@ -87,7 +106,7 @@ fn find_core_at_path(root_path: &Path) -> Option<PathBuf> {
 /// Because CairoLS is tightly bound to Scarb (due to hard compiler version dependency),
 /// we can safely make this lookup once and keep it cached for the entire LS lifetime.
 #[tracing::instrument(skip_all)]
-fn find_scarb_managed_core(scarb: &ScarbToolchain) -> Option<PathBuf> {
+fn find_scarb_managed_core(scarb: &ScarbToolchain) -> Option<UnmanagedCore> {
     let lookup = || {
         let workspace = tempdir()
             .context("failed to create temporary directory")
@@ -120,16 +139,23 @@ fn find_scarb_managed_core(scarb: &ScarbToolchain) -> Option<PathBuf> {
         // that will consist of this package and the `core` crate.
         // Therefore, we allow ourselves to liberally just look for any first usage of a package
         // named `core` in all compilation units components we got.
-        metadata.compilation_units.into_iter().find_map(|compilation_unit| {
+        let path = metadata.compilation_units.into_iter().find_map(|compilation_unit| {
             compilation_unit
                 .components
                 .iter()
                 .find(|component| component.name == CORELIB_CRATE_NAME)
                 .map(|component| component.source_root().to_path_buf().into_std_path_buf())
-        })
+        })?;
+        let version = metadata
+            .packages
+            .into_iter()
+            .find(|package| package.name == CORELIB_CRATE_NAME)
+            .map(|package| package.version)?;
+
+        Some(UnmanagedCore { path, version })
     };
 
-    static CACHE: OnceLock<Option<PathBuf>> = OnceLock::new();
+    static CACHE: OnceLock<Option<UnmanagedCore>> = OnceLock::new();
     CACHE.get_or_init(lookup).clone()
 }
 
