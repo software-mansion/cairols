@@ -218,8 +218,8 @@ fn impl_method_via_definition() {
     trait FooTrait {
         fn area(self: @Foo) -> u64;
     }
-    impl <sel=declaration>FooImpl</sel> of FooTrait {
-        fn area(self: @Foo) -> u64 { 0 }
+    impl FooImpl of FooTrait {
+        fn <sel=declaration>area</sel>(self: @Foo) -> u64 { 0 }
     }
     #[derive(Drop)]
     struct Bar {}

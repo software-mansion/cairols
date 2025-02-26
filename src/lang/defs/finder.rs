@@ -1,19 +1,18 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    EnumLongId, GenericTypeId, LanguageElementId, LookupItemId, MemberId, ModuleId,
+    EnumLongId, GenericTypeId, ImplItemId, LanguageElementId, LookupItemId, MemberId, ModuleId,
     NamedLanguageElementId, StructLongId, SubmoduleLongId, TraitItemId, VarId,
 };
-use cairo_lang_diagnostics::ToOption;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
-use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use cairo_lang_semantic::items::generics::generic_params_to_args;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{ConcreteTraitLongId, Expr, TypeLongId};
+use cairo_lang_semantic::{Expr, TypeLongId};
+use cairo_lang_syntax::node::helpers::HasName;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern};
@@ -21,11 +20,22 @@ use cairo_lang_utils::{Intern, LookupIntern};
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::syntax::SyntaxNodeExt;
 
-/// Either [`ResolvedGenericItem`], [`ResolvedConcreteItem`] or [`MemberId`].
+/// A language element that can be a result of name resolution performed by CairoLS.
+///
+/// This is a strict superset of things Cairo compiler does name resolution for.
+/// CairoLS tries to cover all navigation scenarios, while the compiler doesn't have to,
+/// therefore, we need to add some extra layer of code over it.
+/// As an example, the compiler never resolves to generic associated trait items
+/// because it is coded in such a way, 🤷.
 pub enum ResolvedItem {
+    // Compiler-handled cases.
     Generic(ResolvedGenericItem),
     Concrete(ResolvedConcreteItem),
+
+    // CairoLS-specific additions.
     Member(MemberId),
+    TraitItem(TraitItemId),
+    ImplItem(ImplItemId),
 }
 
 pub fn find_definition(
@@ -40,41 +50,7 @@ pub fn find_definition(
         .or_else(|| try_variant_declaration(db, identifier))
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items))
-        .or_else(|| {
-            // FIXME(mkaput): This logic always kicks in if we're finding definition of undefined
-            //   symbol which is very wrong in such cases.
-            let item = match lookup_items.first().copied()? {
-                LookupItemId::ModuleItem(item) => {
-                    ResolvedGenericItem::from_module_item(db, item).to_option()?
-                }
-                LookupItemId::TraitItem(trait_item) => {
-                    if let TraitItemId::Function(trait_function_id) = trait_item {
-                        let parent_trait = trait_item.trait_id(db);
-                        let generic_parameters =
-                            db.trait_generic_params(parent_trait).to_option()?;
-                        let concrete_trait = ConcreteTraitLongId {
-                            trait_id: parent_trait,
-                            generic_args: generic_params_to_args(&generic_parameters, db),
-                        };
-                        let concrete_trait = db.intern_concrete_trait(concrete_trait);
-
-                        ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(
-                            ImplGenericFunctionId {
-                                impl_id: ImplLongId::SelfImpl(concrete_trait).intern(db),
-                                function: trait_function_id,
-                            },
-                        ))
-                    } else {
-                        ResolvedGenericItem::Trait(trait_item.trait_id(db))
-                    }
-                }
-                LookupItemId::ImplItem(impl_item) => {
-                    ResolvedGenericItem::Impl(impl_item.impl_def_id(db))
-                }
-            };
-
-            Some(ResolvedItem::Generic(item))
-        })
+        .or_else(|| lookup_item_name(db, identifier, lookup_items))
 }
 
 /// Resolve `mod <ident>` syntax.
@@ -273,6 +249,20 @@ fn lookup_resolved_items(
     None
 }
 
+fn lookup_item_name(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<ResolvedItem> {
+    let lookup_item = lookup_items.first().copied()?;
+
+    if lookup_item.name_identifier(db).stable_ptr() != identifier.stable_ptr() {
+        return None;
+    }
+
+    ResolvedItem::from_lookup_item(db, lookup_item)
+}
+
 impl ResolvedItem {
     /// Finds a stable pointer to the syntax node which defines this resolved item.
     pub fn definition_stable_ptr(&self, db: &AnalysisDatabase) -> Option<SyntaxStablePtrId> {
@@ -380,6 +370,36 @@ impl ResolvedItem {
             ResolvedItem::Member(member_id) => {
                 member_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
             }
+
+            ResolvedItem::TraitItem(trait_item) => match trait_item {
+                TraitItemId::Function(trait_function) => {
+                    trait_function.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                }
+                TraitItemId::Type(trait_type) => {
+                    trait_type.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                }
+                TraitItemId::Constant(trait_constant) => {
+                    trait_constant.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                }
+                TraitItemId::Impl(trait_impl) => {
+                    trait_impl.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                }
+            },
+
+            ResolvedItem::ImplItem(impl_item) => match impl_item {
+                ImplItemId::Function(impl_function) => {
+                    impl_function.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                }
+                ImplItemId::Type(impl_type) => {
+                    impl_type.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                }
+                ImplItemId::Constant(impl_constant) => {
+                    impl_constant.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                }
+                ImplItemId::Impl(impl_impl) => {
+                    impl_impl.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                }
+            },
         };
         Some(stable_ptr)
     }
@@ -387,5 +407,16 @@ impl ResolvedItem {
     /// Finds and returns the syntax node corresponding to the definition of the resolved item.
     pub fn definition_node(&self, db: &AnalysisDatabase) -> Option<SyntaxNode> {
         self.definition_stable_ptr(db).map(|stable_ptr| stable_ptr.lookup(db))
+    }
+
+    /// Re-wraps a [`LookupItemId`] into the corresponding [`ResolvedItem`].
+    fn from_lookup_item(db: &dyn SemanticGroup, lookup_item: LookupItemId) -> Option<Self> {
+        match lookup_item {
+            LookupItemId::ModuleItem(module_item) => {
+                ResolvedGenericItem::from_module_item(db, module_item).ok().map(Self::Generic)
+            }
+            LookupItemId::TraitItem(trait_item) => Some(Self::TraitItem(trait_item)),
+            LookupItemId::ImplItem(impl_item) => Some(Self::ImplItem(impl_item)),
+        }
     }
 }
