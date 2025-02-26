@@ -57,6 +57,7 @@ snapshot_kind: text
               }
             },
             "severity": 1,
+            "code": "E0006",
             "message": "Identifier not found.",
             "relatedInformation": [
               {
