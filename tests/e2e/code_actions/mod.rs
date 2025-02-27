@@ -4,6 +4,7 @@ use lsp_types::{
 };
 
 use crate::support::cairo_project_toml::{CAIRO_PROJECT_TOML, CAIRO_PROJECT_TOML_2024_07};
+use crate::support::cursor::Cursor;
 use crate::support::{cursors, sandbox};
 
 mod create_module_file;
@@ -50,19 +51,21 @@ fn quick_fix_general(cairo_code: &str, manifest_content: &str) -> String {
 
     let diagnostics = ls.open_and_wait_for_diagnostics("src/lib.cairo");
 
-    assert_eq!(cursors.carets().len(), 1);
-    let position = cursors.carets()[0];
+    let range = match cursors.assert_single() {
+        Cursor::Caret(position) => Range { start: position, end: position },
+        Cursor::Selection(range) => range,
+    };
 
     let root_path = ls.fixture.root_path().to_string_lossy().to_string();
 
     let code_action_params = CodeActionParams {
         text_document: ls.doc_id("src/lib.cairo"),
-        range: Range { start: position, end: position },
+        range,
         context: CodeActionContext {
             diagnostics: diagnostics
                 .into_iter()
                 .filter(|diagnostic| {
-                    diagnostic.range.start <= position && position <= diagnostic.range.end
+                    diagnostic.range.start <= range.end && range.start <= diagnostic.range.end
                 })
                 .collect(),
             only: None,

@@ -11,7 +11,7 @@ mod test;
 ///
 /// A cursor is a marker in the text that can be one of the following:
 /// 1. `<caret>` specifies the position where the caret should be placed.
-/// 2. `<selection>` and `</selection>` specify the start and end of the selected text range.
+/// 2. `<sel>` and `</sel>` specify the start and end of the selected text range.
 pub fn cursors(text: &str) -> (String, Cursors) {
     // Trim the whitespace, because usually there is one for code clarity.
     let text = text.trim();
@@ -19,6 +19,7 @@ pub fn cursors(text: &str) -> (String, Cursors) {
     let mut cursors = Cursors::new();
     let mut output_text = String::with_capacity(text.len());
     let mut position = Position::new(0, 0);
+    let mut selection = Option::<SelectionElement>::None;
 
     let mut it = text.chars().multipeek();
     while let Some(ch) = it.next() {
@@ -26,7 +27,15 @@ pub fn cursors(text: &str) -> (String, Cursors) {
             // Handle the '<caret>' marker.
             '<' if peek(&mut it, "caret") => {
                 eat(&mut it, "caret>");
-                cursors.add(position);
+                cursors.add_caret(position);
+            }
+            '<' if peek(&mut it, "sel") => {
+                eat(&mut it, "sel>");
+                handle_selection(&mut selection, &mut cursors, SelectionElement::Open(position));
+            }
+            '<' if peek(&mut it, "/sel") => {
+                eat(&mut it, "/sel>");
+                handle_selection(&mut selection, &mut cursors, SelectionElement::Close(position));
             }
             _ => {
                 // Add the character to the output text.
@@ -43,7 +52,29 @@ pub fn cursors(text: &str) -> (String, Cursors) {
         }
     }
 
+    assert!(selection.is_none());
+
     return (output_text, cursors);
+
+    #[derive(Copy, Clone)]
+    enum SelectionElement {
+        Open(Position),
+        Close(Position),
+    }
+
+    fn handle_selection(
+        selection: &mut Option<SelectionElement>,
+        cursors: &mut Cursors,
+        right: SelectionElement,
+    ) {
+        match (selection.take(), right) {
+            (Some(SelectionElement::Open(start)), SelectionElement::Close(end)) => {
+                cursors.add_selection(Range { start, end });
+            }
+            (None, SelectionElement::Open(_)) => *selection = Some(right),
+            _ => panic!("selections should not overlap"),
+        }
+    }
 
     /// Peek multiple characters at once, check if they match the needle, and reset the peek.
     fn peek(it: &mut MultiPeek<Chars<'_>>, needle: &str) -> bool {
@@ -71,32 +102,55 @@ pub fn cursors(text: &str) -> (String, Cursors) {
     }
 }
 
-// TODO(mkaput): Implement selections when we'll need them.
 /// A collection of cursors in a text document.
 ///
 /// See [`cursors`] docs for more information.
 pub struct Cursors {
-    cursors: Vec<Position>,
+    carets: Vec<Position>,
+    selections: Vec<Range>,
 }
 
 impl Cursors {
     fn new() -> Self {
-        Self { cursors: Vec::new() }
+        Self { carets: Vec::new(), selections: Vec::new() }
     }
 
-    fn add(&mut self, cursor: Position) {
-        self.cursors.push(cursor);
+    fn add_caret(&mut self, cursor: Position) {
+        self.carets.push(cursor);
+    }
+
+    fn add_selection(&mut self, selection: Range) {
+        self.selections.push(selection);
     }
 
     /// Get specified caret.
     pub fn caret(&self, idx: usize) -> Position {
-        *self.cursors.get(idx).unwrap_or_else(|| panic!("cursor not found: {idx}"))
+        *self.carets.get(idx).unwrap_or_else(|| panic!("cursor not found: {idx}"))
     }
 
     /// Get all carets.
     pub fn carets(&self) -> Vec<Position> {
-        self.cursors.clone()
+        self.carets.clone()
     }
+
+    /// Get specified selection.
+    pub fn selection(&self, idx: usize) -> Range {
+        *self.selections.get(idx).unwrap_or_else(|| panic!("cursor not found: {idx}"))
+    }
+
+    pub fn assert_single(&self) -> Cursor {
+        match (&self.carets[..], &self.selections[..]) {
+            ([caret], []) => Cursor::Caret(*caret),
+            ([], [selection]) => Cursor::Selection(*selection),
+            _ => panic!("there should be exacly one caret or selection"),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum Cursor {
+    Caret(Position),
+    Selection(Range),
 }
 
 /// Creates a snippet (lines of interest) of the source text showing a caret at the specified
