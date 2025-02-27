@@ -197,6 +197,8 @@ impl MockClient {
                     let response = (handler.f)(request);
                     let message = Message::Response(response);
                     self.client.sender.send(message).expect("failed to send response");
+                } else {
+                    panic!("no handler found for request {:?}", request);
                 }
             }
             if let Message::Notification(Notification { method, params }) = &message {
