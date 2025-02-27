@@ -1,4 +1,5 @@
 use indoc::indoc;
+use insta::internals::Content;
 use lsp_types::Diagnostic;
 use serde::Serialize;
 use serde_json::json;
@@ -96,5 +97,13 @@ fn test_custom_macro() {
         })
         .collect();
 
-    insta::assert_json_snapshot!(DiagnosticsReport { diagnostics: diagnostics_with_url })
+    insta::assert_json_snapshot!(DiagnosticsReport { diagnostics: diagnostics_with_url }, {
+        ".diagnostics[].diagnostics[].diagnostic" => insta::dynamic_redaction(|v, _| {
+            if let Content::Struct(name ,v ) = v {
+                Content::Struct(name, v.iter().filter(|(k ,_v )| *k != "range").cloned().collect())
+            } else {
+                panic!("Unexpected diagnostic structure")
+            }
+        })
+    })
 }
