@@ -119,30 +119,15 @@ impl MockClient {
         while let Some(response_message) =
             self.recv().unwrap_or_else(|err| panic!("{err:?}: {message:?}"))
         {
-            match response_message {
-                Message::Notification(_) => {
-                    // Skip notifications.
-                }
+            if let Message::Response(res) = response_message {
+                let res_id = res.id;
+                let result = res.result.ok_or_else(|| res.error.unwrap());
 
-                Message::Request(req) => {
-                    if let Some(handler) = self.get_handler_for(&req.method) {
-                        let response = (handler.f)(&req);
-                        let message = Message::Response(response);
-                        self.client.sender.send(message).expect("failed to send response");
-                        continue;
-                    }
-                }
+                assert_eq!(res_id, id);
 
-                Message::Response(res) => {
-                    let res_id = res.id;
-                    let result = res.result.ok_or_else(|| res.error.unwrap());
-
-                    assert_eq!(res_id, id);
-
-                    match result {
-                        Ok(result) => return result,
-                        Err(err) => panic!("error response: {:#?}", err),
-                    }
+                match result {
+                    Ok(result) => return result,
+                    Err(err) => panic!("error response: {:#?}", err),
                 }
             }
         }
@@ -207,6 +192,11 @@ impl MockClient {
             if let Message::Request(request) = &message {
                 if request.method == <lsp_request!("workspace/configuration")>::METHOD {
                     self.auto_respond_to_workspace_configuration_request(request);
+                }
+                if let Some(handler) = self.get_handler_for(&request.method) {
+                    let response = (handler.f)(request);
+                    let message = Message::Response(response);
+                    self.client.sender.send(message).expect("failed to send response");
                 }
             }
             if let Message::Notification(Notification { method, params }) = &message {
