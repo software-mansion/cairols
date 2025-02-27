@@ -170,3 +170,10 @@ fn index_in_text(text: &str, position: Position) -> usize {
     }
     offset
 }
+
+pub fn text_chunk_at_range(text: String, range: Range) -> String {
+    let start_idx = index_in_text(&text, range.start);
+    let stop_idx = index_in_text(&text, range.end);
+
+    text[start_idx..stop_idx].to_string()
+}
