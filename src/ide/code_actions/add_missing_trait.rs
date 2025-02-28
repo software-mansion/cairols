@@ -6,6 +6,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use if_chain::if_chain;
 use lsp_types::{CodeAction, CodeActionKind, Range, TextEdit, Url, WorkspaceEdit};
 
+use super::missing_import::is_preferred;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
@@ -18,6 +19,8 @@ pub fn add_missing_trait(
     uri: Url,
 ) -> Option<Vec<CodeAction>> {
     let trait_paths = available_traits_for_method(db, ctx)?;
+
+    let is_preferred = is_preferred(&trait_paths);
 
     let module_start_offset = if_chain! {
         if let ModuleId::Submodule(submodule_id) = ctx.module_id;
@@ -39,6 +42,7 @@ pub fn add_missing_trait(
         .map(|trait_path| CodeAction {
             title: format!("Import {}", trait_path),
             kind: Some(CodeActionKind::QUICKFIX),
+            is_preferred,
             edit: Some(WorkspaceEdit {
                 changes: Some(HashMap::from_iter([(
                     uri.clone(),
