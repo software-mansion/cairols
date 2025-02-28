@@ -2,6 +2,7 @@ pub mod cairo_project_toml;
 pub mod client_capabilities;
 pub mod cursor;
 pub mod data;
+pub mod diagnostics;
 pub mod fixture;
 pub mod insta;
 pub mod jsonrpc;
