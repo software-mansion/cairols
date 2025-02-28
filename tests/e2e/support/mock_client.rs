@@ -27,7 +27,7 @@ use serde_json::Value;
 /// Instead, the thread executing the server is being shut down and any running
 /// blocking tasks are given a small period of time to complete.
 pub struct MockClient {
-    fixture: Fixture,
+    pub fixture: Fixture,
     // Keeps last diagnostics generation for each file
     diagnostics: HashMap<Url, Vec<Diagnostic>>,
     req_id: RequestIdGenerator,
@@ -625,6 +625,7 @@ impl AsRef<Fixture> for MockClient {
         &self.fixture
     }
 }
+
 impl Drop for MockClient {
     fn drop(&mut self) {
         env::set_current_dir(self.starting_cwd.clone()).expect("Could not reset CWD")
