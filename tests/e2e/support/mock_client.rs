@@ -192,13 +192,12 @@ impl MockClient {
             if let Message::Request(request) = &message {
                 if request.method == <lsp_request!("workspace/configuration")>::METHOD {
                     self.auto_respond_to_workspace_configuration_request(request);
-                }
-                if let Some(handler) = self.get_handler_for(&request.method) {
+                } else if let Some(handler) = self.get_handler_for(&request.method) {
                     let response = (handler.f)(request);
                     let message = Message::Response(response);
                     self.client.sender.send(message).expect("failed to send response");
                 } else {
-                    panic!("no handler found for request {:?}", request);
+                    panic!("unhandled request {:?}", request);
                 }
             }
             if let Message::Notification(Notification { method, params }) = &message {
