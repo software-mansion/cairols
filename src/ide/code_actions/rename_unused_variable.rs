@@ -44,6 +44,7 @@ pub fn rename_unused_variable(
     Some(CodeAction {
         title: format!("Rename to `_{var_name}`"),
         kind: Some(CodeActionKind::QUICKFIX),
+        is_preferred: Some(true),
         edit: Some(WorkspaceEdit {
             changes: Some(HashMap::from_iter([(
                 uri,

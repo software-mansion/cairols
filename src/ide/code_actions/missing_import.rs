@@ -57,14 +57,7 @@ pub fn missing_import(
         })
         .collect();
 
-    let is_unambiguous = match items.len() {
-        0 => return None,
-        1 => true,
-        _ => false,
-    };
-
-    // We can propose this for autofix if there is exactly one possible import.
-    let is_preferred = is_unambiguous.then_some(true);
+    let is_preferred = is_preferred(&items);
 
     let module_start_offset = if_chain! {
         if let ModuleId::Submodule(submodule_id) = ctx.module_id;
@@ -99,4 +92,15 @@ pub fn missing_import(
             })
             .collect(),
     )
+}
+
+pub fn is_preferred<T>(items: &[T]) -> Option<bool> {
+    let is_unambiguous = match items.len() {
+        0 => return None,
+        1 => true,
+        _ => false,
+    };
+
+    // We can propose this for autofix if there is exactly one possible option.
+    is_unambiguous.then_some(true)
 }
