@@ -64,4 +64,9 @@ impl ModuleDef {
     pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
         self.id.name(db)
     }
+
+    /// Gets the id of the module.
+    pub fn module_id(&self) -> ModuleId {
+        self.id
+    }
 }
