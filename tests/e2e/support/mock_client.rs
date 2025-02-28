@@ -1,9 +1,9 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::ops::ControlFlow;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use std::{env, fmt, mem, process};
+use std::{env, fmt, process};
 
 use crate::support::fixture::Fixture;
 use crate::support::jsonrpc::RequestIdGenerator;
@@ -14,7 +14,7 @@ use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
 use cairo_language_server::testing::BackendForTesting;
 use lsp_server::{Message, Notification, Request, Response};
 use lsp_types::notification::PublishDiagnostics;
-use lsp_types::request::{RegisterCapability, Request as LspRequest, WorkspaceConfiguration};
+use lsp_types::request::{RegisterCapability, Request as LspRequest};
 use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url, lsp_notification, lsp_request};
 use serde_json::Value;
 
@@ -34,7 +34,10 @@ pub struct MockClient {
     client: lsp_server::Connection,
     trace: Vec<Message>,
     workspace_configuration: Value,
-    expect_request_handlers: VecDeque<ExpectRequestHandler>,
+    // Mapping between request name and request handler
+    // This enforces only one request matcher per method at a time
+    // (can be extended eventually to a custom matcher logic with param parsing etc.)
+    expect_request_handlers: HashMap<String, ExpectRequestHandler>,
     starting_cwd: PathBuf,
 }
 
@@ -113,49 +116,20 @@ impl MockClient {
         let id = self.req_id.next();
         let message = Message::Request(Request::new(id.clone(), method.to_owned(), params));
 
-        let mut expect_request_handlers = mem::take(&mut self.expect_request_handlers);
-        let does_expect_requests = !expect_request_handlers.is_empty();
-
         self.client.sender.send(message.clone()).expect("failed to send request");
 
         while let Some(response_message) =
             self.recv().unwrap_or_else(|err| panic!("{err:?}: {message:?}"))
         {
-            match response_message {
-                Message::Notification(_) => {
-                    // Skip notifications.
-                }
+            if let Message::Response(res) = response_message {
+                let res_id = res.id;
+                let result = res.result.ok_or_else(|| res.error.unwrap());
 
-                Message::Request(req) => {
-                    // FIXME(#338): Delete this hack.
-                    // This check prevents the LS from timing out when polling the client
-                    // for a workspace configuration in tests where MockClient
-                    // uses the default configuration from sandbox.
-                    if req.method == WorkspaceConfiguration::METHOD {
-                        continue;
-                    }
-                    if does_expect_requests {
-                        if let Some(handler) = expect_request_handlers.pop_front() {
-                            let response = (handler.f)(&req);
-                            let message = Message::Response(response);
-                            self.client.sender.send(message).expect("failed to send response");
-                            continue;
-                        }
-                    }
+                assert_eq!(res_id, id);
 
-                    panic!("unexpected request: {:?}", req)
-                }
-
-                Message::Response(res) => {
-                    let res_id = res.id;
-                    let result = res.result.ok_or_else(|| res.error.unwrap());
-
-                    assert_eq!(res_id, id);
-
-                    match result {
-                        Ok(result) => return result,
-                        Err(err) => panic!("error response: {:#?}", err),
-                    }
+                match result {
+                    Ok(result) => return result,
+                    Err(err) => panic!("error response: {:#?}", err),
                 }
             }
         }
@@ -176,6 +150,10 @@ impl MockClient {
     pub fn send_notification_untyped(&mut self, method: &'static str, params: Value) {
         let message = Message::Notification(Notification::new(method.to_string(), params));
         self.client.sender.send(message).expect("failed to send notification");
+    }
+
+    fn get_handler_for(&mut self, request_name: &String) -> Option<ExpectRequestHandler> {
+        self.expect_request_handlers.remove(request_name)
     }
 }
 
@@ -216,6 +194,12 @@ impl MockClient {
             if let Message::Request(request) = &message {
                 if request.method == <lsp_request!("workspace/configuration")>::METHOD {
                     self.auto_respond_to_workspace_configuration_request(request);
+                } else if let Some(handler) = self.get_handler_for(&request.method) {
+                    let response = (handler.f)(request);
+                    let message = Message::Response(response);
+                    self.client.sender.send(message).expect("failed to send response");
+                } else {
+                    panic!("unhandled request {:?}", request);
                 }
             }
             if let Message::Notification(Notification { method, params }) = &message {
@@ -370,11 +354,13 @@ impl MockClient {
     /// fire. Usually it is enough to put request method name here.
     pub fn expect_request_untyped(
         &mut self,
-        description: &'static str,
-        handler: impl FnOnce(&lsp_server::Request) -> lsp_server::Response + 'static,
+        method: &'static str,
+        handler: impl FnOnce(&Request) -> Response + 'static,
     ) {
-        self.expect_request_handlers
-            .push_back(ExpectRequestHandler { description, f: Box::new(handler) })
+        self.expect_request_handlers.insert(
+            method.to_string(),
+            ExpectRequestHandler { description: method, f: Box::new(handler) },
+        );
     }
 }
 
