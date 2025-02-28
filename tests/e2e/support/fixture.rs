@@ -1,10 +1,11 @@
+use crate::support::cairo_project_toml::WELL_KNOWN_CAIRO_PROJECT_TOMLS;
+use assert_fs::TempDir;
+use assert_fs::prelude::*;
+use itertools::Itertools;
+use lsp_types::Url;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
-
-use assert_fs::TempDir;
-use assert_fs::prelude::*;
-use lsp_types::Url;
 
 const TOOL_VERSIONS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/.tool-versions"));
 
@@ -13,12 +14,17 @@ pub struct Fixture {
     // This is put behind a LazyLock, so that Fixture::new calls are no-cost.
     t: LazyLock<TempDir>,
     files: Vec<PathBuf>,
+    insta_settings: Option<insta::internals::SettingsBindDropGuard>,
 }
 
 impl Fixture {
     /// Creates a new [`Fixture`] with an empty temporary directory.
     pub fn new() -> Self {
-        Self { t: LazyLock::new(|| TempDir::new().unwrap()), files: Vec::new() }
+        Self {
+            t: LazyLock::new(|| TempDir::new().unwrap()),
+            files: Vec::new(),
+            insta_settings: None,
+        }
     }
 }
 
@@ -81,6 +87,46 @@ impl Fixture {
     /// Returns all files paths in the fixture.
     pub fn files(&self) -> &[PathBuf] {
         &self.files
+    }
+}
+
+/// Insta integration.
+impl Fixture {
+    /// Binds a new [`insta::Settings`] object with a description built from this fixture.
+    ///
+    /// This function has to be used very carefully because if used multiple times in code,
+    /// **no** other setting bindings can happen between calls.
+    /// This is a consequence of using settings binding guards and their reset behaviour on drops.
+    #[doc(hidden)]
+    pub fn update_insta_settings(&mut self) {
+        let mut settings = insta::Settings::clone_current();
+        settings.set_description(self.build_insta_description());
+
+        // NOTE: We need to drop the old guard before binding new settings, as when that guard
+        //   drops, it restores an "old" settings snapshot it kept inside.
+        drop(self.insta_settings.take());
+
+        self.insta_settings = Some(settings.bind_to_scope());
+    }
+
+    fn build_insta_description(&self) -> String {
+        self.files
+            .iter()
+            .sorted()
+            .map(|path| (path, self.read_file(path).trim().to_owned()))
+            .filter(|(path, contents)| {
+                // We know paths here are always file paths that are UTF-8.
+                let str_file_name = path.file_name().unwrap().to_str().unwrap();
+                match str_file_name {
+                    ".tool-versions" => false,
+                    "cairo_project.toml" => !WELL_KNOWN_CAIRO_PROJECT_TOMLS
+                        .iter()
+                        .any(|it| it.trim() == contents.trim()),
+                    _ => true,
+                }
+            })
+            .map(|(path, contents)| format!("// → {path}\n{contents}", path = path.display()))
+            .join("\n\n")
     }
 }
 

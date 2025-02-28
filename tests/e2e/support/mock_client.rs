@@ -46,11 +46,13 @@ impl MockClient {
     /// (i.e., the `initialize` request and `initialized` notification both will be completed).
     #[must_use]
     pub fn start(
-        fixture: Fixture,
+        mut fixture: Fixture,
         capabilities: lsp_types::ClientCapabilities,
         workspace_configuration: Value,
     ) -> Self {
         let (init, client) = BackendForTesting::new();
+
+        fixture.update_insta_settings();
 
         let mut this = Self {
             fixture,
