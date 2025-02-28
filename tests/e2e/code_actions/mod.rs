@@ -53,7 +53,7 @@ fn quick_fix_general(cairo_code: &str, manifest_content: &str) -> String {
     assert_eq!(cursors.carets().len(), 1);
     let position = cursors.carets()[0];
 
-    let root_path = ls.as_ref().root_path().to_string_lossy().to_string();
+    let root_path = ls.fixture.root_path().to_string_lossy().to_string();
 
     let code_action_params = CodeActionParams {
         text_document: ls.doc_id("src/lib.cairo"),

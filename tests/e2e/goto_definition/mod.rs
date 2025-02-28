@@ -100,8 +100,8 @@ impl GotoDefinitionTest {
             .into_group_map()
             .into_iter()
             .map(|(url, ranges)| {
-                let path = self.ls.as_ref().url_path(&url).unwrap();
-                let cairo = self.ls.as_ref().read_file(&path);
+                let path = self.ls.fixture.url_path(&url).unwrap();
+                let cairo = self.ls.fixture.read_file(&path);
                 let selections = render_selections(&cairo, &ranges);
                 (path.to_string_lossy().to_string(), selections)
             })
