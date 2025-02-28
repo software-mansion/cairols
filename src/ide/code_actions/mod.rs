@@ -1,14 +1,14 @@
 use cairo_lang_syntax::node::SyntaxNode;
-use itertools::Itertools;
 use lsp_types::{
     CodeAction, CodeActionOrCommand, CodeActionParams, CodeActionResponse, Diagnostic,
-    NumberOrString,
+    NumberOrString, Range, Url,
 };
 use tracing::{debug, warn};
 
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use itertools::Itertools;
 
 mod add_missing_trait;
 mod create_module_file;
@@ -22,18 +22,14 @@ mod rename_unused_variable;
 /// either fix problems or to beautify/refactor code.
 pub fn code_actions(params: CodeActionParams, db: &AnalysisDatabase) -> Option<CodeActionResponse> {
     let mut actions = Vec::with_capacity(params.context.diagnostics.len());
-    let file_id = db.file_for_url(&params.text_document.uri)?;
-    let node = db.find_syntax_node_at_position(file_id, params.range.start.to_cairo())?;
 
     actions.extend(
-        get_code_actions_for_diagnostics(db, &node, &params)
-            .into_iter()
-            .map(CodeActionOrCommand::from),
+        get_code_actions_for_diagnostics(db, &params).into_iter().map(CodeActionOrCommand::from),
     );
 
-    actions.extend(
-        expand_macro::expand_macro(db, node.clone()).into_iter().map(CodeActionOrCommand::from),
-    );
+    let node = node_on_range_start(db, &params.text_document.uri, &params.range)?;
+
+    actions.extend(expand_macro::expand_macro(db, node).into_iter().map(CodeActionOrCommand::from));
 
     Some(actions)
 }
@@ -43,7 +39,6 @@ pub fn code_actions(params: CodeActionParams, db: &AnalysisDatabase) -> Option<C
 /// # Arguments
 ///
 /// * `db` - A reference to the Salsa database.
-/// * `node` - The syntax node where the diagnostic is located.
 /// * `params` - The parameters for the code action request.
 ///
 /// # Returns
@@ -51,48 +46,49 @@ pub fn code_actions(params: CodeActionParams, db: &AnalysisDatabase) -> Option<C
 /// A vector of [`CodeAction`] objects that can be applied to resolve the diagnostics.
 fn get_code_actions_for_diagnostics(
     db: &AnalysisDatabase,
-    node: &SyntaxNode,
     params: &CodeActionParams,
 ) -> Vec<CodeAction> {
-    let diagnostic_groups_by_codes = params
+    let uri = &params.text_document.uri;
+
+    params
         .context
         .diagnostics
         .iter()
-        .filter_map(|diagnostic| extract_code(diagnostic).map(|code| (code, diagnostic)))
-        .into_group_map();
+        .filter_map(|diagnostic| {
+            let code = extract_code(diagnostic)?;
 
-    let Some(ctx) = AnalysisContext::from_node(db, node.clone()) else { return Default::default() };
+            Some((code, diagnostic))
+        })
+        // Sometimes diagnostics can be duplicated, for example diagostics from macro generated code have ranges mapped to macro call.
+        .dedup_by(|(code1, diagnostic1), (code2, diagnostic2)| {
+            code1 == code2 && diagnostic1.range == diagnostic2.range
+        })
+        .filter_map(|(code, diagnostic)| {
+            let node = node_on_range_start(db, uri, &diagnostic.range)?;
 
-    diagnostic_groups_by_codes
-        .into_iter()
-        .flat_map(|(code, diagnostics)| match code {
-            "E0001" => diagnostics
-                .into_iter()
-                // There should be exactly one diagnostic.
-                .next()
-                .and_then(|diagnostic| {
-                    rename_unused_variable::rename_unused_variable(
-                        db,
-                        node,
-                        diagnostic.clone(),
-                        params.text_document.uri.clone(),
-                    )
-                })
-                .to_vec(),
-            "E0002" => {
-                add_missing_trait::add_missing_trait(db, &ctx, params.text_document.uri.clone())
-                    .unwrap_or_default()
-            }
-            "E0003" => fill_struct_fields::fill_struct_fields(db, node.clone(), params).to_vec(),
-            "E0004" => fill_trait_members::fill_trait_members(db, &ctx, params).to_vec(),
-            "E0005" => create_module_file::create_module_file(
+            let ctx = AnalysisContext::from_node(db, node)?;
+
+            Some((code, diagnostic, ctx))
+        })
+        .flat_map(|(code, diagnostic, ctx)| match code {
+            "E0001" => rename_unused_variable::rename_unused_variable(
                 db,
-                node.clone(),
-                params.text_document.uri.clone(),
+                &ctx.node,
+                diagnostic.clone(),
+                uri.clone(),
             )
             .to_vec(),
-            "E0006" => missing_import::missing_import(db, &ctx, params.text_document.uri.clone())
-                .unwrap_or_default(),
+            "E0002" => {
+                add_missing_trait::add_missing_trait(db, &ctx, uri.clone()).unwrap_or_default()
+            }
+            "E0003" => {
+                fill_struct_fields::fill_struct_fields(db, ctx.node.clone(), params).to_vec()
+            }
+            "E0004" => fill_trait_members::fill_trait_members(db, &ctx, params).to_vec(),
+            "E0005" => {
+                create_module_file::create_module_file(db, ctx.node.clone(), uri.clone()).to_vec()
+            }
+            "E0006" => missing_import::missing_import(db, &ctx, uri.clone()).unwrap_or_default(),
             _ => {
                 debug!("no code actions for diagnostic code: {code}");
                 vec![]
@@ -121,4 +117,10 @@ fn extract_code(diagnostic: &Diagnostic) -> Option<&str> {
         }
         None => None,
     }
+}
+
+fn node_on_range_start(db: &AnalysisDatabase, uri: &Url, range: &Range) -> Option<SyntaxNode> {
+    let file_id = db.file_for_url(uri)?;
+
+    db.find_syntax_node_at_position(file_id, range.start.to_cairo())
 }

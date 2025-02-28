@@ -29,7 +29,15 @@ fn on_module_name() {
 
 #[test]
 fn after_semicolon() {
-    test_transform!(quick_fix, "mod some_module;<caret>", @"No code actions.");
+    test_transform!(quick_fix, "mod some_module;<caret>", @r#"
+    Title: Create module file `some_module`
+    Document changes json: [
+      {
+        "kind": "create",
+        "uri": "file:///src/some_module.cairo"
+      }
+    ]
+    "#);
 }
 
 #[test]
