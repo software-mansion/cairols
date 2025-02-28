@@ -4,7 +4,7 @@ use lsp_types::{
 };
 
 use crate::support::cairo_project_toml::{CAIRO_PROJECT_TOML, CAIRO_PROJECT_TOML_2024_07};
-use crate::support::{cursors, sandbox};
+use crate::support::{sandbox, with_cursors};
 
 mod create_module_file;
 mod fill_struct_fields;
@@ -38,12 +38,11 @@ fn quick_fix_without_visibility_constraints(cairo_code: &str) -> String {
 }
 
 fn quick_fix_general(cairo_code: &str, manifest_content: &str) -> String {
-    let (cairo, cursors) = cursors(cairo_code);
-
+    let cursors;
     let mut ls = sandbox! {
         files {
             "cairo_project.toml" => manifest_content,
-            "src/lib.cairo" => cairo.clone(),
+            "src/lib.cairo" => with_cursors!(cursors => cairo_code),
         }
         client_capabilities = caps;
     };

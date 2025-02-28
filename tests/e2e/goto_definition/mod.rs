@@ -7,7 +7,7 @@ use lsp_types::{
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::cursor::render_selections;
 use crate::support::fixture::Fixture;
-use crate::support::{MockClient, cursors, fixture, sandbox};
+use crate::support::{MockClient, fixture, sandbox, with_cursors};
 
 mod enums;
 mod fns;
@@ -34,11 +34,10 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
 }
 
 fn goto_definition(cairo_code: &str) -> String {
-    let (cairo, cursors) = cursors(cairo_code);
-
+    let cursors;
     let mut test = GotoDefinitionTest::begin(fixture! {
         "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-        "src/lib.cairo" => cairo.clone(),
+        "src/lib.cairo" => with_cursors!(cursors => cairo_code),
     });
 
     let position = cursors.caret(0);

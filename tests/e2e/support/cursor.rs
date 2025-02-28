@@ -7,6 +7,30 @@ use lsp_types::{Position, Range};
 #[path = "cursor_test.rs"]
 mod test;
 
+/// Utility macro for using cursors cleanly with fixture/sandbox macros.
+///
+/// ## Idiomatic use
+///
+/// ```no_run
+/// let cursors; // the variable where cursors information will be stored
+/// let fixture = fixture! {
+///     "src/lib.cairo" => with_cursors!(cursors => r"
+///         file contents
+///     "),
+/// };
+/// ```
+macro_rules! with_cursors {
+    ($cursors_var:expr => $code:literal) => {{
+        $crate::support::cursor::with_cursors!($cursors_var => ::indoc::indoc!($code))
+    }};
+    ($cursors_var:expr => $code:expr) => {{
+        let (code, cursors) = $crate::support::cursor::cursors($code);
+        $cursors_var = cursors;
+        code
+    }};
+}
+pub(crate) use with_cursors;
+
 /// Extracts cursor markers from the text.
 ///
 /// A cursor is a marker in the text that can be one of the following:

@@ -11,7 +11,7 @@ pub mod scarb;
 
 use serde_json::Value;
 
-pub use self::cursor::cursors;
+pub(crate) use self::cursor::{cursors, with_cursors};
 pub(crate) use self::fixture::fixture;
 pub use self::mock_client::MockClient;
 
