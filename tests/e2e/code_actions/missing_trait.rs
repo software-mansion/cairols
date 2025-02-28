@@ -22,6 +22,10 @@ fn simple() {
     Add new text: "use crate::ATrait;
     "
     At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
+    Title: Fix All
+    Add new text: "use crate::ATrait;
+    "
+    At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
     "#);
 }
 
@@ -117,6 +121,10 @@ fn non_directly_visible_trait() {
     Add new text: "use crate::ATrait1;
     "
     At: Range { start: Position { line: 10, character: 4 }, end: Position { line: 10, character: 4 } }
+    Title: Fix All
+    Add new text: "use crate::ATrait1;
+    "
+    At: Range { start: Position { line: 10, character: 4 }, end: Position { line: 10, character: 4 } }
     "#);
 }
 
@@ -129,6 +137,10 @@ fn from_corelib() {
     }
     ", @r#"
     Title: Import core::hash::HashStateTrait
+    Add new text: "use core::hash::HashStateTrait;
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Fix All
     Add new text: "use core::hash::HashStateTrait;
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
@@ -163,6 +175,10 @@ fn from_starknet() {
     Add new text: "use starknet::storage::StoragePointerReadAccess;
     "
     At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
+    Title: Fix All
+    Add new text: "use starknet::storage::StoragePointerReadAccess;
+    "
+    At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
     "#);
 }
 
@@ -188,6 +204,10 @@ fn visible_only_in_editions_without_visibility_constraints() {
     Add new text: "use crate::hidden_trait::ATrait1;
     "
     At: Range { start: Position { line: 9, character: 4 }, end: Position { line: 9, character: 4 } }
+    Title: Fix All
+    Add new text: "use crate::hidden_trait::ATrait1;
+    "
+    At: Range { start: Position { line: 9, character: 4 }, end: Position { line: 9, character: 4 } }
     "#);
 }
 
@@ -200,6 +220,10 @@ fn from_corelib_visible_only_in_editions_without_visibility_constraints() {
     }
     ", @r#"
     Title: Import integer::AbsAndSign
+    Add new text: "use integer::AbsAndSign;
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Fix All
     Add new text: "use integer::AbsAndSign;
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }

@@ -1,7 +1,7 @@
 use cairo_lang_syntax::node::SyntaxNode;
 use lsp_types::{
-    CodeAction, CodeActionOrCommand, CodeActionParams, CodeActionResponse, Diagnostic,
-    NumberOrString, Range, Url,
+    CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams, CodeActionResponse,
+    Diagnostic, NumberOrString, Range, TextEdit, Url, WorkspaceEdit,
 };
 use tracing::{debug, warn};
 
@@ -9,6 +9,7 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use itertools::Itertools;
+use std::collections::HashMap;
 
 mod add_missing_trait;
 mod create_module_file;
@@ -50,7 +51,7 @@ fn get_code_actions_for_diagnostics(
 ) -> Vec<CodeAction> {
     let uri = &params.text_document.uri;
 
-    params
+    let mut result: Vec<_> = params
         .context
         .diagnostics
         .iter()
@@ -94,7 +95,33 @@ fn get_code_actions_for_diagnostics(
                 vec![]
             }
         })
-        .collect()
+        .collect();
+
+    let changes = result
+        .iter()
+        .filter(|action| action.is_preferred.is_some_and(|a| a))
+        .flat_map(|action| action.edit.as_ref())
+        .flat_map(|edit| edit.changes.as_ref())
+        .cloned()
+        .fold(HashMap::<Url, Vec<TextEdit>>::new(), |mut acc, changes| {
+            for (url, edits) in changes {
+                let entry = acc.entry(url).or_default();
+
+                entry.extend(edits);
+            }
+            acc
+        });
+
+    if !changes.is_empty() {
+        result.push(CodeAction {
+            title: "Fix All".to_string(),
+            kind: Some(CodeActionKind::SOURCE_FIX_ALL),
+            edit: Some(WorkspaceEdit { changes: Some(changes), ..Default::default() }),
+            ..Default::default()
+        });
+    }
+
+    result
 }
 
 trait VecExt<T> {
