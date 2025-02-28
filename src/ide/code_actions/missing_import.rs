@@ -1,15 +1,17 @@
-use lsp_types::{CodeAction, CodeActionKind, Range, TextEdit, Url, WorkspaceEdit};
+use lsp_types::{CodeAction, CodeActionKind, TextEdit, Url, WorkspaceEdit};
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::{LsProtoGroup, ToLsp};
+use crate::lang::lsp::ToLsp;
 use crate::lang::{analysis_context::AnalysisContext, syntax::SyntaxNodeExt};
-use cairo_lang_defs::ids::{FileIndex, ModuleFileId, ModuleId};
+use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_defs::ids::{FileIndex, ModuleFileId};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_syntax::node::ast::{self, ExprPath};
+use cairo_lang_syntax::node::ast::ExprPath;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use if_chain::if_chain;
+use lsp_types::Range;
 use std::collections::HashMap;
 
 pub fn missing_import(
@@ -58,21 +60,7 @@ pub fn missing_import(
         .collect();
 
     let is_preferred = is_preferred(&items);
-
-    let module_start_offset = if_chain! {
-        if let ModuleId::Submodule(submodule_id) = ctx.module_id;
-        if let ast::MaybeModuleBody::Some(body) = submodule_id.stable_ptr(db).lookup(db).body(db);
-
-        then {
-            body.items(db).as_syntax_node().span_start_without_trivia(db)
-        } else {
-            TextOffset::default()
-        }
-    };
-
-    let file_id = db.file_for_url(&uri)?;
-    let module_start_position = module_start_offset.position_in_file(db, file_id)?.to_lsp();
-    let range = Range::new(module_start_position, module_start_position);
+    let range = new_import_position(db, ctx)?;
 
     Some(
         items
@@ -103,4 +91,24 @@ pub fn is_preferred<T>(items: &[T]) -> Option<bool> {
 
     // We can propose this for autofix if there is exactly one possible option.
     is_unambiguous.then_some(true)
+}
+
+/// Returns position where new use statement should be inserted.
+pub fn new_import_position(db: &AnalysisDatabase, ctx: &AnalysisContext) -> Option<Range> {
+    let module_start_offset = if_chain! {
+        if let ModuleId::Submodule(submodule_id) = ctx.module_id;
+        if let ast::MaybeModuleBody::Some(body) = submodule_id.stable_ptr(db).lookup(db).body(db);
+
+        then {
+            body.items(db).as_syntax_node().span_start_without_trivia(db)
+        } else {
+            TextOffset::default()
+        }
+    };
+
+    let file_id = ModuleFileId(ctx.module_id, FileIndex(0)).file_id(db).ok()?;
+    let module_start_position = module_start_offset.position_in_file(db, file_id)?.to_lsp();
+    let range = Range::new(module_start_position, module_start_position);
+
+    Some(range)
 }
