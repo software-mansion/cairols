@@ -1,16 +1,9 @@
 use indoc::indoc;
-use lsp_types::Diagnostic;
 use serde::Serialize;
 use serde_json::json;
 
-use crate::support::normalize::normalize_diagnostics;
+use crate::support::normalize::{DiagnosticsWithUrl, normalize_diagnostics};
 use crate::support::sandbox;
-
-#[derive(Serialize)]
-pub struct DiagnosticsWithUrl {
-    pub url: String,
-    pub diagnostics: Vec<Diagnostic>,
-}
 
 #[derive(Serialize)]
 struct DiagnosticsReport {

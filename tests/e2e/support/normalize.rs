@@ -4,10 +4,16 @@ use std::str::FromStr;
 use itertools::Itertools;
 use lsp_types::{Diagnostic, DiagnosticRelatedInformation, Location, Url};
 use regex::Regex;
+use serde::Serialize;
 
-use crate::custom_macros::DiagnosticsWithUrl;
 use crate::support::fixture::Fixture;
 use crate::support::scarb::scarb_registry_std_path;
+
+#[derive(Debug, Serialize)]
+pub struct DiagnosticsWithUrl {
+    pub url: String,
+    pub diagnostics: Vec<Diagnostic>,
+}
 
 /// Performs various normalization steps of the input data, to remove any runtime-specific artifacts
 /// and make comparisons in test assertions deterministic.
