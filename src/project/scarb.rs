@@ -7,6 +7,7 @@ use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig,
 };
+use cairo_lang_utils::OptionHelper;
 use itertools::Itertools;
 use scarb_metadata::{
     CompilationUnitCairoPluginMetadata, CompilationUnitComponentDependencyMetadata,
@@ -100,6 +101,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                     continue;
                 }
             };
+            let custom_main_file_stems = (file_stem != "lib").then_some(vec![file_stem.into()]);
 
             let cfg_set_from_scarb = scarb_cfg_set_to_cairo(
                 component.cfg.as_ref().unwrap_or(&compilation_unit.cfg),
@@ -181,7 +183,19 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                     (
                         c.name.clone(),
                         DependencySettings {
-                            discriminator: c.discriminator.as_ref().map(ToSmolStr::to_smolstr),
+                            discriminator: c
+                                .discriminator
+                                .as_ref()
+                                .map(ToSmolStr::to_smolstr)
+                                .on_none(|| {
+                                    if !is_core(&package) {
+                                        error!(
+                                            "discriminator of component {} with id {} was None",
+                                            c.name,
+                                            c.id.as_ref().unwrap()
+                                        );
+                                    }
+                                }),
                         },
                     )
                 })
@@ -202,18 +216,15 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                 experimental_features,
             };
 
-            let custom_main_file_stems = (file_stem != "lib").then_some(vec![file_stem.into()]);
-
             // We collect only the built-in plugins.
             // Procedural macros are handled separately in the
             // `crate::lang::proc_macros::controller`.
-
             let mut builtin_plugins = crates_by_component_id
                 .get(&component_id)
                 .map(|cr| cr.builtin_plugins.clone())
                 .unwrap_or_default();
 
-            builtin_plugins.extend(if package.is_some_and(|p| p.name == "core") {
+            builtin_plugins.extend(if is_core(&package) {
                 // Corelib is a special case because it is described by `cairo_project.toml`.
                 plugins_for_corelib()
             } else {
@@ -406,4 +417,8 @@ fn plugins_from_dependencies(
             BuiltinPlugin::from_plugin_metadata(metadata, plugin_metadata)
         })
         .collect()
+}
+
+fn is_core(package: &Option<&PackageMetadata>) -> bool {
+    package.is_some_and(|p| p.name == "core")
 }
