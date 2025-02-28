@@ -29,7 +29,7 @@ use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::{BackgroundSchedule, Task};
 use crate::state::State;
 
-mod traits;
+mod handlers;
 
 pub fn request<'a>(request: Request) -> Task<'a> {
     let id = request.id.clone();
@@ -128,7 +128,7 @@ pub fn notification<'a>(notification: Notification) -> Task<'a> {
     })
 }
 
-fn local_request_task<'a, R: traits::SyncRequestHandler>(
+fn local_request_task<'a, R: handlers::SyncRequestHandler>(
     request: Request,
 ) -> Result<Task<'a>, LSPError> {
     let (id, params) = cast_request::<R>(request)?;
@@ -138,7 +138,7 @@ fn local_request_task<'a, R: traits::SyncRequestHandler>(
     }))
 }
 
-fn background_request_task<'a, R: traits::BackgroundDocumentRequestHandler>(
+fn background_request_task<'a, R: handlers::BackgroundDocumentRequestHandler>(
     request: Request,
     schedule: BackgroundSchedule,
 ) -> Result<Task<'a>, LSPError> {
@@ -165,7 +165,7 @@ fn background_request_task<'a, R: traits::BackgroundDocumentRequestHandler>(
     }))
 }
 
-fn local_notification_task<'a, N: traits::SyncNotificationHandler>(
+fn local_notification_task<'a, N: handlers::SyncNotificationHandler>(
     notification: Notification,
 ) -> Result<Task<'a>, LSPError> {
     let (id, params) = cast_notification::<N>(notification)?;
