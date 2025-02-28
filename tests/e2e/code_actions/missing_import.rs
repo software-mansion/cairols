@@ -20,6 +20,10 @@ fn single() {
     Add new text: "use aa::cc;
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Fix All
+    Add new text: "use aa::cc;
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     "#);
 }
 
@@ -111,6 +115,10 @@ fn generic_path() {
     Add new text: "use aa::bb;
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Fix All
+    Add new text: "use aa::bb;
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     "#);
 }
 
@@ -129,4 +137,40 @@ fn generic_path_on_generic() {
         bb::cc::<fel<caret>t252>()
     }
     ", @"No code actions.");
+}
+
+#[test]
+fn fix_all() {
+    test_transform!(quick_fix, "
+    mod aa {
+        pub mod bb {
+            pub fn cc<T>(a: @T) {}
+        }
+
+        pub fn dd() {}
+    }
+
+    fn test() {
+        <sel>
+        bb::cc();
+        dd();
+        </sel>
+    }
+    ", @r#"
+    Title: Import `aa::bb`
+    Add new text: "use aa::bb;
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Import `aa::dd`
+    Add new text: "use aa::dd;
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Fix All
+    Add new text: "use aa::bb;
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Add new text: "use aa::dd;
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    "#);
 }
