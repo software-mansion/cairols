@@ -46,10 +46,6 @@ pub fn get_workspace_members_manifests(metadata: &Metadata) -> HashMap<PathBuf, 
 /// Technically, it is possible for `scarb metadata` to omit `core` if working on a `no-core`
 /// package, but in reality enabling `no-core` makes sense only for the `core` package itself. To
 /// leave a trace of unreal cases, this function will log a warning if `core` is missing.
-// FIXME(mkaput): Currently this logic is collecting all compilation units of the single package at
-//  once. Often packages declare several targets (lib, starknet-contract, test), which currently
-//  causes overriding of the crate within single call of this function. This is an UX problem, for
-//  which we do not know the solution yet.
 pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
     // A crate can appear as a component in multiple compilation units.
     // We use a map here to make sure we include dependencies and cfg sets from all CUs.
