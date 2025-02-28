@@ -1,3 +1,5 @@
+use std::{any::TypeId, collections::HashMap, sync::LazyLock};
+
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, MacroPlugin, MacroPluginMetadata, PluginResult,
 };
@@ -7,6 +9,7 @@ use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::ast::ModuleItem;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_test_plugin::{test_assert_suite, test_plugin_suite};
+use itertools::chain;
 use scarb_metadata::{CompilationUnitCairoPluginMetadata, Metadata};
 
 /// Representation of known built-in plugins available in the Cairo compiler.
@@ -62,37 +65,18 @@ impl BuiltinPlugin {
         }
     }
 
-    // TODO(#324): Improve those functions as soon as plugins implement `Eq`.
     pub fn try_from_compiler_macro_plugin(plugin: &dyn MacroPlugin) -> Option<Self> {
-        match format!("{plugin:?}").as_str() {
-            "TestPlugin" => Some(Self::CairoTest),
-            "CairoRunPlugin" => Some(Self::CairoRun),
-            "ExecutablePlugin" => Some(Self::Executable),
-            "StarknetPlugin" | "StorageInterfacesPlugin" => Some(Self::Starknet),
-            _ => None,
-        }
+        PLUGIN_TYPE_IDS.get(&plugin.plugin_type_id()).cloned()
     }
 
     pub fn try_from_compiler_inline_macro_plugin(
         plugin: &dyn InlineMacroExprPlugin,
     ) -> Option<Self> {
-        match format!("{plugin:?}").as_str() {
-            "AssertEqMacro" | "AssertNeMacro" | "AssertLtMacro" | "AssertLeMacro"
-            | "AssertGtMacro" | "AssertGeMacro" => Some(Self::AssertMacros),
-            "StorageInterfacesPlugin"
-            | "SelectorMacro"
-            | "GetDepComponentMacro"
-            | "GetDepComponentMutMacro" => Some(Self::Starknet),
-            _ => None,
-        }
+        PLUGIN_TYPE_IDS.get(&plugin.plugin_type_id()).cloned()
     }
 
     pub fn try_from_compiler_analyzer_plugin(plugin: &dyn AnalyzerPlugin) -> Option<Self> {
-        match format!("{plugin:?}").as_str() {
-            "RawExecutableAnalyzer" => Some(Self::Executable),
-            "ABIAnalyzer" | "StorageAnalyzer" => Some(Self::Starknet),
-            _ => None,
-        }
+        PLUGIN_TYPE_IDS.get(&plugin.plugin_type_id()).cloned()
     }
 }
 
@@ -128,4 +112,30 @@ impl MacroPlugin for CairoRunPlugin {
     fn executable_attributes(&self) -> Vec<String> {
         self.declared_attributes()
     }
+}
+
+/// Stores a mapping between [`TypeId`]s of built-in compiler plugins
+/// and their representation by the [`BuitlinPlugin`].
+/// This relation have to be discovered in runtime because most of the plugins
+/// are private and cannot be accessed outside the compiler.
+static PLUGIN_TYPE_IDS: LazyLock<HashMap<TypeId, BuiltinPlugin>> = LazyLock::new(|| {
+    chain!(
+        plugin_type_ids(test_assert_suite()).map(|id| (id, BuiltinPlugin::AssertMacros)),
+        plugin_type_ids(test_plugin_suite()).map(|id| (id, BuiltinPlugin::CairoTest)),
+        plugin_type_ids(cairo_run_plugin_suite()).map(|id| (id, BuiltinPlugin::CairoRun)),
+        plugin_type_ids(executable_plugin_suite()).map(|id| (id, BuiltinPlugin::Executable)),
+        plugin_type_ids(starknet_plugin_suite()).map(|id| (id, BuiltinPlugin::Starknet)),
+    )
+    .collect()
+});
+
+/// Returns an iterator which yields [`TypeId`]s of all plugins of all kinds contained in the [`PluginSuite`].
+fn plugin_type_ids(suite: PluginSuite) -> impl Iterator<Item = TypeId> {
+    let PluginSuite { plugins, inline_macro_plugins, analyzer_plugins } = suite;
+
+    chain!(
+        plugins.into_iter().map(|plugin| plugin.plugin_type_id()),
+        inline_macro_plugins.into_iter().map(|(_, plugin)| plugin.plugin_type_id()),
+        analyzer_plugins.into_iter().map(|plugin| plugin.plugin_type_id()),
+    )
 }
