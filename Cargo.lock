@@ -2982,6 +2982,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "scarb_procedural_macros"
+version = "1.0.0"
+dependencies = [
+ "cairo-lang-macro",
+ "indoc",
+]
+
+[[package]]
 name = "schemars"
 version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
