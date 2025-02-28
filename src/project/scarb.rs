@@ -129,7 +129,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                 cfg_set.union(previous_cfg_set)
             });
 
-            let dependencies = component
+            let (regular_dependencies, plugin_dependencies) = component
                 .dependencies
                 .as_deref()
                 .unwrap_or_else(|| {
@@ -140,20 +140,50 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                     &[]
                 })
                 .iter()
-                .filter_map(|CompilationUnitComponentDependencyMetadata { id, .. }| {
-                    let dependency_component = compilation_unit
-                        .components
-                        .iter()
-                        .find(|component| component.id.as_ref() == Some(id));
+                .fold(
+                    (Vec::new(), Vec::new()),
+                    |(mut regular_deps, mut plugin_deps),
+                     CompilationUnitComponentDependencyMetadata { id, .. }| {
+                        let regular_dep = compilation_unit
+                            .components
+                            .iter()
+                            .find(|component| component.id.as_ref() == Some(id));
 
-                    dependency_component.map(|c| {
-                        (
-                            c.name.clone(),
-                            DependencySettings {
-                                discriminator: c.discriminator.as_ref().map(ToSmolStr::to_smolstr),
-                            },
-                        )
-                    })
+                        let plugin_dep = compilation_unit
+                            .cairo_plugins
+                            .iter()
+                            .find(|plugin| plugin.component_dependency_id.as_ref() == Some(id));
+
+                        match (regular_dep, plugin_dep) {
+                            (Some(dep), None) => {
+                                regular_deps.push(dep);
+                            }
+                            (None, Some(dep)) => {
+                                plugin_deps.push(dep);
+                            }
+                            (Some(dep), Some(_)) => {
+                                error!("component dependency with id `{}` found in both components and plugins of CU with id `{}`: \
+                                        defaulting to treating it as a component dependency", id, compilation_unit.id);
+                                regular_deps.push(dep);
+                            }
+                            (None, None) => {
+                                error!("component dependency with id `{}` not found in components nor in plugins of CU with id `{}`", id, compilation_unit.id);
+                            }
+                        }
+
+                        (regular_deps, plugin_deps)
+                    },
+                );
+
+            let dependencies = regular_dependencies
+                .into_iter()
+                .map(|c| {
+                    (
+                        c.name.clone(),
+                        DependencySettings {
+                            discriminator: c.discriminator.as_ref().map(ToSmolStr::to_smolstr),
+                        },
+                    )
                 })
                 .chain(
                     crates_by_component_id
@@ -173,23 +203,6 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
             };
 
             let custom_main_file_stems = (file_stem != "lib").then_some(vec![file_stem.into()]);
-
-            let plugin_dependencies = component
-                .dependencies
-                .as_ref()
-                .map(|dependencies| {
-                    dependencies
-                        .iter()
-                        .filter_map(|dependency| {
-                            let plugin = compilation_unit.cairo_plugins.iter().find(|plugin| {
-                                plugin.component_dependency_id.as_ref() == Some(&dependency.id)
-                            });
-
-                            plugin
-                        })
-                        .collect_vec()
-                })
-                .unwrap_or_default();
 
             // We collect only the built-in plugins.
             // Procedural macros are handled separately in the
