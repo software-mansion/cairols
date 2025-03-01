@@ -128,13 +128,6 @@ impl ProcMacroClientController {
     /// This ensures that a fresh proc-macro-server is used.
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn force_restart(&mut self, db: &mut AnalysisDatabase, config: &Config) {
-        // We have to make sure that snapshots will not report errors from previous client after we
-        // create new one.
-        db.cancel_all();
-
-        // Otherwise we can get messages from old client after initialization of new one.
-        self.channels.clear_all();
-
         for (crate_id, plugins) in mem::take(&mut self.crate_plugin_suites) {
             let interned_plugins = db.intern_plugin_suite(plugins);
             db.remove_crate_plugin_suite(db.intern_crate(crate_id), &interned_plugins);
@@ -252,6 +245,13 @@ impl ProcMacroClientController {
     /// Spawns proc-macro-server.
     #[tracing::instrument(level = "trace", skip_all)]
     fn spawn_server(&mut self, db: &mut AnalysisDatabase) {
+        // We have to make sure that snapshots will not report errors from previous client after we
+        // create new one.
+        db.cancel_all();
+
+        // Otherwise we can get messages from old client after initialization of new one.
+        self.channels.clear_all();
+
         match self.scarb.proc_macro_server() {
             Ok(proc_macro_server) => {
                 let client = ProcMacroClient::new(
