@@ -20,6 +20,9 @@ fn before_name() {
     Title: Rename to `_b`
     Add new text: "_"
     At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
+    Title: Fix All
+    Add new text: "_"
+    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
     "#);
 }
 
@@ -31,6 +34,9 @@ fn after_name() {
     }
     ", @r#"
     Title: Rename to `_b`
+    Add new text: "_"
+    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
+    Title: Fix All
     Add new text: "_"
     At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
     "#);
@@ -91,6 +97,9 @@ fn before_name_when_mut() {
     Title: Rename to `_b`
     Add new text: "_"
     At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
+    Title: Fix All
+    Add new text: "_"
+    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
     "#);
 }
 
@@ -102,6 +111,9 @@ fn after_name_when_mut() {
     }
     ", @r#"
     Title: Rename to `_b`
+    Add new text: "_"
+    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
+    Title: Fix All
     Add new text: "_"
     At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
     "#);
