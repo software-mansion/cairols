@@ -188,7 +188,12 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                                 .as_ref()
                                 .map(ToSmolStr::to_smolstr)
                                 .on_none(|| {
-                                    if !is_core(&package) {
+                                    let pkg = metadata
+                                        .packages
+                                        .iter()
+                                        .find(|package| package.id == c.package);
+
+                                    if !is_core(&pkg) {
                                         error!(
                                             "discriminator of component {} with id {} was None",
                                             c.name,
