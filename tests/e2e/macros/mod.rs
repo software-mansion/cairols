@@ -16,6 +16,7 @@ use lsp_types::{Position, TextDocumentIdentifier, TextDocumentPositionParams};
 use serde::Serialize;
 use serde_json::json;
 
+mod builtin;
 mod fixtures;
 mod procedural;
 

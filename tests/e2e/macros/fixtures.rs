@@ -7,6 +7,7 @@ use super::{MacroTest, SCARB_TEST_MACROS_PACKAGE};
 pub struct ProjectWithCustomMacros;
 pub struct ProjectWithSnforgeUnitTest;
 pub struct ProjectWithSnforgeIntegrationTest;
+pub struct ProjectWithCairoProjectToml;
 
 impl MacroTest for ProjectWithCustomMacros {
     const CWD: &str = "test_package";
@@ -80,6 +81,20 @@ impl MacroTest for ProjectWithSnforgeIntegrationTest {
                 url = "https://starknet-sepolia.public.blastapi.io/rpc/v0_7"
                 block_id.tag = "latest"
             "#),
+        }
+    }
+}
+
+impl MacroTest for ProjectWithCairoProjectToml {
+    const CWD: &str = "test_package";
+    const SNIPPET_LOCATION: &str = "test_package/src/lib.cairo";
+
+    fn fixture() -> Fixture {
+        fixture! {
+            "test_package/cairo_project.toml" => indoc!(r#"
+                [crate-roots]
+                test_package = "src"
+            "#)
         }
     }
 }
