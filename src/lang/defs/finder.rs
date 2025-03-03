@@ -58,8 +58,10 @@ fn try_submodule_name(
     db: &AnalysisDatabase,
     identifier: &ast::TerminalIdentifier,
 ) -> Option<ResolvedItem> {
-    let item_module = identifier.as_syntax_node().parent_of_type::<ast::ItemModule>(db)?;
-    assert_eq!(item_module.name(db), *identifier);
+    let item_module = identifier
+        .as_syntax_node()
+        .parent_of_type::<ast::ItemModule>(db)
+        .filter(|item_module| item_module.name(db) == *identifier)?;
     let containing_module_file_id =
         db.find_module_file_containing_node(&item_module.as_syntax_node())?;
     let submodule_id =
@@ -139,8 +141,10 @@ fn try_member_declaration(
     db: &AnalysisDatabase,
     identifier: &ast::TerminalIdentifier,
 ) -> Option<ResolvedItem> {
-    let member = identifier.as_syntax_node().parent_of_type::<ast::Member>(db)?;
-    assert_eq!(member.name(db), *identifier);
+    let member = identifier
+        .as_syntax_node()
+        .parent_of_type::<ast::Member>(db)
+        .filter(|member| member.name(db) == *identifier)?;
     let item_struct = member.as_syntax_node().ancestor_of_type::<ast::ItemStruct>(db)?;
     let struct_id = StructLongId(
         db.find_module_file_containing_node(&item_struct.as_syntax_node())?,
@@ -157,8 +161,10 @@ fn try_variant_declaration(
     db: &AnalysisDatabase,
     identifier: &ast::TerminalIdentifier,
 ) -> Option<ResolvedItem> {
-    let variant = identifier.as_syntax_node().ancestor_of_type::<ast::Variant>(db)?;
-    assert_eq!(variant.name(db), *identifier);
+    let variant = identifier
+        .as_syntax_node()
+        .ancestor_of_type::<ast::Variant>(db)
+        .filter(|variant| variant.name(db) == *identifier)?;
     let item_enum = variant.as_syntax_node().ancestor_of_type::<ast::ItemEnum>(db)?;
     let enum_id = EnumLongId(
         db.find_module_file_containing_node(&item_enum.as_syntax_node())?,
@@ -184,9 +190,11 @@ fn try_variable_declaration(
     let function_id = lookup_items.first()?.function_with_body()?;
 
     // Look at function parameters.
-    if let Some(param) = identifier.as_syntax_node().parent_of_type::<ast::Param>(db) {
-        assert_eq!(param.name(db), *identifier);
-
+    if let Some(param) = identifier
+        .as_syntax_node()
+        .parent_of_type::<ast::Param>(db)
+        .filter(|param| param.name(db) == *identifier)
+    {
         // Closures have different semantic model structures than regular functions.
         let params = if let Some(expr_closure_ast) =
             param.as_syntax_node().ancestor_of_type::<ast::ExprClosure>(db)
