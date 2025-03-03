@@ -1,17 +1,15 @@
 ---
-source: tests/e2e/macro_expand/mod.rs
+source: tests/e2e/macros/builtin/mod.rs
 expression: report
 ---
-source_contexts = '''
+[[expansions]]
+analyzed_lines = """
 #[d<caret>erive(Drop, Serde)]
-
 #[derive(Drop,<caret> Serde)]
-
 #[derive(Drop, Serde)]<caret>
-
 struct <caret>A {
-'''
-expansion = '''
+"""
+generated_code = """
 // lib.cairo
 // ---------
 
@@ -34,4 +32,5 @@ impl ASerde<> of core::serde::Serde<A> {
         > { value: core::serde::Serde::<felt252>::deserialize(ref serialized)? };
         core::option::Option::Some(A { a: a.value })
     }
-}'''
+}
+"""

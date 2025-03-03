@@ -1,20 +1,16 @@
 ---
-source: tests/e2e/macro_expand/mod.rs
+source: tests/e2e/macros/builtin/mod.rs
 expression: report
-snapshot_kind: text
 ---
-source_contexts = '''
+[[expansions]]
+analyzed_lines = '''
 fn fib<caret>(mut n: u32) -> u32 {
-
-    println!("some text")<caret>;
-
-    println!("some text");<caret>
-
+     println!("some text")<caret>;
+     println!("some text");<caret>
     while n != 0<caret> {
-
         a = t<caret>emp;
 '''
-expansion = '''
+generated_code = """
 // lib.cairo
 // ---------
 
@@ -43,4 +39,31 @@ fn fib(mut n: u32) -> u32 {
         a = temp;
     }
     a
-}'''
+}
+"""
+
+[[expansions]]
+analyzed_lines = '''
+   <caret>  println!("some text");
+     pr<caret>intln!("some text");
+     println!<caret>("some text");
+'''
+generated_code = """
+// lib.cairo
+// ---------
+
+{
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+    core::result::ResultTrait::<
+        (), core::fmt::Error,
+    >::unwrap(
+        {
+            core::byte_array::ByteArrayTrait::append_word(
+                ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10,
+            );
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        },
+    );
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+}
+"""

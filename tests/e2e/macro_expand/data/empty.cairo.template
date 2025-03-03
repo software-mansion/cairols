@@ -1,4 +1,0 @@
-fn m<caret>ain() -> u3<caret>2 {
-    // co<caret>mments
-    fib(1<caret>6)<caret>
-}
