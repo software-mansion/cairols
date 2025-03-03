@@ -68,6 +68,53 @@ fn test_two_simultaneous_lints() {
     );
 }
 
+#[test]
+fn test_linter_with_starknet_analyzer_plugins() {
+    let report = test_linter_diagnostics(fixture! {
+        "Scarb.toml" => indoc!(r#"
+            [package]
+            name = "test_package"
+            version = "0.1.0"
+            edition = "2024_07"
+
+            [dependencies]
+            starknet = "2.10.0"
+        "#),
+        "src/lib.cairo" => indoc!(r#"
+            //! > cairo_code
+            #[starknet::contract]
+            mod test_contract {
+                #[storage]
+                struct Storage {}
+
+                #[external(v0)]
+                fn foo() {
+                    loop {
+                        break ();
+                    }
+                }
+            }
+        "#)
+    });
+
+    insta::assert_toml_snapshot!(
+        report,
+        @r"
+        [[diagnostics]]
+        severity = 'Error'
+        message = 'Plugin diagnostic: The first parameter of an entry point must be `self`.'
+
+        [[diagnostics]]
+        severity = 'Warning'
+        message = 'Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.'
+
+        [[diagnostics]]
+        severity = 'Warning'
+        message = 'Plugin diagnostic: unnecessary double parentheses found after break. Consider removing them.'
+        "
+    );
+}
+
 #[derive(Serialize)]
 struct Report {
     diagnostics: Vec<Diagnostic>,
