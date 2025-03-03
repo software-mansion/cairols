@@ -1,41 +1,46 @@
 use std::fmt::Display;
 
+use indoc::indoc;
 use serde::Serialize;
 use serde_json::json;
 
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
-use crate::support::insta::test_transform;
+use crate::support::fixture::{Fixture, fixture};
 use crate::support::sandbox;
 
 #[test]
 fn test_simple_lint() {
-    test_transform!(
-        test_linter_diagnostics,
-        r#"
-        fn foo() {
-            let mut span = array![0x0].span();
+    let report = test_linter_diagnostics(fixture! {
+        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+        "src/lib.cairo" => indoc!(r#"
+            fn foo() {
+                let mut span = array![0x0].span();
 
-            loop {
-                match span.pop_front() {
-                    Some(_) => {},
-                    None => { break; },
+                loop {
+                    match span.pop_front() {
+                        Some(_) => {},
+                        None => { break; },
+                    }
                 }
             }
-        }
-        "#,
-        @r#"
-    [[diagnostics]]
-    severity = "Warning"
-    message = "Plugin diagnostic: you seem to be trying to use `loop` for iterating over a span. Consider using `for in`"
-    "#
-    )
+        "#)
+    });
+
+    insta::assert_toml_snapshot!(
+        report,
+        @r"
+        [[diagnostics]]
+        severity = 'Warning'
+        message = 'Plugin diagnostic: you seem to be trying to use `loop` for iterating over a span. Consider using `for in`'
+        "
+    );
 }
 
 #[test]
 fn test_two_simultaneous_lints() {
-    test_transform!(
-        test_linter_diagnostics,
-        r#"
+    let report = test_linter_diagnostics(fixture! {
+        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+        "src/lib.cairo" => r#"
         fn foo() {
             let mut span = array![0x0].span();
 
@@ -46,17 +51,21 @@ fn test_two_simultaneous_lints() {
                 }
             }
         }
-        "#,
-        @r#"
-    [[diagnostics]]
-    severity = "Warning"
-    message = "Plugin diagnostic: unnecessary double parentheses found after break. Consider removing them."
+        "#
+    });
 
-    [[diagnostics]]
-    severity = "Warning"
-    message = "Plugin diagnostic: you seem to be trying to use `loop` for iterating over a span. Consider using `for in`"
-    "#
-    )
+    insta::assert_toml_snapshot!(
+        report,
+        @r"
+        [[diagnostics]]
+        severity = 'Warning'
+        message = 'Plugin diagnostic: unnecessary double parentheses found after break. Consider removing them.'
+
+        [[diagnostics]]
+        severity = 'Warning'
+        message = 'Plugin diagnostic: you seem to be trying to use `loop` for iterating over a span. Consider using `for in`'
+        "
+    );
 }
 
 #[derive(Serialize)]
@@ -88,16 +97,13 @@ impl Display for Report {
 
 /// Collects diagnostics emitted by the linter.
 ///
-/// This function spawns a sandbox language server with the given code in the `src/lib.cairo` file.
+/// This function spawns a sandbox language server with the given fixture.
 /// The Cairo source code is expected to contain caret markers.
 /// The function then requests quick fixes at each caret position and compares the result with the
 /// expected quick fixes from the snapshot file.
-fn test_linter_diagnostics(cairo_code: &str) -> Report {
+fn test_linter_diagnostics(fixture: Fixture) -> Report {
     let mut ls = sandbox!(
-        files {
-            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-            "src/lib.cairo" => cairo_code
-        }
+        fixture = fixture;
         workspace_configuration = json!({
             "cairo1": {
                 "enableLinter": true
