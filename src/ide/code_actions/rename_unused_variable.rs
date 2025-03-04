@@ -7,7 +7,6 @@ use if_chain::if_chain;
 use lsp_types::{CodeAction, CodeActionKind, Diagnostic, TextEdit, Url, WorkspaceEdit};
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::syntax::SyntaxNodeExt;
 
 /// Create a code action that prefixes an unused variable with an `_`.
 pub fn rename_unused_variable(

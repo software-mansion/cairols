@@ -13,8 +13,6 @@ use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
 use smol_str::SmolStr;
 
-use crate::lang::syntax::SyntaxNodeExt;
-
 pub fn file_syntax_tree(db: &dyn SyntaxGroup, syntax_root: &SyntaxNode) -> String {
     let mut printer = Printer::new(db, true, false);
     printer.print_tree("root", syntax_root, "", true);

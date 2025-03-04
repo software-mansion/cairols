@@ -5,7 +5,6 @@ use smol_str::SmolStr;
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::defs::ItemDef;
-use crate::lang::syntax::SyntaxNodeExt;
 
 /// Information about an enum variant.
 #[derive(Eq, PartialEq)]

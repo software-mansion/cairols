@@ -15,8 +15,6 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, Upcast};
 
-use crate::lang::syntax::SyntaxNodeExt;
-
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// Language server-specific extensions to the semantic group.
 pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {

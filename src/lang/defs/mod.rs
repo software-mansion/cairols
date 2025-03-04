@@ -15,7 +15,7 @@ pub use self::module::ModuleDef;
 pub use self::variable::VariableDef;
 pub use self::variant::VariantDef;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::lang::syntax::SyntaxNodeExt;
+
 use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
 

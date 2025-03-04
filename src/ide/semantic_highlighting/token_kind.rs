@@ -10,7 +10,6 @@ use cairo_lang_utils::Upcast;
 use lsp_types::SemanticTokenType;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::lang::syntax::SyntaxNodeExt;
 
 #[allow(dead_code)]
 pub enum SemanticTokenKind {
