@@ -10,8 +10,7 @@ use scarb::regular::macro_generate_code;
 use scarb_proc_macro_server_types::methods::defined_macros::{
     DefinedMacrosResponse, PackageDefinedMacrosInfo,
 };
-use scarb_proc_macro_server_types::scope::ProcMacroScope;
-use smol_str::SmolStr;
+use scarb_proc_macro_server_types::scope::{ProcMacroScope, SerializedPackageId};
 
 mod downcast;
 // TODO(#6666) Evict this module when this is possible.
@@ -21,7 +20,7 @@ mod scarb;
 /// supported by the proc-macro-server, used by those packages.
 pub fn proc_macro_plugin_suites(
     defined_macros: DefinedMacrosResponse,
-) -> OrderedHashMap<SmolStr, PluginSuite> {
+) -> OrderedHashMap<SerializedPackageId, PluginSuite> {
     defined_macros
         .macros_by_package_id
         .into_iter()
@@ -45,7 +44,7 @@ pub fn proc_macro_plugin_suites(
                 plugin_suite.add_inline_macro_plugin_ex(&inline_macro, inline_plugin.clone());
             }
 
-            (package_id.into(), plugin_suite)
+            (package_id, plugin_suite)
         })
         .collect()
 }

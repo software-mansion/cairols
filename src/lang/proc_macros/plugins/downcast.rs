@@ -31,7 +31,7 @@ mod unsafe_downcast_ref_tests {
     use cairo_lang_syntax::node::db::SyntaxGroup;
     use scarb_proc_macro_server_types::methods::ProcMacroResult;
     use scarb_proc_macro_server_types::methods::expand::ExpandAttributeParams;
-    use scarb_proc_macro_server_types::scope::ProcMacroScope;
+    use scarb_proc_macro_server_types::scope::{ProcMacroScope, SerializedPackageId};
 
     use super::unsafe_downcast_ref;
     use crate::lang::db::AnalysisDatabase;
@@ -41,7 +41,8 @@ mod unsafe_downcast_ref_tests {
     fn cast_succeed() {
         let mut db = AnalysisDatabase::new();
 
-        let context = ProcMacroScope { package_id: String::from("anything") };
+        let context =
+            ProcMacroScope { package_id: SerializedPackageId::from("anything".to_string()) };
 
         let input = ExpandAttributeParams {
             context,
