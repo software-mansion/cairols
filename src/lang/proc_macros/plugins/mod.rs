@@ -3,15 +3,14 @@ use std::sync::Arc;
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::smol_str::SmolStr;
 use convert_case::{Case, Casing};
 use downcast::unsafe_downcast_ref;
 use scarb::inline::inline_macro_generate_code;
 use scarb::regular::macro_generate_code;
 use scarb_proc_macro_server_types::methods::defined_macros::{
-    DefinedMacrosResponse, PackageDefinedMacrosInfo,
+    CompilationUnitComponentMacros, DefinedMacrosResponse,
 };
-use scarb_proc_macro_server_types::scope::ProcMacroScope;
+use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, ProcMacroScope};
 
 mod downcast;
 // TODO(#6666) Evict this module when this is possible.
@@ -21,32 +20,38 @@ mod scarb;
 /// supported by the proc-macro-server, used by those packages.
 pub fn proc_macro_plugin_suites(
     defined_macros: DefinedMacrosResponse,
-) -> OrderedHashMap<SmolStr, PluginSuite> {
+) -> OrderedHashMap<CompilationUnitComponent, PluginSuite> {
     defined_macros
-        .macros_by_package_id
+        .macros_for_cu_components
         .into_iter()
-        .map(|(package_id, component_plugins)| {
-            let PackageDefinedMacrosInfo { attributes, inline_macros, derives, executables } =
-                component_plugins;
-            let mut plugin_suite = PluginSuite::default();
+        .map(
+            |CompilationUnitComponentMacros {
+                 component,
+                 attributes,
+                 inline_macros,
+                 derives,
+                 executables,
+             }| {
+                let mut plugin_suite = PluginSuite::default();
 
-            let plugin_scope = ProcMacroScope { package_id: package_id.clone() };
+                let plugin_scope = ProcMacroScope { component: component.clone() };
 
-            plugin_suite.add_plugin_ex(Arc::new(ProcMacroPlugin {
-                scope: plugin_scope.clone(),
-                defined_attributes: attributes,
-                defined_derives: derives,
-                defined_executable_attributes: executables,
-            }));
+                plugin_suite.add_plugin_ex(Arc::new(ProcMacroPlugin {
+                    scope: plugin_scope.clone(),
+                    defined_attributes: attributes,
+                    defined_derives: derives,
+                    defined_executable_attributes: executables,
+                }));
 
-            let inline_plugin = Arc::new(InlineProcMacroPlugin { scope: plugin_scope });
+                let inline_plugin = Arc::new(InlineProcMacroPlugin { scope: plugin_scope });
 
-            for inline_macro in inline_macros {
-                plugin_suite.add_inline_macro_plugin_ex(&inline_macro, inline_plugin.clone());
-            }
+                for inline_macro in inline_macros {
+                    plugin_suite.add_inline_macro_plugin_ex(&inline_macro, inline_plugin.clone());
+                }
 
-            (package_id.into(), plugin_suite)
-        })
+                (component, plugin_suite)
+            },
+        )
         .collect()
 }
 

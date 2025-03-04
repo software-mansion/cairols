@@ -165,15 +165,16 @@ impl ProcMacroClientController {
 
                 self.crate_plugin_suites = proc_macro_plugin_suites(defined_macros)
                     .into_iter()
-                    .map(|(package_id, suite)| {
-                        // Here we rely on the implicit contract that keys of the
-                        // `DefinedMacrosResponse.macros_by_package_id` are of form
-                        // `PackageId.to_serialized_string()` which is always equal to
-                        // `scarb_metadata::CompilationUnitComponentId.repr` and has the form
-                        // "<crate-name> <version> (<source-path>)".
-                        let crate_name = package_id.split(' ').next().unwrap().to_smolstr();
-                        let crate_long_id =
-                            CrateLongId::Real { name: crate_name, discriminator: Some(package_id) };
+                    .map(|(component, suite)| {
+                        // Here we rely on the contract that `name` and `discriminator` of the
+                        // `CompilationUnitComponent` are identical to those from `scarb-metadata`,
+                        // so the `CrateLondId`s constructed here are identical to those built in
+                        // `project::crate_data::Crate::apply`.
+                        let crate_name = component.name.to_smolstr();
+                        let crate_long_id = CrateLongId::Real {
+                            name: crate_name,
+                            discriminator: component.discriminator.map(Into::into),
+                        };
 
                         (crate_long_id, suite)
                     })
