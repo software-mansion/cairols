@@ -2,6 +2,30 @@ use crate::find_references::find_references;
 use crate::support::insta::test_transform;
 
 #[test]
+fn felt_in_struct() {
+    test_transform!(find_references, r#"
+    #[derive(Drop)]
+    struct Foo { field: felt2<caret>52 }
+    "#, @r"
+    // found several references in the core crate
+    #[derive(Drop)]
+    struct Foo { field: <sel>felt252</sel> }
+    ")
+}
+
+#[test]
+fn usize_in_struct() {
+    test_transform!(find_references, r#"
+    #[derive(Drop)]
+    struct Foo { field: usi<caret>ze }
+    "#, @r"
+    // found several references in the core crate
+    #[derive(Drop)]
+    struct Foo { field: usize }
+    ")
+}
+
+#[test]
 fn struct_by_name() {
     test_transform!(find_references, r#"
     #[derive(Drop)]

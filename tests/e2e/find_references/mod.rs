@@ -89,7 +89,10 @@ fn find_references(cairo_code: &str) -> String {
 
             let mut result = String::new();
 
-            if remove_core_references(&mut declarations) || remove_core_references(&mut usages) {
+            let removed_via_declarations = remove_core_references(&mut declarations);
+            let removed_via_references = remove_core_references(&mut usages);
+
+            if removed_via_declarations || removed_via_references {
                 result.push_str("// found several references in the core crate\n");
             }
 
