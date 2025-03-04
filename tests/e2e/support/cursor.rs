@@ -2,7 +2,7 @@ use std::cmp::min;
 use std::str::Chars;
 
 use itertools::{Itertools, MultiPeek};
-use lsp_types::{Position, Range};
+use lsp_types::{Position, Range, TextEdit};
 
 #[path = "cursor_test.rs"]
 mod test;
@@ -208,6 +208,16 @@ pub fn render_selections_with_attrs(text: &str, ranges: &[(Range, Option<String>
             offset + marker.len()
         });
     text
+}
+
+/// Applies text edits to the code.
+pub fn render_text_edits(text_edits: Vec<TextEdit>, mut cairo_code: String) -> String {
+    for edit in text_edits {
+        let start_idx = index_in_text(&cairo_code, edit.range.start);
+        let stop_idx = index_in_text(&cairo_code, edit.range.end);
+        cairo_code.replace_range(start_idx..stop_idx, &edit.new_text);
+    }
+    cairo_code
 }
 
 /// Converts a [`Position`] to a char-bounded index in the text.
