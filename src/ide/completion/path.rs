@@ -69,7 +69,7 @@ pub fn colon_colon_completions(
                 })
             })
             .collect(),
-        ResolvedConcreteItem::Trait(item) => db
+        ResolvedConcreteItem::Trait(item) | ResolvedConcreteItem::SelfTrait(item) => db
             .trait_functions(item.trait_id(db))
             .unwrap_or_default()
             .iter()
