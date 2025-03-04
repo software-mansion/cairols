@@ -7,6 +7,7 @@ mod goto_definition;
 mod hover;
 mod linter;
 mod macro_expand;
+mod rename;
 mod scarb;
 mod semantic_tokens;
 mod support;

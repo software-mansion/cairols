@@ -19,7 +19,7 @@ use lsp_types::notification::{
 };
 use lsp_types::request::{
     CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
-    References, Request,
+    References, Rename, Request,
 };
 use lsp_types::{
     ClientCapabilities, CodeActionProviderCapability, CompletionOptions,
@@ -279,7 +279,7 @@ pub fn collect_dynamic_registrations(
 
     if client_capabilities.rename_provider_dynamic_registration() {
         registrations.push(create_registration(
-            "textDocument/rename",
+            Rename::METHOD,
             RenameRegistrationOptions {
                 text_document_registration_options,
                 rename_options: RenameOptions {
