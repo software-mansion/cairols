@@ -21,7 +21,6 @@ use self::legacy_generic_completions::generic_completions;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
-use crate::lang::syntax::SyntaxNodeExt;
 
 mod attribute;
 mod dot_completions;

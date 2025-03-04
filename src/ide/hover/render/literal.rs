@@ -15,7 +15,6 @@ use lsp_types::Hover;
 use crate::ide::hover::markdown_contents;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
-use crate::lang::syntax::SyntaxNodeExt;
 
 /// Narrows down [`SyntaxNode`] to [`TerminalLiteralNumber`], [`TerminalString`] or
 /// [`TerminalShortString`] if it represents some literal

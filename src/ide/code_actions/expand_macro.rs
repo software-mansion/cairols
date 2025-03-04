@@ -3,7 +3,6 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use lsp_types::{CodeAction, Command};
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::syntax::SyntaxNodeExt;
 
 /// Code actions for macro expansion.
 pub fn expand_macro(db: &AnalysisDatabase, node: SyntaxNode) -> Vec<CodeAction> {
