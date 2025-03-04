@@ -10,6 +10,7 @@ use smol_str::format_smolstr;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::SymbolDef;
+use search_scope::SearchScope;
 
 pub mod search_scope;
 
@@ -32,6 +33,7 @@ pub struct FindUsages<'a> {
     symbol: &'a SymbolDef,
     db: &'a AnalysisDatabase,
     include_declaration: bool,
+    in_scope: Option<SearchScope>,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -42,7 +44,7 @@ pub struct FoundUsage {
 
 impl<'a> FindUsages<'a> {
     pub(super) fn new(symbol: &'a SymbolDef, db: &'a AnalysisDatabase) -> Self {
-        Self { symbol, db, include_declaration: false }
+        Self { symbol, db, include_declaration: false, in_scope: None }
     }
 
     /// If set to `true`, treat the symbol's declaration as a usage and include it in search
@@ -51,6 +53,14 @@ impl<'a> FindUsages<'a> {
     /// Not all symbols have a declaration, macros are the prime example here.
     pub fn include_declaration(mut self, include: bool) -> Self {
         self.include_declaration = include;
+        self
+    }
+
+    /// Will search only in provided scope.
+    ///
+    /// Useful mostly in `textDocument/documentHighlight` to narrow search scope.
+    pub fn in_scope(mut self, scope: SearchScope) -> Self {
+        self.in_scope = Some(scope);
         self
     }
 
@@ -81,9 +91,7 @@ impl<'a> FindUsages<'a> {
             }
         }
 
-        // TODO(mkaput): When needed, allow setting search scope externally, via a field in
-        //   FindUsages and set_scope/in_scope methods like RA does.
-        let search_scope = self.symbol.search_scope(db);
+        let search_scope = self.in_scope.clone().unwrap_or_else(|| self.symbol.search_scope(db));
 
         let needle = match self.symbol {
             // Small optimisation for inline macros: we can be sure that any usages will have a `!`

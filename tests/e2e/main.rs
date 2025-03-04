@@ -2,6 +2,7 @@ mod analysis;
 mod code_actions;
 mod completions;
 mod custom_macros;
+mod document_highlight;
 mod find_references;
 mod goto_definition;
 mod hover;

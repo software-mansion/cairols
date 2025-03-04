@@ -18,24 +18,25 @@ use lsp_types::notification::{
     DidSaveTextDocument, Notification,
 };
 use lsp_types::request::{
-    CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
-    References, Request,
+    CodeActionRequest, Completion, DocumentHighlightRequest, ExecuteCommand, Formatting,
+    GotoDefinition, HoverRequest, References, Request,
 };
 use lsp_types::{
     ClientCapabilities, CodeActionProviderCapability, CompletionOptions,
     CompletionRegistrationOptions, DefinitionOptions, DidChangeWatchedFilesRegistrationOptions,
-    DocumentFilter, ExecuteCommandOptions, ExecuteCommandRegistrationOptions, FileSystemWatcher,
-    GlobPattern, HoverProviderCapability, HoverRegistrationOptions, OneOf, ReferencesOptions,
-    Registration, RenameOptions, SaveOptions, SemanticTokensFullOptions, SemanticTokensLegend,
-    SemanticTokensOptions, SemanticTokensRegistrationOptions, ServerCapabilities,
-    TextDocumentChangeRegistrationOptions, TextDocumentRegistrationOptions,
-    TextDocumentSaveRegistrationOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
-    TextDocumentSyncOptions, TextDocumentSyncSaveOptions,
+    DocumentFilter, DocumentHighlightOptions, ExecuteCommandOptions,
+    ExecuteCommandRegistrationOptions, FileSystemWatcher, GlobPattern, HoverProviderCapability,
+    HoverRegistrationOptions, OneOf, ReferencesOptions, Registration, RenameOptions, SaveOptions,
+    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
+    SemanticTokensRegistrationOptions, ServerCapabilities, TextDocumentChangeRegistrationOptions,
+    TextDocumentRegistrationOptions, TextDocumentSaveRegistrationOptions,
+    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
+    TextDocumentSyncSaveOptions,
 };
 use missing_lsp_types::{
     CodeActionRegistrationOptions, DefinitionRegistrationOptions,
-    DocumentFormattingRegistrationOptions, ReferencesRegistrationOptions,
-    RenameRegistrationOptions,
+    DocumentFormattingRegistrationOptions, DocumentHighlightRegistrationOptions,
+    ReferencesRegistrationOptions, RenameRegistrationOptions,
 };
 use serde::Serialize;
 
@@ -110,6 +111,10 @@ pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> 
             .then_some(OneOf::Left(true)),
         rename_provider: client_capabilities
             .rename_provider_dynamic_registration()
+            .not()
+            .then_some(OneOf::Left(true)),
+        document_highlight_provider: client_capabilities
+            .document_highlight_provider_dynamic_registration()
             .not()
             .then_some(OneOf::Left(true)),
         ..ServerCapabilities::default()
@@ -281,9 +286,21 @@ pub fn collect_dynamic_registrations(
         registrations.push(create_registration(
             "textDocument/rename",
             RenameRegistrationOptions {
-                text_document_registration_options,
+                text_document_registration_options: text_document_registration_options.clone(),
                 rename_options: RenameOptions {
                     prepare_provider: Some(false),
+                    work_done_progress_options: Default::default(),
+                },
+            },
+        ));
+    }
+
+    if client_capabilities.document_highlight_provider_dynamic_registration() {
+        registrations.push(create_registration(
+            DocumentHighlightRequest::METHOD,
+            DocumentHighlightRegistrationOptions {
+                text_document_registration_options: text_document_registration_options.clone(),
+                document_highlight_options: DocumentHighlightOptions {
                     work_done_progress_options: Default::default(),
                 },
             },
@@ -305,8 +322,8 @@ fn create_registration(method: &str, registration_options: impl Serialize) -> Re
 
 mod missing_lsp_types {
     use lsp_types::{
-        CodeActionOptions, DefinitionOptions, DocumentFormattingOptions, ReferencesOptions,
-        RenameOptions, TextDocumentRegistrationOptions,
+        CodeActionOptions, DefinitionOptions, DocumentFormattingOptions, DocumentHighlightOptions,
+        ReferencesOptions, RenameOptions, TextDocumentRegistrationOptions,
     };
     use serde::{Deserialize, Serialize};
 
@@ -358,5 +375,15 @@ mod missing_lsp_types {
 
         #[serde(flatten)]
         pub rename_options: RenameOptions,
+    }
+
+    #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DocumentHighlightRegistrationOptions {
+        #[serde(flatten)]
+        pub text_document_registration_options: TextDocumentRegistrationOptions,
+
+        #[serde(flatten)]
+        pub document_highlight_options: DocumentHighlightOptions,
     }
 }

@@ -13,16 +13,17 @@ use lsp_types::notification::{
     DidOpenTextDocument, DidSaveTextDocument, Notification,
 };
 use lsp_types::request::{
-    CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
-    References, Rename, Request, SemanticTokensFullRequest,
+    CodeActionRequest, Completion, DocumentHighlightRequest, ExecuteCommand, Formatting,
+    GotoDefinition, HoverRequest, References, Rename, Request, SemanticTokensFullRequest,
 };
 use lsp_types::{
     CodeActionParams, CodeActionResponse, CompletionParams, CompletionResponse,
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
     DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
-    DocumentFormattingParams, ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse,
-    Hover, HoverParams, ReferenceParams, RenameParams, SemanticTokensParams, SemanticTokensResult,
-    TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
+    DocumentFormattingParams, DocumentHighlight, DocumentHighlightParams, ExecuteCommandParams,
+    GotoDefinitionParams, GotoDefinitionResponse, Hover, HoverParams, ReferenceParams,
+    RenameParams, SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent,
+    TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
 use serde_json::Value;
 use tracing::error;
@@ -379,6 +380,17 @@ impl BackgroundDocumentRequestHandler for References {
         params: ReferenceParams,
     ) -> LSPResult<Option<Vec<lsp_types::Location>>> {
         Ok(ide::navigation::references::references(params, &snapshot.db))
+    }
+}
+
+impl BackgroundDocumentRequestHandler for DocumentHighlightRequest {
+    #[tracing::instrument(name = "textDocument/documentHighlight", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: DocumentHighlightParams,
+    ) -> LSPResult<Option<Vec<DocumentHighlight>>> {
+        Ok(ide::navigation::highlight::highlight(params, &snapshot.db))
     }
 }
 
