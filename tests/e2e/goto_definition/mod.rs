@@ -9,6 +9,7 @@ use crate::support::cursor::render_selections;
 use crate::support::fixture::Fixture;
 use crate::support::{MockClient, cursors, fixture, sandbox};
 
+mod consts;
 mod enums;
 mod fns;
 mod macros;

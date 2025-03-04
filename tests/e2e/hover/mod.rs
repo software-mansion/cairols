@@ -11,6 +11,7 @@ use crate::support::cursor::{peek_caret, peek_selection};
 use crate::support::{cursors, sandbox};
 
 mod basic;
+mod consts;
 mod literals;
 mod missing_module;
 mod partial;

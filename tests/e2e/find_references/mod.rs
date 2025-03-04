@@ -11,6 +11,7 @@ use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::cursor::render_selections_with_attrs;
 use crate::support::{cursors, sandbox};
 
+mod consts;
 mod enums;
 mod fns;
 mod macros;
