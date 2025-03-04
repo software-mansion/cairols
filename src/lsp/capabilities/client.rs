@@ -50,6 +50,9 @@ pub trait ClientCapabilitiesExt {
 
     /// The client supports dynamic registration for rename provider capabilities.
     fn rename_provider_dynamic_registration(&self) -> bool;
+
+    /// The client supports dynamic registration for document highlight provider capabilities.
+    fn document_highlight_provider_dynamic_registration(&self) -> bool;
 }
 
 impl ClientCapabilitiesExt for ClientCapabilities {
@@ -118,5 +121,11 @@ impl ClientCapabilitiesExt for ClientCapabilities {
 
     fn rename_provider_dynamic_registration(&self) -> bool {
         try_or_default!(self.text_document.as_ref()?.rename.as_ref()?.dynamic_registration?)
+    }
+
+    fn document_highlight_provider_dynamic_registration(&self) -> bool {
+        try_or_default!(
+            self.text_document.as_ref()?.document_highlight.as_ref()?.dynamic_registration?
+        )
     }
 }
