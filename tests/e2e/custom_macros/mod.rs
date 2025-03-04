@@ -26,6 +26,7 @@ struct DiagnosticsReport {
 }
 
 #[test]
+#[ignore = "Disabled because of the cyclic dependency with Scarb"]
 fn test_custom_macro() {
     let mut ls = sandbox! {
         files {
