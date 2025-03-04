@@ -12,7 +12,6 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use tracing::debug;
 
 use super::analysis_context::AnalysisContext;
-use super::syntax::SyntaxNodeExt;
 use crate::lang::db::AnalysisDatabase;
 
 /// Finds all methods that can be called on a type.
