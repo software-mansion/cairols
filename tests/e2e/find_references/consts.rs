@@ -30,7 +30,7 @@ fn const_item_via_other_const_expr() {
     ");
 }
 
-// FIXME: https://github.com/software-mansion/cairols/issues/404
+// FIXME(#404)
 #[test]
 fn associated_const_via_trait_declaration() {
     test_transform!(find_references, r#"
@@ -38,6 +38,7 @@ fn associated_const_via_trait_declaration() {
     "#, @"none response");
 }
 
+// FIXME(#404)
 #[test]
 fn associated_const_via_impl_definition() {
     test_transform!(find_references, r#"
@@ -51,7 +52,7 @@ fn associated_const_via_impl_definition() {
     ");
 }
 
-// FIXME: https://github.com/software-mansion/cairols/issues/405
+// FIXME(#405)
 #[test]
 fn associated_const_via_expr_use() {
     test_transform!(find_references, r#"

@@ -20,7 +20,7 @@ use lsp_types::{
     TextDocumentEdit, TextEdit, Url, WorkspaceEdit,
 };
 
-// TODO(#381): handle crates separately (files need to be renamed too).
+// TODO(#381): handle crates separately (manifest needs to be changed too).
 pub fn rename(
     params: RenameParams,
     db: &AnalysisDatabase,
@@ -48,6 +48,12 @@ pub fn rename(
     let Some(symbol) = symbol() else {
         return Ok(None);
     };
+    if let SymbolDef::ExprInlineMacro(_) = symbol {
+        return Err(LSPError::new(
+            anyhow!("Renaming inline macros is not supported"),
+            ErrorCode::RequestFailed,
+        ));
+    }
 
     let locations: Vec<_> = symbol
         .usages(db)

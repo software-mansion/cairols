@@ -1,8 +1,10 @@
-use std::cmp::min;
-use std::str::Chars;
-
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{Itertools, MultiPeek};
-use lsp_types::{Position, Range};
+use lsp_types::{Position, Range, TextEdit, Url};
+use std::cmp::min;
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::str::Chars;
 
 #[path = "cursor_test.rs"]
 mod test;
@@ -208,6 +210,56 @@ pub fn render_selections_with_attrs(text: &str, ranges: &[(Range, Option<String>
             offset + marker.len()
         });
     text
+}
+
+/// Generates a report by applying text edits to the code and including information about file
+/// renames.
+pub fn render_text_edits_and_file_renames(
+    text_edits: OrderedHashMap<Url, Vec<TextEdit>>,
+    file_renames: HashMap<Url, PathBuf>,
+    file_contents: &HashMap<Url, (&str, String)>,
+) -> String {
+    let is_from_core = |uri: &Url| {
+        let path = uri.path();
+        path.contains("/core/src/") || path.contains("/corelib/src/")
+    };
+
+    let mut core_reference_found = false;
+    let result = text_edits
+        .into_iter()
+        .map(|(uri, edits)| {
+            if is_from_core(&uri) {
+                core_reference_found = true;
+                return String::new();
+            }
+
+            let (path, content) = file_contents.get(&uri).unwrap();
+            let mut content = content.to_owned();
+
+            for edit in edits {
+                let start_idx = index_in_text(&content, edit.range.start);
+                let stop_idx = index_in_text(&content, edit.range.end);
+                content.replace_range(start_idx..stop_idx, &edit.new_text);
+            }
+
+            if let Some(new_path) = file_renames.get(&uri) {
+                format!("// → {path} → {}\n{content}\n", new_path.display())
+            } else if file_contents.len() == 1 {
+                content
+            } else {
+                format!("// → {path}\n{content}\n")
+            }
+        })
+        .fold(String::new(), |mut acc, file_report| {
+            acc += &file_report;
+            acc
+        });
+
+    if core_reference_found {
+        "// found renames in the core crate\n".to_string() + &result
+    } else {
+        result
+    }
 }
 
 /// Converts a [`Position`] to a char-bounded index in the text.

@@ -9,6 +9,7 @@ mod hover;
 mod linter;
 mod macro_expand;
 mod macros;
+mod rename;
 mod scarb;
 mod semantic_tokens;
 mod support;
