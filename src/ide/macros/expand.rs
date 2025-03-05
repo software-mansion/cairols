@@ -20,7 +20,6 @@ use lsp_types::TextDocumentPositionParams;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
-use crate::lang::syntax::SyntaxNodeExt;
 
 /// Tries to expand macro, returns it as string.
 pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) -> Option<String> {

@@ -14,7 +14,6 @@ use tracing::error;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
-use crate::lang::syntax::SyntaxNodeExt;
 
 /// Generates a completion adding all visible struct members that have not yet been specified
 /// to the constructor call, filling their values with a placeholder unit type.

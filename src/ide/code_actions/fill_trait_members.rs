@@ -14,7 +14,6 @@ use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, W
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
-use crate::lang::syntax::SyntaxNodeExt;
 
 /// Generates a completion adding all trait members that have not yet been specified.
 /// Functions are added with empty bodies, consts with placeholder values.

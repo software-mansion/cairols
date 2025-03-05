@@ -15,7 +15,6 @@ use lsp_types::{CompletionItem, CompletionItemKind};
 use super::helpers::completion_kind::resolved_generic_item_completion_kind;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::syntax::SyntaxNodeExt;
 
 pub fn expr_path(
     db: &AnalysisDatabase,

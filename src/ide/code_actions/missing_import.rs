@@ -1,8 +1,8 @@
 use lsp_types::{CodeAction, CodeActionKind, TextEdit, Url, WorkspaceEdit};
 
+use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::ToLsp;
-use crate::lang::{analysis_context::AnalysisContext, syntax::SyntaxNodeExt};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::ids::{FileIndex, ModuleFileId};
 use cairo_lang_filesystem::span::TextOffset;

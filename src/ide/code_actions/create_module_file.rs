@@ -7,7 +7,6 @@ use lsp_types::{
 };
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::lang::syntax::SyntaxNodeExt;
 
 /// Code actions for missing module file.
 pub fn create_module_file(

@@ -18,7 +18,6 @@ use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxN
 use cairo_lang_utils::{Intern, LookupIntern};
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::lang::syntax::SyntaxNodeExt;
 
 /// A language element that can be a result of name resolution performed by CairoLS.
 ///
