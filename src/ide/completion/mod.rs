@@ -23,6 +23,7 @@ use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use expr::macro_call::macro_call_completions;
 use function::params::params_completions;
+use function::variables::variables_completions;
 
 mod attribute;
 mod dot_completions;
@@ -205,6 +206,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
     completions.extend(params_completions(db, &ctx));
     completions.extend(macro_call_completions(db, &ctx));
+    completions.extend(variables_completions(db, &ctx));
 
     if completions.is_empty()
         && trigger_kind == CompletionTriggerKind::INVOKED

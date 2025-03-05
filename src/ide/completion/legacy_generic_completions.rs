@@ -1,12 +1,8 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_semantic::Pattern;
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::ResolvedGenericItem;
 use cairo_lang_utils::{LookupIntern, Upcast};
-use if_chain::if_chain;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
 use super::helpers::completion_kind::resolved_generic_item_completion_kind;
@@ -38,25 +34,6 @@ pub fn generic_completions(
             }
         }));
     }
-
-    if_chain!(
-        if let Some(lookup_item_id) = ctx.lookup_item_id;
-        if let Some(function_id) = lookup_item_id.function_with_body();
-        if let Ok(body) = db.function_body(function_id);
-
-        then {
-            for (_id, pat) in &body.arenas.patterns {
-                if let Pattern::Variable(var) = pat {
-                    completions.push(CompletionItem {
-                        label: var.name.clone().into(),
-                        kind: Some(CompletionItemKind::VARIABLE),
-                        ..CompletionItem::default()
-                    });
-                }
-            }
-        }
-
-    );
 
     completions
 }
