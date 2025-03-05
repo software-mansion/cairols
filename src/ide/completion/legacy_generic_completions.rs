@@ -1,5 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::{LanguageElementId, NamedLanguageElementId};
+use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::Pattern;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -43,24 +43,8 @@ pub fn generic_completions(
         if let Some(lookup_item_id) = ctx.lookup_item_id;
         if let Some(function_id) = lookup_item_id.function_with_body();
         if let Ok(body) = db.function_body(function_id);
-        if let Ok(file_modules) = db.file_modules(function_id.untyped_stable_ptr(db).file_id(db));
-        if let Some(module) = file_modules.first();
 
         then {
-            let crate_id = module.owning_crate(db);
-
-            let inline_plugins = db.crate_inline_macro_plugins(crate_id);
-
-            let completion_items = inline_plugins
-                .iter()
-                .map(|(plugin_name, _)| CompletionItem {
-                    label: format!("{}!", plugin_name),
-                    kind: Some(CompletionItemKind::FUNCTION),
-                    ..CompletionItem::default()
-                });
-
-            completions.extend(completion_items);
-
             for (_id, pat) in &body.arenas.patterns {
                 if let Pattern::Variable(var) = pat {
                     completions.push(CompletionItem {
