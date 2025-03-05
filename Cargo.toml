@@ -9,7 +9,7 @@ license = "Apache-2.0"
 repository = "https://github.com/software-mansion/cairols"
 
 [workspace]
-members = ["xtask"]
+members = ["xtask", "tests/scarb_procedural_macros"]
 
 [features]
 testing = []
