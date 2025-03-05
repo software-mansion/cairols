@@ -22,6 +22,7 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
     }
 }
 
+#[ignore = "This test is flaky. See https://github.com/software-mansion/cairols/issues/414"]
 #[test]
 fn test_ignore_warnings_from_non_path_deps() {
     let cairo_code = indoc! {r#"
