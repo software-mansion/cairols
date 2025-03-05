@@ -52,7 +52,7 @@ cairo-lint-core = "2.11.0"
 colored = "3.0.0"
 convert_case = "0.8.0"
 crossbeam = "0.8.4"
-governor = { version = "0.8.1", default-features = false, features = ["std", "quanta"] }
+governor = { version = "0.8", default-features = false, features = ["std", "quanta"] }
 if_chain = "1"
 indent = "0.1.1"
 indoc = "2"
