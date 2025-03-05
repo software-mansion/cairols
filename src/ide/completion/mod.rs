@@ -12,12 +12,11 @@ use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use if_chain::if_chain;
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
 use mod_item::mod_completions;
-use path::expr_path;
+use path::{expr_path, path_suffix_completions};
 use struct_constructor::struct_constructor_completions;
 use use_statement::use_statement;
 
 use self::dot_completions::dot_completions;
-use self::legacy_generic_completions::generic_completions;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
@@ -30,7 +29,6 @@ mod dot_completions;
 mod expr;
 mod function;
 mod helpers;
-mod legacy_generic_completions;
 mod mod_item;
 mod path;
 mod struct_constructor;
@@ -85,9 +83,6 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     let ctx = AnalysisContext::from_node(db, node.clone())?;
     let crate_id = ctx.module_id.owning_crate(db);
 
-    let trigger_kind =
-        params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED);
-
     let mut completions = vec![];
 
     if_chain!(
@@ -110,9 +105,6 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         }
     );
 
-    // Temp fix, this is due to fact that some completions dont have match yet.
-    let mut was_single = false;
-
     if_chain!(
         if let Some(leaf) = node.ancestor_of_type::<UsePathLeaf>(db);
         if let Some(use_completions) = use_statement(db, ast::UsePath::Leaf(leaf), &ctx);
@@ -124,10 +116,6 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
     if_chain!(
         if let Some(single) = node.ancestor_of_type::<UsePathSingle>(db);
-        if {
-            was_single = true;
-            true
-        };
         if let Some(use_completions) = use_statement(db, ast::UsePath::Single(single), &ctx);
 
         then {
@@ -208,15 +196,10 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     completions.extend(macro_call_completions(db, &ctx));
     completions.extend(variables_completions(db, &ctx));
 
-    if completions.is_empty()
-        && trigger_kind == CompletionTriggerKind::INVOKED
-        && !was_single
-        // Another quickfix, `generic_completions` must be split into smaller parts to fit into system.
-        && node.ancestor_of_kind(db, SyntaxKind::ExprStructCtorCall).is_none()
+    if params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED)
+        == CompletionTriggerKind::INVOKED
     {
-        let result = generic_completions(db, &ctx);
-
-        completions.extend(result);
+        completions.extend(path_suffix_completions(db, &ctx))
     }
 
     Some(CompletionResponse::Array(completions))

@@ -11,6 +11,7 @@ mod attribute;
 mod methods_text_edits;
 mod mod_file;
 mod module_items;
+mod path;
 mod structs;
 mod traits;
 

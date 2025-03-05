@@ -5,7 +5,7 @@ use cairo_lang_syntax::node::ast::UsePath;
 use cairo_lang_utils::Upcast;
 use lsp_types::CompletionItem;
 
-use super::path::colon_colon_completions;
+use super::path::path_prefix_completions;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 
@@ -19,6 +19,6 @@ pub fn use_statement(
             segments.pop();
         }
 
-        segments.is_empty().not().then(|| colon_colon_completions(db, ctx, segments)).flatten()
+        segments.is_empty().not().then(|| path_prefix_completions(db, ctx, segments)).flatten()
     })
 }
