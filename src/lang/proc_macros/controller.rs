@@ -171,9 +171,11 @@ impl ProcMacroClientController {
                         // `PackageId.to_serialized_string()` which is always equal to
                         // `scarb_metadata::CompilationUnitComponentId.repr` and has the form
                         // "<crate-name> <version> (<source-path>)".
-                        let crate_name = package_id.split(' ').next().unwrap().to_smolstr();
-                        let crate_long_id =
-                            CrateLongId::Real { name: crate_name, discriminator: Some(package_id) };
+                        let crate_name = package_id.name().to_smolstr();
+                        let crate_long_id = CrateLongId::Real {
+                            name: crate_name,
+                            discriminator: Some(package_id.to_smolstr()),
+                        };
 
                         (crate_long_id, suite)
                     })
