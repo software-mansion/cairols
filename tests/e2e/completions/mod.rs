@@ -12,6 +12,7 @@ mod methods_text_edits;
 mod mod_file;
 mod module_items;
 mod structs;
+mod traits;
 
 /// Perform completions text edits test. Notice that the test shows many possible completions,
 /// however in practice only those who have the same prefix as the existing code are shown.
