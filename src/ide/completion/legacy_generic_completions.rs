@@ -42,49 +42,36 @@ pub fn generic_completions(
     if_chain!(
         if let Some(lookup_item_id) = ctx.lookup_item_id;
         if let Some(function_id) = lookup_item_id.function_with_body();
-        if let Ok(signature) = db.function_with_body_signature(function_id);
+        if let Ok(body) = db.function_body(function_id);
+        if let Ok(file_modules) = db.file_modules(function_id.untyped_stable_ptr(db).file_id(db));
+        if let Some(module) = file_modules.first();
 
         then {
-            for param in &signature.params {
-                completions.push(CompletionItem {
-                    label: param.name.clone().into(),
-                    kind: Some(CompletionItemKind::VARIABLE),
+            let crate_id = module.owning_crate(db);
+
+            let inline_plugins = db.crate_inline_macro_plugins(crate_id);
+
+            let completion_items = inline_plugins
+                .iter()
+                .map(|(plugin_name, _)| CompletionItem {
+                    label: format!("{}!", plugin_name),
+                    kind: Some(CompletionItemKind::FUNCTION),
                     ..CompletionItem::default()
                 });
-            }
 
-            if_chain! {
-                if let Ok(body) = db.function_body(function_id);
-                if let Ok(file_modules) = db.file_modules(function_id.untyped_stable_ptr(db).file_id(db));
-                if let Some(module) = file_modules.first();
+            completions.extend(completion_items);
 
-                then {
-                    let crate_id = module.owning_crate(db);
-
-                    let inline_plugins = db.crate_inline_macro_plugins(crate_id);
-
-                    let completion_items = inline_plugins
-                        .iter()
-                        .map(|(plugin_name, _)| CompletionItem {
-                            label: format!("{}!", plugin_name),
-                            kind: Some(CompletionItemKind::FUNCTION),
-                            ..CompletionItem::default()
-                        });
-
-                    completions.extend(completion_items);
-
-                    for (_id, pat) in &body.arenas.patterns {
-                        if let Pattern::Variable(var) = pat {
-                            completions.push(CompletionItem {
-                                label: var.name.clone().into(),
-                                kind: Some(CompletionItemKind::VARIABLE),
-                                ..CompletionItem::default()
-                            });
-                        }
-                    }
+            for (_id, pat) in &body.arenas.patterns {
+                if let Pattern::Variable(var) = pat {
+                    completions.push(CompletionItem {
+                        label: var.name.clone().into(),
+                        kind: Some(CompletionItemKind::VARIABLE),
+                        ..CompletionItem::default()
+                    });
                 }
             }
         }
+
     );
 
     completions
