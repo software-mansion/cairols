@@ -21,9 +21,11 @@ use self::legacy_generic_completions::generic_completions;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use function::params::params_completions;
 
 mod attribute;
 mod dot_completions;
+mod function;
 mod helpers;
 mod legacy_generic_completions;
 mod mod_item;
@@ -198,6 +200,8 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
             completions.extend(mod_names_completions);
         }
     );
+
+    completions.extend(params_completions(db, &ctx));
 
     if completions.is_empty()
         && trigger_kind == CompletionTriggerKind::INVOKED
