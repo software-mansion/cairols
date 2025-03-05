@@ -25,12 +25,7 @@ fn lib_cairo_with_body() {
     caret = """
     mod cccc; mod <caret>{}
     """
-
-    [[completions]]
-    completion_label = "core"
-
-    [[completions]]
-    completion_label = "hello"
+    completions = []
     "#);
 }
 
@@ -90,12 +85,7 @@ fn lib_cairo_with_full_name_with_semicolon() {
     caret = """
     mod cccc; mod bbbb<caret>;
     """
-
-    [[completions]]
-    completion_label = "core"
-
-    [[completions]]
-    completion_label = "hello"
+    completions = []
     "#);
 }
 
@@ -123,12 +113,7 @@ fn other_top_level_file_with_body() {
     caret = """
     mod cccc; mod <caret>{}
     """
-
-    [[completions]]
-    completion_label = "core"
-
-    [[completions]]
-    completion_label = "hello"
+    completions = []
     "#);
 }
 
@@ -154,12 +139,7 @@ fn other_top_level_file_with_partial_name_with_semicolon() {
     caret = """
     mod cccc; mod aa<caret>;
     """
-
-    [[completions]]
-    completion_label = "core"
-
-    [[completions]]
-    completion_label = "hello"
+    completions = []
     "#);
 }
 
@@ -171,12 +151,7 @@ fn other_top_level_file_with_partial_name_without_semicolon() {
     caret = """
     mod cccc; mod aa<caret>
     """
-
-    [[completions]]
-    completion_label = "core"
-
-    [[completions]]
-    completion_label = "hello"
+    completions = []
     "#);
 }
 
@@ -188,12 +163,7 @@ fn other_top_level_file_with_full_name_with_semicolon() {
     caret = """
     mod cccc; mod bbbb<caret>;
     """
-
-    [[completions]]
-    completion_label = "core"
-
-    [[completions]]
-    completion_label = "hello"
+    completions = []
     "#);
 }
 
@@ -222,12 +192,7 @@ fn nested_file_with_body() {
     caret = """
     mod cccc; mod <caret>{}
     """
-
-    [[completions]]
-    completion_label = "core"
-
-    [[completions]]
-    completion_label = "hello"
+    completions = []
     "#);
 }
 
@@ -284,11 +249,6 @@ fn nested_file_with_full_name_with_semicolon() {
     caret = """
     mod cccc; mod bbbb<caret>;
     """
-
-    [[completions]]
-    completion_label = "core"
-
-    [[completions]]
-    completion_label = "hello"
+    completions = []
     "#);
 }
