@@ -18,14 +18,9 @@ impl<'db> AnalysisContext<'db> {
         let module_file_id = db.find_module_file_containing_node(&node)?;
         let lookup_item_id = db.find_lookup_item(&node);
 
-        let resolver = match lookup_item_id {
+        let resolver = match lookup_item_id.and_then(|item| item.resolver_data(db).ok()) {
             Some(item) => {
-                let data = item
-                    .resolver_data(db)
-                    .ok()?
-                    .clone_with_inference_id(db, InferenceId::NoContext);
-
-                Resolver::with_data(db, data)
+                Resolver::with_data(db, item.clone_with_inference_id(db, InferenceId::NoContext))
             }
             None => Resolver::new(db, module_file_id, InferenceId::NoContext),
         };
