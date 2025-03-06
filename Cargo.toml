@@ -1,6 +1,6 @@
 [package]
 name = "cairo-language-server"
-version = "2.11.0"
+version = "2.11.1"
 edition = "2024"
 
 authors = ["Software Mansion <contact@swmansion.com>", "StarkWare <info@starkware.co>"]
@@ -31,28 +31,28 @@ testing = []
 # for manipulating these dependencies.
 [dependencies]
 anyhow = "1"
-cairo-lang-compiler = "2.11.0"
-cairo-lang-defs = "2.11.0"
-cairo-lang-diagnostics = "2.11.0"
-cairo-lang-doc = "2.11.0"
-cairo-lang-executable = "2.11.0"
-cairo-lang-filesystem = "2.11.0"
-cairo-lang-formatter = "2.11.0"
-cairo-lang-lowering = "2.11.0"
+cairo-lang-compiler = "2.11.1"
+cairo-lang-defs = "2.11.1"
+cairo-lang-diagnostics = "2.11.1"
+cairo-lang-doc = "2.11.1"
+cairo-lang-executable = "2.11.1"
+cairo-lang-filesystem = "2.11.1"
+cairo-lang-formatter = "2.11.1"
+cairo-lang-lowering = "2.11.1"
 cairo-lang-macro = "0.1.1"
-cairo-lang-parser = "2.11.0"
-cairo-lang-project = "2.11.0"
-cairo-lang-semantic = "2.11.0"
-cairo-lang-starknet = "2.11.0"
-cairo-lang-syntax = "2.11.0"
-cairo-lang-syntax-codegen = "2.11.0"
-cairo-lang-test-plugin = "2.11.0"
-cairo-lang-utils = "2.11.0"
-cairo-lint-core = "2.11.0"
+cairo-lang-parser = "2.11.1"
+cairo-lang-project = "2.11.1"
+cairo-lang-semantic = "2.11.1"
+cairo-lang-starknet = "2.11.1"
+cairo-lang-syntax = "2.11.1"
+cairo-lang-syntax-codegen = "2.11.1"
+cairo-lang-test-plugin = "2.11.1"
+cairo-lang-utils = "2.11.1"
+cairo-lint-core = { git = "https://github.com/software-mansion/cairo-lint", branch = "2.11.1", package = "cairo-lint-core" }
 colored = "3.0.0"
 convert_case = "0.8.0"
 crossbeam = "0.8.4"
-governor = { version = "0.8.1", default-features = false, features = ["std", "quanta"] }
+governor = { version = "0.8.0", default-features = false, features = ["std", "quanta"] }
 if_chain = "1"
 indent = "0.1.1"
 indoc = "2"
@@ -68,7 +68,7 @@ scarb-stable-hash = "1"
 semver = "1"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = "1"
-smol_str = { version = "0.3.2", features = ["serde"] }
+smol_str = { version = "0.2.2", features = ["serde"] }
 tempfile = "3"
 toml = "0.8"
 tracing = "0.1"
