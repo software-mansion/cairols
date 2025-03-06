@@ -21,7 +21,6 @@ use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
 use crate::state::{Owned, Snapshot, State};
 use crate::toolchain::scarb::ScarbToolchain;
 
-#[allow(dead_code)] // TODO: Remove in next PR
 mod builtin_plugins;
 mod crate_data;
 mod manifest_registry;
