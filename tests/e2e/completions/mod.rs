@@ -14,6 +14,7 @@ mod module_items;
 mod path;
 mod structs;
 mod traits;
+mod vars_and_params;
 
 /// Perform completions text edits test. Notice that the test shows many possible completions,
 /// however in practice only those who have the same prefix as the existing code are shown.
