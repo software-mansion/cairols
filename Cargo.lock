@@ -992,7 +992,8 @@ dependencies = [
 [[package]]
 name = "cairo-lint-core"
 version = "2.11.1"
-source = "git+https://github.com/software-mansion/cairo-lint?branch=2.11.1#98c2a1397ed84717335549c8ab23d23b460c7f7e"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be9ba40787dd7915d8b88ad104654c4d3024c3f576fbaba293186e1fde9c22da"
 dependencies = [
  "annotate-snippets",
  "anyhow",

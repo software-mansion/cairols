@@ -48,7 +48,7 @@ cairo-lang-syntax = "2.11.1"
 cairo-lang-syntax-codegen = "2.11.1"
 cairo-lang-test-plugin = "2.11.1"
 cairo-lang-utils = "2.11.1"
-cairo-lint-core = { git = "https://github.com/software-mansion/cairo-lint", branch = "2.11.1", package = "cairo-lint-core" }
+cairo-lint-core = "2.11.1"
 colored = "3.0.0"
 convert_case = "0.8.0"
 crossbeam = "0.8.4"
