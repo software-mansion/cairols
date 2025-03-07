@@ -1,17 +1,12 @@
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     LanguageElementId, ModuleFileId, ModuleId, NamedLanguageElementId, TopLevelLanguageElementId,
     TraitFunctionId,
 };
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextOffset;
-use cairo_lang_semantic::corelib::{core_submodule, get_submodule};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
-use cairo_lang_semantic::items::us::SemanticUseEx;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use cairo_lang_semantic::resolve::ResolvedGenericItem;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
@@ -23,6 +18,7 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
 use crate::lang::methods::find_methods_for_type;
+use itertools::Itertools;
 
 pub fn dot_completions(
     db: &AnalysisDatabase,
@@ -106,8 +102,10 @@ fn completion_for_method(
     let mut additional_text_edits = vec![];
 
     // If the trait is not in scope, add a use statement.
-    if !module_has_trait(db, module_file_id.0, trait_id)? {
-        if let Some(trait_path) = db.visible_traits_from_module(module_file_id)?.get(&trait_id) {
+
+    if let Some(trait_path) = db.visible_traits_from_module(module_file_id)?.get(&trait_id) {
+        // Path is single element if item is already in scope.
+        if trait_path.split("::").collect_vec().len() != 1 {
             additional_text_edits.push(TextEdit {
                 range: Range::new(position, position),
                 new_text: format!("use {};\n", trait_path),
@@ -125,36 +123,4 @@ fn completion_for_method(
         ..CompletionItem::default()
     };
     Some(completion)
-}
-
-/// Checks if a module has a trait in scope.
-fn module_has_trait(
-    db: &AnalysisDatabase,
-    module_id: ModuleId,
-    trait_id: cairo_lang_defs::ids::TraitId,
-) -> Option<bool> {
-    if db.module_traits_ids(module_id).ok()?.contains(&trait_id) {
-        return Some(true);
-    }
-    let mut current_top_module = module_id;
-    while let ModuleId::Submodule(submodule_id) = current_top_module {
-        current_top_module = submodule_id.parent_module(db.upcast());
-    }
-    let crate_id = match current_top_module {
-        ModuleId::CrateRoot(crate_id) => crate_id,
-        ModuleId::Submodule(_) => unreachable!("current module is not a top-level module"),
-    };
-    let edition =
-        db.crate_config(crate_id).map(|config| config.settings.edition).unwrap_or_default();
-    let prelude_submodule_name = edition.prelude_submodule_name();
-    let core_prelude_submodule = core_submodule(db, "prelude");
-    let prelude_submodule = get_submodule(db, core_prelude_submodule, prelude_submodule_name)?;
-    for module_id in [prelude_submodule, module_id].iter().copied() {
-        for use_id in db.module_uses_ids(module_id).ok()?.iter().copied() {
-            if db.use_resolved_item(use_id) == Ok(ResolvedGenericItem::Trait(trait_id)) {
-                return Some(true);
-            }
-        }
-    }
-    Some(false)
 }
