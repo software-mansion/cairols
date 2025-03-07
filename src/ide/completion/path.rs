@@ -1,7 +1,7 @@
 use std::ops::Not;
 
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_defs::ids::{FileIndex, ModuleFileId, NamedLanguageElementId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::items::visibility::peek_visible_in;
@@ -10,11 +10,15 @@ use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
 use cairo_lang_utils::{LookupIntern, Upcast};
+use if_chain::if_chain;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
-use super::helpers::completion_kind::resolved_generic_item_completion_kind;
+use super::helpers::completion_kind::{
+    importable_completion_kind, resolved_generic_item_completion_kind,
+};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use cairo_lang_syntax::node::kind::SyntaxKind;
 
 pub fn expr_path(
     db: &AnalysisDatabase,
@@ -34,12 +38,52 @@ pub fn expr_path(
                 segments.pop();
             }
 
-            colon_colon_completions(db, ctx, segments)
+            path_prefix_completions(db, ctx, segments)
         })
         .flatten()
 }
 
-pub fn colon_colon_completions(
+/// Treats provided path as suffix, proposing elements that can prefix this path.
+pub fn path_suffix_completions(
+    db: &AnalysisDatabase,
+    ctx: &AnalysisContext<'_>,
+) -> Vec<CompletionItem> {
+    let (importables, typed_text) = if_chain!(
+        if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none();
+        if let Some(importables) = db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)));
+        if let Some(typed_text_segments) = ctx.node.ancestor_of_type::<ExprPath>(db).map(|path| path.elements(db));
+        if let [last] = typed_text_segments.as_slice();
+
+        then {
+            (importables, last.as_syntax_node().get_text_without_trivia(db))
+        } else {
+            return Default::default();
+        }
+    );
+
+    importables
+        .iter()
+        .filter_map(|(importable, path_str)| {
+            let path_segments: Vec<_> = path_str.split("::").collect();
+
+            let last_segment = path_segments.last().expect("path to import should not be empty");
+
+            if !last_segment.starts_with(&typed_text) {
+                return None;
+            }
+
+            // TODO(#284)
+            Some(CompletionItem {
+                label: importable.name(db).to_string(),
+                kind: Some(importable_completion_kind(*importable)),
+                ..CompletionItem::default()
+            })
+        })
+        .collect()
+}
+
+/// Treats provided path as prefix, proposing elements that should go next.
+pub fn path_prefix_completions(
     db: &AnalysisDatabase,
     ctx: &AnalysisContext<'_>,
     segments: Vec<PathSegment>,
