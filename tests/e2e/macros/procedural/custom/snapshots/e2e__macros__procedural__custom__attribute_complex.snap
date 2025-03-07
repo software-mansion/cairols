@@ -1,0 +1,28 @@
+---
+source: tests/e2e/macros/procedural/custom/mod.rs
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+#[complex_attribute_macro]<caret>
+fn <caret>foo() {}
+fn foo() {<caret>}
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+#[complex_attribute_macro]
+fn foo() {}
+
+// proc_macro_complex_attribute_macro
+// ----------------------------------
+
+#[simple_attribute_macro]
+fn generated_function_with_other_attribute() {}
+
+// proc_macro_simple_attribute_macro
+// ---------------------------------
+
+fn generated_function() {}
+"""

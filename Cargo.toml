@@ -13,6 +13,7 @@ members = ["xtask", "tests/scarb_procedural_macros"]
 
 [features]
 testing = []
+test_proc_macros = []
 
 # Managing dependencies on crates from starkware-libs/cairo repository:
 #
@@ -75,6 +76,7 @@ tracing = "0.1"
 tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 which = "7"
+serde_yaml = "0.9.34"
 
 [target.'cfg(target_vendor = "apple")'.dependencies]
 libc = "0.2.170"

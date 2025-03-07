@@ -1,0 +1,42 @@
+---
+source: tests/e2e/macros/procedural/custom/mod.rs
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+    let _x = improper<caret>_inline_macro!(10 + 10);
+    let _x = improper_inline_macro!(10 +<caret> 10);
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+unbound_identifier
+"""
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: improper_inline_macro!(10 + 10)
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 13
+        end:
+          line: 1
+          character: 44
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://inline_proc_macro.cairo
+          range:
+            start:
+              line: 0
+              character: 0
+            end:
+              line: 0
+              character: 18
+        message: Diagnostic mapped from here.

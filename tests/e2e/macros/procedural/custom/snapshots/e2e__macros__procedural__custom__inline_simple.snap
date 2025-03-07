@@ -1,0 +1,15 @@
+---
+source: tests/e2e/macros/procedural/custom/mod.rs
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+    let _x = simple<caret>_inline_macro!(10 + 10);
+    let _x = simple_inline_macro!(10 +<caret> 10);
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+9
+"""
