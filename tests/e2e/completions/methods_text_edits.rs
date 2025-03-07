@@ -32,6 +32,7 @@ fn simple_trait() {
     insert_text = "add_assign($0)"
     text_edits = ["""
     use core::ops::AddAssign;
+
     """]
 
     [[completions]]
@@ -40,6 +41,7 @@ fn simple_trait() {
     insert_text = "add_eq($0)"
     text_edits = ["""
     use core::traits::AddEq;
+
     """]
 
     [[completions]]
@@ -48,6 +50,7 @@ fn simple_trait() {
     insert_text = "append_formatted_to_byte_array($0)"
     text_edits = ["""
     use core::to_byte_array::AppendFormattedToByteArray;
+
     """]
 
     [[completions]]
@@ -66,6 +69,7 @@ fn simple_trait() {
     insert_text = "fmt($0)"
     text_edits = ["""
     use core::fmt::Display;
+
     """]
 
     [[completions]]
@@ -74,6 +78,7 @@ fn simple_trait() {
     insert_text = "fmt($0)"
     text_edits = ["""
     use core::fmt::Debug;
+
     """]
 
     [[completions]]
@@ -82,6 +87,7 @@ fn simple_trait() {
     insert_text = "fmt($0)"
     text_edits = ["""
     use core::fmt::LowerHex;
+
     """]
 
     [[completions]]
@@ -90,6 +96,7 @@ fn simple_trait() {
     insert_text = "format_as_byte_array($0)"
     text_edits = ["""
     use core::to_byte_array::FormatAsByteArray;
+
     """]
 
     [[completions]]
@@ -108,6 +115,7 @@ fn simple_trait() {
     insert_text = "is_non_one($0)"
     text_edits = ["""
     use core::num::traits::One;
+
     """]
 
     [[completions]]
@@ -116,6 +124,7 @@ fn simple_trait() {
     insert_text = "is_non_zero($0)"
     text_edits = ["""
     use core::num::traits::Zero;
+
     """]
 
     [[completions]]
@@ -129,6 +138,7 @@ fn simple_trait() {
     insert_text = "is_one($0)"
     text_edits = ["""
     use core::num::traits::One;
+
     """]
 
     [[completions]]
@@ -137,6 +147,7 @@ fn simple_trait() {
     insert_text = "is_zero($0)"
     text_edits = ["""
     use core::num::traits::Zero;
+
     """]
 
     [[completions]]
@@ -150,6 +161,7 @@ fn simple_trait() {
     insert_text = "mul_assign($0)"
     text_edits = ["""
     use core::ops::MulAssign;
+
     """]
 
     [[completions]]
@@ -158,6 +170,7 @@ fn simple_trait() {
     insert_text = "mul_eq($0)"
     text_edits = ["""
     use core::traits::MulEq;
+
     """]
 
     [[completions]]
@@ -166,6 +179,7 @@ fn simple_trait() {
     insert_text = "new_inputs($0)"
     text_edits = ["""
     use core::circuit::CircuitInputs;
+
     """]
 
     [[completions]]
@@ -179,6 +193,7 @@ fn simple_trait() {
     insert_text = "pow($0)"
     text_edits = ["""
     use core::num::traits::Pow;
+
     """]
 
     [[completions]]
@@ -197,6 +212,7 @@ fn simple_trait() {
     insert_text = "some_method($0)"
     text_edits = ["""
     use crate::ATrait1;
+
     """]
 
     [[completions]]
@@ -205,6 +221,7 @@ fn simple_trait() {
     insert_text = "sub_assign($0)"
     text_edits = ["""
     use core::ops::SubAssign;
+
     """]
 
     [[completions]]
@@ -213,6 +230,7 @@ fn simple_trait() {
     insert_text = "sub_eq($0)"
     text_edits = ["""
     use core::traits::SubEq;
+
     """]
 
     [[completions]]
@@ -254,6 +272,7 @@ fn non_directly_visible_trait() {
     insert_text = "add_assign($0)"
     text_edits = ["""
     use core::ops::AddAssign;
+
     """]
 
     [[completions]]
@@ -262,6 +281,7 @@ fn non_directly_visible_trait() {
     insert_text = "add_eq($0)"
     text_edits = ["""
     use core::traits::AddEq;
+
     """]
 
     [[completions]]
@@ -270,6 +290,7 @@ fn non_directly_visible_trait() {
     insert_text = "append_formatted_to_byte_array($0)"
     text_edits = ["""
     use core::to_byte_array::AppendFormattedToByteArray;
+
     """]
 
     [[completions]]
@@ -288,6 +309,7 @@ fn non_directly_visible_trait() {
     insert_text = "fmt($0)"
     text_edits = ["""
     use core::fmt::Display;
+
     """]
 
     [[completions]]
@@ -296,6 +318,7 @@ fn non_directly_visible_trait() {
     insert_text = "fmt($0)"
     text_edits = ["""
     use core::fmt::Debug;
+
     """]
 
     [[completions]]
@@ -304,6 +327,7 @@ fn non_directly_visible_trait() {
     insert_text = "fmt($0)"
     text_edits = ["""
     use core::fmt::LowerHex;
+
     """]
 
     [[completions]]
@@ -312,6 +336,7 @@ fn non_directly_visible_trait() {
     insert_text = "format_as_byte_array($0)"
     text_edits = ["""
     use core::to_byte_array::FormatAsByteArray;
+
     """]
 
     [[completions]]
@@ -330,6 +355,7 @@ fn non_directly_visible_trait() {
     insert_text = "is_non_one($0)"
     text_edits = ["""
     use core::num::traits::One;
+
     """]
 
     [[completions]]
@@ -338,6 +364,7 @@ fn non_directly_visible_trait() {
     insert_text = "is_non_zero($0)"
     text_edits = ["""
     use core::num::traits::Zero;
+
     """]
 
     [[completions]]
@@ -351,6 +378,7 @@ fn non_directly_visible_trait() {
     insert_text = "is_one($0)"
     text_edits = ["""
     use core::num::traits::One;
+
     """]
 
     [[completions]]
@@ -359,6 +387,7 @@ fn non_directly_visible_trait() {
     insert_text = "is_zero($0)"
     text_edits = ["""
     use core::num::traits::Zero;
+
     """]
 
     [[completions]]
@@ -372,6 +401,7 @@ fn non_directly_visible_trait() {
     insert_text = "mul_assign($0)"
     text_edits = ["""
     use core::ops::MulAssign;
+
     """]
 
     [[completions]]
@@ -380,6 +410,7 @@ fn non_directly_visible_trait() {
     insert_text = "mul_eq($0)"
     text_edits = ["""
     use core::traits::MulEq;
+
     """]
 
     [[completions]]
@@ -388,6 +419,7 @@ fn non_directly_visible_trait() {
     insert_text = "new_inputs($0)"
     text_edits = ["""
     use core::circuit::CircuitInputs;
+
     """]
 
     [[completions]]
@@ -401,6 +433,7 @@ fn non_directly_visible_trait() {
     insert_text = "pow($0)"
     text_edits = ["""
     use core::num::traits::Pow;
+
     """]
 
     [[completions]]
@@ -419,6 +452,7 @@ fn non_directly_visible_trait() {
     insert_text = "some_method($0)"
     text_edits = ["""
     use crate::ATrait1;
+
     """]
 
     [[completions]]
@@ -427,6 +461,7 @@ fn non_directly_visible_trait() {
     insert_text = "sub_assign($0)"
     text_edits = ["""
     use core::ops::SubAssign;
+
     """]
 
     [[completions]]
@@ -435,6 +470,7 @@ fn non_directly_visible_trait() {
     insert_text = "sub_eq($0)"
     text_edits = ["""
     use core::traits::SubEq;
+
     """]
 
     [[completions]]

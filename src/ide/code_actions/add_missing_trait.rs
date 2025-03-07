@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
-use lsp_types::{CodeAction, CodeActionKind, TextEdit, Url, WorkspaceEdit};
+use lsp_types::{CodeAction, CodeActionKind, Url, WorkspaceEdit};
 
-use super::missing_import::{is_preferred, new_import_position};
+use super::missing_import::is_preferred;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::importer::new_import_edit;
 use crate::lang::methods::available_traits_for_method;
 
 /// Create a Quick Fix code action to add a missing trait given a `CannotCallMethod` diagnostic.
@@ -16,7 +17,6 @@ pub fn add_missing_trait(
     let trait_paths = available_traits_for_method(db, ctx)?;
 
     let is_preferred = is_preferred(&trait_paths);
-    let range = new_import_position(db, ctx)?;
 
     let code_actions = trait_paths
         .into_iter()
@@ -25,10 +25,8 @@ pub fn add_missing_trait(
             kind: Some(CodeActionKind::QUICKFIX),
             is_preferred,
             edit: Some(WorkspaceEdit {
-                changes: Some(HashMap::from_iter([(
-                    uri.clone(),
-                    vec![TextEdit { range, new_text: format!("use {};\n", trait_path) }],
-                )])),
+                changes: new_import_edit(db, ctx, trait_path)
+                    .map(|edit| HashMap::from_iter([(uri.clone(), vec![edit])])),
                 ..Default::default()
             }),
             ..Default::default()
