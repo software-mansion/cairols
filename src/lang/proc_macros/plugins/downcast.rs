@@ -41,7 +41,7 @@ mod unsafe_downcast_ref_tests {
     fn cast_succeed() {
         let mut db = AnalysisDatabase::new();
 
-        let context = ProcMacroScope { package_id: String::from("anything") };
+        let context = ProcMacroScope { component: Default::default() };
 
         let input = ExpandAttributeParams {
             context,
