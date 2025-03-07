@@ -97,7 +97,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
     if_chain!(
         if let Some(binary_expression) = dot_expr_rhs(db, &node);
-        if let Some(dot_completions) = dot_completions(db, file_id, &ctx, binary_expression);
+        if let Some(dot_completions) = dot_completions(db, &ctx, binary_expression);
 
         then {
             completions.extend(dot_completions);
