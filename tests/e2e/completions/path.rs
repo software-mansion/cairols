@@ -22,9 +22,17 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteArrayImpl"
+    text_edits = ["""
+    use core::byte_array::ByteArrayImpl;
+
+    """]
 
     [[completions]]
     completion_label = "ByteArrayIter"
+    text_edits = ["""
+    use core::byte_array::ByteArrayIter;
+
+    """]
 
     [[completions]]
     completion_label = "ByteArrayTrait"
