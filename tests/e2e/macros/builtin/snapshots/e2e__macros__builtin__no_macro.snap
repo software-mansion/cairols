@@ -1,0 +1,15 @@
+---
+source: tests/e2e/macros/builtin/mod.rs
+description: "// → test_package/cairo_project.toml\n[crate_roots]\ntest_package = \"src\"\n\n[config.global]\nedition = \"2024_07\"\n\n// → test_package/src/lib.cairo\nfn foo() {  }"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+fn foo() { <caret> }
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+fn foo() {}
+"""

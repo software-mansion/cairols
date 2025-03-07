@@ -17,6 +17,7 @@ use lsp_types::{Position, TextDocumentIdentifier, TextDocumentPositionParams};
 use serde::Serialize;
 use serde_json::json;
 
+mod builtin;
 mod fixtures;
 #[cfg(feature = "test_proc_macros")] // TODO(#422): Enable locally
 mod procedural;
