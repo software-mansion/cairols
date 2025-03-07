@@ -1,16 +1,7 @@
-use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::SymbolDef;
-use crate::lang::lsp::{LsProtoGroup, ToCairo};
-use crate::lsp::capabilities::client::ClientCapabilitiesExt;
-use crate::lsp::result::{LSPError, LSPResult};
-use std::collections::HashMap;
-
 use anyhow::anyhow;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::{ModuleId, SubmoduleId};
+use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::FileLongId;
-use cairo_lang_syntax::node::TypedStablePtr;
-use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 use lsp_server::ErrorCode;
@@ -19,6 +10,13 @@ use lsp_types::{
     OptionalVersionedTextDocumentIdentifier, RenameFile, RenameParams, ResourceOp,
     TextDocumentEdit, TextEdit, Url, WorkspaceEdit,
 };
+use std::collections::HashMap;
+
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::defs::SymbolDef;
+use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lsp::capabilities::client::ClientCapabilitiesExt;
+use crate::lsp::result::{LSPError, LSPResult};
 
 // TODO(#381): handle crates separately (manifest needs to be changed too).
 pub fn rename(
@@ -78,7 +76,7 @@ pub fn rename(
                 ));
             }
             ModuleId::Submodule(submodule_id) => {
-                if is_submodule_inline(db, submodule_id) {
+                if db.infallible_is_submodule_inline(submodule_id) {
                     None
                 } else {
                     resource_op_for_non_inline_submodule(
@@ -105,14 +103,6 @@ pub fn rename(
     };
 
     Ok(Some(workspace_edit))
-}
-
-/// Infallible version of `db.is_submodule_inline`.
-fn is_submodule_inline(db: &AnalysisDatabase, submodule_id: SubmoduleId) -> bool {
-    match submodule_id.stable_ptr(db).lookup(db).body(db) {
-        MaybeModuleBody::Some(_) => true,
-        MaybeModuleBody::None(_) => false,
-    }
 }
 
 fn resource_op_for_non_inline_submodule(
