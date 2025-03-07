@@ -3,8 +3,8 @@ use attribute::derive::derive_completions;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::{
-    self, Attribute, BinaryOperator, ExprBinary, ExprPath, ExprStructCtorCall, ItemModule,
-    TerminalIdentifier, UsePathLeaf, UsePathSingle,
+    self, Attribute, ExprPath, ExprStructCtorCall, ItemModule, TerminalIdentifier, UsePathLeaf,
+    UsePathSingle,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -23,6 +23,7 @@ use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use expr::macro_call::macro_call_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
+use helpers::binary_expr::dot_rhs::dot_expr_rhs;
 
 mod attribute;
 mod dot_completions;
@@ -95,9 +96,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     );
 
     if_chain!(
-        if let Some(binary_expression) = node.ancestor_of_type::<ExprBinary>(db);
-        if let BinaryOperator::Dot(_) = binary_expression.op(db);
-        if node.is_descendant(&binary_expression.rhs(db).as_syntax_node());
+        if let Some(binary_expression) = dot_expr_rhs(db, &node);
         if let Some(dot_completions) = dot_completions(db, file_id, &ctx, binary_expression);
 
         then {
