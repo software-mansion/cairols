@@ -2679,8 +2679,7 @@ dependencies = [
 [[package]]
 name = "scarb-proc-macro-server-types"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f795ee87a80ad7f8139bef66655f25e826e5a2c752cd8f907beb700d0c758fc"
+source = "git+https://github.com/software-mansion/scarb?branch=feature%2Fpms-type-model-improvement#21027ede12dc2a6a6261ba58707c227c6ab39c74"
 dependencies = [
  "cairo-lang-macro",
  "serde",
