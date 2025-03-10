@@ -8,10 +8,10 @@ use cairo_lang_syntax::node::green::GreenNodeDetails;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax_codegen::cairo_spec::get_spec;
 use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
+use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::{Intern, LookupIntern};
 use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
-use smol_str::SmolStr;
 
 pub fn file_syntax_tree(db: &dyn SyntaxGroup, syntax_root: &SyntaxNode) -> String {
     let mut printer = Printer::new(db, true, false);

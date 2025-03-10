@@ -3,7 +3,7 @@ use cairo_lang_doc::db::DocGroup;
 use cairo_lang_doc::documentable_item::DocumentableItemId;
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use smol_str::SmolStr;
+use cairo_lang_utils::smol_str::SmolStr;
 
 use crate::lang::db::AnalysisDatabase;
 

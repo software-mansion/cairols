@@ -10,6 +10,7 @@ use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_semantic::db::PluginSuiteInput;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::smol_str::ToSmolStr;
 use crossbeam::channel::{Receiver, Sender};
 use governor::clock::QuantaClock;
 use governor::state::{InMemoryState, NotKeyed};
@@ -19,7 +20,6 @@ use lsp_types::request::SemanticTokensRefresh;
 use lsp_types::{ClientCapabilities, MessageType, ShowMessageParams};
 use scarb_proc_macro_server_types::jsonrpc::RpcResponse;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
-use smol_str::ToSmolStr;
 use tracing::error;
 
 use super::client::connection::ProcMacroServerConnection;
