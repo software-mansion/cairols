@@ -858,8 +858,7 @@ dependencies = [
 [[package]]
 name = "cairo-lint-core"
 version = "2.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be9ba40787dd7915d8b88ad104654c4d3024c3f576fbaba293186e1fde9c22da"
+source = "git+https://github.com/software-mansion/cairo-lint.git?rev=9000bebcc16bcb4a35fa9c3b51e6193518f865fc#9000bebcc16bcb4a35fa9c3b51e6193518f865fc"
 dependencies = [
  "annotate-snippets",
  "anyhow",
@@ -2679,7 +2678,7 @@ dependencies = [
 [[package]]
 name = "scarb-proc-macro-server-types"
 version = "0.2.0"
-source = "git+https://github.com/software-mansion/scarb?branch=feature%2Fpms-type-model-improvement#21027ede12dc2a6a6261ba58707c227c6ab39c74"
+source = "git+https://github.com/software-mansion/scarb?rev=8caf288a0634e8f90323529bde3eac79c47b1fa4#8caf288a0634e8f90323529bde3eac79c47b1fa4"
 dependencies = [
  "cairo-lang-macro",
  "serde",
