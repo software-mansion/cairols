@@ -126,6 +126,22 @@ fn disallow_recursive_definition() {
 }
 
 #[test]
+fn disallow_nested_recursive_definition() {
+    test_transform!(test_completions_text_edits,"
+    fn a(param: felt252, param2: felt252, param3: felt252){
+        let foo_bar_baz = {
+            let b = foo_bar_b<caret>;
+        };
+    }
+    ",@r#"
+    caret = """
+            let b = foo_bar_b<caret>;
+    """
+    completions = []
+    "#);
+}
+
+#[test]
 fn work_with_params() {
     test_transform!(test_completions_text_edits,"
     // funny names so there is no corelib completion in test
@@ -220,5 +236,72 @@ fn ignores_from_macros() {
         _<caret>
     """
     completions = []
+    "#);
+}
+
+#[test]
+fn ignores_from_blocks() {
+    test_transform!(test_completions_text_edits,"
+    fn a(param: felt252, param2: felt252, param3: felt252){
+        {
+            let bbb = 1234;
+        }
+        let foo2 = 1;
+
+        bb<caret>
+    }
+    ",@r#"
+    caret = """
+        bb<caret>
+    """
+    completions = []
+    "#);
+}
+
+#[test]
+fn works_in_same_block() {
+    test_transform!(test_completions_text_edits,"
+    fn a(param: felt252, param2: felt252, param3: felt252){
+        {
+
+            let bbb = 1234;
+
+            let foo2 = 1;
+
+            bb<caret>
+        }
+    }
+    ",@r#"
+    caret = """
+            bb<caret>
+    """
+
+    [[completions]]
+    completion_label = "bbb"
+    "#);
+}
+
+#[test]
+fn works_usage_in_block() {
+    test_transform!(test_completions_text_edits,"
+    fn a(param: felt252, param2: felt252, param3: felt252){
+        {
+
+            let bbb = 1234;
+
+            let foo2 = 1;
+
+            {
+                bb<caret>
+            }
+        }
+    }
+    ",@r#"
+    caret = """
+                bb<caret>
+    """
+
+    [[completions]]
+    completion_label = "bbb"
     "#);
 }
