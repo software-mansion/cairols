@@ -27,6 +27,9 @@ fn simple_trait() {
     """
 
     [[completions]]
+    completion_label = "Some"
+
+    [[completions]]
     completion_label = "add_assign()"
     detail = "core::ops::arith::AddAssign"
     insert_text = "add_assign($0)"
@@ -205,6 +208,13 @@ fn simple_trait() {
     completion_label = "serialize()"
     detail = "core::serde::Serde"
     insert_text = "serialize($0)"
+
+    [[completions]]
+    completion_label = "set_nonce"
+    text_edits = ["""
+    use starknet::testing::set_nonce;
+
+    """]
 
     [[completions]]
     completion_label = "some_method()"
@@ -267,6 +277,9 @@ fn non_directly_visible_trait() {
     """
 
     [[completions]]
+    completion_label = "Some"
+
+    [[completions]]
     completion_label = "add_assign()"
     detail = "core::ops::arith::AddAssign"
     insert_text = "add_assign($0)"
@@ -445,6 +458,13 @@ fn non_directly_visible_trait() {
     completion_label = "serialize()"
     detail = "core::serde::Serde"
     insert_text = "serialize($0)"
+
+    [[completions]]
+    completion_label = "set_nonce"
+    text_edits = ["""
+    use starknet::testing::set_nonce;
+
+    """]
 
     [[completions]]
     completion_label = "some_method()"

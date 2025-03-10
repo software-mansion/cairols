@@ -18,6 +18,7 @@ use super::helpers::completion_kind::{
 };
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::filtering::filter;
 use crate::lang::importer::new_import_edit;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 
@@ -69,7 +70,7 @@ pub fn path_suffix_completions(
 
             let last_segment = path_segments.last().expect("path to import should not be empty");
 
-            if !last_segment.starts_with(&typed_text) {
+            if !filter(last_segment, &typed_text) {
                 return None;
             }
 
