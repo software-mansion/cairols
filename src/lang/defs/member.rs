@@ -1,7 +1,7 @@
 use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
-use smol_str::SmolStr;
+use cairo_lang_utils::smol_str::SmolStr;
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::defs::ItemDef;

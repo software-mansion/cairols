@@ -8,8 +8,8 @@ use cairo_lang_doc::db::DocGroup;
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::Upcast;
+use cairo_lang_utils::smol_str::SmolStr;
 use itertools::Itertools;
-use smol_str::SmolStr;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 

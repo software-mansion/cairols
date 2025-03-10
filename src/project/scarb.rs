@@ -8,12 +8,12 @@ use cairo_lang_filesystem::db::{
     CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig,
 };
 use cairo_lang_utils::OptionHelper;
+use cairo_lang_utils::smol_str::ToSmolStr;
 use itertools::Itertools;
 use scarb_metadata::{
     CompilationUnitCairoPluginMetadata, CompilationUnitComponentDependencyMetadata,
     CompilationUnitComponentId, Metadata, PackageMetadata,
 };
-use smol_str::ToSmolStr;
 use tracing::{debug, error, warn};
 
 use super::builtin_plugins::BuiltinPlugin;

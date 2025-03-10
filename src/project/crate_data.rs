@@ -11,10 +11,10 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::{Intern, LookupIntern};
 use cairo_lint_core::plugin::cairo_lint_plugin_suite;
 use itertools::chain;
-use smol_str::SmolStr;
 
 use super::builtin_plugins::BuiltinPlugin;
 use crate::TRICKS;

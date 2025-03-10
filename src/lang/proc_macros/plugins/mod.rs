@@ -3,6 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::smol_str::SmolStr;
 use convert_case::{Case, Casing};
 use downcast::unsafe_downcast_ref;
 use scarb::inline::inline_macro_generate_code;
@@ -11,7 +12,6 @@ use scarb_proc_macro_server_types::methods::defined_macros::{
     DefinedMacrosResponse, PackageDefinedMacrosInfo,
 };
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
-use smol_str::SmolStr;
 
 mod downcast;
 // TODO(#6666) Evict this module when this is possible.

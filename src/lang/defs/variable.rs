@@ -3,7 +3,7 @@ use cairo_lang_semantic::{Binding, Mutability};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
-use smol_str::SmolStr;
+use cairo_lang_utils::smol_str::SmolStr;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
