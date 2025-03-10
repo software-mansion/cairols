@@ -1,0 +1,27 @@
+---
+source: tests/e2e/macros/builtin/mod.rs
+expression: report
+---
+[[expansions]]
+analyzed_lines = '''
+        assert<caret>!(1 == 1, "Failure message");
+'''
+generated_code = """
+// lib.cairo
+// ---------
+
+if !(1 == 1) {
+    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+    core::result::ResultTrait::<
+        (), core::fmt::Error,
+    >::unwrap(
+        {
+            core::byte_array::ByteArrayTrait::append_word(
+                ref __formatter_for_assert_macro__.buffer, 0x4661696c757265206d657373616765, 15,
+            );
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        },
+    );
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+}
+"""

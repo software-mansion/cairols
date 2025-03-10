@@ -1,4 +1,5 @@
 use indoc::{formatdoc, indoc};
+use serde_json::json;
 
 use crate::support::fixture::{Fixture, fixture};
 
@@ -8,6 +9,7 @@ pub struct ProjectWithCustomMacros;
 pub struct ProjectWithMultipleCrates;
 pub struct ProjectWithSnforgeUnitTest;
 pub struct ProjectWithSnforgeIntegrationTest;
+pub struct ProjectWithCairoProjectToml;
 
 impl MacroTest for ProjectWithCustomMacros {
     fn fixture() -> Fixture {
@@ -143,5 +145,28 @@ impl MacroTest for ProjectWithSnforgeIntegrationTest {
                 block_id.tag = "latest"
             "#),
         }
+    }
+}
+
+impl MacroTest for ProjectWithCairoProjectToml {
+    fn fixture() -> Fixture {
+        fixture! {
+            "test_package/cairo_project.toml" => indoc!(r#"
+                [crate_roots]
+                test_package = "src"
+
+                [config.global]
+                edition = "2024_07"
+            "#)
+        }
+    }
+
+    fn workspace_configuration() -> serde_json::Value {
+        json!({
+            // MockClient::open_and_wait_for_diagnostics_generation timeouts when used with
+            // cairo_project.toml with proc macros enabled.
+            "enableProcMacros": false,
+            "traceMacroDiagnostics": false,
+        })
     }
 }
