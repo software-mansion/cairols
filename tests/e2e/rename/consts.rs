@@ -1,41 +1,39 @@
-use crate::goto_definition::goto_definition;
+use crate::rename::rename;
 use crate::support::insta::test_transform;
 
 #[test]
 fn const_item_via_declaration() {
-    test_transform!(goto_definition, r#"
+    test_transform!(rename, r#"
     const FO<caret>O: u32 = 42;
-    "#, @r"
-    const <sel>FOO</sel>: u32 = 42;
-    ");
+    "#, @"const RENAMED: u32 = 42;");
 }
 
 #[test]
 fn const_item_via_expr() {
-    test_transform!(goto_definition, r#"
+    test_transform!(rename, r#"
     const FOO: u32 = 42;
     fn main() { let _ = FO<caret>O; }
     "#, @r"
-    const <sel>FOO</sel>: u32 = 42;
-    fn main() { let _ = FOO; }
+    const RENAMED: u32 = 42;
+    fn main() { let _ = RENAMED; }
     ");
 }
 
 #[test]
 fn const_item_via_other_const_expr() {
-    test_transform!(goto_definition, r#"
+    test_transform!(rename, r#"
     const FOO: u32 = 42;
     const BAR: u32 = FO<caret>O * 2;
     "#, @r"
-    const <sel>FOO</sel>: u32 = 42;
-    const BAR: u32 = FOO * 2;
+    const RENAMED: u32 = 42;
+    const BAR: u32 = RENAMED * 2;
     ");
 }
 
 // FIXME(#404)
 #[test]
 fn associated_const_via_trait_declaration() {
-    test_transform!(goto_definition, r#"
+    test_transform!(rename, r#"
     trait Shape<T> { const SIDE<caret>S: u32; }
     "#, @"none response");
 }
@@ -43,21 +41,21 @@ fn associated_const_via_trait_declaration() {
 // FIXME(#404)
 #[test]
 fn associated_const_via_impl_definition() {
-    test_transform!(goto_definition, r#"
+    test_transform!(rename, r#"
     trait Shape<T> { const SIDES: u32; }
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const SIDE<caret>S: u32 = 3; }
     "#, @r"
     trait Shape<T> { const SIDES: u32; }
     struct Triangle {}
-    impl TriangleShape of Shape<Triangle> { const <sel>SIDES</sel>: u32 = 3; }
+    impl TriangleShape of Shape<Triangle> { const RENAMED: u32 = 3; }
     ");
 }
 
 // FIXME(#405)
 #[test]
 fn associated_const_via_expr_use() {
-    test_transform!(goto_definition, r#"
+    test_transform!(rename, r#"
     trait Shape<T> { const SIDES: u32; }
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const SIDES: u32 = 3; }

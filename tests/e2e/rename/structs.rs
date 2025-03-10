@@ -1,34 +1,30 @@
-use crate::find_references::find_references;
+use crate::rename::rename;
 use crate::support::insta::test_transform;
 
 #[test]
 fn felt_in_struct() {
-    test_transform!(find_references, r#"
+    test_transform!(rename, r#"
     #[derive(Drop)]
     struct Foo { field: felt2<caret>52 }
     "#, @r"
-    // found several references in the core crate
+    // found renames in the core crate
     #[derive(Drop)]
-    struct Foo { field: <sel>felt252</sel> }
+    struct Foo { field: RENAMED }
     ")
 }
 
 // FIXME(#435)
 #[test]
 fn usize_in_struct() {
-    test_transform!(find_references, r#"
+    test_transform!(rename, r#"
     #[derive(Drop)]
     struct Foo { field: usi<caret>ze }
-    "#, @r"
-    // found several references in the core crate
-    #[derive(Drop)]
-    struct Foo { field: usize }
-    ")
+    "#, @"// found renames in the core crate")
 }
 
 #[test]
 fn struct_by_name() {
-    test_transform!(find_references, r#"
+    test_transform!(rename, r#"
     #[derive(Drop)]
     struct Fo<caret>o { field: felt252 }
     fn main() {
@@ -40,20 +36,20 @@ fn struct_by_name() {
     }
     "#, @r"
     #[derive(Drop)]
-    struct <sel=declaration>Foo</sel> { field: felt252 }
+    struct RENAMED { field: felt252 }
     fn main() {
-        let foo: <sel>Foo</sel> = <sel>Foo</sel> { field: 0 };
+        let foo: RENAMED = RENAMED { field: 0 };
     }
-    fn calc(foo: <sel>Foo</sel>) {}
+    fn calc(foo: RENAMED) {}
     mod rectangle {
-        use super::<sel>Foo</sel>;
+        use super::RENAMED;
     }
     ")
 }
 
 #[test]
 fn struct_member_via_definition() {
-    test_transform!(find_references, r#"
+    test_transform!(rename, r#"
     #[derive(Drop)]
     struct Foo { wi<caret>dth: u64 }
     fn main() {
@@ -62,17 +58,17 @@ fn struct_member_via_definition() {
     }
     "#, @r"
     #[derive(Drop)]
-    struct Foo { <sel=declaration>width</sel>: u64 }
+    struct Foo { RENAMED: u64 }
     fn main() {
-        let foo = Foo { <sel>width</sel>: 0 };
-        let x = foo.<sel>width</sel> * 2;
+        let foo = Foo { RENAMED: 0 };
+        let x = foo.RENAMED * 2;
     }
     ")
 }
 
 #[test]
 fn struct_member_via_constructor() {
-    test_transform!(find_references, r#"
+    test_transform!(rename, r#"
     #[derive(Drop)]
     struct Foo { width: u64 }
     fn main() {
@@ -81,17 +77,17 @@ fn struct_member_via_constructor() {
     }
     "#, @r"
     #[derive(Drop)]
-    struct Foo { <sel=declaration>width</sel>: u64 }
+    struct Foo { RENAMED: u64 }
     fn main() {
-        let foo = Foo { <sel>width</sel>: 0 };
-        let x = foo.<sel>width</sel> * 2;
+        let foo = Foo { RENAMED: 0 };
+        let x = foo.RENAMED * 2;
     }
     ")
 }
 
 #[test]
 fn struct_member_via_field_access() {
-    test_transform!(find_references, r#"
+    test_transform!(rename, r#"
     #[derive(Drop)]
     struct Foo { width: u64 }
     fn main() {
@@ -100,10 +96,10 @@ fn struct_member_via_field_access() {
     }
     "#, @r"
     #[derive(Drop)]
-    struct Foo { <sel=declaration>width</sel>: u64 }
+    struct Foo { RENAMED: u64 }
     fn main() {
-        let foo = Foo { <sel>width</sel>: 0 };
-        let x = foo.<sel>width</sel> * 2;
+        let foo = Foo { RENAMED: 0 };
+        let x = foo.RENAMED * 2;
     }
     ")
 }
