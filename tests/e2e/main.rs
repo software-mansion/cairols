@@ -1,3 +1,9 @@
+// Added because of the need to ignore the tests of proc macros.
+// TODO(#453): Delete
+#![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_macros)]
+
 mod analysis;
 mod code_actions;
 mod completions;
