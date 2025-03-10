@@ -12,6 +12,7 @@ use lsp_types::{CompletionItem, CompletionItemKind, Url};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
+use crate::lang::text_matching::text_matches;
 
 pub fn mod_completions(
     db: &AnalysisDatabase,
@@ -55,7 +56,7 @@ pub fn mod_completions(
         if !existing_modules_files.contains(&cairo_file.to_string_lossy().to_string()) {
             let file_name = file.strip_suffix(".cairo").unwrap_or(&file);
 
-            if file_name.starts_with(typed_module_name) {
+            if text_matches(file_name, typed_module_name) {
                 let label = file_name.strip_suffix(".cairo").unwrap_or(file_name);
                 let semicolon = semicolon_missing.then(|| ";".to_string()).unwrap_or_default();
 

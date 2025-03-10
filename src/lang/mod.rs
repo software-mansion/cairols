@@ -8,4 +8,5 @@ pub mod lsp;
 pub mod methods;
 pub mod plugins;
 pub mod proc_macros;
+pub mod text_matching;
 pub mod usages;

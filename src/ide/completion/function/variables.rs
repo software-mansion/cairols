@@ -8,6 +8,7 @@ use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::text_matching::text_matches;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_syntax::node::ast::{PathSegment, StatementLet};
 use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
@@ -71,7 +72,7 @@ fn patterns(
                 }
             }
 
-            if !var.name.starts_with(typed_text) {
+            if !text_matches(&var.name, typed_text) {
                 continue;
             }
 
