@@ -11,8 +11,10 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_syntax::node::ast::{PathSegment, StatementLet};
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
 use cairo_lang_utils::LookupIntern;
+use std::collections::HashSet;
 
 pub fn variables_completions(
     db: &AnalysisDatabase,
@@ -60,16 +62,43 @@ fn patterns(
                 continue;
             }
 
-            if let Some(let_statement) = ctx.node.ancestor_of_type::<StatementLet>(db) {
-                if let_statement.pattern(db).stable_ptr().0.lookup(db) == pattern_node {
-                    // Disallow recursive variables.
-                    // let abc = {
-                    //     // do something
-                    //     a<caret>
-                    // }
-                    // `abc` is defined before caret, but we still want to skip it.
-                    continue;
-                }
+            // Find all ancestor let statements and check if we are on pattern created with one of these.
+            let is_recursive =
+                ctx.node.ancestors_with_self().filter_map(|node| StatementLet::cast(db, node)).any(
+                    |let_statement| {
+                        let_statement.pattern(db).stable_ptr().0.lookup(db) == pattern_node
+                    },
+                );
+
+            if is_recursive {
+                // Disallow recursive variables.
+                // let abc = {
+                //     // do something
+                //     a<caret>
+                // }
+                // `abc` is defined before caret, but we still want to skip it.
+                continue;
+            }
+
+            let ancestors: HashSet<_> = ctx.node.ancestors_with_self().collect();
+
+            let Some(common_ancestor) =
+                pattern_node.ancestors_with_self().find(|node| ancestors.contains(node))
+            else {
+                continue;
+            };
+
+            let blocks_to_common_ancestor = pattern_node
+                .ancestors_with_self()
+                .take_while(|node| node != &common_ancestor)
+                .filter(|node| node.kind(db) == SyntaxKind::ExprBlock)
+                .count();
+
+            match blocks_to_common_ancestor {
+                0 => {}
+                // This is allowed only if common ancestor is block.
+                1 if common_ancestor.kind(db) == SyntaxKind::ExprBlock => {}
+                _ => continue,
             }
 
             if !text_matches(&var.name, typed_text) {
