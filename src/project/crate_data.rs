@@ -12,7 +12,7 @@ use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::{Intern, LookupIntern};
-use cairo_lint_core::plugin::cairo_lint_plugin_suite;
+use cairo_lint_core::plugin::{cairo_lint_allow_plugin_suite, cairo_lint_plugin_suite};
 use itertools::chain;
 use smol_str::SmolStr;
 
@@ -84,6 +84,7 @@ impl Crate {
             .iter()
             .map(BuiltinPlugin::suite)
             .chain(tricks()) // All crates should receive Tricks.
+            .chain(Some(cairo_lint_allow_plugin_suite())) // All crates should CairoLintAllow.
             .chain(enable_linter.then(cairo_lint_plugin_suite))
             .chain(proc_macro_plugin_suite)
             .fold(get_default_plugin_suite(), |mut acc, suite| {
