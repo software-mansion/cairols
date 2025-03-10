@@ -22,6 +22,27 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "baz"
+
+    [[completions]]
+    completion_label = "blake2s_compress"
+    text_edits = ["""
+    use core::blake::blake2s_compress;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize"
+    text_edits = ["""
+    use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "library_call_syscall"
+    text_edits = ["""
+    use starknet::syscalls::library_call_syscall;
+
+    """]
     "#);
 }
 
@@ -43,6 +64,27 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "bar"
+
+    [[completions]]
+    completion_label = "blake2s_compress"
+    text_edits = ["""
+    use core::blake::blake2s_compress;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize"
+    text_edits = ["""
+    use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "library_call_syscall"
+    text_edits = ["""
+    use starknet::syscalls::library_call_syscall;
+
+    """]
     "#);
 }
 
@@ -56,6 +98,27 @@ fn disallow_recursive_definition() {
     caret = """
         let foo = fo<caret>;
     """
+
+    [[completions]]
+    completion_label = "OverflowingAdd"
+    text_edits = ["""
+    use core::num::traits::OverflowingAdd;
+
+    """]
+
+    [[completions]]
+    completion_label = "OverflowingMul"
+    text_edits = ["""
+    use core::num::traits::OverflowingMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "OverflowingSub"
+    text_edits = ["""
+    use core::num::traits::OverflowingSub;
+
+    """]
 
     [[completions]]
     completion_label = "format!"
@@ -73,6 +136,22 @@ fn work_with_params() {
     caret = """
         paxr<caret>
     """
+
+    [[completions]]
+    completion_label = "a"
+
+    [[completions]]
+    completion_label = "max"
+    text_edits = ["""
+    use core::cmp::max;
+
+    """]
+
+    [[completions]]
+    completion_label = "panic"
+
+    [[completions]]
+    completion_label = "panic!"
 
     [[completions]]
     completion_label = "paxram"
@@ -102,6 +181,27 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "baz"
+
+    [[completions]]
+    completion_label = "blake2s_compress"
+    text_edits = ["""
+    use core::blake::blake2s_compress;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize"
+    text_edits = ["""
+    use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "library_call_syscall"
+    text_edits = ["""
+    use starknet::syscalls::library_call_syscall;
+
+    """]
     "#);
 }
 

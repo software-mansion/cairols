@@ -15,6 +15,13 @@ fn single_element_path() {
     """
 
     [[completions]]
+    completion_label = "BitAnd"
+    text_edits = ["""
+    use core::traits::BitAnd;
+
+    """]
+
+    [[completions]]
     completion_label = "ByteA_ActuallyNotByteArray"
 
     [[completions]]
@@ -36,6 +43,19 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteArrayTrait"
+
+    [[completions]]
+    completion_label = "Bytes31Impl"
+    text_edits = ["""
+    use core::bytes_31::Bytes31Impl;
+
+    """]
+
+    [[completions]]
+    completion_label = "Bytes31Trait"
+
+    [[completions]]
+    completion_label = "System"
     "#);
 }
 
