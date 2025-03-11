@@ -8,6 +8,7 @@ use salsa::ParallelDatabase;
 
 use crate::config::Config;
 use crate::ide::analysis_progress::{AnalysisProgressController, ProcMacroServerTracker};
+use crate::ide::code_lens::CodeLensController;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
@@ -28,6 +29,7 @@ pub struct State {
     pub proc_macro_controller: ProcMacroClientController,
     pub project_controller: ProjectController,
     pub analysis_progress_controller: AnalysisProgressController,
+    pub code_lens_controller: CodeLensController,
 }
 
 impl State {
@@ -62,6 +64,7 @@ impl State {
             analysis_progress_controller,
             proc_macro_controller,
             project_controller: ProjectController::initialize(scarb_toolchain, notifier),
+            code_lens_controller: CodeLensController::default(),
         }
     }
 
@@ -73,6 +76,7 @@ impl State {
             config: self.config.snapshot(),
             client_capabilities: self.client_capabilities.snapshot(),
             loaded_scarb_manifests: self.project_controller.manifests_registry(),
+            code_lens_controller: self.code_lens_controller.clone(),
         }
     }
 }
@@ -85,6 +89,7 @@ pub struct StateSnapshot {
     pub config: Snapshot<Config>,
     pub client_capabilities: Snapshot<ClientCapabilities>,
     pub loaded_scarb_manifests: Snapshot<ManifestRegistry>,
+    pub code_lens_controller: CodeLensController,
 }
 
 impl std::panic::UnwindSafe for StateSnapshot {}
