@@ -34,6 +34,12 @@ jobs:
           echo "::notice::Checking Cairo commit: https://github.com/starkware-libs/cairo/commit/$CAIRO_REV"
           cargo xtask upgrade cairo --rev "$CAIRO_REV"
 
+      - name: Upgrade Lint to latest main commit
+        run: |
+          LINT_REV=$(git ls-remote --refs "https://github.com/software-mansion/cairo-lint" main | awk '{print $1}')
+          echo "::notice::Checking Lint commit: https://github.com/software-mansion/cairo-lint/$LINT_REV"
+          cargo xtask upgrade cairolint --rev "$LINT_REV"
+
       - run: cargo test --profile=ci --no-fail-fast
 
   notify_failed:
