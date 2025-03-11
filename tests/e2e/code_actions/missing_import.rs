@@ -18,10 +18,12 @@ fn single() {
     ", @r#"
     Title: Import `aa::cc`
     Add new text: "use aa::cc;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     Title: Fix All
     Add new text: "use aa::cc;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     "#);
@@ -44,10 +46,12 @@ fn multiple() {
     ", @r#"
     Title: Import `aa::cc`
     Add new text: "use aa::cc;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     Title: Import `aa::bb::cc`
     Add new text: "use aa::bb::cc;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     "#);
@@ -70,10 +74,12 @@ fn ignoring_visibility() {
     ", @r#"
     Title: Import `aa::cc`
     Add new text: "use aa::cc;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     Title: Import `aa::bb::cc`
     Add new text: "use aa::bb::cc;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     "#);
@@ -113,10 +119,12 @@ fn generic_path() {
     ", @r#"
     Title: Import `aa::bb`
     Add new text: "use aa::bb;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     Title: Fix All
     Add new text: "use aa::bb;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     "#);
@@ -159,17 +167,21 @@ fn fix_all() {
     ", @r#"
     Title: Import `aa::bb`
     Add new text: "use aa::bb;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     Title: Import `aa::dd`
     Add new text: "use aa::dd;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     Title: Fix All
     Add new text: "use aa::bb;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     Add new text: "use aa::dd;
+
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     "#);

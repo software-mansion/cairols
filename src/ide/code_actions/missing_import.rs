@@ -1,17 +1,12 @@
-use lsp_types::{CodeAction, CodeActionKind, TextEdit, Url, WorkspaceEdit};
+use lsp_types::{CodeAction, CodeActionKind, Url, WorkspaceEdit};
 
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::ToLsp;
-use cairo_lang_defs::ids::ModuleId;
+use crate::lang::importer::new_import_edit;
 use cairo_lang_defs::ids::{FileIndex, ModuleFileId};
-use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax::node::ast::ExprPath;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
-use if_chain::if_chain;
-use lsp_types::Range;
 use std::collections::HashMap;
 
 pub fn missing_import(
@@ -60,7 +55,6 @@ pub fn missing_import(
         .collect();
 
     let is_preferred = is_preferred(&items);
-    let range = new_import_position(db, ctx)?;
 
     Some(
         items
@@ -70,10 +64,8 @@ pub fn missing_import(
                 kind: Some(CodeActionKind::QUICKFIX),
                 is_preferred,
                 edit: Some(WorkspaceEdit {
-                    changes: Some(HashMap::from_iter([(
-                        uri.clone(),
-                        vec![TextEdit { range, new_text: format!("use {};\n", path) }],
-                    )])),
+                    changes: new_import_edit(db, ctx, path)
+                        .map(|edit| HashMap::from_iter([(uri.clone(), vec![edit])])),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -91,24 +83,4 @@ pub fn is_preferred<T>(items: &[T]) -> Option<bool> {
 
     // We can propose this for autofix if there is exactly one possible option.
     is_unambiguous.then_some(true)
-}
-
-/// Returns position where new use statement should be inserted.
-pub fn new_import_position(db: &AnalysisDatabase, ctx: &AnalysisContext) -> Option<Range> {
-    let module_start_offset = if_chain! {
-        if let ModuleId::Submodule(submodule_id) = ctx.module_id;
-        if let ast::MaybeModuleBody::Some(body) = submodule_id.stable_ptr(db).lookup(db).body(db);
-
-        then {
-            body.items(db).as_syntax_node().span_start_without_trivia(db)
-        } else {
-            TextOffset::default()
-        }
-    };
-
-    let file_id = ModuleFileId(ctx.module_id, FileIndex(0)).file_id(db).ok()?;
-    let module_start_position = module_start_offset.position_in_file(db, file_id)?.to_lsp();
-    let range = Range::new(module_start_position, module_start_position);
-
-    Some(range)
 }

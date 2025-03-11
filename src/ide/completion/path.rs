@@ -18,6 +18,7 @@ use super::helpers::completion_kind::{
 };
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::importer::new_import_edit;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 
 pub fn expr_path(
@@ -72,10 +73,14 @@ pub fn path_suffix_completions(
                 return None;
             }
 
-            // TODO(#284)
+            let is_not_in_scope = path_segments.len() != 1;
+
+            let import = is_not_in_scope.then(|| new_import_edit(db, ctx, path_str)).flatten();
+
             Some(CompletionItem {
                 label: importable.name(db).to_string(),
                 kind: Some(importable_completion_kind(*importable)),
+                additional_text_edits: import.map(|edit| vec![edit]),
                 ..CompletionItem::default()
             })
         })

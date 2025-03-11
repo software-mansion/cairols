@@ -2,6 +2,7 @@ pub mod analysis_context;
 pub mod db;
 pub mod defs;
 pub mod diagnostics;
+pub mod importer;
 pub mod linter;
 pub mod lsp;
 pub mod methods;
