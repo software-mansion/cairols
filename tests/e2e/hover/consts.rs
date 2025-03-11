@@ -99,8 +99,8 @@ fn associated_const_via_impl_definition() {
     hello
     ```
     ```cairo
-    impl TriangleShape of Shape<Triangle>
-    const SIDES: u32 = 3;
+    impl TriangleShape of Shape<Triangle>;
+    <missing>
     ```
     """
     "#);
