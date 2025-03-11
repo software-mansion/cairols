@@ -1,9 +1,9 @@
+use cairo_lang_defs::ids::TraitItemId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::keyword::{CRATE_KW, SELF_TYPE_KW, SUPER_KW};
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use cairo_lang_semantic::resolve::{
-    CRATE_KW, ResolvedConcreteItem, ResolvedGenericItem, SELF_TYPE_KW, SUPER_KW,
-};
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
@@ -151,6 +151,12 @@ impl SemanticTokenKind {
                             SemanticTokenKind::Class
                         }
                         ResolvedGenericItem::Variable(_) => SemanticTokenKind::Variable,
+                        ResolvedGenericItem::TraitItem(trait_item) => match trait_item {
+                            TraitItemId::Function(_) => SemanticTokenKind::Function,
+                            TraitItemId::Type(_) => SemanticTokenKind::Interface,
+                            TraitItemId::Constant(_) => SemanticTokenKind::EnumMember,
+                            TraitItemId::Impl(_) => SemanticTokenKind::Class,
+                        },
                     });
                 }
                 if let Some(item) =

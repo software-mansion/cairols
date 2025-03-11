@@ -30,7 +30,7 @@ fn const_item_via_other_const_expr() {
     ");
 }
 
-// FIXME(#404)
+// FIXME: https://github.com/software-mansion/cairols/issues/404
 #[test]
 fn associated_const_via_trait_declaration() {
     test_transform!(find_references, r#"
@@ -38,7 +38,6 @@ fn associated_const_via_trait_declaration() {
     "#, @"none response");
 }
 
-// FIXME(#404)
 #[test]
 fn associated_const_via_impl_definition() {
     test_transform!(find_references, r#"
@@ -52,7 +51,8 @@ fn associated_const_via_impl_definition() {
     ");
 }
 
-// FIXME(#405)
+// FIXME: https://github.com/software-mansion/cairols/issues/405
+//        https://github.com/software-mansion/cairols/issues/170
 #[test]
 fn associated_const_via_expr_use() {
     test_transform!(find_references, r#"
@@ -62,5 +62,12 @@ fn associated_const_via_expr_use() {
     fn print_shape_info<T, impl ShapeImpl: Shape<T>>() {
         let _ = ShapeImpl::SIDE<caret>S;
     }
-    "#, @"none response");
+    "#, @r"
+    trait Shape<T> { const <sel=declaration>SIDES</sel>: u32; }
+    struct Triangle {}
+    impl TriangleShape of Shape<Triangle> { const SIDES: u32 = 3; }
+    fn print_shape_info<T, impl ShapeImpl: Shape<T>>() {
+        let _ = ShapeImpl::SIDES;
+    }
+    ");
 }

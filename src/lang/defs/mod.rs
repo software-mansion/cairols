@@ -69,13 +69,13 @@ impl SymbolDef {
             | ResolvedItem::Generic(ResolvedGenericItem::GenericImplAlias(_))
             | ResolvedItem::Generic(ResolvedGenericItem::Trait(_))
             | ResolvedItem::Generic(ResolvedGenericItem::Impl(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::TraitItem(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Constant(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Function(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Type(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_))
-            | ResolvedItem::TraitItem(_)
             | ResolvedItem::ImplItem(_) => ItemDef::new(db, &definition_node).map(Self::Item),
 
             ResolvedItem::Generic(ResolvedGenericItem::Module(id))

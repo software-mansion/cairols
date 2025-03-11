@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::ImportableId;
+use cairo_lang_defs::ids::{ImportableId, TraitItemId};
 use cairo_lang_semantic::resolve::ResolvedGenericItem;
 use lsp_types::CompletionItemKind;
 
@@ -16,6 +16,12 @@ pub fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> Compl
         ResolvedGenericItem::Variant(_) => CompletionItemKind::ENUM_MEMBER,
         ResolvedGenericItem::Trait(_) => CompletionItemKind::INTERFACE,
         ResolvedGenericItem::Variable(_) => CompletionItemKind::VARIABLE,
+        ResolvedGenericItem::TraitItem(trait_item) => match trait_item {
+            TraitItemId::Function(_) => CompletionItemKind::FUNCTION,
+            TraitItemId::Type(_) => CompletionItemKind::CLASS,
+            TraitItemId::Constant(_) => CompletionItemKind::CONSTANT,
+            TraitItemId::Impl(_) => CompletionItemKind::CLASS,
+        },
     }
 }
 
