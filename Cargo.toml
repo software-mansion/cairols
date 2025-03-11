@@ -49,7 +49,7 @@ cairo-lang-syntax = "*"
 cairo-lang-syntax-codegen = "*"
 cairo-lang-test-plugin = "*"
 cairo-lang-utils = "*"
-cairo-lint-core = "2.11.1"
+cairo-lint-core = { git = "https://github.com/software-mansion/cairo-lint.git", rev = "9000bebcc16bcb4a35fa9c3b51e6193518f865fc" }
 colored = "3.0.0"
 convert_case = "0.8.0"
 crossbeam = "0.8.4"
@@ -64,7 +64,7 @@ lsp-types = "=0.95.1"
 memchr = "2.7.4"
 salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
 scarb-metadata = "1.14.0"
-scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb", branch = "feature/pms-type-model-improvement" } # TODO: Change to revision after merging in Scarb.
+scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb", rev = "8caf288a0634e8f90323529bde3eac79c47b1fa4" }
 scarb-stable-hash = "1"
 semver = "1"
 serde = { version = "1", default-features = false, features = ["derive"] }

@@ -115,6 +115,51 @@ fn test_linter_with_starknet_analyzer_plugins() {
     );
 }
 
+#[test]
+fn allow_lint_doesnt_generate_diagnostics_with_linter_off() {
+    let mut ls = sandbox! {
+        files {
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+            "src/lib.cairo" => indoc!(r#"
+                #[allow(break_unit)]
+                fn uwu() {}
+            "#),
+        }
+        workspace_configuration = json!({
+            "cairo1": {
+                "enableLinter": false
+            }
+        });
+    };
+
+    assert!(ls.open_and_wait_for_diagnostics("src/lib.cairo").is_empty());
+}
+
+#[test]
+fn allow_lint_doesnt_generate_diagnostics_for_scarb_package_with_linter_off() {
+    let mut ls = sandbox! {
+        files {
+            "Scarb.toml" => indoc! (r#"
+                [package]
+                name = "a"
+                version = "0.1.0"
+                edition = "2024_07"
+            "#),
+            "src/lib.cairo" => indoc!(r#"
+                #[allow(break_unit)]
+                fn uwu() {}
+            "#),
+        }
+        workspace_configuration = json!({
+            "cairo1": {
+                "enableLinter": false
+            }
+        });
+    };
+
+    assert!(ls.open_and_wait_for_diagnostics("src/lib.cairo").is_empty());
+}
+
 #[derive(Serialize)]
 struct Report {
     diagnostics: Vec<Diagnostic>,

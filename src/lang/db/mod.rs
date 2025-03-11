@@ -25,6 +25,7 @@ use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lint_core::plugin::cairo_lint_allow_plugin_suite;
 use itertools::Itertools;
 use salsa::{Database, Durability};
 
@@ -68,21 +69,8 @@ impl AnalysisDatabase {
 
         db.set_cfg_set(Self::initial_cfg_set().into());
 
-        let tricks = TRICKS.get_or_init(Default::default);
-
         // Those pluins are relevant for projects with `cairo_project.toml` (e.g. our tests).
-        let default_plugin_suite = [
-            get_default_plugin_suite(),
-            starknet_plugin_suite(),
-            test_plugin_suite(),
-            executable_plugin_suite(),
-        ]
-        .into_iter()
-        .chain(tricks.extra_plugin_suites.iter().flat_map(|f| f()))
-        .fold(PluginSuite::default(), |mut acc, suite| {
-            acc.add(suite);
-            acc
-        });
+        let default_plugin_suite = Self::default_global_plugin_suite();
 
         let default_plugin_suite = db.intern_plugin_suite(default_plugin_suite);
         db.set_default_plugins_from_suite(default_plugin_suite);
@@ -146,6 +134,24 @@ impl AnalysisDatabase {
         self.set_override_crate_macro_plugins(crate_id, macro_plugins.into_iter().collect());
         self.set_override_crate_analyzer_plugins(crate_id, analyzer_plugins.into_iter().collect());
         self.set_override_crate_inline_macro_plugins(crate_id, Arc::new(inline_macro_plugins));
+    }
+
+    fn default_global_plugin_suite() -> PluginSuite {
+        let tricks = TRICKS.get_or_init(Default::default);
+
+        [
+            get_default_plugin_suite(),
+            starknet_plugin_suite(),
+            test_plugin_suite(),
+            executable_plugin_suite(),
+            cairo_lint_allow_plugin_suite(),
+        ]
+        .into_iter()
+        .chain(tricks.extra_plugin_suites.iter().flat_map(|f| f()))
+        .fold(PluginSuite::default(), |mut acc, suite| {
+            acc.add(suite);
+            acc
+        })
     }
 }
 
