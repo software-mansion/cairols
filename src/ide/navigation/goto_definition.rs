@@ -1,4 +1,4 @@
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::SymbolDef;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use cairo_lang_defs::db::DefsGroup;
@@ -39,7 +39,7 @@ fn try_special_case_non_inline_module(
         match module_id {
             ModuleId::CrateRoot(_) => None,
             ModuleId::Submodule(submodule_id) => db
-                .infallible_is_submodule_inline(submodule_id)
+                .is_submodule_inline(submodule_id)
                 .not()
                 .then(|| {
                     let file = db.module_main_file(module_def.module_id()).ok()?;

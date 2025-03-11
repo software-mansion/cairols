@@ -3,17 +3,16 @@ use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, ImplAliasLongId, ImplDefLongId, ImplFunctionLongId, ImplItemId,
     LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasLongId,
-    StructLongId, SubmoduleId, TraitFunctionLongId, TraitItemId, TraitLongId, UseLongId, VarId,
+    StructLongId, TraitFunctionLongId, TraitItemId, TraitLongId, UseLongId, VarId,
 };
 use cairo_lang_semantic::Binding;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, Upcast};
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
@@ -169,16 +168,6 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
                 // TODO(#58): Implement this.
                 None
             }
-        }
-    }
-
-    // TODO: upstream and remove
-    /// Infallible version of `db.is_submodule_inline`.
-    fn infallible_is_submodule_inline(&self, submodule_id: SubmoduleId) -> bool {
-        let db = self.upcast();
-        match submodule_id.stable_ptr(db.upcast()).lookup(db.upcast()).body(db.upcast()) {
-            MaybeModuleBody::Some(_) => true,
-            MaybeModuleBody::None(_) => false,
         }
     }
 }

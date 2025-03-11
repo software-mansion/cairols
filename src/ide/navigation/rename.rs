@@ -12,7 +12,7 @@ use lsp_types::{
 };
 use std::collections::HashMap;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::SymbolDef;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
@@ -76,7 +76,7 @@ pub fn rename(
                 ));
             }
             ModuleId::Submodule(submodule_id) => {
-                if db.infallible_is_submodule_inline(submodule_id) {
+                if db.is_submodule_inline(submodule_id) {
                     None
                 } else {
                     resource_op_for_non_inline_submodule(
