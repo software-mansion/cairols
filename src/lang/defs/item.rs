@@ -69,7 +69,10 @@ impl ItemDef {
     pub fn signature(&self, db: &AnalysisDatabase) -> String {
         let contexts = self.context_items.iter().copied().rev();
         let this = iter::once(self.lookup_item_id);
-        contexts.chain(this).map(|item| db.get_item_signature(item.into())).join("\n")
+        contexts
+            .chain(this)
+            .map(|item| db.get_item_signature(item.into()).unwrap_or_else(|| "<missing>".into()))
+            .join("\n")
     }
 
     /// Gets item documentation in a final form usable for display.

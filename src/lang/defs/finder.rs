@@ -33,7 +33,6 @@ pub enum ResolvedItem {
 
     // CairoLS-specific additions.
     Member(MemberId),
-    TraitItem(TraitItemId),
     ImplItem(ImplItemId),
 }
 
@@ -373,12 +372,7 @@ impl ResolvedItem {
                 VarId::Item(item) => item.name_stable_ptr(db),
             },
 
-            // Other variants.
-            ResolvedItem::Member(member_id) => {
-                member_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
-            }
-
-            ResolvedItem::TraitItem(trait_item) => match trait_item {
+            ResolvedItem::Generic(ResolvedGenericItem::TraitItem(trait_item)) => match trait_item {
                 TraitItemId::Function(trait_function) => {
                     trait_function.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
                 }
@@ -392,6 +386,11 @@ impl ResolvedItem {
                     trait_impl.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
                 }
             },
+
+            // Other variants.
+            ResolvedItem::Member(member_id) => {
+                member_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+            }
 
             ResolvedItem::ImplItem(impl_item) => match impl_item {
                 ImplItemId::Function(impl_function) => {
@@ -422,7 +421,9 @@ impl ResolvedItem {
             LookupItemId::ModuleItem(module_item) => {
                 ResolvedGenericItem::from_module_item(db, module_item).ok().map(Self::Generic)
             }
-            LookupItemId::TraitItem(trait_item) => Some(Self::TraitItem(trait_item)),
+            LookupItemId::TraitItem(trait_item) => {
+                Some(Self::Generic(ResolvedGenericItem::TraitItem(trait_item)))
+            }
             LookupItemId::ImplItem(impl_item) => Some(Self::ImplItem(impl_item)),
         }
     }

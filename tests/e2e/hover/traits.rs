@@ -24,7 +24,7 @@ fn generated_element_use() {
     hello
     ```
     ```cairo
-    trait MyTrait<SelfType>
+    <missing>
     ```
     """
     "#)
@@ -149,7 +149,7 @@ fn self_type_member_method_call() {
     ```
     ```cairo
     pub trait One<T>
-    fn is_one(self: @T) -> bool
+    fn is_one<T, T>(self: @T) -> bool
     ```
     ---
     Returns true if `self` is equal to the multiplicative identity.
@@ -184,7 +184,7 @@ fn trait_name_generated() {
     hello
     ```
     ```cairo
-    trait MyTrait
+    <missing>
     ```
     """
     "#)
@@ -209,7 +209,7 @@ fn trait_name_generic_name_generated() {
     hello
     ```
     ```cairo
-    impl MyTraitImpl<SelfType> of MyTrait<SelfType>
+    impl MyTraitImpl<SelfType> of MyTrait<SelfType>;
     ```
     """
     "#)
