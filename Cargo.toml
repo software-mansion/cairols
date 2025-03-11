@@ -1,6 +1,6 @@
 [package]
 name = "cairo-language-server"
-version = "2.11.1"
+version = "2.11.2"
 edition = "2024"
 
 authors = ["Software Mansion <contact@swmansion.com>", "StarkWare <info@starkware.co>"]
