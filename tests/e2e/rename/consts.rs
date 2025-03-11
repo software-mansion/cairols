@@ -62,5 +62,12 @@ fn associated_const_via_expr_use() {
     fn print_shape_info<T, impl ShapeImpl: Shape<T>>() {
         let _ = ShapeImpl::SIDE<caret>S;
     }
-    "#, @"none response");
+    "#, @r"
+    trait Shape<T> { const RENAMED: u32; }
+    struct Triangle {}
+    impl TriangleShape of Shape<Triangle> { const SIDES: u32 = 3; }
+    fn print_shape_info<T, impl ShapeImpl: Shape<T>>() {
+        let _ = ShapeImpl::SIDES;
+    }
+    ");
 }
