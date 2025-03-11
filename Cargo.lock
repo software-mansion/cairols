@@ -798,7 +798,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-language-server"
-version = "2.11.1"
+version = "2.11.2"
 dependencies = [
  "anyhow",
  "assert_fs",
@@ -856,8 +856,8 @@ dependencies = [
 
 [[package]]
 name = "cairo-lint-core"
-version = "2.11.1"
-source = "git+https://github.com/software-mansion/cairo-lint.git?rev=9000bebcc16bcb4a35fa9c3b51e6193518f865fc#9000bebcc16bcb4a35fa9c3b51e6193518f865fc"
+version = "2.11.2"
+source = "git+https://github.com/software-mansion/cairo-lint.git?rev=6dd17d9#6dd17d962dd27250e9b1812aee1df72b244cce3d"
 dependencies = [
  "annotate-snippets",
  "anyhow",
