@@ -50,14 +50,20 @@ pub fn struct_constructor_completions(
     let struct_members =
         db.concrete_struct_members(constructor_semantic_expr.concrete_struct_id).ok()?;
 
+    // If any field is not visible this struct is unconstructable anyway, don't propose completions.
+    if !struct_members
+        .values()
+        .all(|data| peek_visible_in(db, data.visibility, struct_parent_module_id, module_id))
+    {
+        return None;
+    }
+
     let completions = struct_members
         .iter()
         .filter_map(|(name, data)| {
             let name = name.to_string();
 
-            let visible = peek_visible_in(db, data.visibility, struct_parent_module_id, module_id);
-
-            if !visible || already_present_members.contains(&name) {
+            if already_present_members.contains(&name) {
                 None
             } else {
                 Some(CompletionItem {

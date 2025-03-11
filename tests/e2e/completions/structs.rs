@@ -217,6 +217,32 @@ fn imported_empty() {
 }
 
 #[test]
+fn some_field_private() {
+    test_transform!(test_completions_text_edits,"
+    mod wrapper {
+        pub struct Struct {
+            x: u32,
+            pub y: felt252,
+            pub z: i16
+        }
+    }
+
+    mod struct_is_not_in_ancestor_module {
+        use super::wrapper::Struct;
+
+        fn foo() {
+            let a = Struct { <caret> };
+        }
+    }
+    ",@r#"
+    caret = """
+            let a = Struct { <caret> };
+    """
+    completions = []
+    "#);
+}
+
+#[test]
 fn imported_after_prop() {
     test_transform!(test_completions_text_edits,"
     pub struct Struct {
