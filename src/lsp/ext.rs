@@ -142,3 +142,17 @@ impl Notification for ScarbResolvingFinish {
     type Params = ();
     const METHOD: &'static str = "scarb/resolving-finish";
 }
+
+#[derive(Debug)]
+pub struct ExecuteInTerminal {}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub struct ExecuteInTerminalParams {
+    pub command: String,
+    pub cwd: PathBuf,
+}
+
+impl Notification for ExecuteInTerminal {
+    type Params = ExecuteInTerminalParams;
+    const METHOD: &'static str = "cairo/executeInTerminal";
+}
