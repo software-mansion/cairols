@@ -53,6 +53,7 @@ cairo-lint-core = { git = "https://github.com/software-mansion/cairo-lint.git", 
 colored = "3.0.0"
 convert_case = "0.8.0"
 crossbeam = "0.8.4"
+csv = "1.3.1"
 governor = { version = "0.8.0", default-features = false, features = ["std", "quanta"] }
 if_chain = "1"
 indent = "0.1.1"

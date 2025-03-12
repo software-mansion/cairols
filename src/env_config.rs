@@ -19,7 +19,7 @@ pub const SCARB: &'_ str = "SCARB";
 
 /// Interval between compiler database regenerations (to free unused memory).
 pub fn db_replace_interval() -> Duration {
-    const DEFAULT: u64 = 300;
+    const DEFAULT: u64 = 30000;
 
     env::var(CAIRO_LS_DB_REPLACE_INTERVAL)
         .ok()
