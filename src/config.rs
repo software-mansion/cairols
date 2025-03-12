@@ -13,6 +13,7 @@ use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::result::{LSPResult, LSPResultEx};
 use crate::server::client::Requester;
 use crate::server::schedule::Task;
+use std::str::FromStr;
 
 // TODO(mkaput): Write a macro that will auto-generate this struct and the `reload` logic.
 // TODO(mkaput): Write a test that checks that fields in this struct are sorted alphabetically.
@@ -50,6 +51,18 @@ pub struct Config {
     /// The property is set by the user under the `cairo1.enableLinter` key in client
     /// configuration.
     pub enable_linter: bool,
+
+    /// A user-provided command used if `test_runner` is [`TestRunner::Custom`].
+    ///
+    /// The property is set by the user under the `cairo1.runTestCommand` key in client
+    /// configuration.
+    pub run_test_command: String,
+
+    /// Test runner that should be used in code lens.
+    ///
+    /// The property is set by the user under the `cairo1.testRunner` key in client
+    /// configuration.
+    pub test_runner: TestRunner,
 }
 
 impl Default for Config {
@@ -59,6 +72,8 @@ impl Default for Config {
             trace_macro_diagnostics: false,
             enable_proc_macros: true,
             enable_linter: true,
+            run_test_command: String::new(),
+            test_runner: TestRunner::Auto,
         }
     }
 }
@@ -89,6 +104,11 @@ impl Config {
                 section: Some("cairo1.enableProcMacros".to_owned()),
             },
             ConfigurationItem { scope_uri: None, section: Some("cairo1.enableLinter".to_owned()) },
+            ConfigurationItem {
+                scope_uri: None,
+                section: Some("cairo1.runTestCommand".to_owned()),
+            },
+            ConfigurationItem { scope_uri: None, section: Some("cairo1.testRunner".to_owned()) },
         ];
         let expected_len = items.len();
 
@@ -127,6 +147,16 @@ impl Config {
                     state.config.enable_linter = value;
                 }
 
+                if let Some(value) = response.pop_front().as_ref().and_then(Value::as_str) {
+                    state.config.run_test_command = value.to_string();
+                }
+
+                if let Some(value) = response.pop_front().as_ref().and_then(Value::as_str) {
+                    if let Ok(value) = value.parse() {
+                        state.config.test_runner = value;
+                    }
+                }
+
                 debug!("reloaded configuration: {:#?}", state.config);
 
                 state.proc_macro_controller.on_config_change(&mut state.db, &state.config);
@@ -141,5 +171,27 @@ impl Config {
             .context("failed to query language client for configuration items")
             .with_failure_code(ErrorCode::RequestFailed)
             .inspect_err(|e| warn!("{e:?}"))
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+pub enum TestRunner {
+    #[default]
+    Auto,
+    Snforge,
+    CairoTest,
+    Custom,
+}
+
+impl FromStr for TestRunner {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "auto" => Ok(Self::Auto),
+            "snforge" => Ok(Self::Snforge),
+            "cairo-test" => Ok(Self::CairoTest),
+            "custom" => Ok(Self::Custom),
+            _ => Err(()),
+        }
     }
 }
