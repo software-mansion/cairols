@@ -23,7 +23,8 @@ use tracing::{error, trace, warn};
 
 use super::client::Responder;
 use crate::lsp::ext::{
-    ExpandMacro, ProvideVirtualFile, ToolchainInfo, ViewAnalyzedCrates, ViewSyntaxTree,
+    DumpMemoryProfile, ExpandMacro, ProvideVirtualFile, ToolchainInfo, ViewAnalyzedCrates,
+    ViewSyntaxTree,
 };
 use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
 use crate::server::panic::cancelled_anyhow;
@@ -86,6 +87,9 @@ pub fn request<'a>(request: Request) -> Task<'a> {
         }
         ViewAnalyzedCrates::METHOD => {
             background_request_task::<ViewAnalyzedCrates>(request, BackgroundSchedule::Worker)
+        }
+        DumpMemoryProfile::METHOD => {
+            background_request_task::<DumpMemoryProfile>(request, BackgroundSchedule::Worker)
         }
 
         method => {

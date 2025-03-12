@@ -35,6 +35,16 @@ impl Request for ViewAnalyzedCrates {
     const METHOD: &'static str = "cairo/viewAnalyzedCrates";
 }
 
+pub struct DumpMemoryProfile;
+
+impl Request for DumpMemoryProfile {
+    type Params = ();
+
+    type Result = String;
+
+    const METHOD: &'static str = "cairo/dumpMemoryProfile";
+}
+
 /// Provides string with code after macros expansion.
 pub struct ExpandMacro;
 

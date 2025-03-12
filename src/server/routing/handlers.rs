@@ -33,15 +33,16 @@ use tracing::error;
 use crate::ide::code_lens::{CodeLensController, FileChange};
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::ext::{
-    ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
-    ToolchainInfo, ToolchainInfoResponse, ViewAnalyzedCrates, ViewSyntaxTree,
+    DumpMemoryProfile, ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest,
+    ProvideVirtualFileResponse, ToolchainInfo, ToolchainInfoResponse, ViewAnalyzedCrates,
+    ViewSyntaxTree,
 };
 use crate::lsp::result::{LSPError, LSPResult};
 use crate::server::client::{Notifier, Requester};
 use crate::server::commands::ServerCommands;
 use crate::state::{State, StateSnapshot};
 use crate::toolchain::info::toolchain_info;
-use crate::{Backend, ide};
+use crate::{Backend, PROFILER, ide};
 
 /// A request handler that needs mutable access to the session.
 /// This will block the main message receiver loop, meaning that no
@@ -374,6 +375,21 @@ impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
         _params: (),
     ) -> LSPResult<String> {
         Ok(ide::introspection::crates::inspect_analyzed_crates(&snapshot.db))
+    }
+}
+
+impl BackgroundDocumentRequestHandler for DumpMemoryProfile {
+    fn run_with_snapshot(
+        _snapshot: StateSnapshot,
+        _notifier: Notifier,
+        _params: <Self as Request>::Params,
+    ) -> LSPResult<<Self as Request>::Result> {
+        #[allow(static_mut_refs)]
+        if let Some(profiler) = std::mem::take(unsafe { &mut PROFILER }) {
+            drop(profiler);
+        }
+
+        Ok(String::from("Ok"))
     }
 }
 

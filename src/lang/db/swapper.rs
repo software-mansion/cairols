@@ -79,6 +79,7 @@ impl AnalysisDatabaseSwapper {
         open_files: &HashSet<Url>,
         project_controller: &mut ProjectController,
     ) {
+        // self.dump_salsa_events(db);
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
             project_controller.clear_loaded_workspaces();
 

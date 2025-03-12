@@ -38,6 +38,8 @@
 //! }
 //! ```
 
+#![feature(ptr_as_ref_unchecked)]
+
 use std::num::NonZeroU32;
 use std::panic::RefUnwindSafe;
 use std::path::PathBuf;
@@ -81,6 +83,8 @@ mod state;
 #[cfg(feature = "testing")]
 pub mod testing;
 mod toolchain;
+
+pub static mut PROFILER: Option<dhat::Profiler> = None;
 
 /// A container to store global customizations initialized upon launch.
 pub static TRICKS: OnceLock<Tricks> = OnceLock::new();

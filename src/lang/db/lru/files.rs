@@ -5,7 +5,9 @@ use super::{REDUCED_CAPACITY, set};
 pub fn set_lru_capacity(db: &mut AnalysisDatabase) {
     set!(
         in db: REDUCED_CAPACITY for cairo_lang_filesystem::db {
-            PrivRawFileContentQuery,
+            CratesQuery, CrateConfigQuery, PrivRawFileContentQuery,
+            FileContentQuery, FileSummaryQuery, BlobContentQuery,
+            GetFlagQuery,
         }
     );
 }
