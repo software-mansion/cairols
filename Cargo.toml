@@ -127,8 +127,8 @@ cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", rev = "252
 
 # FIXME(#447): Remove this when https://github.com/lambdaclass/cairo-vm/pull/1988 is shipped.
 [patch.crates-io.cairo-vm]
-git = "https://github.com/mkaput/cairo-vm"
-branch = "wasm-bindgen"
+git = "https://github.com/lambdaclass/cairo-vm"
+rev = "60c1fa0fca62fed6cfa304cb8fdc0d7ec4c23d02"
 
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,
