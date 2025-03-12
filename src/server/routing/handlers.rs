@@ -22,14 +22,15 @@ use lsp_types::{
     CompletionResponse, DidChangeConfigurationParams, DidChangeTextDocumentParams,
     DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
     DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight,
-    DocumentHighlightParams, ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse,
-    Hover, HoverParams, ReferenceParams, RenameParams, SemanticTokensParams, SemanticTokensResult,
-    TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
+    DocumentHighlightParams, ExecuteCommandParams, FileChangeType, GotoDefinitionParams,
+    GotoDefinitionResponse, Hover, HoverParams, ReferenceParams, RenameParams,
+    SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent,
+    TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
 use serde_json::Value;
 use tracing::error;
 
-use crate::ide::code_lens::CodeLensController;
+use crate::ide::code_lens::{CodeLensController, FileChange};
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
@@ -148,7 +149,7 @@ impl SyncNotificationHandler for DidChangeTextDocument {
     fn run(
         state: &mut State,
         _notifier: Notifier,
-        _requester: &mut Requester<'_>,
+        requester: &mut Requester<'_>,
         params: DidChangeTextDocumentParams,
     ) -> LSPResult<()> {
         let text = if let Ok([TextDocumentContentChangeEvent { text, .. }]) =
@@ -163,6 +164,15 @@ impl SyncNotificationHandler for DidChangeTextDocument {
         if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
             state.db.override_file_content(file, Some(text.into()));
         };
+
+        state.code_lens_controller.on_did_change(
+            requester,
+            &state.db,
+            &state.config,
+            is_cairo_file_path(&params.text_document.uri)
+                .then(|| FileChange { url: params.text_document.uri.clone(), was_deleted: false })
+                .into_iter(),
+        );
 
         Ok(())
     }
@@ -203,6 +213,18 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
                 PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
             }
         }
+
+        state.code_lens_controller.on_did_change(
+            requester,
+            &state.db,
+            &state.config,
+            params.changes.iter().filter(|event| is_cairo_file_path(&event.uri)).map(|event| {
+                FileChange {
+                    url: event.uri.clone(),
+                    was_deleted: event.typ == FileChangeType::DELETED,
+                }
+            }),
+        );
 
         // Reload workspace if a config file has changed.
         for change in params.changes {
