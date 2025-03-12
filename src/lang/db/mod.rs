@@ -35,6 +35,7 @@ pub use self::syntax::*;
 use super::proc_macros::db::{ProcMacroDatabase, init_proc_macro_group};
 use crate::TRICKS;
 
+mod lru;
 mod semantic;
 mod swapper;
 mod syntax;
@@ -69,6 +70,8 @@ impl AnalysisDatabase {
         init_proc_macro_group(&mut db);
 
         db.set_cfg_set(Self::initial_cfg_set().into());
+
+        lru::set_lru_capacities(&mut db);
 
         // Those pluins are relevant for projects with `cairo_project.toml` (e.g. our tests).
         let default_plugin_suite = Self::default_global_plugin_suite();
@@ -180,15 +183,16 @@ fn add_plugin_suite(
 }
 
 impl salsa::Database for AnalysisDatabase {}
-impl ExternalFiles for AnalysisDatabase {
-    fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
-    }
-}
 
 impl salsa::ParallelDatabase for AnalysisDatabase {
     fn snapshot(&self) -> salsa::Snapshot<Self> {
         salsa::Snapshot::new(AnalysisDatabase { storage: self.storage.snapshot() })
+    }
+}
+
+impl ExternalFiles for AnalysisDatabase {
+    fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
+        try_ext_as_virtual_impl(self.upcast(), external_id)
     }
 }
 
