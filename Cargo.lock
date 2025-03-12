@@ -891,7 +891,7 @@ dependencies = [
 [[package]]
 name = "cairo-vm"
 version = "2.0.0"
-source = "git+https://github.com/mkaput/cairo-vm?branch=wasm-bindgen#552850e8a16bfe57b908c787dd81e53bcd4ebc71"
+source = "git+https://github.com/lambdaclass/cairo-vm?rev=60c1fa0fca62fed6cfa304cb8fdc0d7ec4c23d02#60c1fa0fca62fed6cfa304cb8fdc0d7ec4c23d02"
 dependencies = [
  "anyhow",
  "bincode 2.0.0-rc.3",
