@@ -22,7 +22,6 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
     }
 }
 
-#[ignore = "Uncomment after Scarb bump in CI"]
 #[test]
 fn test_ignore_warnings_from_non_path_deps() {
     let cairo_code = indoc! {r#"

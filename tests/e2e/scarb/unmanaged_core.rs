@@ -31,8 +31,8 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
             version: Some(
                 Version {
                     major: 2,
-                    minor: 10,
-                    patch: 1,
+                    minor: 11,
+                    patch: 2,
                 },
             ),
             cfg_set: None,

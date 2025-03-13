@@ -1,5 +1,6 @@
 ---
 source: tests/e2e/scarb/scarb_toml_change/removing_member.rs
+description: "// → Scarb.toml\n[workspace]\nmembers = [\n    \"a\",\n    \"b\"\n]\n\n// → a/Scarb.toml\n[package]\nname = \"a\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\nb = { path = \"../b\" }\n\n// → a/src/lib.cairo\n\n\n// → b/Scarb.toml\n[package]\nname = \"b\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n// → b/src/lib.cairo\n"
 expression: "AnalyzedCratesResult { analyzed_crates, analyzed_crates_diff }"
 ---
 analyzed_crates = '''
@@ -96,8 +97,8 @@ analyzed_crates = '''
         version: Some(
             Version {
                 major: 2,
-                minor: 10,
-                patch: 1,
+                minor: 11,
+                patch: 2,
             },
         ),
         cfg_set: Some(
