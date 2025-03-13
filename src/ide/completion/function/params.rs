@@ -7,6 +7,7 @@ use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::text_matching::text_matches;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::PathSegment;
 
@@ -29,7 +30,7 @@ pub fn params_completions(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> V
 
     params
         .into_iter()
-        .filter(|param| param.name.starts_with(typed_text.as_str()))
+        .filter(|param| text_matches(&param.name, &typed_text))
         .map(|param| CompletionItem {
             label: param.name.clone().into(),
             kind: Some(CompletionItemKind::VARIABLE),

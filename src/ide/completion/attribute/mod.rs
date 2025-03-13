@@ -5,7 +5,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::Attribute;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
-use crate::lang::db::AnalysisDatabase;
+use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 
 pub mod derive;
 
@@ -22,10 +22,7 @@ pub fn attribute_completions(
         plugins
             .iter()
             .flat_map(|plugin_id| db.lookup_intern_macro_plugin(*plugin_id).declared_attributes())
-            .filter(|name| {
-                // Don't suggest already typed one.
-                name.starts_with(&attr_name) && name != &attr_name
-            })
+            .filter(|name| text_matches(name, &attr_name))
             .map(|name| CompletionItem {
                 label: name,
                 kind: Some(CompletionItemKind::FUNCTION),

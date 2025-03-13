@@ -7,6 +7,7 @@ use lsp_types::{CompletionItem, CompletionItemKind};
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::text_matching::text_matches;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::PathSegment;
 
@@ -32,7 +33,7 @@ pub fn macro_call_completions(
 
             inline_plugins
                 .iter()
-                .filter(|(name,_)| name.starts_with(&typed))
+                .filter(|(name,_)| text_matches(name, &typed))
                 .map(|(plugin_name, _)| CompletionItem {
                     label: format!("{}!", plugin_name),
                     kind: Some(CompletionItemKind::FUNCTION),
