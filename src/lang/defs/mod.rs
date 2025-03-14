@@ -124,7 +124,9 @@ impl SymbolDef {
         let width = span.width();
         let (file_id, mut span) =
             get_originating_location(db.upcast(), found_file, span.start_only(), None);
-        span.end = span.end.add_width(width);
+        if span.width().as_u32() == 0 {
+            span.end = span.end.add_width(width);
+        }
         Some((file_id, span))
     }
 

@@ -135,3 +135,41 @@ fn full_path_method_in_expr() {
     }
     ")
 }
+
+#[test]
+fn starknet_interface_dispatcher() {
+    test_transform!(goto_definition, r"
+    mod interface {
+        #[starknet::interface]
+        pub trait Foo<T> { }
+    }
+
+    use interface::FooDispa<caret>tcher;
+    ", @r"
+    mod interface {
+        <sel>#[starknet::interface]</sel>
+        pub trait Foo<T> { }
+    }
+
+    use interface::FooDispatcher;
+    ")
+}
+
+#[test]
+fn generate_trait() {
+    test_transform!(goto_definition, r"
+    mod interface {
+        #[generate_trait]
+        pub impl FooImpl of Foo { }
+    }
+
+    use interface::Fo<caret>o;
+    ", @r"
+    mod interface {
+        #[generate_trait]
+        pub impl FooImpl of <sel>Foo</sel> { }
+    }
+
+    use interface::Foo;
+    ")
+}
