@@ -19,10 +19,10 @@ fn before_name() {
     ", @r#"
     Title: Rename to `_b`
     Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
+    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 8 } }
     Title: Fix All
     Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
+    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 8 } }
     "#);
 }
 
@@ -35,10 +35,10 @@ fn after_name() {
     ", @r#"
     Title: Rename to `_b`
     Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
+    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 8 } }
     Title: Fix All
     Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 9 } }
+    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 8 } }
     "#);
 }
 
@@ -96,10 +96,10 @@ fn before_name_when_mut() {
     ", @r#"
     Title: Rename to `_b`
     Add new text: "_"
-    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
+    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 12 } }
     Title: Fix All
     Add new text: "_"
-    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
+    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 12 } }
     "#);
 }
 
@@ -112,10 +112,10 @@ fn after_name_when_mut() {
     ", @r#"
     Title: Rename to `_b`
     Add new text: "_"
-    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
+    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 12 } }
     Title: Fix All
     Add new text: "_"
-    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 13 } }
+    At: Range { start: Position { line: 1, character: 12 }, end: Position { line: 1, character: 12 } }
     "#);
 }
 
