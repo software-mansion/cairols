@@ -15,8 +15,8 @@ use lsp_types::notification::{
     Notification as NotificationTrait, SetTrace,
 };
 use lsp_types::request::{
-    CodeActionRequest, Completion, DocumentHighlightRequest, ExecuteCommand, Formatting,
-    GotoDefinition, HoverRequest, References, Rename, Request as RequestTrait,
+    CodeActionRequest, CodeLensRequest, Completion, DocumentHighlightRequest, ExecuteCommand,
+    Formatting, GotoDefinition, HoverRequest, References, Rename, Request as RequestTrait,
     SemanticTokensFullRequest,
 };
 use tracing::{error, trace, warn};
@@ -64,6 +64,10 @@ pub fn request<'a>(request: Request) -> Task<'a> {
             background_request_task::<References>(request, BackgroundSchedule::LatencySensitive)
         }
         DocumentHighlightRequest::METHOD => background_request_task::<DocumentHighlightRequest>(
+            request,
+            BackgroundSchedule::LatencySensitive,
+        ),
+        CodeLensRequest::METHOD => background_request_task::<CodeLensRequest>(
             request,
             BackgroundSchedule::LatencySensitive,
         ),

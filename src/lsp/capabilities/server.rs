@@ -18,11 +18,11 @@ use lsp_types::notification::{
     DidSaveTextDocument, Notification,
 };
 use lsp_types::request::{
-    CodeActionRequest, Completion, DocumentHighlightRequest, ExecuteCommand, Formatting,
-    GotoDefinition, HoverRequest, References, Rename, Request,
+    CodeActionRequest, CodeLensRequest, Completion, DocumentHighlightRequest, ExecuteCommand,
+    Formatting, GotoDefinition, HoverRequest, References, Rename, Request,
 };
 use lsp_types::{
-    ClientCapabilities, CodeActionProviderCapability, CompletionOptions,
+    ClientCapabilities, CodeActionProviderCapability, CodeLensOptions, CompletionOptions,
     CompletionRegistrationOptions, DefinitionOptions, DidChangeWatchedFilesRegistrationOptions,
     DocumentFilter, DocumentHighlightOptions, ExecuteCommandOptions,
     ExecuteCommandRegistrationOptions, FileSystemWatcher, GlobPattern, HoverProviderCapability,
@@ -34,7 +34,7 @@ use lsp_types::{
     TextDocumentSyncSaveOptions,
 };
 use missing_lsp_types::{
-    CodeActionRegistrationOptions, DefinitionRegistrationOptions,
+    CodeActionRegistrationOptions, CodeLensRegistrationOptions, DefinitionRegistrationOptions,
     DocumentFormattingRegistrationOptions, DocumentHighlightRegistrationOptions,
     ReferencesRegistrationOptions, RenameRegistrationOptions,
 };
@@ -117,6 +117,10 @@ pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> 
             .document_highlight_provider_dynamic_registration()
             .not()
             .then_some(OneOf::Left(true)),
+        code_lens_provider: client_capabilities
+            .code_lens_provider_dynamic_registration()
+            .not()
+            .then_some(CodeLensOptions { resolve_provider: Some(false) }),
         ..ServerCapabilities::default()
     }
 }
@@ -307,6 +311,16 @@ pub fn collect_dynamic_registrations(
         ));
     }
 
+    if client_capabilities.code_lens_provider_dynamic_registration() {
+        registrations.push(create_registration(
+            CodeLensRequest::METHOD,
+            CodeLensRegistrationOptions {
+                text_document_registration_options: text_document_registration_options.clone(),
+                code_lens_options: CodeLensOptions { resolve_provider: Some(false) },
+            },
+        ));
+    }
+
     registrations.push(create_registration(ViewSyntaxTree::METHOD, ()));
 
     registrations
@@ -322,8 +336,9 @@ fn create_registration(method: &str, registration_options: impl Serialize) -> Re
 
 mod missing_lsp_types {
     use lsp_types::{
-        CodeActionOptions, DefinitionOptions, DocumentFormattingOptions, DocumentHighlightOptions,
-        ReferencesOptions, RenameOptions, TextDocumentRegistrationOptions,
+        CodeActionOptions, CodeLensOptions, DefinitionOptions, DocumentFormattingOptions,
+        DocumentHighlightOptions, ReferencesOptions, RenameOptions,
+        TextDocumentRegistrationOptions,
     };
     use serde::{Deserialize, Serialize};
 
@@ -385,5 +400,15 @@ mod missing_lsp_types {
 
         #[serde(flatten)]
         pub document_highlight_options: DocumentHighlightOptions,
+    }
+
+    #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct CodeLensRegistrationOptions {
+        #[serde(flatten)]
+        pub text_document_registration_options: TextDocumentRegistrationOptions,
+
+        #[serde(flatten)]
+        pub code_lens_options: CodeLensOptions,
     }
 }

@@ -53,6 +53,9 @@ pub trait ClientCapabilitiesExt {
 
     /// The client supports dynamic registration for document highlight provider capabilities.
     fn document_highlight_provider_dynamic_registration(&self) -> bool;
+
+    /// The client supports dynamic registration for code lens provider capabilities.
+    fn code_lens_provider_dynamic_registration(&self) -> bool;
 }
 
 impl ClientCapabilitiesExt for ClientCapabilities {
@@ -127,5 +130,9 @@ impl ClientCapabilitiesExt for ClientCapabilities {
         try_or_default!(
             self.text_document.as_ref()?.document_highlight.as_ref()?.dynamic_registration?
         )
+    }
+
+    fn code_lens_provider_dynamic_registration(&self) -> bool {
+        try_or_default!(self.text_document.as_ref()?.code_lens.as_ref()?.dynamic_registration?)
     }
 }

@@ -13,17 +13,18 @@ use lsp_types::notification::{
     DidOpenTextDocument, DidSaveTextDocument, Notification,
 };
 use lsp_types::request::{
-    CodeActionRequest, Completion, DocumentHighlightRequest, ExecuteCommand, Formatting,
-    GotoDefinition, HoverRequest, References, Rename, Request, SemanticTokensFullRequest,
+    CodeActionRequest, CodeLensRequest, Completion, DocumentHighlightRequest, ExecuteCommand,
+    Formatting, GotoDefinition, HoverRequest, References, Rename, Request,
+    SemanticTokensFullRequest,
 };
 use lsp_types::{
-    CodeActionParams, CodeActionResponse, CompletionParams, CompletionResponse,
-    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
-    DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
-    DocumentFormattingParams, DocumentHighlight, DocumentHighlightParams, ExecuteCommandParams,
-    GotoDefinitionParams, GotoDefinitionResponse, Hover, HoverParams, ReferenceParams,
-    RenameParams, SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent,
-    TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
+    CodeActionParams, CodeActionResponse, CodeLens, CodeLensParams, CompletionParams,
+    CompletionResponse, DidChangeConfigurationParams, DidChangeTextDocumentParams,
+    DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
+    DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight,
+    DocumentHighlightParams, ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse,
+    Hover, HoverParams, ReferenceParams, RenameParams, SemanticTokensParams, SemanticTokensResult,
+    TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
 use serde_json::Value;
 use tracing::error;
@@ -417,6 +418,17 @@ impl BackgroundDocumentRequestHandler for ViewSyntaxTree {
                 ide::introspection::syntax_tree::get_syntax_tree_for_file(&snapshot.db, params)
             })
             .flatten())
+    }
+}
+
+impl BackgroundDocumentRequestHandler for CodeLensRequest {
+    #[tracing::instrument(name = "textDocument/codeLens", skip_all)]
+    fn run_with_snapshot(
+        _snapshot: StateSnapshot,
+        _notifier: Notifier,
+        _params: CodeLensParams,
+    ) -> LSPResult<Option<Vec<CodeLens>>> {
+        todo!();
     }
 }
 
