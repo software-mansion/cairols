@@ -1,5 +1,6 @@
 ---
 source: tests/e2e/macros/procedural/snforge/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[tool.scarb]\nallow-prebuilt-plugins = [\"snforge_scarb_plugin\"]\n\n[dev-dependencies]\nassert_macros = \"2.10.0\"\nsnforge_std = \"0.37.0\"\nsnforge_scarb_plugin = \"0.37.0\"\n\n// → test_package/src/lib.cairo\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn test_nothing() {\n        assert_eq!(1, 1, \"Who knows\");\n    }\n}"
 expression: report
 ---
 [[expansions]]
@@ -13,9 +14,11 @@ generated_code = """
 #[test]
 fn test_nothing() {
     {
-        let __lhs_value_for_assert_eq_macro__ = 1;
-        let __rhs_value_for_assert_eq_macro__ = 1;
-        if !(__lhs_value_for_assert_eq_macro__ == __rhs_value_for_assert_eq_macro__) {
+        let __lhs_value_for_assert_eq_macro__ = @(1);
+        let __rhs_value_for_assert_eq_macro__ = @(1);
+        if !core::traits::PartialEq::eq(
+            __lhs_value_for_assert_eq_macro__, __rhs_value_for_assert_eq_macro__,
+        ) {
             let mut __formatter_for_assert_eq_macro_: core::fmt::Formatter =
                 core::traits::Default::default();
             core::result::ResultTrait::<
@@ -54,40 +57,35 @@ fn test_nothing() {
                 (), core::fmt::Error,
             >::unwrap(
                 {
-                    let __write_macro_arg0__ = @(__lhs_value_for_assert_eq_macro__);
                     core::byte_array::ByteArrayTrait::append_word(
                         ref __formatter_for_assert_eq_macro_.buffer, 0x313a20, 3,
                     );
-                    match core::fmt::Debug::fmt(
-                        __write_macro_arg0__, ref __formatter_for_assert_eq_macro_,
-                    ) {
-                        core::result::Result::Ok(_) => {
-                            core::byte_array::ByteArrayTrait::append_word(
-                                ref __formatter_for_assert_eq_macro_.buffer, 0xa, 1,
-                            );
-                            core::result::Result::<(), core::fmt::Error>::Ok(())
-                        },
-                        core::result::Result::Err(err) => core::result::Result::Err(err),
-                    }
+                    core::result::Result::<(), core::fmt::Error>::Ok(())
                 },
             );
             core::result::ResultTrait::<
                 (), core::fmt::Error,
             >::unwrap(
+                core::fmt::Debug::fmt(
+                    __lhs_value_for_assert_eq_macro__, ref __formatter_for_assert_eq_macro_,
+                ),
+            );
+            core::result::ResultTrait::<
+                (), core::fmt::Error,
+            >::unwrap(
                 {
-                    let __write_macro_arg0__ = @(__rhs_value_for_assert_eq_macro__);
                     core::byte_array::ByteArrayTrait::append_word(
-                        ref __formatter_for_assert_eq_macro_.buffer, 0x313a20, 3,
+                        ref __formatter_for_assert_eq_macro_.buffer, 0xa313a20, 4,
                     );
-                    match core::fmt::Debug::fmt(
-                        __write_macro_arg0__, ref __formatter_for_assert_eq_macro_,
-                    ) {
-                        core::result::Result::Ok(_) => {
-                            core::result::Result::<(), core::fmt::Error>::Ok(())
-                        },
-                        core::result::Result::Err(err) => core::result::Result::Err(err),
-                    }
+                    core::result::Result::<(), core::fmt::Error>::Ok(())
                 },
+            );
+            core::result::ResultTrait::<
+                (), core::fmt::Error,
+            >::unwrap(
+                core::fmt::Debug::fmt(
+                    __rhs_value_for_assert_eq_macro__, ref __formatter_for_assert_eq_macro_,
+                ),
             );
             core::panics::panic_with_byte_array(@__formatter_for_assert_eq_macro_.buffer)
         }
@@ -101,9 +99,11 @@ fn test_nothing() {
 #[__internal_config_statement]
 fn test_nothing() {
     {
-        let __lhs_value_for_assert_eq_macro__ = 1;
-        let __rhs_value_for_assert_eq_macro__ = 1;
-        if !(__lhs_value_for_assert_eq_macro__ == __rhs_value_for_assert_eq_macro__) {
+        let __lhs_value_for_assert_eq_macro__ = @(1);
+        let __rhs_value_for_assert_eq_macro__ = @(1);
+        if !core::traits::PartialEq::eq(
+            __lhs_value_for_assert_eq_macro__, __rhs_value_for_assert_eq_macro__,
+        ) {
             let mut __formatter_for_assert_eq_macro_: core::fmt::Formatter =
                 core::traits::Default::default();
             core::result::ResultTrait::<
@@ -142,40 +142,35 @@ fn test_nothing() {
                 (), core::fmt::Error,
             >::unwrap(
                 {
-                    let __write_macro_arg0__ = @(__lhs_value_for_assert_eq_macro__);
                     core::byte_array::ByteArrayTrait::append_word(
                         ref __formatter_for_assert_eq_macro_.buffer, 0x313a20, 3,
                     );
-                    match core::fmt::Debug::fmt(
-                        __write_macro_arg0__, ref __formatter_for_assert_eq_macro_,
-                    ) {
-                        core::result::Result::Ok(_) => {
-                            core::byte_array::ByteArrayTrait::append_word(
-                                ref __formatter_for_assert_eq_macro_.buffer, 0xa, 1,
-                            );
-                            core::result::Result::<(), core::fmt::Error>::Ok(())
-                        },
-                        core::result::Result::Err(err) => core::result::Result::Err(err),
-                    }
+                    core::result::Result::<(), core::fmt::Error>::Ok(())
                 },
             );
             core::result::ResultTrait::<
                 (), core::fmt::Error,
             >::unwrap(
+                core::fmt::Debug::fmt(
+                    __lhs_value_for_assert_eq_macro__, ref __formatter_for_assert_eq_macro_,
+                ),
+            );
+            core::result::ResultTrait::<
+                (), core::fmt::Error,
+            >::unwrap(
                 {
-                    let __write_macro_arg0__ = @(__rhs_value_for_assert_eq_macro__);
                     core::byte_array::ByteArrayTrait::append_word(
-                        ref __formatter_for_assert_eq_macro_.buffer, 0x313a20, 3,
+                        ref __formatter_for_assert_eq_macro_.buffer, 0xa313a20, 4,
                     );
-                    match core::fmt::Debug::fmt(
-                        __write_macro_arg0__, ref __formatter_for_assert_eq_macro_,
-                    ) {
-                        core::result::Result::Ok(_) => {
-                            core::result::Result::<(), core::fmt::Error>::Ok(())
-                        },
-                        core::result::Result::Err(err) => core::result::Result::Err(err),
-                    }
+                    core::result::Result::<(), core::fmt::Error>::Ok(())
                 },
+            );
+            core::result::ResultTrait::<
+                (), core::fmt::Error,
+            >::unwrap(
+                core::fmt::Debug::fmt(
+                    __rhs_value_for_assert_eq_macro__, ref __formatter_for_assert_eq_macro_,
+                ),
             );
             core::panics::panic_with_byte_array(@__formatter_for_assert_eq_macro_.buffer)
         }
@@ -191,9 +186,11 @@ fn test_nothing() {
         return;
     }
     {
-        let __lhs_value_for_assert_eq_macro__ = 1;
-        let __rhs_value_for_assert_eq_macro__ = 1;
-        if !(__lhs_value_for_assert_eq_macro__ == __rhs_value_for_assert_eq_macro__) {
+        let __lhs_value_for_assert_eq_macro__ = @(1);
+        let __rhs_value_for_assert_eq_macro__ = @(1);
+        if !core::traits::PartialEq::eq(
+            __lhs_value_for_assert_eq_macro__, __rhs_value_for_assert_eq_macro__,
+        ) {
             let mut __formatter_for_assert_eq_macro_: core::fmt::Formatter =
                 core::traits::Default::default();
             core::result::ResultTrait::<
@@ -232,40 +229,35 @@ fn test_nothing() {
                 (), core::fmt::Error,
             >::unwrap(
                 {
-                    let __write_macro_arg0__ = @(__lhs_value_for_assert_eq_macro__);
                     core::byte_array::ByteArrayTrait::append_word(
                         ref __formatter_for_assert_eq_macro_.buffer, 0x313a20, 3,
                     );
-                    match core::fmt::Debug::fmt(
-                        __write_macro_arg0__, ref __formatter_for_assert_eq_macro_,
-                    ) {
-                        core::result::Result::Ok(_) => {
-                            core::byte_array::ByteArrayTrait::append_word(
-                                ref __formatter_for_assert_eq_macro_.buffer, 0xa, 1,
-                            );
-                            core::result::Result::<(), core::fmt::Error>::Ok(())
-                        },
-                        core::result::Result::Err(err) => core::result::Result::Err(err),
-                    }
+                    core::result::Result::<(), core::fmt::Error>::Ok(())
                 },
             );
             core::result::ResultTrait::<
                 (), core::fmt::Error,
             >::unwrap(
+                core::fmt::Debug::fmt(
+                    __lhs_value_for_assert_eq_macro__, ref __formatter_for_assert_eq_macro_,
+                ),
+            );
+            core::result::ResultTrait::<
+                (), core::fmt::Error,
+            >::unwrap(
                 {
-                    let __write_macro_arg0__ = @(__rhs_value_for_assert_eq_macro__);
                     core::byte_array::ByteArrayTrait::append_word(
-                        ref __formatter_for_assert_eq_macro_.buffer, 0x313a20, 3,
+                        ref __formatter_for_assert_eq_macro_.buffer, 0xa313a20, 4,
                     );
-                    match core::fmt::Debug::fmt(
-                        __write_macro_arg0__, ref __formatter_for_assert_eq_macro_,
-                    ) {
-                        core::result::Result::Ok(_) => {
-                            core::result::Result::<(), core::fmt::Error>::Ok(())
-                        },
-                        core::result::Result::Err(err) => core::result::Result::Err(err),
-                    }
+                    core::result::Result::<(), core::fmt::Error>::Ok(())
                 },
+            );
+            core::result::ResultTrait::<
+                (), core::fmt::Error,
+            >::unwrap(
+                core::fmt::Debug::fmt(
+                    __rhs_value_for_assert_eq_macro__, ref __formatter_for_assert_eq_macro_,
+                ),
             );
             core::panics::panic_with_byte_array(@__formatter_for_assert_eq_macro_.buffer)
         }
@@ -282,9 +274,11 @@ generated_code = """
 // ---------
 
 {
-    let __lhs_value_for_assert_eq_macro__ = 1;
-    let __rhs_value_for_assert_eq_macro__ = 1;
-    if !(__lhs_value_for_assert_eq_macro__ == __rhs_value_for_assert_eq_macro__) {
+    let __lhs_value_for_assert_eq_macro__ = @(1);
+    let __rhs_value_for_assert_eq_macro__ = @(1);
+    if !core::traits::PartialEq::eq(
+        __lhs_value_for_assert_eq_macro__, __rhs_value_for_assert_eq_macro__,
+    ) {
         let mut __formatter_for_assert_eq_macro_: core::fmt::Formatter =
             core::traits::Default::default();
         core::result::ResultTrait::<
@@ -323,40 +317,35 @@ generated_code = """
             (), core::fmt::Error,
         >::unwrap(
             {
-                let __write_macro_arg0__ = @(__lhs_value_for_assert_eq_macro__);
                 core::byte_array::ByteArrayTrait::append_word(
                     ref __formatter_for_assert_eq_macro_.buffer, 0x313a20, 3,
                 );
-                match core::fmt::Debug::fmt(
-                    __write_macro_arg0__, ref __formatter_for_assert_eq_macro_,
-                ) {
-                    core::result::Result::Ok(_) => {
-                        core::byte_array::ByteArrayTrait::append_word(
-                            ref __formatter_for_assert_eq_macro_.buffer, 0xa, 1,
-                        );
-                        core::result::Result::<(), core::fmt::Error>::Ok(())
-                    },
-                    core::result::Result::Err(err) => core::result::Result::Err(err),
-                }
+                core::result::Result::<(), core::fmt::Error>::Ok(())
             },
         );
         core::result::ResultTrait::<
             (), core::fmt::Error,
         >::unwrap(
+            core::fmt::Debug::fmt(
+                __lhs_value_for_assert_eq_macro__, ref __formatter_for_assert_eq_macro_,
+            ),
+        );
+        core::result::ResultTrait::<
+            (), core::fmt::Error,
+        >::unwrap(
             {
-                let __write_macro_arg0__ = @(__rhs_value_for_assert_eq_macro__);
                 core::byte_array::ByteArrayTrait::append_word(
-                    ref __formatter_for_assert_eq_macro_.buffer, 0x313a20, 3,
+                    ref __formatter_for_assert_eq_macro_.buffer, 0xa313a20, 4,
                 );
-                match core::fmt::Debug::fmt(
-                    __write_macro_arg0__, ref __formatter_for_assert_eq_macro_,
-                ) {
-                    core::result::Result::Ok(_) => {
-                        core::result::Result::<(), core::fmt::Error>::Ok(())
-                    },
-                    core::result::Result::Err(err) => core::result::Result::Err(err),
-                }
+                core::result::Result::<(), core::fmt::Error>::Ok(())
             },
+        );
+        core::result::ResultTrait::<
+            (), core::fmt::Error,
+        >::unwrap(
+            core::fmt::Debug::fmt(
+                __rhs_value_for_assert_eq_macro__, ref __formatter_for_assert_eq_macro_,
+            ),
         );
         core::panics::panic_with_byte_array(@__formatter_for_assert_eq_macro_.buffer)
     }
