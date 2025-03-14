@@ -6,6 +6,9 @@ use lsp_types::{CodeLens, Url};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use tests::TestCodeLensProvider;
+
+mod tests;
 
 #[derive(Default)]
 pub struct CodeLensControllerState {
@@ -41,17 +44,21 @@ impl CodeLensController {
         Some(code_lens)
     }
 
-    pub fn execute_code_lens(state: &State, _notifier: Notifier, args: &[Value]) -> Option<()> {
+    pub fn execute_code_lens(state: &State, notifier: Notifier, args: &[Value]) -> Option<()> {
         let (index, url) = parse_args(args)?;
 
         // Drop state guard before doing any panickable actions.
-        let _ = state.code_lens_controller.state.read().ok()?.lens.get(&url)?.get(index)?.clone();
+        let (code_lens, kind) =
+            state.code_lens_controller.state.read().ok()?.lens.get(&url)?.get(index)?.clone();
 
-        todo!("add match with handler call");
+        match kind {
+            CodeLensKind::Test => {
+                TestCodeLensProvider.execute_code_lens(state, notifier, url, code_lens)
+            }
+        }
     }
 }
 
-#[allow(dead_code)]
 trait CodeLensProvider {
     fn calculate_code_lens(
         &self,
@@ -70,14 +77,23 @@ trait CodeLensProvider {
 }
 
 #[derive(Clone, Copy)]
-enum CodeLensKind {}
+enum CodeLensKind {
+    Test,
+}
 
 fn calculate_code_lens(
-    _url: Url,
-    _db: &AnalysisDatabase,
-    _config: &Config,
+    url: Url,
+    db: &AnalysisDatabase,
+    config: &Config,
 ) -> Option<Vec<(CodeLens, CodeLensKind)>> {
-    let result = vec![];
+    let mut result = vec![];
+
+    result.extend(
+        TestCodeLensProvider
+            .calculate_code_lens(url, db, config)?
+            .into_iter()
+            .map(|code_lens| (code_lens, CodeLensKind::Test)),
+    );
 
     Some(result)
 }
