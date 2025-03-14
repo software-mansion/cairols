@@ -4,7 +4,7 @@ use cairo_lang_syntax::node::ast::PatternIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use if_chain::if_chain;
-use lsp_types::{CodeAction, CodeActionKind, Diagnostic, TextEdit, Url, WorkspaceEdit};
+use lsp_types::{CodeAction, CodeActionKind, Diagnostic, Range, TextEdit, Url, WorkspaceEdit};
 
 use crate::lang::db::AnalysisDatabase;
 
@@ -47,10 +47,10 @@ pub fn rename_unused_variable(
         edit: Some(WorkspaceEdit {
             changes: Some(HashMap::from_iter([(
                 uri,
-                // The diagnostic range is just the first char of the variable name, so we can just
-                // pass an underscore as the new text it won't replace the current variable name,
-                // and it will prefix it with `_`
-                vec![TextEdit { range: diagnostic.range, new_text: "_".to_owned() }],
+                vec![TextEdit {
+                    range: Range { start: diagnostic.range.start, end: diagnostic.range.start },
+                    new_text: "_".to_owned(),
+                }],
             )])),
             document_changes: None,
             change_annotations: None,
