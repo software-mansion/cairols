@@ -29,6 +29,7 @@ use lsp_types::{
 use serde_json::Value;
 use tracing::error;
 
+use crate::ide::code_lens::CodeLensController;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
@@ -95,7 +96,7 @@ impl SyncRequestHandler for ExecuteCommand {
     )]
     fn run(
         state: &mut State,
-        _notifier: Notifier,
+        notifier: Notifier,
         requester: &mut Requester<'_>,
         params: ExecuteCommandParams,
     ) -> LSPResult<Option<Value>> {
@@ -105,6 +106,9 @@ impl SyncRequestHandler for ExecuteCommand {
             match cmd {
                 ServerCommands::Reload => {
                     Backend::reload(state, requester)?;
+                }
+                ServerCommands::ExecuteCodeLens => {
+                    CodeLensController::execute_code_lens(state, notifier, &params.arguments);
                 }
             }
         }
@@ -424,11 +428,15 @@ impl BackgroundDocumentRequestHandler for ViewSyntaxTree {
 impl BackgroundDocumentRequestHandler for CodeLensRequest {
     #[tracing::instrument(name = "textDocument/codeLens", skip_all)]
     fn run_with_snapshot(
-        _snapshot: StateSnapshot,
+        snapshot: StateSnapshot,
         _notifier: Notifier,
-        _params: CodeLensParams,
+        params: CodeLensParams,
     ) -> LSPResult<Option<Vec<CodeLens>>> {
-        todo!();
+        Ok(snapshot.code_lens_controller.code_lens(
+            params.text_document.uri,
+            &snapshot.db,
+            &snapshot.config,
+        ))
     }
 }
 
