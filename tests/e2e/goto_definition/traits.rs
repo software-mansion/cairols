@@ -287,3 +287,37 @@ fn generate_trait() {
     use interface::Foo;
     ")
 }
+
+// FIXME
+#[test]
+fn self_in_associated_impl_bounds() {
+    test_transform!(goto_definition, r"
+    trait Foorator<T> {}
+    trait IntoFoorator<T> {
+        type IntoFoor;
+        impl Foorator: Foorator<Se<caret>lf::IntoFoor>;
+    }
+    ", @"none response")
+}
+
+// FIXME
+#[test]
+fn self_referred_associated_type_in_method_bounds() {
+    test_transform!(goto_definition, r"
+    pub trait Foo<T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Self::Ite<caret>m>>(self: T);
+    }
+    ", @"none response")
+}
+
+// FIXME
+#[test]
+fn self_in_method_bounds() {
+    test_transform!(goto_definition, r"
+    pub trait Foo<T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Se<caret>lf::Item>>(self: T);
+    }
+    ", @"none response")
+}
