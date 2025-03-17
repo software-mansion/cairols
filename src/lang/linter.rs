@@ -5,24 +5,32 @@ use cairo_lint_core::plugin::cairo_lint_plugin_suite;
 use super::db::AnalysisDatabase;
 use super::plugins::AnalyzerPluginType;
 use crate::config::Config;
+use crate::project::ManifestRegistry;
+use cairo_lang_filesystem::ids::Directory;
 
 pub struct LinterController;
 
 impl LinterController {
     /// Updates the necessary inputs of the [`AnalysisDatabase`] according to the new [`Config`].
-    pub fn on_config_change(db: &mut AnalysisDatabase, config: &Config) {
+    pub fn on_config_change(
+        db: &mut AnalysisDatabase,
+        config: &Config,
+        manifests: &ManifestRegistry,
+    ) {
         if config.enable_linter {
-            enable_cairo_lint_plugin_for_all_crates(db);
+            enable_cairo_lint_plugin_for_all_crates(db, manifests);
         } else {
             disable_cairo_lint_plugin_for_all_crates(db);
         }
     }
 }
 
-fn enable_cairo_lint_plugin_for_all_crates(db: &mut AnalysisDatabase) {
-    let cairo_lint_analyzer_plugins =
-        db.intern_plugin_suite(cairo_lint_plugin_suite()).analyzer_plugins;
-
+fn enable_cairo_lint_plugin_for_all_crates(
+    db: &mut AnalysisDatabase,
+    manifests: &ManifestRegistry,
+) {
+    let default_cairo_lint_analyzer_plugins =
+        db.intern_plugin_suite(cairo_lint_plugin_suite(Default::default())).analyzer_plugins;
     let default_analyzer_plugins = db.default_analyzer_plugins();
 
     if !default_analyzer_plugins
@@ -32,7 +40,7 @@ fn enable_cairo_lint_plugin_for_all_crates(db: &mut AnalysisDatabase) {
         db.set_default_analyzer_plugins(
             default_analyzer_plugins
                 .iter()
-                .chain(cairo_lint_analyzer_plugins.iter())
+                .chain(default_cairo_lint_analyzer_plugins.iter())
                 .cloned()
                 .collect(),
         );
@@ -48,9 +56,24 @@ fn enable_cairo_lint_plugin_for_all_crates(db: &mut AnalysisDatabase) {
             continue;
         }
 
+        let lint_config = db
+            .crate_config(crate_id)
+            .and_then(
+                |config| {
+                    if let Directory::Real(root) = config.root { Some(root) } else { None }
+                },
+            )
+            .and_then(|root| manifests.config_for_file(&root))
+            .map(|member_config| member_config.lint)
+            .unwrap_or_default();
+
         let new_analyzer_plugins = crate_analyzer_plugins
             .iter()
-            .chain(cairo_lint_analyzer_plugins.iter())
+            .chain(
+                db.intern_plugin_suite(cairo_lint_plugin_suite(lint_config))
+                    .analyzer_plugins
+                    .iter(),
+            )
             .cloned()
             .collect();
 

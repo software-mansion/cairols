@@ -858,7 +858,7 @@ dependencies = [
 [[package]]
 name = "cairo-lint-core"
 version = "2.11.2"
-source = "git+https://github.com/software-mansion/cairo-lint.git?rev=6dd17d9#6dd17d962dd27250e9b1812aee1df72b244cce3d"
+source = "git+https://github.com/software-mansion/cairo-lint.git?rev=ae93aa0e3f72a28e04c570502c98dbcf5456a0eb#ae93aa0e3f72a28e04c570502c98dbcf5456a0eb"
 dependencies = [
  "annotate-snippets",
  "anyhow",
@@ -874,6 +874,7 @@ dependencies = [
  "itertools",
  "log",
  "num-bigint",
+ "serde",
 ]
 
 [[package]]

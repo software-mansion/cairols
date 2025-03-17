@@ -102,7 +102,14 @@ impl ProjectController {
                         .proc_macro_controller
                         .proc_macro_plugin_suite_for_crate(cr.crate_long_id());
 
-                    cr.apply(db, state.config.enable_linter, proc_macro_plugin_suite.cloned());
+                    let linter_config = state
+                        .project_controller
+                        .loaded_scarb_manifests
+                        .config_for_file(&cr.root)
+                        .filter(|_| state.config.enable_linter)
+                        .map(|member_config| member_config.lint);
+
+                    cr.apply(db, linter_config, proc_macro_plugin_suite.cloned());
                 }
             }
             ProjectUpdate::ScarbMetadataFailed => {

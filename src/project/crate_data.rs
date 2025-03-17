@@ -19,6 +19,7 @@ use itertools::chain;
 use super::builtin_plugins::BuiltinPlugin;
 use crate::TRICKS;
 use crate::lang::db::AnalysisDatabase;
+use cairo_lint_core::CairoLintToolMetadata;
 
 /// A complete set of information needed to set up a real crate in the analysis database.
 #[derive(Debug, PartialEq, Eq)]
@@ -54,7 +55,7 @@ impl Crate {
     pub fn apply(
         &self,
         db: &mut AnalysisDatabase,
-        enable_linter: bool,
+        lint_config: Option<CairoLintToolMetadata>,
         proc_macro_plugin_suite: Option<PluginSuite>,
     ) {
         assert!(
@@ -85,7 +86,7 @@ impl Crate {
             .map(BuiltinPlugin::suite)
             .chain(tricks()) // All crates should receive Tricks.
             .chain(Some(cairo_lint_allow_plugin_suite())) // All crates should CairoLintAllow.
-            .chain(enable_linter.then(cairo_lint_plugin_suite))
+            .chain(lint_config.map(cairo_lint_plugin_suite))
             .chain(proc_macro_plugin_suite)
             .fold(get_default_plugin_suite(), |mut acc, suite| {
                 acc.add(suite);
