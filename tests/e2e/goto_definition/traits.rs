@@ -206,6 +206,23 @@ fn self_as_outside_impl() {
 }
 
 #[test]
+fn self_in_associated_impl_bounds() {
+    test_transform!(goto_definition, r"
+    trait Foorator<T> {}
+    trait IntoFoorator<T> {
+        type IntoFoor;
+        impl Foorator: Foorator<Se<caret>lf::IntoFoor>;
+    }
+    ", @r"
+    trait Foorator<T> {}
+    trait <sel>IntoFoorator</sel><T> {
+        type IntoFoor;
+        impl Foorator: Foorator<Self::IntoFoor>;
+    }
+    ")
+}
+
+#[test]
 fn self_in_type_position_in_trait_def() {
     test_transform!(goto_definition, r"
     pub trait NegateHelper<T> {
@@ -250,6 +267,28 @@ fn self_referred_associated_type_in_method_param_type() {
     ")
 }
 
+// FIXME: https://github.com/software-mansion/cairols/issues/51
+#[test]
+fn self_in_method_bounds() {
+    test_transform!(goto_definition, r"
+    pub trait Foo<T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Se<caret>lf::Item>>(self: T);
+    }
+    ", @"none response")
+}
+
+// FIXME: https://github.com/software-mansion/cairols/issues/51
+#[test]
+fn self_referred_associated_type_in_method_bounds() {
+    test_transform!(goto_definition, r"
+    pub trait Foo<T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Self::Ite<caret>m>>(self: T);
+    }
+    ", @"none response")
+}
+
 #[test]
 fn starknet_interface_dispatcher() {
     test_transform!(goto_definition, r"
@@ -286,38 +325,4 @@ fn generate_trait() {
 
     use interface::Foo;
     ")
-}
-
-// FIXME
-#[test]
-fn self_in_associated_impl_bounds() {
-    test_transform!(goto_definition, r"
-    trait Foorator<T> {}
-    trait IntoFoorator<T> {
-        type IntoFoor;
-        impl Foorator: Foorator<Se<caret>lf::IntoFoor>;
-    }
-    ", @"none response")
-}
-
-// FIXME
-#[test]
-fn self_referred_associated_type_in_method_bounds() {
-    test_transform!(goto_definition, r"
-    pub trait Foo<T> {
-        type Item;
-        fn last<+Destruct<T>, +Destruct<Self::Ite<caret>m>>(self: T);
-    }
-    ", @"none response")
-}
-
-// FIXME
-#[test]
-fn self_in_method_bounds() {
-    test_transform!(goto_definition, r"
-    pub trait Foo<T> {
-        type Item;
-        fn last<+Destruct<T>, +Destruct<Se<caret>lf::Item>>(self: T);
-    }
-    ", @"none response")
 }
