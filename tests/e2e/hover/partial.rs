@@ -22,6 +22,7 @@ fn uninfered_mut_ident() {
     "#)
 }
 
+// FIXME: https://github.com/software-mansion/cairols/issues/487
 #[test]
 fn uninfered_value() {
     test_transform!(test_hover,r#"
@@ -31,6 +32,17 @@ fn uninfered_value() {
     "#,@r#"
     source_context = """
         let mut xyz = unkn<caret>own_function();
+    """
+    highlight = """
+        let mut xyz = <sel>unknown_function</sel>();
+    """
+    popover = """
+    ```cairo
+    core::prelude
+    ```
+    ```cairo
+    mod v2023_10
+    ```
     """
     "#)
 }
