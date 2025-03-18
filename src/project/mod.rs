@@ -13,6 +13,7 @@ pub use self::crate_data::Crate;
 pub use self::manifest_registry::{ManifestRegistry, ManifestRegistryUpdate};
 pub use self::project_manifest_path::*;
 use crate::lsp::ext::CorelibVersionMismatch;
+use crate::project::model::ProjectModel;
 use crate::project::scarb::{extract_crates, get_workspace_members_manifests};
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core_if_not_present;
 use crate::server::client::Notifier;
@@ -24,12 +25,14 @@ use crate::toolchain::scarb::ScarbToolchain;
 mod builtin_plugins;
 mod crate_data;
 mod manifest_registry;
+mod model;
 mod project_manifest_path;
 mod scarb;
 mod unmanaged_core_crate;
 
 pub struct ProjectController {
-    loaded_scarb_manifests: Owned<ManifestRegistry>,
+    manifest_registry: Owned<ManifestRegistry>,
+    model: ProjectModel,
     // NOTE: Member order matters here.
     //   The request sender MUST be dropped before controller's thread join handle.
     //   Otherwise, the controller thread will never stop, and the controller's
@@ -58,15 +61,16 @@ impl ProjectController {
         );
 
         ProjectController {
-            loaded_scarb_manifests: Default::default(),
+            manifest_registry: Default::default(),
             requests_sender,
             response_receiver,
+            model: Default::default(),
             _thread: thread,
         }
     }
 
     pub fn manifests_registry(&self) -> Snapshot<ManifestRegistry> {
-        self.loaded_scarb_manifests.snapshot()
+        self.manifest_registry.snapshot()
     }
 
     pub fn response_receiver(&self) -> Receiver<ProjectUpdate> {
@@ -76,12 +80,13 @@ impl ProjectController {
     pub fn request_updating_project_for_file(&self, file_path: PathBuf) {
         self.send_request(ProjectUpdateRequest {
             file_path,
-            loaded_manifests: self.loaded_scarb_manifests.snapshot(),
+            loaded_manifests: self.manifest_registry.snapshot(),
         })
     }
 
     pub fn clear_loaded_workspaces(&mut self) {
-        self.loaded_scarb_manifests.clear();
+        self.manifest_registry.clear();
+        self.model.clear_loaded_workspaces();
     }
 
     /// Handles project update by applying necessary changes to the database.
@@ -92,25 +97,19 @@ impl ProjectController {
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
         let db = &mut state.db;
         match project_update {
-            ProjectUpdate::Scarb { crates, loaded_manifests } => {
+            ProjectUpdate::Scarb { crates, loaded_manifests, workspace_dir } => {
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
 
-                state.project_controller.loaded_scarb_manifests.update(loaded_manifests);
+                state.project_controller.manifest_registry.update(loaded_manifests);
 
-                for cr in crates {
-                    let proc_macro_plugin_suite = state
-                        .proc_macro_controller
-                        .proc_macro_plugin_suite_for_crate(cr.crate_long_id());
-
-                    let linter_config = state
-                        .project_controller
-                        .loaded_scarb_manifests
-                        .config_for_file(&cr.root)
-                        .filter(|_| state.config.enable_linter)
-                        .map(|member_config| member_config.lint);
-
-                    cr.apply(db, linter_config, proc_macro_plugin_suite.cloned());
-                }
+                state.project_controller.model.load_workspace(
+                    db,
+                    crates,
+                    workspace_dir,
+                    &state.proc_macro_controller,
+                    &state.project_controller.manifests_registry(),
+                    state.config.enable_linter,
+                );
             }
             ProjectUpdate::ScarbMetadataFailed => {
                 // Try to set up a corelib at least if it is not in the db already.
@@ -166,7 +165,7 @@ impl ProjectController {
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
 pub enum ProjectUpdate {
-    Scarb { crates: Vec<Crate>, loaded_manifests: ManifestRegistryUpdate },
+    Scarb { crates: Vec<Crate>, loaded_manifests: ManifestRegistryUpdate, workspace_dir: PathBuf },
     ScarbMetadataFailed,
     CairoProjectToml(Option<ProjectConfig>),
     NoConfig(PathBuf),
@@ -240,6 +239,7 @@ impl ProjectControllerThread {
                     .map(|metadata| ProjectUpdate::Scarb {
                         crates: extract_crates(&metadata),
                         loaded_manifests: get_workspace_members_manifests(&metadata).into(),
+                        workspace_dir: metadata.workspace.root.into_std_path_buf(),
                     })
                     .unwrap_or(ProjectUpdate::ScarbMetadataFailed)
             }

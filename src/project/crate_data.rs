@@ -13,16 +13,16 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lint_core::CairoLintToolMetadata;
 use cairo_lint_core::plugin::{cairo_lint_allow_plugin_suite, cairo_lint_plugin_suite};
 use itertools::chain;
 
 use super::builtin_plugins::BuiltinPlugin;
 use crate::TRICKS;
 use crate::lang::db::AnalysisDatabase;
-use cairo_lint_core::CairoLintToolMetadata;
 
 /// A complete set of information needed to set up a real crate in the analysis database.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Crate {
     /// Crate name.
     pub name: SmolStr,
@@ -153,7 +153,7 @@ impl Crate {
         source_paths.into_iter().map(|filename| self.root.join(filename)).collect()
     }
 
-    pub fn crate_long_id(&self) -> CrateLongId {
+    pub fn long_id(&self) -> CrateLongId {
         CrateLongId::Real { name: self.name.clone(), discriminator: self.discriminator.clone() }
     }
 }
