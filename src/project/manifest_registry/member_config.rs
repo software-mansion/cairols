@@ -1,15 +1,17 @@
 use cairo_lang_formatter::FormatterConfig;
+use cairo_lint_core::CairoLintToolMetadata;
 use scarb_metadata::PackageMetadata;
 use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]
 pub struct MemberConfig {
     pub fmt: FormatterConfig,
+    pub lint: CairoLintToolMetadata,
 }
 
 impl MemberConfig {
     pub fn from_pkg(pkg: &PackageMetadata) -> Self {
-        Self { fmt: Self::fmt(pkg) }
+        Self { fmt: Self::fmt(pkg), lint: Self::lint(pkg) }
     }
 
     fn fmt(pkg: &PackageMetadata) -> FormatterConfig {
@@ -19,6 +21,15 @@ impl MemberConfig {
         merge_serde_json_value(&mut fmt, fmt_scarb_config);
 
         serde_json::from_value(fmt).unwrap_or_default()
+    }
+
+    fn lint(pkg: &PackageMetadata) -> CairoLintToolMetadata {
+        let mut lint = serde_json::to_value(CairoLintToolMetadata::default()).unwrap();
+        let lint_scarb_config = pkg.tool_metadata("cairo-lint").unwrap_or(&Value::Null);
+
+        merge_serde_json_value(&mut lint, lint_scarb_config);
+
+        serde_json::from_value(lint).unwrap_or_default()
     }
 }
 
