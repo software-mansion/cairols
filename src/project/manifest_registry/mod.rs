@@ -35,6 +35,19 @@ impl ManifestRegistry {
     pub fn update(&mut self, update: ManifestRegistryUpdate) {
         self.manifests.extend(update.manifests);
     }
+
+    pub fn manifests_dirs(&self) -> impl Iterator<Item = PathBuf> {
+        self.manifests.keys().map(|manifest_path| {
+            let mut manifest_dir = (*manifest_path).to_owned();
+
+            // Should be always true but better safe than sorry.
+            if manifest_dir.ends_with("Scarb.toml") {
+                manifest_dir.pop();
+            }
+
+            manifest_dir
+        })
+    }
 }
 
 pub struct ManifestRegistryUpdate {
