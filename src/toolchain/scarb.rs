@@ -11,7 +11,7 @@ use tracing::{debug, error, warn};
 use which::which;
 
 use crate::env_config::{self, CAIRO_LS_LOG};
-use crate::lsp::ext::{ScarbPathMissing, ScarbResolvingFinish, ScarbResolvingStart};
+use crate::lsp::ext::ScarbPathMissing;
 use crate::server::client::Notifier;
 
 pub const SCARB_TOML: &str = "Scarb.toml";
@@ -137,10 +137,6 @@ impl ScarbToolchain {
             bail!("could not find scarb executable");
         };
 
-        if !self.is_silent {
-            self.notifier.notify::<ScarbResolvingStart>(());
-        }
-
         let result = MetadataCommand::new()
             .scarb_path(scarb_path)
             .manifest_path(manifest)
@@ -148,17 +144,13 @@ impl ScarbToolchain {
             .exec()
             .context("failed to execute: scarb metadata");
 
-        if !self.is_silent {
-            self.notifier.notify::<ScarbResolvingFinish>(());
-
-            if result.is_err() {
-                self.notifier.notify::<ShowMessage>(ShowMessageParams {
-                    typ: MessageType::ERROR,
-                    message: "`scarb metadata` failed. Check if your project builds correctly via \
+        if !self.is_silent && result.is_err() {
+            self.notifier.notify::<ShowMessage>(ShowMessageParams {
+                typ: MessageType::ERROR,
+                message: "`scarb metadata` failed. Check if your project builds correctly via \
                               `scarb build`."
-                        .to_string(),
-                });
-            }
+                    .to_string(),
+            });
         }
 
         result
