@@ -14,6 +14,7 @@ use crate::state::State;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::FreeFunctionLongId;
 use cairo_lang_defs::ids::ModuleFileId;
+use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_defs::ids::SubmoduleLongId;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
@@ -21,16 +22,15 @@ use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{
-    TypedStablePtr, TypedSyntaxNode,
-    ast::{MaybeModuleBody, ModuleItem},
-    helpers::QueryAttrs,
+    TypedStablePtr, TypedSyntaxNode, ast::ModuleItem, helpers::QueryAttrs,
 };
 use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::LookupIntern;
 use lsp_types::Command;
+use lsp_types::Position;
 use lsp_types::Range;
 use lsp_types::TextDocumentIdentifier;
 use lsp_types::TextDocumentPositionParams;
@@ -38,6 +38,7 @@ use lsp_types::{CodeLens, Url};
 use serde_json::Number;
 use serde_json::Value;
 use std::fmt::Display;
+use std::ops::ControlFlow;
 
 pub struct TestCodeLensProvider;
 
@@ -50,14 +51,13 @@ impl CodeLensProvider for TestCodeLensProvider {
     ) -> Option<Vec<CodeLens>> {
         let file = db.file_for_url(&url)?;
 
+        let main_module = *db.file_modules(file).ok()?.first()?;
+
         let is_runner_available = config
             .test_runner
             .command(
                 TestFullQualifiedPath::default(), // We can substitute with anything here.
-                AvailableTestRunners::new(
-                    db,
-                    db.file_modules(file).ok()?.first()?.owning_crate(db),
-                )?,
+                AvailableTestRunners::new(db, main_module.owning_crate(db))?,
                 &config.run_test_command,
             )
             .is_some();
@@ -65,13 +65,7 @@ impl CodeLensProvider for TestCodeLensProvider {
         let mut result = vec![];
 
         if is_runner_available {
-            collect_tests(
-                db,
-                db.file_module_syntax(file).ok()?.items(db).elements(db),
-                file,
-                url,
-                &mut result,
-            );
+            collect_tests(db, main_module, file, url, &mut result);
         }
 
         Some(result)
@@ -197,68 +191,118 @@ impl TestRunner {
 
 fn collect_tests(
     db: &AnalysisDatabase,
-    module_items: Vec<ModuleItem>,
-    file: FileId,
+    module: ModuleId,
+    origin_file: FileId,
     file_url: Url,
     file_state: &mut Vec<CodeLens>,
 ) {
-    for item in module_items {
-        match item {
-            ModuleItem::FreeFunction(func) if func.find_attr(db, "test").is_some() => {
-                if let Some(position) = func
-                    .stable_ptr()
-                    .untyped()
-                    .lookup(db)
-                    .span_start_without_trivia(db)
-                    .position_in_file(db, file)
-                {
-                    let position = position.to_lsp();
+    collect_functions(db, module, make_function_code_lens(db, origin_file, &file_url, file_state));
 
-                    make_code_lens(
-                        TextDocumentPositionParams {
-                            position,
-                            text_document: TextDocumentIdentifier { uri: file_url.clone() },
-                        },
-                        false,
-                        file_state,
-                    );
-                };
-            }
-            ModuleItem::Module(module) => {
-                if let MaybeModuleBody::Some(body) = module.body(db) {
-                    let tests_count = file_state.len();
+    let Ok(modules) = db.module_submodules_ids(module) else { return };
 
-                    collect_tests(
-                        db,
-                        body.items(db).elements(db),
-                        file,
-                        file_url.clone(),
-                        file_state,
-                    );
+    for submodule in modules.iter().copied() {
+        let has_tests = if db.is_submodule_inline(submodule) {
+            let tests_count = file_state.len();
 
-                    // Append mod only if it contains tests.
-                    if tests_count != file_state.len() {
-                        if let Some(position) = module
-                            .as_syntax_node()
-                            .span_start_without_trivia(db)
-                            .position_in_file(db, file)
-                        {
-                            let position = position.to_lsp();
+            collect_tests(
+                db,
+                ModuleId::Submodule(submodule),
+                origin_file,
+                file_url.clone(),
+                file_state,
+            );
 
-                            make_code_lens(
-                                TextDocumentPositionParams {
-                                    position,
-                                    text_document: TextDocumentIdentifier { uri: file_url.clone() },
-                                },
-                                true,
-                                file_state,
-                            );
-                        };
-                    }
+            // Append mod only if it contains tests.
+            tests_count != file_state.len()
+        } else {
+            has_any_test(db, ModuleId::Submodule(submodule))
+        };
+
+        if !has_tests {
+            continue;
+        }
+
+        let ptr = submodule.stable_ptr(db).untyped();
+
+        let Some(position) = get_position(db, origin_file, ptr) else {
+            continue;
+        };
+
+        if ptr.file_id(db) != origin_file {
+            continue;
+        }
+
+        make_code_lens(
+            TextDocumentPositionParams {
+                position,
+                text_document: TextDocumentIdentifier { uri: file_url.clone() },
+            },
+            true,
+            file_state,
+        );
+    }
+}
+
+fn has_any_test(db: &AnalysisDatabase, module: ModuleId) -> bool {
+    if collect_functions(db, module, |_| ControlFlow::Break(())).is_break() {
+        return true;
+    }
+
+    let Ok(modules) = db.module_submodules_ids(module) else { return false };
+
+    modules.iter().copied().map(ModuleId::Submodule).any(|submodule| {
+        collect_functions(db, submodule, |_| ControlFlow::Break(())).is_break()
+            || has_any_test(db, submodule)
+    })
+}
+
+fn get_position(db: &AnalysisDatabase, file: FileId, ptr: SyntaxStablePtrId) -> Option<Position> {
+    ptr.lookup(db)
+        .span_start_without_trivia(db)
+        .position_in_file(db, file)
+        .map(|position| position.to_lsp())
+}
+
+fn collect_functions(
+    db: &AnalysisDatabase,
+    module: ModuleId,
+    mut on_test: impl FnMut(SyntaxStablePtrId) -> ControlFlow<(), ()>,
+) -> ControlFlow<(), ()> {
+    if let Ok(functions) = db.module_free_functions(module) {
+        for function in functions.values() {
+            if let Some(test_attr) = function.find_attr(db, "test") {
+                match on_test(test_attr.stable_ptr().untyped()) {
+                    b @ ControlFlow::Break(_) => return b,
+                    ControlFlow::Continue(_) => continue,
                 }
             }
-            _ => {}
         }
+    }
+
+    ControlFlow::Continue(())
+}
+
+fn make_function_code_lens(
+    db: &AnalysisDatabase,
+    file: FileId,
+    file_url: &Url,
+    file_state: &mut Vec<CodeLens>,
+) -> impl FnMut(SyntaxStablePtrId) -> ControlFlow<(), ()> {
+    move |ptr: SyntaxStablePtrId| {
+        if ptr.file_id(db) == file {
+            if let Some(position) = get_position(db, file, ptr) {
+                make_code_lens(
+                    TextDocumentPositionParams {
+                        position,
+                        text_document: TextDocumentIdentifier { uri: file_url.clone() },
+                    },
+                    false,
+                    file_state,
+                );
+            };
+        }
+
+        ControlFlow::Continue(())
     }
 }
 
