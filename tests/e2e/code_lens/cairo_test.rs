@@ -119,19 +119,19 @@ fn complex() {
     [[lenses]]
     line = 4
     command = "▶ Run tests"
-    index = 1
+    index = 2
     file_path = "src/lib.cairo"
 
     [[lenses]]
     line = 5
     command = "▶ Run test"
-    index = 0
+    index = 1
     file_path = "src/lib.cairo"
 
     [[lenses]]
     line = 11
     command = "▶ Run test"
-    index = 2
+    index = 0
     file_path = "src/lib.cairo"
     "#)
 }
