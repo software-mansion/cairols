@@ -188,6 +188,15 @@ pub fn render_selections(text: &str, ranges: &[Range]) -> String {
 
 /// Adds selection markers for all ranges to the source text with optional attributes to attach.
 pub fn render_selections_with_attrs(text: &str, ranges: &[(Range, Option<String>)]) -> String {
+    render_text_with_annotations(text, "sel", ranges)
+}
+
+/// Adds markers for all ranges to the source text with optional attributes to attach.
+pub fn render_text_with_annotations(
+    text: &str,
+    annotation_name: &str,
+    ranges: &[(Range, Option<String>)],
+) -> String {
     let mut text = text.to_owned();
     ranges
         .iter()
@@ -197,11 +206,11 @@ pub fn render_selections_with_attrs(text: &str, ranges: &[(Range, Option<String>
                 (
                     index_in_text(&text, range.start),
                     format!(
-                        "<sel{attr}>",
+                        "<{annotation_name}{attr}>",
                         attr = attr.as_ref().map(|val| format!("={val}")).unwrap_or_default()
                     ),
                 ),
-                (index_in_text(&text, range.end), "</sel>".to_owned()),
+                (index_in_text(&text, range.end), format!("</{annotation_name}>")),
             ]
         })
         .sorted_by_key(|(idx, _)| *idx)
