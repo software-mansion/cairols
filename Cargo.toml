@@ -126,11 +126,6 @@ cairo-lang-test-plugin = { git = "https://github.com/starkware-libs/cairo", rev 
 cairo-lang-test-utils = { git = "https://github.com/starkware-libs/cairo", rev = "2520a55fb4be78625dc95c7888ea8d3252fba2ce" }
 cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", rev = "2520a55fb4be78625dc95c7888ea8d3252fba2ce" }
 
-# FIXME(#447): Remove this when cairo-vm 2.0.1 is released.
-[patch.crates-io.cairo-vm]
-git = "https://github.com/lambdaclass/cairo-vm"
-rev = "60c1fa0fca62fed6cfa304cb8fdc0d7ec4c23d02"
-
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,
 # while crates in this workspace are built with `dev` profile and full debug info.
