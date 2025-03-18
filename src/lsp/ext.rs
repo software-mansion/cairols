@@ -128,22 +128,6 @@ impl Notification for ScarbPathMissing {
 }
 
 #[derive(Debug)]
-pub struct ScarbResolvingStart {}
-
-impl Notification for ScarbResolvingStart {
-    type Params = ();
-    const METHOD: &'static str = "scarb/resolving-start";
-}
-
-#[derive(Debug)]
-pub struct ScarbResolvingFinish {}
-
-impl Notification for ScarbResolvingFinish {
-    type Params = ();
-    const METHOD: &'static str = "scarb/resolving-finish";
-}
-
-#[derive(Debug)]
 pub struct ExecuteInTerminal {}
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
