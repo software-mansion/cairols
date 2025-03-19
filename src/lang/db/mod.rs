@@ -25,7 +25,7 @@ use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lint_core::plugin::cairo_lint_allow_plugin_suite;
+use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
 use itertools::Itertools;
 use salsa::{Database, Durability};
 
