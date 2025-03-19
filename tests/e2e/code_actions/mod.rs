@@ -5,7 +5,8 @@ use lsp_types::{
 
 use crate::support::cairo_project_toml::{CAIRO_PROJECT_TOML, CAIRO_PROJECT_TOML_2024_07};
 use crate::support::cursor::Cursor;
-use crate::support::{cursors, sandbox};
+use crate::support::fixture::Fixture;
+use crate::support::{cursors, fixture, sandbox};
 
 mod create_module_file;
 mod fill_struct_fields;
@@ -31,21 +32,29 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
 }
 
 fn quick_fix(cairo_code: &str) -> String {
-    quick_fix_general(cairo_code, CAIRO_PROJECT_TOML_2024_07)
+    quick_fix_general(
+        cairo_code,
+        fixture! {
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+        },
+    )
 }
 
 fn quick_fix_without_visibility_constraints(cairo_code: &str) -> String {
-    quick_fix_general(cairo_code, CAIRO_PROJECT_TOML)
+    quick_fix_general(
+        cairo_code,
+        fixture! {
+            "cairo_project.toml" => CAIRO_PROJECT_TOML,
+        },
+    )
 }
 
-fn quick_fix_general(cairo_code: &str, manifest_content: &str) -> String {
+fn quick_fix_general(cairo_code: &str, mut fixture: Fixture) -> String {
     let (cairo, cursors) = cursors(cairo_code);
 
+    fixture.add_file("src/lib.cairo", cairo);
     let mut ls = sandbox! {
-        files {
-            "cairo_project.toml" => manifest_content,
-            "src/lib.cairo" => cairo.clone(),
-        }
+        fixture = fixture;
         client_capabilities = caps;
     };
 
