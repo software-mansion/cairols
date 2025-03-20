@@ -1,5 +1,6 @@
 mod analysis;
 mod code_actions;
+mod code_lens;
 mod completions;
 mod document_highlight;
 mod find_references;

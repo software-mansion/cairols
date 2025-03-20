@@ -66,6 +66,12 @@ impl Fixture {
         }
     }
 
+    pub fn file_relative_path(&self, path: impl AsRef<Path>) -> PathBuf {
+        let path = self.file_absolute_path(path);
+
+        PathBuf::from("./").join(path.strip_prefix(self.root_path()).unwrap())
+    }
+
     pub fn file_url(&self, path: impl AsRef<Path>) -> Url {
         Url::from_file_path(self.file_absolute_path(path)).unwrap()
     }
