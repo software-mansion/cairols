@@ -71,7 +71,7 @@ impl MacroPlugin for ProcMacroPlugin {
         &self,
         db: &dyn cairo_lang_syntax::node::db::SyntaxGroup,
         item_ast: cairo_lang_syntax::node::ast::ModuleItem,
-        _metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
+        metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
     ) -> cairo_lang_defs::plugin::PluginResult {
         // Safety: We use this plugin only in AnalysisDatabase.
         let analysis_db = unsafe { unsafe_downcast_ref(db) };
@@ -82,6 +82,7 @@ impl MacroPlugin for ProcMacroPlugin {
             item_ast,
             &self.defined_attributes,
             &self.defined_derives,
+            metadata,
         )
     }
 
