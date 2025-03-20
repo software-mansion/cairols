@@ -49,7 +49,7 @@ cairo-lang-syntax = "*"
 cairo-lang-syntax-codegen = "*"
 cairo-lang-test-plugin = "*"
 cairo-lang-utils = "*"
-cairo-lint-core = { git = "https://github.com/software-mansion/cairo-lint.git", rev = "ae93aa0e3f72a28e04c570502c98dbcf5456a0eb" }
+cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "92996d9adc261818b45b15bd5bcf79c911b13a02" }
 colored = "3.0.0"
 convert_case = "0.8.0"
 crossbeam = "0.8.4"

@@ -1,6 +1,6 @@
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, SemanticGroupEx};
-use cairo_lint_core::plugin::cairo_lint_plugin_suite;
+use cairo_lint::plugin::cairo_lint_plugin_suite;
 
 use super::db::AnalysisDatabase;
 use super::plugins::AnalyzerPluginType;

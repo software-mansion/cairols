@@ -1,5 +1,5 @@
 use cairo_lang_formatter::FormatterConfig;
-use cairo_lint_core::CairoLintToolMetadata;
+use cairo_lint::CairoLintToolMetadata;
 use scarb_metadata::PackageMetadata;
 use serde_json::Value;
 
