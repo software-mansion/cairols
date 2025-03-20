@@ -79,3 +79,27 @@ fn multi_segment_path() {
     completion_label = "Baz"
     "#);
 }
+
+#[test]
+fn enum_pattern() {
+    test_transform!(test_completions_text_edits,"
+    enum Foo {
+        Abc,
+        Qwerty,
+    }
+
+    fn a() {
+        let Foo::<caret> = 1234567;
+    }
+    ",@r#"
+    caret = """
+        let Foo::<caret> = 1234567;
+    """
+
+    [[completions]]
+    completion_label = "Abc"
+
+    [[completions]]
+    completion_label = "Qwerty"
+    "#);
+}

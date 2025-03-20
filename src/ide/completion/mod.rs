@@ -24,6 +24,7 @@ use expr::macro_call::macro_call_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
 use helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use pattern::struct_pattern_completions;
 
 mod attribute;
 mod dot_completions;
@@ -32,6 +33,7 @@ mod function;
 mod helpers;
 mod mod_item;
 mod path;
+mod pattern;
 mod struct_constructor;
 mod use_statement;
 
@@ -194,6 +196,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     completions.extend(params_completions(db, &ctx));
     completions.extend(macro_call_completions(db, &ctx));
     completions.extend(variables_completions(db, &ctx));
+    completions.extend(struct_pattern_completions(db, &ctx));
 
     if params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED)
         == CompletionTriggerKind::INVOKED
