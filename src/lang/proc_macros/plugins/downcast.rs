@@ -24,18 +24,17 @@ pub(super) unsafe fn unsafe_downcast_ref(db: &dyn SyntaxGroup) -> &AnalysisDatab
 
 #[cfg(test)]
 mod unsafe_downcast_ref_tests {
-    use std::collections::HashMap;
-    use std::sync::Arc;
-
-    use cairo_lang_macro::TokenStream;
-    use cairo_lang_syntax::node::db::SyntaxGroup;
-    use scarb_proc_macro_server_types::methods::ProcMacroResult;
-    use scarb_proc_macro_server_types::methods::expand::ExpandAttributeParams;
-    use scarb_proc_macro_server_types::scope::ProcMacroScope;
-
     use super::unsafe_downcast_ref;
     use crate::lang::db::AnalysisDatabase;
+    use crate::lang::proc_macros::client::plain_request_response::PlainExpandAttributeParams;
     use crate::lang::proc_macros::db::ProcMacroGroup;
+    use cairo_lang_macro::TextSpan;
+    use cairo_lang_macro_v1::TokenStream;
+    use cairo_lang_syntax::node::db::SyntaxGroup;
+    use scarb_proc_macro_server_types::methods::ProcMacroResult;
+    use scarb_proc_macro_server_types::scope::ProcMacroScope;
+    use std::collections::HashMap;
+    use std::sync::Arc;
 
     #[test]
     fn cast_succeed() {
@@ -43,15 +42,17 @@ mod unsafe_downcast_ref_tests {
 
         let context = ProcMacroScope { component: Default::default() };
 
-        let input = ExpandAttributeParams {
+        let input = PlainExpandAttributeParams {
             context,
             attr: "asd".to_string(),
-            args: TokenStream::new("asd".to_string()),
-            item: TokenStream::new("asd".to_string()),
+            args: "asd".to_string(),
+            item: "asd".to_string(),
+            call_site: TextSpan { start: 0, end: 0 },
         };
         let output = ProcMacroResult {
             token_stream: TokenStream::new("asd".to_string()),
             diagnostics: Default::default(),
+            code_mappings: None,
         };
         let macro_resolution: HashMap<_, _> = [(input, output)].into_iter().collect();
         let macro_resolution = Arc::new(macro_resolution);
