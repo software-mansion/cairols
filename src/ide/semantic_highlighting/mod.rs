@@ -14,7 +14,7 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 
 mod encoder;
-mod token_kind;
+pub mod token_kind;
 
 /// Resolve the semantic tokens of a given file.
 pub fn semantic_highlight_full(

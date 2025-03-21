@@ -3,6 +3,8 @@ use crate::server::connection::ConnectionInitializer;
 use crate::server::schedule::thread::JoinHandle;
 use anyhow::Result;
 
+pub use crate::ide::semantic_highlighting::token_kind::SemanticTokenKind;
+
 /// Special object to run the language server in end-to-end tests.
 pub struct BackendForTesting(Backend);
 

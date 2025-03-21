@@ -1,0 +1,96 @@
+use crate::semantic_tokens::semantic_tokens;
+use crate::support::insta::test_transform;
+
+#[test]
+fn complex() {
+    test_transform!(semantic_tokens, r#"
+    enum Foo {
+        Bar,
+        Baz,
+    }
+
+    fn main() {
+        let foo = Foo::Bar;
+        let foobar: Foo = foo;
+    }
+
+    fn calc(foo: Foo) {}
+
+    #[cfg(test)]
+    mod rectangle {
+        use super::Foo;
+    }
+
+    mod b {
+        mod a {
+            mod trick {
+                #[test]
+                struct Foo {}
+            }
+        }
+    }
+    "#, @r"
+    <token=keyword>enum</token> <token=enum>Foo</token> {
+        <token=enumMember>Bar</token>,
+        <token=enumMember>Baz</token>,
+    }
+
+    <token=keyword>fn</token> <token=function>main</token>() {
+        <token=keyword>let</token> <token=variable>foo</token> = <token=type>Foo</token>::<token=enumMember>Bar</token>;
+        <token=keyword>let</token> <token=variable>foobar</token>: <token=type>Foo</token> = <token=variable>foo</token>;
+    }
+
+    <token=keyword>fn</token> <token=function>calc</token>(<token=parameter>foo</token>: <token=type>Foo</token>) {}
+
+    #[<token=decorator>cfg</token>(<token=decorator>test</token>)]
+    <token=keyword>mod</token> <token=class>rectangle</token> {
+        <token=keyword>use</token> <token=keyword>super</token>::<token=type>Foo</token>;
+    }
+
+    <token=keyword>mod</token> <token=class>b</token> {
+        <token=keyword>mod</token> <token=class>a</token> {
+            <token=keyword>mod</token> <token=class>trick</token> {
+                #[<token=decorator>test</token>]
+                <token=keyword>struct</token> <token=struct>Foo</token> {}
+            }
+        }
+    }
+    ")
+}
+
+#[test]
+fn multiline() {
+    test_transform!(semantic_tokens, r#"
+    fn main() {
+        let _ = "
+        ";
+    }
+    "#, @r#"
+    <token=keyword>fn</token> <token=function>main</token>() {
+        <token=keyword>let</token> _ = <token=string>"</token>
+    <token=string>    "</token>;
+    }
+    "#)
+}
+
+#[test]
+fn on_mod() {
+    test_transform!(semantic_tokens, r#"
+    #[cfg(test, 1234)]
+    mod rectangle { }
+    "#, @r"
+    #[<token=decorator>cfg</token>(<token=decorator>test</token>, <token=number>1234</token>)]
+    <token=keyword>mod</token> <token=class>rectangle</token> { }
+    ")
+}
+
+#[test]
+fn on_fn() {
+    test_transform!(semantic_tokens, r#"
+    #[cfg(test, 1234)]
+    fn rectangle() { }
+    "#, @r"
+    #[<token=decorator>cfg</token>(<token=decorator>test</token>, <token=number>1234</token>)]
+    <token=keyword>fn</token> <token=function>rectangle</token>() { }
+    ")
+}
