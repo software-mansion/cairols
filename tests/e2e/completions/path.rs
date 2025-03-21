@@ -79,3 +79,29 @@ fn multi_segment_path() {
     completion_label = "Baz"
     "#);
 }
+
+#[test]
+fn multi_segment_path_partial() {
+    test_transform!(test_completions_text_edits,"
+    mod foo {
+        pub mod bar {
+            pub struct Baz {}
+        }
+    }
+
+    fn a() {
+        bar::B<caret>
+    }
+    ",@r#"
+    caret = """
+        bar::B<caret>
+    """
+
+    [[completions]]
+    completion_label = "Baz"
+    text_edits = ["""
+    use foo::bar;
+
+    """]
+    "#);
+}
