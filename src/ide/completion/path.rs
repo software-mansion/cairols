@@ -1,11 +1,9 @@
-use std::ops::Not;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{FileIndex, ModuleFileId, NamedLanguageElementId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::items::visibility::peek_visible_in;
-use cairo_lang_semantic::resolve::{AsSegments, ResolvedConcreteItem, ResolvedGenericItem};
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
@@ -22,29 +20,6 @@ use crate::lang::importer::new_import_edit;
 use crate::lang::text_matching::text_matches;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 
-pub fn expr_path(
-    db: &AnalysisDatabase,
-    expr: ExprPath,
-    ctx: &AnalysisContext<'_>,
-) -> Option<Vec<CompletionItem>> {
-    let first_segment = expr.elements(db).into_iter().next()?;
-    let first_segment = first_segment.as_syntax_node();
-
-    ctx.node
-        .is_descendant(&first_segment)
-        .not()
-        .then(|| {
-            let mut segments = expr.to_segments(db);
-
-            if expr.has_tail(db) {
-                segments.pop();
-            }
-
-            path_prefix_completions(db, ctx, segments)
-        })
-        .flatten()
-}
-
 /// Treats provided path as suffix, proposing elements that can prefix this path.
 pub fn path_suffix_completions(
     db: &AnalysisDatabase,
@@ -54,29 +29,54 @@ pub fn path_suffix_completions(
         if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none();
         if let Some(importables) = db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)));
         if let Some(typed_text_segments) = ctx.node.ancestor_of_type::<ExprPath>(db).map(|path| path.elements(db));
-        if let [last] = typed_text_segments.as_slice();
+        if !typed_text_segments.is_empty();
 
         then {
-            (importables, last.as_syntax_node().get_text_without_trivia(db))
+            (importables, typed_text_segments)
         } else {
             return Default::default();
         }
     );
 
+    let mut typed_text: Vec<_> = typed_text
+        .into_iter()
+        .map(|segment| segment.as_syntax_node().get_text_without_trivia(db))
+        .collect();
+
+    let last_typed_segment = typed_text.pop().expect("typed path should not be empty");
+
     importables
         .iter()
         .filter_map(|(importable, path_str)| {
-            let path_segments: Vec<_> = path_str.split("::").collect();
-
-            let last_segment = path_segments.last().expect("path to import should not be empty");
-
-            if !text_matches(last_segment, &typed_text) {
-                return None;
-            }
+            let mut path_segments: Vec<_> = path_str.split("::").collect();
 
             let is_not_in_scope = path_segments.len() != 1;
 
-            let import = is_not_in_scope.then(|| new_import_edit(db, ctx, path_str)).flatten();
+            let last_segment = path_segments.pop().expect("path to import should not be empty");
+
+            let mut last_poped = None;
+
+            let previous_segment_matches = typed_text.iter().rev().all(|typed_segment| {
+                last_poped = path_segments.pop();
+
+                Some(typed_segment.as_str()) == last_poped
+            });
+
+            // Import path and typed path must have single overlapping element.
+            // use foo::bar;
+            //          bar::baz(12345);
+            // If path was *not* empty we should *not* add use statement at all.
+            if !path_segments.is_empty() {
+                path_segments.push(last_poped.unwrap_or(last_segment));
+            }
+
+            if !previous_segment_matches || !text_matches(last_segment, &last_typed_segment) {
+                return None;
+            }
+
+            let import = (is_not_in_scope && !path_segments.is_empty())
+                .then(|| new_import_edit(db, ctx, path_segments.join("::")))
+                .flatten();
 
             Some(CompletionItem {
                 label: importable.name(db).to_string(),

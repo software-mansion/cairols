@@ -3,8 +3,7 @@ use attribute::derive::derive_completions;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::{
-    self, Attribute, ExprPath, ExprStructCtorCall, ItemModule, TerminalIdentifier, UsePathLeaf,
-    UsePathSingle,
+    self, Attribute, ExprStructCtorCall, ItemModule, TerminalIdentifier, UsePathLeaf, UsePathSingle,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -12,7 +11,7 @@ use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use if_chain::if_chain;
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
 use mod_item::mod_completions;
-use path::{expr_path, path_suffix_completions};
+use path::path_suffix_completions;
 use struct_constructor::struct_constructor_completions;
 use use_statement::use_statement;
 
@@ -24,7 +23,8 @@ use expr::macro_call::macro_call_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
 use helpers::binary_expr::dot_rhs::dot_expr_rhs;
-use pattern::struct_pattern_completions;
+use pattern::{enum_pattern_completions, struct_pattern_completions};
+use self_completions::self_completions;
 
 mod attribute;
 mod dot_completions;
@@ -34,6 +34,7 @@ mod helpers;
 mod mod_item;
 mod path;
 mod pattern;
+mod self_completions;
 mod struct_constructor;
 mod use_statement;
 
@@ -124,14 +125,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         }
     );
 
-    if_chain!(
-        if let Some(expr) = node.ancestor_of_type::<ExprPath>(db);
-        if let Some(expr_path_completions) = expr_path(db, expr, &ctx);
-
-        then {
-            completions.extend(expr_path_completions);
-        }
-    );
+    completions.extend(self_completions(db, &ctx));
 
     // Check if cursor is on attribute name. `#[my_a<cursor>ttr(arg1, args2: 1234)]`
     if_chain!(
@@ -197,6 +191,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     completions.extend(macro_call_completions(db, &ctx));
     completions.extend(variables_completions(db, &ctx));
     completions.extend(struct_pattern_completions(db, &ctx));
+    completions.extend(enum_pattern_completions(db, &ctx));
 
     if params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED)
         == CompletionTriggerKind::INVOKED
