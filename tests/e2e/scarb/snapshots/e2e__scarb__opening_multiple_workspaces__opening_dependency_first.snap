@@ -1,0 +1,245 @@
+---
+source: tests/e2e/scarb/opening_multiple_workspaces.rs
+description: "// → dep/Scarb.toml\n[package]\nname = \"dep\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dev-dependencies]\ndev_dep = { path = \"../dev_dep\" }\n\n// → dep/src/lib.cairo\n\n\n// → dev_dep/Scarb.toml\n[package]\nname = \"dev_dep\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n// → dev_dep/src/lib.cairo\n\n\n// → pkg/Scarb.toml\n[package]\nname = \"pkg\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[[target.starknet-contract]]\n\n[dependencies]\ndep = { path = \"../dep\" }\n\n// → pkg/src/lib.cairo\n"
+expression: "AnalyzedCratesResult { analyzed_crates, analyzed_crates_diff }"
+---
+analyzed_crates = '''
+# Analyzed Crates
+
+- `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
+    ```rust
+    CrateSettings {
+        name: Some(
+            "core",
+        ),
+        edition: V2024_07,
+        version: Some(
+            Version {
+                major: 2,
+                minor: 11,
+                patch: 2,
+            },
+        ),
+        cfg_set: Some(
+            CfgSet(
+                target: "lib",
+                target: "test",
+            ),
+        ),
+        dependencies: {
+            "core": DependencySettings {
+                discriminator: None,
+            },
+        },
+        experimental_features: ExperimentalFeaturesConfig {
+            negative_impls: true,
+            associated_item_constraints: true,
+            coupons: true,
+        },
+    }
+    ```
+- `dep`: `["[ROOT]/dep/src/lib.cairo"]`
+    ```rust
+    CrateSettings {
+        name: Some(
+            "dep",
+        ),
+        edition: V2024_07,
+        version: Some(
+            Version {
+                major: 0,
+                minor: 1,
+                patch: 0,
+            },
+        ),
+        cfg_set: Some(
+            CfgSet(
+                target: "lib",
+                target: "test",
+                test,
+            ),
+        ),
+        dependencies: {
+            "core": DependencySettings {
+                discriminator: None,
+            },
+            "dep": DependencySettings {
+                discriminator: Some(
+                    "dep 0.1.0 (path+[ROOT_URL]dep/Scarb.toml)",
+                ),
+            },
+            "dev_dep": DependencySettings {
+                discriminator: Some(
+                    "dev_dep 0.1.0 (path+[ROOT_URL]dev_dep/Scarb.toml)",
+                ),
+            },
+        },
+        experimental_features: ExperimentalFeaturesConfig {
+            negative_impls: false,
+            associated_item_constraints: false,
+            coupons: false,
+        },
+    }
+    ```
+- `dev_dep`: `["[ROOT]/dev_dep/src/lib.cairo"]`
+    ```rust
+    CrateSettings {
+        name: Some(
+            "dev_dep",
+        ),
+        edition: V2024_07,
+        version: Some(
+            Version {
+                major: 0,
+                minor: 1,
+                patch: 0,
+            },
+        ),
+        cfg_set: Some(
+            CfgSet(
+                target: "test",
+            ),
+        ),
+        dependencies: {
+            "core": DependencySettings {
+                discriminator: None,
+            },
+            "dev_dep": DependencySettings {
+                discriminator: Some(
+                    "dev_dep 0.1.0 (path+[ROOT_URL]dev_dep/Scarb.toml)",
+                ),
+            },
+        },
+        experimental_features: ExperimentalFeaturesConfig {
+            negative_impls: false,
+            associated_item_constraints: false,
+            coupons: false,
+        },
+    }
+    ```
+'''
+analyzed_crates_diff = '''
+@@ -5,30 +5,31 @@
+     CrateSettings {
+         name: Some(
+             "core",
+         ),
+         edition: V2024_07,
+         version: Some(
+             Version {
+                 major: 2,
+                 minor: 11,
+                 patch: 2,
+             },
+         ),
+         cfg_set: Some(
+             CfgSet(
+                 target: "lib",
++                target: "starknet-contract",
+                 target: "test",
+             ),
+         ),
+         dependencies: {
+             "core": DependencySettings {
+                 discriminator: None,
+             },
+         },
+         experimental_features: ExperimentalFeaturesConfig {
+             negative_impls: true,
+             associated_item_constraints: true,
+             coupons: true,
+         },
+     }
+     ```
+@@ -37,30 +38,31 @@
+     CrateSettings {
+         name: Some(
+             "dep",
+         ),
+         edition: V2024_07,
+         version: Some(
+             Version {
+                 major: 0,
+                 minor: 1,
+                 patch: 0,
+             },
+         ),
+         cfg_set: Some(
+             CfgSet(
+                 target: "lib",
++                target: "starknet-contract",
+                 target: "test",
+                 test,
+             ),
+         ),
+         dependencies: {
+             "core": DependencySettings {
+                 discriminator: None,
+             },
+             "dep": DependencySettings {
+                 discriminator: Some(
+                     "dep 0.1.0 (path+[ROOT_URL]dep/Scarb.toml)",
+                 ),
+             },
+             "dev_dep": DependencySettings {
+                 discriminator: Some(
+@@ -99,15 +101,58 @@
+                 discriminator: None,
+             },
+             "dev_dep": DependencySettings {
+                 discriminator: Some(
+                     "dev_dep 0.1.0 (path+[ROOT_URL]dev_dep/Scarb.toml)",
+                 ),
+             },
+         },
+         experimental_features: ExperimentalFeaturesConfig {
+             negative_impls: false,
+             associated_item_constraints: false,
+             coupons: false,
+         },
+     }
+     ```
++- `pkg`: `["[ROOT]/pkg/src/lib.cairo"]`
++    ```rust
++    CrateSettings {
++        name: Some(
++            "pkg",
++        ),
++        edition: V2024_07,
++        version: Some(
++            Version {
++                major: 0,
++                minor: 1,
++                patch: 0,
++            },
++        ),
++        cfg_set: Some(
++            CfgSet(
++                target: "starknet-contract",
++                target: "test",
++                test,
++            ),
++        ),
++        dependencies: {
++            "core": DependencySettings {
++                discriminator: None,
++            },
++            "dep": DependencySettings {
++                discriminator: Some(
++                    "dep 0.1.0 (path+[ROOT_URL]dep/Scarb.toml)",
++                ),
++            },
++            "pkg": DependencySettings {
++                discriminator: Some(
++                    "pkg 0.1.0 (path+[ROOT_URL]pkg/Scarb.toml)",
++                ),
++            },
++        },
++        experimental_features: ExperimentalFeaturesConfig {
++            negative_impls: false,
++            associated_item_constraints: false,
++            coupons: false,
++        },
++    }
++    ```
+'''

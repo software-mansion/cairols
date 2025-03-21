@@ -1,7 +1,6 @@
 use lsp_types::{
     ClientCapabilities, DidChangeWatchedFilesClientCapabilities, WorkspaceClientCapabilities,
 };
-use serde::Serialize;
 
 mod invalid;
 mod removing_dependency;
@@ -19,10 +18,4 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
         }),
         ..base
     }
-}
-
-#[derive(Serialize)]
-struct AnalyzedCratesResult {
-    analyzed_crates: String,
-    analyzed_crates_diff: String,
 }
