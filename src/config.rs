@@ -8,9 +8,13 @@ use lsp_types::{ClientCapabilities, ConfigurationItem, ConfigurationParams};
 use serde_json::Value;
 use tracing::{debug, error, warn};
 
+use crate::ide::analysis_progress::AnalysisProgressController;
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::linter::LinterController;
+use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::result::{LSPResult, LSPResultEx};
+use crate::project::ManifestRegistry;
 use crate::server::client::Requester;
 use crate::server::schedule::Task;
 use std::str::FromStr;
@@ -80,6 +84,44 @@ impl Default for Config {
 
 impl Config {
     /// Reloads the configuration from the language client.
+    ///
+    /// ## Note
+    /// Contrary to [`Config::reload`], it applies changes to the state appropriate for default
+    /// config if the client does not support config reloading.
+    /// Therefore, this function should be called only once per LS lifetime.
+    pub fn reload_on_start(
+        &mut self,
+        requester: &mut Requester<'_>,
+        db: &mut AnalysisDatabase,
+        proc_macro_controller: &mut ProcMacroClientController,
+        analysis_progress_controller: &mut AnalysisProgressController,
+        manifest_registry: &ManifestRegistry,
+        client_capabilities: &ClientCapabilities,
+    ) -> LSPResult<()> {
+        if !client_capabilities.workspace_configuration_support() {
+            warn!(
+                "client does not support `workspace/configuration` requests, config will not be \
+                 reloaded"
+            );
+
+            self.apply_changes(
+                db,
+                proc_macro_controller,
+                analysis_progress_controller,
+                manifest_registry,
+            );
+
+            return Ok(());
+        }
+
+        self.reload_inner(requester)
+    }
+
+    /// Reloads the configuration from the language client.
+    ///
+    /// ## Note
+    /// Contrary to [`Config::reload_on_start`], it does _not_ apply any changes to the state
+    /// if the client does not support config reloading.
     pub fn reload(
         &mut self,
         requester: &mut Requester<'_>,
@@ -90,9 +132,14 @@ impl Config {
                 "client does not support `workspace/configuration` requests, config will not be \
                  reloaded"
             );
+
             return Ok(());
         }
 
+        self.reload_inner(requester)
+    }
+
+    fn reload_inner(&mut self, requester: &mut Requester<'_>) -> LSPResult<()> {
         let items = vec![
             ConfigurationItem { scope_uri: None, section: Some("cairo1.corelibPath".to_owned()) },
             ConfigurationItem {
@@ -159,12 +206,10 @@ impl Config {
 
                 debug!("reloaded configuration: {:#?}", state.config);
 
-                state.proc_macro_controller.on_config_change(&mut state.db, &state.config);
-                state.analysis_progress_controller.on_config_change(&state.config);
-
-                LinterController::on_config_change(
+                state.config.apply_changes(
                     &mut state.db,
-                    &state.config,
+                    &mut state.proc_macro_controller,
+                    &mut state.analysis_progress_controller,
                     &state.project_controller.manifests_registry(),
                 );
             })
@@ -175,6 +220,19 @@ impl Config {
             .context("failed to query language client for configuration items")
             .with_failure_code(ErrorCode::RequestFailed)
             .inspect_err(|e| warn!("{e:?}"))
+    }
+
+    fn apply_changes(
+        &self,
+        db: &mut AnalysisDatabase,
+        proc_macro_controller: &mut ProcMacroClientController,
+        analysis_progress_controller: &mut AnalysisProgressController,
+        manifest_registry: &ManifestRegistry,
+    ) {
+        proc_macro_controller.on_config_change(db, self);
+        analysis_progress_controller.on_config_change(self);
+
+        LinterController::on_config_change(db, self, manifest_registry);
     }
 }
 
