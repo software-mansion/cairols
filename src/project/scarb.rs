@@ -17,9 +17,9 @@ use scarb_metadata::{
 use tracing::{debug, error, warn};
 
 use super::builtin_plugins::BuiltinPlugin;
-use super::manifest_registry::member_config::MemberConfig;
 use crate::lang::db::AnalysisDatabase;
 use crate::project::crate_data::Crate;
+use crate::project::model::MemberConfig;
 
 /// Get paths to manifests of the workspace members.
 pub fn get_workspace_members_manifests(metadata: &Metadata) -> HashMap<PathBuf, MemberConfig> {

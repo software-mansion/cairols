@@ -10,28 +10,27 @@ use lsp_types::{MessageType, ShowMessageParams};
 use tracing::{debug, error, trace, warn};
 
 pub use self::crate_data::Crate;
-pub use self::manifest_registry::{ManifestRegistry, ManifestRegistryUpdate};
 pub use self::project_manifest_path::*;
 use crate::lsp::ext::CorelibVersionMismatch;
-use crate::project::model::ProjectModel;
+use crate::project::model::{ManifestRegistryUpdate, ProjectModel};
 use crate::project::scarb::{extract_crates, get_workspace_members_manifests};
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core_if_not_present;
 use crate::server::client::Notifier;
 use crate::server::schedule::thread;
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
-use crate::state::{Owned, Snapshot, State};
+use crate::state::{Snapshot, State};
 use crate::toolchain::scarb::ScarbToolchain;
+
+pub use model::ManifestRegistry;
 
 mod builtin_plugins;
 mod crate_data;
-mod manifest_registry;
 mod model;
 mod project_manifest_path;
 mod scarb;
 mod unmanaged_core_crate;
 
 pub struct ProjectController {
-    manifest_registry: Owned<ManifestRegistry>,
     model: ProjectModel,
     // NOTE: Member order matters here.
     //   The request sender MUST be dropped before controller's thread join handle.
@@ -61,7 +60,6 @@ impl ProjectController {
         );
 
         ProjectController {
-            manifest_registry: Default::default(),
             requests_sender,
             response_receiver,
             model: Default::default(),
@@ -70,7 +68,7 @@ impl ProjectController {
     }
 
     pub fn manifests_registry(&self) -> Snapshot<ManifestRegistry> {
-        self.manifest_registry.snapshot()
+        self.model.manifests_registry()
     }
 
     pub fn response_receiver(&self) -> Receiver<ProjectUpdate> {
@@ -80,12 +78,11 @@ impl ProjectController {
     pub fn request_updating_project_for_file(&self, file_path: PathBuf) {
         self.send_request(ProjectUpdateRequest {
             file_path,
-            loaded_manifests: self.manifest_registry.snapshot(),
+            loaded_manifests: self.manifests_registry(),
         })
     }
 
     pub fn clear_loaded_workspaces(&mut self) {
-        self.manifest_registry.clear();
         self.model.clear_loaded_workspaces();
     }
 
@@ -100,15 +97,13 @@ impl ProjectController {
             ProjectUpdate::Scarb { crates, loaded_manifests, workspace_dir } => {
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
 
-                state.project_controller.manifest_registry.update(loaded_manifests);
-
                 state.project_controller.model.load_workspace(
                     db,
                     crates,
                     workspace_dir,
                     &state.proc_macro_controller,
-                    &state.project_controller.manifests_registry(),
                     state.config.enable_linter,
+                    loaded_manifests,
                 );
             }
             ProjectUpdate::ScarbMetadataFailed => {
