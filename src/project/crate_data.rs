@@ -20,6 +20,24 @@ use itertools::chain;
 use super::builtin_plugins::BuiltinPlugin;
 use crate::TRICKS;
 use crate::lang::db::AnalysisDatabase;
+use crate::project::model::MemberConfig;
+
+#[derive(Debug)]
+pub struct CrateInfo {
+    pub cr: Crate,
+    pub tools_config: MemberConfig,
+    /// Path to Scarb.toml.
+    pub manifest_path: PathBuf,
+    /// If the crate is a workspace member in the context of the loaded workspace.
+    pub is_member: bool,
+}
+
+impl CrateInfo {
+    /// States whether this is the `core` crate.
+    pub fn is_core(&self) -> bool {
+        self.cr.name == CORELIB_CRATE_NAME
+    }
+}
 
 /// A complete set of information needed to set up a real crate in the analysis database.
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -136,11 +154,6 @@ impl Crate {
         .collect();
 
         Some(Self { name, discriminator, root, custom_main_file_stems, settings, builtin_plugins })
-    }
-
-    /// States whether this is the `core` crate.
-    pub fn is_core(&self) -> bool {
-        self.name == CORELIB_CRATE_NAME
     }
 
     /// Returns paths to the main files of this crate.

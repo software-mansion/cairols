@@ -5,11 +5,15 @@ use std::path::{Path, PathBuf};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::project::Crate;
+use crate::project::crate_data::CrateInfo;
 use crate::state::{Owned, Snapshot};
 
-pub use manifest_registry::{ManifestRegistry, ManifestRegistryUpdate, MemberConfig};
+pub use manifest_registry::{ManifestRegistry, MemberConfig};
 
 mod manifest_registry;
+
+type WorkspaceRoot = PathBuf;
+type ManifestPath = PathBuf;
 
 #[derive(Default)]
 pub struct ProjectModel {
@@ -17,9 +21,11 @@ pub struct ProjectModel {
     // therefore, their contents should be kept synchronised.
     // We keep both of them for efficiency and ease of use.
     /// Mapping from a workspace root to crates contained in the dependency graph of that workspace.
-    loaded_workspaces: HashMap<PathBuf, HashMap<CrateLongId, Crate>>,
+    loaded_workspaces: HashMap<WorkspaceRoot, HashMap<CrateLongId, Crate>>,
     /// Mapping from a crate to roots of workspaces that contained this crate in their dependency graphs.
-    loaded_crates: HashMap<CrateLongId, HashSet<PathBuf>>,
+    loaded_crates: HashMap<CrateLongId, HashSet<WorkspaceRoot>>,
+    /// Used to determine when we can skip calling `scarb metadata` to update a project model.
+    manifests_of_members_from_loaded_workspaces: Owned<HashSet<ManifestPath>>,
     manifest_registry: Owned<ManifestRegistry>,
 }
 
@@ -28,24 +34,39 @@ impl ProjectModel {
         self.manifest_registry.snapshot()
     }
 
+    pub fn loaded_manifests(&self) -> Snapshot<HashSet<ManifestPath>> {
+        self.manifests_of_members_from_loaded_workspaces.snapshot()
+    }
+
     pub fn clear_loaded_workspaces(&mut self) {
         self.loaded_workspaces.clear();
         self.loaded_crates.clear();
+        self.manifests_of_members_from_loaded_workspaces.clear();
         self.manifest_registry.clear();
     }
 
     pub fn load_workspace(
         &mut self,
         db: &mut AnalysisDatabase,
-        workspace_crates: Vec<Crate>,
+        workspace_crates: Vec<CrateInfo>,
         workspace_dir: PathBuf,
         proc_macro_controller: &ProcMacroClientController,
         enable_linter: bool,
-        manifest_registry_update: ManifestRegistryUpdate,
     ) {
-        self.manifest_registry.update(manifest_registry_update);
+        let workspace_crates = workspace_crates
+            .into_iter()
+            .map(|cr_info| {
+                if cr_info.is_member {
+                    self.manifests_of_members_from_loaded_workspaces
+                        .insert(cr_info.manifest_path.clone());
+                }
 
-        let workspace_crates = workspace_crates.into_iter().map(|cr| (cr.long_id(), cr)).collect();
+                self.manifest_registry.insert(cr_info.manifest_path, cr_info.tools_config);
+
+                (cr_info.cr.long_id(), cr_info.cr)
+            })
+            .collect();
+
         if let Some(old_crates) = self.loaded_workspaces.get(&workspace_dir) {
             if old_crates == &workspace_crates {
                 return;

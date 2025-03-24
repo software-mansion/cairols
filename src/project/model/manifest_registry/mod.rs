@@ -24,16 +24,12 @@ impl ManifestRegistry {
         })
     }
 
-    pub fn contains_manifest(&self, path: &PathBuf) -> bool {
-        self.manifests.contains_key(path)
-    }
-
     pub fn clear(&mut self) {
         self.manifests.clear();
     }
 
-    pub fn update(&mut self, update: ManifestRegistryUpdate) {
-        self.manifests.extend(update.manifests);
+    pub fn insert(&mut self, manifest_path: PathBuf, config: MemberConfig) {
+        self.manifests.insert(manifest_path, config);
     }
 
     pub fn manifests_dirs(&self) -> impl Iterator<Item = PathBuf> {
@@ -47,15 +43,5 @@ impl ManifestRegistry {
 
             manifest_dir
         })
-    }
-}
-
-pub struct ManifestRegistryUpdate {
-    manifests: HashMap<PathBuf, MemberConfig>,
-}
-
-impl From<HashMap<PathBuf, MemberConfig>> for ManifestRegistryUpdate {
-    fn from(manifests: HashMap<PathBuf, MemberConfig>) -> Self {
-        Self { manifests }
     }
 }
