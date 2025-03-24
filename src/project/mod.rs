@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use anyhow::Context;
@@ -7,13 +8,13 @@ use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, error, warn};
 
 pub use self::crate_data::Crate;
 pub use self::project_manifest_path::*;
 use crate::lsp::ext::CorelibVersionMismatch;
-use crate::project::model::{ManifestRegistryUpdate, ProjectModel};
-use crate::project::scarb::{extract_crates, get_workspace_members_manifests};
+use crate::project::model::ProjectModel;
+use crate::project::scarb::extract_crates;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core_if_not_present;
 use crate::server::client::Notifier;
 use crate::server::schedule::thread;
@@ -21,6 +22,7 @@ use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
 use crate::state::{Snapshot, State};
 use crate::toolchain::scarb::ScarbToolchain;
 
+use crate::project::crate_data::CrateInfo;
 pub use model::ManifestRegistry;
 
 mod builtin_plugins;
@@ -78,7 +80,7 @@ impl ProjectController {
     pub fn request_updating_project_for_file(&self, file_path: PathBuf) {
         self.send_request(ProjectUpdateRequest {
             file_path,
-            loaded_manifests: self.manifests_registry(),
+            loaded_manifests: self.model.loaded_manifests(),
         })
     }
 
@@ -94,7 +96,7 @@ impl ProjectController {
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
         let db = &mut state.db;
         match project_update {
-            ProjectUpdate::Scarb { crates, loaded_manifests, workspace_dir } => {
+            ProjectUpdate::Scarb { crates, workspace_dir } => {
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
 
                 state.project_controller.model.load_workspace(
@@ -103,7 +105,6 @@ impl ProjectController {
                     workspace_dir,
                     &state.proc_macro_controller,
                     state.config.enable_linter,
-                    loaded_manifests,
                 );
             }
             ProjectUpdate::ScarbMetadataFailed => {
@@ -160,7 +161,7 @@ impl ProjectController {
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
 pub enum ProjectUpdate {
-    Scarb { crates: Vec<Crate>, loaded_manifests: ManifestRegistryUpdate, workspace_dir: PathBuf },
+    Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf },
     ScarbMetadataFailed,
     CairoProjectToml(Option<ProjectConfig>),
     NoConfig(PathBuf),
@@ -214,8 +215,8 @@ impl ProjectControllerThread {
             &self.notifier,
         ) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                if project_update_request.loaded_manifests.contains_manifest(&manifest_path) {
-                    trace!("scarb project is already loaded: {}", manifest_path.display());
+                if project_update_request.loaded_manifests.contains(&manifest_path) {
+                    debug!("scarb project is already loaded: {}", manifest_path.display());
                     return None;
                 }
 
@@ -233,7 +234,6 @@ impl ProjectControllerThread {
                 metadata
                     .map(|metadata| ProjectUpdate::Scarb {
                         crates: extract_crates(&metadata),
-                        loaded_manifests: get_workspace_members_manifests(&metadata).into(),
                         workspace_dir: metadata.workspace.root.into_std_path_buf(),
                     })
                     .unwrap_or(ProjectUpdate::ScarbMetadataFailed)
@@ -276,5 +276,5 @@ impl ProjectControllerThread {
 
 struct ProjectUpdateRequest {
     file_path: PathBuf,
-    loaded_manifests: Snapshot<ManifestRegistry>,
+    loaded_manifests: Snapshot<HashSet<PathBuf>>,
 }
