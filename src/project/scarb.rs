@@ -19,7 +19,7 @@ use tracing::{debug, error, warn};
 use super::builtin_plugins::BuiltinPlugin;
 use crate::lang::db::AnalysisDatabase;
 use crate::project::crate_data::{Crate, CrateInfo};
-use crate::project::model::MemberConfig;
+use crate::project::model::PackageConfig;
 
 /// Extract information about crates that should be loaded to db from Scarb metadata.
 ///
@@ -230,7 +230,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<CrateInfo> {
             };
             let cr_info = CrateInfo {
                 cr,
-                tools_config: MemberConfig::from_pkg(package),
+                package_config: PackageConfig::from_pkg(package),
                 manifest_path: package.manifest_path.clone().into_std_path_buf(),
                 is_member: is_workspace_member(&component.package),
             };
@@ -302,9 +302,9 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<CrateInfo> {
                 custom_main_file_stems: Some(custom_main_file_stems),
                 builtin_plugins,
             },
-            // All crates within a group should have the same `tools_config`, `manifest_path`
+            // All crates within a group should have the same `package_config`, `manifest_path`
             // and `is_member`.
-            tools_config: first_crate.tools_config.clone(),
+            package_config: first_crate.package_config.clone(),
             manifest_path: first_crate.manifest_path.clone(),
             is_member: first_crate.is_member,
         });

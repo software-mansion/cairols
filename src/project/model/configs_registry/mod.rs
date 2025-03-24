@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-pub use self::member_config::MemberConfig;
+pub use self::package_config::PackageConfig;
 
-mod member_config;
+mod package_config;
 
 #[derive(Debug, Default, Clone)]
-pub struct ManifestRegistry {
-    manifests: HashMap<PathBuf, MemberConfig>,
+pub struct ConfigsRegistry {
+    packages_configs: HashMap<PathBuf, PackageConfig>,
 }
 
-impl ManifestRegistry {
-    pub fn config_for_file(&self, path: &Path) -> Option<MemberConfig> {
-        self.manifests.iter().find_map(|(manifest_path, config)| {
+impl ConfigsRegistry {
+    pub fn config_for_file(&self, path: &Path) -> Option<PackageConfig> {
+        self.packages_configs.iter().find_map(|(manifest_path, config)| {
             let mut manifest_dir = (*manifest_path).to_owned();
 
             // Should be always true but better safe than sorry.
@@ -25,15 +25,15 @@ impl ManifestRegistry {
     }
 
     pub fn clear(&mut self) {
-        self.manifests.clear();
+        self.packages_configs.clear();
     }
 
-    pub fn insert(&mut self, manifest_path: PathBuf, config: MemberConfig) {
-        self.manifests.insert(manifest_path, config);
+    pub fn insert(&mut self, manifest_path: PathBuf, config: PackageConfig) {
+        self.packages_configs.insert(manifest_path, config);
     }
 
     pub fn manifests_dirs(&self) -> impl Iterator<Item = PathBuf> {
-        self.manifests.keys().map(|manifest_path| {
+        self.packages_configs.keys().map(|manifest_path| {
             let mut manifest_dir = (*manifest_path).to_owned();
 
             // Should be always true but better safe than sorry.

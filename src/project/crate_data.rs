@@ -20,12 +20,12 @@ use itertools::chain;
 use super::builtin_plugins::BuiltinPlugin;
 use crate::TRICKS;
 use crate::lang::db::AnalysisDatabase;
-use crate::project::model::MemberConfig;
+use crate::project::model::PackageConfig;
 
 #[derive(Debug)]
 pub struct CrateInfo {
     pub cr: Crate,
-    pub tools_config: MemberConfig,
+    pub package_config: PackageConfig,
     /// Path to Scarb.toml.
     pub manifest_path: PathBuf,
     /// If the crate is a workspace member in the context of the loaded workspace.

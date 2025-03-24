@@ -8,9 +8,9 @@ use crate::project::Crate;
 use crate::project::crate_data::CrateInfo;
 use crate::state::{Owned, Snapshot};
 
-pub use manifest_registry::{ManifestRegistry, MemberConfig};
+pub use self::configs_registry::{ConfigsRegistry, PackageConfig};
 
-mod manifest_registry;
+mod configs_registry;
 
 type WorkspaceRoot = PathBuf;
 type ManifestPath = PathBuf;
@@ -26,12 +26,12 @@ pub struct ProjectModel {
     loaded_crates: HashMap<CrateLongId, HashSet<WorkspaceRoot>>,
     /// Used to determine when we can skip calling `scarb metadata` to update a project model.
     manifests_of_members_from_loaded_workspaces: Owned<HashSet<ManifestPath>>,
-    manifest_registry: Owned<ManifestRegistry>,
+    configs_registry: Owned<ConfigsRegistry>,
 }
 
 impl ProjectModel {
-    pub fn manifests_registry(&self) -> Snapshot<ManifestRegistry> {
-        self.manifest_registry.snapshot()
+    pub fn configs_registry(&self) -> Snapshot<ConfigsRegistry> {
+        self.configs_registry.snapshot()
     }
 
     pub fn loaded_manifests(&self) -> Snapshot<HashSet<ManifestPath>> {
@@ -42,7 +42,7 @@ impl ProjectModel {
         self.loaded_workspaces.clear();
         self.loaded_crates.clear();
         self.manifests_of_members_from_loaded_workspaces.clear();
-        self.manifest_registry.clear();
+        self.configs_registry.clear();
     }
 
     pub fn load_workspace(
@@ -61,7 +61,7 @@ impl ProjectModel {
                         .insert(cr_info.manifest_path.clone());
                 }
 
-                self.manifest_registry.insert(cr_info.manifest_path, cr_info.tools_config);
+                self.configs_registry.insert(cr_info.manifest_path, cr_info.package_config);
 
                 (cr_info.cr.long_id(), cr_info.cr)
             })
@@ -149,7 +149,7 @@ impl ProjectModel {
             let proc_macro_plugin_suite =
                 proc_macro_controller.proc_macro_plugin_suite_for_crate(&cr_long_id);
             let lint_config = self
-                .manifest_registry
+                .configs_registry
                 .config_for_file(&cr.root)
                 .filter(|_| enable_linter)
                 .map(|member_config| member_config.lint);

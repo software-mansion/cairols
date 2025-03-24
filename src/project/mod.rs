@@ -10,9 +10,8 @@ use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
 use tracing::{debug, error, warn};
 
-pub use self::crate_data::Crate;
-pub use self::project_manifest_path::*;
 use crate::lsp::ext::CorelibVersionMismatch;
+use crate::project::crate_data::CrateInfo;
 use crate::project::model::ProjectModel;
 use crate::project::scarb::extract_crates;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core_if_not_present;
@@ -22,8 +21,9 @@ use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
 use crate::state::{Snapshot, State};
 use crate::toolchain::scarb::ScarbToolchain;
 
-use crate::project::crate_data::CrateInfo;
-pub use model::ManifestRegistry;
+pub use self::crate_data::Crate;
+pub use self::model::ConfigsRegistry;
+pub use self::project_manifest_path::*;
 
 mod builtin_plugins;
 mod crate_data;
@@ -69,8 +69,8 @@ impl ProjectController {
         }
     }
 
-    pub fn manifests_registry(&self) -> Snapshot<ManifestRegistry> {
-        self.model.manifests_registry()
+    pub fn configs_registry(&self) -> Snapshot<ConfigsRegistry> {
+        self.model.configs_registry()
     }
 
     pub fn response_receiver(&self) -> Receiver<ProjectUpdate> {

@@ -16,7 +16,7 @@ pub fn format(params: DocumentFormattingParams, state: StateSnapshot) -> Option<
 
     let path = file_uri.to_file_path().ok()?;
 
-    let config = state.loaded_scarb_manifests.config_for_file(&path).unwrap_or_default();
+    let config = state.configs_registry.config_for_file(&path).unwrap_or_default();
 
     let Ok(node) = db.file_syntax(file) else {
         error!("formatting failed: file '{file_uri}' does not exist");
