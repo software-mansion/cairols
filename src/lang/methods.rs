@@ -1,5 +1,6 @@
 use cairo_lang_defs::ids::{FileIndex, ModuleFileId, NamedLanguageElementId, TraitFunctionId};
-use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, FilesGroup};
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
 use cairo_lang_semantic::expr::inference::solver::SolutionSet;
@@ -9,6 +10,8 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::TypeFilter;
 use cairo_lang_semantic::resolve::Resolver;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::Intern;
+use itertools::chain;
 use tracing::debug;
 
 use super::analysis_context::AnalysisContext;
@@ -28,8 +31,22 @@ pub fn find_methods_for_type(
 
     let mut relevant_methods = Vec::new();
     // Find methods on type.
-    // TODO(spapini): Look only in current crate dependencies.
-    for crate_id in db.crates() {
+    let dependencies = db
+        .crate_config(resolver.owning_crate_id)
+        .map(|config| config.settings.dependencies)
+        .unwrap_or_default();
+
+    for crate_id in chain!(
+        [resolver.owning_crate_id],
+        (!dependencies.contains_key(CORELIB_CRATE_NAME)).then(|| CrateId::core(db)),
+        dependencies.iter().map(|(name, setting)| {
+            CrateLongId::Real {
+                name: name.clone().into(),
+                discriminator: setting.discriminator.clone(),
+            }
+            .intern(db)
+        })
+    ) {
         let methods = db.methods_in_crate(crate_id, type_filter.clone());
         for trait_function in methods.iter().copied() {
             let clone_data =

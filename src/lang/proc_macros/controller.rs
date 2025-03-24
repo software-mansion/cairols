@@ -200,8 +200,8 @@ impl ProcMacroClientController {
         }
     }
 
-    pub fn proc_macro_plugin_suite_for_crate(&self, id: CrateLongId) -> Option<&PluginSuite> {
-        self.crate_plugin_suites.get(&id)
+    pub fn proc_macro_plugin_suite_for_crate(&self, id: &CrateLongId) -> Option<&PluginSuite> {
+        self.crate_plugin_suites.get(id)
     }
 
     fn remove_current_plugins_from_db(&self, db: &mut AnalysisDatabase) {

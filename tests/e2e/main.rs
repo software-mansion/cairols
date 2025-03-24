@@ -1,5 +1,6 @@
 mod analysis;
 mod code_actions;
+mod code_lens;
 mod completions;
 mod document_highlight;
 mod find_references;
@@ -7,6 +8,7 @@ mod goto_definition;
 mod hover;
 mod linter;
 mod macros;
+mod no_config_reload;
 mod rename;
 mod scarb;
 mod semantic_tokens;

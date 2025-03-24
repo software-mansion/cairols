@@ -289,7 +289,14 @@ impl Backend {
         scheduler.local(Self::register_dynamic_capabilities);
 
         scheduler.local(|state, _notifier, requester, _responder| {
-            let _ = state.config.reload(requester, &state.client_capabilities);
+            let _ = state.config.reload_on_start(
+                requester,
+                &mut state.db,
+                &mut state.proc_macro_controller,
+                &mut state.analysis_progress_controller,
+                &state.project_controller.manifests_registry(),
+                &state.client_capabilities,
+            );
         });
     }
 

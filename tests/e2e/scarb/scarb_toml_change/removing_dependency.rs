@@ -4,7 +4,8 @@ use lsp_types::notification::DidChangeWatchedFiles;
 use lsp_types::{DidChangeWatchedFilesParams, FileChangeType, FileEvent};
 use similar::TextDiff;
 
-use super::{AnalyzedCratesResult, caps};
+use super::caps;
+use crate::scarb::AnalyzedCratesResult;
 use crate::support::normalize::normalize;
 use crate::support::sandbox;
 
@@ -35,7 +36,7 @@ fn test_removing_dependency() {
 
     assert!(ls.open_and_wait_for_diagnostics("a/src/lib.cairo").is_empty());
     // Check if opening `a` triggers calculating diagnostics for `b`.
-    assert!(ls.get_diagnostics_for_file("b/src/lib.cairo").is_empty());
+    assert!(ls.wait_for_diagnostics("b/src/lib.cairo").is_empty());
 
     let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
     let analyzed_crates = normalize(&ls, analyzed_crates);
