@@ -5,7 +5,7 @@ use cairo_lint::plugin::cairo_lint_plugin_suite;
 use super::db::AnalysisDatabase;
 use super::plugins::AnalyzerPluginType;
 use crate::config::Config;
-use crate::project::ManifestRegistry;
+use crate::project::ConfigsRegistry;
 use cairo_lang_filesystem::ids::Directory;
 
 pub struct LinterController;
@@ -15,10 +15,10 @@ impl LinterController {
     pub fn on_config_change(
         db: &mut AnalysisDatabase,
         config: &Config,
-        manifests: &ManifestRegistry,
+        configs_registry: &ConfigsRegistry,
     ) {
         if config.enable_linter {
-            enable_cairo_lint_plugin_for_all_crates(db, manifests);
+            enable_cairo_lint_plugin_for_all_crates(db, configs_registry);
         } else {
             disable_cairo_lint_plugin_for_all_crates(db);
         }
@@ -27,7 +27,7 @@ impl LinterController {
 
 fn enable_cairo_lint_plugin_for_all_crates(
     db: &mut AnalysisDatabase,
-    manifests: &ManifestRegistry,
+    configs_registry: &ConfigsRegistry,
 ) {
     let default_cairo_lint_analyzer_plugins =
         db.intern_plugin_suite(cairo_lint_plugin_suite(Default::default())).analyzer_plugins;
@@ -63,7 +63,7 @@ fn enable_cairo_lint_plugin_for_all_crates(
                     if let Directory::Real(root) = config.root { Some(root) } else { None }
                 },
             )
-            .and_then(|root| manifests.config_for_file(&root))
+            .and_then(|root| configs_registry.config_for_file(&root))
             .map(|member_config| member_config.lint)
             .unwrap_or_default();
 

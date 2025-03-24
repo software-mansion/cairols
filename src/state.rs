@@ -12,7 +12,7 @@ use crate::ide::code_lens::CodeLensController;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
-use crate::project::{ManifestRegistry, ProjectController};
+use crate::project::{ConfigsRegistry, ProjectController};
 use crate::server::client::Client;
 use crate::server::connection::ClientSender;
 use crate::toolchain::scarb::ScarbToolchain;
@@ -75,7 +75,7 @@ impl State {
             open_files: self.open_files.snapshot(),
             config: self.config.snapshot(),
             client_capabilities: self.client_capabilities.snapshot(),
-            loaded_scarb_manifests: self.project_controller.manifests_registry(),
+            configs_registry: self.project_controller.configs_registry(),
             code_lens_controller: self.code_lens_controller.clone(),
         }
     }
@@ -88,7 +88,7 @@ pub struct StateSnapshot {
     pub open_files: Snapshot<HashSet<Url>>,
     pub config: Snapshot<Config>,
     pub client_capabilities: Snapshot<ClientCapabilities>,
-    pub loaded_scarb_manifests: Snapshot<ManifestRegistry>,
+    pub configs_registry: Snapshot<ConfigsRegistry>,
     pub code_lens_controller: CodeLensController,
 }
 

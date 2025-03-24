@@ -4,12 +4,12 @@ use scarb_metadata::PackageMetadata;
 use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]
-pub struct MemberConfig {
+pub struct PackageConfig {
     pub fmt: FormatterConfig,
     pub lint: CairoLintToolMetadata,
 }
 
-impl MemberConfig {
+impl PackageConfig {
     pub fn from_pkg(pkg: &PackageMetadata) -> Self {
         Self { fmt: Self::fmt(pkg), lint: Self::lint(pkg) }
     }

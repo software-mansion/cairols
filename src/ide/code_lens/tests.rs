@@ -105,7 +105,7 @@ impl CodeLensProvider for TestCodeLensProvider {
         notifier.notify::<ExecuteInTerminal>(ExecuteInTerminalParams {
             cwd: state
                 .project_controller
-                .manifests_registry()
+                .configs_registry()
                 .manifests_dirs()
                 .find(|dir| file_path.starts_with(dir))?, // TODO(#484)
             command,
