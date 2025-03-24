@@ -4,7 +4,12 @@ use std::path::{Path, PathBuf};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
-use crate::project::{Crate, ManifestRegistry};
+use crate::project::Crate;
+use crate::state::{Owned, Snapshot};
+
+pub use manifest_registry::{ManifestRegistry, ManifestRegistryUpdate, MemberConfig};
+
+mod manifest_registry;
 
 #[derive(Default)]
 pub struct ProjectModel {
@@ -15,12 +20,18 @@ pub struct ProjectModel {
     loaded_workspaces: HashMap<PathBuf, HashMap<CrateLongId, Crate>>,
     /// Mapping from a crate to roots of workspaces that contained this crate in their dependency graphs.
     loaded_crates: HashMap<CrateLongId, HashSet<PathBuf>>,
+    manifest_registry: Owned<ManifestRegistry>,
 }
 
 impl ProjectModel {
+    pub fn manifests_registry(&self) -> Snapshot<ManifestRegistry> {
+        self.manifest_registry.snapshot()
+    }
+
     pub fn clear_loaded_workspaces(&mut self) {
         self.loaded_workspaces.clear();
         self.loaded_crates.clear();
+        self.manifest_registry.clear();
     }
 
     pub fn load_workspace(
@@ -29,9 +40,11 @@ impl ProjectModel {
         workspace_crates: Vec<Crate>,
         workspace_dir: PathBuf,
         proc_macro_controller: &ProcMacroClientController,
-        manifest_registry: &ManifestRegistry,
         enable_linter: bool,
+        manifest_registry_update: ManifestRegistryUpdate,
     ) {
+        self.manifest_registry.update(manifest_registry_update);
+
         let workspace_crates = workspace_crates.into_iter().map(|cr| (cr.long_id(), cr)).collect();
         if let Some(old_crates) = self.loaded_workspaces.get(&workspace_dir) {
             if old_crates == &workspace_crates {
@@ -44,7 +57,7 @@ impl ProjectModel {
 
         self.add_crates(workspace_crates, &workspace_dir);
 
-        self.apply_changes_to_db(db, proc_macro_controller, manifest_registry, enable_linter);
+        self.apply_changes_to_db(db, proc_macro_controller, enable_linter);
     }
 
     fn remove_crates(
@@ -71,7 +84,6 @@ impl ProjectModel {
         &mut self,
         db: &mut AnalysisDatabase,
         proc_macro_controller: &ProcMacroClientController,
-        manifest_registry: &ManifestRegistry,
         enable_linter: bool,
     ) {
         for (cr, workspaces) in &self.loaded_crates {
@@ -115,7 +127,8 @@ impl ProjectModel {
 
             let proc_macro_plugin_suite =
                 proc_macro_controller.proc_macro_plugin_suite_for_crate(&cr_long_id);
-            let lint_config = manifest_registry
+            let lint_config = self
+                .manifest_registry
                 .config_for_file(&cr.root)
                 .filter(|_| enable_linter)
                 .map(|member_config| member_config.lint);

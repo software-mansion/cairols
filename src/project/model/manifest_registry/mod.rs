@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use self::member_config::MemberConfig;
+pub use self::member_config::MemberConfig;
 
-pub mod member_config;
+mod member_config;
 
 #[derive(Debug, Default, Clone)]
 pub struct ManifestRegistry {
