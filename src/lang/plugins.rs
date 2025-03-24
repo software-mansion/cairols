@@ -1,7 +1,7 @@
 use std::any::TypeId;
 
 use cairo_lang_semantic::plugin::AnalyzerPlugin;
-use cairo_lint_core::plugin::CairoLint;
+use cairo_lint::plugin::CairoLint;
 
 pub trait AnalyzerPluginType: AnalyzerPlugin {
     fn is_cairo_lint_plugin(&self) -> bool {

@@ -24,16 +24,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
-name = "annotate-snippets"
-version = "0.11.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "710e8eae58854cdc1790fcb56cca04d712a17be849eeb81da2a724bf4bae2bc4"
-dependencies = [
- "anstyle",
- "unicode-width 0.2.0",
-]
-
-[[package]]
 name = "anstream"
 version = "0.6.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -820,7 +810,7 @@ dependencies = [
  "cairo-lang-test-plugin",
  "cairo-lang-utils",
  "cairo-language-server",
- "cairo-lint-core",
+ "cairo-lint",
  "colored",
  "convert_case",
  "crossbeam",
@@ -856,11 +846,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-lint-core"
+name = "cairo-lint"
 version = "2.11.2"
-source = "git+https://github.com/software-mansion/cairo-lint.git?rev=ae93aa0e3f72a28e04c570502c98dbcf5456a0eb#ae93aa0e3f72a28e04c570502c98dbcf5456a0eb"
+source = "git+https://github.com/software-mansion/cairo-lint?rev=92996d9adc261818b45b15bd5bcf79c911b13a02#92996d9adc261818b45b15bd5bcf79c911b13a02"
 dependencies = [
- "annotate-snippets",
  "anyhow",
  "cairo-lang-compiler",
  "cairo-lang-defs",
@@ -871,10 +860,14 @@ dependencies = [
  "cairo-lang-test-plugin",
  "cairo-lang-utils",
  "if_chain",
+ "indoc",
  "itertools",
  "log",
  "num-bigint",
+ "scarb-metadata",
  "serde",
+ "tempfile",
+ "which",
 ]
 
 [[package]]
@@ -1380,7 +1373,7 @@ version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14dbbfd5c71d70241ecf9e6f13737f7b5ce823821063188d7e46c41d371eebd5"
 dependencies = [
- "unicode-width 0.1.14",
+ "unicode-width",
 ]
 
 [[package]]
@@ -3312,12 +3305,6 @@ name = "unicode-width"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af"
-
-[[package]]
-name = "unicode-width"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fc81956842c57dac11422a97c3b8195a1ff727f06e85c84ed2e8aa277c9a0fd"
 
 [[package]]
 name = "unicode-xid"
