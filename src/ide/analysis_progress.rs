@@ -22,6 +22,7 @@ pub struct ProcMacroServerTracker {
 }
 
 impl ProcMacroServerTracker {
+    #[expect(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             procmacro_request_submitted: Arc::new(AtomicBool::new(false)),

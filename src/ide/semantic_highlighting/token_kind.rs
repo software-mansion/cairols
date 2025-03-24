@@ -11,7 +11,6 @@ use lsp_types::SemanticTokenType;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
-#[allow(dead_code)]
 pub enum SemanticTokenKind {
     Namespace,
     Class,
@@ -22,6 +21,7 @@ pub enum SemanticTokenKind {
     Type,
     Parameter,
     Variable,
+    #[allow(dead_code)]
     Property,
     EnumMember,
     Function,
@@ -134,7 +134,7 @@ impl SemanticTokenKind {
                 _ => {}
             };
 
-            for lookup_item_id in db.collect_lookup_items_leaf(&node)? {
+            if let Some(lookup_item_id) = db.find_lookup_item(&node) {
                 // Resolved items.
                 if let Some(item) =
                     db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
@@ -176,12 +176,11 @@ impl SemanticTokenKind {
                 }
 
                 // Exprs and patterns..
-                let Some(function_id) = lookup_item_id.function_with_body() else {
-                    continue;
-                };
-                if let Some(expr_path_ptr) = expr_path_ptr {
-                    if db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok() {
-                        return Some(SemanticTokenKind::Variable);
+                if let Some(function_id) = lookup_item_id.function_with_body() {
+                    if let Some(expr_path_ptr) = expr_path_ptr {
+                        if db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok() {
+                            return Some(SemanticTokenKind::Variable);
+                        }
                     }
                 }
             }
