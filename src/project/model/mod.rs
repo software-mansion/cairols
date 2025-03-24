@@ -4,7 +4,16 @@ use std::path::{Path, PathBuf};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
-use crate::project::{Crate, ManifestRegistry};
+use crate::project::Crate;
+use crate::project::crate_data::CrateInfo;
+use crate::state::{Owned, Snapshot};
+
+pub use member_config::MemberConfig;
+
+mod member_config;
+
+type ManifestPath = PathBuf;
+type WorkspaceRoot = PathBuf;
 
 #[derive(Default)]
 pub struct ProjectModel {
@@ -12,27 +21,54 @@ pub struct ProjectModel {
     // therefore, their contents should be kept synchronised.
     // We keep both of them for efficiency and ease of use.
     /// Mapping from a workspace root to crates contained in the dependency graph of that workspace.
-    loaded_workspaces: HashMap<PathBuf, HashMap<CrateLongId, Crate>>,
+    loaded_workspaces: HashMap<WorkspaceRoot, HashMap<CrateLongId, Crate>>,
     /// Mapping from a crate to roots of workspaces that contained this crate in their dependency graphs.
-    loaded_crates: HashMap<CrateLongId, HashSet<PathBuf>>,
+    loaded_crates: HashMap<CrateLongId, HashSet<WorkspaceRoot>>,
+    /// Used to determine when we can skip calling `scarb metadata` to update a project model.
+    manifests_of_members_from_loaded_workspaces: Owned<HashSet<ManifestPath>>,
+    configs_registry: Owned<ConfigsRegistry>,
 }
 
 impl ProjectModel {
+    pub fn configs_registry(&self) -> Snapshot<ConfigsRegistry> {
+        self.configs_registry.snapshot()
+    }
+
+    pub fn loaded_manifests(&self) -> Snapshot<HashSet<ManifestPath>> {
+        self.manifests_of_members_from_loaded_workspaces.snapshot()
+    }
+
     pub fn clear_loaded_workspaces(&mut self) {
         self.loaded_workspaces.clear();
         self.loaded_crates.clear();
+        self.configs_registry.clear();
     }
 
     pub fn load_workspace(
         &mut self,
         db: &mut AnalysisDatabase,
-        workspace_crates: Vec<Crate>,
+        workspace_crates: Vec<CrateInfo>,
         workspace_dir: PathBuf,
         proc_macro_controller: &ProcMacroClientController,
-        manifest_registry: &ManifestRegistry,
         enable_linter: bool,
     ) {
-        let workspace_crates = workspace_crates.into_iter().map(|cr| (cr.long_id(), cr)).collect();
+        let workspace_crates = workspace_crates
+            .into_iter()
+            .map(|cr_info| {
+                if let Some(manifest_path) = cr_info.manifest_path.as_ref() {
+                    if cr_info.is_member {
+                        self.manifests_of_members_from_loaded_workspaces
+                            .insert(manifest_path.clone());
+                    }
+
+                    if let Some(config) = cr_info.tools_config {
+                        self.configs_registry.insert(manifest_path.clone(), config);
+                    }
+                }
+
+                (cr_info.cr.long_id(), cr_info.cr)
+            })
+            .collect();
         if let Some(old_crates) = self.loaded_workspaces.get(&workspace_dir) {
             if old_crates == &workspace_crates {
                 return;
@@ -44,7 +80,7 @@ impl ProjectModel {
 
         self.add_crates(workspace_crates, &workspace_dir);
 
-        self.apply_changes_to_db(db, proc_macro_controller, manifest_registry, enable_linter);
+        self.apply_changes_to_db(db, proc_macro_controller, enable_linter);
     }
 
     fn remove_crates(
@@ -71,7 +107,6 @@ impl ProjectModel {
         &mut self,
         db: &mut AnalysisDatabase,
         proc_macro_controller: &ProcMacroClientController,
-        manifest_registry: &ManifestRegistry,
         enable_linter: bool,
     ) {
         for (cr, workspaces) in &self.loaded_crates {
@@ -115,12 +150,54 @@ impl ProjectModel {
 
             let proc_macro_plugin_suite =
                 proc_macro_controller.proc_macro_plugin_suite_for_crate(&cr_long_id);
-            let lint_config = manifest_registry
+            let lint_config = self
+                .configs_registry
                 .config_for_file(&cr.root)
                 .filter(|_| enable_linter)
                 .map(|member_config| member_config.lint);
 
             cr.apply(db, lint_config, proc_macro_plugin_suite.cloned());
         }
+    }
+}
+
+#[derive(Default, Clone)]
+pub struct ConfigsRegistry {
+    tools_configs: HashMap<ManifestPath, MemberConfig>,
+}
+
+impl ConfigsRegistry {
+    pub fn config_for_file(&self, path: &Path) -> Option<MemberConfig> {
+        self.tools_configs.iter().find_map(|(manifest_path, config)| {
+            let mut manifest_dir = (*manifest_path).to_owned();
+
+            // Should be always true but better safe than sorry.
+            if manifest_dir.ends_with("Scarb.toml") {
+                manifest_dir.pop();
+            }
+
+            path.starts_with(manifest_dir).then(|| config.clone())
+        })
+    }
+
+    pub fn manifests_dirs(&self) -> impl Iterator<Item = PathBuf> {
+        self.tools_configs.keys().map(|manifest_path| {
+            let mut manifest_dir = (*manifest_path).to_owned();
+
+            // Should be always true but better safe than sorry.
+            if manifest_dir.ends_with("Scarb.toml") {
+                manifest_dir.pop();
+            }
+
+            manifest_dir
+        })
+    }
+
+    fn insert(&mut self, manifest_path: PathBuf, config: MemberConfig) {
+        self.tools_configs.insert(manifest_path, config);
+    }
+
+    fn clear(&mut self) {
+        self.tools_configs.clear();
     }
 }

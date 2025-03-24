@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::{Context, Result, bail, ensure};
 use cairo_lang_filesystem::cfg::CfgSet;
@@ -17,27 +17,9 @@ use scarb_metadata::{
 use tracing::{debug, error, warn};
 
 use super::builtin_plugins::BuiltinPlugin;
-use super::manifest_registry::member_config::MemberConfig;
 use crate::lang::db::AnalysisDatabase;
-use crate::project::crate_data::Crate;
-
-/// Get paths to manifests of the workspace members.
-pub fn get_workspace_members_manifests(metadata: &Metadata) -> HashMap<PathBuf, MemberConfig> {
-    metadata
-        .workspace
-        .members
-        .iter()
-        .map(|package_id| {
-            let pkg = &metadata[package_id];
-
-            let manifest = pkg.manifest_path.clone().into();
-
-            let member_config = MemberConfig::from_pkg(pkg);
-
-            (manifest, member_config)
-        })
-        .collect()
-}
+use crate::project::crate_data::{Crate, CrateInfo};
+use crate::project::model::MemberConfig;
 
 /// Extract information about crates that should be loaded to db from Scarb metadata.
 ///
@@ -47,12 +29,13 @@ pub fn get_workspace_members_manifests(metadata: &Metadata) -> HashMap<PathBuf, 
 /// Technically, it is possible for `scarb metadata` to omit `core` if working on a `no-core`
 /// package, but in reality enabling `no-core` makes sense only for the `core` package itself. To
 /// leave a trace of unreal cases, this function will log a warning if `core` is missing.
-pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
-    // A crate can appear as a component in multiple compilation units.
+pub fn extract_crates(metadata: &Metadata) -> Vec<CrateInfo> {
+    let is_workspace_member = |pkg_id| metadata.workspace.members.contains(pkg_id);
+    // A crate can appear as a component in multiple compilation units.l
     // We use a map here to make sure we include dependencies and cfg sets from all CUs.
     // We can keep components with assigned group id separately as they are not affected by this;
     // they are parts of integration tests crates which cannot appear in multiple compilation units.
-    let mut crates_by_component_id: HashMap<CompilationUnitComponentId, Crate> = HashMap::new();
+    let mut crates_by_component_id: HashMap<CompilationUnitComponentId, CrateInfo> = HashMap::new();
     let mut crates_grouped_by_group_id = HashMap::new();
 
     for compilation_unit in &metadata.compilation_units {
@@ -125,7 +108,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                 let empty_cfg_set = CfgSet::new();
                 let previous_cfg_set = crates_by_component_id
                     .get(&component_id)
-                    .and_then(|cr| cr.settings.cfg_set.as_ref())
+                    .and_then(|cr_info| cr_info.cr.settings.cfg_set.as_ref())
                     .unwrap_or(&empty_cfg_set);
 
                 cfg_set.union(previous_cfg_set)
@@ -207,7 +190,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                 .chain(
                     crates_by_component_id
                         .get(&component_id)
-                        .map(|cr| cr.settings.dependencies.clone())
+                        .map(|cr_info| cr_info.cr.settings.dependencies.clone())
                         .unwrap_or_default(),
                 )
                 .collect();
@@ -226,7 +209,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
             // `crate::lang::proc_macros::controller`.
             let mut builtin_plugins = crates_by_component_id
                 .get(&component_id)
-                .map(|cr| cr.builtin_plugins.clone())
+                .map(|cr_info| cr_info.cr.builtin_plugins.clone())
                 .unwrap_or_default();
 
             builtin_plugins.extend(if is_core(&package) {
@@ -244,11 +227,17 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                 settings,
                 builtin_plugins,
             };
+            let cr_info = CrateInfo {
+                cr,
+                tools_config: package.map(MemberConfig::from_pkg),
+                manifest_path: package.map(|p| p.manifest_path.clone().into_std_path_buf()),
+                is_member: is_workspace_member(&component.package),
+            };
 
             if compilation_unit.package == component.package {
                 if let Some(group_id) = compilation_unit.target.params.get("group-id") {
                     if let Some(group_id) = group_id.as_str() {
-                        if cr.custom_main_file_stems.is_none() {
+                        if cr_info.cr.custom_main_file_stems.is_none() {
                             error!(
                                 "compilation unit component with name {} has `lib.cairo` root \
                                  file while being part of target grouped by group_id {group_id}",
@@ -258,7 +247,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                             let crates = crates_grouped_by_group_id
                                 .entry(group_id.to_string())
                                 .or_insert(vec![]);
-                            crates.push(cr);
+                            crates.push(cr_info);
 
                             continue;
                         }
@@ -271,7 +260,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
                 }
             }
 
-            crates_by_component_id.insert(component_id, cr);
+            crates_by_component_id.insert(component_id, cr_info);
         }
     }
 
@@ -279,37 +268,49 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
 
     // Merging crates grouped by group id into single crates.
     for (group_id, crs) in crates_grouped_by_group_id {
-        if !crs.iter().map(|cr| (&cr.settings, &cr.root)).all_equal() {
+        if !crs
+            .iter()
+            .map(|cr_info| {
+                (&cr_info.cr.settings, &cr_info.cr.root, &cr_info.manifest_path, &cr_info.is_member)
+            })
+            .all_equal()
+        {
             error!(
-                "main crates of targets with group_id {group_id} had different settings and/or \
-                 roots"
+                "main crates of targets with group_id {group_id} had different (and/or):\
+                 settings, roots, manifest paths, package ids"
             )
         }
+
         let first_crate = &crs[0];
 
-        // All crates within a group should have the same settings and root.
-        let settings = first_crate.settings.clone();
-        let root = first_crate.root.clone();
-        // Name and discriminator don't really matter, so we take the first crate's ones.
-        let name = first_crate.name.clone();
-        let discriminator = first_crate.discriminator.clone();
+        let builtin_plugins =
+            crs.iter().flat_map(|cr_info| cr_info.cr.builtin_plugins.clone()).collect();
+        let custom_main_file_stems = crs
+            .iter()
+            .flat_map(|cr_info| cr_info.cr.custom_main_file_stems.clone().unwrap())
+            .collect();
 
-        let builtin_plugins = crs.iter().flat_map(|cr| cr.builtin_plugins.clone()).collect();
+        crates.push(CrateInfo {
+            cr: Crate {
+                // Name and discriminator don't really matter, so we take the first crate's ones.
+                name: first_crate.cr.name.clone(),
+                discriminator: first_crate.cr.discriminator.clone(),
+                // All crates within a group should have the same settings, root and manifest path.
+                root: first_crate.cr.root.clone(),
+                settings: first_crate.cr.settings.clone(),
 
-        let custom_main_file_stems =
-            crs.into_iter().flat_map(|cr| cr.custom_main_file_stems.unwrap()).collect();
-
-        crates.push(Crate {
-            name,
-            discriminator,
-            root,
-            custom_main_file_stems: Some(custom_main_file_stems),
-            settings,
-            builtin_plugins,
+                custom_main_file_stems: Some(custom_main_file_stems),
+                builtin_plugins,
+            },
+            // All crates within a group should have the same `tools_config`, manifest path
+            // and `is_member`.
+            tools_config: first_crate.tools_config.clone(),
+            manifest_path: first_crate.manifest_path.clone(),
+            is_member: first_crate.is_member,
         });
     }
 
-    if !crates.iter().any(Crate::is_core) {
+    if !crates.iter().any(CrateInfo::is_core) {
         warn!("core crate is missing in scarb metadata, did not initialize it");
     }
 

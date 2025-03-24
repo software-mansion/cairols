@@ -294,7 +294,7 @@ impl Backend {
                 &mut state.db,
                 &mut state.proc_macro_controller,
                 &mut state.analysis_progress_controller,
-                &state.project_controller.manifests_registry(),
+                &state.project_controller.configs_registry(),
                 &state.client_capabilities,
             );
         });
