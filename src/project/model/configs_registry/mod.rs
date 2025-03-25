@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -12,16 +13,11 @@ pub struct ConfigsRegistry {
 
 impl ConfigsRegistry {
     pub fn config_for_file(&self, path: &Path) -> Option<PackageConfig> {
-        self.packages_configs.iter().find_map(|(manifest_path, config)| {
-            let mut manifest_dir = (*manifest_path).to_owned();
+        self.entry_for_file(path).map(|(_, config)| config)
+    }
 
-            // Should be always true but better safe than sorry.
-            if manifest_dir.ends_with("Scarb.toml") {
-                manifest_dir.pop();
-            }
-
-            path.starts_with(manifest_dir).then(|| config.clone())
-        })
+    pub fn manifest_dir_for_file(&self, path: &Path) -> Option<PathBuf> {
+        self.entry_for_file(path).map(|(dir, _)| dir)
     }
 
     pub fn clear(&mut self) {
@@ -32,16 +28,20 @@ impl ConfigsRegistry {
         self.packages_configs.insert(manifest_path, config);
     }
 
-    pub fn manifests_dirs(&self) -> impl Iterator<Item = PathBuf> {
-        self.packages_configs.keys().map(|manifest_path| {
-            let mut manifest_dir = (*manifest_path).to_owned();
+    fn entry_for_file(&self, path: &Path) -> Option<(PathBuf, PackageConfig)> {
+        self.packages_configs
+            .iter()
+            .filter_map(|(manifest_path, config)| {
+                let mut manifest_dir = (*manifest_path).to_owned();
 
-            // Should be always true but better safe than sorry.
-            if manifest_dir.ends_with("Scarb.toml") {
-                manifest_dir.pop();
-            }
+                // Should be always true but better safe than sorry.
+                if manifest_dir.ends_with("Scarb.toml") {
+                    manifest_dir.pop();
+                }
 
-            manifest_dir
-        })
+                path.starts_with(&manifest_dir).then(|| (manifest_dir, config.clone()))
+            })
+            .sorted_by(|(p1, _), (p2, _)| p2.as_os_str().len().cmp(&p1.as_os_str().len()))
+            .next()
     }
 }
