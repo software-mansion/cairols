@@ -18,6 +18,7 @@ mod both_runners;
 mod cairo_test;
 mod custom;
 mod no_runners;
+mod other_file;
 mod snforge;
 
 fn test_code_lens_snforge(cairo_code: &str) -> Report {
@@ -117,6 +118,19 @@ fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
         files {
             "Scarb.toml" => scarb_toml,
             "src/lib.cairo" => cairo.clone(),
+            "src/foo.cairo" => r#"
+                #[test]
+                fn test_from_other_file() {}
+            "#,
+            "src/bar.cairo" => r#"
+                fn no_test_from_other_file() {}
+            "#,
+            "src/baz.cairo" => r#"
+                mod wrapper {
+                    #[test]
+                    fn nested_test_in_other_file() {}
+                }
+            "#,
         }
         client_capabilities = caps;
         workspace_configuration = config;
