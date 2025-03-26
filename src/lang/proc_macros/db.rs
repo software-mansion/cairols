@@ -5,8 +5,8 @@ use super::client::ServerStatus;
 use crate::lang::proc_macros::client::plain_request_response::{
     PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
 };
-use crate::lang::proc_macros::conversions::token_stream_v2_to_v1;
 use cairo_lang_macro::{TextSpan, Token, TokenStream, TokenTree};
+use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use scarb_proc_macro_server_types::methods::expand::{
     ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
@@ -77,7 +77,7 @@ pub fn get_attribute_expansion(
     db: &dyn ProcMacroGroup,
     params: ExpandAttributeParams,
 ) -> ProcMacroResult {
-    get_stored_attribute_expansion(db, params.clone().into()).unwrap_or_else(|| {
+    db.get_stored_attribute_expansion(params.clone().into()).unwrap_or_else(|| {
         let token_stream = params.item.clone();
 
         if let Some(client) = db.proc_macro_server_status().ready() {
