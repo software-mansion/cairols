@@ -103,3 +103,30 @@ fn enum_pattern() {
     completion_label = "Qwerty"
     "#);
 }
+
+#[test]
+fn multi_segment_path_partial() {
+    test_transform!(test_completions_text_edits,"
+    mod foo {
+        pub mod bar {
+            pub struct Baz {}
+        }
+        pub struct Boo {}
+    }
+
+    fn a() {
+        bar::B<caret>
+    }
+    ",@r#"
+    caret = """
+        bar::B<caret>
+    """
+
+    [[completions]]
+    completion_label = "Baz"
+    text_edits = ["""
+    use foo::bar;
+
+    """]
+    "#);
+}
