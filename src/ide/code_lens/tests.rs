@@ -250,9 +250,14 @@ fn collect_functions(db: &AnalysisDatabase, module: ModuleId) -> Vec<SyntaxStabl
 
     if let Ok(functions) = db.module_free_functions(module) {
         for function in functions.values() {
-            if let Some(test_attr) = function.find_attr(db, "test") {
-                result.push(test_attr.stable_ptr().untyped());
-            }
+            result.extend(
+                ["test", "snforge_internal_test_executable"]
+                    .iter()
+                    .filter_map(|test_attr| function.find_attr(db, test_attr))
+                    .map(|test_attr| test_attr.stable_ptr().untyped())
+                    // If for some weird reason we found both, push only first (prefer `#[test]`).
+                    .next(),
+            );
         }
     }
 
