@@ -24,6 +24,13 @@ expression: "normalize(&ls, output)"
             associated_item_constraints: true,
             coupons: true,
         },
+    },
+    Plugins {
+        builtin: [
+            Executable,
+            CairoTest,
+            Starknet,
+        ],
     }
     ```
 - `project1`: `["[ROOT]/project1/src/lib.cairo"]`
@@ -39,6 +46,13 @@ expression: "normalize(&ls, output)"
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [
+            Executable,
+            CairoTest,
+            Starknet,
+        ],
     }
     ```
 - `project2`: `["[ROOT]/project2/src/lib.cairo"]`
@@ -54,6 +68,13 @@ expression: "normalize(&ls, output)"
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [
+            Executable,
+            CairoTest,
+            Starknet,
+        ],
     }
     ```
 - `subproject`: `["[ROOT]/project2/subproject/src/lib.cairo"]`
@@ -69,5 +90,12 @@ expression: "normalize(&ls, output)"
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [
+            Executable,
+            CairoTest,
+            Starknet,
+        ],
     }
     ```

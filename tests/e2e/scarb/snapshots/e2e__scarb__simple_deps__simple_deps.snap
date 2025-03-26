@@ -46,6 +46,9 @@ expression: "normalize(&ls, analyzed_crates)"
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [],
     }
     ```
 - `b`: `["[ROOT]/b/src/lib.cairo"]`
@@ -83,6 +86,9 @@ expression: "normalize(&ls, analyzed_crates)"
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [],
     }
     ```
 - `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
@@ -115,5 +121,11 @@ expression: "normalize(&ls, analyzed_crates)"
             associated_item_constraints: true,
             coupons: true,
         },
+    },
+    Plugins {
+        builtin: [
+            CairoTest,
+            Starknet,
+        ],
     }
     ```

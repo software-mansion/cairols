@@ -42,6 +42,9 @@ analyzed_crates = '''
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [],
     }
     ```
 - `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
@@ -74,6 +77,12 @@ analyzed_crates = '''
             associated_item_constraints: true,
             coupons: true,
         },
+    },
+    Plugins {
+        builtin: [
+            CairoTest,
+            Starknet,
+        ],
     }
     ```
 '''
@@ -99,6 +108,12 @@ analyzed_crates_after_failed_metadata = '''
             associated_item_constraints: true,
             coupons: true,
         },
+    },
+    Plugins {
+        builtin: [
+            CairoTest,
+            Starknet,
+        ],
     }
     ```
 '''

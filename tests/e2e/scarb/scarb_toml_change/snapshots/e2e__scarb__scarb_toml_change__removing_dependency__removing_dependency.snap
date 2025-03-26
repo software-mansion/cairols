@@ -47,6 +47,9 @@ analyzed_crates = '''
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [],
     }
     ```
 - `b`: `["[ROOT]/b/src/lib.cairo"]`
@@ -84,6 +87,9 @@ analyzed_crates = '''
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [],
     }
     ```
 - `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
@@ -116,11 +122,17 @@ analyzed_crates = '''
             associated_item_constraints: true,
             coupons: true,
         },
+    },
+    Plugins {
+        builtin: [
+            CairoTest,
+            Starknet,
+        ],
     }
     ```
 '''
 analyzed_crates_diff = '''
-@@ -25,52 +25,10 @@
+@@ -25,55 +25,10 @@
              "a": DependencySettings {
                  discriminator: Some(
                      "a 0.1.0 (path+[ROOT_URL]a/Scarb.toml)",
@@ -140,6 +152,9 @@ analyzed_crates_diff = '''
 -            associated_item_constraints: false,
 -            coupons: false,
 -        },
+-    },
+-    Plugins {
+-        builtin: [],
 -    }
 -    ```
 -- `b`: `["[ROOT]/b/src/lib.cairo"]`

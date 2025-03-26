@@ -47,6 +47,9 @@ analyzed_crates = '''
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [],
     }
     ```
 - `b`: `["[ROOT]/b/src/lib.cairo"]`
@@ -85,6 +88,9 @@ analyzed_crates = '''
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [],
     }
     ```
 - `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
@@ -117,11 +123,17 @@ analyzed_crates = '''
             associated_item_constraints: true,
             coupons: true,
         },
+    },
+    Plugins {
+        builtin: [
+            CairoTest,
+            Starknet,
+        ],
     }
     ```
 '''
 analyzed_crates_diff = '''
-@@ -49,31 +49,30 @@
+@@ -52,31 +52,30 @@
          name: Some(
              "b",
          ),

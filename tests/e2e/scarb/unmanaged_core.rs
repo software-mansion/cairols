@@ -42,6 +42,13 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
                 associated_item_constraints: true,
                 coupons: true,
             },
+        },
+        Plugins {
+            builtin: [
+                Executable,
+                CairoTest,
+                Starknet,
+            ],
         }
         ```
     "##);

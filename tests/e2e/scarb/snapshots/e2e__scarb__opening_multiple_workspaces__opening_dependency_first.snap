@@ -1,6 +1,6 @@
 ---
 source: tests/e2e/scarb/opening_multiple_workspaces.rs
-description: "// → dep/Scarb.toml\n[package]\nname = \"dep\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dev-dependencies]\ndev_dep = { path = \"../dev_dep\" }\n\n// → dep/src/lib.cairo\n\n\n// → dev_dep/Scarb.toml\n[package]\nname = \"dev_dep\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n// → dev_dep/src/lib.cairo\n\n\n// → pkg/Scarb.toml\n[package]\nname = \"pkg\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[[target.starknet-contract]]\n\n[dependencies]\ndep = { path = \"../dep\" }\n\n// → pkg/src/lib.cairo\n"
+description: "// → dep/Scarb.toml\n[package]\nname = \"dep\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dev-dependencies]\ncairo_test = \"2\"\ndev_dep = { path = \"../dev_dep\" }\n\n// → dep/src/lib.cairo\n\n\n// → dev_dep/Scarb.toml\n[package]\nname = \"dev_dep\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n// → dev_dep/src/lib.cairo\n\n\n// → pkg/Scarb.toml\n[package]\nname = \"pkg\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[[target.starknet-contract]]\n\n[dependencies]\ndep = { path = \"../dep\" }\n\n// → pkg/src/lib.cairo\n"
 expression: "AnalyzedCratesResult { analyzed_crates, analyzed_crates_diff }"
 ---
 analyzed_crates = '''
@@ -36,6 +36,12 @@ analyzed_crates = '''
             associated_item_constraints: true,
             coupons: true,
         },
+    },
+    Plugins {
+        builtin: [
+            CairoTest,
+            Starknet,
+        ],
     }
     ```
 - `dep`: `["[ROOT]/dep/src/lib.cairo"]`
@@ -79,6 +85,11 @@ analyzed_crates = '''
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [
+            CairoTest,
+        ],
     }
     ```
 - `dev_dep`: `["[ROOT]/dev_dep/src/lib.cairo"]`
@@ -115,6 +126,9 @@ analyzed_crates = '''
             associated_item_constraints: false,
             coupons: false,
         },
+    },
+    Plugins {
+        builtin: [],
     }
     ```
 '''
@@ -149,9 +163,9 @@ analyzed_crates_diff = '''
              associated_item_constraints: true,
              coupons: true,
          },
-     }
-     ```
-@@ -37,30 +38,31 @@
+     },
+     Plugins {
+@@ -43,30 +44,31 @@
      CrateSettings {
          name: Some(
              "dep",
@@ -183,10 +197,7 @@ analyzed_crates_diff = '''
              },
              "dev_dep": DependencySettings {
                  discriminator: Some(
-@@ -99,15 +101,58 @@
-                 discriminator: None,
-             },
-             "dev_dep": DependencySettings {
+@@ -113,15 +115,61 @@
                  discriminator: Some(
                      "dev_dep 0.1.0 (path+[ROOT_URL]dev_dep/Scarb.toml)",
                  ),
@@ -197,6 +208,9 @@ analyzed_crates_diff = '''
              associated_item_constraints: false,
              coupons: false,
          },
+     },
+     Plugins {
+         builtin: [],
      }
      ```
 +- `pkg`: `["[ROOT]/pkg/src/lib.cairo"]`
@@ -240,6 +254,9 @@ analyzed_crates_diff = '''
 +            associated_item_constraints: false,
 +            coupons: false,
 +        },
++    },
++    Plugins {
++        builtin: [],
 +    }
 +    ```
 '''

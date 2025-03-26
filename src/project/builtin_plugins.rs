@@ -13,7 +13,7 @@ use itertools::chain;
 use scarb_metadata::{CompilationUnitCairoPluginMetadata, Metadata};
 
 /// Representation of known built-in plugins available in the Cairo compiler.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum BuiltinPlugin {
     AssertMacros,
     Executable,
