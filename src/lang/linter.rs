@@ -1,6 +1,6 @@
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, SemanticGroupEx};
-use cairo_lint::plugin::cairo_lint_plugin_suite;
+use cairo_lint::plugin::cairo_lint_plugin_suite_without_metadata_validation;
 
 use super::db::AnalysisDatabase;
 use super::plugins::AnalyzerPluginType;
@@ -29,8 +29,11 @@ fn enable_cairo_lint_plugin_for_all_crates(
     db: &mut AnalysisDatabase,
     configs_registry: &ConfigsRegistry,
 ) {
-    let default_cairo_lint_analyzer_plugins =
-        db.intern_plugin_suite(cairo_lint_plugin_suite(Default::default())).analyzer_plugins;
+    let default_cairo_lint_analyzer_plugins = db
+        .intern_plugin_suite(
+            cairo_lint_plugin_suite_without_metadata_validation(Default::default()),
+        )
+        .analyzer_plugins;
     let default_analyzer_plugins = db.default_analyzer_plugins();
 
     if !default_analyzer_plugins
@@ -70,9 +73,11 @@ fn enable_cairo_lint_plugin_for_all_crates(
         let new_analyzer_plugins = crate_analyzer_plugins
             .iter()
             .chain(
-                db.intern_plugin_suite(cairo_lint_plugin_suite(lint_config))
-                    .analyzer_plugins
-                    .iter(),
+                db.intern_plugin_suite(cairo_lint_plugin_suite_without_metadata_validation(
+                    lint_config,
+                ))
+                .analyzer_plugins
+                .iter(),
             )
             .cloned()
             .collect();

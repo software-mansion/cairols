@@ -49,7 +49,7 @@ cairo-lang-syntax = "*"
 cairo-lang-syntax-codegen = "*"
 cairo-lang-test-plugin = "*"
 cairo-lang-utils = "*"
-cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "92996d9adc261818b45b15bd5bcf79c911b13a02" }
+cairo-lint = "*"
 colored = "3.0.0"
 convert_case = "0.8.0"
 crossbeam = "0.8.4"
@@ -125,6 +125,7 @@ cairo-lang-syntax-codegen = { git = "https://github.com/starkware-libs/cairo", r
 cairo-lang-test-plugin = { git = "https://github.com/starkware-libs/cairo", rev = "2520a55fb4be78625dc95c7888ea8d3252fba2ce" }
 cairo-lang-test-utils = { git = "https://github.com/starkware-libs/cairo", rev = "2520a55fb4be78625dc95c7888ea8d3252fba2ce" }
 cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", rev = "2520a55fb4be78625dc95c7888ea8d3252fba2ce" }
+cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "b545bc9be6ae981dd9089579f8e484bb06bde5d9" }
 
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,
