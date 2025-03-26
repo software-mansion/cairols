@@ -2,8 +2,10 @@ use cairo_language_server::lsp;
 use indoc::indoc;
 use lsp_types::notification::DidChangeWatchedFiles;
 use lsp_types::{DidChangeWatchedFilesParams, FileChangeType, FileEvent};
+use toml::toml;
 
 use super::caps;
+use crate::support::normalize::normalize;
 use crate::support::sandbox;
 
 #[test]
@@ -24,6 +26,7 @@ fn test_invalid_scarb_toml_change() {
     assert!(ls.open_and_wait_for_diagnostics("src/lib.cairo").is_empty());
 
     let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    let analyzed_crates = normalize(&ls, analyzed_crates);
 
     ls.edit_file(
         "Scarb.toml",
@@ -40,6 +43,11 @@ fn test_invalid_scarb_toml_change() {
     ls.wait_for_project_update();
 
     let analyzed_crates_after_failed_metadata = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    let analyzed_crates_after_failed_metadata =
+        normalize(&ls, analyzed_crates_after_failed_metadata);
 
-    assert_eq!(analyzed_crates, analyzed_crates_after_failed_metadata);
+    insta::assert_toml_snapshot!(toml! {
+        analyzed_crates = analyzed_crates
+        analyzed_crates_after_failed_metadata = analyzed_crates_after_failed_metadata
+    });
 }

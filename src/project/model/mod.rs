@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateLongId;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -38,11 +39,13 @@ impl ProjectModel {
         self.manifests_of_members_from_loaded_workspaces.snapshot()
     }
 
-    pub fn clear_loaded_workspaces(&mut self) {
+    pub fn clear_loaded_workspaces(&mut self, db: &mut AnalysisDatabase) {
         self.loaded_workspaces.clear();
         self.loaded_crates.clear();
         self.manifests_of_members_from_loaded_workspaces.clear();
         self.configs_registry.clear();
+
+        db.set_crate_configs(Default::default());
     }
 
     pub fn load_workspace(
@@ -91,6 +94,8 @@ impl ProjectModel {
                 paths.remove(workspace_dir);
             });
         }
+
+        loaded_crates.retain(|_, paths| !paths.is_empty());
     }
 
     fn add_crates(&mut self, workspace_crates: HashMap<CrateLongId, Crate>, workspace_dir: &Path) {

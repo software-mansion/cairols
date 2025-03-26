@@ -1,15 +1,7 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-use anyhow::Context;
-use cairo_lang_compiler::db::validate_corelib;
-use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_project::ProjectConfig;
-use crossbeam::channel::{Receiver, Sender};
-use lsp_types::notification::ShowMessage;
-use lsp_types::{MessageType, ShowMessageParams};
-use tracing::{debug, error, warn};
-
+use crate::lang::db::AnalysisDatabase;
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::crate_data::CrateInfo;
 use crate::project::model::ProjectModel;
@@ -20,6 +12,14 @@ use crate::server::schedule::thread;
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
 use crate::state::{Snapshot, State};
 use crate::toolchain::scarb::ScarbToolchain;
+use anyhow::Context;
+use cairo_lang_compiler::db::validate_corelib;
+use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
+use cairo_lang_project::ProjectConfig;
+use crossbeam::channel::{Receiver, Sender};
+use lsp_types::notification::ShowMessage;
+use lsp_types::{MessageType, ShowMessageParams};
+use tracing::{debug, error, warn};
 
 pub use self::crate_data::Crate;
 pub use self::model::ConfigsRegistry;
@@ -84,8 +84,8 @@ impl ProjectController {
         })
     }
 
-    pub fn clear_loaded_workspaces(&mut self) {
-        self.model.clear_loaded_workspaces();
+    pub fn clear_loaded_workspaces(&mut self, db: &mut AnalysisDatabase) {
+        self.model.clear_loaded_workspaces(db);
     }
 
     /// Handles project update by applying necessary changes to the database.
