@@ -33,9 +33,16 @@ fn test_code_lens_snforge(cairo_code: &str) -> Report {
 
             [dependencies]
             snforge_std = "0.38.3"
+
+            [tool.scarb]
+            allow-prebuilt-plugins = ["snforge_std"]
             "#
         ),
-        Value::Object(Default::default()),
+        json!({
+            "cairo1": {
+                "enableProcMacros": true
+            }
+        }),
     )
 }
 
@@ -53,7 +60,11 @@ fn test_code_lens_cairo_test(cairo_code: &str) -> Report {
             cairo_test = "2.9.0"
             "#
         ),
-        Value::Object(Default::default()),
+        json!({
+            "cairo1": {
+                "enableProcMacros": true
+            }
+        }),
     )
 }
 
@@ -70,9 +81,16 @@ fn test_code_lens_both_runners(cairo_code: &str) -> Report {
             [dependencies]
             cairo_test = "2.9.0"
             snforge_std = "0.38.3"
+
+            [tool.scarb]
+            allow-prebuilt-plugins = ["snforge_std"]
             "#
         ),
-        Value::Object(Default::default()),
+        json!({
+            "cairo1": {
+                "enableProcMacros": true
+            }
+        }),
     )
 }
 
@@ -87,7 +105,11 @@ fn test_code_lens_no_runner(cairo_code: &str) -> Report {
             edition = "2024_07"
             "#
         ),
-        Value::Object(Default::default()),
+        json!({
+            "cairo1": {
+                "enableProcMacros": true
+            }
+        }),
     )
 }
 
@@ -104,6 +126,7 @@ fn test_code_lens_custom_runner(cairo_code: &str) -> Report {
         ),
         json!({
             "cairo1": {
+                "enableProcMacros": true,
                 "runTestCommand": "some random template ->{{TEST_PATH}}<- string",
                 "testRunner": "custom"
             }
@@ -132,6 +155,7 @@ fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
                 }
             "#,
         }
+        cwd = "./"; // Proc macros will fail if cwd is not set.
         client_capabilities = caps;
         workspace_configuration = config;
     };
@@ -141,7 +165,7 @@ fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
         Cursor::Selection(range) => range.start,
     };
 
-    ls.open_all_cairo_files_and_wait_for_project_update();
+    ls.open_and_wait_for_diagnostics_generation("src/lib.cairo");
 
     let lenses = ls.send_request::<CodeLensRequest>(CodeLensParams {
         text_document: ls.doc_id("src/lib.cairo"),
