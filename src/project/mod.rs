@@ -25,7 +25,7 @@ pub use self::crate_data::Crate;
 pub use self::model::ConfigsRegistry;
 pub use self::project_manifest_path::*;
 
-mod builtin_plugins;
+pub mod builtin_plugins;
 mod crate_data;
 mod model;
 mod project_manifest_path;
