@@ -120,12 +120,49 @@ analyzed_crates = '''
     ```
 '''
 analyzed_crates_diff = '''
-@@ -25,15 +25,10 @@
+@@ -25,52 +25,10 @@
              "a": DependencySettings {
                  discriminator: Some(
                      "a 0.1.0 (path+[ROOT_URL]a/Scarb.toml)",
                  ),
              },
+-            "b": DependencySettings {
+-                discriminator: Some(
+-                    "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)",
+-                ),
+-            },
+-            "core": DependencySettings {
+-                discriminator: None,
+-            },
+-        },
+-        experimental_features: ExperimentalFeaturesConfig {
+-            negative_impls: false,
+-            associated_item_constraints: false,
+-            coupons: false,
+-        },
+-    }
+-    ```
+-- `b`: `["[ROOT]/b/src/lib.cairo"]`
+-    ```rust
+-    CrateSettings {
+-        name: Some(
+-            "b",
+-        ),
+-        edition: V2024_07,
+-        version: Some(
+-            Version {
+-                major: 0,
+-                minor: 1,
+-                patch: 0,
+-            },
+-        ),
+-        cfg_set: Some(
+-            CfgSet(
+-                target: "lib",
+-                target: "test",
+-            ),
+-        ),
+-        dependencies: {
 -            "b": DependencySettings {
 -                discriminator: Some(
 -                    "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)",

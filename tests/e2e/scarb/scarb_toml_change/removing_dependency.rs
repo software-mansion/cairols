@@ -60,8 +60,6 @@ fn test_removing_dependency() {
     });
     ls.wait_for_project_update();
 
-    // FIXME(#90): `b` should disappear from the project model - `CrateId` representing `b`
-    //  should be removed from db.crate_configs().
     let analyzed_crates_after_dep_removal = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
     let analyzed_crates_after_dep_removal = normalize(&ls, analyzed_crates_after_dep_removal);
 
