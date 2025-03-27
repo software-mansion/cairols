@@ -7,9 +7,9 @@ use crate::{
     ide::completion::path::path_prefix_completions, lang::analysis_context::AnalysisContext,
 };
 use cairo_lang_defs::ids::GenericTypeId;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::NotFoundItemType;
 use cairo_lang_semantic::resolve::ResolvedGenericItem;
+use cairo_lang_semantic::{db::SemanticGroup, resolve::ResolutionContext};
 use cairo_lang_syntax::node::{
     Token, TypedSyntaxNode,
     ast::{PatternEnum, PatternIdentifier, PatternStruct, PatternStructParam},
@@ -31,7 +31,7 @@ pub fn struct_pattern_completions(
                 &mut Default::default(),
                 &pattern.path(db),
                 NotFoundItemType::Type,
-                None,
+                ResolutionContext::Default,
             );
         if let Ok(all_members) = db.struct_members(struct_item);
 
