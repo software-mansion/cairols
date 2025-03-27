@@ -153,7 +153,6 @@ fn self_type_member_method_call() {
     ```
     ---
     Returns true if `self` is equal to the multiplicative identity.
-
     # Examples
 
     ```cairo
