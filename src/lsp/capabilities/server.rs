@@ -25,13 +25,15 @@ use lsp_types::{
     ClientCapabilities, CodeActionProviderCapability, CodeLensOptions, CompletionOptions,
     CompletionRegistrationOptions, DefinitionOptions, DidChangeWatchedFilesRegistrationOptions,
     DocumentFilter, DocumentHighlightOptions, ExecuteCommandOptions,
-    ExecuteCommandRegistrationOptions, FileSystemWatcher, GlobPattern, HoverProviderCapability,
-    HoverRegistrationOptions, OneOf, ReferencesOptions, Registration, RenameOptions, SaveOptions,
-    SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
-    SemanticTokensRegistrationOptions, ServerCapabilities, TextDocumentChangeRegistrationOptions,
-    TextDocumentRegistrationOptions, TextDocumentSaveRegistrationOptions,
-    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
-    TextDocumentSyncSaveOptions,
+    ExecuteCommandRegistrationOptions, FileOperationFilter, FileOperationPattern,
+    FileOperationPatternKind, FileOperationRegistrationOptions, FileSystemWatcher, GlobPattern,
+    HoverProviderCapability, HoverRegistrationOptions, OneOf, ReferencesOptions, Registration,
+    RenameOptions, SaveOptions, SemanticTokensFullOptions, SemanticTokensLegend,
+    SemanticTokensOptions, SemanticTokensRegistrationOptions, ServerCapabilities,
+    TextDocumentChangeRegistrationOptions, TextDocumentRegistrationOptions,
+    TextDocumentSaveRegistrationOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
+    TextDocumentSyncOptions, TextDocumentSyncSaveOptions,
+    WorkspaceFileOperationsServerCapabilities, WorkspaceServerCapabilities,
 };
 use missing_lsp_types::{
     CodeActionRegistrationOptions, CodeLensRegistrationOptions, DefinitionRegistrationOptions,
@@ -47,6 +49,34 @@ use crate::lsp::ext::ViewSyntaxTree;
 /// Returns capabilities the server wants to register statically.
 pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCapabilities {
     ServerCapabilities {
+        workspace: client_capabilities.workspace_will_rename_files_support().then(|| {
+            WorkspaceServerCapabilities {
+                file_operations: Some(WorkspaceFileOperationsServerCapabilities {
+                    will_rename: Some(FileOperationRegistrationOptions {
+                        filters: vec![
+                            FileOperationFilter {
+                                scheme: Some(String::from("file")),
+                                pattern: FileOperationPattern {
+                                    glob: String::from("**/*.cairo"),
+                                    matches: Some(FileOperationPatternKind::File),
+                                    options: None,
+                                },
+                            },
+                            FileOperationFilter {
+                                scheme: Some(String::from("file")),
+                                pattern: FileOperationPattern {
+                                    glob: String::from("**"),
+                                    matches: Some(FileOperationPatternKind::Folder),
+                                    options: None,
+                                },
+                            },
+                        ],
+                    }),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }
+        }),
         text_document_sync: client_capabilities
             .text_document_synchronization_dynamic_registration()
             .not()
