@@ -229,9 +229,11 @@ fn has_any_test(db: &AnalysisDatabase, module: ModuleId) -> bool {
 
     let Ok(modules) = db.module_submodules_ids(module) else { return false };
 
-    modules.iter().copied().map(ModuleId::Submodule).any(|submodule| {
-        collect_functions(db, submodule).is_empty().not() || has_any_test(db, submodule)
-    })
+    modules
+        .iter()
+        .copied()
+        .map(ModuleId::Submodule)
+        .any(|submodule| collect_functions(db, submodule).is_empty().not())
 }
 
 fn get_position(db: &AnalysisDatabase, file: FileId, ptr: SyntaxStablePtrId) -> Option<Position> {
