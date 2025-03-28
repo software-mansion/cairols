@@ -266,7 +266,7 @@ impl ProcMacroClientController {
 
                 client.start_initialize();
 
-                db.set_proc_macro_server_status(ServerStatus::Starting(Arc::new(client)));
+                self.set_proc_macro_server_status(db, ServerStatus::Starting(Arc::new(client)));
             }
             Err(err) => {
                 error!("spawning proc-macro-server failed: {err:?}");
