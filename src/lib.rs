@@ -425,7 +425,7 @@ impl Backend {
 
     /// Reload config and update project model for all open files.
     fn reload(state: &mut State, requester: &mut Requester<'_>) -> LSPResult<()> {
-        state.project_controller.clear_loaded_workspaces(&mut state.db);
+        state.project_controller.clear_loaded_workspaces();
         state.config.reload(requester, &state.client_capabilities)?;
 
         for uri in state.open_files.iter() {

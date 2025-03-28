@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-use crate::lang::db::AnalysisDatabase;
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::crate_data::CrateInfo;
 use crate::project::model::ProjectModel;
@@ -84,8 +83,8 @@ impl ProjectController {
         })
     }
 
-    pub fn clear_loaded_workspaces(&mut self, db: &mut AnalysisDatabase) {
-        self.model.clear_loaded_workspaces(db);
+    pub fn clear_loaded_workspaces(&mut self) {
+        self.model.clear_loaded_workspaces();
     }
 
     /// Handles project update by applying necessary changes to the database.

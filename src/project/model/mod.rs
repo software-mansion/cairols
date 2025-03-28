@@ -28,6 +28,10 @@ pub struct ProjectModel {
     /// Used to determine when we can skip calling `scarb metadata` to update a project model.
     manifests_of_members_from_loaded_workspaces: Owned<HashSet<ManifestPath>>,
     configs_registry: Owned<ConfigsRegistry>,
+    /// Used to delay removing of crates from the db until the next workspace is loaded.
+    /// It is done to ensure diagnostics are not randomly cleared after a project manifest change/
+    /// db swap/reload workspace command.
+    remove_crates_from_db_on_next_update: bool,
 }
 
 impl ProjectModel {
@@ -39,13 +43,13 @@ impl ProjectModel {
         self.manifests_of_members_from_loaded_workspaces.snapshot()
     }
 
-    pub fn clear_loaded_workspaces(&mut self, db: &mut AnalysisDatabase) {
+    pub fn clear_loaded_workspaces(&mut self) {
         self.loaded_workspaces.clear();
         self.loaded_crates.clear();
         self.manifests_of_members_from_loaded_workspaces.clear();
         self.configs_registry.clear();
 
-        db.set_crate_configs(Default::default());
+        self.remove_crates_from_db_on_next_update = true;
     }
 
     pub fn load_workspace(
@@ -56,6 +60,11 @@ impl ProjectModel {
         proc_macro_controller: &ProcMacroClientController,
         enable_linter: bool,
     ) {
+        if self.remove_crates_from_db_on_next_update {
+            self.remove_crates_from_db_on_next_update = false;
+            db.set_crate_configs(Default::default());
+        }
+
         let workspace_crates = workspace_crates
             .into_iter()
             .map(|cr_info| {
