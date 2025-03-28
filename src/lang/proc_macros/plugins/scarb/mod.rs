@@ -20,19 +20,17 @@ trait FromSyntaxNode {
 
 impl FromSyntaxNode for TokenStreamV2 {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: &impl TypedSyntaxNode) -> Self {
-        Self::from_primitive_token_stream(node.as_syntax_node().descendants(db).map(
-            |syntax_node| {
-                let content = syntax_node.get_text(db);
-                let span = syntax_node.span(db);
-                PrimitiveToken {
-                    content,
-                    span: Some(PrimitiveSpan {
-                        start: span.start.as_u32() as usize,
-                        end: span.end.as_u32() as usize,
-                    }),
-                }
-            },
-        ))
+        Self::from_primitive_token_stream(node.as_syntax_node().tokens(db).map(|syntax_node| {
+            let content = syntax_node.get_text(db);
+            let span = syntax_node.span(db);
+            PrimitiveToken {
+                content,
+                span: Some(PrimitiveSpan {
+                    start: span.start.as_u32() as usize,
+                    end: span.end.as_u32() as usize,
+                }),
+            }
+        }))
     }
 }
 
