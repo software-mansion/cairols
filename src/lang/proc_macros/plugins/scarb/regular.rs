@@ -1,8 +1,18 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
+use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
-use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_macro::{TokenStream, TokenStreamMetadata};
+use std::collections::HashSet;
+
+use super::{FromSyntaxNode, into_cairo_diagnostics};
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::proc_macros::db::{get_attribute_expansion, get_derive_expansion};
+use crate::lang::proc_macros::plugins::scarb::conversion::{
+    CallSiteLocation, code_mapping_from_proc_macro_server,
+};
+use crate::lang::proc_macros::plugins::scarb::types::TokenStreamBuilder;
+use cairo_lang_filesystem::span::TextSpan as CairoTextSpan;
+use cairo_lang_macro::{AllocationContext, TextSpan, TokenStream, TokenStreamMetadata};
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::ast::{
     self, Expr, ImplItem, MaybeImplBody, MaybeTraitBody, PathSegment,
@@ -10,16 +20,13 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
 use convert_case::{Case, Casing};
+use itertools::Itertools;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use scarb_proc_macro_server_types::methods::expand::{ExpandAttributeParams, ExpandDeriveParams};
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
 use scarb_stable_hash::StableHasher;
-
-use super::{FromSyntaxNode, into_cairo_diagnostics};
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::proc_macros::db::ProcMacroGroup;
 
 const DERIVE_ATTR: &str = "derive";
 
@@ -32,8 +39,9 @@ pub fn macro_generate_code(
     item_ast: ast::ModuleItem,
     defined_attributes: &[String],
     defined_derives: &[String],
+    metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
 ) -> PluginResult {
-    let stream_metadata = calculate_metadata(db, item_ast.clone());
+    let stream_metadata = calculate_metadata(db, item_ast.clone(), metadata.edition);
 
     // Handle inner functions.
     if let InnerAttrExpansionResult::Some(result) =
@@ -45,18 +53,20 @@ pub fn macro_generate_code(
     // Expand first attribute.
     // Note that we only expand the first attribute, as we assume that the rest of the attributes
     // will be handled by a subsequent call to this function.
-    let (input, body) = parse_attribute(db, defined_attributes, item_ast.clone());
+    let ctx = AllocationContext::default();
+    let (input, body) = parse_attribute(db, Vec::from(defined_attributes), item_ast.clone(), &ctx);
 
     if let Some(result) = match input {
-        AttrExpansionFound::Last { name, args, stable_ptr } => Some((name, args, stable_ptr, true)),
-        AttrExpansionFound::Some { name, args, stable_ptr } => {
-            Some((name, args, stable_ptr, false))
+        AttrExpansionFound::Last(AttrExpansionArgs { name, args, call_site }) => {
+            Some((name, args, call_site, true))
+        }
+        AttrExpansionFound::Some(AttrExpansionArgs { name, args, call_site }) => {
+            Some((name, args, call_site, false))
         }
         AttrExpansionFound::None => None,
     }
-    .map(|(name, args, stable_ptr, last)| {
+    .map(|(name, args, call_site, last)| {
         let token_stream = body.with_metadata(stream_metadata.clone());
-        let span = item_ast.as_syntax_node().span(db);
         expand_attribute(
             db,
             expansion_context.clone(),
@@ -64,8 +74,8 @@ pub fn macro_generate_code(
             last,
             args,
             token_stream,
-            span,
-            stable_ptr,
+            call_site,
+            item_ast.as_syntax_node(),
         )
     }) {
         return result;
@@ -95,7 +105,9 @@ fn expand_inner_attr(
 ) -> InnerAttrExpansionResult {
     let mut context = InnerAttrExpansionContext::new();
     let mut item_builder = PatchBuilder::new(db, &item_ast);
+    let mut used_attr_names: HashSet<String> = Default::default();
     let mut all_none = true;
+    let ctx = AllocationContext::default();
 
     match item_ast.clone() {
         ast::ModuleItem::Trait(trait_ast) => {
@@ -121,13 +133,21 @@ fn expand_inner_attr(
                             continue;
                         };
 
-                        let mut func_builder = PatchBuilder::new(db, func);
+                        let mut token_stream_builder = TokenStreamBuilder::new(db);
                         let attrs = func.attributes(db).elements(db);
-                        let found =
-                            parse_attrs(db, defined_attributes, &mut func_builder, attrs, func);
-                        func_builder.add_node(func.declaration(db).as_syntax_node());
-                        func_builder.add_node(func.body(db).as_syntax_node());
-                        let token_stream = TokenStream::new(func_builder.build().0);
+                        let found = parse_attrs(
+                            db,
+                            defined_attributes,
+                            &mut token_stream_builder,
+                            attrs,
+                            &ctx,
+                        );
+                        if let Some(name) = found.as_name() {
+                            used_attr_names.insert(name);
+                        }
+                        token_stream_builder.add_node(func.declaration(db).as_syntax_node());
+                        token_stream_builder.add_node(func.body(db).as_syntax_node());
+                        let token_stream = token_stream_builder.build(&ctx);
 
                         all_none = all_none
                             && do_expand_inner_attr(
@@ -147,7 +167,11 @@ fn expand_inner_attr(
                         InnerAttrExpansionResult::None
                     } else {
                         let (code, mappings) = item_builder.build();
-                        InnerAttrExpansionResult::Some(context.into_result(code, mappings))
+                        InnerAttrExpansionResult::Some(context.into_result(
+                            code,
+                            mappings,
+                            used_attr_names.into_iter().collect(),
+                        ))
                     }
                 }
             }
@@ -177,14 +201,22 @@ fn expand_inner_attr(
                             continue;
                         };
 
-                        let mut func_builder = PatchBuilder::new(db, &func);
+                        let mut token_stream_builder = TokenStreamBuilder::new(db);
                         let attrs = func.attributes(db).elements(db);
-                        let found =
-                            parse_attrs(db, defined_attributes, &mut func_builder, attrs, &func);
-                        func_builder.add_node(func.visibility(db).as_syntax_node());
-                        func_builder.add_node(func.declaration(db).as_syntax_node());
-                        func_builder.add_node(func.body(db).as_syntax_node());
-                        let token_stream = TokenStream::new(func_builder.build().0);
+                        let found = parse_attrs(
+                            db,
+                            defined_attributes,
+                            &mut token_stream_builder,
+                            attrs,
+                            &ctx,
+                        );
+                        if let Some(name) = found.as_name() {
+                            used_attr_names.insert(name);
+                        }
+                        token_stream_builder.add_node(func.visibility(db).as_syntax_node());
+                        token_stream_builder.add_node(func.declaration(db).as_syntax_node());
+                        token_stream_builder.add_node(func.body(db).as_syntax_node());
+                        let token_stream = token_stream_builder.build(&ctx);
                         all_none = all_none
                             && do_expand_inner_attr(
                                 db,
@@ -203,7 +235,11 @@ fn expand_inner_attr(
                         InnerAttrExpansionResult::None
                     } else {
                         let (code, mappings) = item_builder.build();
-                        InnerAttrExpansionResult::Some(context.into_result(code, mappings))
+                        InnerAttrExpansionResult::Some(context.into_result(
+                            code,
+                            mappings,
+                            used_attr_names.into_iter().collect(),
+                        ))
                     }
                 }
             }
@@ -222,14 +258,14 @@ fn do_expand_inner_attr(
     token_stream: TokenStream,
 ) -> bool {
     let mut all_none = true;
-    let (name, args, stable_ptr) = match found {
-        AttrExpansionFound::Last { name, args, stable_ptr } => {
+    let (name, args, call_site) = match found {
+        AttrExpansionFound::Last(AttrExpansionArgs { name, args, call_site }) => {
             all_none = false;
-            (name, args, stable_ptr)
+            (name, args, call_site)
         }
-        AttrExpansionFound::Some { name, args, stable_ptr } => {
+        AttrExpansionFound::Some(AttrExpansionArgs { name, args, call_site }) => {
             all_none = false;
-            (name, args, stable_ptr)
+            (name, args, call_site)
         }
         AttrExpansionFound::None => {
             item_builder.add_node(func.as_syntax_node());
@@ -237,14 +273,18 @@ fn do_expand_inner_attr(
         }
     };
 
-    let result = db.get_attribute_expansion(ExpandAttributeParams {
-        context: expansion_context,
-        attr: name,
-        args: args.clone(),
-        item: token_stream.clone(),
-    });
+    let result = get_attribute_expansion(
+        db,
+        ExpandAttributeParams {
+            context: expansion_context,
+            attr: name,
+            args: args.clone(),
+            item: token_stream.clone(),
+            call_site: call_site.span,
+        },
+    );
 
-    let expanded = context.register_result(token_stream.to_string(), result, stable_ptr);
+    let expanded = context.register_result(token_stream.to_string(), result, call_site.stable_ptr);
     item_builder.add_modified(RewriteNode::Mapped {
         origin: func.as_syntax_node().span(db),
         node: Box::new(RewriteNode::Text(expanded.to_string())),
@@ -279,14 +319,27 @@ impl InnerAttrExpansionContext {
 
         expanded
     }
-    pub fn into_result(self, expanded: String, code_mappings: Vec<CodeMapping>) -> PluginResult {
+    pub fn into_result(
+        self,
+        expanded: String,
+        code_mappings: Vec<CodeMapping>,
+        attr_names: Vec<String>,
+    ) -> PluginResult {
+        let msg = if attr_names.len() == 1 {
+            "the attribute macro"
+        } else {
+            "one of the attribute macros"
+        };
+        let derive_names = attr_names.iter().map(ToString::to_string).join("`, `");
+        let note = format!("this error originates in {msg}: `{derive_names}`");
+
         PluginResult {
             code: Some(PluginGeneratedFile {
                 name: "proc_attr_inner".into(),
                 content: expanded,
                 aux_data: None,
                 code_mappings,
-                diagnostics_note: Default::default(),
+                diagnostics_note: Some(note),
             }),
             diagnostics: self.diagnostics,
             remove_original_item: true,
@@ -299,86 +352,148 @@ enum InnerAttrExpansionResult {
     Some(PluginResult),
 }
 
+pub enum AttrExpansionFound {
+    Some(AttrExpansionArgs),
+    Last(AttrExpansionArgs),
+    None,
+}
+
+pub struct AttrExpansionArgs {
+    pub name: String,
+    pub args: TokenStream,
+    pub call_site: CallSiteLocation,
+}
+
+impl AttrExpansionFound {
+    pub fn as_name(&self) -> Option<String> {
+        match self {
+            AttrExpansionFound::Some(AttrExpansionArgs { name, .. })
+            | AttrExpansionFound::Last(AttrExpansionArgs { name, .. }) => Some(name.clone()),
+            AttrExpansionFound::None => None,
+        }
+    }
+}
+
 /// Find first attribute procedural macros that should be expanded.
 ///
 /// Remove the attribute from the code.
-fn parse_attribute(
+pub(crate) fn parse_attribute(
     db: &dyn SyntaxGroup,
-    defined_attributes: &[String],
+    defined_attributes: Vec<String>,
     item_ast: ast::ModuleItem,
+    ctx: &AllocationContext,
 ) -> (AttrExpansionFound, TokenStream) {
-    let mut item_builder = PatchBuilder::new(db, &item_ast);
+    let mut token_stream_builder = TokenStreamBuilder::new(db);
     let input = match item_ast.clone() {
-        ast::ModuleItem::Struct(struct_ast) => {
-            let attrs = struct_ast.attributes(db).elements(db);
+        ast::ModuleItem::Trait(trait_ast) => {
+            let attrs = trait_ast.attributes(db).elements(db);
             let expansion =
-                parse_attrs(db, defined_attributes, &mut item_builder, attrs, &item_ast);
-            item_builder.add_node(struct_ast.visibility(db).as_syntax_node());
-            item_builder.add_node(struct_ast.struct_kw(db).as_syntax_node());
-            item_builder.add_node(struct_ast.name(db).as_syntax_node());
-            item_builder.add_node(struct_ast.generic_params(db).as_syntax_node());
-            item_builder.add_node(struct_ast.lbrace(db).as_syntax_node());
-            item_builder.add_node(struct_ast.members(db).as_syntax_node());
-            item_builder.add_node(struct_ast.rbrace(db).as_syntax_node());
+                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
+            token_stream_builder.add_node(trait_ast.visibility(db).as_syntax_node());
+            token_stream_builder.add_node(trait_ast.trait_kw(db).as_syntax_node());
+            token_stream_builder.add_node(trait_ast.name(db).as_syntax_node());
+            token_stream_builder.add_node(trait_ast.generic_params(db).as_syntax_node());
+            token_stream_builder.add_node(trait_ast.body(db).as_syntax_node());
             expansion
         }
-        ast::ModuleItem::Enum(enum_ast) => {
-            let attrs = enum_ast.attributes(db).elements(db);
+        ast::ModuleItem::Impl(impl_ast) => {
+            let attrs = impl_ast.attributes(db).elements(db);
             let expansion =
-                parse_attrs(db, defined_attributes, &mut item_builder, attrs, &item_ast);
-            item_builder.add_node(enum_ast.visibility(db).as_syntax_node());
-            item_builder.add_node(enum_ast.enum_kw(db).as_syntax_node());
-            item_builder.add_node(enum_ast.name(db).as_syntax_node());
-            item_builder.add_node(enum_ast.generic_params(db).as_syntax_node());
-            item_builder.add_node(enum_ast.lbrace(db).as_syntax_node());
-            item_builder.add_node(enum_ast.variants(db).as_syntax_node());
-            item_builder.add_node(enum_ast.rbrace(db).as_syntax_node());
+                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
+            token_stream_builder.add_node(impl_ast.visibility(db).as_syntax_node());
+            token_stream_builder.add_node(impl_ast.impl_kw(db).as_syntax_node());
+            token_stream_builder.add_node(impl_ast.name(db).as_syntax_node());
+            token_stream_builder.add_node(impl_ast.generic_params(db).as_syntax_node());
+            token_stream_builder.add_node(impl_ast.of_kw(db).as_syntax_node());
+            token_stream_builder.add_node(impl_ast.trait_path(db).as_syntax_node());
+            token_stream_builder.add_node(impl_ast.body(db).as_syntax_node());
             expansion
         }
-        ast::ModuleItem::ExternType(extern_type_ast) => {
-            let attrs = extern_type_ast.attributes(db).elements(db);
+        ast::ModuleItem::Module(module_ast) => {
+            let attrs = module_ast.attributes(db).elements(db);
             let expansion =
-                parse_attrs(db, defined_attributes, &mut item_builder, attrs, &item_ast);
-            item_builder.add_node(extern_type_ast.visibility(db).as_syntax_node());
-            item_builder.add_node(extern_type_ast.extern_kw(db).as_syntax_node());
-            item_builder.add_node(extern_type_ast.type_kw(db).as_syntax_node());
-            item_builder.add_node(extern_type_ast.name(db).as_syntax_node());
-            item_builder.add_node(extern_type_ast.generic_params(db).as_syntax_node());
-            item_builder.add_node(extern_type_ast.semicolon(db).as_syntax_node());
-            expansion
-        }
-        ast::ModuleItem::ExternFunction(extern_func_ast) => {
-            let attrs = extern_func_ast.attributes(db).elements(db);
-            let expansion =
-                parse_attrs(db, defined_attributes, &mut item_builder, attrs, &item_ast);
-            item_builder.add_node(extern_func_ast.visibility(db).as_syntax_node());
-            item_builder.add_node(extern_func_ast.extern_kw(db).as_syntax_node());
-            item_builder.add_node(extern_func_ast.declaration(db).as_syntax_node());
-            item_builder.add_node(extern_func_ast.semicolon(db).as_syntax_node());
+                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
+            token_stream_builder.add_node(module_ast.visibility(db).as_syntax_node());
+            token_stream_builder.add_node(module_ast.module_kw(db).as_syntax_node());
+            token_stream_builder.add_node(module_ast.name(db).as_syntax_node());
+            token_stream_builder.add_node(module_ast.body(db).as_syntax_node());
             expansion
         }
         ast::ModuleItem::FreeFunction(free_func_ast) => {
             let attrs = free_func_ast.attributes(db).elements(db);
             let expansion =
-                parse_attrs(db, defined_attributes, &mut item_builder, attrs, &item_ast);
-            item_builder.add_node(free_func_ast.visibility(db).as_syntax_node());
-            item_builder.add_node(free_func_ast.declaration(db).as_syntax_node());
-            item_builder.add_node(free_func_ast.body(db).as_syntax_node());
+                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
+            token_stream_builder.add_node(free_func_ast.visibility(db).as_syntax_node());
+            token_stream_builder.add_node(free_func_ast.declaration(db).as_syntax_node());
+            token_stream_builder.add_node(free_func_ast.body(db).as_syntax_node());
+            expansion
+        }
+        ast::ModuleItem::ExternFunction(extern_func_ast) => {
+            let attrs = extern_func_ast.attributes(db).elements(db);
+            let expansion =
+                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
+            token_stream_builder.add_node(extern_func_ast.visibility(db).as_syntax_node());
+            token_stream_builder.add_node(extern_func_ast.extern_kw(db).as_syntax_node());
+            token_stream_builder.add_node(extern_func_ast.declaration(db).as_syntax_node());
+            token_stream_builder.add_node(extern_func_ast.semicolon(db).as_syntax_node());
+            expansion
+        }
+        ast::ModuleItem::ExternType(extern_type_ast) => {
+            let attrs = extern_type_ast.attributes(db).elements(db);
+            let expansion =
+                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
+            token_stream_builder.add_node(extern_type_ast.visibility(db).as_syntax_node());
+            token_stream_builder.add_node(extern_type_ast.extern_kw(db).as_syntax_node());
+            token_stream_builder.add_node(extern_type_ast.type_kw(db).as_syntax_node());
+            token_stream_builder.add_node(extern_type_ast.name(db).as_syntax_node());
+            token_stream_builder.add_node(extern_type_ast.generic_params(db).as_syntax_node());
+            token_stream_builder.add_node(extern_type_ast.semicolon(db).as_syntax_node());
+            expansion
+        }
+        ast::ModuleItem::Struct(struct_ast) => {
+            let attrs = struct_ast.attributes(db).elements(db);
+            let expansion =
+                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
+            token_stream_builder.add_node(struct_ast.visibility(db).as_syntax_node());
+            token_stream_builder.add_node(struct_ast.struct_kw(db).as_syntax_node());
+            token_stream_builder.add_node(struct_ast.name(db).as_syntax_node());
+            token_stream_builder.add_node(struct_ast.generic_params(db).as_syntax_node());
+            token_stream_builder.add_node(struct_ast.lbrace(db).as_syntax_node());
+            token_stream_builder.add_node(struct_ast.members(db).as_syntax_node());
+            token_stream_builder.add_node(struct_ast.rbrace(db).as_syntax_node());
+            expansion
+        }
+        ast::ModuleItem::Enum(enum_ast) => {
+            let attrs = enum_ast.attributes(db).elements(db);
+            let expansion =
+                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
+            token_stream_builder.add_node(enum_ast.visibility(db).as_syntax_node());
+            token_stream_builder.add_node(enum_ast.enum_kw(db).as_syntax_node());
+            token_stream_builder.add_node(enum_ast.name(db).as_syntax_node());
+            token_stream_builder.add_node(enum_ast.generic_params(db).as_syntax_node());
+            token_stream_builder.add_node(enum_ast.lbrace(db).as_syntax_node());
+            token_stream_builder.add_node(enum_ast.variants(db).as_syntax_node());
+            token_stream_builder.add_node(enum_ast.rbrace(db).as_syntax_node());
             expansion
         }
         _ => AttrExpansionFound::None,
     };
-    let token_stream = TokenStream::new(item_builder.build().0);
+    let token_stream = token_stream_builder.build(ctx);
     (input, token_stream)
 }
 
 fn parse_attrs(
     db: &dyn SyntaxGroup,
     defined_attributes: &[String],
-    builder: &mut PatchBuilder<'_>,
+    builder: &mut TokenStreamBuilder<'_>,
     attrs: Vec<ast::Attribute>,
-    item_ast: &impl TypedSyntaxNode,
+    ctx: &AllocationContext,
 ) -> AttrExpansionFound {
+    // This function parses attributes of the item,
+    // checking if those attributes correspond to a procedural macro that should be fired.
+    // The proc macro attribute found is removed from attributes list,
+    // while other attributes are appended to the `PathBuilder` passed as an argument.
+
     // Note this function does not affect the executable attributes,
     // as it only pulls `ExpansionKind::Attr` from the plugin.
     // This means that executable attributes will neither be removed from the item,
@@ -390,17 +505,16 @@ fn parse_attrs(
         if last {
             let structured_attr = attr.clone().structurize(db);
             let found = defined_attributes.contains(&structured_attr.id.into());
-
             if found {
                 if expansion.is_none() {
-                    let mut args_builder = PatchBuilder::new(db, item_ast);
+                    let mut args_builder = TokenStreamBuilder::new(db);
                     args_builder.add_node(attr.arguments(db).as_syntax_node());
-                    let args = TokenStream::new(args_builder.build().0);
-                    expansion = Some((
-                        attr.attr(db).as_syntax_node().get_text(db),
+                    let args = args_builder.build(ctx);
+                    expansion = Some(AttrExpansionArgs {
+                        name: attr.attr(db).as_syntax_node().get_text_without_trivia(db),
                         args,
-                        attr.stable_ptr().untyped(),
-                    ));
+                        call_site: CallSiteLocation::new(&attr, db),
+                    });
                     // Do not add the attribute for found expansion.
                     continue;
                 } else {
@@ -411,12 +525,8 @@ fn parse_attrs(
         builder.add_node(attr.as_syntax_node());
     }
     match (expansion, last) {
-        (Some((name, args, stable_ptr)), true) => {
-            AttrExpansionFound::Last { name, args, stable_ptr }
-        }
-        (Some((name, args, stable_ptr)), false) => {
-            AttrExpansionFound::Some { name, args, stable_ptr }
-        }
+        (Some(args), true) => AttrExpansionFound::Last(args),
+        (Some(args), false) => AttrExpansionFound::Some(args),
         (None, _) => AttrExpansionFound::None,
     }
 }
@@ -428,7 +538,7 @@ fn parse_derive(
     db: &dyn SyntaxGroup,
     defined_derives: &[String],
     item_ast: ast::ModuleItem,
-) -> Vec<String> {
+) -> Vec<(String, CallSiteLocation)> {
     let attrs = match item_ast {
         ast::ModuleItem::Struct(struct_ast) => Some(struct_ast.query_attr(db, DERIVE_ATTR)),
         ast::ModuleItem::Enum(enum_ast) => Some(enum_ast.query_attr(db, DERIVE_ATTR)),
@@ -455,7 +565,12 @@ fn parse_derive(
             let ident = segment.ident(db);
             let value = ident.text(db).to_string();
 
-            defined_derives.iter().find(|derive| derive == &&value.to_case(Case::Snake)).cloned()
+            let matching_derive = defined_derives
+                .iter()
+                .find(|derive| derive == &&value.to_case(Case::Snake))
+                .cloned()?;
+
+            Some((matching_derive, CallSiteLocation::new(segment, db)))
         })
         .collect()
 }
@@ -467,49 +582,65 @@ fn expand_derives(
     item_ast: ast::ModuleItem,
     stream_metadata: TokenStreamMetadata,
 ) -> Option<PluginResult> {
-    let stable_ptr = item_ast.clone().stable_ptr().untyped();
-    let span = item_ast.as_syntax_node().span(db);
     let token_stream =
         TokenStream::from_syntax_node(db, &item_ast).with_metadata(stream_metadata.clone());
 
     // All derives to be applied.
     let derives = parse_derive(db, defined_derives, item_ast.clone());
-    let any_derives = !derives.is_empty();
 
-    if any_derives {
-        // region: Modified scarb code
-        let result = db.get_derive_expansion(ExpandDeriveParams {
-            context: expansion_context,
-            derives,
-            item: token_stream,
-        });
-        // endregion
-
-        return Some(PluginResult {
-            code: if result.token_stream.is_empty() {
-                None
-            } else {
-                let content = result.token_stream.to_string();
-
-                Some(PluginGeneratedFile {
-                    name: "proc_macro_derive".into(),
-                    code_mappings: vec![CodeMapping {
-                        origin: CodeOrigin::Span(span),
-                        span: TextSpan::from_str(&content),
-                    }],
-                    content,
-                    aux_data: None,
-                    diagnostics_note: Default::default(),
-                })
-            },
-            diagnostics: into_cairo_diagnostics(result.diagnostics, stable_ptr),
-            // Note that we don't remove the original item here, unlike for attributes.
-            // We do not add the original code to the generated file either.
-            remove_original_item: false,
-        });
+    if derives.is_empty() {
+        // No derives found - returning early.
+        return None;
     }
 
-    None
+    let stable_ptr = derives[0].1.stable_ptr;
+    let span_db = stable_ptr.lookup(db).span(db);
+    let call_site = TextSpan { start: span_db.start.as_u32(), end: span_db.end.as_u32() };
+
+    let derive_names: Vec<String> = derives.into_iter().map(|a| a.0).collect();
+    // region: Modified scarb code
+    let result = get_derive_expansion(
+        db,
+        ExpandDeriveParams {
+            context: expansion_context,
+            derives: derive_names.clone(),
+            item: token_stream,
+            call_site,
+        },
+    );
+    // endregion
+
+    Some(PluginResult {
+        code: if result.token_stream.is_empty() {
+            None
+        } else {
+            let content = result.token_stream.to_string();
+            let msg = if derive_names.len() == 1 {
+                "the derive macro"
+            } else {
+                "one of the derive macros"
+            };
+            let derive_names = derive_names.iter().join("`, `");
+            let note = format!("this error originates in {msg}: `{derive_names}`");
+
+            let code_mappings = result
+                .code_mappings
+                .map(|x| x.into_iter().map(code_mapping_from_proc_macro_server).collect())
+                .unwrap_or_default();
+
+            Some(PluginGeneratedFile {
+                name: "proc_macro_derive".into(),
+                code_mappings,
+                content,
+                aux_data: None,
+                diagnostics_note: Some(note),
+            })
+        },
+        diagnostics: into_cairo_diagnostics(result.diagnostics, stable_ptr),
+        // Note that we don't remove the original item here, unlike for attributes.
+        // We do not add the original code to the generated file either.
+        remove_original_item: false,
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -520,23 +651,27 @@ fn expand_attribute(
     last: bool,
     args: TokenStream,
     token_stream: TokenStream,
-    span: TextSpan,
-    stable_ptr: SyntaxStablePtrId,
+    call_site: CallSiteLocation,
+    original_node: SyntaxNode,
 ) -> PluginResult {
     // region: Modified scarb code
-    let result = db.get_attribute_expansion(ExpandAttributeParams {
-        context: expansion_context,
-        args,
-        attr: name.clone(),
-        item: token_stream.clone(),
-    });
+    let result = get_attribute_expansion(
+        db,
+        ExpandAttributeParams {
+            context: expansion_context,
+            args,
+            attr: name.clone(),
+            item: token_stream.clone(),
+            call_site: call_site.span,
+        },
+    );
     // endregion
 
     // Handle token stream.
     if result.token_stream.is_empty() {
         // Remove original code
         return PluginResult {
-            diagnostics: into_cairo_diagnostics(result.diagnostics, stable_ptr),
+            diagnostics: into_cairo_diagnostics(result.diagnostics, call_site.stable_ptr),
             code: None,
             remove_original_item: true,
         };
@@ -556,7 +691,7 @@ fn expand_attribute(
         return PluginResult {
             code: None,
             remove_original_item: false,
-            diagnostics: into_cairo_diagnostics(result.diagnostics, stable_ptr),
+            diagnostics: into_cairo_diagnostics(result.diagnostics, call_site.stable_ptr),
         };
     }
 
@@ -565,33 +700,41 @@ fn expand_attribute(
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: file_name.into(),
-            code_mappings: vec![CodeMapping {
-                origin: CodeOrigin::Span(span),
-                span: TextSpan::from_str(&content),
-            }],
+            code_mappings: result
+                .code_mappings
+                .map(|x| x.into_iter().map(code_mapping_from_proc_macro_server).collect())
+                .unwrap_or_else(|| {
+                    vec![CodeMapping {
+                        origin: CodeOrigin::Span(original_node.span_without_trivia(db)),
+                        span: CairoTextSpan::from_str(&content),
+                    }]
+                }),
             content,
             aux_data: None,
-            diagnostics_note: Default::default(),
+            diagnostics_note: Some(format!(
+                "this error originates in the attribute macro: `{}`",
+                name
+            )),
         }),
-        diagnostics: into_cairo_diagnostics(result.diagnostics, stable_ptr),
+        diagnostics: into_cairo_diagnostics(result.diagnostics, call_site.stable_ptr),
         remove_original_item: true,
     }
 }
 
-enum AttrExpansionFound {
-    Some { name: String, args: TokenStream, stable_ptr: SyntaxStablePtrId },
-    None,
-    Last { name: String, args: TokenStream, stable_ptr: SyntaxStablePtrId },
-}
-
-fn calculate_metadata(db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> TokenStreamMetadata {
+fn calculate_metadata(
+    db: &dyn SyntaxGroup,
+    item_ast: ast::ModuleItem,
+    edition: Edition,
+) -> TokenStreamMetadata {
     fn short_hash(hashable: impl std::hash::Hash) -> String {
         let mut hasher = StableHasher::new();
         hashable.hash(&mut hasher);
         hasher.finish_as_short_hash()
     }
+
     let stable_ptr = item_ast.clone().stable_ptr().untyped();
     let file_path = stable_ptr.file_id(db).full_path(db.upcast());
     let file_id = short_hash(file_path.clone());
-    TokenStreamMetadata::new(file_path, file_id)
+    let edition = serde_json::to_value(edition).unwrap();
+    TokenStreamMetadata::new(file_path, file_id, edition)
 }
