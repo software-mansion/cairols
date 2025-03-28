@@ -45,7 +45,7 @@ fn text_span_from_proc_macro_server(
     proc_macro_server_text_span: InterfaceTextSpan,
 ) -> CairoTextSpan {
     CairoTextSpan {
-        start: text_offset_from_proc_macro_server(proc_macro_server_text_span.end),
+        start: text_offset_from_proc_macro_server(proc_macro_server_text_span.start),
         end: text_offset_from_proc_macro_server(proc_macro_server_text_span.end),
     }
 }
