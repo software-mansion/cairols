@@ -582,7 +582,6 @@ fn expand_derives(
     item_ast: ast::ModuleItem,
     stream_metadata: TokenStreamMetadata,
 ) -> Option<PluginResult> {
-    let item_span = &item_ast.as_syntax_node().span(db);
     let token_stream =
         TokenStream::from_syntax_node(db, &item_ast).with_metadata(stream_metadata.clone());
 
@@ -624,17 +623,14 @@ fn expand_derives(
             let derive_names = derive_names.iter().join("`, `");
             let note = format!("this error originates in {msg}: `{derive_names}`");
 
+            let code_mappings = result
+                .code_mappings
+                .map(|x| x.into_iter().map(code_mapping_from_proc_macro_server).collect())
+                .unwrap_or_default();
+
             Some(PluginGeneratedFile {
                 name: "proc_macro_derive".into(),
-                code_mappings: result
-                    .code_mappings
-                    .map(|x| x.into_iter().map(code_mapping_from_proc_macro_server).collect())
-                    .unwrap_or_else(|| {
-                        vec![CodeMapping {
-                            origin: CodeOrigin::Span(*item_span),
-                            span: CairoTextSpan::from_str(&content),
-                        }]
-                    }),
+                code_mappings,
                 content,
                 aux_data: None,
                 diagnostics_note: Some(note),
