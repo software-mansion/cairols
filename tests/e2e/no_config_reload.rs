@@ -26,7 +26,6 @@ fn default_config_is_applied() {
 
                 [dependencies]
                 snforge_std = "0.38.0"
-                snforge_scarb_plugin = "0.38.0"
             "#),
             "src/lib.cairo" => indoc! {r#"
                 #[test]
