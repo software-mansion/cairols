@@ -40,7 +40,9 @@ cairo-lang-executable = "*"
 cairo-lang-filesystem = "*"
 cairo-lang-formatter = "*"
 cairo-lang-lowering = "*"
-cairo-lang-macro = "0.1.1"
+cairo-lang-macro = { git = "https://github.com/software-mansion/scarb.git", rev = "d8e5c90" }
+cairo-lang-macro-v1 = { version = "0.1", package = "cairo-lang-macro", features = ["serde"] }
+cairo-lang-primitive-token = "1.0.0"
 cairo-lang-parser = "*"
 cairo-lang-project = "*"
 cairo-lang-semantic = "*"
@@ -65,7 +67,7 @@ lsp-types = "=0.95.1"
 memchr = "2.7.4"
 salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
 scarb-metadata = "1.14.0"
-scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb", rev = "8caf288a0634e8f90323529bde3eac79c47b1fa4" }
+scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb.git", rev = "d8e5c90" }
 scarb-stable-hash = "1"
 semver = "1"
 serde = { version = "1", default-features = false, features = ["derive"] }

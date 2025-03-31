@@ -18,16 +18,20 @@ pub use status::ServerStatus;
 use tracing::error;
 
 use crate::ide::analysis_progress::ProcMacroServerTracker;
+use crate::lang::proc_macros::client::plain_request_response::{
+    PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
+};
 
 pub mod connection;
 mod id_generator;
+pub mod plain_request_response;
 pub mod status;
 
 #[derive(Debug)]
 pub enum RequestParams {
-    Attribute(ExpandAttributeParams),
-    Derive(ExpandDeriveParams),
-    Inline(ExpandInlineMacroParams),
+    Attribute(PlainExpandAttributeParams),
+    Derive(PlainExpandDeriveParams),
+    Inline(PlainExpandInlineParams),
 }
 
 pub struct ProcMacroClient {
@@ -55,17 +59,19 @@ impl ProcMacroClient {
 
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_attribute(&self, params: ExpandAttributeParams) {
-        self.send_request::<ExpandAttribute>(params, RequestParams::Attribute)
+        self.send_request::<ExpandAttribute>(params, |params| {
+            RequestParams::Attribute(params.into())
+        })
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_derives(&self, params: ExpandDeriveParams) {
-        self.send_request::<ExpandDerive>(params, RequestParams::Derive)
+        self.send_request::<ExpandDerive>(params, |params| RequestParams::Derive(params.into()))
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_inline_macros(&self, params: ExpandInlineMacroParams) {
-        self.send_request::<ExpandInline>(params, RequestParams::Inline)
+        self.send_request::<ExpandInline>(params, |params| RequestParams::Inline(params.into()))
     }
 
     #[tracing::instrument(level = "trace", skip_all)]

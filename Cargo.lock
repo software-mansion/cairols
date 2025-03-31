@@ -416,8 +416,22 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dda77fe9404e438edaa80c9acaf0d72260aa883ba433812d0a745f5a72f31881"
 dependencies = [
- "cairo-lang-macro-attributes",
- "cairo-lang-macro-stable",
+ "cairo-lang-macro-attributes 0.1.0",
+ "cairo-lang-macro-stable 1.0.0",
+ "linkme",
+ "serde",
+]
+
+[[package]]
+name = "cairo-lang-macro"
+version = "0.2.0"
+source = "git+https://github.com/software-mansion/scarb.git?rev=d8e5c90#d8e5c90bdab3844b7e0820cc795185dab2c62909"
+dependencies = [
+ "bumpalo",
+ "cairo-lang-macro-attributes 0.2.0",
+ "cairo-lang-macro-stable 2.0.0",
+ "cairo-lang-primitive-token",
+ "cairo-lang-quote",
  "linkme",
  "serde",
 ]
@@ -434,10 +448,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-lang-macro-attributes"
+version = "0.2.0"
+source = "git+https://github.com/software-mansion/scarb.git?rev=d8e5c90#d8e5c90bdab3844b7e0820cc795185dab2c62909"
+dependencies = [
+ "quote",
+ "scarb-stable-hash",
+ "syn 2.0.98",
+]
+
+[[package]]
 name = "cairo-lang-macro-stable"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c49906d6b1c215e5814be7c5c65ecf2328898b335bee8c2409ec07cfb5530daf"
+
+[[package]]
+name = "cairo-lang-macro-stable"
+version = "2.0.0"
+source = "git+https://github.com/software-mansion/scarb.git?rev=d8e5c90#d8e5c90bdab3844b7e0820cc795185dab2c62909"
 
 [[package]]
 name = "cairo-lang-parser"
@@ -503,6 +532,15 @@ dependencies = [
  "serde",
  "thiserror 2.0.11",
  "toml 0.8.20",
+]
+
+[[package]]
+name = "cairo-lang-quote"
+version = "0.1.0"
+source = "git+https://github.com/software-mansion/scarb.git?rev=d8e5c90#d8e5c90bdab3844b7e0820cc795185dab2c62909"
+dependencies = [
+ "proc-macro2",
+ "quote",
 ]
 
 [[package]]
@@ -800,8 +838,10 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-formatter",
  "cairo-lang-lowering",
- "cairo-lang-macro",
+ "cairo-lang-macro 0.1.1",
+ "cairo-lang-macro 0.2.0",
  "cairo-lang-parser",
+ "cairo-lang-primitive-token",
  "cairo-lang-project",
  "cairo-lang-semantic",
  "cairo-lang-starknet",
@@ -2678,9 +2718,10 @@ dependencies = [
 [[package]]
 name = "scarb-proc-macro-server-types"
 version = "0.2.0"
-source = "git+https://github.com/software-mansion/scarb?rev=8caf288a0634e8f90323529bde3eac79c47b1fa4#8caf288a0634e8f90323529bde3eac79c47b1fa4"
+source = "git+https://github.com/software-mansion/scarb.git?rev=d8e5c90#d8e5c90bdab3844b7e0820cc795185dab2c62909"
 dependencies = [
- "cairo-lang-macro",
+ "cairo-lang-macro 0.1.1",
+ "cairo-lang-macro 0.2.0",
  "serde",
  "serde_json",
 ]
@@ -2699,7 +2740,7 @@ dependencies = [
 name = "scarb_procedural_macros"
 version = "1.0.0"
 dependencies = [
- "cairo-lang-macro",
+ "cairo-lang-macro 0.1.1",
  "indoc",
 ]
 
