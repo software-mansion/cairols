@@ -315,3 +315,26 @@ fn not_imported() {
     completions = []
     "#);
 }
+
+#[test]
+fn dep_without_visibility_support() {
+    test_transform!(test_completions_text_edits,"
+    fn a() {
+        dep::Foo { // This struct is partially private
+            <caret>
+        };
+    }
+    ",@r#"
+    caret = """
+            <caret>
+    """
+
+    [[completions]]
+    completion_label = "a"
+    detail = "core::felt252"
+
+    [[completions]]
+    completion_label = "b"
+    detail = "core::felt252"
+    "#);
+}

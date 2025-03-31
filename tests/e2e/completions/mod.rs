@@ -3,9 +3,9 @@ use std::fmt::Display;
 use lsp_types::{CompletionParams, TextDocumentPositionParams, lsp_request};
 use serde::Serialize;
 
-use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::cursor::peek_caret;
 use crate::support::{MockClient, cursors, sandbox};
+use indoc::indoc;
 
 mod attribute;
 mod methods_text_edits;
@@ -28,8 +28,26 @@ fn test_completions_text_edits(cairo_code: &str) -> Report {
     test_completions_text_edits_inner(cairo_code, "src/lib.cairo", |cairo| {
         sandbox! {
             files {
-                "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+                "cairo_project.toml" => indoc!(r#"
+                    [crate_roots]
+                    hello = "src"
+                    dep = "dep"
+
+                    [config.override.hello]
+                    edition = "2024_07"
+                    [config.override.dep]
+                    edition = "2023_10" # Edition with visibility ignores
+
+                    [config.override.hello.dependencies]
+                    dep = { discriminator = "dep" }
+                "#),
                 "src/lib.cairo" => cairo,
+                "dep/lib.cairo" => indoc! ("
+                    struct Foo {
+                        a: felt252
+                        pub b: felt252
+                    }
+                "),
             }
         }
     })
