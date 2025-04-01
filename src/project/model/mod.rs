@@ -93,30 +93,8 @@ impl ProjectModel {
         self.apply_changes_to_db(db, proc_macro_controller, enable_linter);
     }
 
-    fn remove_crates(
-        loaded_crates: &mut HashMap<CrateLongId, HashSet<PathBuf>>,
-        workspace_dir: &Path,
-        old_crates: &HashMap<CrateLongId, Crate>,
-    ) {
-        for old_cr in old_crates.keys() {
-            loaded_crates.entry(old_cr.clone()).and_modify(|paths| {
-                paths.remove(workspace_dir);
-            });
-        }
-
-        loaded_crates.retain(|_, paths| !paths.is_empty());
-    }
-
-    fn add_crates(&mut self, workspace_crates: HashMap<CrateLongId, Crate>, workspace_dir: &Path) {
-        for cr in workspace_crates.keys() {
-            self.loaded_crates.entry(cr.clone()).or_default().insert(workspace_dir.to_path_buf());
-        }
-
-        self.loaded_workspaces.insert(workspace_dir.to_path_buf(), workspace_crates);
-    }
-
-    fn apply_changes_to_db(
-        &mut self,
+    pub fn apply_changes_to_db(
+        &self,
         db: &mut AnalysisDatabase,
         proc_macro_controller: &ProcMacroClientController,
         enable_linter: bool,
@@ -170,5 +148,27 @@ impl ProjectModel {
 
             cr.apply(db, lint_config, proc_macro_plugin_suite.cloned());
         }
+    }
+
+    fn remove_crates(
+        loaded_crates: &mut HashMap<CrateLongId, HashSet<PathBuf>>,
+        workspace_dir: &Path,
+        old_crates: &HashMap<CrateLongId, Crate>,
+    ) {
+        for old_cr in old_crates.keys() {
+            loaded_crates.entry(old_cr.clone()).and_modify(|paths| {
+                paths.remove(workspace_dir);
+            });
+        }
+
+        loaded_crates.retain(|_, paths| !paths.is_empty());
+    }
+
+    fn add_crates(&mut self, workspace_crates: HashMap<CrateLongId, Crate>, workspace_dir: &Path) {
+        for cr in workspace_crates.keys() {
+            self.loaded_crates.entry(cr.clone()).or_default().insert(workspace_dir.to_path_buf());
+        }
+
+        self.loaded_workspaces.insert(workspace_dir.to_path_buf(), workspace_crates);
     }
 }

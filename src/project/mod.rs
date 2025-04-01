@@ -1,6 +1,11 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
+pub use self::crate_data::Crate;
+pub use self::model::ConfigsRegistry;
+pub use self::project_manifest_path::*;
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::crate_data::CrateInfo;
 use crate::project::model::ProjectModel;
@@ -19,10 +24,6 @@ use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
 use tracing::{debug, error, warn};
-
-pub use self::crate_data::Crate;
-pub use self::model::ConfigsRegistry;
-pub use self::project_manifest_path::*;
 
 pub mod builtin_plugins;
 mod crate_data;
@@ -158,6 +159,15 @@ impl ProjectController {
 
         #[cfg(feature = "testing")]
         notifier.notify::<crate::lsp::ext::testing::ProjectUpdatingFinished>(());
+    }
+
+    pub fn migrate_crates_to_new_db(
+        &self,
+        new_db: &mut AnalysisDatabase,
+        proc_macro_controller: &ProcMacroClientController,
+        enable_linter: bool,
+    ) {
+        self.model.apply_changes_to_db(new_db, proc_macro_controller, enable_linter);
     }
 
     /// Sends an action request to the background thread.
