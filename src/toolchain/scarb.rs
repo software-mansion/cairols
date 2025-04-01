@@ -10,7 +10,7 @@ use scarb_metadata::{Metadata, MetadataCommand};
 use tracing::{debug, error, warn};
 use which::which;
 
-use crate::env_config::{self, CAIRO_LS_LOG};
+use crate::env_config::{self, CAIRO_LS_LOG, scarb_cache_path};
 use crate::lsp::ext::ScarbPathMissing;
 use crate::server::client::Notifier;
 
@@ -197,6 +197,10 @@ impl ScarbToolchain {
     }
 
     fn fetch_cache_path(&self) -> Result<PathBuf> {
+        if let Some(scarb_cache_path) = scarb_cache_path() {
+            return Ok(scarb_cache_path);
+        }
+
         let Some(scarb_path) = self.discover() else { bail!("failed to get scarb path") };
 
         let output = Command::new(scarb_path).arg("cache").arg("path").output()?;

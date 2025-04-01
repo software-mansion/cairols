@@ -33,6 +33,7 @@ mod unmanaged_core_crate;
 
 pub struct ProjectController {
     model: ProjectModel,
+    scarb_toolchain: ScarbToolchain,
     // NOTE: Member order matters here.
     //   The request sender MUST be dropped before controller's thread join handle.
     //   Otherwise, the controller thread will never stop, and the controller's
@@ -56,14 +57,15 @@ impl ProjectController {
         let thread = ProjectControllerThread::spawn(
             requests_receiver,
             response_sender,
-            scarb_toolchain,
+            scarb_toolchain.clone(),
             notifier,
         );
 
         ProjectController {
+            model: Default::default(),
+            scarb_toolchain,
             requests_sender,
             response_receiver,
-            model: Default::default(),
             _thread: thread,
         }
     }
@@ -77,6 +79,15 @@ impl ProjectController {
     }
 
     pub fn request_updating_project_for_file(&self, file_path: PathBuf) {
+        // Skip updating the project model for dependencies from Scarb cache.
+        // It is extremely likely that this is not the project that a user wants to work on and
+        // opening it was a result of `goto` to dependency.
+        if let Some(path) = self.scarb_toolchain.cache_path() {
+            if file_path.starts_with(path) {
+                return;
+            }
+        }
+
         self.send_request(ProjectUpdateRequest {
             file_path,
             loaded_manifests: self.model.loaded_manifests(),
