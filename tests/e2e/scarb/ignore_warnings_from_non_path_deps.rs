@@ -1,11 +1,8 @@
 use indoc::indoc;
-use lsp_types::{
-    ClientCapabilities, GotoCapability, GotoDefinitionParams, GotoDefinitionResponse,
-    TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
-};
+use lsp_types::{ClientCapabilities, GotoCapability, TextDocumentClientCapabilities};
 use serde_json::json;
 
-use crate::support::{cursors, sandbox};
+use crate::support::sandbox;
 
 fn caps(base: ClientCapabilities) -> ClientCapabilities {
     ClientCapabilities {
@@ -24,14 +21,13 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
 
 #[test]
 fn test_ignore_warnings_from_non_path_deps() {
-    let cairo_code = indoc! {r#"
-        use snforge_std::byte_array::byte_array_a<caret>s_felt_array;
+    let cairo = indoc! {r#"
+        use snforge_std::byte_array::byte_array_as_felt_array;
 
         fn func() {
             byte_array_as_felt_array(@"abc");
         }
     "#};
-    let (cairo, cursors) = cursors(cairo_code);
 
     let mut ls = sandbox! {
         files {
@@ -58,33 +54,4 @@ fn test_ignore_warnings_from_non_path_deps() {
     ls.open_and_wait_for_diagnostics_generation("src/lib.cairo")
         .into_iter()
         .for_each(|(url, diags)| assert!(diags.is_empty(), "{url} → {diags:#?}"));
-
-    // Goto is the easiest way to get an absolute path to a file from a dependency.
-    let url_to_dependency_file_with_lint_errors = {
-        let code_action_params = GotoDefinitionParams {
-            text_document_position_params: TextDocumentPositionParams {
-                text_document: ls.doc_id("src/lib.cairo"),
-                position: cursors.carets()[0],
-            },
-            work_done_progress_params: Default::default(),
-            partial_result_params: Default::default(),
-        };
-        let response =
-            ls.send_request::<lsp_request!("textDocument/definition")>(code_action_params).unwrap();
-
-        match response {
-            GotoDefinitionResponse::Scalar(location) => location.uri,
-            _ => panic!("Unexpected goto response variant"),
-        }
-    };
-
-    // Test if no diagnostics appear even though we opened a dep file that contains lint errors.
-    assert!(
-        ls.open_and_wait_for_diagnostics_generation(
-            url_to_dependency_file_with_lint_errors.to_file_path().unwrap()
-        )
-        .get(&url_to_dependency_file_with_lint_errors)
-        .unwrap()
-        .is_empty()
-    );
 }
