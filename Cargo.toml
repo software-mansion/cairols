@@ -40,7 +40,7 @@ cairo-lang-executable = "*"
 cairo-lang-filesystem = "*"
 cairo-lang-formatter = "*"
 cairo-lang-lowering = "*"
-cairo-lang-macro = { git = "https://github.com/software-mansion/scarb.git", rev = "d8e5c90" }
+cairo-lang-macro = { git = "https://github.com/software-mansion/scarb.git", rev = "3e105bb2ab4cca554a66b01400128cf4af87c2fb" }
 cairo-lang-macro-v1 = { version = "0.1", package = "cairo-lang-macro", features = ["serde"] }
 cairo-lang-parser = "*"
 cairo-lang-primitive-token = "1.0.0"
@@ -66,7 +66,7 @@ lsp-types = "=0.95.1"
 memchr = "2.7.4"
 salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
 scarb-metadata = "1.14.0"
-scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb.git", rev = "d8e5c90" }
+scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb.git", rev = "3e105bb2ab4cca554a66b01400128cf4af87c2fb" }
 scarb-stable-hash = "1"
 semver = "1"
 serde = { version = "1", default-features = false, features = ["derive"] }
@@ -126,7 +126,7 @@ cairo-lang-syntax-codegen = { git = "https://github.com/starkware-libs/cairo", r
 cairo-lang-test-plugin = { git = "https://github.com/starkware-libs/cairo", rev = "5ede9bb75294b5cd294d3fbb9f720232fecc70d9" }
 cairo-lang-test-utils = { git = "https://github.com/starkware-libs/cairo", rev = "5ede9bb75294b5cd294d3fbb9f720232fecc70d9" }
 cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", rev = "5ede9bb75294b5cd294d3fbb9f720232fecc70d9" }
-cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "77aa60e6280112aebd2fdfe23f7101f3cf0cd69d" }
+cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "ae88251fad706a780d4a1f742f8bce7d20a46159" }
 
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,

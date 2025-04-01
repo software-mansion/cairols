@@ -428,7 +428,7 @@ dependencies = [
 [[package]]
 name = "cairo-lang-macro"
 version = "0.2.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=d8e5c90#d8e5c90bdab3844b7e0820cc795185dab2c62909"
+source = "git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb#3e105bb2ab4cca554a66b01400128cf4af87c2fb"
 dependencies = [
  "bumpalo",
  "cairo-lang-macro-attributes 0.2.0",
@@ -453,7 +453,7 @@ dependencies = [
 [[package]]
 name = "cairo-lang-macro-attributes"
 version = "0.2.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=d8e5c90#d8e5c90bdab3844b7e0820cc795185dab2c62909"
+source = "git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb#3e105bb2ab4cca554a66b01400128cf4af87c2fb"
 dependencies = [
  "quote",
  "scarb-stable-hash",
@@ -469,7 +469,7 @@ checksum = "c49906d6b1c215e5814be7c5c65ecf2328898b335bee8c2409ec07cfb5530daf"
 [[package]]
 name = "cairo-lang-macro-stable"
 version = "2.0.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=d8e5c90#d8e5c90bdab3844b7e0820cc795185dab2c62909"
+source = "git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb#3e105bb2ab4cca554a66b01400128cf4af87c2fb"
 
 [[package]]
 name = "cairo-lang-parser"
@@ -540,7 +540,7 @@ dependencies = [
 [[package]]
 name = "cairo-lang-quote"
 version = "0.1.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=d8e5c90#d8e5c90bdab3844b7e0820cc795185dab2c62909"
+source = "git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb#3e105bb2ab4cca554a66b01400128cf4af87c2fb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -891,7 +891,7 @@ dependencies = [
 [[package]]
 name = "cairo-lint"
 version = "2.11.2"
-source = "git+https://github.com/software-mansion/cairo-lint?rev=77aa60e6280112aebd2fdfe23f7101f3cf0cd69d#77aa60e6280112aebd2fdfe23f7101f3cf0cd69d"
+source = "git+https://github.com/software-mansion/cairo-lint?rev=ae88251fad706a780d4a1f742f8bce7d20a46159#ae88251fad706a780d4a1f742f8bce7d20a46159"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1292,9 +1292,9 @@ dependencies = [
 
 [[package]]
 name = "errno"
-version = "0.3.10"
+version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d"
+checksum = "976dd42dc7e85965fe702eb8164f21f450704bdde31faefd6471dba214cb594e"
 dependencies = [
  "libc",
  "windows-sys 0.59.0",
@@ -2059,9 +2059,9 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "miniz_oxide"
-version = "0.8.5"
+version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e3e04debbb59698c15bacbb6d93584a8c0ca9cc3213cb423d31f760d8843ce5"
+checksum = "ff70ce3e48ae43fa075863cef62e8b43b71a4f2382229920e0df362592919430"
 dependencies = [
  "adler2",
 ]
@@ -2765,7 +2765,7 @@ dependencies = [
 [[package]]
 name = "scarb-proc-macro-server-types"
 version = "0.2.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=d8e5c90#d8e5c90bdab3844b7e0820cc795185dab2c62909"
+source = "git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb#3e105bb2ab4cca554a66b01400128cf4af87c2fb"
 dependencies = [
  "cairo-lang-macro 0.1.1",
  "cairo-lang-macro 0.2.0",
@@ -2950,6 +2950,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d"
 
 [[package]]
+name = "size-of"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4e36eca171fddeda53901b0a436573b3f2391eaa9189d439b2bd8ea8cebd7e3"
+
+[[package]]
 name = "slab"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3037,9 +3043,9 @@ dependencies = [
 
 [[package]]
 name = "starknet-types-core"
-version = "0.1.7"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa1b9e01ccb217ab6d475c5cda05dbb22c30029f7bb52b192a010a00d77a3d74"
+checksum = "4037bcb26ce7c508448d221e570d075196fd4f6912ae6380981098937af9522a"
 dependencies = [
  "lambdaworks-crypto",
  "lambdaworks-math",
@@ -3048,6 +3054,8 @@ dependencies = [
  "num-integer",
  "num-traits",
  "serde",
+ "size-of",
+ "zeroize",
 ]
 
 [[package]]
