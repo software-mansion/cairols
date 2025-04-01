@@ -55,13 +55,13 @@ cairo-lint = "*"
 colored = "3.0.0"
 convert_case = "0.8.0"
 crossbeam = "0.8.4"
-governor = { version = "0.8.0", default-features = false, features = ["std", "quanta"] }
+governor = { version = "0.10.0", default-features = false, features = ["std", "quanta"] }
 if_chain = "1"
 indent = "0.1.1"
 indoc = "2"
 itertools = "0.14.0"
 jaro_winkler = "0.1.0"
-jod-thread = "0.1.2"
+jod-thread = "1.0.0"
 lsp-server = "0.7.8"
 lsp-types = "=0.95.1"
 memchr = "2.7.4"
@@ -81,7 +81,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 which = "7"
 
 [target.'cfg(target_vendor = "apple")'.dependencies]
-libc = "0.2.170"
+libc = "0.2.171"
 
 [dev-dependencies]
 assert_fs = "1.1"
