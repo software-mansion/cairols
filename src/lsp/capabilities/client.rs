@@ -56,6 +56,9 @@ pub trait ClientCapabilitiesExt {
 
     /// The client supports dynamic registration for code lens provider capabilities.
     fn code_lens_provider_dynamic_registration(&self) -> bool;
+
+    /// The client supports sending `workspace/willRenameFiles` requests.
+    fn workspace_will_rename_files_support(&self) -> bool;
 }
 
 impl ClientCapabilitiesExt for ClientCapabilities {
@@ -134,5 +137,9 @@ impl ClientCapabilitiesExt for ClientCapabilities {
 
     fn code_lens_provider_dynamic_registration(&self) -> bool {
         try_or_default!(self.text_document.as_ref()?.code_lens.as_ref()?.dynamic_registration?)
+    }
+
+    fn workspace_will_rename_files_support(&self) -> bool {
+        try_or_default!(self.workspace.as_ref()?.file_operations.as_ref()?.will_rename?)
     }
 }

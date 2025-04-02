@@ -15,7 +15,7 @@ use lsp_types::notification::{
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, Completion, DocumentHighlightRequest, ExecuteCommand,
     Formatting, GotoDefinition, HoverRequest, References, Rename, Request,
-    SemanticTokensFullRequest,
+    SemanticTokensFullRequest, WillRenameFiles,
 };
 use lsp_types::{
     CodeActionParams, CodeActionResponse, CodeLens, CodeLensParams, CompletionParams,
@@ -23,7 +23,7 @@ use lsp_types::{
     DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
     DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight,
     DocumentHighlightParams, ExecuteCommandParams, FileChangeType, GotoDefinitionParams,
-    GotoDefinitionResponse, Hover, HoverParams, ReferenceParams, RenameParams,
+    GotoDefinitionResponse, Hover, HoverParams, ReferenceParams, RenameFilesParams, RenameParams,
     SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent,
     TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
@@ -41,7 +41,7 @@ use crate::server::client::{Notifier, Requester};
 use crate::server::commands::ServerCommands;
 use crate::state::{State, StateSnapshot};
 use crate::toolchain::info::toolchain_info;
-use crate::{Backend, ide};
+use crate::{Backend, ide, lang};
 
 /// A request handler that needs mutable access to the session.
 /// This will block the main message receiver loop, meaning that no
@@ -462,6 +462,17 @@ impl BackgroundDocumentRequestHandler for CodeLensRequest {
     }
 }
 
-fn is_cairo_file_path(file_path: &Url) -> bool {
+impl BackgroundDocumentRequestHandler for WillRenameFiles {
+    #[tracing::instrument(name = "workspace/willRenameFiles", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: RenameFilesParams,
+    ) -> LSPResult<Option<WorkspaceEdit>> {
+        Ok(lang::rename_file::rename_files(&snapshot.db, params))
+    }
+}
+
+pub fn is_cairo_file_path(file_path: &Url) -> bool {
     file_path.path().ends_with(".cairo")
 }
