@@ -20,8 +20,8 @@ use cairo_lang_defs::ids::SubmoduleLongId;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{
     TypedStablePtr, TypedSyntaxNode, ast::ModuleItem, helpers::QueryAttrs,
@@ -63,7 +63,7 @@ impl CodeLensProvider for TestCodeLensProvider {
         let mut result = vec![];
 
         if is_runner_available {
-            collect_tests(db, main_module, file, url, &mut result);
+            collect_tests(db, main_module, url, &mut result);
         }
 
         Some(result)
@@ -186,27 +186,27 @@ impl TestRunner {
 fn collect_tests(
     db: &AnalysisDatabase,
     module: ModuleId,
-    origin_file: FileId,
     file_url: Url,
     file_state: &mut Vec<CodeLens>,
 ) {
     for test_fn in collect_functions(db, module) {
-        maybe_push_code_lens(db, origin_file, &file_url, file_state, false, test_fn);
+        maybe_push_code_lens(
+            db,
+            file_state,
+            |position, index| make_code_lens(&file_url, index, position, false),
+            test_fn,
+        );
     }
 
     let Ok(modules) = db.module_submodules_ids(module) else { return };
 
     for submodule in modules.iter().copied() {
-        let has_tests = if db.is_submodule_inline(submodule) {
+        let is_inline = db.is_submodule_inline(submodule);
+
+        let has_tests = if is_inline {
             let tests_count = file_state.len();
 
-            collect_tests(
-                db,
-                ModuleId::Submodule(submodule),
-                origin_file,
-                file_url.clone(),
-                file_state,
-            );
+            collect_tests(db, ModuleId::Submodule(submodule), file_url.clone(), file_state);
 
             // Append mod only if it contains tests.
             tests_count != file_state.len()
@@ -217,7 +217,12 @@ fn collect_tests(
         if has_tests {
             let ptr = submodule.stable_ptr(db).untyped();
 
-            maybe_push_code_lens(db, origin_file, &file_url, file_state, true, ptr);
+            maybe_push_code_lens(
+                db,
+                file_state,
+                |position, index| make_code_lens(&file_url, index, position, true),
+                ptr,
+            );
         }
     }
 }
@@ -234,8 +239,21 @@ fn has_any_test(db: &AnalysisDatabase, module: ModuleId) -> bool {
     })
 }
 
-fn get_position(db: &AnalysisDatabase, file: FileId, ptr: SyntaxStablePtrId) -> Option<Position> {
-    ptr.lookup(db)
+fn get_position(db: &AnalysisDatabase, ptr: SyntaxStablePtrId) -> Option<Position> {
+    let (file, span) =
+        get_originating_location(db, ptr.file_id(db), ptr.lookup(db).span_without_trivia(db), None);
+
+    let module_item = db
+        .find_syntax_node_at_offset(file, span.start)?
+        .ancestors_with_self()
+        .find(|n| ModuleItem::cast(db, n.clone()).is_some())?;
+
+    module_item
+        // In original code it is always `#[test]`.
+        .find_attr(db, "test")
+        .map(|test| test.as_syntax_node())
+        // If attr is not found we are probably on mod.
+        .unwrap_or(module_item)
         .span_start_without_trivia(db)
         .position_in_file(db, file)
         .map(|position| position.to_lsp())
@@ -262,31 +280,33 @@ fn collect_functions(db: &AnalysisDatabase, module: ModuleId) -> Vec<SyntaxStabl
 
 fn maybe_push_code_lens(
     db: &AnalysisDatabase,
-    file: FileId,
-    file_url: &Url,
     file_state: &mut Vec<CodeLens>,
-    is_plural: bool,
+    make_code_lens: impl FnOnce(Position, usize) -> CodeLens,
     ptr: SyntaxStablePtrId,
 ) {
-    if ptr.file_id(db) == file {
-        if let Some(position) = get_position(db, file, ptr) {
-            let mut title = "▶ Run test".to_string();
+    if let Some(position) = get_position(db, ptr) {
+        let lens = make_code_lens(position, file_state.len());
 
-            if is_plural {
-                title.push('s');
-            }
-
-            let command = Command {
-                title,
-                command: "cairo.executeCodeLens".to_string(),
-                arguments: Some(vec![
-                    Value::Number(Number::from(file_state.len())),
-                    Value::String(file_url.to_string()),
-                ]),
-            };
-            let range = Range::new(position, position);
-
-            file_state.push(CodeLens { range, command: Some(command), data: None });
-        };
+        file_state.push(lens);
     }
+}
+
+fn make_code_lens(file_url: &Url, index: usize, position: Position, is_plural: bool) -> CodeLens {
+    let mut title = "▶ Run test".to_string();
+
+    if is_plural {
+        title.push('s');
+    }
+
+    let command = Command {
+        title,
+        command: "cairo.executeCodeLens".to_string(),
+        arguments: Some(vec![
+            Value::Number(Number::from(index)),
+            Value::String(file_url.to_string()),
+        ]),
+    };
+    let range = Range::new(position, position);
+
+    CodeLens { range, command: Some(command), data: None }
 }
