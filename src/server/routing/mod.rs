@@ -17,7 +17,7 @@ use lsp_types::notification::{
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, Completion, DocumentHighlightRequest, ExecuteCommand,
     Formatting, GotoDefinition, HoverRequest, References, Rename, Request as RequestTrait,
-    SemanticTokensFullRequest,
+    SemanticTokensFullRequest, WillRenameFiles,
 };
 use tracing::{error, trace, warn};
 
@@ -29,6 +29,7 @@ use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::{BackgroundSchedule, Task};
 use crate::state::State;
+pub use handlers::is_cairo_file_path;
 
 mod handlers;
 
@@ -87,6 +88,10 @@ pub fn request<'a>(request: Request) -> Task<'a> {
         ViewAnalyzedCrates::METHOD => {
             background_request_task::<ViewAnalyzedCrates>(request, BackgroundSchedule::Worker)
         }
+        WillRenameFiles::METHOD => background_request_task::<WillRenameFiles>(
+            request,
+            BackgroundSchedule::LatencySensitive,
+        ),
 
         method => {
             warn!("received request {method} which does not have a handler");
