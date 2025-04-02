@@ -10,3 +10,4 @@ pub mod plugins;
 pub mod proc_macros;
 pub mod text_matching;
 pub mod usages;
+pub mod visibility;

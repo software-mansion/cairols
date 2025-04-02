@@ -2,7 +2,6 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{FileIndex, ModuleFileId, NamedLanguageElementId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
-use cairo_lang_semantic::items::visibility::peek_visible_in;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -18,6 +17,7 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
 use crate::lang::text_matching::text_matches;
+use crate::lang::visibility::peek_visible_in_with_edition;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 
 /// Treats provided path as suffix, proposing elements that can prefix this path.
@@ -110,13 +110,12 @@ pub fn path_prefix_completions(
                 let resolved_item = ResolvedGenericItem::from_module_item(db, *item).ok()?;
                 let item_info = db.module_item_info_by_name(module_id, item.name(db)).ok()??;
 
-                peek_visible_in(db, item_info.visibility, module_id, ctx.module_id).then(|| {
-                    CompletionItem {
+                peek_visible_in_with_edition(db, item_info.visibility, module_id, ctx.module_id)
+                    .then(|| CompletionItem {
                         label: item.name(db.upcast()).to_string(),
                         kind: Some(resolved_generic_item_completion_kind(resolved_item)),
                         ..CompletionItem::default()
-                    }
-                })
+                    })
             })
             .collect(),
         ResolvedConcreteItem::Trait(item) | ResolvedConcreteItem::SelfTrait(item) => db

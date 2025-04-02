@@ -1,13 +1,13 @@
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
-use cairo_lang_semantic::items::visibility::peek_visible_in;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use lsp_types::{CompletionItem, CompletionItemKind};
 
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::visibility::peek_visible_in_with_edition;
 
 /// Discovers struct members missing in the constructor call and returns completions containing
 /// their names with type hints.
@@ -51,10 +51,9 @@ pub fn struct_constructor_completions(
         db.concrete_struct_members(constructor_semantic_expr.concrete_struct_id).ok()?;
 
     // If any field is not visible this struct is unconstructable anyway, don't propose completions.
-    if !struct_members
-        .values()
-        .all(|data| peek_visible_in(db, data.visibility, struct_parent_module_id, module_id))
-    {
+    if !struct_members.values().all(|data| {
+        peek_visible_in_with_edition(db, data.visibility, struct_parent_module_id, module_id)
+    }) {
         return None;
     }
 

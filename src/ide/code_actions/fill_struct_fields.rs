@@ -4,7 +4,6 @@ use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic::Expr;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
-use cairo_lang_semantic::items::visibility::peek_visible_in;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::ast::{ExprStructCtorCall, StructArg};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -14,6 +13,7 @@ use tracing::error;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
+use crate::lang::visibility::peek_visible_in_with_edition;
 
 /// Generates a completion adding all visible struct members that have not yet been specified
 /// to the constructor call, filling their values with a placeholder unit type.
@@ -93,7 +93,12 @@ pub fn fill_struct_fields(
 
             if already_present_arguments.contains(&name) {
                 None
-            } else if peek_visible_in(db, member.visibility, struct_parent_module_id, module_id) {
+            } else if peek_visible_in_with_edition(
+                db,
+                member.visibility,
+                struct_parent_module_id,
+                module_id,
+            ) {
                 Some(format!("{name}: ()"))
             } else {
                 None
