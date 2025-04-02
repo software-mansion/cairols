@@ -5,164 +5,160 @@ expression: "AnalyzedCratesResult { analyzed_crates, analyzed_crates_diff }"
 ---
 analyzed_crates = '''
 # Analyzed Crates
+---
+```json
+{
+  "name": "a",
+  "source_paths": [
+    "[ROOT]/a/src/lib.cairo"
+  ],
+  "settings": {
+    "name": "a",
+    "edition": "2024_07",
+    "version": "0.1.0",
+    "cfg_set": [
+      [
+        "target",
+        "lib"
+      ],
+      [
+        "target",
+        "test"
+      ],
+      "test"
+    ],
+    "dependencies": {
+      "a": {
+        "discriminator": "a 0.1.0 (path+[ROOT_URL]a/Scarb.toml)"
+      },
+      "b": {
+        "discriminator": "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)"
+      },
+      "core": {
+        "discriminator": null
+      }
+    },
+    "experimental_features": {
+      "negative_impls": false,
+      "associated_item_constraints": false,
+      "coupons": false
+    }
+  },
+  "linter_configuration": "Off",
+  "plugins": {}
+}
 
-- `a`: `["[ROOT]/a/src/lib.cairo"]`
-    ```rust
-    CrateSettings {
-        name: Some(
-            "a",
-        ),
-        edition: V2024_07,
-        version: Some(
-            Version {
-                major: 0,
-                minor: 1,
-                patch: 0,
-            },
-        ),
-        cfg_set: Some(
-            CfgSet(
-                target: "lib",
-                target: "test",
-                test,
-            ),
-        ),
-        dependencies: {
-            "a": DependencySettings {
-                discriminator: Some(
-                    "a 0.1.0 (path+[ROOT_URL]a/Scarb.toml)",
-                ),
-            },
-            "b": DependencySettings {
-                discriminator: Some(
-                    "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)",
-                ),
-            },
-            "core": DependencySettings {
-                discriminator: None,
-            },
-        },
-        experimental_features: ExperimentalFeaturesConfig {
-            negative_impls: false,
-            associated_item_constraints: false,
-            coupons: false,
-        },
+{
+  "name": "b",
+  "source_paths": [
+    "[ROOT]/b/src/lib.cairo"
+  ],
+  "settings": {
+    "name": "b",
+    "edition": "2024_07",
+    "version": "0.1.0",
+    "cfg_set": [
+      [
+        "target",
+        "lib"
+      ],
+      [
+        "target",
+        "test"
+      ],
+      "test"
+    ],
+    "dependencies": {
+      "b": {
+        "discriminator": "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)"
+      },
+      "core": {
+        "discriminator": null
+      }
     },
-    Plugins {
-        builtin: [],
+    "experimental_features": {
+      "negative_impls": false,
+      "associated_item_constraints": false,
+      "coupons": false
     }
-    ```
-- `b`: `["[ROOT]/b/src/lib.cairo"]`
-    ```rust
-    CrateSettings {
-        name: Some(
-            "b",
-        ),
-        edition: V2024_07,
-        version: Some(
-            Version {
-                major: 0,
-                minor: 1,
-                patch: 0,
-            },
-        ),
-        cfg_set: Some(
-            CfgSet(
-                target: "lib",
-                target: "test",
-                test,
-            ),
-        ),
-        dependencies: {
-            "b": DependencySettings {
-                discriminator: Some(
-                    "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)",
-                ),
-            },
-            "core": DependencySettings {
-                discriminator: None,
-            },
-        },
-        experimental_features: ExperimentalFeaturesConfig {
-            negative_impls: false,
-            associated_item_constraints: false,
-            coupons: false,
-        },
+  },
+  "linter_configuration": "Off",
+  "plugins": {}
+}
+
+{
+  "name": "core",
+  "source_paths": [
+    "[SCARB_REGISTRY_STD]/core/src/lib.cairo"
+  ],
+  "settings": {
+    "name": "core",
+    "edition": "2024_07",
+    "version": "2.11.2",
+    "cfg_set": [
+      [
+        "target",
+        "lib"
+      ],
+      [
+        "target",
+        "test"
+      ]
+    ],
+    "dependencies": {
+      "core": {
+        "discriminator": null
+      }
     },
-    Plugins {
-        builtin: [],
+    "experimental_features": {
+      "negative_impls": true,
+      "associated_item_constraints": true,
+      "coupons": true
     }
-    ```
-- `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
-    ```rust
-    CrateSettings {
-        name: Some(
-            "core",
-        ),
-        edition: V2024_07,
-        version: Some(
-            Version {
-                major: 2,
-                minor: 11,
-                patch: 2,
-            },
-        ),
-        cfg_set: Some(
-            CfgSet(
-                target: "lib",
-                target: "test",
-            ),
-        ),
-        dependencies: {
-            "core": DependencySettings {
-                discriminator: None,
-            },
-        },
-        experimental_features: ExperimentalFeaturesConfig {
-            negative_impls: true,
-            associated_item_constraints: true,
-            coupons: true,
-        },
-    },
-    Plugins {
-        builtin: [
-            CairoTest,
-            Starknet,
-        ],
-    }
-    ```
-'''
+  },
+  "linter_configuration": "Off",
+  "plugins": {
+    "builtin_plugins": [
+      "Executable",
+      "CairoTest",
+      "Starknet"
+    ]
+  }
+}
+```'''
 analyzed_crates_diff = '''
-@@ -52,31 +52,30 @@
-         name: Some(
-             "b",
-         ),
-         edition: V2024_07,
-         version: Some(
-             Version {
-                 major: 0,
-                 minor: 1,
-                 patch: 0,
-             },
-         ),
-         cfg_set: Some(
-             CfgSet(
-                 target: "lib",
-                 target: "test",
--                test,
-             ),
-         ),
-         dependencies: {
-             "b": DependencySettings {
-                 discriminator: Some(
-                     "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)",
-                 ),
-             },
-             "core": DependencySettings {
-                 discriminator: None,
-             },
-         },
-         experimental_features: ExperimentalFeaturesConfig {
-             negative_impls: false,
-             associated_item_constraints: false,
+@@ -47,32 +47,31 @@
+   "source_paths": [
+     "[ROOT]/b/src/lib.cairo"
+   ],
+   "settings": {
+     "name": "b",
+     "edition": "2024_07",
+     "version": "0.1.0",
+     "cfg_set": [
+       [
+         "target",
+         "lib"
+       ],
+       [
+         "target",
+         "test"
+-      ],
+-      "test"
++      ]
+     ],
+     "dependencies": {
+       "b": {
+         "discriminator": "b 0.1.0 (path+[ROOT_URL]b/Scarb.toml)"
+       },
+       "core": {
+         "discriminator": null
+       }
+     },
+     "experimental_features": {
+       "negative_impls": false,
+       "associated_item_constraints": false,
+       "coupons": false
+     }
+   },
 '''

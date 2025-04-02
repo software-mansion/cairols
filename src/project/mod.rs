@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-pub use self::crate_data::Crate;
+pub use self::crate_data::{Crate, extract_custom_file_stems};
 pub use self::model::ConfigsRegistry;
 pub use self::project_manifest_path::*;
 use crate::lang::db::AnalysisDatabase;
