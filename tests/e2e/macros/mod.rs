@@ -32,6 +32,16 @@ pub static SCARB_TEST_MACROS_PACKAGE: LazyLock<PathBuf> = LazyLock::new(|| {
         .expect("should be able to obtain an absolute path to `scarb_procedural_macros`")
 });
 
+pub const SCARB_TEST_MACROS_V2_PACKAGE_NAME: &str = "scarb_procedural_macros_v2";
+
+pub static SCARB_TEST_MACROS_V2_PACKAGE: LazyLock<PathBuf> = LazyLock::new(|| {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join(SCARB_TEST_MACROS_V2_PACKAGE_NAME)
+        .canonicalize()
+        .expect("should be able to obtain an absolute path to `scarb_procedural_macros_v2`")
+});
+
 // NOTE: This procedure is implemented as a macro to delegate
 // the choice of the snapshot destination in the file system
 // and avoid a possible mess with specifying those locations manually.
