@@ -415,6 +415,8 @@ impl Backend {
             &mut state.db,
             &state.open_files,
             &mut state.project_controller,
+            &state.proc_macro_controller,
+            &state.config,
         );
     }
 

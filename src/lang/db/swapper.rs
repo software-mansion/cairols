@@ -12,9 +12,11 @@ use cairo_lang_utils::{Intern, LookupIntern};
 use lsp_types::Url;
 use tracing::{error, warn};
 
+use crate::config::Config;
 use crate::env_config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
+use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::project::ProjectController;
 
@@ -53,6 +55,8 @@ impl AnalysisDatabaseSwapper {
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
         project_controller: &mut ProjectController,
+        proc_macro_client_controller: &ProcMacroClientController,
+        config: &Config,
     ) {
         let Ok(elapsed) = self.last_replace.elapsed() else {
             warn!("system time went backwards, skipping db swap");
@@ -68,7 +72,7 @@ impl AnalysisDatabaseSwapper {
             return;
         }
 
-        self.swap(db, open_files, project_controller)
+        self.swap(db, open_files, project_controller, proc_macro_client_controller, config)
     }
 
     /// Swaps the database.
@@ -78,14 +82,22 @@ impl AnalysisDatabaseSwapper {
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
         project_controller: &mut ProjectController,
+        proc_macro_client_controller: &ProcMacroClientController,
+        config: &Config,
     ) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
             let mut new_db = AnalysisDatabase::new();
-            project_controller.clear_loaded_workspaces();
 
+            self.migrate_default_plugins(&mut new_db, db);
             self.migrate_proc_macro_state(&mut new_db, db);
             self.migrate_file_overrides(&mut new_db, db, open_files);
-            self.update_project_for_open_files(open_files, project_controller);
+
+            project_controller.migrate_crates_to_new_db(
+                db,
+                proc_macro_client_controller,
+                config.enable_linter,
+            );
+
             new_db
         })) else {
             error!("caught panic when preparing new db for swap");
@@ -97,8 +109,8 @@ impl AnalysisDatabaseSwapper {
         self.last_replace = SystemTime::now();
     }
 
-    /// Copies current proc macro state into new db.
-    fn migrate_proc_macro_state(&self, new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
+    /// Copies current default macro plugins into new db.
+    fn migrate_default_plugins(&self, new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
         new_db.set_default_macro_plugins(
             old_db
                 .default_macro_plugins()
@@ -129,70 +141,10 @@ impl AnalysisDatabaseSwapper {
                 })
                 .collect(),
         ));
+    }
 
-        new_db.set_macro_plugin_overrides(Arc::new(
-            old_db
-                .macro_plugin_overrides()
-                .iter()
-                .map(|(&crate_id, plugins)| {
-                    (
-                        new_db.intern_crate(old_db.lookup_intern_crate(crate_id)),
-                        plugins
-                            .iter()
-                            .map(|&id| {
-                                new_db.intern_macro_plugin(old_db.lookup_intern_macro_plugin(id))
-                            })
-                            .collect(),
-                    )
-                })
-                .collect(),
-        ));
-
-        new_db.set_analyzer_plugin_overrides(Arc::new(
-            old_db
-                .analyzer_plugin_overrides()
-                .iter()
-                .map(|(&crate_id, plugins)| {
-                    (
-                        new_db.intern_crate(old_db.lookup_intern_crate(crate_id)),
-                        plugins
-                            .iter()
-                            .map(|&id| {
-                                new_db.intern_analyzer_plugin(
-                                    old_db.lookup_intern_analyzer_plugin(id),
-                                )
-                            })
-                            .collect(),
-                    )
-                })
-                .collect(),
-        ));
-
-        new_db.set_inline_macro_plugin_overrides(Arc::new(
-            old_db
-                .inline_macro_plugin_overrides()
-                .iter()
-                .map(|(&crate_id, plugins)| {
-                    (
-                        new_db.intern_crate(old_db.lookup_intern_crate(crate_id)),
-                        Arc::new(
-                            plugins
-                                .iter()
-                                .map(|(name, &id)| {
-                                    (
-                                        name.clone(),
-                                        new_db.intern_inline_macro_plugin(
-                                            old_db.lookup_intern_inline_macro_plugin(id),
-                                        ),
-                                    )
-                                })
-                                .collect(),
-                        ),
-                    )
-                })
-                .collect(),
-        ));
-
+    /// Copies current proc macro state into new db.
+    fn migrate_proc_macro_state(&self, new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
         new_db.set_proc_macro_server_status(old_db.proc_macro_server_status());
 
         // TODO(#6646): Probably this should not be part of migration as it will be ever growing,
@@ -224,21 +176,5 @@ impl AnalysisDatabaseSwapper {
             }
         }
         new_db.set_file_overrides(Arc::new(new_overrides));
-    }
-
-    /// Ensures all open files have their crates detected to regenerate crates state.
-    fn update_project_for_open_files(
-        &self,
-        open_files: &HashSet<Url>,
-        project_controller: &mut ProjectController,
-    ) {
-        for uri in open_files {
-            let Ok(file_path) = uri.to_file_path() else {
-                // We are only interested in physical files.
-                continue;
-            };
-
-            project_controller.request_updating_project_for_file(file_path);
-        }
     }
 }
