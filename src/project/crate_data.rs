@@ -158,16 +158,6 @@ impl Crate {
         Some(Self { name, discriminator, root, custom_main_file_stems, settings, builtin_plugins })
     }
 
-    /// Returns paths to the main files of this crate.
-    pub fn source_paths(&self) -> Vec<PathBuf> {
-        let source_paths = match &self.custom_main_file_stems {
-            Some(stems) => stems.iter().map(|stem| format!("{stem}.cairo")).collect(),
-            None => vec!["lib.cairo".into()],
-        };
-
-        source_paths.into_iter().map(|filename| self.root.join(filename)).collect()
-    }
-
     pub fn long_id(&self) -> CrateLongId {
         CrateLongId::Real { name: self.name.clone(), discriminator: self.discriminator.clone() }
     }
@@ -195,7 +185,7 @@ fn inject_virtual_wrapper_lib(
 
 /// The inverse of [`inject_virtual_wrapper_lib`],
 /// tries to infer root module name from crate if it does not have real `lib.cairo`.
-fn extract_custom_file_stems(db: &AnalysisDatabase, crate_id: CrateId) -> Option<Vec<SmolStr>> {
+pub fn extract_custom_file_stems(db: &AnalysisDatabase, crate_id: CrateId) -> Option<Vec<SmolStr>> {
     let CrateConfiguration { root: Directory::Real(root), .. } = db.crate_config(crate_id)? else {
         return None;
     };

@@ -4,98 +4,113 @@ description: "// → project1/cairo_project.toml\n[crate_roots]\nproject1 = \"sr
 expression: "normalize(&ls, output)"
 ---
 # Analyzed Crates
+---
+```json
+{
+  "name": "core",
+  "source_paths": [
+    "[SCARB_REGISTRY_STD]/core/src/lib.cairo"
+  ],
+  "settings": {
+    "name": null,
+    "edition": "2024_07",
+    "version": "2.11.2",
+    "cfg_set": null,
+    "dependencies": {},
+    "experimental_features": {
+      "negative_impls": true,
+      "associated_item_constraints": true,
+      "coupons": true
+    }
+  },
+  "linter_configuration": "Off",
+  "plugins": {
+    "builtin_plugins": [
+      "Executable",
+      "CairoTest",
+      "Starknet"
+    ]
+  }
+}
 
-- `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
-    ```rust
-    CrateSettings {
-        name: None,
-        edition: V2024_07,
-        version: Some(
-            Version {
-                major: 2,
-                minor: 11,
-                patch: 2,
-            },
-        ),
-        cfg_set: None,
-        dependencies: {},
-        experimental_features: ExperimentalFeaturesConfig {
-            negative_impls: true,
-            associated_item_constraints: true,
-            coupons: true,
-        },
-    },
-    Plugins {
-        builtin: [
-            Executable,
-            CairoTest,
-            Starknet,
-        ],
+{
+  "name": "project1",
+  "source_paths": [
+    "[ROOT]/project1/src/lib.cairo"
+  ],
+  "settings": {
+    "name": null,
+    "edition": "2023_01",
+    "version": null,
+    "cfg_set": null,
+    "dependencies": {},
+    "experimental_features": {
+      "negative_impls": false,
+      "associated_item_constraints": false,
+      "coupons": false
     }
-    ```
-- `project1`: `["[ROOT]/project1/src/lib.cairo"]`
-    ```rust
-    CrateSettings {
-        name: None,
-        edition: V2023_01,
-        version: None,
-        cfg_set: None,
-        dependencies: {},
-        experimental_features: ExperimentalFeaturesConfig {
-            negative_impls: false,
-            associated_item_constraints: false,
-            coupons: false,
-        },
-    },
-    Plugins {
-        builtin: [
-            Executable,
-            CairoTest,
-            Starknet,
-        ],
+  },
+  "linter_configuration": "Off",
+  "plugins": {
+    "builtin_plugins": [
+      "Executable",
+      "CairoTest",
+      "Starknet"
+    ]
+  }
+}
+
+{
+  "name": "project2",
+  "source_paths": [
+    "[ROOT]/project2/src/lib.cairo"
+  ],
+  "settings": {
+    "name": null,
+    "edition": "2023_01",
+    "version": null,
+    "cfg_set": null,
+    "dependencies": {},
+    "experimental_features": {
+      "negative_impls": false,
+      "associated_item_constraints": false,
+      "coupons": false
     }
-    ```
-- `project2`: `["[ROOT]/project2/src/lib.cairo"]`
-    ```rust
-    CrateSettings {
-        name: None,
-        edition: V2023_01,
-        version: None,
-        cfg_set: None,
-        dependencies: {},
-        experimental_features: ExperimentalFeaturesConfig {
-            negative_impls: false,
-            associated_item_constraints: false,
-            coupons: false,
-        },
-    },
-    Plugins {
-        builtin: [
-            Executable,
-            CairoTest,
-            Starknet,
-        ],
+  },
+  "linter_configuration": "Off",
+  "plugins": {
+    "builtin_plugins": [
+      "Executable",
+      "CairoTest",
+      "Starknet"
+    ]
+  }
+}
+
+{
+  "name": "subproject",
+  "source_paths": [
+    "[ROOT]/project2/subproject/src/lib.cairo"
+  ],
+  "settings": {
+    "name": null,
+    "edition": "2023_01",
+    "version": null,
+    "cfg_set": null,
+    "dependencies": {},
+    "experimental_features": {
+      "negative_impls": false,
+      "associated_item_constraints": false,
+      "coupons": false
     }
-    ```
-- `subproject`: `["[ROOT]/project2/subproject/src/lib.cairo"]`
-    ```rust
-    CrateSettings {
-        name: None,
-        edition: V2023_01,
-        version: None,
-        cfg_set: None,
-        dependencies: {},
-        experimental_features: ExperimentalFeaturesConfig {
-            negative_impls: false,
-            associated_item_constraints: false,
-            coupons: false,
-        },
-    },
-    Plugins {
-        builtin: [
-            Executable,
-            CairoTest,
-            Starknet,
-        ],
-    }
-    ```
+  },
+  "linter_configuration": "Off",
+  "plugins": {
+    "builtin_plugins": [
+      "Executable",
+      "CairoTest",
+      "Starknet"
+    ]
+  }
+}
+```

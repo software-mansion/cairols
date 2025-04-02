@@ -403,7 +403,7 @@ fn scarb_package_experimental_features(package: &PackageMetadata) -> Experimenta
 
 /// Returns all plugins required by the `core` crate.
 fn plugins_for_corelib() -> Vec<BuiltinPlugin> {
-    vec![BuiltinPlugin::CairoTest, BuiltinPlugin::Starknet]
+    vec![BuiltinPlugin::CairoTest, BuiltinPlugin::Executable, BuiltinPlugin::Starknet]
 }
 
 /// Returns all built-in plugins described by `dependencies`.

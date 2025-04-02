@@ -11,9 +11,10 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_test_plugin::{test_assert_suite, test_plugin_suite};
 use itertools::chain;
 use scarb_metadata::{CompilationUnitCairoPluginMetadata, Metadata};
+use serde::Serialize;
 
 /// Representation of known built-in plugins available in the Cairo compiler.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize)]
 pub enum BuiltinPlugin {
     AssertMacros,
     Executable,

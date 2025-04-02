@@ -22,34 +22,34 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
 
     insta::assert_snapshot!(normalize(&ls, analyzed_crates), @r##"
     # Analyzed Crates
-
-    - `core`: `["[SCARB_REGISTRY_STD]/core/src/lib.cairo"]`
-        ```rust
-        CrateSettings {
-            name: None,
-            edition: V2024_07,
-            version: Some(
-                Version {
-                    major: 2,
-                    minor: 11,
-                    patch: 2,
-                },
-            ),
-            cfg_set: None,
-            dependencies: {},
-            experimental_features: ExperimentalFeaturesConfig {
-                negative_impls: true,
-                associated_item_constraints: true,
-                coupons: true,
-            },
-        },
-        Plugins {
-            builtin: [
-                Executable,
-                CairoTest,
-                Starknet,
-            ],
+    ---
+    ```json
+    {
+      "name": "core",
+      "source_paths": [
+        "[SCARB_REGISTRY_STD]/core/src/lib.cairo"
+      ],
+      "settings": {
+        "name": null,
+        "edition": "2024_07",
+        "version": "2.11.2",
+        "cfg_set": null,
+        "dependencies": {},
+        "experimental_features": {
+          "negative_impls": true,
+          "associated_item_constraints": true,
+          "coupons": true
         }
-        ```
+      },
+      "linter_configuration": "Off",
+      "plugins": {
+        "builtin_plugins": [
+          "Executable",
+          "CairoTest",
+          "Starknet"
+        ]
+      }
+    }
+    ```
     "##);
 }
