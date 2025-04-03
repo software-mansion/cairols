@@ -30,14 +30,12 @@ use itertools::Itertools;
 use salsa::{Database, Durability};
 
 pub use self::semantic::*;
-pub use self::swapper::*;
 pub use self::syntax::*;
 use super::proc_macros::db::{ProcMacroDatabase, init_proc_macro_group};
 use crate::TRICKS;
 
 mod lru;
 mod semantic;
-mod swapper;
 mod syntax;
 
 /// The Cairo compiler Salsa database tailored for language server usage.

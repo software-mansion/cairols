@@ -9,7 +9,7 @@ use salsa::ParallelDatabase;
 use crate::config::Config;
 use crate::ide::analysis_progress::{AnalysisProgressController, ProcMacroServerTracker};
 use crate::ide::code_lens::CodeLensController;
-use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::DiagnosticsController;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::project::{ConfigsRegistry, ProjectController};
@@ -24,7 +24,6 @@ pub struct State {
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
     pub scarb_toolchain: ScarbToolchain,
-    pub db_swapper: AnalysisDatabaseSwapper,
     pub diagnostics_controller: DiagnosticsController,
     pub proc_macro_controller: ProcMacroClientController,
     pub project_controller: ProjectController,
@@ -59,7 +58,6 @@ impl State {
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
             scarb_toolchain: scarb_toolchain.clone(),
-            db_swapper: AnalysisDatabaseSwapper::new(),
             diagnostics_controller,
             analysis_progress_controller,
             proc_macro_controller,

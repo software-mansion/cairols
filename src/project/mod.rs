@@ -6,7 +6,6 @@ pub use self::model::ConfigsRegistry;
 pub use self::project_manifest_path::*;
 use crate::ide::code_lens::FileChange;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::crate_data::CrateInfo;
 use crate::project::model::ProjectModel;
@@ -196,15 +195,6 @@ impl ProjectController {
 
         #[cfg(feature = "testing")]
         notifier.notify::<crate::lsp::ext::testing::ProjectUpdatingFinished>(());
-    }
-
-    pub fn migrate_crates_to_new_db(
-        &self,
-        new_db: &mut AnalysisDatabase,
-        proc_macro_controller: &ProcMacroClientController,
-        enable_linter: bool,
-    ) {
-        self.model.apply_changes_to_db(new_db, proc_macro_controller, enable_linter);
     }
 
     /// Sends an action request to the background thread.
