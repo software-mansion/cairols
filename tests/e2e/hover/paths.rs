@@ -317,9 +317,6 @@ fn function_with_path_super() {
     """
     popover = """
     ```cairo
-
-    ```
-    ```cairo
     crate hello
     ```
     """
@@ -506,9 +503,6 @@ fn struct_constructor_with_path_first() {
             let _ = <sel>super</sel>::some_module::internal_module::nested_internal_module::PublicStruct {};
     """
     popover = """
-    ```cairo
-
-    ```
     ```cairo
     crate hello
     ```
