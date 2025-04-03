@@ -23,7 +23,7 @@ impl MemberDef {
     ) -> Option<Self> {
         let struct_ast = definition_node.ancestor_of_type::<ast::ItemStruct>(db)?;
         let struct_item = ItemDef::new(db, &struct_ast.name(db).as_syntax_node())?;
-        Some(Self { member_id, struct_item, definition_stable_ptr: definition_node.stable_ptr() })
+        Some(Self { member_id, struct_item, definition_stable_ptr: definition_node.stable_ptr(db) })
     }
 
     /// Gets the stable pointer to the syntax node which defines this symbol.

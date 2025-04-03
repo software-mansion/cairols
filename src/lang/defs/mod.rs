@@ -2,6 +2,7 @@ use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
@@ -43,13 +44,13 @@ pub enum SymbolDef {
 impl SymbolDef {
     /// Finds definition of the symbol referred to by the given identifier.
     pub fn find(db: &AnalysisDatabase, identifier: &ast::TerminalIdentifier) -> Option<Self> {
-        if let Some(parent) = identifier.as_syntax_node().parent() {
+        if let Some(parent) = identifier.as_syntax_node().parent(db) {
             if parent.kind(db.upcast()) == SyntaxKind::PathSegmentSimple
                 && parent.grandparent_kind(db) == Some(SyntaxKind::ExprInlineMacro)
             {
                 return Some(Self::ExprInlineMacro(
                     parent
-                        .parent()
+                        .parent(db)
                         .expect("Grandparent already exists")
                         .get_text_without_trivia(db.upcast())
                         .into(),
@@ -104,10 +105,10 @@ impl SymbolDef {
     /// Gets a stable pointer to the "most interesting" syntax node of the symbol.
     ///
     /// Typically, this is this symbol's name node.
-    pub fn definition_stable_ptr(&self) -> Option<SyntaxStablePtrId> {
+    pub fn definition_stable_ptr(&self, db: &dyn SyntaxGroup) -> Option<SyntaxStablePtrId> {
         match self {
             Self::Item(d) => Some(d.definition_stable_ptr()),
-            Self::Variable(d) => Some(d.definition_stable_ptr()),
+            Self::Variable(d) => Some(d.definition_stable_ptr(db)),
             Self::ExprInlineMacro(_) => None,
             Self::Member(d) => Some(d.definition_stable_ptr()),
             Self::Variant(d) => Some(d.definition_stable_ptr()),
@@ -117,7 +118,7 @@ impl SymbolDef {
 
     /// Gets the [`FileId`] and [`TextSpan`] of symbol's definition node's originating location.
     pub fn definition_location(&self, db: &AnalysisDatabase) -> Option<(FileId, TextSpan)> {
-        let stable_ptr = self.definition_stable_ptr()?;
+        let stable_ptr = self.definition_stable_ptr(db)?;
         let node = stable_ptr.lookup(db.upcast());
         let found_file = stable_ptr.file_id(db.upcast());
         let span = node.span_without_trivia(db.upcast());
@@ -152,11 +153,11 @@ impl SymbolDef {
                     &[SyntaxKind::FunctionWithBody, SyntaxKind::TraitItemFunction],
                 ) {
                     SearchScope::file_span(
-                        owning_function.stable_ptr().file_id(db.upcast()),
+                        owning_function.stable_ptr(db).file_id(db.upcast()),
                         owning_function.span(db.upcast()),
                     )
                 } else {
-                    SearchScope::file(var.definition_stable_ptr().file_id(db.upcast()))
+                    SearchScope::file(var.definition_stable_ptr(db).file_id(db.upcast()))
                 }
             }
 

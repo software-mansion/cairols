@@ -36,7 +36,7 @@ pub fn struct_constructor_completions(
         .collect::<Vec<_>>();
 
     let constructor_expr_id =
-        db.lookup_expr_by_ptr(function_id, constructor.stable_ptr().into()).ok()?;
+        db.lookup_expr_by_ptr(function_id, constructor.stable_ptr(db).into()).ok()?;
 
     let semantic_expr = db.expr_semantic(function_id, constructor_expr_id);
 

@@ -44,7 +44,7 @@ fn patterns(
     ctx: &AnalysisContext<'_>,
     typed_text: &str,
 ) -> Vec<CompletionItem> {
-    let cursor = ctx.node.offset();
+    let cursor = ctx.node.offset(db);
 
     let mut completions = vec![];
 
@@ -58,17 +58,18 @@ fn patterns(
             }
 
             // Take only already declared variables.
-            if cursor < pattern_node.offset() {
+            if cursor < pattern_node.offset(db) {
                 continue;
             }
 
             // Find all ancestor let statements and check if we are on pattern created with one of these.
-            let is_recursive =
-                ctx.node.ancestors_with_self().filter_map(|node| StatementLet::cast(db, node)).any(
-                    |let_statement| {
-                        let_statement.pattern(db).stable_ptr().0.lookup(db) == pattern_node
-                    },
-                );
+            let is_recursive = ctx
+                .node
+                .ancestors_with_self(db)
+                .filter_map(|node| StatementLet::cast(db, node))
+                .any(|let_statement| {
+                    let_statement.pattern(db).stable_ptr(db).0.lookup(db) == pattern_node
+                });
 
             if is_recursive {
                 // Disallow recursive variables.
@@ -80,16 +81,16 @@ fn patterns(
                 continue;
             }
 
-            let ancestors: HashSet<_> = ctx.node.ancestors_with_self().collect();
+            let ancestors: HashSet<_> = ctx.node.ancestors_with_self(db).collect();
 
             let Some(common_ancestor) =
-                pattern_node.ancestors_with_self().find(|node| ancestors.contains(node))
+                pattern_node.ancestors_with_self(db).find(|node| ancestors.contains(node))
             else {
                 continue;
             };
 
             let blocks_to_common_ancestor = pattern_node
-                .ancestors_with_self()
+                .ancestors_with_self(db)
                 .take_while(|node| node != &common_ancestor)
                 .filter(|node| node.kind(db) == SyntaxKind::ExprBlock)
                 .count();

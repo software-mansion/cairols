@@ -45,7 +45,7 @@ fn use_position(db: &AnalysisDatabase, ctx: &AnalysisContext) -> Option<UsePosit
                         .expect("use leaf must be in use item")
                         .use_kw(db)
                         .token(db)
-                        .stable_ptr()
+                        .stable_ptr(db)
                         .untyped()
                 })
                 .map(|stable_ptr| UsePosition::new(db, stable_ptr, true))
