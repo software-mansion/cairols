@@ -257,11 +257,6 @@ impl Backend {
 
             Self::dispatch_setup_tasks(&mut scheduler);
 
-            // Attempt to swap the database to reduce memory use.
-            // Because diagnostics are always refreshed afterwards, the fresh database state will
-            // be quickly repopulated.
-            scheduler.on_sync_task(Self::maybe_swap_database);
-
             // Refresh diagnostics each time state changes.
             // Although it is possible to mutate state without affecting the analysis database,
             // we basically never hit such a case in CairoLS in happy paths.
@@ -406,17 +401,6 @@ impl Backend {
             &state.config,
             &state.client_capabilities,
             requester,
-        );
-    }
-
-    /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, _notifier: Notifier) {
-        state.db_swapper.maybe_swap(
-            &mut state.db,
-            &state.open_files,
-            &mut state.project_controller,
-            &state.proc_macro_controller,
-            &state.config,
         );
     }
 
