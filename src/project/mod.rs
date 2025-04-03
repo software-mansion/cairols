@@ -19,6 +19,8 @@ use crate::toolchain::scarb::ScarbToolchain;
 use anyhow::Context;
 use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
+use cairo_lang_filesystem::db::{CrateIdentifier, FilesGroup, FilesGroupEx};
+use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
@@ -127,15 +129,30 @@ impl ProjectController {
                 );
             }
             ProjectUpdate::CairoProjectToml(maybe_project_config) => {
+                if let Some(project_config) = maybe_project_config {
+                    update_crate_roots_from_project_config(db, &project_config);
+
+                    // Make sure cfg(test) is not set if the core crate comes from the Scarb cache.
+                    if contains_core_from_scarb_cache(&project_config, &state.scarb_toolchain) {
+                        let core_id = CrateId::core(db);
+
+                        let mut core_settings = db.crate_config(core_id).unwrap();
+                        core_settings.settings.cfg_set = Some(
+                            core_settings
+                                .settings
+                                .cfg_set
+                                .unwrap_or_default()
+                                .union(&AnalysisDatabase::initial_cfg_set_for_deps()),
+                        );
+                        db.set_crate_config(core_id, Some(core_settings));
+                    }
+                }
+
                 try_to_init_unmanaged_core_if_not_present(
                     db,
                     &state.config,
                     &state.scarb_toolchain,
                 );
-
-                if let Some(project_config) = maybe_project_config {
-                    update_crate_roots_from_project_config(db, &project_config);
-                }
             }
             ProjectUpdate::NoConfig(file_path) => {
                 try_to_init_unmanaged_core_if_not_present(
@@ -297,4 +314,20 @@ impl ProjectControllerThread {
 struct ProjectUpdateRequest {
     file_path: PathBuf,
     loaded_manifests: Snapshot<HashSet<PathBuf>>,
+}
+
+fn contains_core_from_scarb_cache(
+    project_config: &ProjectConfig,
+    scarb_toolchain: &ScarbToolchain,
+) -> bool {
+    project_config
+        .content
+        .crate_roots
+        .get(&CrateIdentifier::from("core"))
+        .map(|p| project_config.absolute_crate_root(p))
+        .is_some_and(|core_root| {
+            scarb_toolchain
+                .cache_path()
+                .is_some_and(|scarb_cache_path| core_root.starts_with(scarb_cache_path))
+        })
 }

@@ -8,16 +8,15 @@ use cairo_lang_filesystem::db::{
     FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
-use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup};
+use cairo_lang_semantic::db::PluginSuiteInput;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::smol_str::SmolStr;
-use cairo_lang_utils::{Intern, LookupIntern};
 use cairo_lint::CairoLintToolMetadata;
 use cairo_lint::plugin::{
     cairo_lint_allow_plugin_suite, cairo_lint_plugin_suite_without_metadata_validation,
 };
-use itertools::chain;
 
 use super::builtin_plugins::BuiltinPlugin;
 use crate::TRICKS;
@@ -115,47 +114,6 @@ impl Crate {
 
         let interned_plugins = db.intern_plugin_suite(plugins);
         db.set_override_crate_plugins_from_suite(crate_id, interned_plugins);
-    }
-
-    /// Construct a [`Crate`] from data already applied to the [`AnalysisDatabase`].
-    ///
-    /// Returns `None` if the crate is virtual or the crate configuration is missing.
-    pub fn reconstruct(db: &AnalysisDatabase, crate_id: CrateId) -> Option<Self> {
-        let CrateLongId::Real { name, discriminator } = crate_id.lookup_intern(db) else {
-            return None;
-        };
-
-        let Some(CrateConfiguration { root: Directory::Real(root), settings, .. }) =
-            db.crate_config(crate_id)
-        else {
-            return None;
-        };
-
-        let custom_main_file_stems = extract_custom_file_stems(db, crate_id);
-
-        let macro_plugins = db.crate_macro_plugins(crate_id);
-        let inline_macro_plugins = db.crate_inline_macro_plugins(crate_id);
-        let analyzer_plugins = db.crate_analyzer_plugins(crate_id);
-
-        let builtin_plugins = chain!(
-            macro_plugins
-                .iter()
-                .map(|&id| db.lookup_intern_macro_plugin(id).0)
-                .filter_map(|plugin| BuiltinPlugin::try_from_compiler_macro_plugin(&*plugin)),
-            inline_macro_plugins
-                .values()
-                .map(|&id| db.lookup_intern_inline_macro_plugin(id).0)
-                .filter_map(|plugin| BuiltinPlugin::try_from_compiler_inline_macro_plugin(
-                    &*plugin
-                )),
-            analyzer_plugins
-                .iter()
-                .map(|&id| db.lookup_intern_analyzer_plugin(id).0)
-                .filter_map(|plugin| BuiltinPlugin::try_from_compiler_analyzer_plugin(&*plugin))
-        )
-        .collect();
-
-        Some(Self { name, discriminator, root, custom_main_file_stems, settings, builtin_plugins })
     }
 
     pub fn long_id(&self) -> CrateLongId {
