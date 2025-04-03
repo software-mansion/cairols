@@ -7,7 +7,7 @@ pub const RULE: &str = "---\n";
 
 /// Surround the given code with `cairo` fenced code block.
 pub fn fenced_code_block(code: &str) -> String {
-    if code.is_empty() {
+    if code.trim().is_empty() {
         return String::new();
     }
     format!("```cairo\n{code}\n```\n")
