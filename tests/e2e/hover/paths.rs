@@ -312,6 +312,14 @@ fn function_with_path_super() {
     source_context = """
             <caret>super::some_module::internal_module::nested_internal_module::foo();
     """
+    highlight = """
+            <sel>super</sel>::some_module::internal_module::nested_internal_module::foo();
+    """
+    popover = """
+    ```cairo
+    crate hello
+    ```
+    """
     "#)
 }
 
@@ -490,6 +498,14 @@ fn struct_constructor_with_path_first() {
     "#,@r#"
     source_context = """
             let _ = <caret>super::some_module::internal_module::nested_internal_module::PublicStruct {};
+    """
+    highlight = """
+            let _ = <sel>super</sel>::some_module::internal_module::nested_internal_module::PublicStruct {};
+    """
+    popover = """
+    ```cairo
+    crate hello
+    ```
     """
     "#)
 }
