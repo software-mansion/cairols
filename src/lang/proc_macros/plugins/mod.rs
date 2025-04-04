@@ -8,9 +8,11 @@ use downcast::unsafe_downcast_ref;
 use scarb::inline::inline_macro_generate_code;
 use scarb::regular::macro_generate_code;
 use scarb_proc_macro_server_types::methods::defined_macros::{
-    CompilationUnitComponentMacros, DefinedMacrosResponse,
+    CompilationUnitComponentMacros, DebugInfo, DefinedMacrosResponse,
 };
 use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, ProcMacroScope};
+
+use crate::lang::plugins::DowncastRefUnchecked;
 
 mod downcast;
 // TODO(#6666) Evict this module when this is possible.
@@ -31,6 +33,7 @@ pub fn proc_macro_plugin_suites(
                  inline_macros,
                  derives,
                  executables,
+                 debug_info: DebugInfo { source_packages },
              }| {
                 let mut plugin_suite = PluginSuite::default();
 
@@ -38,12 +41,14 @@ pub fn proc_macro_plugin_suites(
 
                 plugin_suite.add_plugin_ex(Arc::new(ProcMacroPlugin {
                     scope: plugin_scope.clone(),
+                    source_packages: source_packages.clone(),
                     defined_attributes: attributes,
                     defined_derives: derives,
                     defined_executable_attributes: executables,
                 }));
 
-                let inline_plugin = Arc::new(InlineProcMacroPlugin { scope: plugin_scope });
+                let inline_plugin =
+                    Arc::new(InlineProcMacroPlugin { scope: plugin_scope, source_packages });
 
                 for inline_macro in inline_macros {
                     plugin_suite.add_inline_macro_plugin_ex(&inline_macro, inline_plugin.clone());
@@ -58,11 +63,26 @@ pub fn proc_macro_plugin_suites(
 /// Macro plugin that searches for proc macros and forwards their resolution to the
 /// proc-macro-server.
 #[derive(Debug)]
-struct ProcMacroPlugin {
+pub struct ProcMacroPlugin {
     scope: ProcMacroScope,
+    source_packages: Vec<String>,
     defined_attributes: Vec<String>,
     defined_derives: Vec<String>,
     defined_executable_attributes: Vec<String>,
+}
+
+impl ProcMacroPlugin {
+    pub fn source_packages(&self) -> &[String] {
+        &self.source_packages
+    }
+}
+
+impl<'t> DowncastRefUnchecked<'t> for ProcMacroPlugin {
+    type From = &'t dyn MacroPlugin;
+
+    unsafe fn downcast_ref_unchecked(value: Self::From) -> &'t Self {
+        unsafe { &*(value as *const dyn MacroPlugin as *const Self) }
+    }
 }
 
 impl MacroPlugin for ProcMacroPlugin {
@@ -97,8 +117,23 @@ impl MacroPlugin for ProcMacroPlugin {
 
 /// Inline macro plugin that forwards resolution to the proc-macro-server.
 #[derive(Debug)]
-struct InlineProcMacroPlugin {
+pub struct InlineProcMacroPlugin {
     scope: ProcMacroScope,
+    source_packages: Vec<String>,
+}
+
+impl InlineProcMacroPlugin {
+    pub fn source_packages(&self) -> &[String] {
+        &self.source_packages
+    }
+}
+
+impl<'t> DowncastRefUnchecked<'t> for InlineProcMacroPlugin {
+    type From = &'t dyn InlineMacroExprPlugin;
+
+    unsafe fn downcast_ref_unchecked(value: Self::From) -> &'t Self {
+        unsafe { &*(value as *const dyn InlineMacroExprPlugin as *const Self) }
+    }
 }
 
 impl InlineMacroExprPlugin for InlineProcMacroPlugin {

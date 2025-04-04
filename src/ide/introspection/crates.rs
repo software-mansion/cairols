@@ -1,3 +1,4 @@
+use std::any::TypeId;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -8,11 +9,13 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::ids::AnalyzerPluginLongId;
 use cairo_lang_utils::{LookupIntern, smol_str::SmolStr};
+use cairo_lint::plugin::CairoLint;
 use itertools::{Itertools, chain};
 use serde::Serialize;
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::plugins::AnalyzerPluginType;
+use crate::lang::plugins::{AnalyzerPluginType, DowncastRefUnchecked};
+use crate::lang::proc_macros::plugins::{InlineProcMacroPlugin, ProcMacroPlugin};
 use crate::project::builtin_plugins::BuiltinPlugin;
 use crate::project::extract_custom_file_stems;
 
@@ -84,7 +87,7 @@ enum LinterConfiguration {
 
 impl LinterConfiguration {
     fn for_crate(db: &AnalysisDatabase, crate_id: CrateId) -> Self {
-        let Some(_plugin) = db
+        let Some(id) = db
             .crate_analyzer_plugins(crate_id)
             .iter()
             .map(|id| id.lookup_intern(db))
@@ -93,7 +96,14 @@ impl LinterConfiguration {
             return Self::Off;
         };
 
-        let config = HashMap::new();
+        // Safety: we check if `id` points to the `CairoLint` plugin.
+        let plugin = unsafe { CairoLint::downcast_ref_unchecked(&*id.0) };
+
+        let mut config = plugin.tool_metadata().clone();
+        config.insert(
+            "include_compiler_generated_files".to_owned(),
+            plugin.include_compiler_generated_files(),
+        );
 
         Self::On(config)
     }
@@ -104,7 +114,7 @@ struct Plugins {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     builtin_plugins: Vec<BuiltinPlugin>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    proc_macros: Vec<ProcMacro>,
+    proc_macros: Vec<String>,
 }
 
 impl Plugins {
@@ -131,13 +141,15 @@ impl Plugins {
 
         let builtin_plugins = builtin_plugins.into_iter().unique().sorted().collect_vec();
 
+        let proc_macros =
+            proc_macros.into_iter().flat_map(|m| m.source_packages).sorted().collect_vec();
+
         Self { builtin_plugins, proc_macros }
     }
 }
 
 enum Plugin {
     Builtin(BuiltinPlugin),
-    #[expect(dead_code)] // In the next PR :)))
     ProcMacro(ProcMacro),
 }
 
@@ -156,7 +168,14 @@ impl TryFrom<MacroPluginLongId> for Plugin {
             return Ok(Self::Builtin(builtin_plugin));
         }
 
-        Err(())
+        if plugin.plugin_type_id() != TypeId::of::<ProcMacroPlugin>() {
+            return Err(());
+        }
+
+        // Safety: we explicitly check if `id` points to `ProcMacroPlugin`.
+        // We also extract the `&dyn MacroPlugin` from `Arc`.
+        let plugin = unsafe { ProcMacroPlugin::downcast_ref_unchecked(&*id.0) };
+        Ok(Self::ProcMacro(ProcMacro { source_packages: plugin.source_packages().to_vec() }))
     }
 }
 
@@ -170,13 +189,21 @@ impl TryFrom<InlineMacroExprPluginLongId> for Plugin {
             return Ok(Self::Builtin(builtin_plugin));
         }
 
-        Err(())
+        if plugin.plugin_type_id() != TypeId::of::<InlineProcMacroPlugin>() {
+            return Err(());
+        }
+
+        // Safety: we explicitly check if `id` points to `InlineProcMacroPlugin`.
+        // We also extract the `&dyn InlineMacroExprPlugin` from `Arc`.
+        let plugin = unsafe { InlineProcMacroPlugin::downcast_ref_unchecked(&*id.0) };
+        Ok(Self::ProcMacro(ProcMacro { source_packages: plugin.source_packages().to_vec() }))
     }
 }
 
 impl TryFrom<AnalyzerPluginLongId> for Plugin {
     type Error = ();
 
+    /// Fails for plugins from `cairo-lint`: the main linter plugin and helper analyzer plugins.
     fn try_from(plugin: AnalyzerPluginLongId) -> Result<Self, Self::Error> {
         BuiltinPlugin::try_from_compiler_analyzer_plugin(&*plugin.0).map(Self::Builtin).ok_or(())
     }
