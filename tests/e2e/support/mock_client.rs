@@ -68,6 +68,8 @@ impl MockClient {
             starting_cwd: env::current_dir().expect("No CWD set"),
         };
 
+        this.set_cwd("./");
+
         std::thread::spawn(|| init().run_for_tests());
 
         this.initialize(capabilities);
