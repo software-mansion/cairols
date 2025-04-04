@@ -11,6 +11,7 @@ use memchr::memmem::Finder;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::SymbolDef;
+use cairo_lang_filesystem::db::get_originating_location;
 use search_scope::SearchScope;
 
 pub mod search_scope;
@@ -41,6 +42,14 @@ pub struct FindUsages<'a> {
 pub struct FoundUsage {
     pub file: FileId,
     pub span: TextSpan,
+}
+
+impl FoundUsage {
+    fn originating_location(&self, db: &AnalysisDatabase) -> Self {
+        let (file, span) = get_originating_location(db, self.file, self.span, None);
+
+        Self { file, span }
+    }
 }
 
 impl<'a> FindUsages<'a> {
@@ -88,7 +97,8 @@ impl<'a> FindUsages<'a> {
         if self.include_declaration {
             if let Some(stable_ptr) = self.symbol.definition_stable_ptr(db) {
                 let usage = FoundUsage::from_stable_ptr(db, stable_ptr);
-                flow!(sink(usage));
+                // Definition can be in vfs, common for `#[generate_trait]`, map it back to user code.
+                flow!(sink(usage.originating_location(db)));
             }
         }
 
