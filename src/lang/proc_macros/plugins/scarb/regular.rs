@@ -567,7 +567,7 @@ fn parse_derive(
 
             let matching_derive = defined_derives
                 .iter()
-                .find(|derive| derive == &&value.to_case(Case::Snake))
+                .find(|derive| derive.to_case(Case::Pascal) == value)
                 .cloned()?;
 
             Some((matching_derive, CallSiteLocation::new(segment, db)))

@@ -1,0 +1,11 @@
+[package]
+name = "scarb_procedural_macros_v2"
+version = "1.0.0"
+edition = "2024"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+cairo-lang-macro = { git = "https://github.com/software-mansion/scarb", rev = "d91215ae8e6a0044f16930b3b0b151abbf1ac0a9" }
+indoc = "2"

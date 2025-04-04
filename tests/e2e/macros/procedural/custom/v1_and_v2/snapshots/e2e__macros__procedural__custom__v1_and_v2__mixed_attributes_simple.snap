@@ -1,0 +1,43 @@
+---
+source: tests/e2e/macros/procedural/custom/v1_and_v2/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros = { path = \"/Users/timelock/swm/starkware/cairols/tests/scarb_procedural_macros\" }\ncairols_test_macros_v2 = { path = \"/Users/timelock/swm/starkware/cairols/tests/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[simple_attribute_macro]\nfn foo() {}\n\n#[simple_attribute_macro_v2]\nfn foo_v2() {}"
+expression: report
+snapshot_kind: text
+---
+[[expansions]]
+analyzed_lines = """
+#[simple_attribute_macro]<caret>
+fn <caret>foo() {}
+fn foo() {<caret>}
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+#[simple_attribute_macro]
+fn foo() {}
+
+// proc_macro_simple_attribute_macro
+// ---------------------------------
+
+fn generated_function() {}
+"""
+
+[[expansions]]
+analyzed_lines = """
+#[simple_attribute_macro_v2]<caret>
+fn <caret>foo_v2() {}
+fn foo_v2() {<caret>}
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+#[simple_attribute_macro_v2]
+fn foo_v2() {}
+
+// proc_macro_simple_attribute_macro_v2
+// ------------------------------------
+
+fn generated_function_v2() {}
+"""
