@@ -1,0 +1,31 @@
+name: Check new scarb nightly
+on:
+  repository_dispatch:
+    types: [ new-scarb-nightly-published ]
+  workflow_dispatch:
+
+jobs:
+  test-with-nightly-scarb:
+    runs-on: ubuntu-latest
+    name: Check with scarb nightly release from tag (${{ github.event.client_payload.tag_name }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: ${{ github.event.client_payload.tag_name }}
+          cache: false
+      - run: cargo test --profile=ci --no-fail-fast
+
+  notify_failed:
+    runs-on: ubuntu-latest
+    if: always() && needs.test-with-nightly-scarb.result == 'failure' && github.event_name == 'repository_dispatch'
+    needs: test-with-nightly-scarb
+    steps:
+      - name: Notify the team about workflow failure
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_SCARB_NIGHTLY_CHECK_FAILURE_WEBHOOK_URL }}
+          webhook-type: webhook-trigger
+          payload: |
+            url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
