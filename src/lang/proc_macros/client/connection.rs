@@ -10,6 +10,7 @@ use tracing::{error, info};
 pub struct ProcMacroServerConnection {
     pub(super) requester: Sender<RpcRequest>,
     pub(super) responses: Arc<Mutex<VecDeque<RpcResponse>>>,
+    pub(super) server_killed_receiver: Receiver<()>,
 }
 
 impl std::fmt::Debug for ProcMacroServerConnection {
@@ -29,17 +30,23 @@ impl ProcMacroServerConnection {
             proc_macro_server.stdin.take().expect("proc-macro-server must use pipe on stdin");
 
         let (requester, receiver) = crossbeam::channel::bounded(0);
+        let (server_killed_sender, server_killed_receiver) = crossbeam::channel::bounded(1);
 
         let responses: Arc<Mutex<VecDeque<RpcResponse>>> = Default::default();
         let responses_writer = Arc::clone(&responses);
 
         std::thread::spawn(move || {
-            read_responses(proc_macro_server, responses_writer, response_channel_sender)
+            read_responses(
+                proc_macro_server,
+                responses_writer,
+                response_channel_sender,
+                server_killed_sender,
+            )
         });
 
         std::thread::spawn(move || write_requests(server_input, receiver));
 
-        Self { requester, responses }
+        Self { requester, responses, server_killed_receiver }
     }
 }
 
@@ -47,10 +54,11 @@ fn read_responses(
     mut proc_macro_server: std::process::Child,
     responses_writer: Arc<Mutex<VecDeque<RpcResponse>>>,
     response_channel_sender: Sender<()>,
+    server_killed_sender: Sender<()>,
 ) {
     let server_output =
         proc_macro_server.stdout.take().expect("proc-macro-server must use pipe on stdout");
-    let _proc_macro_server = KillOnDrop(proc_macro_server);
+    let proc_macro_server = KillOnDrop(proc_macro_server);
     let mut line = String::new();
     let mut output = BufReader::new(server_output);
 
@@ -89,6 +97,12 @@ fn read_responses(
             // No receiver exists so stop reading and drop this thread.
             break;
         }
+    }
+
+    drop(proc_macro_server);
+
+    if let Err(err) = server_killed_sender.try_send(()) {
+        error!("unexpected error when informing about the death of the server: {err}");
     }
 }
 
