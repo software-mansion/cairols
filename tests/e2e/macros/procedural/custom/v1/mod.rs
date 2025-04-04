@@ -1,6 +1,5 @@
 use indoc::indoc;
 
-use crate::macros::fixtures::ProjectWithMultipleCrates;
 use crate::macros::{fixtures::ProjectWithCustomMacros, test_macro_expansion_and_diagnostics};
 
 #[test]
@@ -170,26 +169,6 @@ fn derive_with_error() {
             "test_package/src/lib.cairo" => indoc!(r#"
                 #[derive<caret>(Error<caret>DeriveMacro)]
                 struct Empty<caret>Struct {<caret>}
-            "#)
-        }
-    );
-}
-
-#[test]
-fn macros_with_equal_names_in_two_separate_packages() {
-    test_macro_expansion_and_diagnostics!(
-        project = ProjectWithMultipleCrates,
-        cwd = "workspace/package_a",
-        files {
-            "workspace/package_a/src/lib.cairo" => indoc!(r#"
-                fn foo() {
-                    let _name = which_<caret>macro_package!();
-                }
-            "#),
-            "workspace/package_b/src/lib.cairo" => indoc!(r#"
-                fn foo() {
-                    let _name = which_<caret>macro_package!();
-                }
             "#)
         }
     );
