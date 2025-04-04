@@ -399,7 +399,7 @@ fn parse_attrs(
                     expansion = Some((
                         attr.attr(db).as_syntax_node().get_text(db),
                         args,
-                        attr.stable_ptr().untyped(),
+                        attr.stable_ptr(db).untyped(),
                     ));
                     // Do not add the attribute for found expansion.
                     continue;
@@ -467,7 +467,7 @@ fn expand_derives(
     item_ast: ast::ModuleItem,
     stream_metadata: TokenStreamMetadata,
 ) -> Option<PluginResult> {
-    let stable_ptr = item_ast.clone().stable_ptr().untyped();
+    let stable_ptr = item_ast.clone().stable_ptr(db).untyped();
     let span = item_ast.as_syntax_node().span(db);
     let token_stream =
         TokenStream::from_syntax_node(db, &item_ast).with_metadata(stream_metadata.clone());
@@ -590,7 +590,7 @@ fn calculate_metadata(db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> TokenS
         hashable.hash(&mut hasher);
         hasher.finish_as_short_hash()
     }
-    let stable_ptr = item_ast.clone().stable_ptr().untyped();
+    let stable_ptr = item_ast.clone().stable_ptr(db).untyped();
     let file_path = stable_ptr.file_id(db).full_path(db.upcast());
     let file_id = short_hash(file_path.clone());
     TokenStreamMetadata::new(file_path, file_id)

@@ -47,13 +47,13 @@ pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) 
     let module_file = db.module_main_file(module_id).ok()?;
 
     let item_ast_node = node
-        .ancestors_with_self()
+        .ancestors_with_self(db)
         .find(|node| node.parent_kind(db) == Some(SyntaxKind::ModuleItemList));
     let macro_ast_node = node.ancestor_of_kind(db, SyntaxKind::ExprInlineMacro);
 
     let (node_to_expand, top_level_macro_kind) = match (item_ast_node, macro_ast_node) {
         (Some(item_ast_node), Some(macro_ast_node)) => {
-            if item_ast_node.is_descendant(&macro_ast_node) {
+            if item_ast_node.is_descendant(db, &macro_ast_node) {
                 (item_ast_node, TopLevelMacroKind::Attribute)
             } else {
                 (macro_ast_node, TopLevelMacroKind::Inline)
@@ -68,7 +68,7 @@ pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) 
         TopLevelMacroKind::Inline => VecDeque::from([module_file]),
         // If this is attribute or derive macro, it can return many files.
         TopLevelMacroKind::Attribute => {
-            expanded_macro_files(db, module_file, node_to_expand.clone(), &metadata)?
+            expanded_macro_files(db, module_file, node_to_expand, &metadata)?
         }
     };
 
@@ -91,7 +91,7 @@ fn expanded_macro_files(
 ) -> Option<VecDeque<FileId>> {
     let syntax_db = db.upcast();
 
-    let item = ModuleItemList::from_syntax_node(syntax_db, item_ast_node.parent()?)
+    let item = ModuleItemList::from_syntax_node(syntax_db, item_ast_node.parent(syntax_db)?)
         .elements(syntax_db)
         .into_iter()
         .find(|e| e.as_syntax_node() == item_ast_node)?;
@@ -217,7 +217,7 @@ impl FileProcessorConfig {
     ) -> Self {
         Self {
             content: node_to_expand.get_text(db),
-            offset_correction: node_to_expand.offset() - Default::default(),
+            offset_correction: node_to_expand.offset(db) - Default::default(),
             macros: match top_level_macro_kind {
                 TopLevelMacroKind::Inline => vec![node_to_expand],
                 TopLevelMacroKind::Attribute => node_to_expand
@@ -261,7 +261,7 @@ fn expand_inline_macros_in_single_file(
     } else {
         // Iterate in reversed order so positions are not affected by inlining.
         for node in config.macros.into_iter().rev() {
-            let inline_macro = ExprInlineMacro::from_syntax_node(db, node.clone());
+            let inline_macro = ExprInlineMacro::from_syntax_node(db, node);
             let code = plugins
                 .get(&inline_macro.path(db).as_syntax_node().get_text_without_trivia(db))
                 .map(|&id| db.lookup_intern_inline_macro_plugin(id))?
@@ -269,7 +269,7 @@ fn expand_inline_macros_in_single_file(
                 .code?
                 .content;
 
-            let offset = node.offset().sub_width(config.offset_correction);
+            let offset = node.offset(db).sub_width(config.offset_correction);
 
             config.content.replace_range(
                 TextSpan { start: offset, end: offset.add_width(node.width(db)) }.to_str_range(),

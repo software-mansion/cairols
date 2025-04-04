@@ -126,11 +126,11 @@ impl TestFullQualifiedPath {
     ) -> Option<Self> {
         let full_path = match module_item {
             ModuleItem::FreeFunction(function_with_body) => ModuleItemId::FreeFunction(
-                FreeFunctionLongId(module_file_id, function_with_body.stable_ptr()).intern(db),
+                FreeFunctionLongId(module_file_id, function_with_body.stable_ptr(db)).intern(db),
             )
             .full_path(db),
             ModuleItem::Module(item_module) => ModuleItemId::Submodule(
-                SubmoduleLongId(module_file_id, item_module.stable_ptr()).intern(db),
+                SubmoduleLongId(module_file_id, item_module.stable_ptr(db)).intern(db),
             )
             .full_path(db),
             _ => return None,
@@ -245,8 +245,8 @@ fn get_position(db: &AnalysisDatabase, ptr: SyntaxStablePtrId) -> Option<Positio
 
     let module_item = db
         .find_syntax_node_at_offset(file, span.start)?
-        .ancestors_with_self()
-        .find(|n| ModuleItem::cast(db, n.clone()).is_some())?;
+        .ancestors_with_self(db)
+        .find(|n| ModuleItem::cast(db, *n).is_some())?;
 
     module_item
         // In original code it is always `#[test]`.
@@ -268,7 +268,7 @@ fn collect_functions(db: &AnalysisDatabase, module: ModuleId) -> Vec<SyntaxStabl
                 ["test", "snforge_internal_test_executable"]
                     .iter()
                     .filter_map(|test_attr| function.find_attr(db, test_attr))
-                    .map(|test_attr| test_attr.stable_ptr().untyped())
+                    .map(|test_attr| test_attr.stable_ptr(db).untyped())
                     // If for some weird reason we found both, push only first (prefer `#[test]`).
                     .next(),
             );

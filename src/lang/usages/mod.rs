@@ -3,6 +3,7 @@ use std::ops::ControlFlow;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::smol_str::format_smolstr;
@@ -85,7 +86,7 @@ impl<'a> FindUsages<'a> {
         let db = self.db;
 
         if self.include_declaration {
-            if let Some(stable_ptr) = self.symbol.definition_stable_ptr() {
+            if let Some(stable_ptr) = self.symbol.definition_stable_ptr(db) {
                 let usage = FoundUsage::from_stable_ptr(db, stable_ptr);
                 flow!(sink(usage));
             }
@@ -107,7 +108,7 @@ impl<'a> FindUsages<'a> {
             for offset in Self::match_offsets(&finder, &text, search_span) {
                 if let Some(node) = db.find_syntax_node_at_offset(file, offset) {
                     if let Some(identifier) = TerminalIdentifier::cast_token(db, node) {
-                        flow!(self.found_identifier(identifier, sink));
+                        flow!(self.found_identifier(db, identifier, sink));
                     }
                 }
             }
@@ -142,11 +143,12 @@ impl<'a> FindUsages<'a> {
 
     fn found_identifier(
         &self,
+        db: &dyn SyntaxGroup,
         identifier: TerminalIdentifier,
         sink: &mut dyn FnMut(FoundUsage) -> ControlFlow<(), ()>,
     ) -> ControlFlow<(), ()> {
         // Declaration is not a usage, so filter it out.
-        if Some(identifier.stable_ptr().untyped()) == self.symbol.definition_stable_ptr() {
+        if Some(identifier.stable_ptr(self.db).untyped()) == self.symbol.definition_stable_ptr(db) {
             return ControlFlow::Continue(());
         }
         let Some(found_symbol) = SymbolDef::find(self.db, &identifier) else {
@@ -164,7 +166,7 @@ impl<'a> FindUsages<'a> {
 impl FoundUsage {
     fn from_syntax_node(db: &AnalysisDatabase, syntax_node: SyntaxNode) -> Self {
         Self {
-            file: syntax_node.stable_ptr().file_id(db),
+            file: syntax_node.stable_ptr(db).file_id(db),
             span: syntax_node.span_without_trivia(db),
         }
     }

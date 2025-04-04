@@ -28,7 +28,7 @@ impl ModuleDef {
             .strip_suffix("::")
             .map(String::from);
 
-        ModuleDef { id, parent_full_path, definition_stable_ptr: definition_node.stable_ptr() }
+        ModuleDef { id, parent_full_path, definition_stable_ptr: definition_node.stable_ptr(db) }
     }
 
     /// Gets the stable pointer to the syntax node which defines this symbol.

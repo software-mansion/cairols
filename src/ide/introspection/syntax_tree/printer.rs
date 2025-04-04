@@ -23,7 +23,7 @@ pub fn syntax_tree_branch_above_leaf(
     db: &dyn SyntaxGroup,
     syntax_tree_leaf: &SyntaxNode,
 ) -> String {
-    let mut syntax_tree_branch: Vec<_> = syntax_tree_leaf.ancestors_with_self().collect();
+    let mut syntax_tree_branch: Vec<_> = syntax_tree_leaf.ancestors_with_self(db).collect();
     syntax_tree_branch.reverse();
 
     let mut printer = Printer::new(db, true, false);
@@ -174,7 +174,7 @@ impl<'a> Printer<'a> {
             format!(" (kind: {kind:?})")
         };
 
-        let children = self.db.get_children(syntax_node.clone());
+        let children = syntax_node.get_children(self.db);
         let num_children = children.len();
         let suffix = if num_children == 0 {
             self.bright_purple(" []".into()).to_string()
@@ -211,7 +211,7 @@ impl<'a> Printer<'a> {
             format!(" (kind: {kind:?})")
         };
 
-        let children = self.db.get_children(syntax_node.clone());
+        let children = syntax_node.get_children(self.db);
         let num_children = children.len();
         let suffix = if num_children == 0 {
             self.bright_purple(" []".into()).to_string()

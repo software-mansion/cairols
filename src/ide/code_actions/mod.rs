@@ -82,13 +82,9 @@ fn get_code_actions_for_diagnostics(
             "E0002" => {
                 add_missing_trait::add_missing_trait(db, &ctx, uri.clone()).unwrap_or_default()
             }
-            "E0003" => {
-                fill_struct_fields::fill_struct_fields(db, ctx.node.clone(), params).to_vec()
-            }
+            "E0003" => fill_struct_fields::fill_struct_fields(db, ctx.node, params).to_vec(),
             "E0004" => fill_trait_members::fill_trait_members(db, &ctx, params).to_vec(),
-            "E0005" => {
-                create_module_file::create_module_file(db, ctx.node.clone(), uri.clone()).to_vec()
-            }
+            "E0005" => create_module_file::create_module_file(db, ctx.node, uri.clone()).to_vec(),
             "E0006" => missing_import::missing_import(db, &ctx, uri.clone()).unwrap_or_default(),
             _ => {
                 debug!("no code actions for diagnostic code: {code}");

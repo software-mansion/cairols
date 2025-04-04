@@ -5,7 +5,6 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::{
     self, Attribute, ExprStructCtorCall, ItemModule, TerminalIdentifier, UsePathLeaf, UsePathSingle,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use if_chain::if_chain;
@@ -81,10 +80,10 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         || node.kind(db) == SyntaxKind::Trivia
         || node.kind(db).is_token()
     {
-        node = node.parent().unwrap_or(node);
+        node = node.parent(db).unwrap_or(node);
     }
 
-    let ctx = AnalysisContext::from_node(db, node.clone())?;
+    let ctx = AnalysisContext::from_node(db, node)?;
     let crate_id = ctx.module_id.owning_crate(db);
 
     let mut completions = vec![];
@@ -162,7 +161,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     );
 
     if_chain!(
-        if let Some(ident) = TerminalIdentifier::cast(db, node.clone());
+        if let Some(ident) = TerminalIdentifier::cast(db, node);
         if let Some(module_item) = node.parent_of_type::<ItemModule>(db);
         // We are in nested mod, we should not show completions for file modules.
         if module_item.as_syntax_node().ancestor_of_kind(db, SyntaxKind::ItemModule).is_none();
@@ -203,13 +202,13 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 }
 
 fn find_last_meaning_node(db: &AnalysisDatabase, node: SyntaxNode) -> SyntaxNode {
-    for child in db.get_children(node.clone()).iter().rev() {
+    for child in node.get_children(db).iter().rev() {
         if child.kind(db) == SyntaxKind::Trivia {
             continue;
         }
 
-        if let Some(grand_child) = db
-            .get_children(child.clone())
+        if let Some(grand_child) = child
+            .get_children(db)
             .iter()
             .find(|grand_child| grand_child.kind(db) != SyntaxKind::Trivia)
         {
@@ -218,7 +217,7 @@ fn find_last_meaning_node(db: &AnalysisDatabase, node: SyntaxNode) -> SyntaxNode
             }
         }
 
-        return find_last_meaning_node(db, child.clone());
+        return find_last_meaning_node(db, *child);
     }
 
     node

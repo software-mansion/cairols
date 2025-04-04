@@ -63,7 +63,7 @@ fn try_submodule_name(
     let containing_module_file_id =
         db.find_module_file_containing_node(&item_module.as_syntax_node())?;
     let submodule_id =
-        SubmoduleLongId(containing_module_file_id, item_module.stable_ptr()).intern(db);
+        SubmoduleLongId(containing_module_file_id, item_module.stable_ptr(db)).intern(db);
     Some(ResolvedItem::Generic(ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id))))
 }
 
@@ -79,7 +79,7 @@ fn try_member_from_constructor(
 
     let constructor_expr = identifier_node.ancestor_of_type::<ast::ExprStructCtorCall>(db)?;
     let constructor_expr_id =
-        db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr().into()).ok()?;
+        db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr(db).into()).ok()?;
 
     let Expr::StructCtor(constructor_expr_semantic) =
         db.expr_semantic(function_id, constructor_expr_id)
@@ -112,22 +112,22 @@ fn try_member(
     let function_with_body = lookup_items.first()?.function_with_body()?;
 
     let expr_id =
-        db.lookup_expr_by_ptr(function_with_body, binary_expr.stable_ptr().into()).ok()?;
+        db.lookup_expr_by_ptr(function_with_body, binary_expr.stable_ptr(db).into()).ok()?;
     let semantic_expr = db.expr_semantic(function_with_body, expr_id);
 
     let Expr::MemberAccess(expr_member_access) = semantic_expr else { return None };
 
-    let pointer_to_rhs = binary_expr.rhs(db).stable_ptr().untyped();
+    let pointer_to_rhs = binary_expr.rhs(db).stable_ptr(db).untyped();
 
     let mut current_node = syntax_node;
     // Check if the terminal identifier points to a member, not a struct variable.
-    while pointer_to_rhs != current_node.stable_ptr() {
+    while pointer_to_rhs != current_node.stable_ptr(db) {
         // If we found the node with the binary expression, then we're sure we won't find the
         // node with the member.
-        if current_node.stable_ptr() == binary_expr.stable_ptr().untyped() {
+        if current_node.stable_ptr(db) == binary_expr.stable_ptr(db).untyped() {
             return None;
         }
-        current_node = current_node.parent().unwrap();
+        current_node = current_node.parent(db).unwrap();
     }
 
     let member_id = expr_member_access.member;
@@ -146,7 +146,7 @@ fn try_member_declaration(
     let item_struct = member.as_syntax_node().ancestor_of_type::<ast::ItemStruct>(db)?;
     let struct_id = StructLongId(
         db.find_module_file_containing_node(&item_struct.as_syntax_node())?,
-        item_struct.stable_ptr(),
+        item_struct.stable_ptr(db),
     )
     .intern(db);
     let struct_members = db.struct_members(struct_id).ok()?;
@@ -166,7 +166,7 @@ fn try_variant_declaration(
     let item_enum = variant.as_syntax_node().ancestor_of_type::<ast::ItemEnum>(db)?;
     let enum_id = EnumLongId(
         db.find_module_file_containing_node(&item_enum.as_syntax_node())?,
-        item_enum.stable_ptr(),
+        item_enum.stable_ptr(db),
     )
     .intern(db);
     let enum_variants = db.enum_variants(enum_id).ok()?;
@@ -198,7 +198,7 @@ fn try_variable_declaration(
             param.as_syntax_node().ancestor_of_type::<ast::ExprClosure>(db)
         {
             let expr_id =
-                db.lookup_expr_by_ptr(function_id, expr_closure_ast.stable_ptr().into()).ok()?;
+                db.lookup_expr_by_ptr(function_id, expr_closure_ast.stable_ptr(db).into()).ok()?;
             let Expr::ExprClosure(expr_closure_semantic) = db.expr_semantic(function_id, expr_id)
             else {
                 // Break in case Expr::Missing was here.
@@ -211,7 +211,7 @@ fn try_variable_declaration(
         };
 
         if let Some(param) =
-            params.into_iter().find(|param| param.stable_ptr == identifier.stable_ptr())
+            params.into_iter().find(|param| param.stable_ptr == identifier.stable_ptr(db))
         {
             let var_id = VarId::Param(param.id);
             return Some(ResolvedItem::Generic(ResolvedGenericItem::Variable(var_id)));
@@ -220,7 +220,7 @@ fn try_variable_declaration(
 
     // Look at identifier patterns in the function body.
     if let Some(pattern_ast) = identifier.as_syntax_node().ancestor_of_type::<ast::Pattern>(db) {
-        let pattern_id = db.lookup_pattern_by_ptr(function_id, pattern_ast.stable_ptr()).ok()?;
+        let pattern_id = db.lookup_pattern_by_ptr(function_id, pattern_ast.stable_ptr(db)).ok()?;
         let pattern = db.pattern_semantic(function_id, pattern_id);
         let pattern_variable = pattern
             .variables(&QueryPatternVariablesFromDb(db, function_id))
@@ -241,13 +241,13 @@ fn lookup_resolved_items(
 ) -> Option<ResolvedItem> {
     for &lookup_item_id in lookup_items {
         if let Some(item) =
-            db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+            db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr(db))
         {
             return Some(ResolvedItem::Generic(item));
         }
 
         if let Some(item) =
-            db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+            db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr(db))
         {
             return Some(ResolvedItem::Concrete(item));
         }
@@ -262,7 +262,7 @@ fn lookup_item_name(
 ) -> Option<ResolvedItem> {
     let lookup_item = lookup_items.first().copied()?;
 
-    if lookup_item.name_identifier(db).stable_ptr() != identifier.stable_ptr() {
+    if lookup_item.name_identifier(db).stable_ptr(db) != identifier.stable_ptr(db) {
         return None;
     }
 
@@ -295,7 +295,7 @@ impl ResolvedItem {
 
             // Generic items.
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(item)) => {
-                item.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                item.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Module(module_id)) => {
@@ -305,12 +305,12 @@ impl ResolvedItem {
                         // itself.
                         let module_file = db.module_main_file(*module_id).ok()?;
                         let file_syntax = db.file_module_syntax(module_file).ok()?;
-                        file_syntax.as_syntax_node().stable_ptr()
+                        file_syntax.as_syntax_node().stable_ptr(db)
                     }
                     ModuleId::Submodule(submodule_id) => {
                         // For submodules, the definition node is the identifier in `mod <ident>
                         // .*`.
-                        submodule_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                        submodule_id.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                     }
                 }
             }
@@ -327,46 +327,46 @@ impl ResolvedItem {
                         _ => id.function.stable_ptr(db).lookup(db).declaration(db),
                     },
                 };
-                declaration.name(db).stable_ptr().untyped()
+                declaration.name(db).stable_ptr(db).untyped()
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::GenericType(generic_type)) => {
                 match generic_type {
                     GenericTypeId::Struct(struct_id) => {
-                        struct_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                        struct_id.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                     }
                     GenericTypeId::Enum(enum_id) => {
-                        enum_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                        enum_id.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                     }
                     GenericTypeId::Extern(extern_type_id) => {
-                        extern_type_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                        extern_type_id.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                     }
                 }
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::GenericTypeAlias(type_alias)) => {
-                type_alias.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                type_alias.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::GenericImplAlias(impl_alias)) => {
-                impl_alias.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                impl_alias.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Variant(variant)) => {
-                variant.id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                variant.id.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Trait(trt)) => {
-                trt.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                trt.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Impl(imp)) => {
-                imp.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                imp.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Variable(var)) => match var {
                 VarId::Param(param) => {
-                    param.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    param.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
                 VarId::Local(var) => var.untyped_stable_ptr(db),
                 VarId::Item(item) => item.name_stable_ptr(db),
@@ -374,36 +374,36 @@ impl ResolvedItem {
 
             ResolvedItem::Generic(ResolvedGenericItem::TraitItem(trait_item)) => match trait_item {
                 TraitItemId::Function(trait_function) => {
-                    trait_function.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    trait_function.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
                 TraitItemId::Type(trait_type) => {
-                    trait_type.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    trait_type.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
                 TraitItemId::Constant(trait_constant) => {
-                    trait_constant.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    trait_constant.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
                 TraitItemId::Impl(trait_impl) => {
-                    trait_impl.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    trait_impl.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
             },
 
             // Other variants.
             ResolvedItem::Member(member_id) => {
-                member_id.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                member_id.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
             }
 
             ResolvedItem::ImplItem(impl_item) => match impl_item {
                 ImplItemId::Function(impl_function) => {
-                    impl_function.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    impl_function.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
                 ImplItemId::Type(impl_type) => {
-                    impl_type.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    impl_type.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
                 ImplItemId::Constant(impl_constant) => {
-                    impl_constant.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    impl_constant.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
                 ImplItemId::Impl(impl_impl) => {
-                    impl_impl.stable_ptr(db).lookup(db).name(db).stable_ptr().untyped()
+                    impl_impl.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
             },
         };

@@ -62,8 +62,8 @@ impl SemanticTokensTraverser {
                 let width = text.len() as u32;
                 let maybe_semantic_kind = self
                     .offset_to_kind_lookahead
-                    .remove(&node.offset())
-                    .or_else(|| SemanticTokenKind::from_syntax_node(db, node.clone()));
+                    .remove(&node.offset(db))
+                    .or_else(|| SemanticTokenKind::from_syntax_node(db, node));
 
                 if let Some(semantic_kind) = maybe_semantic_kind {
                     let Some(text) = node.text(db) else { unreachable!() };
@@ -85,14 +85,14 @@ impl SemanticTokensTraverser {
                 }
             }
             syntax::node::green::GreenNodeDetails::Node { .. } => {
-                let children = syntax_db.get_children(node.clone());
+                let children = node.get_children(syntax_db);
                 match green_node.kind {
                     SyntaxKind::Param => {
                         self.mark_future_token(
                             ast::Param::from_syntax_node(syntax_db, node)
                                 .name(syntax_db)
                                 .as_syntax_node()
-                                .offset(),
+                                .offset(db),
                             SemanticTokenKind::Parameter,
                         );
                     }
@@ -102,7 +102,7 @@ impl SemanticTokensTraverser {
                                 .declaration(syntax_db)
                                 .name(syntax_db)
                                 .as_syntax_node()
-                                .offset(),
+                                .offset(db),
                             SemanticTokenKind::Function,
                         );
                     }
@@ -110,20 +110,20 @@ impl SemanticTokensTraverser {
                         ast::ItemStruct::from_syntax_node(syntax_db, node)
                             .name(syntax_db)
                             .as_syntax_node()
-                            .offset(),
+                            .offset(db),
                         SemanticTokenKind::Struct,
                     ),
                     SyntaxKind::ItemEnum => self.mark_future_token(
                         ast::ItemEnum::from_syntax_node(syntax_db, node)
                             .name(syntax_db)
                             .as_syntax_node()
-                            .offset(),
+                            .offset(db),
                         SemanticTokenKind::Enum,
                     ),
                     _ => {}
                 }
                 for child in children.iter() {
-                    self.find_semantic_tokens(db, data, child.clone());
+                    self.find_semantic_tokens(db, data, *child);
                 }
             }
         }

@@ -91,7 +91,7 @@ pub fn available_traits_for_method(
     db: &AnalysisDatabase,
     ctx: &AnalysisContext<'_>,
 ) -> Option<Vec<String>> {
-    let stable_ptr = ctx.node.ancestor_of_type::<ast::ExprBinary>(db)?.lhs(db).stable_ptr();
+    let stable_ptr = ctx.node.ancestor_of_type::<ast::ExprBinary>(db)?.lhs(db).stable_ptr(db);
 
     // Get its semantic model.
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;

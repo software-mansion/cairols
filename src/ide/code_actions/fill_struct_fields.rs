@@ -69,7 +69,7 @@ pub fn fill_struct_fields(
         .collect::<Vec<_>>();
 
     let constructor_expr_id =
-        db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr().into()).ok()?;
+        db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr(db).into()).ok()?;
 
     let constructor_semantic = match db.expr_semantic(function_id, constructor_expr_id) {
         Expr::StructCtor(semantic) => semantic,

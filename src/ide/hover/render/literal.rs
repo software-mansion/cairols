@@ -23,20 +23,20 @@ use crate::lang::lsp::ToLsp;
 pub fn literal(db: &AnalysisDatabase, node: &SyntaxNode, file_id: FileId) -> Option<Hover> {
     match node.kind(db) {
         SyntaxKind::TokenLiteralNumber => {
-            let parent = node.parent()?;
-            let literal = TerminalLiteralNumber::from_syntax_node(db, parent.clone());
+            let parent = node.parent(db)?;
+            let literal = TerminalLiteralNumber::from_syntax_node(db, parent);
             let ty = find_type(db, parent)?;
             number_hover(db, &literal, &ty, file_id)
         }
         SyntaxKind::TokenString => {
-            let parent = node.parent()?;
-            let literal = TerminalString::from_syntax_node(db, parent.clone());
+            let parent = node.parent(db)?;
+            let literal = TerminalString::from_syntax_node(db, parent);
             let ty = find_type(db, parent)?;
             string_hover(db, &literal, &ty, file_id)
         }
         SyntaxKind::TokenShortString => {
-            let parent = node.parent()?;
-            let literal = TerminalShortString::from_syntax_node(db, parent.clone());
+            let parent = node.parent(db)?;
+            let literal = TerminalShortString::from_syntax_node(db, parent);
             let ty = find_type(db, parent)?;
             short_string_hover(db, &literal, &ty, file_id)
         }
@@ -47,7 +47,7 @@ pub fn literal(db: &AnalysisDatabase, node: &SyntaxNode, file_id: FileId) -> Opt
 /// Gets the type of an expression associated with [`SyntaxNode`].
 fn find_type(db: &AnalysisDatabase, node: SyntaxNode) -> Option<String> {
     if let Some(function_id) = db.find_lookup_item(&node)?.function_with_body() {
-        find_type_in_function_context(db, node.clone(), function_id)
+        find_type_in_function_context(db, node, function_id)
     } else {
         find_type_in_const_declaration(db, node)
     }
@@ -61,7 +61,7 @@ fn find_type_in_function_context(
     function_id: FunctionWithBodyId,
 ) -> Option<String> {
     let expr = Expr::from_syntax_node(db, node);
-    let expr_id = db.lookup_expr_by_ptr(function_id, expr.stable_ptr()).ok()?;
+    let expr_id = db.lookup_expr_by_ptr(function_id, expr.stable_ptr(db)).ok()?;
     Some(db.expr_semantic(function_id, expr_id).ty().format(db))
 }
 
@@ -70,7 +70,7 @@ fn find_type_in_const_declaration(db: &AnalysisDatabase, node: SyntaxNode) -> Op
     let module_file_id = db.find_module_file_containing_node(&node)?;
 
     let const_item = node.ancestor_of_type::<ItemConstant>(db)?;
-    let const_item_id = ConstantLongId(module_file_id, const_item.stable_ptr()).intern(db);
+    let const_item_id = ConstantLongId(module_file_id, const_item.stable_ptr(db)).intern(db);
 
     Some(db.constant_const_type(const_item_id).ok()?.format(db))
 }

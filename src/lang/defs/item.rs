@@ -56,7 +56,7 @@ impl ItemDef {
         Some(Self {
             lookup_item_id,
             context_items,
-            definition_stable_ptr: definition_node.stable_ptr(),
+            definition_stable_ptr: definition_node.stable_ptr(db),
         })
     }
 
