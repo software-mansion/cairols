@@ -246,12 +246,7 @@ impl ProcMacroClientController {
     /// Spawns proc-macro-server.
     #[tracing::instrument(level = "trace", skip_all)]
     fn spawn_server(&mut self, db: &mut AnalysisDatabase) {
-        // We have to make sure that snapshots will not report errors from previous client after we
-        // create new one.
-        db.cancel_all();
-
-        // Otherwise we can get messages from old client after initialization of new one.
-        self.channels.clear_all();
+        self.clean_up_previous_proc_macro_server(db);
 
         match self.scarb.proc_macro_server() {
             Ok(proc_macro_server) => {
@@ -274,6 +269,32 @@ impl ProcMacroClientController {
                 self.fatal_failed(db, InitializationFailedInfo::SpawnFail);
             }
         }
+    }
+
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn clean_up_previous_proc_macro_server(&mut self, db: &mut AnalysisDatabase) {
+        // We have to make sure that snapshots will not report errors from the previous client after
+        // we create a new one.
+        db.cancel_all();
+
+        // At this point we are the only thread with access to the db and therefore
+        // to the proc macro client.
+        if let ServerStatus::Starting(client) | ServerStatus::Ready(client) =
+            db.proc_macro_server_status()
+        {
+            // Make the db drop the strong reference to the proc macro client.
+            db.set_proc_macro_server_status(ServerStatus::Pending);
+
+            let client = Arc::try_unwrap(client)
+                .expect("only one strong reference client is expected at this point");
+
+            // This has to be done *before* clearing channels, so we don't receive a response signal
+            // from the old proc macro server when we come back to the main event loop.
+            client.kill_proc_macro_server();
+        }
+
+        // Otherwise we can get messages from the old client after an initialization of the new one.
+        self.channels.clear_all();
     }
 
     #[tracing::instrument(level = "trace", skip_all)]

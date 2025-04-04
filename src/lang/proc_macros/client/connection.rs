@@ -7,9 +7,12 @@ use crossbeam::channel::{Receiver, Sender, TrySendError};
 use scarb_proc_macro_server_types::jsonrpc::{RpcRequest, RpcResponse};
 use tracing::{error, info};
 
+use crate::server::trigger;
+
 pub struct ProcMacroServerConnection {
     pub(super) requester: Sender<RpcRequest>,
     pub(super) responses: Arc<Mutex<VecDeque<RpcResponse>>>,
+    pub(super) server_killed_receiver: trigger::Receiver<()>,
 }
 
 impl std::fmt::Debug for ProcMacroServerConnection {
@@ -29,17 +32,23 @@ impl ProcMacroServerConnection {
             proc_macro_server.stdin.take().expect("proc-macro-server must use pipe on stdin");
 
         let (requester, receiver) = crossbeam::channel::bounded(0);
+        let (server_killed_sender, server_killed_receiver) = trigger::trigger();
 
         let responses: Arc<Mutex<VecDeque<RpcResponse>>> = Default::default();
         let responses_writer = Arc::clone(&responses);
 
         std::thread::spawn(move || {
-            read_responses(proc_macro_server, responses_writer, response_channel_sender)
+            read_responses(
+                proc_macro_server,
+                responses_writer,
+                response_channel_sender,
+                server_killed_sender,
+            )
         });
 
         std::thread::spawn(move || write_requests(server_input, receiver));
 
-        Self { requester, responses }
+        Self { requester, responses, server_killed_receiver }
     }
 }
 
@@ -47,6 +56,7 @@ fn read_responses(
     mut proc_macro_server: std::process::Child,
     responses_writer: Arc<Mutex<VecDeque<RpcResponse>>>,
     response_channel_sender: Sender<()>,
+    server_killed_sender: trigger::Sender<()>,
 ) {
     let server_output =
         proc_macro_server.stdout.take().expect("proc-macro-server must use pipe on stdout");
@@ -90,6 +100,8 @@ fn read_responses(
             break;
         }
     }
+
+    server_killed_sender.activate(());
 }
 
 fn write_requests(mut server_input: ChildStdin, receiver: Receiver<RpcRequest>) {
