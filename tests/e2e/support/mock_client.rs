@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::ops::ControlFlow;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
-use std::{env, fmt, process};
+use std::{fmt, process};
 
 use crate::support::fixture::Fixture;
 use crate::support::jsonrpc::RequestIdGenerator;
@@ -38,7 +38,6 @@ pub struct MockClient {
     // This enforces only one request matcher per method at a time
     // (can be extended eventually to a custom matcher logic with param parsing etc.)
     expect_request_handlers: HashMap<String, ExpectRequestHandler>,
-    starting_cwd: PathBuf,
 }
 
 impl MockClient {
@@ -52,10 +51,13 @@ impl MockClient {
         mut fixture: Fixture,
         capabilities: lsp_types::ClientCapabilities,
         workspace_configuration: Value,
+        cwd: Option<impl AsRef<Path>>,
     ) -> Self {
         let (init, client) = BackendForTesting::new();
 
         fixture.update_insta_settings();
+        let root_path = fixture.root_path();
+        let cwd = cwd.map(|cwd| root_path.join(cwd)).unwrap_or_else(|| root_path.join("./"));
 
         let mut this = Self {
             fixture,
@@ -65,19 +67,13 @@ impl MockClient {
             workspace_configuration,
             expect_request_handlers: Default::default(),
             diagnostics: Default::default(),
-            starting_cwd: env::current_dir().expect("No CWD set"),
         };
 
-        std::thread::spawn(|| init().run_for_tests());
+        std::thread::spawn(|| init(cwd).run_for_tests());
 
         this.initialize(capabilities);
 
         this
-    }
-
-    pub fn set_cwd(&self, cwd: impl AsRef<Path>) {
-        let p = self.fixture.root_path().join(cwd);
-        env::set_current_dir(p).unwrap();
     }
 
     /// Performs the `initialize`/`initialized` handshake with the server synchronously.
@@ -609,12 +605,6 @@ impl MockClient {
 impl AsRef<Fixture> for MockClient {
     fn as_ref(&self) -> &Fixture {
         &self.fixture
-    }
-}
-
-impl Drop for MockClient {
-    fn drop(&mut self) {
-        env::set_current_dir(self.starting_cwd.clone()).expect("Could not reset CWD")
     }
 }
 

@@ -36,7 +36,6 @@ fn default_config_is_applied() {
             "#
             },
         }
-        cwd = "./";
         client_capabilities = caps;
     };
 

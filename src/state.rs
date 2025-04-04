@@ -16,6 +16,7 @@ use crate::project::{ConfigsRegistry, ProjectController};
 use crate::server::client::Client;
 use crate::server::connection::ClientSender;
 use crate::toolchain::scarb::ScarbToolchain;
+use std::path::PathBuf;
 
 /// State of Language server.
 pub struct State {
@@ -33,7 +34,11 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(sender: ClientSender, client_capabilities: ClientCapabilities) -> Self {
+    pub fn new(
+        sender: ClientSender,
+        client_capabilities: ClientCapabilities,
+        cwd: PathBuf,
+    ) -> Self {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
 
@@ -45,6 +50,7 @@ impl State {
             scarb_toolchain.clone(),
             notifier.clone(),
             proc_macro_request_tracker,
+            cwd,
         );
 
         let diagnostics_controller = DiagnosticsController::new(
