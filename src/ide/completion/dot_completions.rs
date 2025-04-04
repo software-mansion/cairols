@@ -31,9 +31,9 @@ pub fn dot_completions(
 
     // Extract lhs node.
     let node = expr.lhs(syntax_db);
-    let stable_ptr = node.stable_ptr().untyped();
+    let stable_ptr = node.stable_ptr(db).untyped();
     // Get its semantic model.
-    let expr_id = db.lookup_expr_by_ptr(function_with_body, node.stable_ptr()).ok()?;
+    let expr_id = db.lookup_expr_by_ptr(function_with_body, node.stable_ptr(db)).ok()?;
     let semantic_expr = db.expr_semantic(function_with_body, expr_id);
     // Get the type.
     let ty = semantic_expr.ty();

@@ -20,7 +20,7 @@ pub fn inline_macro_generate_code(
     syntax: &ast::ExprInlineMacro,
 ) -> InlinePluginResult {
     let origin = CodeOrigin::Span(syntax.as_syntax_node().span(db));
-    let stable_ptr = syntax.clone().stable_ptr().untyped();
+    let stable_ptr = syntax.clone().stable_ptr(db).untyped();
     let arguments = syntax.arguments(db);
     let token_stream = TokenStream::from_syntax_node(db, &arguments);
     // region: Modified scarb code

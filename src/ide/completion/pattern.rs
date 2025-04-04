@@ -23,7 +23,7 @@ pub fn struct_pattern_completions(
     let (all_members, existing_members, typed) = if_chain!(
         if let Some(pattern) = ctx.node.ancestor_of_type::<PatternStruct>(db);
         if let typed = ctx.node.ancestor_of_type::<PatternIdentifier>(db).filter(|ident| {
-            ident.as_syntax_node().parent().and_then(|p| p.parent())
+            ident.as_syntax_node().parent(db).and_then(|p| p.parent(db))
                 == Some(pattern.as_syntax_node())
         });
         if let Ok(ResolvedGenericItem::GenericType(GenericTypeId::Struct(struct_item))) =

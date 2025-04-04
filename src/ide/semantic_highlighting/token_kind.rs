@@ -82,14 +82,14 @@ impl SemanticTokenKind {
             }
             _ => return None,
         };
-        node = node.parent().unwrap();
-        let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.clone());
+        node = node.parent(db).unwrap();
+        let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node);
 
         if [SUPER_KW, SELF_TYPE_KW, CRATE_KW].contains(&identifier.text(syntax_db).as_str()) {
             return Some(SemanticTokenKind::Keyword);
         }
 
-        let parent_node = node.parent().unwrap();
+        let parent_node = node.parent(db).unwrap();
         let parent_kind = parent_node.kind(syntax_db);
         match parent_kind {
             SyntaxKind::ItemInlineMacro => return Some(SemanticTokenKind::InlineMacro),
@@ -118,14 +118,14 @@ impl SemanticTokenKind {
         }
 
         // Identifier.
-        while let Some(parent) = node.parent() {
+        while let Some(parent) = node.parent(db) {
             node = parent;
 
             match node.kind(syntax_db) {
                 SyntaxKind::ExprInlineMacro => return Some(SemanticTokenKind::InlineMacro),
                 SyntaxKind::ExprPath => {
                     expr_path_ptr =
-                        Some(ast::ExprPath::from_syntax_node(syntax_db, node.clone()).stable_ptr());
+                        Some(ast::ExprPath::from_syntax_node(syntax_db, node).stable_ptr(db));
                 }
                 SyntaxKind::Member => return Some(SemanticTokenKind::Variable),
                 SyntaxKind::PatternIdentifier => return Some(SemanticTokenKind::Variable),
@@ -136,8 +136,8 @@ impl SemanticTokenKind {
 
             if let Some(lookup_item_id) = db.find_lookup_item(&node) {
                 // Resolved items.
-                if let Some(item) =
-                    db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+                if let Some(item) = db
+                    .lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr(db))
                 {
                     return Some(match item {
                         ResolvedGenericItem::GenericConstant(_) => SemanticTokenKind::EnumMember,
@@ -159,8 +159,8 @@ impl SemanticTokenKind {
                         },
                     });
                 }
-                if let Some(item) =
-                    db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+                if let Some(item) = db
+                    .lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr(db))
                 {
                     return Some(match item {
                         ResolvedConcreteItem::Constant(_) => SemanticTokenKind::EnumMember,

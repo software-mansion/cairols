@@ -23,7 +23,7 @@ impl VariantDef {
     ) -> Option<Self> {
         let enum_ast = definition_node.ancestor_of_type::<ast::ItemEnum>(db)?;
         let enum_item = ItemDef::new(db, &enum_ast.name(db).as_syntax_node())?;
-        Some(Self { variant_id, enum_item, definition_stable_ptr: definition_node.stable_ptr() })
+        Some(Self { variant_id, enum_item, definition_stable_ptr: definition_node.stable_ptr(db) })
     }
 
     /// Gets the stable pointer to the syntax node which defines this symbol.

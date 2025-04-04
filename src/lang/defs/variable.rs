@@ -1,5 +1,6 @@
 use cairo_lang_defs::ids::VarId;
 use cairo_lang_semantic::{Binding, Mutability};
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
@@ -27,8 +28,8 @@ impl VariableDef {
     }
 
     /// Gets the stable pointer to the syntax node which defines this symbol.
-    pub fn definition_stable_ptr(&self) -> SyntaxStablePtrId {
-        self.identifier.stable_ptr().untyped()
+    pub fn definition_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
+        self.identifier.stable_ptr(db).untyped()
     }
 
     /// Gets variable signature, which tries to resemble the way how it is defined in code.
