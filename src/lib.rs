@@ -352,7 +352,7 @@ impl Backend {
                 recv(project_updates_receiver) -> project_update => {
                     let Ok(project_update) = project_update else { break };
 
-                    scheduler.local(move |state, notifier, _, _| ProjectController::handle_update(state, notifier, project_update));
+                    scheduler.local(move |state, notifier, requester, _| ProjectController::handle_update(state, notifier, requester, project_update));
                 }
                 recv(incoming) -> msg => {
                     let Ok(msg) = msg else { break };

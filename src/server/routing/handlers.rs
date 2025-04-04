@@ -273,7 +273,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
     fn run(
         state: &mut State,
         _notifier: Notifier,
-        _requester: &mut Requester<'_>,
+        requester: &mut Requester<'_>,
         params: DidOpenTextDocumentParams,
     ) -> LSPResult<()> {
         let uri = params.text_document.uri;
@@ -287,8 +287,16 @@ impl SyncNotificationHandler for DidOpenTextDocument {
         }
 
         if let Some(file_id) = state.db.file_for_url(&uri) {
-            state.open_files.insert(uri);
+            state.open_files.insert(uri.clone());
             state.db.override_file_content(file_id, Some(params.text_document.text.into()));
+            state.code_lens_controller.on_did_change(
+                requester,
+                &state.db,
+                &state.config,
+                is_cairo_file_path(&uri)
+                    .then_some(FileChange { url: uri, was_deleted: false })
+                    .into_iter(),
+            );
         }
 
         Ok(())
