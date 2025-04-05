@@ -35,7 +35,6 @@ use lsp_types::Range;
 use lsp_types::{CodeLens, Url};
 use serde_json::Number;
 use serde_json::Value;
-use std::fmt::Display;
 use std::ops::Not;
 
 pub struct TestCodeLensProvider;
@@ -54,7 +53,7 @@ impl CodeLensProvider for TestCodeLensProvider {
         let is_runner_available = config
             .test_runner
             .command(
-                TestFullQualifiedPath::default(), // We can substitute with anything here.
+                TestFullQualifiedPath::Function(String::new()), // We can substitute with anything here.
                 AvailableTestRunners::new(db, main_module.owning_crate(db))?,
                 &config.run_test_command,
             )
@@ -103,18 +102,33 @@ impl CodeLensProvider for TestCodeLensProvider {
     }
 }
 
-#[derive(Default)]
-struct TestFullQualifiedPath(String);
+enum TestFullQualifiedPath {
+    Function(String),
+    Module(String),
+}
 
-impl Display for TestFullQualifiedPath {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
+impl TestFullQualifiedPath {
+    fn cairo_test_command(&self) -> String {
+        format!("scarb cairo-test --filter {}", self.as_ref())
+    }
+
+    fn snforge_command(&self) -> String {
+        match self {
+            TestFullQualifiedPath::Function(path) => {
+                format!("snforge test {path} --exact")
+            }
+            TestFullQualifiedPath::Module(path) => {
+                format!("snforge test {path}")
+            }
+        }
     }
 }
 
 impl AsRef<str> for TestFullQualifiedPath {
     fn as_ref(&self) -> &str {
-        &self.0
+        match self {
+            TestFullQualifiedPath::Function(path) | TestFullQualifiedPath::Module(path) => path,
+        }
     }
 }
 
@@ -124,19 +138,26 @@ impl TestFullQualifiedPath {
         module_item: ModuleItem,
         module_file_id: ModuleFileId,
     ) -> Option<Self> {
-        let full_path = match module_item {
-            ModuleItem::FreeFunction(function_with_body) => ModuleItemId::FreeFunction(
-                FreeFunctionLongId(module_file_id, function_with_body.stable_ptr(db)).intern(db),
-            )
-            .full_path(db),
-            ModuleItem::Module(item_module) => ModuleItemId::Submodule(
-                SubmoduleLongId(module_file_id, item_module.stable_ptr(db)).intern(db),
-            )
-            .full_path(db),
-            _ => return None,
-        };
+        match module_item {
+            ModuleItem::FreeFunction(function_with_body) => {
+                let path = ModuleItemId::FreeFunction(
+                    FreeFunctionLongId(module_file_id, function_with_body.stable_ptr(db))
+                        .intern(db),
+                )
+                .full_path(db);
 
-        Some(Self(full_path))
+                Some(TestFullQualifiedPath::Function(path))
+            }
+            ModuleItem::Module(item_module) => {
+                let path = ModuleItemId::Submodule(
+                    SubmoduleLongId(module_file_id, item_module.stable_ptr(db)).intern(db),
+                )
+                .full_path(db);
+
+                Some(TestFullQualifiedPath::Module(path))
+            }
+            _ => None,
+        }
     }
 }
 
@@ -167,16 +188,12 @@ impl TestRunner {
     ) -> Option<String> {
         match self {
             Self::Auto => match (available_runners.cairo_test, available_runners.snforge) {
-                (true, false) => Some(format!("scarb cairo-test --filter {test_path}")),
-                (false, true) => Some(format!("snforge test {test_path} --exact")),
+                (true, false) => Some(test_path.cairo_test_command()),
+                (false, true) => Some(test_path.snforge_command()),
                 _ => None,
             },
-            Self::CairoTest if available_runners.cairo_test => {
-                Some(format!("scarb cairo-test --filter {test_path}"))
-            }
-            Self::Snforge if available_runners.snforge => {
-                Some(format!("snforge test {test_path} --exact"))
-            }
+            Self::CairoTest if available_runners.cairo_test => Some(test_path.cairo_test_command()),
+            Self::Snforge if available_runners.snforge => Some(test_path.snforge_command()),
             Self::Custom => Some(custom_command.replace("{{TEST_PATH}}", test_path.as_ref())),
             _ => None,
         }
