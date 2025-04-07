@@ -14,10 +14,11 @@ use scarb_proc_macro_server_types::methods::expand::{
     ExpandAttribute, ExpandAttributeParams, ExpandDerive, ExpandDeriveParams, ExpandInline,
     ExpandInlineMacroParams,
 };
-pub use status::ServerStatus;
 use tracing::error;
 
 use crate::ide::analysis_progress::ProcMacroServerTracker;
+
+pub use status::ServerStatus;
 
 pub mod connection;
 mod id_generator;
@@ -91,6 +92,18 @@ impl ProcMacroClient {
         let requests = self.requests_params.lock().unwrap();
 
         Responses { responses, requests }
+    }
+
+    /// Waits for the proc macro server to be killed.
+    pub(super) fn kill_proc_macro_server(self) {
+        // Dropping this causes the thread responsible for writing requests to PMS to finish.
+        // Consequently, the handler to PMS' stdin will be dropped.
+        // Due to the way PMS is implemented, this will result in its death.
+        drop(self.connection.requester);
+
+        if self.connection.server_killed_receiver.wait().is_none() {
+            error!("failed to receive information that proc macro server was killed");
+        }
     }
 
     fn request_defined_macros(&self) -> Result<()> {
