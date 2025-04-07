@@ -3,13 +3,15 @@ use serde_json::json;
 
 use crate::support::fixture::{Fixture, fixture};
 
-use super::{MacroTest, SCARB_TEST_MACROS_PACKAGE};
+use super::{MacroTest, SCARB_TEST_MACROS_PACKAGE, SCARB_TEST_MACROS_V2_PACKAGE};
 
 pub struct ProjectWithCustomMacros;
 pub struct ProjectWithMultipleCrates;
 pub struct ProjectWithSnforgeUnitTest;
 pub struct ProjectWithSnforgeIntegrationTest;
 pub struct ProjectWithCairoProjectToml;
+pub struct ProjectWithCustomMacrosV2;
+pub struct ProjectWithCustomMacrosV1AndV2;
 
 impl MacroTest for ProjectWithCustomMacros {
     fn fixture() -> Fixture {
@@ -25,6 +27,46 @@ impl MacroTest for ProjectWithCustomMacros {
                 cairols_test_macros = {{ path = "{}" }}
                 "#,
                 SCARB_TEST_MACROS_PACKAGE.display()
+            )
+        }
+    }
+}
+
+impl MacroTest for ProjectWithCustomMacrosV2 {
+    fn fixture() -> Fixture {
+        fixture! {
+            "test_package/Scarb.toml" => formatdoc!(
+                r#"
+                [package]
+                name = "test_package"
+                version = "0.1.0"
+                edition = "2024_07"
+
+                [dependencies]
+                cairols_test_macros_v2 = {{ path = "{}" }}
+                "#,
+                SCARB_TEST_MACROS_V2_PACKAGE.display()
+            )
+        }
+    }
+}
+
+impl MacroTest for ProjectWithCustomMacrosV1AndV2 {
+    fn fixture() -> Fixture {
+        fixture! {
+            "test_package/Scarb.toml" => formatdoc!(
+                r#"
+                [package]
+                name = "test_package"
+                version = "0.1.0"
+                edition = "2024_07"
+
+                [dependencies]
+                cairols_test_macros = {{ path = "{}" }}
+                cairols_test_macros_v2 = {{ path = "{}" }}
+                "#,
+                SCARB_TEST_MACROS_PACKAGE.display(),
+                SCARB_TEST_MACROS_V2_PACKAGE.display()
             )
         }
     }

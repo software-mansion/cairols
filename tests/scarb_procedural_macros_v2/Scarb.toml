@@ -1,0 +1,7 @@
+[package]
+name = "cairols_test_macros_v2"
+version = "1.0.0"
+description = "A set of procedural macros used to test the Cairo Language Server"
+edition = "2024_07"
+
+[cairo-plugin]
