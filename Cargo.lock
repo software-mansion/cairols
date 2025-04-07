@@ -431,10 +431,10 @@ version = "0.2.0"
 source = "git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb#3e105bb2ab4cca554a66b01400128cf4af87c2fb"
 dependencies = [
  "bumpalo",
- "cairo-lang-macro-attributes 0.2.0 (git+https://github.com/software-mansion/scarb.git?rev=d8e5c90)",
- "cairo-lang-macro-stable 2.0.0 (git+https://github.com/software-mansion/scarb.git?rev=d8e5c90)",
+ "cairo-lang-macro-attributes 0.2.0 (git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb)",
+ "cairo-lang-macro-stable 2.0.0 (git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb)",
  "cairo-lang-primitive-token",
- "cairo-lang-quote 0.1.0 (git+https://github.com/software-mansion/scarb.git?rev=d8e5c90)",
+ "cairo-lang-quote 0.1.0 (git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb)",
  "linkme",
  "serde",
 ]
@@ -480,7 +480,7 @@ source = "git+https://github.com/software-mansion/scarb?rev=d91215ae8e6a0044f169
 dependencies = [
  "quote",
  "scarb-stable-hash",
- "syn 2.0.98",
+ "syn 2.0.100",
 ]
 
 [[package]]
@@ -880,7 +880,7 @@ dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-lowering",
  "cairo-lang-macro 0.1.1",
- "cairo-lang-macro 0.2.0 (git+https://github.com/software-mansion/scarb.git?rev=d8e5c90)",
+ "cairo-lang-macro 0.2.0 (git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb)",
  "cairo-lang-parser",
  "cairo-lang-primitive-token",
  "cairo-lang-project",
@@ -2805,7 +2805,7 @@ version = "0.2.0"
 source = "git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb#3e105bb2ab4cca554a66b01400128cf4af87c2fb"
 dependencies = [
  "cairo-lang-macro 0.1.1",
- "cairo-lang-macro 0.2.0 (git+https://github.com/software-mansion/scarb.git?rev=d8e5c90)",
+ "cairo-lang-macro 0.2.0 (git+https://github.com/software-mansion/scarb.git?rev=3e105bb2ab4cca554a66b01400128cf4af87c2fb)",
  "serde",
  "serde_json",
 ]
