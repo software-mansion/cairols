@@ -14,7 +14,6 @@ use tracing::{error, warn};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
-use crate::project::Crate;
 use crate::toolchain::scarb::{SCARB_TOML, ScarbToolchain};
 
 /// Try to find a Cairo `core` crate (see [`find_unmanaged_core`]) and initialize it in the
@@ -24,7 +23,7 @@ pub fn try_to_init_unmanaged_core_if_not_present(
     config: &Config,
     scarb: &ScarbToolchain,
 ) {
-    if Crate::reconstruct(db, CrateId::core(db)).is_some() {
+    if db.crates().contains(&CrateId::core(db)) {
         return;
     }
 
