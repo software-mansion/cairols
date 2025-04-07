@@ -95,6 +95,7 @@ impl AnalysisDatabase {
     }
 
     /// Trigger cancellation in any background tasks that might still be running.
+    /// This method will block until all db snapshots are dropped.
     pub fn cancel_all(&mut self) {
         self.salsa_runtime_mut().synthetic_write(Durability::LOW);
     }
