@@ -25,6 +25,7 @@ use tracing::error;
 use super::client::connection::ProcMacroServerConnection;
 use super::client::status::ServerStatus;
 use super::client::{ProcMacroClient, RequestParams};
+use super::db::init_proc_macro_group;
 use crate::config::Config;
 use crate::ide::analysis_progress::{ProcMacroServerStatus, ProcMacroServerTracker};
 use crate::lang::db::AnalysisDatabase;
@@ -111,6 +112,14 @@ impl ProcMacroClientController {
     /// `ClientStatus::Starting` if config allows this.
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn on_config_change(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+        if !config.enable_proc_macros {
+            // Clear resolved macros if proc macro server should be disabled.
+            self.remove_current_plugins_from_db(db);
+            self.crate_plugin_suites.clear();
+
+            init_proc_macro_group(db);
+        }
+
         if db.proc_macro_server_status().is_pending() {
             self.try_initialize(db, config);
         }
