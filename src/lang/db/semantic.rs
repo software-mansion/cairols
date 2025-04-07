@@ -1,9 +1,10 @@
 use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
-    FreeFunctionLongId, ImplAliasLongId, ImplDefLongId, ImplFunctionLongId, ImplItemId,
-    LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasLongId,
-    StructLongId, TraitFunctionLongId, TraitItemId, TraitLongId, UseLongId, VarId,
+    FreeFunctionLongId, ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId,
+    ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
+    ModuleTypeAliasLongId, StructLongId, TraitFunctionLongId, TraitItemId, TraitLongId, UseLongId,
+    VarId,
 };
 use cairo_lang_semantic::Binding;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -196,17 +197,32 @@ fn lookup_item_from_ast(
     node: SyntaxNode,
 ) -> Option<Vec<LookupItemId>> {
     let syntax_db = db.upcast();
+
+    let is_in_impl = node.ancestor_of_kind(syntax_db, SyntaxKind::ItemImpl).is_some();
+
     // TODO(spapini): Handle trait items.
     Some(match node.kind(syntax_db) {
-        SyntaxKind::ItemConstant => vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
-            ConstantLongId(
-                module_file_id,
-                ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
-            )
-            .intern(db),
-        ))],
+        SyntaxKind::ItemConstant => {
+            if is_in_impl {
+                vec![LookupItemId::ImplItem(ImplItemId::Constant(
+                    ImplConstantDefLongId(
+                        module_file_id,
+                        ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                    )
+                    .intern(db),
+                ))]
+            } else {
+                vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
+                    ConstantLongId(
+                        module_file_id,
+                        ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                    )
+                    .intern(db),
+                ))]
+            }
+        }
         SyntaxKind::FunctionWithBody => {
-            if node.grandparent_kind(syntax_db) == Some(SyntaxKind::ImplBody) {
+            if is_in_impl {
                 vec![LookupItemId::ImplItem(ImplItemId::Function(
                     ImplFunctionLongId(
                         module_file_id,
