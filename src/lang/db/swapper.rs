@@ -93,7 +93,7 @@ impl AnalysisDatabaseSwapper {
             self.migrate_file_overrides(&mut new_db, db, open_files);
 
             project_controller.migrate_crates_to_new_db(
-                db,
+                &mut new_db,
                 proc_macro_client_controller,
                 config.enable_linter,
             );
