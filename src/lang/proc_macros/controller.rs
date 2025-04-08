@@ -117,6 +117,8 @@ impl ProcMacroClientController {
             self.remove_current_plugins_from_db(db);
             self.crate_plugin_suites.clear();
 
+            self.clean_up_previous_proc_macro_server(db);
+
             init_proc_macro_group(db);
         }
 
@@ -292,7 +294,7 @@ impl ProcMacroClientController {
             db.proc_macro_server_status()
         {
             // Make the db drop the strong reference to the proc macro client.
-            db.set_proc_macro_server_status(ServerStatus::Pending);
+            self.set_proc_macro_server_status(db, ServerStatus::Pending);
 
             let client = Arc::try_unwrap(client)
                 .expect("only one strong reference client is expected at this point");
