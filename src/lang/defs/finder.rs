@@ -5,18 +5,21 @@ use cairo_lang_defs::ids::{
     MemberId, ModuleId, NamedLanguageElementId, StructLongId, SubmoduleLongId, TraitItemId, VarId,
 };
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::db::{SemanticGroup, get_resolver_data_options};
+use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::ResolvedGenericItem::TraitItem;
-use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use cairo_lang_semantic::{Expr, TypeLongId};
 use cairo_lang_syntax::node::helpers::HasName;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::{Intern, LookupIntern};
 
 /// A language element that can be a result of name resolution performed by CairoLS.
@@ -34,22 +37,46 @@ pub enum ResolvedItem {
     // CairoLS-specific additions.
     Member(MemberId),
     ImplItem(ImplItemId),
+    ExprInlineMacro(SmolStr),
 }
 
 pub fn find_definition(
     db: &AnalysisDatabase,
     identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
+    resolver_data: &mut Option<ResolverData>,
 ) -> Option<ResolvedItem> {
-    try_submodule_name(db, identifier)
+    try_inline_macro(db, identifier)
+        .or_else(|| try_submodule_name(db, identifier))
         .or_else(|| try_member(db, identifier, lookup_items))
         .or_else(|| try_member_from_constructor(db, identifier, lookup_items))
         .or_else(|| try_member_declaration(db, identifier))
         .or_else(|| try_variant_declaration(db, identifier))
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
         .or_else(|| try_impl_items(db, identifier))
-        .or_else(|| lookup_resolved_items(db, identifier, lookup_items))
+        .or_else(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
+}
+
+fn try_inline_macro(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+) -> Option<ResolvedItem> {
+    if let Some(parent) = identifier.as_syntax_node().parent(db) {
+        if parent.kind(db) == SyntaxKind::PathSegmentSimple
+            && parent.grandparent_kind(db) == Some(SyntaxKind::ExprInlineMacro)
+        {
+            return Some(ResolvedItem::ExprInlineMacro(
+                parent
+                    .parent(db)
+                    .expect("Grandparent already exists")
+                    .get_text_without_trivia(db)
+                    .into(),
+            ));
+        }
+    }
+
+    None
 }
 
 /// Resolve elements of `impl`s to trait definitions.
@@ -290,18 +317,27 @@ fn lookup_resolved_items(
     db: &AnalysisDatabase,
     identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
+    resolver_data: &mut Option<ResolverData>,
 ) -> Option<ResolvedItem> {
-    for &lookup_item_id in lookup_items {
-        if let Some(item) =
-            db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr(db))
-        {
-            return Some(ResolvedItem::Generic(item));
-        }
+    let ptr = identifier.stable_ptr(db);
 
-        if let Some(item) =
-            db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr(db))
-        {
-            return Some(ResolvedItem::Concrete(item));
+    for &lookup_item_id in lookup_items {
+        match db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, ptr) {
+            None |
+            // Const cannot be easily converted into generic from concrete so return it unresolved.
+            Some(ResolvedConcreteItem::Constant(_)) => {
+                if let Some(item) = db.lookup_resolved_generic_item_by_ptr(lookup_item_id, ptr) {
+                    return Some(ResolvedItem::Generic(item));
+                }
+            }
+            Some(item) => {
+                // Mostly copied from `db.lookup_resolved_concrete_item_by_ptr`.
+                *resolver_data = get_resolver_data_options(lookup_item_id, db)
+                    .into_iter()
+                    .find(|resolver_data| resolver_data.resolved_items.concrete.contains_key(&ptr))
+                    .map(|data| data.clone_with_inference_id(db, InferenceId::NoContext));
+                return Some(ResolvedItem::Concrete(item));
+            }
         }
     }
     None
@@ -327,23 +363,28 @@ impl ResolvedItem {
         // TIP: This is a var so that highlighting exit points in IDEs of this function is usable.
         let stable_ptr = match self {
             // Concrete items.
-            ResolvedItem::Concrete(ResolvedConcreteItem::Type(ty)) => {
+            ResolvedItem::Concrete(concrete_item @ ResolvedConcreteItem::Type(ty)) => {
                 if let TypeLongId::GenericParameter(param) = ty.lookup_intern(db) {
                     param.untyped_stable_ptr(db)
                 } else {
-                    return None;
+                    // Try convert into generic and call definition_stable_ptr recursively.
+                    Self::Generic(concrete_item.generic(db)?).definition_stable_ptr(db)?
                 }
             }
 
-            ResolvedItem::Concrete(ResolvedConcreteItem::Impl(imp)) => {
+            ResolvedItem::Concrete(concrete_item @ ResolvedConcreteItem::Impl(imp)) => {
                 if let ImplLongId::GenericParameter(param) = imp.lookup_intern(db) {
                     param.untyped_stable_ptr(db)
                 } else {
-                    return None;
+                    // Try convert into generic and call definition_stable_ptr recursively.
+                    Self::Generic(concrete_item.generic(db)?).definition_stable_ptr(db)?
                 }
             }
 
-            ResolvedItem::Concrete(_) => return None,
+            ResolvedItem::Concrete(concrete_item) => {
+                // Try convert into generic and call definition_stable_ptr recursively.
+                Self::Generic(concrete_item.generic(db)?).definition_stable_ptr(db)?
+            }
 
             // Generic items.
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(item)) => {
@@ -458,6 +499,7 @@ impl ResolvedItem {
                     impl_impl.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
             },
+            ResolvedItem::ExprInlineMacro(_) => return None,
         };
         Some(stable_ptr)
     }
