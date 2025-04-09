@@ -69,7 +69,6 @@ fn const_item_via_other_const_expr() {
     "#);
 }
 
-// FIXME: https://github.com/software-mansion/cairols/issues/404
 #[test]
 fn associated_const_via_trait_declaration() {
     test_transform!(test_hover, r#"
@@ -77,6 +76,18 @@ fn associated_const_via_trait_declaration() {
     "#, @r#"
     source_context = """
     trait Shape<T> { const SIDE<caret>S: u32; }
+    """
+    highlight = """
+    trait Shape<T> { const <sel>SIDES</sel>: u32; }
+    """
+    popover = """
+    ```cairo
+    hello::Shape
+    ```
+    ```cairo
+    trait Shape<T>
+    const SIDES: u32;
+    ```
     """
     "#);
 }
@@ -126,10 +137,11 @@ fn associated_const_via_expr_use() {
     """
     popover = """
     ```cairo
-    hello
+    hello::Shape
     ```
     ```cairo
     trait Shape<T>
+    const SIDES: u32;
     ```
     """
     "#);
