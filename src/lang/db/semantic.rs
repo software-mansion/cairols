@@ -3,8 +3,8 @@ use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId,
     ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
-    ModuleTypeAliasLongId, StructLongId, TraitFunctionLongId, TraitItemId, TraitLongId, UseLongId,
-    VarId,
+    ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
+    TraitItemId, TraitLongId, UseLongId, VarId,
 };
 use cairo_lang_semantic::Binding;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -200,7 +200,6 @@ fn lookup_item_from_ast(
 
     let is_in_impl = node.ancestor_of_kind(syntax_db, SyntaxKind::ItemImpl).is_some();
 
-    // TODO(spapini): Handle trait items.
     Some(match node.kind(syntax_db) {
         SyntaxKind::ItemConstant => {
             if is_in_impl {
@@ -268,11 +267,29 @@ fn lookup_item_from_ast(
                 .intern(db),
             ))]
         }
+        SyntaxKind::TraitItemConstant => {
+            vec![LookupItemId::TraitItem(TraitItemId::Constant(
+                TraitConstantLongId(
+                    module_file_id,
+                    ast::TraitItemConstant::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                )
+                .intern(db),
+            ))]
+        }
         SyntaxKind::TraitItemFunction => {
             vec![LookupItemId::TraitItem(TraitItemId::Function(
                 TraitFunctionLongId(
                     module_file_id,
                     ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                )
+                .intern(db),
+            ))]
+        }
+        SyntaxKind::TraitItemImpl => {
+            vec![LookupItemId::TraitItem(TraitItemId::Impl(
+                TraitImplLongId(
+                    module_file_id,
+                    ast::TraitItemImpl::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
                 )
                 .intern(db),
             ))]

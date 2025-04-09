@@ -32,12 +32,11 @@ fn const_item_via_other_const_expr() {
     ");
 }
 
-// FIXME: https://github.com/software-mansion/cairols/issues/404
 #[test]
 fn associated_const_via_trait_declaration() {
     test_transform!(goto_definition, r#"
     trait Shape<T> { const SIDE<caret>S: u32; }
-    "#, @"none response");
+    "#, @"trait Shape<T> { const <sel>SIDES</sel>: u32; }");
 }
 
 #[test]

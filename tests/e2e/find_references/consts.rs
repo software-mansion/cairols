@@ -30,12 +30,11 @@ fn const_item_via_other_const_expr() {
     ");
 }
 
-// FIXME: https://github.com/software-mansion/cairols/issues/404
 #[test]
 fn associated_const_via_trait_declaration() {
     test_transform!(find_references, r#"
     trait Shape<T> { const SIDE<caret>S: u32; }
-    "#, @"none response");
+    "#, @"trait Shape<T> { const <sel=declaration>SIDES</sel>: u32; }");
 }
 
 #[test]
@@ -67,7 +66,7 @@ fn associated_const_via_expr_use() {
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const SIDES: u32 = 3; }
     fn print_shape_info<T, impl ShapeImpl: Shape<T>>() {
-        let _ = ShapeImpl::SIDES;
+        let _ = ShapeImpl::<sel>SIDES</sel>;
     }
     ");
 }
