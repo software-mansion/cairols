@@ -75,6 +75,19 @@ impl ItemDef {
             .join("\n")
     }
 
+    /// Get item signature without its body including signatures of its contexts. Also adds text for this item only.
+    pub fn signature_with_text(&self, db: &AnalysisDatabase, text: &str) -> String {
+        let this =
+            db.get_item_signature(self.lookup_item_id.into()).unwrap_or_else(|| "<missing>".into());
+
+        let contexts = self.context_items.iter().copied().rev();
+        let contexts = contexts
+            .map(|item| db.get_item_signature(item.into()).unwrap_or_else(|| "<missing>".into()))
+            .join("\n");
+
+        format!("{this}{text}{contexts}")
+    }
+
     /// Gets item documentation in a final form usable for display.
     pub fn documentation(&self, db: &AnalysisDatabase) -> Option<String> {
         db.get_item_documentation(self.lookup_item_id.into())
