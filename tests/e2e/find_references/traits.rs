@@ -40,7 +40,6 @@ fn trait_via_definition() {
     ")
 }
 
-// FIXME(#170)
 #[test]
 fn trait_method_via_definition() {
     test_transform!(find_references, r#"
@@ -72,7 +71,7 @@ fn trait_method_via_definition() {
         fn <sel=declaration>area</sel>(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
-        fn area(self: @Foo) -> u64 { 0 }
+        fn <sel>area</sel>(self: @Foo) -> u64 { 0 }
     }
     #[derive(Drop)]
     struct Bar {}
@@ -90,7 +89,6 @@ fn trait_method_via_definition() {
     ")
 }
 
-// FIXME(#170)
 #[test]
 fn trait_method_via_dot_call() {
     test_transform!(find_references, r#"
@@ -122,7 +120,7 @@ fn trait_method_via_dot_call() {
         fn <sel=declaration>area</sel>(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
-        fn area(self: @Foo) -> u64 { 0 }
+        fn <sel>area</sel>(self: @Foo) -> u64 { 0 }
     }
     #[derive(Drop)]
     struct Bar {}
@@ -140,7 +138,6 @@ fn trait_method_via_dot_call() {
     ")
 }
 
-// FIXME(#170)
 #[test]
 fn trait_method_via_path_call() {
     test_transform!(find_references, r#"
@@ -172,7 +169,7 @@ fn trait_method_via_path_call() {
         fn <sel=declaration>area</sel>(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
-        fn area(self: @Foo) -> u64 { 0 }
+        fn <sel>area</sel>(self: @Foo) -> u64 { 0 }
     }
     #[derive(Drop)]
     struct Bar {}
@@ -190,7 +187,6 @@ fn trait_method_via_path_call() {
     ")
 }
 
-// FIXME(#170): Does not work as expected.
 #[test]
 fn impl_method_via_definition() {
     test_transform!(find_references, r#"
@@ -219,10 +215,10 @@ fn impl_method_via_definition() {
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        fn area(self: @Foo) -> u64;
+        fn <sel=declaration>area</sel>(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
-        fn <sel=declaration>area</sel>(self: @Foo) -> u64 { 0 }
+        fn <sel>area</sel>(self: @Foo) -> u64 { 0 }
     }
     #[derive(Drop)]
     struct Bar {}
@@ -234,8 +230,131 @@ fn impl_method_via_definition() {
     }
     fn main() {
         let foo = Foo {};
-        let x = foo.area();
-        let y = FooTrait::area(foo);
+        let x = foo.<sel>area</sel>();
+        let y = FooTrait::<sel>area</sel>(foo);
+    }
+    ")
+}
+
+#[test]
+fn dual_implementations_of_trait_via_trait_function() {
+    test_transform!(find_references, r#"
+    #[derive(Drop)]
+    struct Foo {}
+    trait FooTrait<T> {
+        fn are<caret>a(self: @T) -> u64;
+    }
+    impl FooImpl of FooTrait<Foo> {
+        fn area(self: @Foo) -> u64 { 0 }
+    }
+    
+    #[derive(Drop)]
+    struct Bar {}
+    impl BarImpl of FooTrait<Bar> {
+        fn area(self: @Bar) -> u64 { 0 }
+    }
+    fn main() {
+        let foo = Foo {};
+        let x_foo = foo.area();
+        let y_foo = FooTrait::area(foo);
+        
+        let bar = Bar {};
+        let x_bar = bar.area();
+        let y_bar = FooTrait::area(bar);
+    }
+    "#, @r"
+    #[derive(Drop)]
+    struct Foo {}
+    trait FooTrait<T> {
+        fn <sel=declaration>area</sel>(self: @T) -> u64;
+    }
+    impl FooImpl of FooTrait<Foo> {
+        fn <sel>area</sel>(self: @Foo) -> u64 { 0 }
+    }
+
+    #[derive(Drop)]
+    struct Bar {}
+    impl BarImpl of FooTrait<Bar> {
+        fn <sel>area</sel>(self: @Bar) -> u64 { 0 }
+    }
+    fn main() {
+        let foo = Foo {};
+        let x_foo = foo.<sel>area</sel>();
+        let y_foo = FooTrait::<sel>area</sel>(foo);
+        
+        let bar = Bar {};
+        let x_bar = bar.<sel>area</sel>();
+        let y_bar = FooTrait::<sel>area</sel>(bar);
+    }
+    ")
+}
+
+// FIXME(#170)
+#[test]
+fn dual_implementations_of_trait_via_trait_type() {
+    test_transform!(find_references, r#"
+    trait FooTrait {
+        type Overrid<caret>eMe;
+    }
+    impl FooImpl of FooTrait {
+        type OverrideMe = u256;
+    }
+    
+    impl BarImpl of FooTrait {
+        type OverrideMe = felt252;
+    }
+    fn main() {
+        let v1: FooImpl::OverrideMe = 123;
+        let v2: BarImpl::OverrideMe = 123;
+    }
+    "#, @"none response")
+}
+
+#[test]
+fn dual_implementations_of_trait_via_trait_impl() {
+    test_transform!(find_references, r#"
+    trait ConstCarryingTrait {
+        const value: felt252;
+    }
+    trait FooTrait {
+        impl ValueCa<caret>rrier: ConstCarryingTrait;
+    }
+    
+    impl Carry123 of ConstCarryingTrait {
+        const value: felt252 = 123; 
+    }
+    impl Carry456 of ConstCarryingTrait {
+        const value: felt252 = 456; 
+    }
+    
+    impl Foo123 of FooTrait {
+        impl ValueCarrier = Carry123;
+    }
+    
+    impl Bar456 of FooTrait {
+        impl ValueCarrier = Carry456;
+    }
+    "#, @r"
+    trait ConstCarryingTrait {
+        const value: felt252;
+    }
+    trait FooTrait {
+        impl <sel=declaration>ValueCarrier</sel>: ConstCarryingTrait;
+    }
+
+    impl Carry123 of ConstCarryingTrait {
+        const value: felt252 = 123; 
+    }
+    impl Carry456 of ConstCarryingTrait {
+        const value: felt252 = 456; 
+    }
+
+    impl Foo123 of FooTrait {
+        impl <sel>ValueCarrier</sel> = Carry123;
+    }
+
+    impl Bar456 of FooTrait {
+        impl <sel>ValueCarrier</sel> = Carry456;
     }
     ")
 }
