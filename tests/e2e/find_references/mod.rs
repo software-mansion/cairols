@@ -17,6 +17,7 @@ mod fns;
 mod macros;
 mod structs;
 mod traits;
+mod types;
 mod vars;
 
 fn caps(base: ClientCapabilities) -> ClientCapabilities {
