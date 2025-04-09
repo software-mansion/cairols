@@ -37,7 +37,6 @@ fn associated_const_via_trait_declaration() {
     "#, @"trait Shape<T> { const RENAMED: u32; }");
 }
 
-// FIXME(#404)
 #[test]
 fn associated_const_via_impl_definition() {
     test_transform!(rename, r#"
@@ -45,13 +44,12 @@ fn associated_const_via_impl_definition() {
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const SIDE<caret>S: u32 = 3; }
     "#, @r"
-    trait Shape<T> { const SIDES: u32; }
+    trait Shape<T> { const RENAMED: u32; }
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const RENAMED: u32 = 3; }
     ");
 }
 
-// FIXME(#405)
 #[test]
 fn associated_const_via_expr_use() {
     test_transform!(rename, r#"
@@ -64,7 +62,7 @@ fn associated_const_via_expr_use() {
     "#, @r"
     trait Shape<T> { const RENAMED: u32; }
     struct Triangle {}
-    impl TriangleShape of Shape<Triangle> { const SIDES: u32 = 3; }
+    impl TriangleShape of Shape<Triangle> { const RENAMED: u32 = 3; }
     fn print_shape_info<T, impl ShapeImpl: Shape<T>>() {
         let _ = ShapeImpl::RENAMED;
     }
