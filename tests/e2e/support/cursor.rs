@@ -186,6 +186,27 @@ pub fn render_selections(text: &str, ranges: &[Range]) -> String {
     )
 }
 
+/// Selects only those lines of the text that contain ranges
+/// and adds selection markers according to those ranges.
+pub fn render_selections_relevant_lines(text: &str, ranges: &[Range]) -> String {
+    let text_with_selections = render_selections(text, ranges);
+    let lines = text_with_selections.lines().collect::<Vec<_>>();
+
+    ranges
+        .iter()
+        .flat_map(|Range { start, end }| {
+            let start = start.line as usize;
+            let mut end = end.line as usize;
+
+            if end == start {
+                end += 1;
+            }
+
+            &lines[start..end]
+        })
+        .join("\n")
+}
+
 /// Adds selection markers for all ranges to the source text with optional attributes to attach.
 pub fn render_selections_with_attrs(text: &str, ranges: &[(Range, Option<String>)]) -> String {
     render_text_with_annotations(text, "sel", ranges)
