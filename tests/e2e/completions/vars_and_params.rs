@@ -122,7 +122,7 @@ fn disallow_recursive_definition() {
 
     [[completions]]
     completion_label = "format!"
-    insert_text = "format!($1)"
+    insert_text = 'format!("$1")'
     "#);
 }
 

@@ -50,7 +50,7 @@ fn snippet_completions_for_inline_plugins(inline_macro_name: &str) -> Completion
         | "assert_ge") => {
             format!("{macro_name}!($1, $2, \"$3\")")
         }
-        macro_name @ ("format!" | "print" | "println" | "panic" | "selector") => {
+        macro_name @ ("format" | "print" | "println" | "panic" | "selector") => {
             format!("{macro_name}!(\"$1\")")
         }
         macro_name @ ("write" | "writeln") => {
