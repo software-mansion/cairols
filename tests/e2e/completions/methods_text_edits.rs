@@ -35,7 +35,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "add_assign()"
     detail = "core::ops::arith::AddAssign"
-    insert_text = "add_assign($0)"
+    insert_text = "add_assign($1)"
     text_edits = ["""
     use core::ops::AddAssign;
 
@@ -44,7 +44,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "add_eq()"
     detail = "core::traits::AddEq"
-    insert_text = "add_eq($0)"
+    insert_text = "add_eq($1)"
     text_edits = ["""
     use core::traits::AddEq;
 
@@ -53,7 +53,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "append_formatted_to_byte_array()"
     detail = "core::to_byte_array::AppendFormattedToByteArray"
-    insert_text = "append_formatted_to_byte_array($0)"
+    insert_text = "append_formatted_to_byte_array($1)"
     text_edits = ["""
     use core::to_byte_array::AppendFormattedToByteArray;
 
@@ -62,17 +62,17 @@ fn simple_trait() {
     [[completions]]
     completion_label = "clone()"
     detail = "core::clone::Clone"
-    insert_text = "clone($0)"
+    insert_text = "clone($1)"
 
     [[completions]]
     completion_label = "destruct()"
     detail = "core::traits::Destruct"
-    insert_text = "destruct($0)"
+    insert_text = "destruct($1)"
 
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::Display"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::Display;
 
@@ -81,7 +81,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::Debug"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::Debug;
 
@@ -90,7 +90,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::LowerHex"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::LowerHex;
 
@@ -99,7 +99,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "format_as_byte_array()"
     detail = "core::to_byte_array::FormatAsByteArray"
-    insert_text = "format_as_byte_array($0)"
+    insert_text = "format_as_byte_array($1)"
     text_edits = ["""
     use core::to_byte_array::FormatAsByteArray;
 
@@ -108,17 +108,17 @@ fn simple_trait() {
     [[completions]]
     completion_label = "get_descriptor()"
     detail = "core::circuit::GetCircuitDescriptor"
-    insert_text = "get_descriptor($0)"
+    insert_text = "get_descriptor($1)"
 
     [[completions]]
     completion_label = "into()"
     detail = "core::traits::Into"
-    insert_text = "into($0)"
+    insert_text = "into($1)"
 
     [[completions]]
     completion_label = "is_non_one()"
     detail = "core::num::traits::one::One"
-    insert_text = "is_non_one($0)"
+    insert_text = "is_non_one($1)"
     text_edits = ["""
     use core::num::traits::One;
 
@@ -127,7 +127,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "is_non_zero()"
     detail = "core::num::traits::zero::Zero"
-    insert_text = "is_non_zero($0)"
+    insert_text = "is_non_zero($1)"
     text_edits = ["""
     use core::num::traits::Zero;
 
@@ -136,12 +136,12 @@ fn simple_trait() {
     [[completions]]
     completion_label = "is_non_zero()"
     detail = "core::zeroable::Zeroable"
-    insert_text = "is_non_zero($0)"
+    insert_text = "is_non_zero($1)"
 
     [[completions]]
     completion_label = "is_one()"
     detail = "core::num::traits::one::One"
-    insert_text = "is_one($0)"
+    insert_text = "is_one($1)"
     text_edits = ["""
     use core::num::traits::One;
 
@@ -150,7 +150,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "is_zero()"
     detail = "core::num::traits::zero::Zero"
-    insert_text = "is_zero($0)"
+    insert_text = "is_zero($1)"
     text_edits = ["""
     use core::num::traits::Zero;
 
@@ -159,12 +159,12 @@ fn simple_trait() {
     [[completions]]
     completion_label = "is_zero()"
     detail = "core::zeroable::Zeroable"
-    insert_text = "is_zero($0)"
+    insert_text = "is_zero($1)"
 
     [[completions]]
     completion_label = "mul_assign()"
     detail = "core::ops::arith::MulAssign"
-    insert_text = "mul_assign($0)"
+    insert_text = "mul_assign($1)"
     text_edits = ["""
     use core::ops::MulAssign;
 
@@ -173,7 +173,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "mul_eq()"
     detail = "core::traits::MulEq"
-    insert_text = "mul_eq($0)"
+    insert_text = "mul_eq($1)"
     text_edits = ["""
     use core::traits::MulEq;
 
@@ -182,7 +182,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "new_inputs()"
     detail = "core::circuit::CircuitInputs"
-    insert_text = "new_inputs($0)"
+    insert_text = "new_inputs($1)"
     text_edits = ["""
     use core::circuit::CircuitInputs;
 
@@ -191,12 +191,12 @@ fn simple_trait() {
     [[completions]]
     completion_label = "panic_destruct()"
     detail = "core::traits::PanicDestruct"
-    insert_text = "panic_destruct($0)"
+    insert_text = "panic_destruct($1)"
 
     [[completions]]
     completion_label = "pow()"
     detail = "core::num::traits::ops::pow::Pow"
-    insert_text = "pow($0)"
+    insert_text = "pow($1)"
     text_edits = ["""
     use core::num::traits::Pow;
 
@@ -205,12 +205,12 @@ fn simple_trait() {
     [[completions]]
     completion_label = "print()"
     detail = "core::debug::PrintTrait"
-    insert_text = "print($0)"
+    insert_text = "print($1)"
 
     [[completions]]
     completion_label = "serialize()"
     detail = "core::serde::Serde"
-    insert_text = "serialize($0)"
+    insert_text = "serialize($1)"
 
     [[completions]]
     completion_label = "set_nonce"
@@ -222,7 +222,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "some_method()"
     detail = "hello::hidden_trait::ATrait1"
-    insert_text = "some_method($0)"
+    insert_text = "some_method($1)"
     text_edits = ["""
     use crate::ATrait1;
 
@@ -231,7 +231,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "sub_assign()"
     detail = "core::ops::arith::SubAssign"
-    insert_text = "sub_assign($0)"
+    insert_text = "sub_assign($1)"
     text_edits = ["""
     use core::ops::SubAssign;
 
@@ -240,7 +240,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "sub_eq()"
     detail = "core::traits::SubEq"
-    insert_text = "sub_eq($0)"
+    insert_text = "sub_eq($1)"
     text_edits = ["""
     use core::traits::SubEq;
 
@@ -249,7 +249,7 @@ fn simple_trait() {
     [[completions]]
     completion_label = "try_into()"
     detail = "core::traits::TryInto"
-    insert_text = "try_into($0)"
+    insert_text = "try_into($1)"
     "#);
 }
 
@@ -285,7 +285,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "add_assign()"
     detail = "core::ops::arith::AddAssign"
-    insert_text = "add_assign($0)"
+    insert_text = "add_assign($1)"
     text_edits = ["""
     use core::ops::AddAssign;
 
@@ -294,7 +294,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "add_eq()"
     detail = "core::traits::AddEq"
-    insert_text = "add_eq($0)"
+    insert_text = "add_eq($1)"
     text_edits = ["""
     use core::traits::AddEq;
 
@@ -303,7 +303,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "append_formatted_to_byte_array()"
     detail = "core::to_byte_array::AppendFormattedToByteArray"
-    insert_text = "append_formatted_to_byte_array($0)"
+    insert_text = "append_formatted_to_byte_array($1)"
     text_edits = ["""
     use core::to_byte_array::AppendFormattedToByteArray;
 
@@ -312,17 +312,17 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "clone()"
     detail = "core::clone::Clone"
-    insert_text = "clone($0)"
+    insert_text = "clone($1)"
 
     [[completions]]
     completion_label = "destruct()"
     detail = "core::traits::Destruct"
-    insert_text = "destruct($0)"
+    insert_text = "destruct($1)"
 
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::Display"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::Display;
 
@@ -331,7 +331,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::Debug"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::Debug;
 
@@ -340,7 +340,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::LowerHex"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::LowerHex;
 
@@ -349,7 +349,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "format_as_byte_array()"
     detail = "core::to_byte_array::FormatAsByteArray"
-    insert_text = "format_as_byte_array($0)"
+    insert_text = "format_as_byte_array($1)"
     text_edits = ["""
     use core::to_byte_array::FormatAsByteArray;
 
@@ -358,17 +358,17 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "get_descriptor()"
     detail = "core::circuit::GetCircuitDescriptor"
-    insert_text = "get_descriptor($0)"
+    insert_text = "get_descriptor($1)"
 
     [[completions]]
     completion_label = "into()"
     detail = "core::traits::Into"
-    insert_text = "into($0)"
+    insert_text = "into($1)"
 
     [[completions]]
     completion_label = "is_non_one()"
     detail = "core::num::traits::one::One"
-    insert_text = "is_non_one($0)"
+    insert_text = "is_non_one($1)"
     text_edits = ["""
     use core::num::traits::One;
 
@@ -377,7 +377,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "is_non_zero()"
     detail = "core::num::traits::zero::Zero"
-    insert_text = "is_non_zero($0)"
+    insert_text = "is_non_zero($1)"
     text_edits = ["""
     use core::num::traits::Zero;
 
@@ -386,12 +386,12 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "is_non_zero()"
     detail = "core::zeroable::Zeroable"
-    insert_text = "is_non_zero($0)"
+    insert_text = "is_non_zero($1)"
 
     [[completions]]
     completion_label = "is_one()"
     detail = "core::num::traits::one::One"
-    insert_text = "is_one($0)"
+    insert_text = "is_one($1)"
     text_edits = ["""
     use core::num::traits::One;
 
@@ -400,7 +400,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "is_zero()"
     detail = "core::num::traits::zero::Zero"
-    insert_text = "is_zero($0)"
+    insert_text = "is_zero($1)"
     text_edits = ["""
     use core::num::traits::Zero;
 
@@ -409,12 +409,12 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "is_zero()"
     detail = "core::zeroable::Zeroable"
-    insert_text = "is_zero($0)"
+    insert_text = "is_zero($1)"
 
     [[completions]]
     completion_label = "mul_assign()"
     detail = "core::ops::arith::MulAssign"
-    insert_text = "mul_assign($0)"
+    insert_text = "mul_assign($1)"
     text_edits = ["""
     use core::ops::MulAssign;
 
@@ -423,7 +423,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "mul_eq()"
     detail = "core::traits::MulEq"
-    insert_text = "mul_eq($0)"
+    insert_text = "mul_eq($1)"
     text_edits = ["""
     use core::traits::MulEq;
 
@@ -432,7 +432,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "new_inputs()"
     detail = "core::circuit::CircuitInputs"
-    insert_text = "new_inputs($0)"
+    insert_text = "new_inputs($1)"
     text_edits = ["""
     use core::circuit::CircuitInputs;
 
@@ -441,12 +441,12 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "panic_destruct()"
     detail = "core::traits::PanicDestruct"
-    insert_text = "panic_destruct($0)"
+    insert_text = "panic_destruct($1)"
 
     [[completions]]
     completion_label = "pow()"
     detail = "core::num::traits::ops::pow::Pow"
-    insert_text = "pow($0)"
+    insert_text = "pow($1)"
     text_edits = ["""
     use core::num::traits::Pow;
 
@@ -455,12 +455,12 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "print()"
     detail = "core::debug::PrintTrait"
-    insert_text = "print($0)"
+    insert_text = "print($1)"
 
     [[completions]]
     completion_label = "serialize()"
     detail = "core::serde::Serde"
-    insert_text = "serialize($0)"
+    insert_text = "serialize($1)"
 
     [[completions]]
     completion_label = "set_nonce"
@@ -472,7 +472,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "some_method()"
     detail = "hello::hidden_trait::ATrait1"
-    insert_text = "some_method($0)"
+    insert_text = "some_method($1)"
     text_edits = ["""
     use crate::ATrait1;
 
@@ -481,7 +481,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "sub_assign()"
     detail = "core::ops::arith::SubAssign"
-    insert_text = "sub_assign($0)"
+    insert_text = "sub_assign($1)"
     text_edits = ["""
     use core::ops::SubAssign;
 
@@ -490,7 +490,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "sub_eq()"
     detail = "core::traits::SubEq"
-    insert_text = "sub_eq($0)"
+    insert_text = "sub_eq($1)"
     text_edits = ["""
     use core::traits::SubEq;
 
@@ -499,7 +499,7 @@ fn non_directly_visible_trait() {
     [[completions]]
     completion_label = "try_into()"
     detail = "core::traits::TryInto"
-    insert_text = "try_into($0)"
+    insert_text = "try_into($1)"
     "#);
 }
 
@@ -551,7 +551,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "add_assign()"
     detail = "core::ops::arith::AddAssign"
-    insert_text = "add_assign($0)"
+    insert_text = "add_assign($1)"
     text_edits = ["""
     use core::ops::AddAssign;
 
@@ -560,7 +560,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "add_eq()"
     detail = "core::traits::AddEq"
-    insert_text = "add_eq($0)"
+    insert_text = "add_eq($1)"
     text_edits = ["""
     use core::traits::AddEq;
 
@@ -569,7 +569,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "append_formatted_to_byte_array()"
     detail = "core::to_byte_array::AppendFormattedToByteArray"
-    insert_text = "append_formatted_to_byte_array($0)"
+    insert_text = "append_formatted_to_byte_array($1)"
     text_edits = ["""
     use core::to_byte_array::AppendFormattedToByteArray;
 
@@ -578,17 +578,17 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "clone()"
     detail = "core::clone::Clone"
-    insert_text = "clone($0)"
+    insert_text = "clone($1)"
 
     [[completions]]
     completion_label = "destruct()"
     detail = "core::traits::Destruct"
-    insert_text = "destruct($0)"
+    insert_text = "destruct($1)"
 
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::Display"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::Display;
 
@@ -597,7 +597,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::Debug"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::Debug;
 
@@ -606,7 +606,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::LowerHex"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::LowerHex;
 
@@ -615,7 +615,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "format_as_byte_array()"
     detail = "core::to_byte_array::FormatAsByteArray"
-    insert_text = "format_as_byte_array($0)"
+    insert_text = "format_as_byte_array($1)"
     text_edits = ["""
     use core::to_byte_array::FormatAsByteArray;
 
@@ -624,17 +624,17 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "get_descriptor()"
     detail = "core::circuit::GetCircuitDescriptor"
-    insert_text = "get_descriptor($0)"
+    insert_text = "get_descriptor($1)"
 
     [[completions]]
     completion_label = "into()"
     detail = "core::traits::Into"
-    insert_text = "into($0)"
+    insert_text = "into($1)"
 
     [[completions]]
     completion_label = "is_non_one()"
     detail = "core::num::traits::one::One"
-    insert_text = "is_non_one($0)"
+    insert_text = "is_non_one($1)"
     text_edits = ["""
     use core::num::traits::One;
 
@@ -643,7 +643,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "is_non_zero()"
     detail = "core::num::traits::zero::Zero"
-    insert_text = "is_non_zero($0)"
+    insert_text = "is_non_zero($1)"
     text_edits = ["""
     use core::num::traits::Zero;
 
@@ -652,12 +652,12 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "is_non_zero()"
     detail = "core::zeroable::Zeroable"
-    insert_text = "is_non_zero($0)"
+    insert_text = "is_non_zero($1)"
 
     [[completions]]
     completion_label = "is_one()"
     detail = "core::num::traits::one::One"
-    insert_text = "is_one($0)"
+    insert_text = "is_one($1)"
     text_edits = ["""
     use core::num::traits::One;
 
@@ -666,7 +666,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "is_zero()"
     detail = "core::num::traits::zero::Zero"
-    insert_text = "is_zero($0)"
+    insert_text = "is_zero($1)"
     text_edits = ["""
     use core::num::traits::Zero;
 
@@ -675,12 +675,12 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "is_zero()"
     detail = "core::zeroable::Zeroable"
-    insert_text = "is_zero($0)"
+    insert_text = "is_zero($1)"
 
     [[completions]]
     completion_label = "mul_assign()"
     detail = "core::ops::arith::MulAssign"
-    insert_text = "mul_assign($0)"
+    insert_text = "mul_assign($1)"
     text_edits = ["""
     use core::ops::MulAssign;
 
@@ -689,7 +689,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "mul_eq()"
     detail = "core::traits::MulEq"
-    insert_text = "mul_eq($0)"
+    insert_text = "mul_eq($1)"
     text_edits = ["""
     use core::traits::MulEq;
 
@@ -698,7 +698,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "new_inputs()"
     detail = "core::circuit::CircuitInputs"
-    insert_text = "new_inputs($0)"
+    insert_text = "new_inputs($1)"
     text_edits = ["""
     use core::circuit::CircuitInputs;
 
@@ -707,12 +707,12 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "panic_destruct()"
     detail = "core::traits::PanicDestruct"
-    insert_text = "panic_destruct($0)"
+    insert_text = "panic_destruct($1)"
 
     [[completions]]
     completion_label = "pow()"
     detail = "core::num::traits::ops::pow::Pow"
-    insert_text = "pow($0)"
+    insert_text = "pow($1)"
     text_edits = ["""
     use core::num::traits::Pow;
 
@@ -721,20 +721,21 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "print()"
     detail = "core::debug::PrintTrait"
-    insert_text = "print($0)"
+    insert_text = "print($1)"
 
     [[completions]]
     completion_label = "selector!"
+    insert_text = 'selector!("$1")'
 
     [[completions]]
     completion_label = "serialize()"
     detail = "core::serde::Serde"
-    insert_text = "serialize($0)"
+    insert_text = "serialize($1)"
 
     [[completions]]
     completion_label = "some_method()"
     detail = "dep::X"
-    insert_text = "some_method($0)"
+    insert_text = "some_method($1)"
     text_edits = ["""
     use dep::X;
 
@@ -743,7 +744,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "sub_assign()"
     detail = "core::ops::arith::SubAssign"
-    insert_text = "sub_assign($0)"
+    insert_text = "sub_assign($1)"
     text_edits = ["""
     use core::ops::SubAssign;
 
@@ -752,7 +753,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "sub_eq()"
     detail = "core::traits::SubEq"
-    insert_text = "sub_eq($0)"
+    insert_text = "sub_eq($1)"
     text_edits = ["""
     use core::traits::SubEq;
 
@@ -761,7 +762,7 @@ fn methods_from_deps_included() {
     [[completions]]
     completion_label = "try_into()"
     detail = "core::traits::TryInto"
-    insert_text = "try_into($0)"
+    insert_text = "try_into($1)"
     "#);
 }
 
@@ -786,7 +787,7 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "add_assign()"
     detail = "core::ops::arith::AddAssign"
-    insert_text = "add_assign($0)"
+    insert_text = "add_assign($1)"
     text_edits = ["""
     use core::ops::AddAssign;
 
@@ -795,12 +796,12 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "add_eq()"
     detail = "core::traits::AddEq"
-    insert_text = "add_eq($0)"
+    insert_text = "add_eq($1)"
 
     [[completions]]
     completion_label = "append_formatted_to_byte_array()"
     detail = "core::to_byte_array::AppendFormattedToByteArray"
-    insert_text = "append_formatted_to_byte_array($0)"
+    insert_text = "append_formatted_to_byte_array($1)"
     text_edits = ["""
     use to_byte_array::AppendFormattedToByteArray;
 
@@ -809,17 +810,17 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "clone()"
     detail = "core::clone::Clone"
-    insert_text = "clone($0)"
+    insert_text = "clone($1)"
 
     [[completions]]
     completion_label = "destruct()"
     detail = "core::traits::Destruct"
-    insert_text = "destruct($0)"
+    insert_text = "destruct($1)"
 
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::Display"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::Display;
 
@@ -828,7 +829,7 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::Debug"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::Debug;
 
@@ -837,7 +838,7 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "fmt()"
     detail = "core::fmt::LowerHex"
-    insert_text = "fmt($0)"
+    insert_text = "fmt($1)"
     text_edits = ["""
     use core::fmt::LowerHex;
 
@@ -846,7 +847,7 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "format_as_byte_array()"
     detail = "core::to_byte_array::FormatAsByteArray"
-    insert_text = "format_as_byte_array($0)"
+    insert_text = "format_as_byte_array($1)"
     text_edits = ["""
     use to_byte_array::FormatAsByteArray;
 
@@ -855,7 +856,7 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "get_descriptor()"
     detail = "core::circuit::GetCircuitDescriptor"
-    insert_text = "get_descriptor($0)"
+    insert_text = "get_descriptor($1)"
     text_edits = ["""
     use core::circuit::GetCircuitDescriptor;
 
@@ -864,12 +865,12 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "into()"
     detail = "core::traits::Into"
-    insert_text = "into($0)"
+    insert_text = "into($1)"
 
     [[completions]]
     completion_label = "is_non_one()"
     detail = "core::num::traits::one::One"
-    insert_text = "is_non_one($0)"
+    insert_text = "is_non_one($1)"
     text_edits = ["""
     use core::num::traits::One;
 
@@ -878,7 +879,7 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "is_non_zero()"
     detail = "core::num::traits::zero::Zero"
-    insert_text = "is_non_zero($0)"
+    insert_text = "is_non_zero($1)"
     text_edits = ["""
     use core::num::traits::Zero;
 
@@ -887,12 +888,12 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "is_non_zero()"
     detail = "core::zeroable::Zeroable"
-    insert_text = "is_non_zero($0)"
+    insert_text = "is_non_zero($1)"
 
     [[completions]]
     completion_label = "is_one()"
     detail = "core::num::traits::one::One"
-    insert_text = "is_one($0)"
+    insert_text = "is_one($1)"
     text_edits = ["""
     use core::num::traits::One;
 
@@ -901,7 +902,7 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "is_zero()"
     detail = "core::num::traits::zero::Zero"
-    insert_text = "is_zero($0)"
+    insert_text = "is_zero($1)"
     text_edits = ["""
     use core::num::traits::Zero;
 
@@ -910,12 +911,12 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "is_zero()"
     detail = "core::zeroable::Zeroable"
-    insert_text = "is_zero($0)"
+    insert_text = "is_zero($1)"
 
     [[completions]]
     completion_label = "mul_assign()"
     detail = "core::ops::arith::MulAssign"
-    insert_text = "mul_assign($0)"
+    insert_text = "mul_assign($1)"
     text_edits = ["""
     use core::ops::MulAssign;
 
@@ -924,12 +925,12 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "mul_eq()"
     detail = "core::traits::MulEq"
-    insert_text = "mul_eq($0)"
+    insert_text = "mul_eq($1)"
 
     [[completions]]
     completion_label = "new_inputs()"
     detail = "core::circuit::CircuitInputs"
-    insert_text = "new_inputs($0)"
+    insert_text = "new_inputs($1)"
     text_edits = ["""
     use core::circuit::CircuitInputs;
 
@@ -938,12 +939,12 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "panic_destruct()"
     detail = "core::traits::PanicDestruct"
-    insert_text = "panic_destruct($0)"
+    insert_text = "panic_destruct($1)"
 
     [[completions]]
     completion_label = "pow()"
     detail = "core::num::traits::ops::pow::Pow"
-    insert_text = "pow($0)"
+    insert_text = "pow($1)"
     text_edits = ["""
     use core::num::traits::Pow;
 
@@ -952,7 +953,7 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "print()"
     detail = "core::debug::PrintTrait"
-    insert_text = "print($0)"
+    insert_text = "print($1)"
     text_edits = ["""
     use debug::PrintTrait;
 
@@ -960,16 +961,17 @@ fn methods_from_non_deps_excluded() {
 
     [[completions]]
     completion_label = "selector!"
+    insert_text = 'selector!("$1")'
 
     [[completions]]
     completion_label = "serialize()"
     detail = "core::serde::Serde"
-    insert_text = "serialize($0)"
+    insert_text = "serialize($1)"
 
     [[completions]]
     completion_label = "sub_assign()"
     detail = "core::ops::arith::SubAssign"
-    insert_text = "sub_assign($0)"
+    insert_text = "sub_assign($1)"
     text_edits = ["""
     use core::ops::SubAssign;
 
@@ -978,11 +980,11 @@ fn methods_from_non_deps_excluded() {
     [[completions]]
     completion_label = "sub_eq()"
     detail = "core::traits::SubEq"
-    insert_text = "sub_eq($0)"
+    insert_text = "sub_eq($1)"
 
     [[completions]]
     completion_label = "try_into()"
     detail = "core::traits::TryInto"
-    insert_text = "try_into($0)"
+    insert_text = "try_into($1)"
     "#);
 }

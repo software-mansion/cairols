@@ -1,15 +1,15 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_syntax::node::Token;
+use cairo_lang_syntax::node::ast::PathSegment;
 use if_chain::if_chain;
-use lsp_types::{CompletionItem, CompletionItemKind};
+use lsp_types::{CompletionItem, InsertTextFormat};
 
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
-use cairo_lang_syntax::node::Token;
-use cairo_lang_syntax::node::ast::PathSegment;
 
 pub fn macro_call_completions(
     db: &AnalysisDatabase,
@@ -34,14 +34,36 @@ pub fn macro_call_completions(
             inline_plugins
                 .iter()
                 .filter(|(name,_)| text_matches(name, &typed))
-                .map(|(plugin_name, _)| CompletionItem {
-                    label: format!("{}!", plugin_name),
-                    kind: Some(CompletionItemKind::FUNCTION),
-                    ..CompletionItem::default()
-                })
+                .map(|(plugin_name, _)| snippet_completions_for_inline_plugins(plugin_name))
                 .collect()
         } else {
             Default::default()
         }
     )
+}
+
+fn snippet_completions_for_inline_plugins(inline_macro_name: &str) -> CompletionItem {
+    let insert_text = match inline_macro_name {
+        "array" => "array![$1]".to_string(),
+        "assert" => "assert!($1, \"$2\")".to_string(),
+        macro_name @ ("assert_eq" | "assert_ne" | "assert_lt" | "assert_le" | "assert_gt"
+        | "assert_ge") => {
+            format!("{macro_name}!($1, $2, \"$3\")")
+        }
+        macro_name @ ("format" | "print" | "println" | "panic" | "selector") => {
+            format!("{macro_name}!(\"$1\")")
+        }
+        macro_name @ ("write" | "writeln") => {
+            format!("{macro_name}!($1, \"$2\")")
+        }
+        "consteval_int" => "consteval_int!($1)".to_string(),
+        rest => format!("{rest}!($1)"),
+    };
+
+    CompletionItem {
+        label: format!("{inline_macro_name}!"),
+        insert_text_format: Some(InsertTextFormat::SNIPPET),
+        insert_text: Some(insert_text),
+        ..CompletionItem::default()
+    }
 }

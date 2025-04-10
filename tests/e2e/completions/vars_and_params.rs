@@ -122,6 +122,7 @@ fn disallow_recursive_definition() {
 
     [[completions]]
     completion_label = "format!"
+    insert_text = 'format!("$1")'
     "#);
 }
 
@@ -168,6 +169,7 @@ fn work_with_params() {
 
     [[completions]]
     completion_label = "panic!"
+    insert_text = 'panic!("$1")'
 
     [[completions]]
     completion_label = "paxram"
