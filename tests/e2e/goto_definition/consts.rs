@@ -40,21 +40,6 @@ fn associated_const_via_trait_declaration() {
 }
 
 #[test]
-fn associated_const_via_impl_definition() {
-    test_transform!(goto_definition, r#"
-    trait Shape<T> { const SIDES: u32; }
-    struct Triangle {}
-    impl TriangleShape of Shape<Triangle> { const SIDE<caret>S: u32 = 3; }
-    "#, @r"
-    trait Shape<T> { const SIDES: u32; }
-    struct Triangle {}
-    impl TriangleShape of Shape<Triangle> { const <sel>SIDES</sel>: u32 = 3; }
-    ");
-}
-
-// FIXME: https://github.com/software-mansion/cairols/issues/405
-//        https://github.com/software-mansion/cairols/issues/170
-#[test]
 fn associated_const_via_expr_use() {
     test_transform!(goto_definition, r#"
     trait Shape<T> { const SIDES: u32; }

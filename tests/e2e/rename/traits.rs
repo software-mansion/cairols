@@ -40,7 +40,6 @@ fn trait_via_definition() {
     ")
 }
 
-// FIXME(#170)
 #[test]
 fn trait_method_via_definition() {
     test_transform!(rename, r#"
@@ -72,7 +71,7 @@ fn trait_method_via_definition() {
         fn RENAMED(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
-        fn area(self: @Foo) -> u64 { 0 }
+        fn RENAMED(self: @Foo) -> u64 { 0 }
     }
     #[derive(Drop)]
     struct Bar {}
@@ -90,7 +89,6 @@ fn trait_method_via_definition() {
     ")
 }
 
-// FIXME(#170)
 #[test]
 fn trait_method_via_dot_call() {
     test_transform!(rename, r#"
@@ -122,7 +120,7 @@ fn trait_method_via_dot_call() {
         fn RENAMED(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
-        fn area(self: @Foo) -> u64 { 0 }
+        fn RENAMED(self: @Foo) -> u64 { 0 }
     }
     #[derive(Drop)]
     struct Bar {}
@@ -140,7 +138,6 @@ fn trait_method_via_dot_call() {
     ")
 }
 
-// FIXME(#170)
 #[test]
 fn trait_method_via_path_call() {
     test_transform!(rename, r#"
@@ -172,7 +169,7 @@ fn trait_method_via_path_call() {
         fn RENAMED(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
-        fn area(self: @Foo) -> u64 { 0 }
+        fn RENAMED(self: @Foo) -> u64 { 0 }
     }
     #[derive(Drop)]
     struct Bar {}
@@ -190,7 +187,6 @@ fn trait_method_via_path_call() {
     ")
 }
 
-// FIXME(#170): Does not work as expected.
 #[test]
 fn impl_method_via_definition() {
     test_transform!(rename, r#"
@@ -219,7 +215,7 @@ fn impl_method_via_definition() {
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        fn area(self: @Foo) -> u64;
+        fn RENAMED(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
         fn RENAMED(self: @Foo) -> u64 { 0 }
@@ -234,8 +230,8 @@ fn impl_method_via_definition() {
     }
     fn main() {
         let foo = Foo {};
-        let x = foo.area();
-        let y = FooTrait::area(foo);
+        let x = foo.RENAMED();
+        let y = FooTrait::RENAMED(foo);
     }
     ")
 }

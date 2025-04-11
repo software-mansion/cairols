@@ -107,18 +107,16 @@ fn associated_const_via_impl_definition() {
     """
     popover = """
     ```cairo
-    hello::TriangleShape
+    hello::Shape
     ```
     ```cairo
-    impl TriangleShape of Shape<Triangle>;
-    const SIDES: u32 = 3;
+    trait Shape<T>
+    const SIDES: u32;
     ```
     """
     "#);
 }
 
-// FIXME: https://github.com/software-mansion/cairols/issues/405
-//        https://github.com/software-mansion/cairols/issues/170
 #[test]
 fn associated_const_via_expr_use() {
     test_transform!(test_hover, r#"
