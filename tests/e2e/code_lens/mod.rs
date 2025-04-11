@@ -155,7 +155,6 @@ fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
                 }
             "#,
         }
-        cwd = "./"; // Proc macros will fail if cwd is not set.
         client_capabilities = caps;
         workspace_configuration = config;
     };
