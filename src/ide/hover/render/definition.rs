@@ -10,7 +10,7 @@ use lsp_types::Hover;
 use crate::ide::hover::markdown_contents;
 use crate::ide::hover::render::markdown::{RULE, fenced_code_block};
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::defs::SymbolDef;
+use crate::lang::defs::NavigationTarget;
 use crate::lang::lsp::ToLsp;
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.
@@ -19,10 +19,10 @@ pub fn definition(
     identifier: &TerminalIdentifier,
     file_id: FileId,
 ) -> Option<Hover> {
-    let symbol = SymbolDef::find(db, identifier)?;
+    let symbol = NavigationTarget::find_closest_parent_ref(db, identifier)?;
 
     let md = match &symbol {
-        SymbolDef::Item(item) => {
+        NavigationTarget::Item(item) => {
             let mut md = String::new();
             md += &fenced_code_block(&item.definition_path(db));
             md += &fenced_code_block(&item.signature(db));
@@ -33,7 +33,7 @@ pub fn definition(
             md
         }
 
-        SymbolDef::Module(module) => {
+        NavigationTarget::Module(module) => {
             let mut md = String::new();
             md += &fenced_code_block(&module.definition_path());
             md += &fenced_code_block(&module.signature(db));
@@ -44,8 +44,8 @@ pub fn definition(
             md
         }
 
-        SymbolDef::Variable(var) => fenced_code_block(&var.signature(db)?),
-        SymbolDef::ExprInlineMacro(macro_name) => {
+        NavigationTarget::Variable(var) => fenced_code_block(&var.signature(db)?),
+        NavigationTarget::ExprInlineMacro(macro_name) => {
             let crate_id = db.file_modules(file_id).ok()?.first()?.owning_crate(db);
 
             let mut md = fenced_code_block(macro_name);
@@ -61,7 +61,7 @@ pub fn definition(
             }
             md
         }
-        SymbolDef::Member(member) => {
+        NavigationTarget::Member(member) => {
             let mut md = String::new();
 
             // Signature is the signature of the struct, so it makes sense that the definition
@@ -75,7 +75,7 @@ pub fn definition(
             }
             md
         }
-        SymbolDef::Variant(variant) => {
+        NavigationTarget::Variant(variant) => {
             let mut md = String::new();
 
             // Signature is the signature of the enum, so it makes sense that the definition

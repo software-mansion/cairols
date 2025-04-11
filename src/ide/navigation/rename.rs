@@ -13,7 +13,7 @@ use lsp_types::{
 use std::collections::HashMap;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::SymbolDef;
+use crate::lang::defs::NavigationTarget;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::result::{LSPError, LSPResult};
@@ -41,12 +41,12 @@ pub fn rename(
         let position = params.text_document_position.position.to_cairo();
         let identifier = db.find_identifier_at_position(file, position)?;
 
-        SymbolDef::find(db, &identifier)
+        NavigationTarget::find_root_def(db, &identifier)
     };
     let Some(symbol) = symbol() else {
         return Ok(None);
     };
-    if let SymbolDef::ExprInlineMacro(_) = symbol {
+    if let NavigationTarget::ExprInlineMacro(_) = symbol {
         return Err(LSPError::new(
             anyhow!("Renaming inline macros is not supported"),
             ErrorCode::RequestFailed,
@@ -67,7 +67,7 @@ pub fn rename(
             acc
         });
 
-    let resource_op = if let SymbolDef::Module(module_def) = symbol {
+    let resource_op = if let NavigationTarget::Module(module_def) = symbol {
         match module_def.module_id() {
             ModuleId::CrateRoot(_) => {
                 return Err(LSPError::new(

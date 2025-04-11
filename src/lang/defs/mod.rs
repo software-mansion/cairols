@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use cairo_lang_utils::smol_str::SmolStr;
 
-use self::finder::{ResolvedItem, find_definition};
+use self::finder::{ResolvedItem, find_definition, find_nearest_parent_def};
 pub use self::item::ItemDef;
 pub use self::member::MemberDef;
 pub use self::module::ModuleDef;
@@ -32,7 +32,7 @@ mod variant;
 /// This is an ephemeral data structure.
 /// Do not store it in any kind of state.
 #[derive(Eq, PartialEq)]
-pub enum SymbolDef {
+pub enum NavigationTarget {
     Item(ItemDef),
     Variable(VariableDef),
     ExprInlineMacro(SmolStr),
@@ -41,25 +41,34 @@ pub enum SymbolDef {
     Module(ModuleDef),
 }
 
-impl SymbolDef {
-    /// Finds definition of the symbol referred to by the given identifier.
-    pub fn find(db: &AnalysisDatabase, identifier: &ast::TerminalIdentifier) -> Option<Self> {
-        if let Some(parent) = identifier.as_syntax_node().parent(db) {
-            if parent.kind(db.upcast()) == SyntaxKind::PathSegmentSimple
-                && parent.grandparent_kind(db) == Some(SyntaxKind::ExprInlineMacro)
-            {
-                return Some(Self::ExprInlineMacro(
-                    parent
-                        .parent(db)
-                        .expect("Grandparent already exists")
-                        .get_text_without_trivia(db.upcast())
-                        .into(),
-                ));
-            }
-        }
+impl NavigationTarget {
+    /// Finds the nearest definition that makes sense to navigate to, when looking for symbol definition
+    pub fn find_closest_parent_ref(
+        db: &AnalysisDatabase,
+        identifier: &ast::TerminalIdentifier,
+    ) -> Option<Self> {
         // Get the resolved item info and the syntax node of the definition.
         let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
+
+        let resolved_item = find_nearest_parent_def(db, identifier, &lookup_items)?;
+
+        Self::from_resolved_item(db, resolved_item)
+    }
+
+    /// Finds the root definition of the symbol referred to by the given identifier.
+    pub fn find_root_def(
+        db: &AnalysisDatabase,
+        identifier: &ast::TerminalIdentifier,
+    ) -> Option<Self> {
+        // Get the resolved item info and the syntax node of the definition.
+        let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
+
         let resolved_item = find_definition(db, identifier, &lookup_items)?;
+
+        Self::from_resolved_item(db, resolved_item)
+    }
+
+    fn from_resolved_item(db: &AnalysisDatabase, resolved_item: ResolvedItem) -> Option<Self> {
         let definition_node = resolved_item.definition_node(db)?;
 
         match resolved_item {
@@ -99,6 +108,7 @@ impl SymbolDef {
             ResolvedItem::Concrete(ResolvedConcreteItem::Variant(concrete_variant)) => {
                 VariantDef::new(db, concrete_variant.id, definition_node).map(Self::Variant)
             }
+            ResolvedItem::InlineMacro(macro_name) => Some(Self::ExprInlineMacro(macro_name)),
         }
     }
 

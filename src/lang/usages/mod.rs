@@ -10,7 +10,7 @@ use cairo_lang_utils::smol_str::format_smolstr;
 use memchr::memmem::Finder;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::SymbolDef;
+use crate::lang::defs::NavigationTarget;
 use cairo_lang_filesystem::db::get_originating_location;
 use search_scope::SearchScope;
 
@@ -32,7 +32,7 @@ macro_rules! flow {
 /// first, a fast text search to get a superset of matches is performed,
 /// and then each match is checked using a precise goto-definition algorithm.
 pub struct FindUsages<'a> {
-    symbol: &'a SymbolDef,
+    symbol: &'a NavigationTarget,
     db: &'a AnalysisDatabase,
     include_declaration: bool,
     in_scope: Option<SearchScope>,
@@ -53,7 +53,7 @@ impl FoundUsage {
 }
 
 impl<'a> FindUsages<'a> {
-    pub(super) fn new(symbol: &'a SymbolDef, db: &'a AnalysisDatabase) -> Self {
+    pub(super) fn new(symbol: &'a NavigationTarget, db: &'a AnalysisDatabase) -> Self {
         Self { symbol, db, include_declaration: false, in_scope: None }
     }
 
@@ -107,7 +107,7 @@ impl<'a> FindUsages<'a> {
         let needle = match self.symbol {
             // Small optimisation for inline macros: we can be sure that any usages will have a `!`
             // at the end, so we do not need to search for occurrences without it.
-            SymbolDef::ExprInlineMacro(macro_name) => format_smolstr!("{macro_name}!"),
+            NavigationTarget::ExprInlineMacro(macro_name) => format_smolstr!("{macro_name}!"),
             symbol => symbol.name(db),
         };
 
@@ -161,7 +161,7 @@ impl<'a> FindUsages<'a> {
         if Some(identifier.stable_ptr(self.db).untyped()) == self.symbol.definition_stable_ptr(db) {
             return ControlFlow::Continue(());
         }
-        let Some(found_symbol) = SymbolDef::find(self.db, &identifier) else {
+        let Some(found_symbol) = NavigationTarget::find_root_def(self.db, &identifier) else {
             return ControlFlow::Continue(());
         };
         if found_symbol == *self.symbol {

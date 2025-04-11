@@ -1,6 +1,6 @@
 use super::{db::AnalysisDatabase, lsp::LsProtoGroup};
 use crate::{
-    lang::{defs::SymbolDef, lsp::ToLsp},
+    lang::{defs::NavigationTarget, lsp::ToLsp},
     server::is_cairo_file_path,
 };
 use cairo_lang_defs::{
@@ -81,7 +81,11 @@ fn handle_rename(
 
     let mod_name = submodule.name_identifier(db);
 
-    for usage in SymbolDef::find(db, &mod_name)?.usages(db).include_declaration(true).collect() {
+    for usage in NavigationTarget::find_root_def(db, &mod_name)?
+        .usages(db)
+        .include_declaration(true)
+        .collect()
+    {
         let file = db.url_for_file(usage.file)?;
         let range = usage.span.position_in_file(db, usage.file)?;
 

@@ -1,5 +1,5 @@
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::SymbolDef;
+use crate::lang::defs::NavigationTarget;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
@@ -19,7 +19,7 @@ pub fn goto_definition(
     let position = params.text_document_position_params.position.to_cairo();
 
     let identifier = db.find_identifier_at_position(file, position)?;
-    let symbol = SymbolDef::find(db, &identifier)?;
+    let symbol = NavigationTarget::find_closest_parent_ref(db, &identifier)?;
 
     let (found_file, span) = try_special_case_non_inline_module(db, &symbol)
         .map_or_else(|| symbol.definition_location(db), Some)?;
@@ -32,9 +32,9 @@ pub fn goto_definition(
 // In the case of a non-inline module redirect to a module file instead of a definition node.
 fn try_special_case_non_inline_module(
     db: &AnalysisDatabase,
-    symbol: &SymbolDef,
+    symbol: &NavigationTarget,
 ) -> Option<(FileId, TextSpan)> {
-    if let SymbolDef::Module(module_def) = symbol {
+    if let NavigationTarget::Module(module_def) = symbol {
         let module_id = module_def.module_id();
         match module_id {
             ModuleId::CrateRoot(_) => None,

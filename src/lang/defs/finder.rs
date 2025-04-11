@@ -16,8 +16,10 @@ use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{Expr, TypeLongId};
 use cairo_lang_syntax::node::helpers::HasName;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::smol_str::SmolStr;
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 
 /// A language element that can be a result of name resolution performed by CairoLS.
 ///
@@ -34,6 +36,7 @@ pub enum ResolvedItem {
     // CairoLS-specific additions.
     Member(MemberId),
     ImplItem(ImplItemId),
+    InlineMacro(SmolStr),
 }
 
 pub fn find_definition(
@@ -42,6 +45,7 @@ pub fn find_definition(
     lookup_items: &[LookupItemId],
 ) -> Option<ResolvedItem> {
     try_submodule_name(db, identifier)
+        .or_else(|| try_macro(db, identifier))
         .or_else(|| try_member(db, identifier, lookup_items))
         .or_else(|| try_member_from_constructor(db, identifier, lookup_items))
         .or_else(|| try_member_declaration(db, identifier))
@@ -50,6 +54,41 @@ pub fn find_definition(
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items))
         .or_else(|| try_impl_items(db, identifier))
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
+}
+
+// TODO(#170): Implement different logic for goto definition to work properly
+pub fn find_nearest_parent_def(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<ResolvedItem> {
+    try_submodule_name(db, identifier)
+        .or_else(|| try_macro(db, identifier))
+        .or_else(|| try_member(db, identifier, lookup_items))
+        .or_else(|| try_member_from_constructor(db, identifier, lookup_items))
+        .or_else(|| try_member_declaration(db, identifier))
+        .or_else(|| try_variant_declaration(db, identifier))
+        .or_else(|| try_variable_declaration(db, identifier, lookup_items))
+        .or_else(|| lookup_resolved_items(db, identifier, lookup_items))
+        .or_else(|| try_impl_items(db, identifier))
+        .or_else(|| lookup_item_name(db, identifier, lookup_items))
+}
+
+fn try_macro(db: &AnalysisDatabase, identifier: &ast::TerminalIdentifier) -> Option<ResolvedItem> {
+    if let Some(parent) = identifier.as_syntax_node().parent(db) {
+        if parent.kind(db.upcast()) == SyntaxKind::PathSegmentSimple
+            && parent.grandparent_kind(db) == Some(SyntaxKind::ExprInlineMacro)
+        {
+            return Some(ResolvedItem::InlineMacro(
+                parent
+                    .parent(db)
+                    .expect("Grandparent already exists")
+                    .get_text_without_trivia(db.upcast())
+                    .into(),
+            ));
+        }
+    }
+    None
 }
 
 /// Resolve elements of `impl`s to trait definitions.
@@ -458,6 +497,7 @@ impl ResolvedItem {
                     impl_impl.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
             },
+            ResolvedItem::InlineMacro(_) => return None,
         };
         Some(stable_ptr)
     }
