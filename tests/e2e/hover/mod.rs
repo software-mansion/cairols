@@ -12,6 +12,7 @@ use crate::support::{cursors, sandbox};
 
 mod basic;
 mod consts;
+mod function_call;
 mod literals;
 mod missing_module;
 mod partial;
