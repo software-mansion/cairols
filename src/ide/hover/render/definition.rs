@@ -12,7 +12,7 @@ use crate::ide::hover::markdown_contents;
 use crate::ide::markdown::{RULE, fenced_code_block};
 use crate::ide::ty::InferredValue;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::defs::{ResolvedItem, SymbolDef};
+use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch};
 use crate::lang::lsp::ToLsp;
 use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_semantic::expr::inference::InferenceId;
@@ -28,15 +28,14 @@ pub fn definition(
     file_id: FileId,
     importables: &OrderedHashMap<ImportableId, String>,
 ) -> Option<Hover> {
-    let (resolved_item, resolver_data, symbol) =
-        SymbolDef::find_with_resolved_item(db, identifier)?;
+    let search = SymbolSearch::find_definition(db, identifier)?;
 
-    let md = match &symbol {
+    let md = match &search.def {
         SymbolDef::Item(item) => {
             let mut md = String::new();
             md += &fenced_code_block(&item.definition_path(db));
             md += &fenced_code_block(
-                &concrete_signature(db, resolved_item, resolver_data, importables)
+                &concrete_signature(db, search.resolved_item, search.resolver_data, importables)
                     .map(|signature| item.signature_with_text(db, &signature))
                     .unwrap_or_else(|| item.signature(db)),
             );

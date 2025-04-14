@@ -13,7 +13,7 @@ use lsp_types::{
 use std::collections::HashMap;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::SymbolDef;
+use crate::lang::defs::{SymbolDef, SymbolSearch};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::result::{LSPError, LSPResult};
@@ -41,7 +41,7 @@ pub fn rename(
         let position = params.text_document_position.position.to_cairo();
         let identifier = db.find_identifier_at_position(file, position)?;
 
-        SymbolDef::find(db, &identifier)
+        SymbolSearch::find_definition(db, &identifier).map(|search| search.def)
     };
     let Some(symbol) = symbol() else {
         return Ok(None);

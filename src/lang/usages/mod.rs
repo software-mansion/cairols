@@ -10,7 +10,7 @@ use cairo_lang_utils::smol_str::format_smolstr;
 use memchr::memmem::Finder;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::SymbolDef;
+use crate::lang::defs::{SymbolDef, SymbolSearch};
 use cairo_lang_filesystem::db::get_originating_location;
 use search_scope::SearchScope;
 
@@ -161,10 +161,10 @@ impl<'a> FindUsages<'a> {
         if Some(identifier.stable_ptr(self.db).untyped()) == self.symbol.definition_stable_ptr(db) {
             return ControlFlow::Continue(());
         }
-        let Some(found_symbol) = SymbolDef::find(self.db, &identifier) else {
+        let Some(found_symbol) = SymbolSearch::find_definition(self.db, &identifier) else {
             return ControlFlow::Continue(());
         };
-        if found_symbol == *self.symbol {
+        if found_symbol.def == *self.symbol {
             let usage = FoundUsage::from_syntax_node(self.db, identifier.as_syntax_node());
             sink(usage)
         } else {
