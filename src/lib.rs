@@ -228,20 +228,20 @@ impl Backend {
     fn new() -> Result<Self> {
         let connection_initializer = ConnectionInitializer::stdio();
 
-        Self::initialize(connection_initializer)
+        Self::initialize(connection_initializer, std::env::current_dir()?)
     }
 
     /// Initializes the connection and crate a ready to run [`Backend`] instance.
     ///
     /// As part of the initialization flow, this function exchanges client and server capabilities.
-    fn initialize(connection_initializer: ConnectionInitializer) -> Result<Self> {
+    fn initialize(connection_initializer: ConnectionInitializer, cwd: PathBuf) -> Result<Self> {
         let (id, init_params) = connection_initializer.initialize_start()?;
 
         let client_capabilities = init_params.capabilities;
         let server_capabilities = collect_server_capabilities(&client_capabilities);
 
         let connection = connection_initializer.initialize_finish(id, server_capabilities)?;
-        let state = State::new(connection.make_sender(), client_capabilities);
+        let state = State::new(connection.make_sender(), client_capabilities, cwd);
 
         Ok(Self { connection, state })
     }

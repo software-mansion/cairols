@@ -35,6 +35,7 @@ use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::server::client::{Notifier, Requester};
 use crate::server::schedule::Task;
 use crate::toolchain::scarb::ScarbToolchain;
+use std::path::PathBuf;
 
 const RESTART_RATE_LIMITER_PERIOD_SEC: u64 = 180;
 const RESTART_RATE_LIMITER_RETRIES: u32 = 5;
@@ -65,6 +66,7 @@ pub struct ProcMacroClientController {
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     channels: ProcMacroChannels,
     proc_macro_server_tracker: ProcMacroServerTracker,
+    cwd: PathBuf,
 }
 
 impl From<&ServerStatus> for ProcMacroServerStatus {
@@ -87,6 +89,7 @@ impl ProcMacroClientController {
         scarb: ScarbToolchain,
         notifier: Notifier,
         proc_macro_server_tracker: ProcMacroServerTracker,
+        cwd: PathBuf,
     ) -> Self {
         Self {
             scarb,
@@ -104,6 +107,7 @@ impl ProcMacroClientController {
                 ),
             ),
             channels: ProcMacroChannels::new(),
+            cwd,
         }
     }
 
@@ -259,7 +263,7 @@ impl ProcMacroClientController {
     fn spawn_server(&mut self, db: &mut AnalysisDatabase) {
         self.clean_up_previous_proc_macro_server(db);
 
-        match self.scarb.proc_macro_server() {
+        match self.scarb.proc_macro_server(&self.cwd) {
             Ok(proc_macro_server) => {
                 let client = ProcMacroClient::new(
                     ProcMacroServerConnection::stdio(

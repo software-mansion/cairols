@@ -69,10 +69,8 @@ macro_rules! sandbox {
             client_capabilities = $client_capabilities(client_capabilities);
         )?
 
-        let client = MockClient::start(fixture, client_capabilities, workspace_configuration);
-        $(
-            client.set_cwd($cwd);
-        )?
+        let client = MockClient::start(fixture, client_capabilities, workspace_configuration, $crate::support::cwd_to_option!($($cwd)?));
+
         client
     }};
 }
@@ -98,3 +96,10 @@ pub(crate) fn merge_json(a: &mut Value, b: &Value) {
 }
 
 pub(crate) use sandbox;
+
+macro_rules! cwd_to_option {
+    () => {{ Option::<&'static str>::None }};
+    ($cwd:expr) => {{ Some($cwd) }};
+}
+
+pub(crate) use cwd_to_option;
