@@ -2,16 +2,22 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::InlineMacroExprPlugin;
 use cairo_lang_doc::db::DocGroup;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::TerminalIdentifier;
+use cairo_lang_syntax::node::ast::{
+    FunctionDeclaration, GenericParam, OptionWrappedGenericParamList, TerminalIdentifier,
+};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 use lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
 use crate::ide::hover::render::markdown::{RULE, fenced_code_block};
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::defs::SymbolDef;
+use crate::lang::defs::{ResolvedItem, SymbolDef};
 use crate::lang::lsp::ToLsp;
+use cairo_lang_semantic::expr::inference::InferenceId;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolverData};
+use cairo_lang_semantic::substitution::SemanticRewriter;
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.
 pub fn definition(
@@ -19,13 +25,18 @@ pub fn definition(
     identifier: &TerminalIdentifier,
     file_id: FileId,
 ) -> Option<Hover> {
-    let symbol = SymbolDef::find(db, identifier)?;
+    let (resolved_item, resolver_data, symbol) =
+        SymbolDef::find_with_resolved_item(db, identifier)?;
 
     let md = match &symbol {
         SymbolDef::Item(item) => {
             let mut md = String::new();
             md += &fenced_code_block(&item.definition_path(db));
-            md += &fenced_code_block(&item.signature(db));
+            md += &fenced_code_block(
+                &concrete_signature(db, resolved_item, resolver_data)
+                    .map(|signature| item.signature_with_text(db, &signature))
+                    .unwrap_or_else(|| item.signature(db)),
+            );
             if let Some(doc) = item.documentation(db) {
                 md += RULE;
                 md += &doc;
@@ -99,4 +110,77 @@ pub fn definition(
             .position_in_file(db.upcast(), file_id)
             .map(|p| p.to_lsp()),
     })
+}
+
+fn concrete_signature(
+    db: &AnalysisDatabase,
+    resolved_item: ResolvedItem,
+    resolver_data: Option<ResolverData>,
+) -> Option<String> {
+    let resolver_data = resolver_data?;
+
+    match resolved_item {
+        ResolvedItem::Concrete(ResolvedConcreteItem::Function(concrete_func)) => {
+            let mut inference_data =
+                resolver_data.inference_data.clone_with_inference_id(db, InferenceId::NoContext);
+            let mut inference = inference_data.inference(db);
+            let _ = inference.solve();
+
+            let concrete_func = concrete_func.get_concrete(db);
+
+            let generics = match concrete_func.generic_function {
+                GenericFunctionId::Extern(func) => {
+                    get_generics(func.stable_ptr(db).lookup(db).declaration(db), db)
+                }
+                GenericFunctionId::Free(func) => {
+                    get_generics(func.stable_ptr(db).lookup(db).declaration(db), db)
+                }
+                GenericFunctionId::Impl(impl_id) => {
+                    get_generics(impl_id.function.stable_ptr(db).lookup(db).declaration(db), db)
+                }
+            };
+
+            if generics.is_empty() {
+                return None;
+            }
+
+            let generic_args_concrete = concrete_func
+                .generic_args
+                .into_iter()
+                .map(|arg| inference.rewrite(arg))
+                .collect::<Result<Vec<_>, _>>()
+                .ok()?;
+
+            if generic_args_concrete.iter().any(|arg| !arg.is_fully_concrete(db)) {
+                return None;
+            }
+
+            let mut result = generics.into_iter().zip(generic_args_concrete).fold(
+                "\n\n".to_string(),
+                |mut acc, (generic, concrete)| {
+                    let left = generic.as_syntax_node().get_text_without_trivia(db);
+                    let right = concrete.format(db);
+
+                    acc.push_str(&left);
+                    acc.push_str(" = ");
+                    acc.push_str(&right);
+                    acc.push('\n');
+                    acc
+                },
+            );
+            result.push('\n');
+
+            Some(result)
+        }
+        _ => None,
+    }
+}
+
+fn get_generics(declaration: FunctionDeclaration, db: &AnalysisDatabase) -> Vec<GenericParam> {
+    match declaration.generic_params(db) {
+        OptionWrappedGenericParamList::Empty(_) => vec![],
+        OptionWrappedGenericParamList::WrappedGenericParamList(list) => {
+            list.generic_params(db).elements(db)
+        }
+    }
 }

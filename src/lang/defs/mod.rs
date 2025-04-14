@@ -1,7 +1,7 @@
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -9,7 +9,8 @@ use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use cairo_lang_utils::smol_str::SmolStr;
 
-use self::finder::{ResolvedItem, find_definition};
+pub use self::finder::ResolvedItem;
+use self::finder::find_definition;
 pub use self::item::ItemDef;
 pub use self::member::MemberDef;
 pub use self::module::ModuleDef;
@@ -44,23 +45,17 @@ pub enum SymbolDef {
 impl SymbolDef {
     /// Finds definition of the symbol referred to by the given identifier.
     pub fn find(db: &AnalysisDatabase, identifier: &ast::TerminalIdentifier) -> Option<Self> {
-        if let Some(parent) = identifier.as_syntax_node().parent(db) {
-            if parent.kind(db.upcast()) == SyntaxKind::PathSegmentSimple
-                && parent.grandparent_kind(db) == Some(SyntaxKind::ExprInlineMacro)
-            {
-                return Some(Self::ExprInlineMacro(
-                    parent
-                        .parent(db)
-                        .expect("Grandparent already exists")
-                        .get_text_without_trivia(db.upcast())
-                        .into(),
-                ));
-            }
-        }
+        Self::find_with_resolved_item(db, identifier).map(|(_, _, def)| def)
+    }
+
+    pub fn find_with_resolved_item(
+        db: &AnalysisDatabase,
+        identifier: &ast::TerminalIdentifier,
+    ) -> Option<(ResolvedItem, Option<ResolverData>, Self)> {
         // Get the resolved item info and the syntax node of the definition.
         let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
-        let resolved_item = find_definition(db, identifier, &lookup_items)?;
-        let definition_node = resolved_item.definition_node(db)?;
+        let mut resolver_data = None;
+        let resolved_item = find_definition(db, identifier, &lookup_items, &mut resolver_data)?;
 
         match resolved_item {
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(_))
@@ -77,29 +72,38 @@ impl SymbolDef {
             | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_))
-            | ResolvedItem::ImplItem(_) => ItemDef::new(db, &definition_node).map(Self::Item),
+            | ResolvedItem::ImplItem(_) => {
+                ItemDef::new(db, &resolved_item.definition_node(db)?).map(Self::Item)
+            }
 
             ResolvedItem::Generic(ResolvedGenericItem::Module(id))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Module(id)) => {
-                Some(Self::Module(ModuleDef::new(db, id, definition_node)))
+                Some(Self::Module(ModuleDef::new(db, id, resolved_item.definition_node(db)?)))
             }
 
-            ResolvedItem::Generic(ResolvedGenericItem::Variable(var_id)) => {
-                Some(Self::Variable(VariableDef::new(db, var_id, definition_node)))
-            }
+            ResolvedItem::Generic(ResolvedGenericItem::Variable(var_id)) => Some(Self::Variable(
+                VariableDef::new(db, var_id, resolved_item.definition_node(db)?),
+            )),
 
             ResolvedItem::Member(member_id) => {
-                MemberDef::new(db, member_id, definition_node).map(Self::Member)
+                MemberDef::new(db, member_id, resolved_item.definition_node(db)?).map(Self::Member)
             }
 
-            ResolvedItem::Generic(ResolvedGenericItem::Variant(variant)) => {
-                VariantDef::new(db, variant.id, definition_node).map(Self::Variant)
+            ResolvedItem::Generic(ResolvedGenericItem::Variant(ref variant)) => {
+                VariantDef::new(db, variant.id, resolved_item.definition_node(db)?)
+                    .map(Self::Variant)
             }
 
-            ResolvedItem::Concrete(ResolvedConcreteItem::Variant(concrete_variant)) => {
-                VariantDef::new(db, concrete_variant.id, definition_node).map(Self::Variant)
+            ResolvedItem::Concrete(ResolvedConcreteItem::Variant(ref concrete_variant)) => {
+                VariantDef::new(db, concrete_variant.id, resolved_item.definition_node(db)?)
+                    .map(Self::Variant)
+            }
+
+            ResolvedItem::ExprInlineMacro(ref inline_macro) => {
+                Some(Self::ExprInlineMacro(inline_macro.clone()))
             }
         }
+        .map(|def| (resolved_item, resolver_data, def))
     }
 
     /// Gets a stable pointer to the "most interesting" syntax node of the symbol.
