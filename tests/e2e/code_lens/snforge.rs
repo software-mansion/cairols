@@ -83,7 +83,7 @@ fn run_for_mod() {
     file_path = "src/lib.cairo"
 
     [execute_in_terminal]
-    command = "snforge test hello::b --exact"
+    command = "snforge test hello::b"
     cwd = "./"
     "#)
 }
