@@ -66,16 +66,15 @@ fn try_impl_items(
         let trait_id = db.impl_def_concrete_trait(long_id).ok()?.trait_id(db);
 
         if let Some(function) =
-            identifier.as_syntax_node().ancestor_of_type::<ast::FunctionDeclaration>(db)
+            identifier.as_syntax_node().parent_of_type::<ast::FunctionDeclaration>(db)
         {
-            // We don't want this to look for the trait definition on parameters themselves
-            if identifier.as_syntax_node().ancestor_of_type::<ast::ParamList>(db).is_some() {
-                return None;
-            }
-            let impl_func_name = function.name(db).text(db);
-            let trait_fn = db.trait_function_by_name(trait_id, impl_func_name).ok()??;
+            let fn_name = function.name(db);
+            if fn_name == *identifier {
+                let impl_func_name = function.name(db).text(db);
+                let trait_fn = db.trait_function_by_name(trait_id, impl_func_name).ok()??;
 
-            return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Function(trait_fn))));
+                return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Function(trait_fn))));
+            }
         }
 
         if let Some(constant) =
