@@ -92,6 +92,7 @@ fn associated_const_via_trait_declaration() {
     "#);
 }
 
+// FIXME(#170): This should show the implementation instead of the trait
 #[test]
 fn associated_const_via_impl_definition() {
     test_transform!(test_hover, r#"

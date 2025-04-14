@@ -12,11 +12,11 @@ use crate::support::{MockClient, cursors, fixture, sandbox};
 mod consts;
 mod enums;
 mod fns;
-mod impls;
 mod macros;
 mod mods;
 mod paths;
 mod structs;
+mod trait_impls;
 mod traits;
 mod vars;
 
