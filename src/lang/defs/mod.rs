@@ -27,10 +27,6 @@ mod module;
 mod variable;
 mod variant;
 
-/// Keeps information about the symbol that is being searched for/inspected.
-///
-/// This is an ephemeral data structure.
-/// Do not store it in any kind of state.
 #[derive(Eq, PartialEq)]
 pub enum SymbolDef {
     Item(ItemDef),
@@ -41,21 +37,40 @@ pub enum SymbolDef {
     Module(ModuleDef),
 }
 
-impl SymbolDef {
-    /// Finds definition of the symbol referred to by the given identifier.
-    pub fn find(db: &AnalysisDatabase, identifier: &ast::TerminalIdentifier) -> Option<Self> {
-        Self::find_with_resolved_item(db, identifier).map(|(_, _, def)| def)
-    }
+/// Keeps information about the symbol that is being searched for/inspected.
+///
+/// This is an ephemeral data structure.
+/// Do not store it in any kind of state.
+pub struct SymbolSearch {
+    pub def: SymbolDef,
+    pub resolved_item: ResolvedItem,
+    pub resolver_data: Option<ResolverData>,
+}
 
-    pub fn find_with_resolved_item(
+impl SymbolSearch {
+    // FIXME: I will need this in the next PRs, this is just to show how i will use refactored code
+    #[expect(dead_code)]
+    pub fn find_declaration() -> Option<Self> {
+        todo!()
+    }
+    /// Finds definition of the symbol referred to by the given identifier.
+    pub fn find_definition(
         db: &AnalysisDatabase,
         identifier: &ast::TerminalIdentifier,
-    ) -> Option<(ResolvedItem, Option<ResolverData>, Self)> {
+    ) -> Option<Self> {
         // Get the resolved item info and the syntax node of the definition.
         let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
         let mut resolver_data = None;
         let resolved_item = find_definition(db, identifier, &lookup_items, &mut resolver_data)?;
 
+        Self::from_resolved_item(db, resolved_item, resolver_data)
+    }
+
+    fn from_resolved_item(
+        db: &AnalysisDatabase,
+        resolved_item: ResolvedItem,
+        resolver_data: Option<ResolverData>,
+    ) -> Option<Self> {
         match resolved_item {
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericFunction(_))
@@ -72,53 +87,46 @@ impl SymbolDef {
             | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_))
             | ResolvedItem::ImplItem(_) => {
-                ItemDef::new(db, &resolved_item.definition_node(db)?).map(Self::Item)
+                ItemDef::new(db, &resolved_item.definition_node(db)?).map(SymbolDef::Item)
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Module(id))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Module(id)) => {
-                Some(Self::Module(ModuleDef::new(db, id, resolved_item.definition_node(db)?)))
+                Some(SymbolDef::Module(ModuleDef::new(db, id, resolved_item.definition_node(db)?)))
             }
 
-            ResolvedItem::Generic(ResolvedGenericItem::Variable(var_id)) => Some(Self::Variable(
-                VariableDef::new(db, var_id, resolved_item.definition_node(db)?),
-            )),
+            ResolvedItem::Generic(ResolvedGenericItem::Variable(var_id)) => {
+                Some(SymbolDef::Variable(VariableDef::new(
+                    db,
+                    var_id,
+                    resolved_item.definition_node(db)?,
+                )))
+            }
 
             ResolvedItem::Member(member_id) => {
-                MemberDef::new(db, member_id, resolved_item.definition_node(db)?).map(Self::Member)
+                MemberDef::new(db, member_id, resolved_item.definition_node(db)?)
+                    .map(SymbolDef::Member)
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Variant(ref variant)) => {
                 VariantDef::new(db, variant.id, resolved_item.definition_node(db)?)
-                    .map(Self::Variant)
+                    .map(SymbolDef::Variant)
             }
 
             ResolvedItem::Concrete(ResolvedConcreteItem::Variant(ref concrete_variant)) => {
                 VariantDef::new(db, concrete_variant.id, resolved_item.definition_node(db)?)
-                    .map(Self::Variant)
+                    .map(SymbolDef::Variant)
             }
 
             ResolvedItem::ExprInlineMacro(ref inline_macro) => {
-                Some(Self::ExprInlineMacro(inline_macro.clone()))
+                Some(SymbolDef::ExprInlineMacro(inline_macro.clone()))
             }
         }
-        .map(|def| (resolved_item, resolver_data, def))
+        .map(|def| Self { def, resolved_item, resolver_data })
     }
+}
 
-    /// Gets a stable pointer to the "most interesting" syntax node of the symbol.
-    ///
-    /// Typically, this is this symbol's name node.
-    pub fn definition_stable_ptr(&self, db: &dyn SyntaxGroup) -> Option<SyntaxStablePtrId> {
-        match self {
-            Self::Item(d) => Some(d.definition_stable_ptr()),
-            Self::Variable(d) => Some(d.definition_stable_ptr(db)),
-            Self::ExprInlineMacro(_) => None,
-            Self::Member(d) => Some(d.definition_stable_ptr()),
-            Self::Variant(d) => Some(d.definition_stable_ptr()),
-            Self::Module(d) => Some(d.definition_stable_ptr()),
-        }
-    }
-
+impl SymbolDef {
     /// Gets the [`FileId`] and [`TextSpan`] of symbol's definition node's originating location.
     pub fn definition_location(&self, db: &AnalysisDatabase) -> Option<(FileId, TextSpan)> {
         let stable_ptr = self.definition_stable_ptr(db)?;
@@ -165,6 +173,20 @@ impl SymbolDef {
 
             // TODO(#195): Use visibility information to narrow down search scopes.
             _ => SearchScope::everything(db),
+        }
+    }
+
+    /// Gets a stable pointer to the "most interesting" syntax node of the symbol.
+    ///
+    /// Typically, this is this symbol's name node.
+    pub fn definition_stable_ptr(&self, db: &dyn SyntaxGroup) -> Option<SyntaxStablePtrId> {
+        match self {
+            Self::Item(d) => Some(d.definition_stable_ptr()),
+            Self::Variable(d) => Some(d.definition_stable_ptr(db)),
+            Self::ExprInlineMacro(_) => None,
+            Self::Member(d) => Some(d.definition_stable_ptr()),
+            Self::Variant(d) => Some(d.definition_stable_ptr()),
+            Self::Module(d) => Some(d.definition_stable_ptr()),
         }
     }
 
