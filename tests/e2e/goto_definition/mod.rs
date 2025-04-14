@@ -16,6 +16,7 @@ mod macros;
 mod mods;
 mod paths;
 mod structs;
+mod trait_impls;
 mod traits;
 mod vars;
 

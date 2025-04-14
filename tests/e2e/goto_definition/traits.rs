@@ -54,27 +54,6 @@ fn full_path_trait_name_in_expr() {
 }
 
 #[test]
-fn method_in_impl() {
-    test_transform!(goto_definition, r"
-    pub trait Foo<T> {
-        fn foo(self: T);
-    }
-    pub struct Bar {}
-    impl FooBar of Foo<Bar> {
-        fn fo<caret>o(self: Bar) {}
-    }
-    ", @r"
-    pub trait Foo<T> {
-        fn foo(self: T);
-    }
-    pub struct Bar {}
-    impl FooBar of Foo<Bar> {
-        fn <sel>foo</sel>(self: Bar) {}
-    }
-    ")
-}
-
-#[test]
 fn dot_method_in_expr() {
     test_transform!(goto_definition, r"
     pub trait Foo<T> {

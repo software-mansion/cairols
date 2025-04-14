@@ -44,14 +44,12 @@ fn associated_const_via_impl_definition() {
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const SIDE<caret>S: u32 = 3; }
     "#, @r"
-    trait Shape<T> { const SIDES: u32; }
+    trait Shape<T> { const <sel=declaration>SIDES</sel>: u32; }
     struct Triangle {}
-    impl TriangleShape of Shape<Triangle> { const <sel=declaration>SIDES</sel>: u32 = 3; }
+    impl TriangleShape of Shape<Triangle> { const <sel>SIDES</sel>: u32 = 3; }
     ");
 }
 
-// FIXME: https://github.com/software-mansion/cairols/issues/405
-//        https://github.com/software-mansion/cairols/issues/170
 #[test]
 fn associated_const_via_expr_use() {
     test_transform!(find_references, r#"
@@ -64,9 +62,47 @@ fn associated_const_via_expr_use() {
     "#, @r"
     trait Shape<T> { const <sel=declaration>SIDES</sel>: u32; }
     struct Triangle {}
-    impl TriangleShape of Shape<Triangle> { const SIDES: u32 = 3; }
+    impl TriangleShape of Shape<Triangle> { const <sel>SIDES</sel>: u32 = 3; }
     fn print_shape_info<T, impl ShapeImpl: Shape<T>>() {
         let _ = ShapeImpl::<sel>SIDES</sel>;
     }
     ");
+}
+
+// FIXME(#170)
+#[test]
+fn dual_trait_const_via_trait_function() {
+    test_transform!(find_references, r#"
+    trait FooTrait<T> {
+        const FOO_CONST<caret>ANT: felt252;
+    }
+    impl FooImpl of FooTrait<felt252> {
+        const FOO_CONSTANT: felt252 = 123;
+    }
+    
+    impl BarImpl of FooTrait<u256> {
+        const FOO_CONSTANT: u256 = 123_u256;
+    }
+    
+    fn main() {
+        let foo: felt252 = FooImpl::FOO_CONSTANT;
+        let bar: u256 = BarImpl::FOO_CONSTANT;
+    }
+    "#, @r"
+    trait FooTrait<T> {
+        const <sel=declaration>FOO_CONSTANT</sel>: felt252;
+    }
+    impl FooImpl of FooTrait<felt252> {
+        const <sel>FOO_CONSTANT</sel>: felt252 = 123;
+    }
+
+    impl BarImpl of FooTrait<u256> {
+        const <sel>FOO_CONSTANT</sel>: u256 = 123_u256;
+    }
+
+    fn main() {
+        let foo: felt252 = FooImpl::FOO_CONSTANT;
+        let bar: u256 = BarImpl::FOO_CONSTANT;
+    }
+    ")
 }

@@ -1,7 +1,8 @@
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    EnumLongId, GenericTypeId, ImplItemId, LanguageElementId, LookupItemId, MemberId, ModuleId,
-    NamedLanguageElementId, StructLongId, SubmoduleLongId, TraitItemId, VarId,
+    EnumLongId, GenericTypeId, ImplDefLongId, ImplItemId, LanguageElementId, LookupItemId,
+    MemberId, ModuleId, NamedLanguageElementId, StructLongId, SubmoduleLongId, TraitItemId, VarId,
 };
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -10,14 +11,13 @@ use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_semantic::resolve::ResolvedGenericItem::TraitItem;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{Expr, TypeLongId};
 use cairo_lang_syntax::node::helpers::HasName;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern};
-
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 /// A language element that can be a result of name resolution performed by CairoLS.
 ///
@@ -47,8 +47,60 @@ pub fn find_definition(
         .or_else(|| try_member_declaration(db, identifier))
         .or_else(|| try_variant_declaration(db, identifier))
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
+        .or_else(|| try_impl_items(db, identifier))
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items))
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
+}
+
+/// Resolve elements of `impl`s to trait definitions.
+fn try_impl_items(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+) -> Option<ResolvedItem> {
+    let Some(item_impl) = &identifier.as_syntax_node().ancestor_of_type::<ast::ItemImpl>(db) else {
+        return None;
+    };
+    let long_id = ImplDefLongId(
+        db.find_module_file_containing_node(&identifier.as_syntax_node())?,
+        item_impl.stable_ptr(db),
+    )
+    .intern(db);
+    let trait_id = db.impl_def_concrete_trait(long_id).ok()?.trait_id(db);
+
+    if let Some(function) =
+        identifier.as_syntax_node().parent_of_type::<ast::FunctionDeclaration>(db)
+    {
+        let fn_name = function.name(db);
+        if fn_name == *identifier {
+            let impl_func_name = function.name(db).text(db);
+            let trait_fn = db.trait_function_by_name(trait_id, impl_func_name).ok()??;
+
+            return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Function(trait_fn))));
+        }
+    }
+
+    if let Some(constant) = identifier.as_syntax_node().ancestor_of_type::<ast::ItemConstant>(db) {
+        let impl_const_name = constant.name(db).text(db);
+        let trait_const = db.trait_constant_by_name(trait_id, impl_const_name).ok()??;
+        return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Constant(trait_const))));
+    }
+    if let Some(associated_type) =
+        identifier.as_syntax_node().ancestor_of_type::<ast::ItemTypeAlias>(db)
+    {
+        let associated_type_name = associated_type.name(db).text(db);
+        let impl_associated_type = db.trait_type_by_name(trait_id, associated_type_name).ok()??;
+        return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Type(impl_associated_type))));
+    }
+
+    if let Some(associated_impl) =
+        identifier.as_syntax_node().ancestor_of_type::<ast::ItemImplAlias>(db)
+    {
+        let associated_impl_name = associated_impl.name(db).text(db);
+        let impl_associated_impl = db.trait_impl_by_name(trait_id, associated_impl_name).ok()??;
+
+        return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Impl(impl_associated_impl))));
+    }
+    None
 }
 
 /// Resolve `mod <ident>` syntax.
