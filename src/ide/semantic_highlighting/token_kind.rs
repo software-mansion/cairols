@@ -6,7 +6,6 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
-use cairo_lang_utils::Upcast;
 use lsp_types::SemanticTokenType;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
@@ -36,17 +35,16 @@ pub enum SemanticTokenKind {
     GenericParamImpl,
 }
 impl SemanticTokenKind {
-    pub fn from_syntax_node(db: &AnalysisDatabase, mut node: SyntaxNode) -> Option<Self> {
-        let syntax_db = db.upcast();
-        let mut expr_path_ptr = None;
-        let kind = node.kind(syntax_db);
-        match kind {
+    pub fn from_syntax_node(db: &AnalysisDatabase, node: SyntaxNode) -> Option<Self> {
+        let node_kind = node.kind(db);
+        // Simple tokens.
+        match node_kind {
             SyntaxKind::TokenIdentifier => {}
-            _ if kind.is_keyword_token() => return Some(SemanticTokenKind::Keyword),
+            kind if kind.is_keyword_token() => return Some(SemanticTokenKind::Keyword),
             SyntaxKind::TokenLiteralNumber => return Some(SemanticTokenKind::Number),
             SyntaxKind::TokenNot
                 if matches!(
-                    node.grandparent_kind(syntax_db),
+                    node.grandparent_kind(db),
                     Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
                 ) =>
             {
@@ -54,7 +52,7 @@ impl SemanticTokenKind {
             }
             SyntaxKind::TokenPlus
                 if matches!(
-                    node.grandparent_kind(syntax_db),
+                    node.grandparent_kind(db),
                     Some(SyntaxKind::GenericParamImplAnonymous)
                 ) =>
             {
@@ -82,24 +80,29 @@ impl SemanticTokenKind {
             }
             _ => return None,
         };
-        node = node.parent(db).unwrap();
-        let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node);
 
-        if [SUPER_KW, SELF_TYPE_KW, CRATE_KW].contains(&identifier.text(syntax_db).as_str()) {
+        assert_eq!(node_kind, SyntaxKind::TokenIdentifier);
+
+        let identifier = node.ancestor_of_type::<ast::TerminalIdentifier>(db)?;
+
+        // Non-keyword keywords.
+        if [SUPER_KW, SELF_TYPE_KW, CRATE_KW].contains(&identifier.text(db).as_str()) {
             return Some(SemanticTokenKind::Keyword);
         }
 
-        let parent_node = node.parent(db).unwrap();
-        let parent_kind = parent_node.kind(syntax_db);
-        match parent_kind {
+        let identifier_parent = identifier.as_syntax_node().parent(db)?;
+        match identifier_parent.kind(db) {
             SyntaxKind::ItemInlineMacro => return Some(SemanticTokenKind::InlineMacro),
             SyntaxKind::AliasClause => return Some(SemanticTokenKind::Class),
-            _ if ast::ModuleItem::is_variant(parent_kind) => return Some(SemanticTokenKind::Class),
+            SyntaxKind::ItemConstant | SyntaxKind::TraitItemConstant => {
+                return Some(SemanticTokenKind::EnumMember);
+            }
+            kind if ast::ModuleItem::is_variant(kind) => return Some(SemanticTokenKind::Class),
             SyntaxKind::StructArgSingle => return Some(SemanticTokenKind::Field),
             SyntaxKind::FunctionDeclaration => return Some(SemanticTokenKind::Function),
             SyntaxKind::GenericParamType => return Some(SemanticTokenKind::TypeParameter),
             SyntaxKind::PathSegmentSimple | SyntaxKind::PathSegmentWithGenericArgs => {
-                match parent_node.grandparent_kind(syntax_db) {
+                match identifier_parent.grandparent_kind(db) {
                     Some(SyntaxKind::GenericParamImplAnonymous) => {
                         return Some(SemanticTokenKind::GenericParamImpl);
                     }
@@ -113,19 +116,17 @@ impl SemanticTokenKind {
                     _ => {}
                 }
             }
-
             _ => {}
         }
 
         // Identifier.
-        while let Some(parent) = node.parent(db) {
-            node = parent;
+        let mut expr_path_ptr = None;
 
-            match node.kind(syntax_db) {
+        for node in identifier_parent.ancestors_with_self(db) {
+            match node.kind(db) {
                 SyntaxKind::ExprInlineMacro => return Some(SemanticTokenKind::InlineMacro),
                 SyntaxKind::ExprPath => {
-                    expr_path_ptr =
-                        Some(ast::ExprPath::from_syntax_node(syntax_db, node).stable_ptr(db));
+                    expr_path_ptr = Some(ast::ExprPath::from_syntax_node(db, node).stable_ptr(db));
                 }
                 SyntaxKind::Member => return Some(SemanticTokenKind::Variable),
                 SyntaxKind::PatternIdentifier => return Some(SemanticTokenKind::Variable),
@@ -175,7 +176,7 @@ impl SemanticTokenKind {
                     });
                 }
 
-                // Exprs and patterns..
+                // Exprs and patterns.
                 if let Some(function_id) = lookup_item_id.function_with_body() {
                     if let Some(expr_path_ptr) = expr_path_ptr {
                         if db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok() {
