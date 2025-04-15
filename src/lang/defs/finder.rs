@@ -56,10 +56,17 @@ pub fn find_definition(
         .or_else(|| try_member_declaration(db, identifier))
         .or_else(|| try_variant_declaration(db, identifier))
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
-        .or_else(|| try_impl_items(db, identifier))
+        // FIXME(#405): .or_else(|| try_consts(db, identifier))
         .or_else(|| try_concrete_type_or_impl(db, identifier, lookup_items))
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
+}
+
+pub fn find_declaration(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+) -> Option<ResolvedItem> {
+    try_impl_items(db, identifier)
 }
 
 fn try_inline_macro(

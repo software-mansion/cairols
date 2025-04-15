@@ -187,6 +187,7 @@ fn trait_method_via_path_call() {
     ")
 }
 
+// FIXME: (#170) Usages should be renamed here as well
 #[test]
 fn impl_method_via_definition() {
     test_transform!(rename, r#"
@@ -215,7 +216,7 @@ fn impl_method_via_definition() {
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        fn RENAMED(self: @Foo) -> u64;
+        fn area(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
         fn RENAMED(self: @Foo) -> u64 { 0 }
@@ -230,8 +231,8 @@ fn impl_method_via_definition() {
     }
     fn main() {
         let foo = Foo {};
-        let x = foo.RENAMED();
-        let y = FooTrait::RENAMED(foo);
+        let x = foo.area();
+        let y = FooTrait::area(foo);
     }
     ")
 }

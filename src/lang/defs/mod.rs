@@ -16,7 +16,7 @@ pub use self::module::ModuleDef;
 pub use self::variable::VariableDef;
 pub use self::variant::VariantDef;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-
+use crate::lang::defs::finder::find_declaration;
 use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
 
@@ -48,11 +48,6 @@ pub struct SymbolSearch {
 }
 
 impl SymbolSearch {
-    // FIXME: I will need this in the next PRs, this is just to show how i will use refactored code
-    #[expect(dead_code)]
-    pub fn find_declaration() -> Option<Self> {
-        todo!()
-    }
     /// Finds definition of the symbol referred to by the given identifier.
     pub fn find_definition(
         db: &AnalysisDatabase,
@@ -62,6 +57,16 @@ impl SymbolSearch {
         let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
         let mut resolver_data = None;
         let resolved_item = find_definition(db, identifier, &lookup_items, &mut resolver_data)?;
+
+        Self::from_resolved_item(db, resolved_item, resolver_data)
+    }
+
+    pub fn find_declaration(
+        db: &AnalysisDatabase,
+        identifier: &ast::TerminalIdentifier,
+    ) -> Option<Self> {
+        let resolver_data = None;
+        let resolved_item = find_declaration(db, identifier)?;
 
         Self::from_resolved_item(db, resolved_item, resolver_data)
     }
