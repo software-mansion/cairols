@@ -19,7 +19,6 @@ use serde_json::json;
 
 mod builtin;
 mod fixtures;
-#[cfg(feature = "test_proc_macros")] // TODO(#422): Enable locally
 mod procedural;
 
 pub const SCARB_TEST_MACROS_PACKAGE_NAME: &str = "scarb_procedural_macros";
