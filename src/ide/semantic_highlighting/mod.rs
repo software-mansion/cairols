@@ -66,7 +66,7 @@ impl SemanticTokensTraverser {
                     .or_else(|| SemanticTokenKind::from_syntax_node(db, node));
 
                 if let Some(semantic_kind) = maybe_semantic_kind {
-                    let Some(text) = node.text(db) else { unreachable!() };
+                    let text = node.text(db).unwrap();
 
                     if text.contains('\n') {
                         // Split multiline token into multiple single line tokens.
