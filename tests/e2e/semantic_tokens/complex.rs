@@ -94,3 +94,38 @@ fn on_fn() {
     <token=keyword>fn</token> <token=function>rectangle</token>() { }
     ")
 }
+
+#[test]
+fn consts() {
+    test_transform!(semantic_tokens, r#"
+    const STANDALONE: u32 = 3;
+
+    trait Shape<T> {
+        const SIDES: u8;
+    }
+
+    impl UnitShape of Shape<()> {
+        const SIDES: u8 = 0;
+    }
+
+    fn func() {
+        let x = STANDALONE;
+        UnitShape::SIDES;
+    }
+    "#, @r"
+    <token=keyword>const</token> <token=enumMember>STANDALONE</token>: <token=type>u32</token> = <token=number>3</token>;
+
+    <token=keyword>trait</token> <token=class>Shape</token><token=operator><</token><token=typeParameter>T</token><token=operator>></token> {
+        <token=keyword>const</token> <token=enumMember>SIDES</token>: <token=type>u8</token>;
+    }
+
+    <token=keyword>impl</token> <token=class>UnitShape</token> <token=keyword>of</token> <token=interface>Shape</token><token=operator><</token>()<token=operator>></token> {
+        <token=keyword>const</token> <token=enumMember>SIDES</token>: <token=type>u8</token> = <token=number>0</token>;
+    }
+
+    <token=keyword>fn</token> <token=function>func</token>() {
+        <token=keyword>let</token> <token=variable>x</token> = <token=enumMember>STANDALONE</token>;
+        <token=class>UnitShape</token>::<token=enumMember>SIDES</token>;
+    }
+    ")
+}
