@@ -208,6 +208,13 @@ fn simple_trait() {
     insert_text = "print($1)"
 
     [[completions]]
+    completion_label = "serde"
+    text_edits = ["""
+    use core::serde;
+
+    """]
+
+    [[completions]]
     completion_label = "serialize()"
     detail = "core::serde::Serde"
     insert_text = "serialize($1)"
@@ -225,6 +232,13 @@ fn simple_trait() {
     insert_text = "some_method($1)"
     text_edits = ["""
     use crate::ATrait1;
+
+    """]
+
+    [[completions]]
+    completion_label = "storage_access"
+    text_edits = ["""
+    use starknet::storage_access;
 
     """]
 
@@ -458,6 +472,13 @@ fn non_directly_visible_trait() {
     insert_text = "print($1)"
 
     [[completions]]
+    completion_label = "serde"
+    text_edits = ["""
+    use core::serde;
+
+    """]
+
+    [[completions]]
     completion_label = "serialize()"
     detail = "core::serde::Serde"
     insert_text = "serialize($1)"
@@ -475,6 +496,13 @@ fn non_directly_visible_trait() {
     insert_text = "some_method($1)"
     text_edits = ["""
     use crate::ATrait1;
+
+    """]
+
+    [[completions]]
+    completion_label = "storage_access"
+    text_edits = ["""
+    use starknet::storage_access;
 
     """]
 
@@ -967,6 +995,13 @@ fn methods_from_non_deps_excluded() {
     completion_label = "serialize()"
     detail = "core::serde::Serde"
     insert_text = "serialize($1)"
+
+    [[completions]]
+    completion_label = "storage_node"
+    text_edits = ["""
+    use core::starknet::storage::storage_node;
+
+    """]
 
     [[completions]]
     completion_label = "sub_assign()"
