@@ -108,11 +108,11 @@ fn associated_const_via_impl_definition() {
     """
     popover = """
     ```cairo
-    hello::Shape
+    hello::TriangleShape
     ```
     ```cairo
-    trait Shape<T>
-    const SIDES: u32;
+    impl TriangleShape of Shape<Triangle>;
+    const SIDES: u32 = 3;
     ```
     """
     "#);

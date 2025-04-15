@@ -187,6 +187,7 @@ fn trait_method_via_path_call() {
     ")
 }
 
+// FIXME(#170): Function usages should be selected here as well
 #[test]
 fn impl_method_via_definition() {
     test_transform!(find_references, r#"
@@ -215,10 +216,10 @@ fn impl_method_via_definition() {
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        fn <sel=declaration>area</sel>(self: @Foo) -> u64;
+        fn area(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
-        fn <sel>area</sel>(self: @Foo) -> u64 { 0 }
+        fn <sel=declaration>area</sel>(self: @Foo) -> u64 { 0 }
     }
     #[derive(Drop)]
     struct Bar {}
@@ -230,8 +231,8 @@ fn impl_method_via_definition() {
     }
     fn main() {
         let foo = Foo {};
-        let x = foo.<sel>area</sel>();
-        let y = FooTrait::<sel>area</sel>(foo);
+        let x = foo.area();
+        let y = FooTrait::area(foo);
     }
     ")
 }
