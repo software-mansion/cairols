@@ -10,7 +10,7 @@ use cairo_lang_utils::Upcast;
 use cairo_lang_utils::smol_str::SmolStr;
 
 pub use self::finder::ResolvedItem;
-use self::finder::find_definition;
+pub use self::finder::find_definition;
 pub use self::item::ItemDef;
 pub use self::member::MemberDef;
 pub use self::module::ModuleDef;

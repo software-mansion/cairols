@@ -2,6 +2,7 @@ use lsp_types::{Hover, HoverContents, HoverParams, MarkupContent, MarkupKind};
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use cairo_lang_syntax::node::ast::TerminalUnderscore;
 
 mod render;
 
@@ -13,6 +14,14 @@ pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
     if let Some(hover) = db
         .find_syntax_node_at_position(file_id, position)
         .and_then(|ref node| render::literal(db, node, file_id))
+    {
+        return Some(hover);
+    }
+
+    if let Some(hover) = db
+        .find_syntax_node_at_position(file_id, position)
+        .and_then(|node| node.ancestor_of_type::<TerminalUnderscore>(db))
+        .and_then(|underscore| render::ty(db, underscore, file_id))
     {
         return Some(hover);
     }
