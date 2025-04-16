@@ -42,6 +42,37 @@ fn generic_function_call() {
 }
 
 #[test]
+fn generic_function_call_placeholder() {
+    test_transform!(test_hover, r#"
+    fn a<
+        T,
+        +Copy<T>,
+        impl One: core::num::traits::One<T>
+    >(
+        b: @T,
+    ) -> T {
+        *b
+    }
+
+    fn main() {
+        let _: felt252 = a::<<caret>_>(@123);
+    }
+    "#, @r#"
+    source_context = """
+        let _: felt252 = a::<<caret>_>(@123);
+    """
+    highlight = """
+        let _: felt252 = a::<<sel>_</sel>>(@123);
+    """
+    popover = """
+    ```cairo
+    core::felt252
+    ```
+    """
+    "#);
+}
+
+#[test]
 fn generic_function_call_wrong() {
     test_transform!(test_hover, r#"
     fn a<
@@ -70,6 +101,66 @@ fn generic_function_call_wrong() {
     ```
     ```cairo
     fn a<T, +Copy<T>, One>(b: @T) -> T
+    ```
+    """
+    "#);
+}
+
+#[test]
+fn generic_function_call_wrong_placeholder() {
+    test_transform!(test_hover, r#"
+    fn a<
+        T,
+        +Copy<T>,
+        impl One: core::num::traits::One<T>
+    >(
+        b: @T,
+    ) -> T {
+        *b
+    }
+
+    fn main() {
+        let _ = a::<<caret>_>();
+    }
+    "#, @r#"
+    source_context = """
+        let _ = a::<<caret>_>();
+    """
+    highlight = """
+        let _ = a::<<sel>_</sel>>();
+    """
+    popover = """
+    ```cairo
+    <missing>
+    ```
+    """
+    "#);
+}
+
+#[test]
+fn generic_trait_function_call_placeholder() {
+    test_transform!(test_hover, r#"
+    trait Foo<T> {
+        fn foo(a: @T) { }
+    }
+
+    impl FooFelt of Foo<felt252> {
+        fn foo(a: @felt252) { }
+    }
+
+    fn main() {
+        let _ = Foo::<<caret>_>::foo(@12);
+    }
+    "#, @r#"
+    source_context = """
+        let _ = Foo::<<caret>_>::foo(@12);
+    """
+    highlight = """
+        let _ = Foo::<<sel>_</sel>>::foo(@12);
+    """
+    popover = """
+    ```cairo
+    core::felt252
     ```
     """
     "#);
