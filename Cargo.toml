@@ -13,7 +13,6 @@ members = ["xtask", "tests/scarb_procedural_macros", "tests/scarb_procedural_mac
 
 [features]
 testing = []
-test_proc_macros = []
 
 # Managing dependencies on crates from starkware-libs/cairo repository:
 #
