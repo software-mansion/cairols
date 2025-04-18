@@ -1,5 +1,5 @@
 use cairo_lang_macro::{
-    Diagnostic, ProcMacroResult, TextSpan, Token, TokenStream, TokenTree, attribute_macro,
+    Diagnostic, ProcMacroResult, TextSpan, Token, TokenStream, TokenTree, attribute_macro, quote,
 };
 use indoc::indoc;
 
@@ -35,4 +35,15 @@ pub fn improper_attribute_macro_v2(_args: TokenStream, item: TokenStream) -> Pro
 pub fn error_attribute_macro_v2(_args: TokenStream, _item: TokenStream) -> ProcMacroResult {
     ProcMacroResult::new(TokenStream::empty())
         .with_diagnostics(Diagnostic::error("Error from procedural macro").into())
+}
+
+#[attribute_macro]
+pub fn wrap_with_module(_args: TokenStream, item: TokenStream) -> ProcMacroResult {
+    let ts = quote! {
+        fn essa() {
+            let ABC: felt252 = 123;
+            #item
+        }
+    };
+    ProcMacroResult::new(ts)
 }
