@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::FileId;
 use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
+use lsp_types::{PublishDiagnosticsParams, Url};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FileDiagnostics;
@@ -58,20 +58,20 @@ fn refresh_file_diagnostics(
 
     // IMPORTANT: DO NOT change the order of operations here. `to_lsp` may panic, so it has to come
     // before `insert`. It is to make sure that if `insert` succeeds, `notify` executes as well.
-    let mut params = new_file_diagnostics.to_lsp(db, file, trace_macro_diagnostics);
+    let result_diags = new_file_diagnostics.to_lsp(db, file, trace_macro_diagnostics);
 
-    // We want to ensure better UX by avoiding showing anything but errors from code that is not
-    // controlled by a user (dependencies from git/package register).
-    // Therefore, we filter non-error diagnostics for files residing in Scarb cache.
-    let is_dependency = scarb_toolchain.cache_path().is_some_and(|cache_path| {
-        params.uri.to_file_path().is_ok_and(|p| p.starts_with(cache_path))
-    });
-    if is_dependency {
-        params.diagnostics.retain(|diag| diag.severity == Some(DiagnosticSeverity::ERROR));
-    }
+    // The files diagnostics we actually need to push, are in the keys right now
+    let updated_files: Vec<Url> = result_diags.keys().cloned().collect();
 
-    if project_diagnostics.insert(new_file_diagnostics.clone()) {
-        notifier.notify::<PublishDiagnostics>(params);
+    project_diagnostics.apply_updates(result_diags, scarb_toolchain);
+    for file in updated_files {
+        // Unwrap is safe here because we know this file was updated
+        let diagnostics = project_diagnostics.get_diagnostics_for(&file).unwrap();
+        notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+            uri: file.clone(),
+            diagnostics,
+            version: None,
+        });
     }
 }
 
@@ -87,18 +87,8 @@ pub fn clear_old_diagnostics(
     notifier: Notifier,
 ) {
     let removed = project_diagnostics.clear_old(&files_to_preserve);
-    for mut file_diagnostics in removed {
-        // It might be that we are removing a file that actually had some diagnostics.
-        // For example, this might happen if a file with a syntax error is deleted.
-        // We are reusing just removed `FileDiagnostics` instead of constructing a fresh one
-        // to preserve any extra state it might contain.
-        file_diagnostics.clear();
-
-        let params = PublishDiagnosticsParams {
-            uri: file_diagnostics.url,
-            diagnostics: vec![],
-            version: None,
-        };
+    for (url, _) in removed {
+        let params = PublishDiagnosticsParams { uri: url, diagnostics: vec![], version: None };
         notifier.notify::<PublishDiagnostics>(params);
     }
 }
