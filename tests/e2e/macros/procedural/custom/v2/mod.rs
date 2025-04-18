@@ -181,3 +181,35 @@ fn derive_with_error_v2() {
         }
     );
 }
+
+#[test]
+fn attribute_with_quote_v2() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacrosV2,
+        cwd = "test_package",
+        files {"test_package/src/lib.cairo" => indoc!(r#"
+            #[wrap_with_module]
+            fn funksia<caret>() -> felt252 {
+                123
+            }
+        "#)
+        }
+    );
+}
+
+#[test]
+fn attribute_with_quote_user_error_v2() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacrosV2,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                #[wrap_with_module]
+                fn funk<caret>sia() -> felt252 {
+                    abc = 123
+                    abc
+                }
+            "#)
+        }
+    );
+}

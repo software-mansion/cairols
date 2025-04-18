@@ -2834,6 +2834,7 @@ name = "scarb_procedural_macros_v2"
 version = "1.0.0"
 dependencies = [
  "cairo-lang-macro 0.2.0 (git+https://github.com/software-mansion/scarb?rev=d91215ae8e6a0044f16930b3b0b151abbf1ac0a9)",
+ "cairo-lang-primitive-token",
  "indoc",
 ]
 
