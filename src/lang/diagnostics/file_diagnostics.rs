@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
 use cairo_lang_defs::db::DefsGroup;
@@ -13,7 +13,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::LookupIntern;
-use lsp_types::Url;
+use lsp_types::{Diagnostic, Url};
 use tracing::{error, info_span};
 
 use crate::lang::db::AnalysisDatabase;
@@ -39,6 +39,20 @@ pub struct FileDiagnostics {
     pub parser: Diagnostics<ParserDiagnostic>,
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
+}
+
+pub enum LSPDiagnostic {
+    Standard(Diagnostic),
+    Remapped(Diagnostic),
+}
+
+impl LSPDiagnostic {
+    pub(crate) fn unpack(self) -> Diagnostic {
+        match self {
+            LSPDiagnostic::Standard(x) => x,
+            LSPDiagnostic::Remapped(x) => x,
+        }
+    }
 }
 
 impl FileDiagnostics {
@@ -106,13 +120,6 @@ impl FileDiagnostics {
         })
     }
 
-    /// Clears all diagnostics from this `FileDiagnostics`.
-    pub fn clear(&mut self) {
-        self.parser = Diagnostics::default();
-        self.semantic = Diagnostics::default();
-        self.lowering = Diagnostics::default();
-    }
-
     /// Constructs a new [`lsp_types::PublishDiagnosticsParams`] from this `FileDiagnostics`.
     ///
     /// NOTE: `file_id` must correspond to the url at the current time slice.
@@ -121,8 +128,8 @@ impl FileDiagnostics {
         db: &AnalysisDatabase,
         file_id: FileId,
         trace_macro_diagnostics: bool,
-    ) -> lsp_types::PublishDiagnosticsParams {
-        let mut diagnostics = Vec::new();
+    ) -> HashMap<Url, Vec<LSPDiagnostic>> {
+        let mut diagnostics = HashMap::new();
         map_cairo_diagnostics_to_lsp(
             db as &dyn FilesGroup,
             &mut diagnostics,
@@ -145,6 +152,6 @@ impl FileDiagnostics {
             trace_macro_diagnostics,
         );
 
-        lsp_types::PublishDiagnosticsParams { uri: self.url.clone(), diagnostics, version: None }
+        diagnostics
     }
 }
