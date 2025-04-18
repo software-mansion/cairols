@@ -1,18 +1,21 @@
+use crate::lang::diagnostics::file_diagnostics::LSPDiagnostic;
+use crate::lang::lsp::{LsProtoGroup, ToLsp};
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_utils::{LookupIntern, Upcast};
 use lsp_types::{
     Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Range,
+    Url,
 };
+use std::collections::HashMap;
 use tracing::{error, trace};
 
-use crate::lang::lsp::{LsProtoGroup, ToLsp};
-
 /// Converts internal diagnostics to LSP format.
+/// Inserts into a map that keeps remapped and normal diagnostics
 pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
     db: &T::DbType,
-    diags: &mut Vec<Diagnostic>,
+    diags: &mut HashMap<Url, Vec<LSPDiagnostic>>,
     diagnostics: &Diagnostics<T>,
     processed_file_id: FileId,
     trace_macro_diagnostics: bool,
@@ -46,7 +49,6 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
                 message += &format!("\nnote: {}", note.text);
             }
         }
-
         let Some((range, mapped_file_id)) = get_mapped_range_and_add_mapping_note(
             db,
             &diagnostic.location(db),
@@ -56,10 +58,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
             continue;
         };
 
-        if mapped_file_id != processed_file_id {
-            continue;
-        }
-        diags.push(Diagnostic {
+        let diagnostic = Diagnostic {
             range,
             message,
             related_information: (!related_information.is_empty()).then_some(related_information),
@@ -69,7 +68,17 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
             }),
             code: diagnostic.error_code().map(|code| NumberOrString::String(code.to_string())),
             ..Diagnostic::default()
-        });
+        };
+        let Some(file_url) = db.url_for_file(mapped_file_id) else {
+            continue;
+        };
+        let lsp_diagnostic = if mapped_file_id != processed_file_id {
+            LSPDiagnostic::Remapped(diagnostic)
+        } else {
+            LSPDiagnostic::Standard(diagnostic)
+        };
+
+        diags.entry(file_url).or_default().push(lsp_diagnostic);
     }
 }
 
