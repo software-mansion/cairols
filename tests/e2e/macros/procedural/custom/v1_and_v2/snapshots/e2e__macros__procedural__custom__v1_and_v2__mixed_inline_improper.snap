@@ -1,6 +1,6 @@
 ---
 source: tests/e2e/macros/procedural/custom/v1_and_v2/mod.rs
-description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros = { path = \"/Users/timelock/swm/starkware/cairols/tests/scarb_procedural_macros\" }\ncairols_test_macros_v2 = { path = \"/Users/timelock/swm/starkware/cairols/tests/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\nfn foo() {\n    let _x = improper_inline_macro!(10 + 10);\n}\n\nfn bar() {\n    let _y = improper_inline_macro_v2!(10 + 10);\n}"
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros = { path = \"/Users/piotr/Projects/cairols/tests/scarb_procedural_macros\" }\ncairols_test_macros_v2 = { path = \"/Users/piotr/Projects/cairols/tests/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\nfn foo() {\n    let _x = improper_inline_macro!(10 + 10);\n}\n\nfn bar() {\n    let _y = improper_inline_macro_v2!(10 + 10);\n}"
 expression: report
 ---
 [[expansions]]
@@ -9,9 +9,6 @@ analyzed_lines = """
     let _x = improper_inline_macro!(10 +<caret> 10);
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 unbound_identifier
 """
 
@@ -21,9 +18,6 @@ analyzed_lines = """
     let _y = improper_inline_macro_v2!(10 +<caret> 10);
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 {
     (10 + 10);
     unbound_identifier_v2
