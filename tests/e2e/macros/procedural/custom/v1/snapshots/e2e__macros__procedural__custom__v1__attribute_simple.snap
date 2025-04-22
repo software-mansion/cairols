@@ -10,14 +10,5 @@ fn <caret>foo() {}
 fn foo() {<caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
-#[simple_attribute_macro]
-fn foo() {}
-
-// proc_macro_simple_attribute_macro
-// ---------------------------------
-
 fn generated_function() {}
 """

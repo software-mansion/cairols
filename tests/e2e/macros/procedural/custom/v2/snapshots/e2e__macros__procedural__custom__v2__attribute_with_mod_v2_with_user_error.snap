@@ -10,17 +10,6 @@ fn f<caret>oo() { "a" + "b"; }
 fn foo() { "a" + "b"; <caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
-#[mod_attribute_macro_v2]
-fn foo() {
-    "a" + "b";
-}
-
-// proc_macro_mod_attribute_macro_v2
-// ---------------------------------
-
 mod modzik {
     fn foo() {
         "a" + "b";

@@ -9,9 +9,6 @@ analyzed_lines = """
     let _x = simple_inline_macro_v2!(10_u8 +<caret> 5_felt252);
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 (10_u8 + 5_felt252)
 """
 

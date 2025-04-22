@@ -9,9 +9,6 @@ analyzed_lines = """
     let _x = improper_inline_macro_v2!(10 +<caret> 10);
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 {
     (10 + 10);
     unbound_identifier_v2

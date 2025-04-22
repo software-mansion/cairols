@@ -11,32 +11,22 @@ struct Empty<caret>Struct { x: u8, x: u8 }
 struct EmptyStruct { x: u8, x: u8 <caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 #[derive(ComplexDeriveMacroV2)]
 struct EmptyStruct {
     x: u8,
     x: u8,
 }
-
-// proc_macro_derive
-// -----------------
-
-#[simple_attribute_macro_v2]
+//-----
 fn another_generated_function_v2() {}
+fn generated_function_v2() {}
+
 trait MyTraitV2<T> {
     fn bar(t: T);
 }
+
 impl MyTraitImpl of MyTraitV2<felt252> {
     fn bar(t: felt252) {}
 }
-
-// proc_macro_simple_attribute_macro_v2
-// ------------------------------------
-
-fn another_generated_function_v2() {}
-fn generated_function_v2() {}
 """
 
 mapped_diagnostics:

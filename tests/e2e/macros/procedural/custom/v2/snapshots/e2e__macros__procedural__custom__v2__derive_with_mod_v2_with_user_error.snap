@@ -11,17 +11,11 @@ struct My<caret>Struct { a: b, }
 struct MyStruct { a: b, <caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 #[derive(ModDeriveMacroV2)]
 struct MyStruct {
     a: b,
 }
-
-// proc_macro_derive
-// -----------------
-
+//-----
 mod modzik {let x = ; }
 """
 
