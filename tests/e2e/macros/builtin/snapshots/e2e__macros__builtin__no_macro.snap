@@ -8,8 +8,5 @@ analyzed_lines = """
 fn foo() { <caret> }
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 fn foo() {}
 """

@@ -9,9 +9,6 @@ analyzed_lines = """
     let _x = simple_inline_macro!(10 +<caret> 10);
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 9
 """
 
@@ -21,8 +18,5 @@ analyzed_lines = """
     let _y = simple_inline_macro_v2!(10 +<caret> 10);
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 (10 + 10)
 """
