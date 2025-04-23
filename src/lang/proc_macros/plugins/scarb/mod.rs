@@ -43,6 +43,7 @@ fn into_cairo_diagnostics(
         .into_iter()
         .map(|diag| PluginDiagnostic {
             stable_ptr,
+            relative_span: None,
             message: diag.message,
             severity: match diag.severity {
                 SeverityV2::Error => cairo_lang_diagnostics::Severity::Error,

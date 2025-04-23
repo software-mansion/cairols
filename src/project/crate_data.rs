@@ -4,8 +4,7 @@ use std::path::PathBuf;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CORELIB_CRATE_NAME, CrateConfiguration, CrateSettings, FilesGroup,
-    FilesGroupEx,
+    CORELIB_CRATE_NAME, CrateConfiguration, CrateSettings, FilesGroup, FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_semantic::db::PluginSuiteInput;
@@ -138,7 +137,7 @@ fn inject_virtual_wrapper_lib(
         file_stems.iter().map(|stem| format!("mod {stem};")).collect::<Vec<_>>().join("\n");
 
     // Inject virtual lib file wrapper.
-    db.as_files_group_mut().override_file_content(file_id, Some(file_content.into()));
+    db.override_file_content(file_id, Some(file_content.into()));
 }
 
 /// The inverse of [`inject_virtual_wrapper_lib`],

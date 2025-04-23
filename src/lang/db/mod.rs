@@ -7,9 +7,7 @@ use cairo_lang_defs::ids::{InlineMacroExprPluginId, MacroPluginId};
 use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
-use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_files_group,
-};
+use cairo_lang_filesystem::db::{ExternalFiles, FilesDatabase, FilesGroup, init_files_group};
 use cairo_lang_filesystem::ids::{CrateId, VirtualFile};
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
 use cairo_lang_lowering::utils::InliningStrategy;
@@ -190,12 +188,6 @@ impl ExternalFiles for AnalysisDatabase {
 impl salsa::ParallelDatabase for AnalysisDatabase {
     fn snapshot(&self) -> salsa::Snapshot<Self> {
         salsa::Snapshot::new(AnalysisDatabase { storage: self.storage.snapshot() })
-    }
-}
-
-impl AsFilesGroupMut for AnalysisDatabase {
-    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
-        self
     }
 }
 
