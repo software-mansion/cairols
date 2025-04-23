@@ -7,5 +7,5 @@ edition = "2024"
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-cairo-lang-macro = { git = "https://github.com/software-mansion/scarb", rev = "d91215ae8e6a0044f16930b3b0b151abbf1ac0a9" }
+cairo-lang-macro = { git = "https://github.com/software-mansion/scarb", rev = "af5795e3b04ee39a15debaabf77db2d96b9031b8" }
 indoc = "2"

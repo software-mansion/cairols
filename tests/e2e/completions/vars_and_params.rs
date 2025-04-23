@@ -24,6 +24,13 @@ fn all_prefixed() {
     completion_label = "baz"
 
     [[completions]]
+    completion_label = "blake"
+    text_edits = ["""
+    use core::blake;
+
+    """]
+
+    [[completions]]
     completion_label = "blake2s_compress"
     text_edits = ["""
     use core::blake::blake2s_compress;
@@ -34,6 +41,13 @@ fn all_prefixed() {
     completion_label = "blake2s_finalize"
     text_edits = ["""
     use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "byte_array"
+    text_edits = ["""
+    use core::byte_array;
 
     """]
 
@@ -66,6 +80,13 @@ fn only_before_cursor() {
     completion_label = "bar"
 
     [[completions]]
+    completion_label = "blake"
+    text_edits = ["""
+    use core::blake;
+
+    """]
+
+    [[completions]]
     completion_label = "blake2s_compress"
     text_edits = ["""
     use core::blake::blake2s_compress;
@@ -76,6 +97,13 @@ fn only_before_cursor() {
     completion_label = "blake2s_finalize"
     text_edits = ["""
     use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "byte_array"
+    text_edits = ["""
+    use core::byte_array;
 
     """]
 
@@ -201,6 +229,13 @@ fn mixed_params_vars() {
     completion_label = "baz"
 
     [[completions]]
+    completion_label = "blake"
+    text_edits = ["""
+    use core::blake;
+
+    """]
+
+    [[completions]]
     completion_label = "blake2s_compress"
     text_edits = ["""
     use core::blake::blake2s_compress;
@@ -211,6 +246,13 @@ fn mixed_params_vars() {
     completion_label = "blake2s_finalize"
     text_edits = ["""
     use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "byte_array"
+    text_edits = ["""
+    use core::byte_array;
 
     """]
 
