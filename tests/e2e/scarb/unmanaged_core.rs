@@ -32,7 +32,7 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
       "settings": {
         "name": null,
         "edition": "2024_07",
-        "version": "2.11.2",
+        "version": "2.11.4",
         "cfg_set": null,
         "dependencies": {},
         "experimental_features": {
