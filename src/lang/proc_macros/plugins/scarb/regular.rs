@@ -733,7 +733,7 @@ fn calculate_metadata(
     }
 
     let stable_ptr = item_ast.clone().stable_ptr(db).untyped();
-    let file_path = stable_ptr.file_id(db).full_path(db.upcast());
+    let file_path = stable_ptr.file_id(db).full_path(db);
     let file_id = short_hash(file_path.clone());
     let edition = serde_json::to_value(edition).unwrap();
     TokenStreamMetadata::new(file_path, file_id, edition)
