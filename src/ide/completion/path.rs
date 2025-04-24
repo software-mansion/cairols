@@ -79,7 +79,7 @@ pub fn path_suffix_completions(
                 .flatten();
 
             Some(CompletionItem {
-                label: importable.name(db).to_string(),
+                label: last_segment.to_string(),
                 kind: Some(importable_completion_kind(*importable)),
                 additional_text_edits: import.map(|edit| vec![edit]),
                 ..CompletionItem::default()

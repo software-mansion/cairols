@@ -5,9 +5,7 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69    |
 // +-----------------------------------------------------+
 
-use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
-};
+use cairo_lang_filesystem::db::{FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use lsp_types::notification::{
     DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
     DidOpenTextDocument, DidSaveTextDocument, Notification,
@@ -210,7 +208,7 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
                 // We opt for this approach instead of using
                 // [`crate::lang::db::AnalysisDatabase::cancel_all`] because it is
                 // more descriptive and precise in targeting what we aim to achieve here.
-                PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
+                PrivRawFileContentQuery.in_db_mut(&mut state.db).invalidate(&file);
             }
         }
 
@@ -316,7 +314,7 @@ impl SyncNotificationHandler for DidSaveTextDocument {
         params: DidSaveTextDocumentParams,
     ) -> LSPResult<()> {
         if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
-            PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
+            PrivRawFileContentQuery.in_db_mut(&mut state.db).invalidate(&file);
             state.db.override_file_content(file, None);
         }
 
