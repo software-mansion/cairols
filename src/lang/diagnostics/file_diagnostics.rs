@@ -4,6 +4,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::Diagnostics;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -11,7 +12,7 @@ use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::{LookupIntern, Upcast};
+use cairo_lang_utils::LookupIntern;
 use lsp_types::Url;
 use tracing::{error, info_span};
 
@@ -123,21 +124,21 @@ impl FileDiagnostics {
     ) -> lsp_types::PublishDiagnosticsParams {
         let mut diagnostics = Vec::new();
         map_cairo_diagnostics_to_lsp(
-            (*db).upcast(),
+            db as &dyn FilesGroup,
             &mut diagnostics,
             &self.parser,
             file_id,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
-            (*db).upcast(),
+            db as &dyn SemanticGroup,
             &mut diagnostics,
             &self.semantic,
             file_id,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
-            (*db).upcast(),
+            db as &dyn SemanticGroup,
             &mut diagnostics,
             &self.lowering,
             file_id,

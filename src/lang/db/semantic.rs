@@ -19,9 +19,7 @@ use cairo_lang_utils::{Intern, Upcast};
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// Language server-specific extensions to the semantic group.
-pub trait LsSemanticGroup:
-    Upcast<dyn SemanticGroup> + Upcast<dyn SyntaxGroup> + Upcast<dyn DefsGroup>
-{
+pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup {
     /// Returns a [`LookupItemId`] corresponding to the node or its first parent all the way up to
     /// syntax root in the file.
     ///
@@ -128,20 +126,18 @@ pub trait LsSemanticGroup:
     /// This forces us to perform elaborate reverse lookups,
     /// which makes life here much harder than needed.
     fn lookup_binding(&self, var_id: VarId) -> Option<Binding> {
-        let semantic_db: &dyn SemanticGroup = self.upcast();
         let syntax_db: &dyn SyntaxGroup = self.upcast();
-        let defs_db: &dyn DefsGroup = self.upcast();
 
         match var_id {
             VarId::Param(param_id) => {
                 // Get param's syntax node.
-                let param = param_id.untyped_stable_ptr(defs_db).lookup(syntax_db);
+                let param = param_id.untyped_stable_ptr(self.upcast()).lookup(syntax_db);
 
                 // Get the function which contains the variable/parameter.
-                let function_id = semantic_db.find_lookup_item(&param)?.function_with_body()?;
+                let function_id = self.find_lookup_item(&param)?.function_with_body()?;
 
                 // Get function signature.
-                let signature = semantic_db.function_with_body_signature(function_id).ok()?;
+                let signature = self.function_with_body_signature(function_id).ok()?;
 
                 // Find the binding in the function's signature.
                 signature.params.into_iter().find(|p| p.id == param_id).map(Into::into)
@@ -149,25 +145,23 @@ pub trait LsSemanticGroup:
 
             VarId::Local(local_var_id) => {
                 // Get the Pattern syntax node which defines the variable.
-                let identifier = local_var_id.untyped_stable_ptr(defs_db).lookup(syntax_db);
+                let identifier = local_var_id.untyped_stable_ptr(self.upcast()).lookup(syntax_db);
                 let pattern = identifier.ancestor_of_type::<ast::Pattern>(syntax_db)?;
 
                 // Get the function which contains the variable/parameter.
-                let function_id = semantic_db
-                    .find_lookup_item(&pattern.as_syntax_node())?
-                    .function_with_body()?;
+                let function_id =
+                    self.find_lookup_item(&pattern.as_syntax_node())?.function_with_body()?;
 
                 // Get the semantic model for the pattern.
-                let pattern = semantic_db.pattern_semantic(
+                let pattern = self.pattern_semantic(
                     function_id,
-                    semantic_db
-                        .lookup_pattern_by_ptr(function_id, pattern.stable_ptr(syntax_db))
+                    self.lookup_pattern_by_ptr(function_id, pattern.stable_ptr(self.upcast()))
                         .ok()?,
                 );
 
                 // Extract the binding from the found pattern.
                 let binding = pattern
-                    .variables(&QueryPatternVariablesFromDb(semantic_db, function_id))
+                    .variables(&QueryPatternVariablesFromDb(self.upcast(), function_id))
                     .into_iter()
                     .find(|pv| pv.var.id == local_var_id)?
                     .var
@@ -184,10 +178,7 @@ pub trait LsSemanticGroup:
     }
 }
 
-impl<T> LsSemanticGroup for T where
-    T: Upcast<dyn SemanticGroup> + Upcast<dyn SyntaxGroup> + Upcast<dyn DefsGroup> + ?Sized
-{
-}
+impl<T> LsSemanticGroup for T where T: Upcast<dyn SemanticGroup> + SemanticGroup {}
 
 /// If the ast node is a lookup item, return corresponding ids. Otherwise, returns `None`.
 /// See [LookupItemId].
@@ -214,7 +205,7 @@ fn lookup_item_from_ast(
                 vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
                     ConstantLongId(
                         module_file_id,
-                        ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                        ast::ItemConstant::from_syntax_node(db, node).stable_ptr(db),
                     )
                     .intern(db),
                 ))]
@@ -225,8 +216,7 @@ fn lookup_item_from_ast(
                 vec![LookupItemId::ImplItem(ImplItemId::Function(
                     ImplFunctionLongId(
                         module_file_id,
-                        ast::FunctionWithBody::from_syntax_node(syntax_db, node)
-                            .stable_ptr(syntax_db),
+                        ast::FunctionWithBody::from_syntax_node(db, node).stable_ptr(db),
                     )
                     .intern(db),
                 ))]
@@ -234,8 +224,7 @@ fn lookup_item_from_ast(
                 vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
                     FreeFunctionLongId(
                         module_file_id,
-                        ast::FunctionWithBody::from_syntax_node(syntax_db, node)
-                            .stable_ptr(syntax_db),
+                        ast::FunctionWithBody::from_syntax_node(db, node).stable_ptr(db),
                     )
                     .intern(db),
                 ))]
@@ -245,8 +234,7 @@ fn lookup_item_from_ast(
             vec![LookupItemId::ModuleItem(ModuleItemId::ExternFunction(
                 ExternFunctionLongId(
                     module_file_id,
-                    ast::ItemExternFunction::from_syntax_node(syntax_db, node)
-                        .stable_ptr(syntax_db),
+                    ast::ItemExternFunction::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
             ))]
@@ -254,7 +242,7 @@ fn lookup_item_from_ast(
         SyntaxKind::ItemExternType => vec![LookupItemId::ModuleItem(ModuleItemId::ExternType(
             ExternTypeLongId(
                 module_file_id,
-                ast::ItemExternType::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                ast::ItemExternType::from_syntax_node(db, node).stable_ptr(db),
             )
             .intern(db),
         ))],
@@ -262,7 +250,7 @@ fn lookup_item_from_ast(
             vec![LookupItemId::ModuleItem(ModuleItemId::Trait(
                 TraitLongId(
                     module_file_id,
-                    ast::ItemTrait::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                    ast::ItemTrait::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
             ))]
@@ -271,7 +259,7 @@ fn lookup_item_from_ast(
             vec![LookupItemId::TraitItem(TraitItemId::Constant(
                 TraitConstantLongId(
                     module_file_id,
-                    ast::TraitItemConstant::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                    ast::TraitItemConstant::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
             ))]
@@ -280,7 +268,7 @@ fn lookup_item_from_ast(
             vec![LookupItemId::TraitItem(TraitItemId::Function(
                 TraitFunctionLongId(
                     module_file_id,
-                    ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                    ast::TraitItemFunction::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
             ))]
@@ -289,7 +277,7 @@ fn lookup_item_from_ast(
             vec![LookupItemId::TraitItem(TraitItemId::Impl(
                 TraitImplLongId(
                     module_file_id,
-                    ast::TraitItemImpl::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                    ast::TraitItemImpl::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
             ))]
@@ -298,7 +286,7 @@ fn lookup_item_from_ast(
             vec![LookupItemId::ModuleItem(ModuleItemId::Impl(
                 ImplDefLongId(
                     module_file_id,
-                    ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                    ast::ItemImpl::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
             ))]
@@ -307,7 +295,7 @@ fn lookup_item_from_ast(
             vec![LookupItemId::ModuleItem(ModuleItemId::Struct(
                 StructLongId(
                     module_file_id,
-                    ast::ItemStruct::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                    ast::ItemStruct::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
             ))]
@@ -316,7 +304,7 @@ fn lookup_item_from_ast(
             vec![LookupItemId::ModuleItem(ModuleItemId::Enum(
                 EnumLongId(
                     module_file_id,
-                    ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                    ast::ItemEnum::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
             ))]
@@ -324,8 +312,8 @@ fn lookup_item_from_ast(
         SyntaxKind::ItemUse => {
             // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
             // items.
-            let item_use = ast::ItemUse::from_syntax_node(db.upcast(), node);
-            get_all_path_leaves(db.upcast(), &item_use)
+            let item_use = ast::ItemUse::from_syntax_node(db, node);
+            get_all_path_leaves(db, &item_use)
                 .into_iter()
                 .map(|leaf| {
                     let use_long_id = UseLongId(module_file_id, leaf.stable_ptr(syntax_db));
@@ -336,14 +324,14 @@ fn lookup_item_from_ast(
         SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
             ModuleTypeAliasLongId(
                 module_file_id,
-                ast::ItemTypeAlias::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                ast::ItemTypeAlias::from_syntax_node(db, node).stable_ptr(db),
             )
             .intern(db),
         ))],
         SyntaxKind::ItemImplAlias => vec![LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
             ImplAliasLongId(
                 module_file_id,
-                ast::ItemImplAlias::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
+                ast::ItemImplAlias::from_syntax_node(db, node).stable_ptr(db),
             )
             .intern(db),
         ))],

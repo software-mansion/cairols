@@ -8,7 +8,6 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::Upcast;
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
 use tracing::debug;
 
@@ -23,14 +22,13 @@ pub fn dot_completions(
     ctx: &AnalysisContext<'_>,
     expr: ast::ExprBinary,
 ) -> Option<Vec<CompletionItem>> {
-    let syntax_db = db.upcast();
     // Get a resolver in the current context.
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
-    let module_file_id = function_with_body.module_file_id(db.upcast());
+    let module_file_id = function_with_body.module_file_id(db);
     let resolver = ctx.resolver(db);
 
     // Extract lhs node.
-    let node = expr.lhs(syntax_db);
+    let node = expr.lhs(db);
     let stable_ptr = node.stable_ptr(db).untyped();
     // Get its semantic model.
     let expr_id = db.lookup_expr_by_ptr(function_with_body, node.stable_ptr(db)).ok()?;
@@ -60,7 +58,7 @@ pub fn dot_completions(
         db.concrete_struct_members(concrete_struct_id).ok()?.iter().for_each(|(name, member)| {
             let completion = CompletionItem {
                 label: name.to_string(),
-                detail: Some(member.ty.format(db.upcast())),
+                detail: Some(member.ty.format(db)),
                 kind: Some(CompletionItemKind::FIELD),
                 ..CompletionItem::default()
             };
@@ -77,12 +75,12 @@ fn completion_for_method(
     module_file_id: ModuleFileId,
     trait_function: TraitFunctionId,
 ) -> Option<CompletionItem> {
-    let trait_id = trait_function.trait_id(db.upcast());
-    let name = trait_function.name(db.upcast());
+    let trait_id = trait_function.trait_id(db);
+    let name = trait_function.name(db);
     db.trait_function_signature(trait_function).ok()?;
 
     // TODO(spapini): Add signature.
-    let detail = trait_id.full_path(db.upcast());
+    let detail = trait_id.full_path(db);
     let mut additional_text_edits = vec![];
 
     // If the trait is not in scope, add a use statement.

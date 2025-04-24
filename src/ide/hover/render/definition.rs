@@ -6,7 +6,6 @@ use cairo_lang_syntax::node::ast::{
     FunctionDeclaration, GenericParam, OptionWrappedGenericParamList, TerminalIdentifier,
 };
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::Upcast;
 use lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
@@ -106,8 +105,8 @@ pub fn definition(
         contents: markdown_contents(md),
         range: identifier
             .as_syntax_node()
-            .span_without_trivia(db.upcast())
-            .position_in_file(db.upcast(), file_id)
+            .span_without_trivia(db)
+            .position_in_file(db, file_id)
             .map(|p| p.to_lsp()),
     })
 }

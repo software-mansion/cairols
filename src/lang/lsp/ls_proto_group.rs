@@ -1,7 +1,7 @@
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use lsp_types::{Location, Url};
 use salsa::InternKey;
 use tracing::error;
@@ -45,7 +45,7 @@ pub trait LsProtoGroup: Upcast<dyn FilesGroup> {
 
     /// Get the canonical [`Url`] for a [`FileId`].
     fn url_for_file(&self, file_id: FileId) -> Option<Url> {
-        let vf = match self.upcast().lookup_intern_file(file_id) {
+        let vf = match file_id.lookup_intern(self.upcast()) {
             FileLongId::OnDisk(path) => return Some(Url::from_file_path(path).unwrap()),
             FileLongId::Virtual(vf) => vf,
             FileLongId::External(id) => self.upcast().try_ext_as_virtual(id)?,

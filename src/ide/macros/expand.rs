@@ -89,10 +89,8 @@ fn expanded_macro_files(
     item_ast_node: SyntaxNode,
     metadata: &MacroPluginMetadata<'_>,
 ) -> Option<VecDeque<FileId>> {
-    let syntax_db = db.upcast();
-
-    let item = ModuleItemList::from_syntax_node(syntax_db, item_ast_node.parent(syntax_db)?)
-        .elements(syntax_db)
+    let item = ModuleItemList::from_syntax_node(db, item_ast_node.parent(db)?)
+        .elements(db)
         .into_iter()
         .find(|e| e.as_syntax_node() == item_ast_node)?;
 
@@ -107,7 +105,7 @@ fn expanded_macro_files(
         for item_ast in item_asts {
             for &plugin_id in db.crate_macro_plugins(crate_id).iter() {
                 let plugin = db.lookup_intern_macro_plugin(plugin_id);
-                let result = plugin.generate_code(db.upcast(), item_ast.clone(), metadata);
+                let result = plugin.generate_code(db, item_ast.clone(), metadata);
 
                 if let Some(generated) = result.code {
                     let new_file = FileLongId::Virtual(VirtualFile {
@@ -121,10 +119,7 @@ fn expanded_macro_files(
 
                     module_queue.push_back((
                         new_file,
-                        db.file_module_syntax(new_file)
-                            .ok()?
-                            .items(syntax_db)
-                            .elements(db.upcast()),
+                        db.file_module_syntax(new_file).ok()?.items(db).elements(db),
                     ));
                 }
                 if result.remove_original_item {

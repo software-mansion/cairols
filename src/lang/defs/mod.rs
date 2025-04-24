@@ -6,7 +6,6 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
-use cairo_lang_utils::Upcast;
 use cairo_lang_utils::smol_str::SmolStr;
 
 pub use self::finder::ResolvedItem;
@@ -123,12 +122,11 @@ impl SymbolDef {
     /// Gets the [`FileId`] and [`TextSpan`] of symbol's definition node's originating location.
     pub fn definition_location(&self, db: &AnalysisDatabase) -> Option<(FileId, TextSpan)> {
         let stable_ptr = self.definition_stable_ptr(db)?;
-        let node = stable_ptr.lookup(db.upcast());
-        let found_file = stable_ptr.file_id(db.upcast());
-        let span = node.span_without_trivia(db.upcast());
+        let node = stable_ptr.lookup(db);
+        let found_file = stable_ptr.file_id(db);
+        let span = node.span_without_trivia(db);
         let width = span.width();
-        let (file_id, mut span) =
-            get_originating_location(db.upcast(), found_file, span.start_only(), None);
+        let (file_id, mut span) = get_originating_location(db, found_file, span.start_only(), None);
         if span.width().as_u32() == 0 {
             span.end = span.end.add_width(width);
         }
@@ -157,11 +155,11 @@ impl SymbolDef {
                     &[SyntaxKind::FunctionWithBody, SyntaxKind::TraitItemFunction],
                 ) {
                     SearchScope::file_span(
-                        owning_function.stable_ptr(db).file_id(db.upcast()),
-                        owning_function.span(db.upcast()),
+                        owning_function.stable_ptr(db).file_id(db),
+                        owning_function.span(db),
                     )
                 } else {
-                    SearchScope::file(var.definition_stable_ptr(db).file_id(db.upcast()))
+                    SearchScope::file(var.definition_stable_ptr(db).file_id(db))
                 }
             }
 
