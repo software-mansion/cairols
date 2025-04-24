@@ -1,7 +1,6 @@
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_formatter::get_formatted_file;
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_utils::Upcast;
 use lsp_types::{DocumentFormattingParams, Position, Range, TextEdit};
 use tracing::error;
 
@@ -28,7 +27,7 @@ pub fn format(params: DocumentFormattingParams, state: StateSnapshot) -> Option<
         return None;
     }
 
-    let new_text = get_formatted_file(db.upcast(), &node, config.fmt);
+    let new_text = get_formatted_file(db, &node, config.fmt);
 
     let Some(file_summary) = db.file_summary(file) else {
         error!("formatting failed: cannot get summary for file '{file_uri}'");

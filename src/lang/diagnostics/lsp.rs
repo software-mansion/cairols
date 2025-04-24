@@ -1,3 +1,4 @@
+use crate::lang::lsp::{LsProtoGroup, ToLsp};
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
@@ -6,8 +7,6 @@ use lsp_types::{
     Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Range,
 };
 use tracing::{error, trace};
-
-use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
 /// Converts internal diagnostics to LSP format.
 pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(

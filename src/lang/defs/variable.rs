@@ -3,7 +3,6 @@ use cairo_lang_semantic::{Binding, Mutability};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::Upcast;
 use cairo_lang_utils::smol_str::SmolStr;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
@@ -59,7 +58,7 @@ impl VariableDef {
             },
         };
 
-        let ty = binding.ty().format(db.upcast());
+        let ty = binding.ty().format(db);
 
         Some(format!("{prefix}{mutability}{name}: {ty}"))
     }

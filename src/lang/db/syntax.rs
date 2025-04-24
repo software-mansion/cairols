@@ -4,14 +4,13 @@ use cairo_lang_filesystem::span::{TextOffset, TextPosition};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal};
-use cairo_lang_utils::Upcast;
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// LS-specific extensions to the syntax group of the Cairo compiler.
-pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
+pub trait LsSyntaxGroup: ParserGroup {
     /// Finds the most specific [`SyntaxNode`] at the given [`TextOffset`] in the file.
     fn find_syntax_node_at_offset(&self, file: FileId, offset: TextOffset) -> Option<SyntaxNode> {
-        let db = self.upcast();
+        let db = self;
         Some(db.file_syntax(file).to_option()?.lookup_offset(db.upcast(), offset))
     }
 
@@ -21,8 +20,7 @@ pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
         file: FileId,
         position: TextPosition,
     ) -> Option<SyntaxNode> {
-        let db = self.upcast();
-        Some(db.file_syntax(file).to_option()?.lookup_position(db.upcast(), position))
+        Some(self.file_syntax(file).to_option()?.lookup_position(self.upcast(), position))
     }
 
     /// Finds a [`TerminalIdentifier`] at the given [`TextPosition`] in the file.
@@ -38,12 +36,9 @@ pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
         file: FileId,
         position: TextPosition,
     ) -> Option<TerminalIdentifier> {
-        let db = self.upcast();
-        let syntax_db = db.upcast();
-
         let find = |position: TextPosition| {
             let node = self.find_syntax_node_at_position(file, position)?;
-            TerminalIdentifier::cast_token(syntax_db, node)
+            TerminalIdentifier::cast_token(self.upcast(), node)
         };
 
         find(position).or_else(|| {
@@ -54,4 +49,4 @@ pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
     }
 }
 
-impl<T> LsSyntaxGroup for T where T: Upcast<dyn ParserGroup> + ?Sized {}
+impl<T> LsSyntaxGroup for T where T: ParserGroup {}

@@ -3,7 +3,6 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
-use cairo_lang_utils::Upcast;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use lsp_types::{SemanticToken, SemanticTokens, SemanticTokensParams, SemanticTokensResult};
 use tracing::error;
@@ -29,7 +28,7 @@ pub fn semantic_highlight_full(
     };
 
     let mut data: Vec<SemanticToken> = Vec::new();
-    SemanticTokensTraverser::default().find_semantic_tokens(db.upcast(), &mut data, node);
+    SemanticTokensTraverser::default().find_semantic_tokens(db, &mut data, node);
     Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data }))
 }
 
@@ -50,8 +49,7 @@ impl SemanticTokensTraverser {
         data: &mut Vec<SemanticToken>,
         node: SyntaxNode,
     ) {
-        let syntax_db = db.upcast();
-        let green_node = node.green_node(syntax_db);
+        let green_node = node.green_node(db);
         match &green_node.details {
             syntax::node::green::GreenNodeDetails::Token(text) => {
                 if green_node.kind == SyntaxKind::TokenNewline {
@@ -85,12 +83,12 @@ impl SemanticTokensTraverser {
                 }
             }
             syntax::node::green::GreenNodeDetails::Node { .. } => {
-                let children = node.get_children(syntax_db);
+                let children = node.get_children(db);
                 match green_node.kind {
                     SyntaxKind::Param => {
                         self.mark_future_token(
-                            ast::Param::from_syntax_node(syntax_db, node)
-                                .name(syntax_db)
+                            ast::Param::from_syntax_node(db, node)
+                                .name(db)
                                 .as_syntax_node()
                                 .offset(db),
                             SemanticTokenKind::Parameter,
@@ -98,24 +96,24 @@ impl SemanticTokensTraverser {
                     }
                     SyntaxKind::FunctionWithBody => {
                         self.mark_future_token(
-                            ast::FunctionWithBody::from_syntax_node(syntax_db, node)
-                                .declaration(syntax_db)
-                                .name(syntax_db)
+                            ast::FunctionWithBody::from_syntax_node(db, node)
+                                .declaration(db)
+                                .name(db)
                                 .as_syntax_node()
                                 .offset(db),
                             SemanticTokenKind::Function,
                         );
                     }
                     SyntaxKind::ItemStruct => self.mark_future_token(
-                        ast::ItemStruct::from_syntax_node(syntax_db, node)
-                            .name(syntax_db)
+                        ast::ItemStruct::from_syntax_node(db, node)
+                            .name(db)
                             .as_syntax_node()
                             .offset(db),
                         SemanticTokenKind::Struct,
                     ),
                     SyntaxKind::ItemEnum => self.mark_future_token(
-                        ast::ItemEnum::from_syntax_node(syntax_db, node)
-                            .name(syntax_db)
+                        ast::ItemEnum::from_syntax_node(db, node)
+                            .name(db)
                             .as_syntax_node()
                             .offset(db),
                         SemanticTokenKind::Enum,

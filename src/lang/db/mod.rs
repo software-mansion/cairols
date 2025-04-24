@@ -181,7 +181,7 @@ fn add_plugin_suite(
 impl salsa::Database for AnalysisDatabase {}
 impl ExternalFiles for AnalysisDatabase {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
+        try_ext_as_virtual_impl(self, external_id)
     }
 }
 

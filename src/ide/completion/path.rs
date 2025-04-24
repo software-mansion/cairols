@@ -6,7 +6,7 @@ use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
-use cairo_lang_utils::{LookupIntern, Upcast};
+use cairo_lang_utils::LookupIntern;
 use if_chain::if_chain;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
@@ -112,7 +112,7 @@ pub fn path_prefix_completions(
 
                 peek_visible_in_with_edition(db, item_info.visibility, module_id, ctx.module_id)
                     .then(|| CompletionItem {
-                        label: item.name(db.upcast()).to_string(),
+                        label: item.name(db).to_string(),
                         kind: Some(resolved_generic_item_completion_kind(resolved_item)),
                         ..CompletionItem::default()
                     })

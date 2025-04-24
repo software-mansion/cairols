@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::Intern;
 use indoc::formatdoc;
 use lsp_types::Hover;
 
@@ -98,8 +98,8 @@ fn number_hover(
         contents: markdown_contents(representation),
         range: literal
             .as_syntax_node()
-            .span_without_trivia(db.upcast())
-            .position_in_file(db.upcast(), file_id)
+            .span_without_trivia(db)
+            .position_in_file(db, file_id)
             .map(|position| position.to_lsp()),
     })
 }
@@ -123,8 +123,8 @@ fn string_hover(
         contents: markdown_contents(representation),
         range: literal
             .as_syntax_node()
-            .span_without_trivia(db.upcast())
-            .position_in_file(db.upcast(), file_id)
+            .span_without_trivia(db)
+            .position_in_file(db, file_id)
             .map(|position| position.to_lsp()),
     })
 }
@@ -163,8 +163,8 @@ fn short_string_hover(
         contents: markdown_contents(representation),
         range: literal
             .as_syntax_node()
-            .span_without_trivia(db.upcast())
-            .position_in_file(db.upcast(), file_id)
+            .span_without_trivia(db)
+            .position_in_file(db, file_id)
             .map(|position| position.to_lsp()),
     })
 }

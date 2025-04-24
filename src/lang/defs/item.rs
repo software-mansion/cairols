@@ -7,7 +7,6 @@ use cairo_lang_defs::ids::{
 use cairo_lang_doc::db::DocGroup;
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::Upcast;
 use cairo_lang_utils::smol_str::SmolStr;
 use itertools::Itertools;
 
@@ -96,21 +95,19 @@ impl ItemDef {
     /// Gets the full path (including crate name and defining trait/impl if applicable)
     /// to the module containing the item.
     pub fn definition_path(&self, db: &AnalysisDatabase) -> String {
-        let defs_db = db.upcast();
         match self.lookup_item_id {
-            LookupItemId::ModuleItem(item) => item.parent_module(defs_db).full_path(defs_db),
-            LookupItemId::TraitItem(item) => item.trait_id(defs_db).full_path(defs_db),
-            LookupItemId::ImplItem(item) => item.impl_def_id(defs_db).full_path(defs_db),
+            LookupItemId::ModuleItem(item) => item.parent_module(db).full_path(db),
+            LookupItemId::TraitItem(item) => item.trait_id(db).full_path(db),
+            LookupItemId::ImplItem(item) => item.impl_def_id(db).full_path(db),
         }
     }
 
     /// Gets the name of the item.
     pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
-        let defs_db = db.upcast();
         match self.lookup_item_id {
-            LookupItemId::ModuleItem(item) => item.name(defs_db),
-            LookupItemId::TraitItem(item) => item.name(defs_db),
-            LookupItemId::ImplItem(item) => item.name(defs_db),
+            LookupItemId::ModuleItem(item) => item.name(db),
+            LookupItemId::TraitItem(item) => item.name(db),
+            LookupItemId::ImplItem(item) => item.name(db),
         }
     }
 }

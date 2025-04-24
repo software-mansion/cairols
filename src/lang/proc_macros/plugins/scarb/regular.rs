@@ -591,7 +591,7 @@ fn calculate_metadata(db: &dyn SyntaxGroup, item_ast: ast::ModuleItem) -> TokenS
         hasher.finish_as_short_hash()
     }
     let stable_ptr = item_ast.clone().stable_ptr(db).untyped();
-    let file_path = stable_ptr.file_id(db).full_path(db.upcast());
+    let file_path = stable_ptr.file_id(db).full_path(db);
     let file_id = short_hash(file_path.clone());
     TokenStreamMetadata::new(file_path, file_id)
 }
