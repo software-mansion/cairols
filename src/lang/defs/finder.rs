@@ -166,7 +166,7 @@ fn try_member_from_constructor(
         return None;
     };
 
-    let struct_member = identifier_node.ancestor_of_type::<ast::StructArgSingle>(db)?;
+    let struct_member = ast::StructArgSingle::cast(db, identifier_node.parent(db)?)?;
 
     let struct_member_name =
         struct_member.identifier(db).as_syntax_node().get_text_without_trivia(db);

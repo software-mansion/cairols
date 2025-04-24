@@ -60,3 +60,32 @@ fn struct_member_in_constructor() {
     }
     ")
 }
+
+#[test]
+fn struct_member_right_side() {
+    test_transform!(goto_definition, r"
+    struct ExecutionInfoMock {
+        caller_address: Operation,
+    }
+    enum Operation {
+        Retain
+    }
+    fn func() {
+        ExecutionInfoMock {
+            caller_address: Oper<caret>ation::Retain,
+        };
+    }
+    ", @r"
+    struct ExecutionInfoMock {
+        caller_address: Operation,
+    }
+    enum <sel>Operation</sel> {
+        Retain
+    }
+    fn func() {
+        ExecutionInfoMock {
+            caller_address: Operation::Retain,
+        };
+    }
+    ")
+}
