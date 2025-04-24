@@ -28,7 +28,7 @@ pub fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> Compl
 pub fn importable_completion_kind(item: ImportableId) -> CompletionItemKind {
     match item {
         ImportableId::Constant(_) => CompletionItemKind::CONSTANT,
-        ImportableId::Submodule(_) => CompletionItemKind::MODULE,
+        ImportableId::Submodule(_) | ImportableId::Crate(_) => CompletionItemKind::MODULE,
         ImportableId::ExternFunction(_) | ImportableId::FreeFunction(_) => {
             CompletionItemKind::FUNCTION
         }
