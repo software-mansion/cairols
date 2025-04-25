@@ -29,7 +29,7 @@ fn generic_function_call() {
     hello
     ```
     ```cairo
-    fn a<T, +Copy<T>, One>(b: @T) -> T
+    fn a<T, +Copy<T>, impl One: One<T>>(b: @T) -> T
 
     T = core::felt252
     +Copy<T> = core::felt252Copy
@@ -100,7 +100,7 @@ fn generic_function_call_wrong() {
     hello
     ```
     ```cairo
-    fn a<T, +Copy<T>, One>(b: @T) -> T
+    fn a<T, +Copy<T>, impl One: One<T>>(b: @T) -> T
     ```
     """
     "#);
