@@ -34,8 +34,6 @@ fn mixed_inline_complex() {
     );
 }
 
-// TODO(#535): Diagnostics from V2 wrongly mapped
-#[ignore = "Wrong diagnostics mappings from scarb nightly"]
 #[test]
 fn mixed_inline_improper() {
     test_macro_expansion_and_diagnostics!(
@@ -71,8 +69,6 @@ fn mixed_inline_with_error() {
     );
 }
 
-// TODO(#535): Diagnostics from V2 wrongly mapped
-#[ignore = "Wrong diagnostics mappings from scarb nightly"]
 #[test]
 fn mixed_attributes_simple() {
     test_macro_expansion_and_diagnostics!(
@@ -91,8 +87,6 @@ fn mixed_attributes_simple() {
     );
 }
 
-// TODO(#535): Diagnostics from V2 wrongly mapped
-#[ignore = "Wrong diagnostics mappings from scarb nightly"]
 #[test]
 fn mixed_attribute_complex() {
     test_macro_expansion_and_diagnostics!(
@@ -111,8 +105,6 @@ fn mixed_attribute_complex() {
     );
 }
 
-// TODO(#535): Diagnostics from V2 wrongly mapped
-#[ignore = "Wrong diagnostics mappings from scarb nightly"]
 #[test]
 fn mixed_attribute_improper() {
     test_macro_expansion_and_diagnostics!(
