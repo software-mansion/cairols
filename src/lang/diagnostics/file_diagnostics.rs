@@ -18,9 +18,10 @@ use tracing::{error, info_span};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
+use crate::lang::lsp::LsProtoGroup;
 use crate::server::panic::is_cancelled;
 
-/// Result of refreshing diagnostics for a single file.
+/// Result of processing a single file in search for diagnostics.
 ///
 /// ## Comparisons
 ///
@@ -33,13 +34,14 @@ use crate::server::panic::is_cancelled;
 /// to the given `file` will also be visited and their diagnostics collected.
 #[derive(Clone, PartialEq, Eq)]
 pub struct FileDiagnostics {
+    pub processed_file_url: Url,
     pub parser: Diagnostics<ParserDiagnostic>,
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
 }
 
 impl FileDiagnostics {
-    /// Collects all diagnostics kinds from the given `file` and constructs a new `FileDiagnostics`.
+    /// Collects all diagnostics kinds by processing `file` and constructs a new `FileDiagnostics`.
     ///
     /// The `processed_modules` in/out parameter is used to avoid constructing two overlapping
     /// `FileDiagnostics` in a single batch.
@@ -47,7 +49,7 @@ impl FileDiagnostics {
     /// constructed `FileDiagnostics`), and new module IDs will be added.
     pub fn collect(
         db: &AnalysisDatabase,
-        file: FileId,
+        processed_file: FileId,
         processed_modules: &mut HashSet<ModuleId>,
     ) -> Option<Self> {
         macro_rules! query {
@@ -59,7 +61,7 @@ impl FileDiagnostics {
                         } else {
                             error!(
                                 "caught panic when computing diagnostics for file: {:?}",
-                                file.lookup_intern(db)
+                                processed_file.lookup_intern(db)
                             );
                             err
                         }
@@ -68,7 +70,8 @@ impl FileDiagnostics {
             };
         }
 
-        let module_ids = query!(db.file_modules(file)).ok()?.ok()?;
+        let processed_file_url = query!(db.url_for_file(processed_file)).ok()??;
+        let module_ids = query!(db.file_modules(processed_file)).ok()?.ok()?;
 
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
@@ -92,23 +95,25 @@ impl FileDiagnostics {
             }
         }
 
-        let parser_file_diagnostics = query!(db.file_syntax_diagnostics(file)).unwrap_or_default();
+        // TODO: collect parser diags for virtual files - check diags for generated files
+        let parser_file_diagnostics =
+            query!(db.file_syntax_diagnostics(processed_file)).unwrap_or_default();
 
         Some(FileDiagnostics {
+            processed_file_url,
             parser: parser_file_diagnostics,
             semantic: Diagnostics::from_iter(semantic_file_diagnostics),
             lowering: Diagnostics::from_iter(lowering_file_diagnostics),
         })
     }
 
-    /// Constructs a new [`lsp_types::PublishDiagnosticsParams`] from this `FileDiagnostics`.
-    ///
-    /// NOTE: `file_id` must correspond to the url at the current time slice.
+    /// Converts all diagnostics from this [`FileDiagnostics`] to mapping from [`Url`] to
+    /// [`Diagnostic`] .
     pub fn to_lsp(
         &self,
         db: &AnalysisDatabase,
         trace_macro_diagnostics: bool,
-    ) -> HashMap<Url, Vec<Diagnostic>> {
+    ) -> (Url, HashMap<Url, Vec<Diagnostic>>) {
         let mut diagnostics = HashMap::new();
         map_cairo_diagnostics_to_lsp(
             db as &dyn FilesGroup,
@@ -129,6 +134,14 @@ impl FileDiagnostics {
             trace_macro_diagnostics,
         );
 
-        diagnostics
+        // In our tests, we often await diagnostics for a given non-virtual file,
+        // even when they are supposed to be empty.
+        // Processed file is the only non-virtual file in here - ensure we send
+        // empty diagnostics when appropriate.
+        if !diagnostics.contains_key(&self.processed_file_url) {
+            diagnostics.insert(self.processed_file_url.clone(), Vec::new());
+        }
+
+        (self.processed_file_url.clone(), diagnostics)
     }
 }

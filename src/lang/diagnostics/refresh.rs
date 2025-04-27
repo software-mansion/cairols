@@ -1,9 +1,8 @@
-use std::collections::HashSet;
-
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::FileId;
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
+use std::collections::HashSet;
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FileDiagnostics;
@@ -57,28 +56,38 @@ fn refresh_file_diagnostics(
     };
 
     // IMPORTANT: DO NOT change the order of operations here. `to_lsp` may panic, so it has to come
-    // before `insert`. It is to make sure that if `insert` succeeds, `notify` executes as well.
-    let result_diags = new_file_diagnostics.to_lsp(db, trace_macro_diagnostics);
+    // before `update`. It is to make sure that if `update` succeeds, `notify` executes as well.
+    let (processed_file_url, new_diags) = new_file_diagnostics.to_lsp(db, trace_macro_diagnostics);
 
-    for (file, mut diagnostics) in result_diags {
-        // We want to ensure better UX by avoiding showing anything but errors from code that is not
-        // controlled by a user (dependencies from git/package register).
-        // Therefore, we filter non-error diagnostics for files residing in Scarb cache.
-        let is_dependency = scarb_toolchain
-            .cache_path()
-            .is_some_and(|cache_path| file.to_file_path().is_ok_and(|p| p.starts_with(cache_path)));
-
-        if is_dependency {
-            diagnostics.retain(|diag| diag.severity == Some(DiagnosticSeverity::ERROR));
-        }
-
-        if project_diagnostics.insert(file.clone(), diagnostics.clone()) {
-            notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-                uri: file.clone(),
-                diagnostics,
-                version: None,
+    let new_diags = new_diags
+        .into_iter()
+        .filter_map(|(file, mut diagnostics)| {
+            // TODO: fix for virtual files from deps - check path of parent files for virtual files
+            // We want to ensure better UX by avoiding showing anything but errors from code that is
+            // not controlled by a user (dependencies from git/package register).
+            // Therefore, we filter non-error diagnostics for files residing in Scarb cache.
+            let is_dependency = scarb_toolchain.cache_path().is_some_and(|cache_path| {
+                file.to_file_path().is_ok_and(|p| p.starts_with(cache_path))
             });
-        }
+
+            if is_dependency {
+                diagnostics.retain(|diag| diag.severity == Some(DiagnosticSeverity::ERROR));
+                if diagnostics.is_empty() {
+                    return None;
+                }
+            }
+
+            Some((file, diagnostics))
+        })
+        .collect();
+
+    let diags_to_send = project_diagnostics.update(processed_file_url, new_diags);
+    for (url, diagnostics) in diags_to_send {
+        notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+            uri: url,
+            diagnostics,
+            version: None,
+        });
     }
 }
 
@@ -94,7 +103,7 @@ pub fn clear_old_diagnostics(
     notifier: Notifier,
 ) {
     let removed = project_diagnostics.clear_old(&files_to_preserve);
-    for (url, _) in removed {
+    for url in removed {
         let params = PublishDiagnosticsParams { uri: url, diagnostics: vec![], version: None };
         notifier.notify::<PublishDiagnostics>(params);
     }

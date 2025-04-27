@@ -12,7 +12,11 @@ use crate::lang::lsp::LsProtoGroup;
 /// Finds all analyzable files in `db` that are open and need to be analysed ASAP, thus _primary_.
 #[tracing::instrument(skip_all)]
 pub fn find_primary_files(db: &AnalysisDatabase, open_files: &HashSet<Url>) -> HashSet<FileId> {
-    open_files.iter().filter_map(|uri| db.file_for_url(uri)).collect()
+    open_files
+        .iter()
+        .filter(|uri| uri.scheme() != "vfs")
+        .filter_map(|uri| db.file_for_url(uri))
+        .collect()
 }
 
 /// Finds all analyzable files in `db` that are **not** primary.
