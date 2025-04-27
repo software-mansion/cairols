@@ -1,4 +1,4 @@
 [alias]
-lint = "clippy --all-targets --all-features -- --no-deps"
-docs = "doc --all-features --no-deps"
+lint = "clippy --workspace --all-targets --all-features -- --no-deps"
+docs = "doc --workspace --all-features --no-deps"
 xtask = "run --quiet --package xtask --"
