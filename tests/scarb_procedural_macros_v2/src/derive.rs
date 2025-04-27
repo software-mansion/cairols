@@ -1,12 +1,8 @@
-use cairo_lang_macro::{
-    Diagnostic, ProcMacroResult, TextSpan, Token, TokenStream, TokenTree, derive_macro,
-};
-use indoc::indoc;
+use cairo_lang_macro::{Diagnostic, ProcMacroResult, TokenStream, derive_macro, quote};
 
 #[derive_macro]
 pub fn simple_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
-    let result = indoc!(
-        r#"
+    let ts = quote! {
         trait MyTrait<T> {
             fn foo(t: T);
         }
@@ -14,19 +10,15 @@ pub fn simple_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
         impl MyTraitImpl of MyTrait<felt252> {
             fn foo(t: felt252) {}
         }
-        "#
-    );
-    let span = TextSpan::new(0, result.len() as u32);
-
-    ProcMacroResult::new(TokenStream::new(vec![TokenTree::Ident(Token::new(result, span))]))
+    };
+    ProcMacroResult::new(ts)
 }
 
 #[derive_macro]
 pub fn complex_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
-    let result = indoc!(
-        r#"
+    let ts = quote! {
         #[simple_attribute_macro_v2]
-        fn generated_function_v2() {}
+        fn another_generated_function_v2() {}
 
         trait MyTraitV2<T> {
             fn bar(t: T);
@@ -35,25 +27,18 @@ pub fn complex_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
         impl MyTraitImpl of MyTraitV2<felt252> {
             fn bar(t: felt252) {}
         }
-        "#
-    );
-    let span = TextSpan::new(0, result.len() as u32);
-
-    ProcMacroResult::new(TokenStream::new(vec![TokenTree::Ident(Token::new(result, span))]))
+    };
+    ProcMacroResult::new(ts)
 }
 
 #[derive_macro]
 pub fn improper_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
-    let result = indoc!(
-        r#"
+    let ts = quote! {
         fn generated_function_v2() {
             some <*> haskell <$> syntax
         }
-        "#
-    );
-    let span = TextSpan::new(0, result.len() as u32);
-
-    ProcMacroResult::new(TokenStream::new(vec![TokenTree::Ident(Token::new(result, span))]))
+    };
+    ProcMacroResult::new(ts)
 }
 
 #[derive_macro]

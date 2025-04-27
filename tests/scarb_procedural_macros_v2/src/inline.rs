@@ -1,27 +1,30 @@
-use cairo_lang_macro::{
-    Diagnostic, ProcMacroResult, TextSpan, Token, TokenStream, TokenTree, inline_macro,
-};
+use cairo_lang_macro::{Diagnostic, ProcMacroResult, TokenStream, inline_macro, quote};
 
 #[inline_macro]
 pub fn simple_inline_macro_v2(item: TokenStream) -> ProcMacroResult {
-    let result = item.to_string();
-    let span = TextSpan::new(0, result.len() as u32);
-    ProcMacroResult::new(TokenStream::new(vec![TokenTree::Ident(Token::new(result, span))]))
+    let ts = quote! {
+        #item
+    };
+    ProcMacroResult::new(ts)
 }
 
 #[inline_macro]
 pub fn complex_inline_macro_v2(item: TokenStream) -> ProcMacroResult {
-    let result =
-        format!("simple_inline_macro_v2!({0}) + simple_inline_macro_v2!({0})", item.to_string());
-    let span = TextSpan::new(0, result.len() as u32);
-    ProcMacroResult::new(TokenStream::new(vec![TokenTree::Ident(Token::new(result, span))]))
+    let ts = quote! {
+        simple_inline_macro_v2!(#item) + simple_inline_macro_v2!(#item)
+    };
+    ProcMacroResult::new(ts)
 }
 
 #[inline_macro]
-pub fn improper_inline_macro_v2(_item: TokenStream) -> ProcMacroResult {
-    let result = String::from("unbound_identifier_v2");
-    let span = TextSpan::new(0, result.len() as u32);
-    ProcMacroResult::new(TokenStream::new(vec![TokenTree::Ident(Token::new(result, span))]))
+pub fn improper_inline_macro_v2(item: TokenStream) -> ProcMacroResult {
+    let ts = quote! {
+        {
+            #item;
+            unbound_identifier_v2
+        }
+    };
+    ProcMacroResult::new(ts)
 }
 
 #[inline_macro]

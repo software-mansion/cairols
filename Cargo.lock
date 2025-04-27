@@ -959,6 +959,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairols_test_macros"
+version = "1.0.0"
+dependencies = [
+ "cairo-lang-macro 0.1.1",
+ "indoc",
+]
+
+[[package]]
+name = "cairols_test_macros_v2"
+version = "1.0.0"
+dependencies = [
+ "cairo-lang-macro 0.2.0",
+ "cairo-lang-primitive-token",
+]
+
+[[package]]
 name = "camino"
 version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2782,22 +2798,6 @@ checksum = "1902536b23a05dd165d3992865870aaf1b0650317767cbf171ed2ca5903732a9"
 dependencies = [
  "data-encoding",
  "xxhash-rust",
-]
-
-[[package]]
-name = "scarb_procedural_macros"
-version = "1.0.0"
-dependencies = [
- "cairo-lang-macro 0.1.1",
- "indoc",
-]
-
-[[package]]
-name = "scarb_procedural_macros_v2"
-version = "1.0.0"
-dependencies = [
- "cairo-lang-macro 0.2.0",
- "indoc",
 ]
 
 [[package]]
