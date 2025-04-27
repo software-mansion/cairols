@@ -1,4 +1,3 @@
-use crate::lang::diagnostics::file_diagnostics::LSPDiagnostic;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
@@ -15,9 +14,8 @@ use tracing::{error, trace};
 /// Inserts into a map that keeps remapped and normal diagnostics
 pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
     db: &T::DbType,
-    diags: &mut HashMap<Url, Vec<LSPDiagnostic>>,
+    diags: &mut HashMap<Url, Vec<Diagnostic>>,
     diagnostics: &Diagnostics<T>,
-    processed_file_id: FileId,
     trace_macro_diagnostics: bool,
 ) {
     for diagnostic in if trace_macro_diagnostics {
@@ -72,13 +70,8 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
         let Some(file_url) = db.url_for_file(mapped_file_id) else {
             continue;
         };
-        let lsp_diagnostic = if mapped_file_id != processed_file_id {
-            LSPDiagnostic::Remapped(diagnostic)
-        } else {
-            LSPDiagnostic::Standard(diagnostic)
-        };
 
-        diags.entry(file_url).or_default().push(lsp_diagnostic);
+        diags.entry(file_url).or_default().push(diagnostic);
     }
 }
 

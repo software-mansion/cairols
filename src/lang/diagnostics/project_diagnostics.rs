@@ -1,7 +1,5 @@
-use crate::lang::diagnostics::file_diagnostics::LSPDiagnostic;
-use crate::toolchain::scarb::ScarbToolchain;
 use itertools::{Either, Itertools};
-use lsp_types::{Diagnostic, DiagnosticSeverity, Url};
+use lsp_types::{Diagnostic, Url};
 use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::sync::{Arc, RwLock};
@@ -47,68 +45,6 @@ impl ProjectDiagnostics {
             .expect("file diagnostics are poisoned, bailing out")
             .insert(file_url.clone(), diags);
         true
-    }
-
-    pub fn apply_updates(
-        &self,
-        updates: HashMap<Url, Vec<LSPDiagnostic>>,
-        scarb_toolchain: &ScarbToolchain,
-    ) {
-        for (file, lsp_diagnostics) in updates {
-            // There are basically ONLY 2 cases:
-            // (if there's something else here something went seriously wrong)
-            // 1. Remapped entry - those we want to append to existing diagnostics
-            // 2. Non-remapped ones - we want to substitute the original ones with them
-            let mut new_diagnostics: Vec<Diagnostic> = if lsp_diagnostics
-                .iter()
-                .all(|diagnostic| matches!(diagnostic, LSPDiagnostic::Remapped(_)))
-            {
-                let mut new_diags: Vec<Diagnostic> =
-                    lsp_diagnostics.into_iter().map(|diag| diag.unpack()).collect();
-
-                if let Some(diags) = self
-                    .file_diagnostics
-                    .read()
-                    .expect("file diagnostics are poisoned, bailing out")
-                    .get(&file)
-                {
-                    diags.clone_into(&mut new_diags)
-                }
-
-                new_diags
-            } else if lsp_diagnostics
-                .iter()
-                .all(|diagnostic| matches!(diagnostic, LSPDiagnostic::Standard(_)))
-            {
-                lsp_diagnostics.into_iter().map(|diag| diag.unpack()).collect()
-            } else {
-                panic!(
-                    "Some of the diagnostics updates are of mixed types - cannot proceed with such update"
-                )
-            };
-
-            // Filtering phase
-            // We want to ensure better UX by avoiding showing anything but errors from code that is not
-            // controlled by a user (dependencies from git/package register).
-            // Therefore, we filter non-error diagnostics for files residing in Scarb cache.
-            let is_dependency = scarb_toolchain.cache_path().is_some_and(|cache_path| {
-                file.to_file_path().is_ok_and(|p| p.starts_with(cache_path))
-            });
-            if is_dependency {
-                new_diagnostics.retain(|diag| diag.severity == Some(DiagnosticSeverity::ERROR));
-            }
-
-            self.insert(file, new_diagnostics);
-        }
-    }
-
-    pub fn get_diagnostics_for(&self, file_url: &Url) -> Option<Vec<Diagnostic>> {
-        let read_guard =
-            self.file_diagnostics.read().expect("file diagnostics are poisoned, bailing out");
-
-        let diags = read_guard.get(file_url);
-
-        diags.cloned()
     }
 
     /// Removes diagnostics for files not present in the given set and returns a list of actually

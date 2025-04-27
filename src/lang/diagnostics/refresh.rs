@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::FileId;
 use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{PublishDiagnosticsParams, Url};
+use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FileDiagnostics;
@@ -58,20 +58,27 @@ fn refresh_file_diagnostics(
 
     // IMPORTANT: DO NOT change the order of operations here. `to_lsp` may panic, so it has to come
     // before `insert`. It is to make sure that if `insert` succeeds, `notify` executes as well.
-    let result_diags = new_file_diagnostics.to_lsp(db, file, trace_macro_diagnostics);
+    let result_diags = new_file_diagnostics.to_lsp(db, trace_macro_diagnostics);
 
-    // The files diagnostics we actually need to push, are in the keys right now
-    let updated_files: Vec<Url> = result_diags.keys().cloned().collect();
+    for (file, mut diagnostics) in result_diags {
+        // We want to ensure better UX by avoiding showing anything but errors from code that is not
+        // controlled by a user (dependencies from git/package register).
+        // Therefore, we filter non-error diagnostics for files residing in Scarb cache.
+        let is_dependency = scarb_toolchain
+            .cache_path()
+            .is_some_and(|cache_path| file.to_file_path().is_ok_and(|p| p.starts_with(cache_path)));
 
-    project_diagnostics.apply_updates(result_diags, scarb_toolchain);
-    for file in updated_files {
-        // Unwrap is safe here because we know this file was updated
-        let diagnostics = project_diagnostics.get_diagnostics_for(&file).unwrap();
-        notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-            uri: file.clone(),
-            diagnostics,
-            version: None,
-        });
+        if is_dependency {
+            diagnostics.retain(|diag| diag.severity == Some(DiagnosticSeverity::ERROR));
+        }
+
+        if project_diagnostics.insert(file.clone(), diagnostics.clone()) {
+            notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+                uri: file.clone(),
+                diagnostics,
+                version: None,
+            });
+        }
     }
 }
 

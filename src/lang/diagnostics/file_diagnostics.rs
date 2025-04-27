@@ -18,7 +18,6 @@ use tracing::{error, info_span};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
-use crate::lang::lsp::LsProtoGroup;
 use crate::server::panic::is_cancelled;
 
 /// Result of refreshing diagnostics for a single file.
@@ -34,25 +33,9 @@ use crate::server::panic::is_cancelled;
 /// to the given `file` will also be visited and their diagnostics collected.
 #[derive(Clone, PartialEq, Eq)]
 pub struct FileDiagnostics {
-    /// The file URL these diagnostics are associated with.
-    pub url: Url,
     pub parser: Diagnostics<ParserDiagnostic>,
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
-}
-
-pub enum LSPDiagnostic {
-    Standard(Diagnostic),
-    Remapped(Diagnostic),
-}
-
-impl LSPDiagnostic {
-    pub(crate) fn unpack(self) -> Diagnostic {
-        match self {
-            LSPDiagnostic::Standard(x) => x,
-            LSPDiagnostic::Remapped(x) => x,
-        }
-    }
 }
 
 impl FileDiagnostics {
@@ -85,7 +68,6 @@ impl FileDiagnostics {
             };
         }
 
-        let url = query!(db.url_for_file(file)).ok()??;
         let module_ids = query!(db.file_modules(file)).ok()?.ok()?;
 
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
@@ -113,7 +95,6 @@ impl FileDiagnostics {
         let parser_file_diagnostics = query!(db.file_syntax_diagnostics(file)).unwrap_or_default();
 
         Some(FileDiagnostics {
-            url,
             parser: parser_file_diagnostics,
             semantic: Diagnostics::from_iter(semantic_file_diagnostics),
             lowering: Diagnostics::from_iter(lowering_file_diagnostics),
@@ -126,29 +107,25 @@ impl FileDiagnostics {
     pub fn to_lsp(
         &self,
         db: &AnalysisDatabase,
-        file_id: FileId,
         trace_macro_diagnostics: bool,
-    ) -> HashMap<Url, Vec<LSPDiagnostic>> {
+    ) -> HashMap<Url, Vec<Diagnostic>> {
         let mut diagnostics = HashMap::new();
         map_cairo_diagnostics_to_lsp(
             db as &dyn FilesGroup,
             &mut diagnostics,
             &self.parser,
-            file_id,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             db as &dyn SemanticGroup,
             &mut diagnostics,
             &self.semantic,
-            file_id,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             db as &dyn SemanticGroup,
             &mut diagnostics,
             &self.lowering,
-            file_id,
             trace_macro_diagnostics,
         );
 
