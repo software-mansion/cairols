@@ -16,8 +16,8 @@ use lsp_types::notification::{
 };
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, Completion, DocumentHighlightRequest, ExecuteCommand,
-    Formatting, GotoDefinition, HoverRequest, References, Rename, Request as RequestTrait,
-    SemanticTokensFullRequest, WillRenameFiles,
+    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, References, Rename,
+    Request as RequestTrait, SemanticTokensFullRequest, WillRenameFiles,
 };
 use tracing::{error, trace, warn};
 
@@ -89,6 +89,10 @@ pub fn request<'a>(request: Request) -> Task<'a> {
             background_request_task::<ViewAnalyzedCrates>(request, BackgroundSchedule::Worker)
         }
         WillRenameFiles::METHOD => background_request_task::<WillRenameFiles>(
+            request,
+            BackgroundSchedule::LatencySensitive,
+        ),
+        InlayHintRequest::METHOD => background_request_task::<InlayHintRequest>(
             request,
             BackgroundSchedule::LatencySensitive,
         ),

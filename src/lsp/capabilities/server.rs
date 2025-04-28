@@ -19,7 +19,7 @@ use lsp_types::notification::{
 };
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, Completion, DocumentHighlightRequest, ExecuteCommand,
-    Formatting, GotoDefinition, HoverRequest, References, Rename, Request,
+    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, References, Rename, Request,
 };
 use lsp_types::{
     ClientCapabilities, CodeActionProviderCapability, CodeLensOptions, CompletionOptions,
@@ -27,13 +27,14 @@ use lsp_types::{
     DocumentFilter, DocumentHighlightOptions, ExecuteCommandOptions,
     ExecuteCommandRegistrationOptions, FileOperationFilter, FileOperationPattern,
     FileOperationPatternKind, FileOperationRegistrationOptions, FileSystemWatcher, GlobPattern,
-    HoverProviderCapability, HoverRegistrationOptions, OneOf, ReferencesOptions, Registration,
-    RenameOptions, SaveOptions, SemanticTokensFullOptions, SemanticTokensLegend,
-    SemanticTokensOptions, SemanticTokensRegistrationOptions, ServerCapabilities,
-    TextDocumentChangeRegistrationOptions, TextDocumentRegistrationOptions,
-    TextDocumentSaveRegistrationOptions, TextDocumentSyncCapability, TextDocumentSyncKind,
-    TextDocumentSyncOptions, TextDocumentSyncSaveOptions,
-    WorkspaceFileOperationsServerCapabilities, WorkspaceServerCapabilities,
+    HoverProviderCapability, HoverRegistrationOptions, InlayHintOptions,
+    InlayHintRegistrationOptions, OneOf, ReferencesOptions, Registration, RenameOptions,
+    SaveOptions, SemanticTokensFullOptions, SemanticTokensLegend, SemanticTokensOptions,
+    SemanticTokensRegistrationOptions, ServerCapabilities, TextDocumentChangeRegistrationOptions,
+    TextDocumentRegistrationOptions, TextDocumentSaveRegistrationOptions,
+    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
+    TextDocumentSyncSaveOptions, WorkspaceFileOperationsServerCapabilities,
+    WorkspaceServerCapabilities,
 };
 use missing_lsp_types::{
     CodeActionRegistrationOptions, CodeLensRegistrationOptions, DefinitionRegistrationOptions,
@@ -151,6 +152,10 @@ pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> 
             .code_lens_provider_dynamic_registration()
             .not()
             .then_some(CodeLensOptions { resolve_provider: Some(false) }),
+        inlay_hint_provider: client_capabilities
+            .text_document_inlay_hints_dynamic_registration()
+            .not()
+            .then_some(OneOf::Left(true)),
         ..ServerCapabilities::default()
     }
 }
@@ -347,6 +352,20 @@ pub fn collect_dynamic_registrations(
             CodeLensRegistrationOptions {
                 text_document_registration_options: text_document_registration_options.clone(),
                 code_lens_options: CodeLensOptions { resolve_provider: Some(false) },
+            },
+        ));
+    }
+
+    if client_capabilities.text_document_inlay_hints_dynamic_registration() {
+        registrations.push(create_registration(
+            InlayHintRequest::METHOD,
+            InlayHintRegistrationOptions {
+                text_document_registration_options: text_document_registration_options.clone(),
+                inlay_hint_options: InlayHintOptions {
+                    resolve_provider: Some(false),
+                    ..Default::default()
+                },
+                ..Default::default()
             },
         ));
     }
