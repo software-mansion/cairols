@@ -7,10 +7,12 @@ use crate::support::cairo_project_toml::{CAIRO_PROJECT_TOML, CAIRO_PROJECT_TOML_
 use crate::support::cursor::Cursor;
 use crate::support::fixture::Fixture;
 use crate::support::{cursors, fixture, sandbox};
+use serde_json::json;
 
 mod create_module_file;
 mod fill_struct_fields;
 mod fill_trait_members;
+mod lint;
 mod macro_expand;
 mod missing_import;
 mod missing_trait;
@@ -31,12 +33,23 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
     }
 }
 
+fn quick_fix_with_linter(cairo_code: &str) -> String {
+    quick_fix_general(
+        cairo_code,
+        fixture! {
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+        },
+        true,
+    )
+}
+
 fn quick_fix(cairo_code: &str) -> String {
     quick_fix_general(
         cairo_code,
         fixture! {
             "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
         },
+        false,
     )
 }
 
@@ -46,16 +59,22 @@ fn quick_fix_without_visibility_constraints(cairo_code: &str) -> String {
         fixture! {
             "cairo_project.toml" => CAIRO_PROJECT_TOML,
         },
+        false,
     )
 }
 
-fn quick_fix_general(cairo_code: &str, mut fixture: Fixture) -> String {
+fn quick_fix_general(cairo_code: &str, mut fixture: Fixture, linter: bool) -> String {
     let (cairo, cursors) = cursors(cairo_code);
 
     fixture.add_file("src/lib.cairo", cairo);
     let mut ls = sandbox! {
         fixture = fixture;
         client_capabilities = caps;
+        workspace_configuration = json!({
+            "cairo1": {
+                "enableLinter": linter
+            }
+        });
     };
 
     let diagnostics = ls.open_and_wait_for_diagnostics("src/lib.cairo");
