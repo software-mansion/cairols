@@ -245,6 +245,7 @@ fn only_dependencies_suggested(project_config: &str) -> impl Fn(&str) -> String 
                     }
             "#},
             },
+            false,
         )
     }
 }

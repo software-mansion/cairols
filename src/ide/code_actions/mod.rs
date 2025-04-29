@@ -12,6 +12,7 @@ use itertools::Itertools;
 use std::collections::HashMap;
 
 mod add_missing_trait;
+mod cairo_lint;
 mod create_module_file;
 mod expand_macro;
 mod fill_struct_fields;
@@ -55,11 +56,7 @@ fn get_code_actions_for_diagnostics(
         .context
         .diagnostics
         .iter()
-        .filter_map(|diagnostic| {
-            let code = extract_code(diagnostic)?;
-
-            Some((code, diagnostic))
-        })
+        .map(|diagnostic| (extract_code(diagnostic), diagnostic))
         // Sometimes diagnostics can be duplicated, for example diagostics from macro generated code have ranges mapped to macro call.
         .dedup_by(|(code1, diagnostic1), (code2, diagnostic2)| {
             code1 == code2 && diagnostic1.range == diagnostic2.range
@@ -72,21 +69,26 @@ fn get_code_actions_for_diagnostics(
             Some((code, diagnostic, ctx))
         })
         .flat_map(|(code, diagnostic, ctx)| match code {
-            "E0001" => rename_unused_variable::rename_unused_variable(
+            None => cairo_lint::cairo_lint(db, &ctx).unwrap_or_default(),
+            Some("E0001") => rename_unused_variable::rename_unused_variable(
                 db,
                 &ctx.node,
                 diagnostic.clone(),
                 uri.clone(),
             )
             .to_vec(),
-            "E0002" => {
+            Some("E0002") => {
                 add_missing_trait::add_missing_trait(db, &ctx, uri.clone()).unwrap_or_default()
             }
-            "E0003" => fill_struct_fields::fill_struct_fields(db, ctx.node, params).to_vec(),
-            "E0004" => fill_trait_members::fill_trait_members(db, &ctx, params).to_vec(),
-            "E0005" => create_module_file::create_module_file(db, ctx.node, uri.clone()).to_vec(),
-            "E0006" => missing_import::missing_import(db, &ctx, uri.clone()).unwrap_or_default(),
-            _ => {
+            Some("E0003") => fill_struct_fields::fill_struct_fields(db, ctx.node, params).to_vec(),
+            Some("E0004") => fill_trait_members::fill_trait_members(db, &ctx, params).to_vec(),
+            Some("E0005") => {
+                create_module_file::create_module_file(db, ctx.node, uri.clone()).to_vec()
+            }
+            Some("E0006") => {
+                missing_import::missing_import(db, &ctx, uri.clone()).unwrap_or_default()
+            }
+            Some(code) => {
                 debug!("no code actions for diagnostic code: {code}");
                 vec![]
             }
