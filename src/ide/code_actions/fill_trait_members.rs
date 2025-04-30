@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use cairo_lang_defs::ids::{NamedLanguageElementId, TraitConstantId, TraitFunctionId};
+use cairo_lang_defs::ids::{
+    FileIndex, ImportableId, ModuleFileId, NamedLanguageElementId, TraitConstantId, TraitFunctionId,
+};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::resolve::ResolvedConcreteItem;
@@ -11,9 +13,11 @@ use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
 use itertools::{Itertools, chain};
 use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, WorkspaceEdit};
 
+use crate::ide::ty::{InferredValue, format_type};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// Generates a completion adding all trait members that have not yet been specified.
 /// Functions are added with empty bodies, consts with placeholder values.
@@ -23,6 +27,8 @@ pub fn fill_trait_members(
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
     let file = db.find_module_file_containing_node(&ctx.node)?.file_id(db).ok()?;
+    let importables =
+        db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)))?;
 
     let item_impl = ctx.node.ancestor_of_type::<ItemImpl>(db)?;
 
@@ -68,12 +74,12 @@ pub fn fill_trait_members(
         trait_types.values().map(|id| format!("type {} = ();", id.name(db))),
         trait_constants
             .values()
-            .filter_map(|&id| constant_code(db, id, &substitution))
+            .filter_map(|&id| constant_code(db, id, &substitution, &importables))
             .collect_vec()
             .into_iter(),
         trait_functions
             .values()
-            .filter_map(|&id| function_code(db, id, &substitution))
+            .filter_map(|&id| function_code(db, id, &substitution, &importables))
             .collect_vec()
             .into_iter()
     )
@@ -131,9 +137,14 @@ fn constant_code(
     db: &AnalysisDatabase,
     id: TraitConstantId,
     substitution: &GenericSubstitution,
+    importables: &OrderedHashMap<ImportableId, String>,
 ) -> Option<String> {
     let name = id.name(db);
-    let ty = substitution.substitute(db, db.trait_constant_type(id).ok()?).ok()?.format(db);
+    let ty = format_type(
+        db,
+        substitution.substitute(db, db.trait_constant_type(id).ok()?).ok()?,
+        importables,
+    );
 
     Some(format!("const {name}: {ty} = ();"))
 }
@@ -146,6 +157,7 @@ fn function_code(
     db: &AnalysisDatabase,
     id: TraitFunctionId,
     substitution: &GenericSubstitution,
+    importables: &OrderedHashMap<ImportableId, String>,
 ) -> Option<String> {
     // Do not complete functions that have default implementations.
     if db.trait_function_body(id).ok()?.is_some() {
@@ -160,7 +172,7 @@ fn function_code(
     } else {
         let formatted_parameters = generic_parameters
             .into_iter()
-            .map(|parameter| generic_parameter_code(db, parameter, substitution))
+            .map(|parameter| generic_parameter_code(db, parameter, substitution, importables))
             .collect::<Option<Vec<_>>>()?
             .join(", ");
 
@@ -170,7 +182,7 @@ fn function_code(
     let parameters = signature
         .params
         .iter()
-        .map(|parameter| function_parameter(db, parameter, substitution))
+        .map(|parameter| function_parameter(db, parameter, substitution, importables))
         .collect::<Option<Vec<_>>>()?
         .join(", ");
 
@@ -178,12 +190,18 @@ fn function_code(
     let title = Some(format!("fn {name}{generic_parameters_bracket}({parameters})"));
 
     let return_type = substitution.substitute(db, signature.return_type).ok()?;
-    let return_type =
-        if return_type.is_unit(db) { None } else { Some(format!("-> {}", return_type.format(db))) };
+    let return_type = if return_type.is_unit(db) {
+        None
+    } else {
+        Some(format!("-> {}", format_type(db, return_type, importables)))
+    };
 
     let implicits = match &signature.implicits[..] {
         [] => None,
-        types => Some(format!("implicits({})", types.iter().map(|ty| ty.format(db)).join(", "))),
+        types => Some(format!(
+            "implicits({})",
+            types.iter().map(|ty| format_type(db, *ty, importables)).join(", ")
+        )),
     };
 
     let nopanic = if !signature.panicable { Some(String::from("nopanic")) } else { None };
@@ -200,11 +218,14 @@ fn generic_parameter_code(
     db: &AnalysisDatabase,
     parameter: GenericParam,
     substitution: &GenericSubstitution,
+    importables: &OrderedHashMap<ImportableId, String>,
 ) -> Option<String> {
     match parameter {
-        GenericParam::Const(param) => {
-            Some(format!("const {}: {}", param.id.format(db), param.ty.format(db)))
-        }
+        GenericParam::Const(param) => Some(format!(
+            "const {}: {}",
+            param.id.format(db),
+            format_type(db, param.ty, importables)
+        )),
 
         GenericParam::Impl(param) => {
             let concrete_trait = param.concrete_trait.ok()?;
@@ -216,7 +237,7 @@ fn generic_parameter_code(
             } else {
                 let formatted_arguments = trait_generic_arguments
                     .into_iter()
-                    .map(|argument| generic_argument_code(db, argument, substitution))
+                    .map(|argument| generic_argument_code(db, argument, substitution, importables))
                     .collect::<Option<Vec<_>>>()?
                     .join(", ");
 
@@ -243,12 +264,15 @@ fn generic_argument_code(
     db: &AnalysisDatabase,
     argument: GenericArgumentId,
     substitution: &GenericSubstitution,
+    importables: &OrderedHashMap<ImportableId, String>,
 ) -> Option<String> {
     match argument {
         GenericArgumentId::Type(type_id) => {
-            Some(substitution.substitute(db, type_id).ok()?.format(db))
+            Some(format_type(db, substitution.substitute(db, type_id).ok()?, importables))
         }
-        GenericArgumentId::Constant(const_value) => Some(const_value.format(db)),
+        GenericArgumentId::Constant(const_value) => {
+            Some(InferredValue::Constant(const_value).format(db, importables))
+        }
         // Trait constraint shouldn't appear as a generic argument
         GenericArgumentId::Impl(_) => None,
         // Negative constraints are allowed only in impl statements
@@ -263,6 +287,7 @@ fn function_parameter(
     db: &AnalysisDatabase,
     parameter: &Parameter,
     substitution: &GenericSubstitution,
+    importables: &OrderedHashMap<ImportableId, String>,
 ) -> Option<String> {
     let prefix = match parameter.mutability {
         cairo_lang_semantic::Mutability::Immutable => "",
@@ -271,7 +296,7 @@ fn function_parameter(
     };
 
     let name = parameter.id.name(db);
-    let ty = substitution.substitute(db, parameter.ty).ok()?.format(db);
+    let ty = format_type(db, substitution.substitute(db, parameter.ty).ok()?, importables);
 
     Some(format!("{prefix}{name}: {ty}"))
 }
