@@ -18,6 +18,8 @@ pub fn find_primary_files(db: &AnalysisDatabase, open_files: &HashSet<Url>) -> H
         // Relevant virtual files will be processed as a result of processing on disk files.
         .filter(|uri| uri.scheme() != "vfs")
         .filter_map(|uri| db.file_for_url(uri))
+        // Filter out files that don't belong to any crate, e.g. removed modules.
+        .filter(|file_id| db.file_modules(*file_id).is_ok())
         .collect()
 }
 
