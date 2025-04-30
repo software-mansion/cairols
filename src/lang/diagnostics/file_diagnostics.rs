@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
 use cairo_lang_defs::db::DefsGroup;
@@ -13,7 +13,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::LookupIntern;
-use lsp_types::Url;
+use lsp_types::{Diagnostic, Url};
 use tracing::{error, info_span};
 
 use crate::lang::db::AnalysisDatabase;
@@ -21,7 +21,8 @@ use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::panic::is_cancelled;
 
-/// Result of refreshing diagnostics for a single file.
+/// Result of processing a single on disk file in search for diagnostics.
+/// Note that it may contain diagnostics for virtual files originating from the processed file.
 ///
 /// ## Comparisons
 ///
@@ -34,15 +35,15 @@ use crate::server::panic::is_cancelled;
 /// to the given `file` will also be visited and their diagnostics collected.
 #[derive(Clone, PartialEq, Eq)]
 pub struct FileDiagnostics {
-    /// The file URL these diagnostics are associated with.
-    pub url: Url,
+    pub processed_file: (Url, FileId),
     pub parser: Diagnostics<ParserDiagnostic>,
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
 }
 
 impl FileDiagnostics {
-    /// Collects all diagnostics kinds from the given `file` and constructs a new `FileDiagnostics`.
+    /// Collects all diagnostics kinds by processing an on disk `file`
+    /// and constructs a new `FileDiagnostics`.
     ///
     /// The `processed_modules` in/out parameter is used to avoid constructing two overlapping
     /// `FileDiagnostics` in a single batch.
@@ -50,7 +51,7 @@ impl FileDiagnostics {
     /// constructed `FileDiagnostics`), and new module IDs will be added.
     pub fn collect(
         db: &AnalysisDatabase,
-        file: FileId,
+        processed_file: FileId,
         processed_modules: &mut HashSet<ModuleId>,
     ) -> Option<Self> {
         macro_rules! query {
@@ -62,7 +63,7 @@ impl FileDiagnostics {
                         } else {
                             error!(
                                 "caught panic when computing diagnostics for file: {:?}",
-                                file.lookup_intern(db)
+                                processed_file.lookup_intern(db)
                             );
                             err
                         }
@@ -71,8 +72,8 @@ impl FileDiagnostics {
             };
         }
 
-        let url = query!(db.url_for_file(file)).ok()??;
-        let module_ids = query!(db.file_modules(file)).ok()?.ok()?;
+        let processed_file_url = query!(db.url_for_file(processed_file)).ok()??;
+        let module_ids = query!(db.file_modules(processed_file)).ok()?.ok()?;
 
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
@@ -96,55 +97,56 @@ impl FileDiagnostics {
             }
         }
 
-        let parser_file_diagnostics = query!(db.file_syntax_diagnostics(file)).unwrap_or_default();
+        // TODO: collect parser diags for virtual files - check generated files.
+        let parser_file_diagnostics =
+            query!(db.file_syntax_diagnostics(processed_file)).unwrap_or_default();
 
         Some(FileDiagnostics {
-            url,
+            processed_file: (processed_file_url, processed_file),
             parser: parser_file_diagnostics,
             semantic: Diagnostics::from_iter(semantic_file_diagnostics),
             lowering: Diagnostics::from_iter(lowering_file_diagnostics),
         })
     }
 
-    /// Clears all diagnostics from this `FileDiagnostics`.
-    pub fn clear(&mut self) {
-        self.parser = Diagnostics::default();
-        self.semantic = Diagnostics::default();
-        self.lowering = Diagnostics::default();
-    }
-
-    /// Constructs a new [`lsp_types::PublishDiagnosticsParams`] from this `FileDiagnostics`.
+    /// Converts all diagnostics from this [`FileDiagnostics`] to mapping from [`Url`] and
+    /// [`FileId`] to [`Diagnostic`].
     ///
-    /// NOTE: `file_id` must correspond to the url at the current time slice.
+    /// The key in the mapping refers to either the processed on disk file or
+    /// any of the virtual files originating from the processed file.
     pub fn to_lsp(
         &self,
         db: &AnalysisDatabase,
-        file_id: FileId,
         trace_macro_diagnostics: bool,
-    ) -> lsp_types::PublishDiagnosticsParams {
-        let mut diagnostics = Vec::new();
+    ) -> (Url, HashMap<(Url, FileId), Vec<Diagnostic>>) {
+        let mut diagnostics = HashMap::new();
         map_cairo_diagnostics_to_lsp(
             db as &dyn FilesGroup,
             &mut diagnostics,
             &self.parser,
-            file_id,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             db as &dyn SemanticGroup,
             &mut diagnostics,
             &self.semantic,
-            file_id,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             db as &dyn SemanticGroup,
             &mut diagnostics,
             &self.lowering,
-            file_id,
             trace_macro_diagnostics,
         );
 
-        lsp_types::PublishDiagnosticsParams { uri: self.url.clone(), diagnostics, version: None }
+        // In our tests, we often await diagnostics for an on disk file,
+        // even when they are supposed to be empty.
+        // Processed file is the only on disk file in here - ensure we send
+        // empty diagnostics when appropriate.
+        if !diagnostics.contains_key(&self.processed_file) {
+            diagnostics.insert(self.processed_file.clone(), Vec::new());
+        }
+
+        (self.processed_file.0.clone(), diagnostics)
     }
 }
