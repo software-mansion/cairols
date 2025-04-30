@@ -20,6 +20,7 @@ mod macros;
 mod modules;
 mod structs;
 mod traits;
+mod types;
 mod vars;
 
 const DEFAULT_NEW_NAME: &'_ str = "RENAMED";

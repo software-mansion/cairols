@@ -5,8 +5,9 @@ use lsp_types::{
 };
 
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
-use crate::support::cursor::render_selections;
+use crate::support::cursor::{render_selections, render_selections_relevant_lines};
 use crate::support::fixture::Fixture;
+use crate::support::scarb::scarb_core_path;
 use crate::support::{MockClient, cursors, fixture, sandbox};
 
 mod consts;
@@ -18,6 +19,7 @@ mod paths;
 mod structs;
 mod trait_impls;
 mod traits;
+mod types;
 mod vars;
 
 fn caps(base: ClientCapabilities) -> ClientCapabilities {
@@ -102,10 +104,32 @@ impl GotoDefinitionTest {
             .into_group_map()
             .into_iter()
             .map(|(url, ranges)| {
-                let path = self.ls.fixture.url_path(&url).unwrap();
+                let path = self
+                    .ls
+                    .fixture
+                    .url_path(&url)
+                    .unwrap_or_else(|_| url.to_file_path().unwrap())
+                    .to_string_lossy()
+                    .to_string();
+
                 let cairo = self.ls.fixture.read_file(&path);
-                let selections = render_selections(&cairo, &ranges);
-                (path.to_string_lossy().to_string(), selections)
+
+                let core_path = scarb_core_path().to_string_lossy().to_string();
+
+                // Files from corelib do not belong to the test fixture
+                // and need to be handled separately.
+                if path.contains(&core_path) {
+                    let item_path_relative_to_core_src = path.strip_prefix(&core_path).unwrap();
+                    let item_path_relative_to_cache =
+                        format!("core/src{item_path_relative_to_core_src}");
+
+                    // Show only lines containing selections.
+                    let selections = render_selections_relevant_lines(&cairo, &ranges);
+                    (item_path_relative_to_cache, selections)
+                } else {
+                    let selections = render_selections(&cairo, &ranges);
+                    (path, selections)
+                }
             })
             .collect())
     }
