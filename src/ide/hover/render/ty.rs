@@ -1,4 +1,4 @@
-use super::markdown::fenced_code_block;
+use super::super::super::markdown::fenced_code_block;
 use crate::{
     ide::hover::markdown_contents,
     lang::{
