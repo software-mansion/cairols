@@ -18,7 +18,6 @@ fn test_type_alias_in_use() {
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_alias_as_type() {
     test_transform!(rename, r#"
@@ -26,13 +25,12 @@ fn test_type_alias_in_alias_as_type() {
     type TypeAlias = Struct;
     type AnotherTypeAlias = TypeAlias<caret>;
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
-    type AnotherTypeAlias = TypeAlias;
+    struct Struct {};
+    type RENAMED = Struct;
+    type AnotherTypeAlias = RENAMED;
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_alias_as_type_parameter() {
     test_transform!(rename, r#"
@@ -40,13 +38,12 @@ fn test_type_alias_in_alias_as_type_parameter() {
     type TypeAlias = Struct;
     type AnotherTypeAlias = Array<TypeAlias<caret>>;
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
-    type AnotherTypeAlias = Array<TypeAlias>;
+    struct Struct {};
+    type RENAMED = Struct;
+    type AnotherTypeAlias = Array<RENAMED>;
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_variable_as_type() {
     test_transform!(rename, r#"
@@ -56,15 +53,14 @@ fn test_type_alias_in_variable_as_type() {
         let x: TypeAlias<caret> = 0x0;
     }
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
+    struct Struct {};
+    type RENAMED = Struct;
     fn foo() {
-        let x: TypeAlias = 0x0;
+        let x: RENAMED = 0x0;
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_variable_as_type_parameter() {
     test_transform!(rename, r#"
@@ -74,15 +70,14 @@ fn test_type_alias_in_variable_as_type_parameter() {
         let x: Array<TypeAlias<caret>> = 0x0;
     }
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
+    struct Struct {};
+    type RENAMED = Struct;
     fn foo() {
-        let x: Array<TypeAlias> = 0x0;
+        let x: Array<RENAMED> = 0x0;
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_function_argument_as_type() {
     test_transform!(rename, r#"
@@ -90,13 +85,12 @@ fn test_type_alias_in_function_argument_as_type() {
     type TypeAlias = Struct;
     fn foo(x: TypeAlias<caret>) {}
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
-    fn foo(x: TypeAlias) {}
+    struct Struct {};
+    type RENAMED = Struct;
+    fn foo(x: RENAMED) {}
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_function_argument_as_type_parameter() {
     test_transform!(rename, r#"
@@ -104,13 +98,12 @@ fn test_type_alias_in_function_argument_as_type_parameter() {
     type TypeAlias = Struct;
     fn foo(x: Array<TypeAlias<caret>>) {}
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
-    fn foo(x: Array<TypeAlias>) {}
+    struct Struct {};
+    type RENAMED = Struct;
+    fn foo(x: Array<RENAMED>) {}
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_return_type_as_type() {
     test_transform!(rename, r#"
@@ -118,13 +111,12 @@ fn test_type_alias_in_return_type_as_type() {
     type TypeAlias = Struct;
     fn foo() -> TypeAlias<caret> { 0x0 }
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
-    fn foo() -> TypeAlias { 0x0 }
+    struct Struct {};
+    type RENAMED = Struct;
+    fn foo() -> RENAMED { 0x0 }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_return_type_as_type_parameter() {
     test_transform!(rename, r#"
@@ -132,13 +124,12 @@ fn test_type_alias_in_return_type_as_type_parameter() {
     type TypeAlias = Struct;
     fn foo() -> Array<TypeAlias<caret>> { 0x0 }
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
-    fn foo() -> Array<TypeAlias> { 0x0 }
+    struct Struct {};
+    type RENAMED = Struct;
+    fn foo() -> Array<RENAMED> { 0x0 }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_struct_field_as_type() {
     test_transform!(rename, r#"
@@ -149,14 +140,13 @@ fn test_type_alias_in_struct_field_as_type() {
     }
     "#, @r"
     struct Struct {};
-    type TypeAlias = RENAMED;
-    struct RENAMED {
-        x: TypeAlias
+    type RENAMED = Struct;
+    struct Struct {
+        x: RENAMED
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_struct_field_as_type_parameter() {
     test_transform!(rename, r#"
@@ -167,14 +157,13 @@ fn test_type_alias_in_struct_field_as_type_parameter() {
     }
     "#, @r"
     struct Struct {};
-    type TypeAlias = RENAMED;
-    struct RENAMED {
-        x: Array<TypeAlias>
+    type RENAMED = Struct;
+    struct Struct {
+        x: Array<RENAMED>
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_turbofish_enum_as_type() {
     test_transform!(rename, r#"
@@ -184,15 +173,14 @@ fn test_type_alias_in_turbofish_enum_as_type() {
         let x = Result::<TypeAlias<caret>>::Err(());
     }
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
+    struct Struct {};
+    type RENAMED = Struct;
     fn foo() {
-        let x = Result::<TypeAlias>::Err(());
+        let x = Result::<RENAMED>::Err(());
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_turbofish_enum_as_type_parameter() {
     test_transform!(rename, r#"
@@ -202,10 +190,10 @@ fn test_type_alias_in_turbofish_enum_as_type_parameter() {
         let x = Result::<Array<TypeAlias<caret>>>::Err(());
     }
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
+    struct Struct {};
+    type RENAMED = Struct;
     fn foo() {
-        let x = Result::<Array<TypeAlias>>::Err(());
+        let x = Result::<Array<RENAMED>>::Err(());
     }
     ")
 }
@@ -234,7 +222,6 @@ fn test_type_alias_in_trait_associated_type_as_type_parameter() {
     "#, @"none response")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_trait_associated_const_as_type() {
     test_transform!(rename, r#"
@@ -244,15 +231,14 @@ fn test_type_alias_in_trait_associated_const_as_type() {
         const Const: TypeAlias<caret>;
     }
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
+    struct Struct {};
+    type RENAMED = Struct;
     trait Trait {
-        const Const: TypeAlias;
+        const Const: RENAMED;
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_trait_associated_const_as_type_parameter() {
     test_transform!(rename, r#"
@@ -262,35 +248,40 @@ fn test_type_alias_in_trait_associated_const_as_type_parameter() {
         const Const: Array<TypeAlias<caret>>;
     }
     "#, @r"
-    struct RENAMED {};
-    type TypeAlias = RENAMED;
+    struct Struct {};
+    type RENAMED = Struct;
     trait Trait {
-        const Const: Array<TypeAlias>;
+        const Const: Array<RENAMED>;
     }
     ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_type_alias_in_trait_generic_bound_as_type() {
     test_transform!(rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait<T, +Into<TypeAlias<caret>, T>> {}
-    "#, @"none response")
+    "#, @r"
+    struct Struct {};
+    type RENAMED = Struct;
+    trait Trait<T, +Into<RENAMED, T>> {}
+    ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_type_alias_in_trait_generic_bound_as_type_parameter() {
     test_transform!(rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait<T, +Into<Array<TypeAlias<caret>>, T>> {}
-    "#, @"none response")
+    "#, @r"
+    struct Struct {};
+    type RENAMED = Struct;
+    trait Trait<T, +Into<Array<RENAMED>, T>> {}
+    ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_type_alias_in_impl_associated_type_as_type() {
     test_transform!(rename, r#"
@@ -304,17 +295,16 @@ fn test_type_alias_in_impl_associated_type_as_type() {
     }
     "#, @r"
     struct Struct {};
-    type TypeAlias = Struct;
+    type RENAMED = Struct;
     trait Trait {
-        type RENAMED;
+        type Type;
     }
     impl Impl of Trait {
-        type Type = TypeAlias;
+        type Type = RENAMED;
     }
     ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_type_alias_in_impl_associated_type_as_type_parameter() {
     test_transform!(rename, r#"
@@ -328,17 +318,16 @@ fn test_type_alias_in_impl_associated_type_as_type_parameter() {
     }
     "#, @r"
     struct Struct {};
-    type TypeAlias = Struct;
+    type RENAMED = Struct;
     trait Trait {
-        type RENAMED;
+        type Type;
     }
     impl Impl of Trait {
-        type Type = Array<TypeAlias>;
+        type Type = Array<RENAMED>;
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_impl_associated_const_as_type() {
     test_transform!(rename, r#"
@@ -352,17 +341,16 @@ fn test_type_alias_in_impl_associated_const_as_type() {
     }
     "#, @r"
     struct Struct {};
-    type TypeAlias = Struct;
+    type RENAMED = Struct;
     trait Trait {
-        const RENAMED: TypeAlias;
+        const Const: RENAMED;
     }
     impl Impl of Trait {
-        const RENAMED: TypeAlias = 0x0;
+        const Const: RENAMED = 0x0;
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_impl_associated_const_as_type_parameter() {
     test_transform!(rename, r#"
@@ -376,17 +364,16 @@ fn test_type_alias_in_impl_associated_const_as_type_parameter() {
     }
     "#, @r"
     struct Struct {};
-    type TypeAlias = Struct;
+    type RENAMED = Struct;
     trait Trait {
-        const RENAMED: TypeAlias;
+        const Const: RENAMED;
     }
     impl Impl of Trait {
-        const RENAMED: Array<TypeAlias> = 0x0;
+        const Const: Array<RENAMED> = 0x0;
     }
     ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_type_alias_in_impl_generic_bound_as_type() {
     test_transform!(rename, r#"
@@ -394,10 +381,14 @@ fn test_type_alias_in_impl_generic_bound_as_type() {
     type TypeAlias = Struct;
     trait Trait<T, +Into<TypeAlias, T>> {}
     impl<T, +Into<TypeAlias<caret>, T>> Impl of Trait<T> {}
-    "#, @"none response")
+    "#, @r"
+    struct Struct {};
+    type RENAMED = Struct;
+    trait Trait<T, +Into<RENAMED, T>> {}
+    impl<T, +Into<RENAMED, T>> Impl of Trait<T> {}
+    ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_type_alias_in_impl_generic_bound_as_type_parameter() {
     test_transform!(rename, r#"
@@ -405,5 +396,10 @@ fn test_type_alias_in_impl_generic_bound_as_type_parameter() {
     type TypeAlias = Struct;
     trait Trait<T, +Into<TypeAlias, T>> {}
     impl<T, +Into<Array<TypeAlias<caret>>, T>> Impl of Trait<T> {}
-    "#, @"none response")
+    "#, @r"
+    struct Struct {};
+    type RENAMED = Struct;
+    trait Trait<T, +Into<RENAMED, T>> {}
+    impl<T, +Into<Array<RENAMED>, T>> Impl of Trait<T> {}
+    ")
 }
