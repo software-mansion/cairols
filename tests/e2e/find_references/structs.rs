@@ -13,7 +13,6 @@ fn felt_in_struct() {
     ")
 }
 
-// FIXME(#435)
 #[test]
 fn usize_in_struct() {
     test_transform!(find_references, r#"
@@ -22,7 +21,7 @@ fn usize_in_struct() {
     "#, @r"
     // found several references in the core crate
     #[derive(Drop)]
-    struct Foo { field: usize }
+    struct Foo { field: <sel>usize</sel> }
     ")
 }
 

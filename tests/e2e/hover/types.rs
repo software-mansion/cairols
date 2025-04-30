@@ -367,7 +367,6 @@ fn test_extern_type_in_trait_associated_const_as_type_parameter() {
     "#)
 }
 
-// FIXME(#565) - hovers for generic bounds have not yet been implemented.
 #[test]
 fn test_extern_type_in_trait_generic_bound_as_type() {
     test_transform!(test_hover, r#"
@@ -376,10 +375,21 @@ fn test_extern_type_in_trait_generic_bound_as_type() {
     source_context = """
     trait Trait<T, +Into<u32<caret>, T>> {}
     """
+    highlight = """
+    trait Trait<T, +Into<<sel>u32</sel>, T>> {}
+    """
+    popover = """
+    ```cairo
+    core::integer
+    ```
+    ```cairo
+    pub extern type u32;
+    ```
+    ---
+    The 32-bit unsigned integer type."""
     "#)
 }
 
-// FIXME(#565)
 #[test]
 fn test_extern_type_in_trait_generic_bound_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -388,10 +398,21 @@ fn test_extern_type_in_trait_generic_bound_as_type_parameter() {
     source_context = """
     trait Trait<T, +Into<Array<u32<caret>>, T>> {}
     """
+    highlight = """
+    trait Trait<T, +Into<Array<<sel>u32</sel>>, T>> {}
+    """
+    popover = """
+    ```cairo
+    core::integer
+    ```
+    ```cairo
+    pub extern type u32;
+    ```
+    ---
+    The 32-bit unsigned integer type."""
     "#)
 }
 
-// FIXME(#563) - hovers for impl associated items have not yet been implemented.
 #[test]
 fn test_extern_type_in_impl_associated_type_as_type() {
     test_transform!(test_hover, r#"
@@ -410,16 +431,16 @@ fn test_extern_type_in_impl_associated_type_as_type() {
     """
     popover = """
     ```cairo
-    hello
+    core::integer
     ```
     ```cairo
-    trait Trait
+    pub extern type u32;
     ```
-    """
+    ---
+    The 32-bit unsigned integer type."""
     "#)
 }
 
-// FIXME(#563)
 #[test]
 fn test_extern_type_in_impl_associated_type_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -438,16 +459,16 @@ fn test_extern_type_in_impl_associated_type_as_type_parameter() {
     """
     popover = """
     ```cairo
-    hello
+    core::integer
     ```
     ```cairo
-    trait Trait
+    pub extern type u32;
     ```
-    """
+    ---
+    The 32-bit unsigned integer type."""
     "#)
 }
 
-// FIXME(#563)
 #[test]
 fn test_extern_type_in_impl_associated_const_as_type() {
     test_transform!(test_hover, r#"
@@ -466,17 +487,16 @@ fn test_extern_type_in_impl_associated_const_as_type() {
     """
     popover = """
     ```cairo
-    hello::Trait
+    core::integer
     ```
     ```cairo
-    trait Trait
-    const Const: u32;
+    pub extern type u32;
     ```
-    """
+    ---
+    The 32-bit unsigned integer type."""
     "#)
 }
 
-// FIXME(#563)
 #[test]
 fn test_extern_type_in_impl_associated_const_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -495,17 +515,16 @@ fn test_extern_type_in_impl_associated_const_as_type_parameter() {
     """
     popover = """
     ```cairo
-    hello::Trait
+    core::integer
     ```
     ```cairo
-    trait Trait
-    const Const: u32;
+    pub extern type u32;
     ```
-    """
+    ---
+    The 32-bit unsigned integer type."""
     "#)
 }
 
-// FIXME(#565)
 #[test]
 fn test_extern_type_in_impl_generic_bound_as_type() {
     test_transform!(test_hover, r#"
@@ -515,10 +534,21 @@ fn test_extern_type_in_impl_generic_bound_as_type() {
     source_context = """
     impl<T, +Into<u32<caret>, T>> Impl of Trait<T> {}
     """
+    highlight = """
+    impl<T, +Into<<sel>u32</sel>, T>> Impl of Trait<T> {}
+    """
+    popover = """
+    ```cairo
+    core::integer
+    ```
+    ```cairo
+    pub extern type u32;
+    ```
+    ---
+    The 32-bit unsigned integer type."""
     "#)
 }
 
-// FIXME(#565)
 #[test]
 fn test_extern_type_in_impl_generic_bound_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -528,6 +558,18 @@ fn test_extern_type_in_impl_generic_bound_as_type_parameter() {
     source_context = """
     impl<T, +Into<Array<u32<caret>>, T>> Impl of Trait<T> {}
     """
+    highlight = """
+    impl<T, +Into<Array<<sel>u32</sel>>, T>> Impl of Trait<T> {}
+    """
+    popover = """
+    ```cairo
+    core::integer
+    ```
+    ```cairo
+    pub extern type u32;
+    ```
+    ---
+    The 32-bit unsigned integer type."""
     "#)
 }
 
@@ -554,9 +596,6 @@ fn test_builtin_alias_in_use() {
     "#)
 }
 
-// FIXME(#466) - type aliases are not handled properly.
-// Hover refers to the original type being a right-hand-side of the alias, not to the alias itself.
-// Hover on type expression is different than on the import (see the test above).
 #[test]
 fn test_builtin_alias_in_alias_as_type() {
     test_transform!(test_hover, r#"
@@ -571,16 +610,16 @@ fn test_builtin_alias_in_alias_as_type() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_alias_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -595,16 +634,16 @@ fn test_builtin_alias_in_alias_as_type_parameter() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_variable_as_type() {
     test_transform!(test_hover, r#"
@@ -621,16 +660,16 @@ fn test_builtin_alias_in_variable_as_type() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_variable_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -647,16 +686,16 @@ fn test_builtin_alias_in_variable_as_type_parameter() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_function_argument_as_type() {
     test_transform!(test_hover, r#"
@@ -671,16 +710,16 @@ fn test_builtin_alias_in_function_argument_as_type() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_function_argument_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -695,16 +734,16 @@ fn test_builtin_alias_in_function_argument_as_type_parameter() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_return_type_as_type() {
     test_transform!(test_hover, r#"
@@ -719,16 +758,16 @@ fn test_builtin_alias_in_return_type_as_type() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_return_type_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -743,16 +782,16 @@ fn test_builtin_alias_in_return_type_as_type_parameter() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_struct_field_as_type() {
     test_transform!(test_hover, r#"
@@ -769,16 +808,16 @@ fn test_builtin_alias_in_struct_field_as_type() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_struct_field_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -795,16 +834,16 @@ fn test_builtin_alias_in_struct_field_as_type_parameter() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_turbofish_enum_as_type() {
     test_transform!(test_hover, r#"
@@ -821,16 +860,16 @@ fn test_builtin_alias_in_turbofish_enum_as_type() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_turbofish_enum_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -847,12 +886,13 @@ fn test_builtin_alias_in_turbofish_enum_as_type_parameter() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
@@ -886,7 +926,6 @@ fn test_builtin_alias_in_trait_associated_type_as_type_parameter() {
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_trait_associated_const_as_type() {
     test_transform!(test_hover, r#"
@@ -903,16 +942,16 @@ fn test_builtin_alias_in_trait_associated_const_as_type() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_trait_associated_const_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -929,16 +968,16 @@ fn test_builtin_alias_in_trait_associated_const_as_type_parameter() {
     """
     popover = """
     ```cairo
-    core::internal::bounded_int
+    core::circuit
     ```
     ```cairo
-    pub(crate) extern type BoundedInt<MINMAX>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#565)
 #[test]
 fn test_builtin_alias_in_trait_generic_bound_as_type() {
     test_transform!(test_hover, r#"
@@ -949,10 +988,21 @@ fn test_builtin_alias_in_trait_generic_bound_as_type() {
     source_context = """
     trait Trait<T, +Into<u96<caret>, T>> {}
     """
+    highlight = """
+    trait Trait<T, +Into<<sel>u96</sel>, T>> {}
+    """
+    popover = """
+    ```cairo
+    core::circuit
+    ```
+    ```cairo
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    ```
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#565)
 #[test]
 fn test_builtin_alias_in_trait_generic_bound_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -962,10 +1012,21 @@ fn test_builtin_alias_in_trait_generic_bound_as_type_parameter() {
     source_context = """
     trait Trait<T, +Into<Array<u96<caret>>, T>> {}
     """
+    highlight = """
+    trait Trait<T, +Into<Array<<sel>u96</sel>>, T>> {}
+    """
+    popover = """
+    ```cairo
+    core::circuit
+    ```
+    ```cairo
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    ```
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#563)
 #[test]
 fn test_builtin_alias_in_impl_associated_type_as_type() {
     test_transform!(test_hover, r#"
@@ -985,16 +1046,16 @@ fn test_builtin_alias_in_impl_associated_type_as_type() {
     """
     popover = """
     ```cairo
-    hello
+    core::circuit
     ```
     ```cairo
-    trait Trait
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#563)
 #[test]
 fn test_builtin_alias_in_impl_associated_type_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -1014,16 +1075,16 @@ fn test_builtin_alias_in_impl_associated_type_as_type_parameter() {
     """
     popover = """
     ```cairo
-    hello
+    core::circuit
     ```
     ```cairo
-    trait Trait
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_impl_associated_const_as_type() {
     test_transform!(test_hover, r#"
@@ -1043,17 +1104,16 @@ fn test_builtin_alias_in_impl_associated_const_as_type() {
     """
     popover = """
     ```cairo
-    hello::Trait
+    core::circuit
     ```
     ```cairo
-    trait Trait
-    const Const: BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_impl_associated_const_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -1073,17 +1133,16 @@ fn test_builtin_alias_in_impl_associated_const_as_type_parameter() {
     """
     popover = """
     ```cairo
-    hello::Trait
+    core::circuit
     ```
     ```cairo
-    trait Trait
-    const Const: BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
     ```
-    """
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#565)
 #[test]
 fn test_builtin_alias_in_impl_generic_bound_as_type() {
     test_transform!(test_hover, r#"
@@ -1094,10 +1153,21 @@ fn test_builtin_alias_in_impl_generic_bound_as_type() {
     source_context = """
     impl<T, +Into<u96<caret>, T>> Impl of Trait<T> {}
     """
+    highlight = """
+    impl<T, +Into<<sel>u96</sel>, T>> Impl of Trait<T> {}
+    """
+    popover = """
+    ```cairo
+    core::circuit
+    ```
+    ```cairo
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    ```
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }
 
-// FIXME(#565)
 #[test]
 fn test_builtin_alias_in_impl_generic_bound_as_type_parameter() {
     test_transform!(test_hover, r#"
@@ -1108,5 +1178,17 @@ fn test_builtin_alias_in_impl_generic_bound_as_type_parameter() {
     source_context = """
     impl<T, +Into<Array<u96<caret>>, T>> Impl of Trait<T> {}
     """
+    highlight = """
+    impl<T, +Into<Array<<sel>u96</sel>>, T>> Impl of Trait<T> {}
+    """
+    popover = """
+    ```cairo
+    core::circuit
+    ```
+    ```cairo
+    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    ```
+    ---
+    A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
     "#)
 }

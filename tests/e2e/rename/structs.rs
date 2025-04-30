@@ -13,13 +13,16 @@ fn felt_in_struct() {
     ")
 }
 
-// FIXME(#435)
 #[test]
 fn usize_in_struct() {
     test_transform!(rename, r#"
     #[derive(Drop)]
     struct Foo { field: usi<caret>ze }
-    "#, @"// found renames in the core crate")
+    "#, @r"
+    // found renames in the core crate
+    #[derive(Drop)]
+    struct Foo { field: RENAMED }
+    ")
 }
 
 #[test]
