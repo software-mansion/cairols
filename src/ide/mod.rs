@@ -10,3 +10,4 @@ pub mod macros;
 mod markdown;
 pub mod navigation;
 pub mod semantic_highlighting;
+mod ty;
