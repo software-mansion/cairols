@@ -19,6 +19,7 @@ mod partial;
 mod paths;
 mod structs;
 mod traits;
+mod types;
 mod variables;
 
 /// Perform hover test.
