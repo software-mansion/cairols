@@ -17,8 +17,6 @@ fn inline_simple_v2() {
     );
 }
 
-// TODO(#535): Diagnostics from V2 wrongly mapped
-#[ignore = "Wrong diagnostics mappings from scarb nightly"]
 #[test]
 fn inline_complex_v2() {
     test_macro_expansion_and_diagnostics!(
@@ -34,8 +32,6 @@ fn inline_complex_v2() {
     );
 }
 
-// TODO(#535): Diagnostics from V2 wrongly mapped
-#[ignore = "Wrong diagnostics mappings from scarb nightly"]
 #[test]
 fn inline_improper_v2() {
     test_macro_expansion_and_diagnostics!(
@@ -94,8 +90,6 @@ fn attribute_complex_v2() {
     );
 }
 
-// TODO(#535): Diagnostics from V2 wrongly mapped
-#[ignore = "Wrong diagnostics mappings from scarb nightly"]
 #[test]
 fn attribute_improper_v2() {
     test_macro_expansion_and_diagnostics!(
@@ -152,8 +146,6 @@ fn derive_complex_v2() {
     );
 }
 
-// TODO(#535): Diagnostics from V2 wrongly mapped
-#[ignore = "Wrong diagnostics mappings from scarb nightly"]
 #[test]
 fn derive_improper_v2() {
     test_macro_expansion_and_diagnostics!(

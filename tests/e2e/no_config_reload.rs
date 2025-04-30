@@ -14,7 +14,6 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
 }
 
 #[test]
-#[ignore = "#539"] // TODO(#539) Unignore.
 // Proc macros are on by default on the server side.
 fn default_config_is_applied() {
     let mut ls = sandbox! {
