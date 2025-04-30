@@ -6,5 +6,6 @@ pub mod formatter;
 pub mod hover;
 pub mod introspection;
 pub mod macros;
+mod markdown;
 pub mod navigation;
 pub mod semantic_highlighting;
