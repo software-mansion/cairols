@@ -12,7 +12,7 @@ use lsp_types::notification::{
 };
 use lsp_types::request::{
     CodeActionRequest, CodeLensRequest, Completion, DocumentHighlightRequest, ExecuteCommand,
-    Formatting, GotoDefinition, HoverRequest, References, Rename, Request,
+    Formatting, GotoDefinition, HoverRequest, InlayHintRequest, References, Rename, Request,
     SemanticTokensFullRequest, WillRenameFiles,
 };
 use lsp_types::{
@@ -21,9 +21,9 @@ use lsp_types::{
     DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
     DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight,
     DocumentHighlightParams, ExecuteCommandParams, FileChangeType, GotoDefinitionParams,
-    GotoDefinitionResponse, Hover, HoverParams, ReferenceParams, RenameFilesParams, RenameParams,
-    SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent,
-    TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
+    GotoDefinitionResponse, Hover, HoverParams, InlayHint, InlayHintParams, ReferenceParams,
+    RenameFilesParams, RenameParams, SemanticTokensParams, SemanticTokensResult,
+    TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
 use serde_json::Value;
 use tracing::error;
@@ -476,6 +476,17 @@ impl BackgroundDocumentRequestHandler for WillRenameFiles {
         params: RenameFilesParams,
     ) -> LSPResult<Option<WorkspaceEdit>> {
         Ok(lang::rename_file::rename_files(&snapshot.db, params))
+    }
+}
+
+impl BackgroundDocumentRequestHandler for InlayHintRequest {
+    #[tracing::instrument(name = "textDocument/inlayHint", skip_all)]
+    fn run_with_snapshot(
+        _snapshot: StateSnapshot,
+        _notifier: Notifier,
+        _params: InlayHintParams,
+    ) -> LSPResult<Option<Vec<InlayHint>>> {
+        todo!()
     }
 }
 
