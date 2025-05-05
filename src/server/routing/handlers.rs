@@ -482,11 +482,11 @@ impl BackgroundDocumentRequestHandler for WillRenameFiles {
 impl BackgroundDocumentRequestHandler for InlayHintRequest {
     #[tracing::instrument(name = "textDocument/inlayHint", skip_all)]
     fn run_with_snapshot(
-        _snapshot: StateSnapshot,
+        snapshot: StateSnapshot,
         _notifier: Notifier,
-        _params: InlayHintParams,
+        params: InlayHintParams,
     ) -> LSPResult<Option<Vec<InlayHint>>> {
-        todo!()
+        Ok(ide::inlay_hints::inlay_hints(&snapshot.db, params))
     }
 }
 
