@@ -68,11 +68,15 @@ impl AnalysisDatabase {
 
         db.set_cfg_set(Self::initial_cfg_set().into());
 
-        // Those pluins are relevant for projects with `cairo_project.toml` (e.g. our tests).
+        // Those plugins are relevant for projects with `cairo_project.toml` (e.g. our tests).
         let default_plugin_suite = Self::default_global_plugin_suite();
-
         let default_plugin_suite = db.intern_plugin_suite(default_plugin_suite);
         db.set_default_plugins_from_suite(default_plugin_suite);
+
+        // Set default plugins for core to make sure starknet plugin is not applied to it.
+        let core_plugin_suite = Self::default_corelib_plugin_suite();
+        let core_plugin_suite = db.intern_plugin_suite(core_plugin_suite);
+        db.set_override_crate_plugins_from_suite(CrateId::core(&db), core_plugin_suite);
 
         db
     }
@@ -142,6 +146,23 @@ impl AnalysisDatabase {
         [
             get_default_plugin_suite(),
             starknet_plugin_suite(),
+            test_plugin_suite(),
+            executable_plugin_suite(),
+            cairo_lint_allow_plugin_suite(),
+        ]
+        .into_iter()
+        .chain(tricks.extra_plugin_suites.iter().flat_map(|f| f()))
+        .fold(PluginSuite::default(), |mut acc, suite| {
+            acc.add(suite);
+            acc
+        })
+    }
+
+    fn default_corelib_plugin_suite() -> PluginSuite {
+        let tricks = TRICKS.get_or_init(Default::default);
+
+        [
+            get_default_plugin_suite(),
             test_plugin_suite(),
             executable_plugin_suite(),
             cairo_lint_allow_plugin_suite(),

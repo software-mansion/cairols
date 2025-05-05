@@ -45,8 +45,7 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
       "plugins": {
         "builtin_plugins": [
           "Executable",
-          "CairoTest",
-          "Starknet"
+          "CairoTest"
         ]
       }
     }
