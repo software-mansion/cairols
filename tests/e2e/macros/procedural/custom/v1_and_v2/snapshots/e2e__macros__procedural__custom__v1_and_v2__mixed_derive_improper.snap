@@ -1,0 +1,324 @@
+---
+source: tests/e2e/macros/procedural/custom/v1_and_v2/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros = { path = \"/Users/timelock/swm/starkware/cairols/tests/scarb_procedural_macros\" }\ncairols_test_macros_v2 = { path = \"/Users/timelock/swm/starkware/cairols/tests/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[derive(ImproperDeriveMacro)]\nstruct EmptyStruct {}\n\n#[derive(ImproperDeriveMacroV2)]\nstruct EmptyStructV2 {}"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+#[derive<caret>(ImproperDeriveMacro)]
+#[derive(Improper<caret>DeriveMacro)]
+struct Empty<caret>Struct {}
+struct EmptyStruct {<caret>}
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+#[derive(ImproperDeriveMacro)]
+struct EmptyStruct {}
+
+// proc_macro_derive
+// -----------------
+
+fn generated_function() {
+    some < *> haskell <
+    $ > syntax
+}
+"""
+
+[[expansions]]
+analyzed_lines = """
+#[derive<caret>(ImproperDeriveMacroV2)]
+#[derive(Improper<caret>DeriveMacroV2)]
+struct Empty<caret>StructV2 {}
+struct EmptyStructV2 {<caret>}
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+#[derive(ImproperDeriveMacroV2)]
+struct EmptyStructV2 {}
+
+// proc_macro_derive
+// -----------------
+
+fn generated_function_v2() {
+    some < *> haskell <
+    $ > syntax
+}
+"""
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: ImproperDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 28
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 4
+            end:
+              line: 1
+              character: 8
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 28
+      severity: 1
+      message: Are you missing a `::`?.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 9
+            end:
+              line: 1
+              character: 10
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 28
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 13
+            end:
+              line: 1
+              character: 20
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 28
+      severity: 1
+      message: Are you missing a `::`?.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 21
+            end:
+              line: 1
+              character: 22
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 28
+      severity: 1
+      message: Missing semicolon
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 22
+            end:
+              line: 1
+              character: 22
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 28
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 25
+            end:
+              line: 1
+              character: 31
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacroV2
+    diagnostic:
+      range:
+        start:
+          line: 3
+          character: 9
+        end:
+          line: 3
+          character: 30
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 0
+              character: 27
+            end:
+              line: 0
+              character: 31
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacroV2
+    diagnostic:
+      range:
+        start:
+          line: 3
+          character: 9
+        end:
+          line: 3
+          character: 30
+      severity: 1
+      message: Are you missing a `::`?.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 0
+              character: 31
+            end:
+              line: 0
+              character: 32
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacroV2
+    diagnostic:
+      range:
+        start:
+          line: 3
+          character: 9
+        end:
+          line: 3
+          character: 30
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 0
+              character: 34
+            end:
+              line: 0
+              character: 41
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacroV2
+    diagnostic:
+      range:
+        start:
+          line: 3
+          character: 9
+        end:
+          line: 3
+          character: 30
+      severity: 1
+      message: Are you missing a `::`?.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 0
+              character: 41
+            end:
+              line: 0
+              character: 42
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacroV2
+    diagnostic:
+      range:
+        start:
+          line: 3
+          character: 9
+        end:
+          line: 3
+          character: 30
+      severity: 1
+      message: Missing semicolon
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 0
+              character: 42
+            end:
+              line: 0
+              character: 42
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacroV2
+    diagnostic:
+      range:
+        start:
+          line: 3
+          character: 9
+        end:
+          line: 3
+          character: 30
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 0
+              character: 44
+            end:
+              line: 0
+              character: 50
+        message: Diagnostic mapped from here.

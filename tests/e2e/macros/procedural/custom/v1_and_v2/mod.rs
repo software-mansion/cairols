@@ -139,8 +139,6 @@ fn mixed_attribute_with_error() {
     );
 }
 
-// TODO(#535): Diagnostics from V2 wrongly mapped
-#[ignore = "Wrong diagnostics mappings from scarb nightly"]
 #[test]
 fn mixed_derive_simple() {
     test_macro_expansion_and_diagnostics!(
@@ -158,9 +156,7 @@ fn mixed_derive_simple() {
     );
 }
 
-// TODO(#535): Diagnostics from V2 wrongly mapped
 #[test]
-#[ignore = "Wrong diagnostics mappings from scarb nightly"]
 fn mixed_derive_complex() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithCustomMacrosV1AndV2,
@@ -177,9 +173,7 @@ fn mixed_derive_complex() {
     );
 }
 
-// TODO(#535): Diagnostics from V2 wrongly mapped
 #[test]
-#[ignore = "Wrong diagnostics mappings from scarb nightly"]
 fn mixed_derive_improper() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithCustomMacrosV1AndV2,
