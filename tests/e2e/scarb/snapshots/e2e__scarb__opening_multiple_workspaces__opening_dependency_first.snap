@@ -41,8 +41,7 @@ analyzed_crates = '''
   "plugins": {
     "builtin_plugins": [
       "Executable",
-      "CairoTest",
-      "Starknet"
+      "CairoTest"
     ]
   }
 }
@@ -161,7 +160,7 @@ analyzed_crates_diff = '''
      }
    },
    "linter_configuration": "Off",
-@@ -45,30 +49,34 @@
+@@ -44,30 +48,34 @@
    "name": "dep",
    "source_paths": [
      "[ROOT]/dep/src/lib.cairo"
@@ -196,7 +195,7 @@ analyzed_crates_diff = '''
          "discriminator": "dev_dep 0.1.0 (path+[ROOT_URL]dev_dep/Scarb.toml)"
        }
      },
-@@ -106,16 +114,57 @@
+@@ -105,16 +113,57 @@
          "discriminator": null
        },
        "dev_dep": {
