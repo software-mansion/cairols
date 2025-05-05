@@ -102,8 +102,10 @@ impl Crate {
             .builtin_plugins
             .iter()
             .map(BuiltinPlugin::suite)
-            .chain(tricks()) // All crates should receive Tricks.
-            .chain(Some(cairo_lint_allow_plugin_suite())) // All crates should CairoLintAllow.
+            // All crates should receive Tricks.
+            .chain(tricks())
+            // All crates should receive CairoLintAllow.
+            .chain(Some(cairo_lint_allow_plugin_suite()))
             .chain(lint_config.map(cairo_lint_plugin_suite_without_metadata_validation))
             .chain(proc_macro_plugin_suite)
             .fold(get_default_plugin_suite(), |mut acc, suite| {

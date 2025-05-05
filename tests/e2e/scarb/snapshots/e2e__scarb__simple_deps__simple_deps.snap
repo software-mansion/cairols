@@ -118,8 +118,7 @@ expression: "normalize(&ls, analyzed_crates)"
   "plugins": {
     "builtin_plugins": [
       "Executable",
-      "CairoTest",
-      "Starknet"
+      "CairoTest"
     ]
   }
 }

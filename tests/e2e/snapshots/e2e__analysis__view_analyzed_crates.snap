@@ -27,8 +27,7 @@ expression: "normalize(&ls, output)"
   "plugins": {
     "builtin_plugins": [
       "Executable",
-      "CairoTest",
-      "Starknet"
+      "CairoTest"
     ]
   }
 }
