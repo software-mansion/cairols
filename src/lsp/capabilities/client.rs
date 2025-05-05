@@ -59,6 +59,9 @@ pub trait ClientCapabilitiesExt {
 
     /// The client supports sending `workspace/willRenameFiles` requests.
     fn workspace_will_rename_files_support(&self) -> bool;
+
+    /// The client supports dynamic registration for inlay hint provider capabilities.
+    fn text_document_inlay_hints_dynamic_registration(&self) -> bool;
 }
 
 impl ClientCapabilitiesExt for ClientCapabilities {
@@ -141,5 +144,9 @@ impl ClientCapabilitiesExt for ClientCapabilities {
 
     fn workspace_will_rename_files_support(&self) -> bool {
         try_or_default!(self.workspace.as_ref()?.file_operations.as_ref()?.will_rename?)
+    }
+
+    fn text_document_inlay_hints_dynamic_registration(&self) -> bool {
+        try_or_default!(self.text_document.as_ref()?.inlay_hint.as_ref()?.dynamic_registration?)
     }
 }
