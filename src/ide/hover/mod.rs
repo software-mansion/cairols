@@ -39,6 +39,6 @@ pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
 }
 
 /// Convenience shortcut for building hover contents from markdown block.
-fn markdown_contents(md: String) -> HoverContents {
+pub fn markdown_contents(md: String) -> HoverContents {
     HoverContents::Markup(MarkupContent { kind: MarkupKind::Markdown, value: md })
 }

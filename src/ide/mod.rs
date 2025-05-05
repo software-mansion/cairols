@@ -4,6 +4,7 @@ pub mod code_lens;
 pub mod completion;
 pub mod formatter;
 pub mod hover;
+pub mod inlay_hints;
 pub mod introspection;
 pub mod macros;
 mod markdown;
