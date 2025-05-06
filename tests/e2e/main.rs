@@ -6,6 +6,7 @@ mod document_highlight;
 mod find_references;
 mod goto_definition;
 mod hover;
+mod inlay_hints;
 mod linter;
 mod macros;
 mod no_config_reload;
