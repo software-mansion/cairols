@@ -1,5 +1,6 @@
 ---
-source: tests/e2e/macros/procedural/custom/mod.rs
+source: tests/e2e/macros/procedural/custom/v1/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros = { path = \"/scarb_procedural_macros\" }\n\n// → test_package/src/lib.cairo\n#[complex_attribute_macro]\nfn foo() {}"
 expression: report
 ---
 [[expansions]]

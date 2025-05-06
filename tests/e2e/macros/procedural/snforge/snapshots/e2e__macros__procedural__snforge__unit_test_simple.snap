@@ -1,5 +1,6 @@
 ---
 source: tests/e2e/macros/procedural/snforge/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[tool.scarb]\nallow-prebuilt-plugins = [\"snforge_scarb_plugin\"]\n\n[dev-dependencies]\nassert_macros = \"2.10.0\"\nsnforge_std = \"0.37.0\"\nsnforge_scarb_plugin = \"0.37.0\"\n\n// → test_package/src/lib.cairo\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn test_nothing() {\n        assert(1 == 1, 'Who knows');\n    }\n}"
 expression: report
 ---
 [[expansions]]

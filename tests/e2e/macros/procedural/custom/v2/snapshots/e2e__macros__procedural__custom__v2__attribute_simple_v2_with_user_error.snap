@@ -1,0 +1,77 @@
+---
+source: tests/e2e/macros/procedural/custom/v2/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[simple_attribute_macro_v2]\nfn foo() { a = 5; }"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+#[simple_attribute_macro_v2]<caret>
+fn <caret>foo() { a = 5; }
+fn foo() { a = 5; <caret>}
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+#[simple_attribute_macro_v2]
+fn foo() {
+    a = 5;
+}
+
+// proc_macro_simple_attribute_macro_v2
+// ------------------------------------
+
+fn foo() {
+    a = 5;
+}
+fn generated_function_v2() {}
+"""
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: a
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 11
+        end:
+          line: 1
+          character: 12
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_simple_attribute_macro_v2.cairo
+          range:
+            start:
+              line: 0
+              character: 11
+            end:
+              line: 0
+              character: 12
+        message: Diagnostic mapped from here.
+  - related_code: a
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 11
+        end:
+          line: 1
+          character: 12
+      severity: 1
+      message: Invalid left-hand side of assignment.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_simple_attribute_macro_v2.cairo
+          range:
+            start:
+              line: 0
+              character: 11
+            end:
+              line: 0
+              character: 12
+        message: Diagnostic mapped from here.

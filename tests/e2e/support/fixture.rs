@@ -120,7 +120,13 @@ impl Fixture {
         self.files
             .iter()
             .sorted()
-            .map(|path| (path, self.read_file(path).trim().to_owned()))
+            .map(|path| {
+                let test_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
+                (
+                    path,
+                    self.read_file(path).trim().to_owned().replace(test_dir.to_str().unwrap(), ""),
+                )
+            })
             .filter(|(path, contents)| {
                 // We know paths here are always file paths that are UTF-8.
                 let str_file_name = path.file_name().unwrap().to_str().unwrap();

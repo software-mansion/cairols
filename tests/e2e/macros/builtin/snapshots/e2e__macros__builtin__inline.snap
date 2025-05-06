@@ -1,5 +1,6 @@
 ---
 source: tests/e2e/macros/builtin/mod.rs
+description: "// → test_package/cairo_project.toml\n[crate_roots]\ntest_package = \"src\"\n\n[config.global]\nedition = \"2024_07\"\n\n// → test_package/src/lib.cairo\nfn fib(mut n: u32) -> u32 {\n     println!(\"some text\");\n    let mut a: u32 = 0;\n    let mut b: u32 = 1;\n    while n != 0 {\n        n = n - 1;\n        let temp = b;\n        b = a + b;\n        a = temp;\n    };\n    a\n}"
 expression: report
 ---
 [[expansions]]

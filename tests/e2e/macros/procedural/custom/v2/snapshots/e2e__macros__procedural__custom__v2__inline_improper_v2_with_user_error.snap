@@ -1,0 +1,92 @@
+---
+source: tests/e2e/macros/procedural/custom/v2/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\nfn foo() {\n    let _x = improper_inline_macro_v2!({ valid_syntax_btw = 10 });\n}"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+    let _x = improper<caret>_inline_macro_v2!({ valid_syntax_btw = 10 });
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+{
+    ({
+        valid_syntax_btw = 10
+    });
+    unbound_identifier_v2
+}
+"""
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: 'valid_syntax_btw '
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 41
+        end:
+          line: 1
+          character: 58
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://inline_proc_macro.cairo
+          range:
+            start:
+              line: 0
+              character: 4
+            end:
+              line: 0
+              character: 20
+        message: Diagnostic mapped from here.
+  - related_code: 'valid_syntax_btw '
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 41
+        end:
+          line: 1
+          character: 58
+      severity: 1
+      message: Invalid left-hand side of assignment.
+      relatedInformation:
+      - location:
+          uri: vfs://inline_proc_macro.cairo
+          range:
+            start:
+              line: 0
+              character: 4
+            end:
+              line: 0
+              character: 20
+        message: Diagnostic mapped from here.
+  - related_code: improper_inline_macro_v2!({ valid_syntax_btw = 10 })
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 13
+        end:
+          line: 1
+          character: 65
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://inline_proc_macro.cairo
+          range:
+            start:
+              line: 0
+              character: 29
+            end:
+              line: 0
+              character: 50
+        message: Diagnostic mapped from here.
