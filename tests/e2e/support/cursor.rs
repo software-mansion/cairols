@@ -147,6 +147,13 @@ impl Cursors {
             _ => panic!("there should be exacly one caret or selection"),
         }
     }
+
+    pub fn assert_single_selection(&self) -> Range {
+        match (&self.carets[..], &self.selections[..]) {
+            ([], [selection]) => *selection,
+            _ => panic!("there should be exacly one selection"),
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -295,7 +302,7 @@ pub fn render_text_edits_and_file_renames(
 /// Converts a [`Position`] to a char-bounded index in the text.
 ///
 /// This function assumes UTF-8 position encoding.
-fn index_in_text(text: &str, position: Position) -> usize {
+pub fn index_in_text(text: &str, position: Position) -> usize {
     let mut offset = 0;
     let mut lines = text.lines();
     for line in lines.by_ref().take(position.line as usize) {
