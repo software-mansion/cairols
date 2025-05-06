@@ -1,5 +1,6 @@
 ---
 source: tests/e2e/macros/builtin/mod.rs
+description: "// → test_package/cairo_project.toml\n[crate_roots]\ntest_package = \"src\"\n\n[config.global]\nedition = \"2024_07\"\n\n// → test_package/src/lib.cairo\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn test_nothing() {\n        assert!(1 == 1, \"Failure message\");\n    }\n}"
 expression: report
 ---
 [[expansions]]
