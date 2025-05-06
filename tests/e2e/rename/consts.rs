@@ -30,7 +30,7 @@ fn const_item_via_other_const_expr() {
     ");
 }
 
-// FIXME(#405): Const usage should also be renamed here
+// FIXME(#589): Const usage should also be renamed here
 #[test]
 fn associated_const_via_trait_declaration() {
     test_transform!(rename, r#"

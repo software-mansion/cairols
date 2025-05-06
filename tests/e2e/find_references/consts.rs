@@ -50,7 +50,7 @@ fn associated_const_via_impl_definition() {
     ");
 }
 
-// FIXME(#405)
+// FIXME(#589)
 #[test]
 fn associated_trait_const_via_usages() {
     test_transform!(find_references, r#"
@@ -110,7 +110,7 @@ fn associated_const_via_expr_use() {
     ");
 }
 
-// FIXME(#170)
+// FIXME(#589)
 #[test]
 fn dual_trait_const_via_trait_function() {
     test_transform!(find_references, r#"

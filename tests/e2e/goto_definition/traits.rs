@@ -70,12 +70,12 @@ fn dot_method_in_expr() {
     }
     ", @r"
     pub trait Foo<T> {
-        fn <sel>foo</sel>(self: T);
+        fn foo(self: T);
     }
     #[derive(Copy, Drop)]
     pub struct Bar {}
     impl FooBar of Foo<Bar> {
-        fn foo(self: Bar) {}
+        fn <sel>foo</sel>(self: Bar) {}
     }
     fn main() {
         let bar = Bar {};
@@ -101,12 +101,12 @@ fn full_path_method_in_expr() {
     }
     ", @r"
     pub trait Foo<T> {
-        fn <sel>foo</sel>(self: T);
+        fn foo(self: T);
     }
     #[derive(Copy, Drop)]
     pub struct Bar {}
     impl FooBar of Foo<Bar> {
-        fn foo(self: Bar) {}
+        fn <sel>foo</sel>(self: Bar) {}
     }
     fn main() {
         let bar = Bar {};
