@@ -101,7 +101,6 @@ fn trait_impls() {
     ")
 }
 
-// FIXME(#170): This should return impl
 #[test]
 fn impl_fn_usages() {
     test_transform!(goto_definition, r"
@@ -125,11 +124,11 @@ fn impl_fn_usages() {
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        fn <sel>area</sel>(self: @Foo) -> u64;
+        fn area(self: @Foo) -> u64;
     }
 
     impl FooImpl of FooTrait {
-        fn area(self: @Foo) -> u64 { 0 }
+        fn <sel>area</sel>(self: @Foo) -> u64 { 0 }
     }
 
     fn main() {

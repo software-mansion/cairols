@@ -187,7 +187,6 @@ fn trait_method_via_path_call() {
     ")
 }
 
-// FIXME: (#170) Usages should be renamed here as well
 #[test]
 fn impl_method_via_definition() {
     test_transform!(rename, r#"
@@ -210,7 +209,7 @@ fn impl_method_via_definition() {
     fn main() {
         let foo = Foo {};
         let x = foo.area();
-        let y = FooTrait::area(foo);
+        let y = FooTrait::area(@foo);
     }
     "#, @r"
     #[derive(Drop)]
@@ -231,8 +230,8 @@ fn impl_method_via_definition() {
     }
     fn main() {
         let foo = Foo {};
-        let x = foo.area();
-        let y = FooTrait::area(foo);
+        let x = foo.RENAMED();
+        let y = FooTrait::RENAMED(@foo);
     }
     ")
 }

@@ -110,7 +110,7 @@ fn associated_const_via_expr_use() {
     ");
 }
 
-// FIXME(#170)
+// FIXME(#589)
 #[test]
 fn dual_trait_const_via_trait_function() {
     test_transform!(find_references, r#"
