@@ -19,7 +19,7 @@ fn pattern_with_generics() {
     }
 
     fn main<C, +Drop<T>>(foo: C) {
-        let Foo { bar<hint>: </hint><hint tooltip="```cairo\ncore::felt252\n```\n">core::felt252</hint>, baz: _a<hint>: </hint><hint tooltip="```cairo\nC\n```\n">C</hint> } = Foo { bar: 12, baz: foo };
+        let Foo { bar<hint>: </hint><hint tooltip="```cairo\nfelt252\n```\n">felt252</hint>, baz: _a<hint>: </hint><hint tooltip="```cairo\nC\n```\n">C</hint> } = Foo { bar: 12, baz: foo };
     }
     "#)
 }
@@ -32,7 +32,7 @@ fn from_inline_macro() {
     }
     "#, @r#"
     fn main() {
-        let _a<hint>: </hint><hint tooltip="```cairo\ncore::array::Array::<core::felt252>\n```\n">core::array::Array::<core::felt252></hint> = array![1234];
+        let _a<hint>: </hint><hint tooltip="```cairo\nArray<felt252>\n```\n">Array<felt252></hint> = array![1234];
     }
     "#)
 }
@@ -45,7 +45,7 @@ fn simple() {
     }
     "#, @r#"
     fn main() {
-        let _a<hint>: </hint><hint tooltip="```cairo\ncore::felt252\n```\n">core::felt252</hint> = 1234;
+        let _a<hint>: </hint><hint tooltip="```cairo\nfelt252\n```\n">felt252</hint> = 1234;
     }
     "#)
 }
