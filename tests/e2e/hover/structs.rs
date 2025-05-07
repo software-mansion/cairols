@@ -250,3 +250,43 @@ fn non_existent_struct_member_init() {
     """
     "#)
 }
+
+#[test]
+fn infered_generic() {
+    test_transform!(test_hover,"
+    struct Foo<
+        T,
+        +Copy<T>,
+        impl One: core::num::traits::One<T>
+    > {
+        b: T
+    }
+
+    fn main() {
+        let _ = Fo<caret>o { b: 0 };
+    }
+    ",@r#"
+    source_context = """
+        let _ = Fo<caret>o { b: 0 };
+    """
+    highlight = """
+        let _ = <sel>Foo</sel> { b: 0 };
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    struct Foo<T, +Copy<T>impl One: One<T>> {
+        b: T,
+    }
+
+    T = felt252
+    +Copy<T> = core::felt252Copy
+    impl One: core::num::traits::One<T> = core::felt_252::Felt252One
+
+
+    ```
+    """
+    "#)
+}
