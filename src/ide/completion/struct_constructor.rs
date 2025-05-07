@@ -1,10 +1,11 @@
-use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_defs::ids::{FileIndex, LanguageElementId, ModuleFileId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use lsp_types::{CompletionItem, CompletionItemKind};
 
+use crate::ide::ty::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::visibility::peek_visible_in_with_edition;
@@ -19,6 +20,8 @@ pub fn struct_constructor_completions(
     let module_id = ctx.module_id;
     let lookup_item_id = ctx.lookup_item_id?;
     let function_id = lookup_item_id.function_with_body()?;
+    let importables =
+        db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)))?;
 
     let already_present_members = constructor
         .arguments(db)
@@ -67,7 +70,7 @@ pub fn struct_constructor_completions(
             } else {
                 Some(CompletionItem {
                     label: name,
-                    detail: Some(data.ty.format(db)),
+                    detail: Some(format_type(db, data.ty, &importables)),
                     kind: Some(CompletionItemKind::VALUE),
                     ..Default::default()
                 })

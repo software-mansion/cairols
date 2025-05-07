@@ -53,19 +53,19 @@ fn fill_empty_impl() {
     Title: Implement missing members
     Add new text: "type Type = ();
 
-    const CONCRETE_CONST: core::integer::u32 = ();
+    const CONCRETE_CONST: u32 = ();
 
-    const GENERIC_CONST: core::integer::u32 = ();
+    const GENERIC_CONST: u32 = ();
 
-    fn foo(t: core::integer::u32, v: core::felt252) -> core::integer::u32 {}
+    fn foo(t: u32, v: felt252) -> u32 {}
 
-    fn bar(t: core::integer::u32) -> core::felt252 {}
+    fn bar(t: u32) -> felt252 {}
 
-    fn baz(s: hello::SomeStructWithConstParameter::<1>) {}
+    fn baz(s: SomeStructWithConstParameter<1>) {}
 
-    fn generic<const V: core::integer::u32, W, +Into<core::integer::u32, W>>(w: W) {}
+    fn generic<const V: u32, W, +Into<u32, W>>(w: W) {}
 
-    fn with_concrete_impl<W, impl SomeImpl: Into<core::integer::u32, W>>(w: W) -> W {}"
+    fn with_concrete_impl<W, impl SomeImpl: Into<u32, W>>(w: W) -> W {}"
     At: Range { start: Position { line: 16, character: 0 }, end: Position { line: 16, character: 0 } }
     "#
     )
@@ -83,17 +83,17 @@ fn fill_impl_with_const() {
     Title: Implement missing members
     Add new text: "type Type = ();
 
-    const GENERIC_CONST: core::integer::u32 = ();
+    const GENERIC_CONST: u32 = ();
 
-    fn foo(t: core::integer::u32, v: core::felt252) -> core::integer::u32 {}
+    fn foo(t: u32, v: felt252) -> u32 {}
 
-    fn bar(t: core::integer::u32) -> core::felt252 {}
+    fn bar(t: u32) -> felt252 {}
 
-    fn baz(s: hello::SomeStructWithConstParameter::<10>) {}
+    fn baz(s: SomeStructWithConstParameter<10>) {}
 
-    fn generic<const V: core::integer::u32, W, +Into<core::integer::u32, W>>(w: W) {}
+    fn generic<const V: u32, W, +Into<u32, W>>(w: W) {}
 
-    fn with_concrete_impl<W, impl SomeImpl: Into<core::integer::u32, W>>(w: W) -> W {}"
+    fn with_concrete_impl<W, impl SomeImpl: Into<u32, W>>(w: W) -> W {}"
     At: Range { start: Position { line: 16, character: 34 }, end: Position { line: 16, character: 34 } }
     "#
     )
@@ -111,17 +111,17 @@ fn fill_impl_with_function() {
     Title: Implement missing members
     Add new text: "type Type = ();
 
-    const CONCRETE_CONST: core::integer::u32 = ();
+    const CONCRETE_CONST: u32 = ();
 
-    const GENERIC_CONST: core::integer::u32 = ();
+    const GENERIC_CONST: u32 = ();
 
-    fn bar(t: core::integer::u32) -> core::felt252 {}
+    fn bar(t: u32) -> felt252 {}
 
-    fn baz(s: hello::SomeStructWithConstParameter::<0>) {}
+    fn baz(s: SomeStructWithConstParameter<0>) {}
 
-    fn generic<const V: core::integer::u32, W, +Into<core::integer::u32, W>>(w: W) {}
+    fn generic<const V: u32, W, +Into<u32, W>>(w: W) {}
 
-    fn with_concrete_impl<W, impl SomeImpl: Into<core::integer::u32, W>>(w: W) -> W {}"
+    fn with_concrete_impl<W, impl SomeImpl: Into<u32, W>>(w: W) -> W {}"
     At: Range { start: Position { line: 16, character: 43 }, end: Position { line: 16, character: 43 } }
     "#
     )
@@ -170,7 +170,7 @@ fn fill_trait_no_generic_args() {
     Title: Implement missing members
     Add new text: "type Type = ();
 
-    const CONCRETE_CONST: core::integer::u32 = ();
+    const CONCRETE_CONST: u32 = ();
 
     const GENERIC_CONST: ?2 = ();
 
@@ -178,9 +178,9 @@ fn fill_trait_no_generic_args() {
 
     fn bar(t: ?2) -> ?3 {}
 
-    fn baz(s: hello::SomeStructWithConstParameter::<?1>) {}
+    fn baz(s: SomeStructWithConstParameter<?1>) {}
 
-    fn generic<const V: core::integer::u32, W, +Into<?2, W>>(w: W) {}
+    fn generic<const V: u32, W, +Into<?2, W>>(w: W) {}
 
     fn with_concrete_impl<W, impl SomeImpl: Into<?2, W>>(w: W) -> W {}"
     At: Range { start: Position { line: 15, character: 40 }, end: Position { line: 15, character: 40 } }
@@ -212,19 +212,19 @@ fn fill_imported_trait() {
     Title: Implement missing members
     Add new text: "type Type = ();
 
-    const CONCRETE_CONST: core::integer::u32 = ();
+    const CONCRETE_CONST: u32 = ();
 
-    const GENERIC_CONST: core::integer::u32 = ();
+    const GENERIC_CONST: u32 = ();
 
-    fn foo(t: core::integer::u32, v: core::felt252) -> core::integer::u32 {}
+    fn foo(t: u32, v: felt252) -> u32 {}
 
-    fn bar(t: core::integer::u32) -> core::felt252 {}
+    fn bar(t: u32) -> felt252 {}
 
-    fn baz(s: hello::trait_module::SomeStructWithConstParameter::<1>) {}
+    fn baz(s: crate::trait_module::SomeStructWithConstParameter<1>) {}
 
-    fn generic<const V: core::integer::u32, W, +Into<core::integer::u32, W>>(w: W) {}
+    fn generic<const V: u32, W, +Into<u32, W>>(w: W) {}
 
-    fn with_concrete_impl<W, impl SomeImpl: Into<core::integer::u32, W>>(w: W) -> W {}"
+    fn with_concrete_impl<W, impl SomeImpl: Into<u32, W>>(w: W) -> W {}"
     At: Range { start: Position { line: 23, character: 0 }, end: Position { line: 23, character: 0 } }
     "#
     )

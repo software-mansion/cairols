@@ -26,15 +26,15 @@ fn empty() {
 
     [[completions]]
     completion_label = "x"
-    detail = "core::integer::u32"
+    detail = "u32"
 
     [[completions]]
     completion_label = "y"
-    detail = "core::felt252"
+    detail = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "core::integer::i16"
+    detail = "i16"
     "#);
 }
 
@@ -63,11 +63,11 @@ fn after_prop() {
 
     [[completions]]
     completion_label = "y"
-    detail = "core::felt252"
+    detail = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "core::integer::i16"
+    detail = "i16"
     "#);
 }
 
@@ -100,11 +100,11 @@ fn after_prop_before_spread() {
 
     [[completions]]
     completion_label = "y"
-    detail = "core::felt252"
+    detail = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "core::integer::i16"
+    detail = "i16"
     "#);
 }
 
@@ -136,11 +136,11 @@ fn after_prop_before_spread_same_line() {
 
     [[completions]]
     completion_label = "y"
-    detail = "core::felt252"
+    detail = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "core::integer::i16"
+    detail = "i16"
     "#);
 }
 
@@ -169,15 +169,15 @@ fn before_spread_same_line() {
 
     [[completions]]
     completion_label = "x"
-    detail = "core::integer::u32"
+    detail = "u32"
 
     [[completions]]
     completion_label = "y"
-    detail = "core::felt252"
+    detail = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "core::integer::i16"
+    detail = "i16"
     "#);
 }
 
@@ -204,15 +204,15 @@ fn imported_empty() {
 
     [[completions]]
     completion_label = "x"
-    detail = "core::integer::u32"
+    detail = "u32"
 
     [[completions]]
     completion_label = "y"
-    detail = "core::felt252"
+    detail = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "core::integer::i16"
+    detail = "i16"
     "#);
 }
 
@@ -265,11 +265,11 @@ fn imported_after_prop() {
 
     [[completions]]
     completion_label = "x"
-    detail = "core::integer::u32"
+    detail = "u32"
 
     [[completions]]
     completion_label = "z"
-    detail = "core::integer::i16"
+    detail = "i16"
     "#);
 }
 
@@ -296,7 +296,7 @@ fn imported_after_two_prop() {
 
     [[completions]]
     completion_label = "z"
-    detail = "core::integer::i16"
+    detail = "i16"
     "#);
 }
 
@@ -331,10 +331,10 @@ fn dep_without_visibility_support() {
 
     [[completions]]
     completion_label = "a"
-    detail = "core::felt252"
+    detail = "felt252"
 
     [[completions]]
     completion_label = "b"
-    detail = "core::felt252"
+    detail = "felt252"
     "#);
 }

@@ -1,5 +1,5 @@
 use cairo_lang_defs::ids::{
-    LanguageElementId, ModuleFileId, NamedLanguageElementId, TopLevelLanguageElementId,
+    FileIndex, LanguageElementId, ModuleFileId, NamedLanguageElementId, TopLevelLanguageElementId,
     TraitFunctionId,
 };
 use cairo_lang_semantic::db::SemanticGroup;
@@ -11,6 +11,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
 use tracing::debug;
 
+use crate::ide::ty::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
@@ -26,6 +27,8 @@ pub fn dot_completions(
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let module_file_id = function_with_body.module_file_id(db);
     let resolver = ctx.resolver(db);
+    let importables =
+        db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)))?;
 
     // Extract lhs node.
     let node = expr.lhs(db);
@@ -58,7 +61,7 @@ pub fn dot_completions(
         db.concrete_struct_members(concrete_struct_id).ok()?.iter().for_each(|(name, member)| {
             let completion = CompletionItem {
                 label: name.to_string(),
-                detail: Some(member.ty.format(db)),
+                detail: Some(format_type(db, member.ty, &importables)),
                 kind: Some(CompletionItemKind::FIELD),
                 ..CompletionItem::default()
             };
