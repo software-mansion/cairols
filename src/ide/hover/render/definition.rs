@@ -10,19 +10,23 @@ use lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
 use crate::ide::markdown::{RULE, fenced_code_block};
+use crate::ide::ty::InferredValue;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::defs::{ResolvedItem, SymbolDef};
 use crate::lang::lsp::ToLsp;
+use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolverData};
 use cairo_lang_semantic::substitution::SemanticRewriter;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.
 pub fn definition(
     db: &AnalysisDatabase,
     identifier: &TerminalIdentifier,
     file_id: FileId,
+    importables: &OrderedHashMap<ImportableId, String>,
 ) -> Option<Hover> {
     let (resolved_item, resolver_data, symbol) =
         SymbolDef::find_with_resolved_item(db, identifier)?;
@@ -32,7 +36,7 @@ pub fn definition(
             let mut md = String::new();
             md += &fenced_code_block(&item.definition_path(db));
             md += &fenced_code_block(
-                &concrete_signature(db, resolved_item, resolver_data)
+                &concrete_signature(db, resolved_item, resolver_data, importables)
                     .map(|signature| item.signature_with_text(db, &signature))
                     .unwrap_or_else(|| item.signature(db)),
             );
@@ -54,7 +58,7 @@ pub fn definition(
             md
         }
 
-        SymbolDef::Variable(var) => fenced_code_block(&var.signature(db)?),
+        SymbolDef::Variable(var) => fenced_code_block(&var.signature(db, importables)?),
         SymbolDef::ExprInlineMacro(macro_name) => {
             let crate_id = db.file_modules(file_id).ok()?.first()?.owning_crate(db);
 
@@ -115,6 +119,7 @@ fn concrete_signature(
     db: &AnalysisDatabase,
     resolved_item: ResolvedItem,
     resolver_data: Option<ResolverData>,
+    importables: &OrderedHashMap<ImportableId, String>,
 ) -> Option<String> {
     let resolver_data = resolver_data?;
 
@@ -158,7 +163,10 @@ fn concrete_signature(
                 "\n\n".to_string(),
                 |mut acc, (generic, concrete)| {
                     let left = generic.as_syntax_node().get_text_without_trivia(db);
-                    let right = concrete.format(db);
+
+                    let right = InferredValue::try_from_generic_arg_id(concrete)
+                        .map(|value| value.format(db, importables))
+                        .unwrap_or_else(|| concrete.format(db));
 
                     acc.push_str(&left);
                     acc.push_str(" = ");

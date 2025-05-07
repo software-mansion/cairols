@@ -14,7 +14,7 @@ fn const_initializer_value() {
     """
     popover = """
     ```cairo
-    core::felt252
+    felt252
     ```
     ---
     value of literal: `291 (0x123 | 0b100100011)`
@@ -59,7 +59,7 @@ fn var_short_string() {
     """
     popover = """
     ```cairo
-    core::felt252
+    felt252
     ```
     ---
     value of literal: `'short_string' (0x73686f72745f737472696e67)`
@@ -83,7 +83,7 @@ fn var_byte_array() {
     '''
     popover = """
     ```cairo
-    core::byte_array::ByteArray
+    ByteArray
     ```
     """
     "#)
@@ -105,7 +105,7 @@ fn var_explicit_felt() {
     """
     popover = """
     ```cairo
-    core::felt252
+    felt252
     ```
     ---
     value of literal: `33 (0x21 | 0b100001)`
@@ -129,7 +129,7 @@ fn var_explicit_u32() {
     """
     popover = """
     ```cairo
-    core::integer::u32
+    u32
     ```
     ---
     value of literal: `51 (0x33 | 0b110011)`
@@ -153,7 +153,7 @@ fn var_dec_felt() {
     """
     popover = """
     ```cairo
-    core::felt252
+    felt252
     ```
     ---
     value of literal: `50 (0x32 | 0b110010)`
@@ -177,7 +177,7 @@ fn var_bin_felt() {
     """
     popover = """
     ```cairo
-    core::felt252
+    felt252
     ```
     ---
     value of literal: `15 (0xf | 0b1111)`
@@ -201,7 +201,7 @@ fn var_oct_felt() {
     """
     popover = """
     ```cairo
-    core::felt252
+    felt252
     ```
     ---
     value of literal: `63 (0x3f | 0b111111)`
@@ -225,7 +225,7 @@ fn var_explicit_hex_felt_to_u32() {
     """
     popover = """
     ```cairo
-    core::felt252
+    felt252
     ```
     ---
     value of literal: `368 (0x170 | 0b101110000)`
@@ -249,7 +249,7 @@ fn var_string_to_u8() {
     '''
     popover = """
     ```cairo
-    core::integer::u8
+    u8
     ```
     """
     "#)
@@ -271,7 +271,7 @@ fn var_hex_felt_to_u8() {
     """
     popover = """
     ```cairo
-    core::integer::u8
+    u8
     ```
     ---
     value of literal: `4095 (0xfff | 0b111111111111)`

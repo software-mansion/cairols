@@ -31,7 +31,7 @@ fn generic_function_call() {
     ```cairo
     fn a<T, +Copy<T>, impl One: One<T>>(b: @T) -> T
 
-    T = core::felt252
+    T = felt252
     +Copy<T> = core::felt252Copy
     impl One: core::num::traits::One<T> = core::felt_252::Felt252One
 
@@ -66,7 +66,7 @@ fn generic_function_call_placeholder() {
     """
     popover = """
     ```cairo
-    core::felt252
+    felt252
     ```
     """
     "#);
@@ -160,7 +160,7 @@ fn generic_trait_function_call_placeholder() {
     """
     popover = """
     ```cairo
-    core::felt252
+    felt252
     ```
     """
     "#);
