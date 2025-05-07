@@ -21,6 +21,7 @@ mod structs;
 mod traits;
 mod types;
 mod variables;
+mod variants;
 
 /// Perform hover test.
 ///
