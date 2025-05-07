@@ -1,13 +1,16 @@
 use super::super::super::markdown::fenced_code_block;
 use crate::{
-    ide::hover::markdown_contents,
+    ide::{
+        hover::markdown_contents,
+        ty::{InferredValue, format_type},
+    },
     lang::{
         db::{AnalysisDatabase, LsSemanticGroup},
         defs::{ResolvedItem, find_definition},
         lsp::ToLsp,
     },
 };
-use cairo_lang_defs::ids::LookupItemId;
+use cairo_lang_defs::ids::{ImportableId, LookupItemId};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::{
     db::SemanticGroup,
@@ -21,14 +24,19 @@ use cairo_lang_syntax::node::{
     TypedSyntaxNode,
     ast::{ExprPath, PathSegment, Pattern, TerminalUnderscore},
 };
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{LookupIntern, ordered_hash_map::OrderedHashMap};
 use lsp_types::Hover;
 
-pub fn ty(db: &AnalysisDatabase, underscore: TerminalUnderscore, file_id: FileId) -> Option<Hover> {
+pub fn ty(
+    db: &AnalysisDatabase,
+    underscore: TerminalUnderscore,
+    file_id: FileId,
+    importables: &OrderedHashMap<ImportableId, String>,
+) -> Option<Hover> {
     let lookup_items = db.collect_lookup_items_stack(&underscore.as_syntax_node())?;
 
-    let result = pattern(db, underscore.clone(), &lookup_items)
-        .or_else(|| path(db, underscore.clone(), &lookup_items))?;
+    let result = pattern(db, underscore.clone(), &lookup_items, importables)
+        .or_else(|| path(db, underscore.clone(), &lookup_items, importables))?;
 
     Some(Hover {
         contents: markdown_contents(fenced_code_block(&result)),
@@ -44,19 +52,21 @@ fn pattern(
     db: &AnalysisDatabase,
     underscore: TerminalUnderscore,
     lookup_items: &[LookupItemId],
+    importables: &OrderedHashMap<ImportableId, String>,
 ) -> Option<String> {
     let function_id = lookup_items.first()?.function_with_body()?;
     let pattern_id = db
         .lookup_pattern_by_ptr(function_id, Pattern::Underscore(underscore).stable_ptr(db))
         .ok()?;
 
-    Some(db.pattern_semantic(function_id, pattern_id).ty().format(db))
+    Some(format_type(db, db.pattern_semantic(function_id, pattern_id).ty(), importables))
 }
 
 fn path(
     db: &AnalysisDatabase,
     underscore: TerminalUnderscore,
     lookup_items: &[LookupItemId],
+    importables: &OrderedHashMap<ImportableId, String>,
 ) -> Option<String> {
     let path = underscore.as_syntax_node().ancestor_of_type::<ExprPath>(db)?;
 
@@ -106,7 +116,8 @@ fn path(
         _ => return None,
     };
 
-    let result = inference.rewrite(arg).ok()?.format(db);
+    let result = InferredValue::try_from_generic_arg_id(inference.rewrite(arg).ok()?)?
+        .format(db, importables);
 
     Some(result)
 }

@@ -16,7 +16,7 @@ fn let_mut() {
     """
     popover = """
     ```cairo
-    let mut x: core::felt252
+    let mut x: felt252
     ```
     """
     "#)
@@ -80,7 +80,7 @@ fn assign_lhs() {
     """
     popover = """
     ```cairo
-    let mut x: core::integer::u32
+    let mut x: u32
     ```
     """
     "#)
@@ -285,7 +285,7 @@ fn param_name() {
     """
     popover = """
     ```cairo
-    coin: hello::Coin
+    coin: Coin
     ```
     """
     "#)
@@ -344,7 +344,7 @@ fn enum_value() {
     """
     popover = """
     ```cairo
-    coin: hello::Coin
+    coin: Coin
     ```
     """
     "#)

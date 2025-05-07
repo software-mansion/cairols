@@ -1,11 +1,13 @@
-use cairo_lang_defs::ids::VarId;
+use cairo_lang_defs::ids::{ImportableId, VarId};
 use cairo_lang_semantic::{Binding, Mutability};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::smol_str::SmolStr;
 
+use crate::ide::ty::format_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// Information about the definition of a variable (local, function parameter).
 #[derive(Eq, PartialEq)]
@@ -32,7 +34,11 @@ impl VariableDef {
     }
 
     /// Gets variable signature, which tries to resemble the way how it is defined in code.
-    pub fn signature(&self, db: &AnalysisDatabase) -> Option<String> {
+    pub fn signature(
+        &self,
+        db: &AnalysisDatabase,
+        importables: &OrderedHashMap<ImportableId, String>,
+    ) -> Option<String> {
         let name = self.name(db);
         let binding = db.lookup_binding(self.var_id)?;
 
@@ -58,7 +64,7 @@ impl VariableDef {
             },
         };
 
-        let ty = binding.ty().format(db);
+        let ty = format_type(db, binding.ty(), importables);
 
         Some(format!("{prefix}{mutability}{name}: {ty}"))
     }

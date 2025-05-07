@@ -16,7 +16,7 @@ fn ident_typed() {
     """
     popover = """
     ```cairo
-    let abc: core::felt252
+    let abc: felt252
     ```
     """
     "#)
@@ -37,7 +37,7 @@ fn ident() {
     """
     popover = """
     ```cairo
-    let xyz: core::felt252
+    let xyz: felt252
     ```
     """
     "#)
@@ -59,7 +59,7 @@ fn ident_mut() {
     """
     popover = """
     ```cairo
-    let mut def: core::felt252
+    let mut def: felt252
     ```
     """
     "#)
@@ -81,7 +81,7 @@ fn value_mut() {
     """
     popover = """
     ```cairo
-    let abc: core::felt252
+    let abc: felt252
     ```
     """
     "#)
@@ -104,7 +104,7 @@ fn star_lhs() {
     """
     popover = """
     ```cairo
-    let mut def: core::felt252
+    let mut def: felt252
     ```
     """
     "#)
@@ -127,7 +127,7 @@ fn star_rhs() {
     """
     popover = """
     ```cairo
-    let xyz: core::felt252
+    let xyz: felt252
     ```
     """
     "#)
