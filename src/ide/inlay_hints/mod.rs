@@ -1,4 +1,7 @@
-use super::{markdown::fenced_code_block, ty::format_type};
+use super::{
+    markdown::fenced_code_block,
+    ty::{find_underscores, format_type},
+};
 use crate::lang::{
     db::{AnalysisDatabase, LsSemanticGroup},
     lsp::{LsProtoGroup, ToCairo, ToLsp},
@@ -19,9 +22,6 @@ use lsp_types::{
     InlayHint, InlayHintKind, InlayHintLabel, InlayHintLabelPart, InlayHintLabelPartTooltip,
     InlayHintParams, MarkupContent, MarkupKind,
 };
-use types::find_underscores;
-
-mod types;
 
 pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec<InlayHint>> {
     let file = db.file_for_url(&params.text_document.uri)?;
