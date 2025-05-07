@@ -236,3 +236,50 @@ fn trait_name_generic_name() {
     """
     "#)
 }
+
+#[test]
+fn infered_generic() {
+    test_transform!(test_hover,"
+    trait Foo<
+        T,
+        +Copy<T>,
+        impl One: core::num::traits::One<T>
+    > {
+        fn b(a: T) -> T;
+    }
+    impl FooImpl<
+        T,
+        +Copy<T>,
+        impl One: core::num::traits::One<T>
+    > of Foo<T> {
+        fn b(a: T) -> T {
+            a
+        }
+    }
+
+    fn main() {
+        let _ = Fo<caret>o::b(23);
+    }
+    ",@r#"
+    source_context = """
+        let _ = Fo<caret>o::b(23);
+    """
+    highlight = """
+        let _ = <sel>Foo</sel>::b(23);
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    trait Foo<T, +Copy<T>impl One: One<T>>
+
+    T = felt252
+    +Copy<T> = core::felt252Copy
+    impl One: core::num::traits::One<T> = core::felt_252::Felt252One
+
+
+    ```
+    """
+    "#)
+}
