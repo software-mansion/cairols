@@ -142,3 +142,42 @@ fn non_existent_module() {
     completions = []
     "#);
 }
+
+#[test]
+fn first_segment() {
+    test_transform!(test_completions_text_edits,"
+    mod helper_module {
+        pub trait Trait1<T> {
+            fn some_method(self: @T);
+        }
+
+        pub const CONST: felt252 = 0x0;
+
+        fn foo() {}
+        pub fn bar() {}
+    }
+
+    use helper_mod<caret>;
+    ",@r#"
+    caret = """
+    use helper_mod<caret>;
+    """
+
+    [[completions]]
+    completion_label = "hello"
+    "#);
+}
+
+#[test]
+fn first_segment_core() {
+    test_transform!(test_completions_text_edits,"
+    use co<caret>;
+    ",@r#"
+    caret = """
+    use co<caret>;
+    """
+
+    [[completions]]
+    completion_label = "core"
+    "#);
+}
