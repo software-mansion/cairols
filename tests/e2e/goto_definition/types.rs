@@ -177,23 +177,26 @@ fn test_extern_type_in_trait_associated_const_as_type_parameter() {
     ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_extern_type_in_trait_generic_bound_as_type() {
     test_transform!(goto_definition, r#"
     trait Trait<T, +Into<u32<caret>, T>> {}
-    "#, @"none response")
+    "#, @r"
+    // → core/src/integer.cairo
+    pub extern type <sel>u32</sel>;
+    ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_extern_type_in_trait_generic_bound_as_type_parameter() {
     test_transform!(goto_definition, r#"
     trait Trait<T, +Into<Array<u32<caret>>, T>> {}
-    "#, @"none response")
+    "#, @r"
+    // → core/src/integer.cairo
+    pub extern type <sel>u32</sel>;
+    ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_extern_type_in_impl_associated_type_as_type() {
     test_transform!(goto_definition, r#"
@@ -205,17 +208,11 @@ fn test_extern_type_in_impl_associated_type_as_type() {
         type Type = u32<caret>;
     }
     "#, @r"
-    trait Trait {
-        type <sel>Type</sel>;
-    }
-
-    impl Impl of Trait {
-        type Type = u32;
-    }
+    // → core/src/integer.cairo
+    pub extern type <sel>u32</sel>;
     ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_extern_type_in_impl_associated_type_as_type_parameter() {
     test_transform!(goto_definition, r#"
@@ -226,16 +223,11 @@ fn test_extern_type_in_impl_associated_type_as_type_parameter() {
         type Type = Array<u32<caret>>;
     }
     "#, @r"
-    trait Trait {
-        type <sel>Type</sel>;
-    }
-    impl Impl of Trait {
-        type Type = Array<u32>;
-    }
+    // → core/src/integer.cairo
+    pub extern type <sel>u32</sel>;
     ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_extern_type_in_impl_associated_const_as_type() {
     test_transform!(goto_definition, r#"
@@ -246,16 +238,11 @@ fn test_extern_type_in_impl_associated_const_as_type() {
         const Const: u32<caret> = 0x0;
     }
     "#, @r"
-    trait Trait {
-        const <sel>Const</sel>: u32;
-    }
-    impl Impl of Trait {
-        const Const: u32 = 0x0;
-    }
+    // → core/src/integer.cairo
+    pub extern type <sel>u32</sel>;
     ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_extern_type_in_impl_associated_const_as_type_parameter() {
     test_transform!(goto_definition, r#"
@@ -266,31 +253,31 @@ fn test_extern_type_in_impl_associated_const_as_type_parameter() {
         const Const: Array<u32<caret>> = 0x0;
     }
     "#, @r"
-    trait Trait {
-        const <sel>Const</sel>: u32;
-    }
-    impl Impl of Trait {
-        const Const: Array<u32> = 0x0;
-    }
+    // → core/src/integer.cairo
+    pub extern type <sel>u32</sel>;
     ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_extern_type_in_impl_generic_bound_as_type() {
     test_transform!(goto_definition, r#"
     trait Trait<T, +Into<u32, T>> {}
     impl<T, +Into<u32<caret>, T>> Impl of Trait<T> {}
-    "#, @"none response")
+    "#, @r"
+    // → core/src/integer.cairo
+    pub extern type <sel>u32</sel>;
+    ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_extern_type_in_impl_generic_bound_as_type_parameter() {
     test_transform!(goto_definition, r#"
     trait Trait<T, +Into<u32, T>> {}
     impl<T, +Into<Array<u32<caret>>, T>> Impl of Trait<T> {}
-    "#, @"none response")
+    "#, @r"
+    // → core/src/integer.cairo
+    pub extern type <sel>u32</sel>;
+    ")
 }
 
 #[test]
@@ -303,31 +290,28 @@ fn test_builtin_alias_in_use() {
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_alias_as_type() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     type TypeAlias = u96<caret>
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_alias_as_type_parameter() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     type TypeAlias = Array<u96<caret>>
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_variable_as_type() {
     test_transform!(goto_definition, r#"
@@ -336,12 +320,11 @@ fn test_builtin_alias_in_variable_as_type() {
         let x: u96<caret> = 0x0;
     }
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_variable_as_type_parameter() {
     test_transform!(goto_definition, r#"
@@ -350,60 +333,55 @@ fn test_builtin_alias_in_variable_as_type_parameter() {
         let x: Array<u96<caret>> = 0x0;
     }
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_function_argument_as_type() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     fn foo(x: u96<caret>) {}
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_function_argument_as_type_parameter() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     fn foo(x: Array<u96<caret>>) {}
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_return_type_as_type() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     fn foo() -> u96<caret> { 0x0 }
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_return_type_as_type_parameter() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     fn foo() -> Array<u96<caret>> { 0x0 }
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_struct_field_as_type() {
     test_transform!(goto_definition, r#"
@@ -412,12 +390,11 @@ fn test_builtin_alias_in_struct_field_as_type() {
         x: u96<caret>
     }
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_struct_field_as_type_parameter() {
     test_transform!(goto_definition, r#"
@@ -426,12 +403,11 @@ fn test_builtin_alias_in_struct_field_as_type_parameter() {
         x: Array<u96<caret>>
     }
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_turbofish_enum_as_type() {
     test_transform!(goto_definition, r#"
@@ -440,12 +416,11 @@ fn test_builtin_alias_in_turbofish_enum_as_type() {
         let x = Result::<u96<caret>>::Err(());
     }
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_turbofish_enum_as_type_parameter() {
     test_transform!(goto_definition, r#"
@@ -454,8 +429,8 @@ fn test_builtin_alias_in_turbofish_enum_as_type_parameter() {
         let x = Result::<Array<u96<caret>>>::Err(());
     }
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
@@ -481,7 +456,6 @@ fn test_builtin_alias_in_trait_associated_type_as_type_parameter() {
     "#, @"none response")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_trait_associated_const_as_type() {
     test_transform!(goto_definition, r#"
@@ -490,12 +464,11 @@ fn test_builtin_alias_in_trait_associated_const_as_type() {
         const Const: u96<caret>;
     }
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_trait_associated_const_as_type_parameter() {
     test_transform!(goto_definition, r#"
@@ -504,30 +477,33 @@ fn test_builtin_alias_in_trait_associated_const_as_type_parameter() {
         const Const: Array<u96<caret>>;
     }
     "#, @r"
-    // → core/src/internal/bounded_int.cairo
-    pub(crate) extern type <sel>BoundedInt</sel><const MIN: felt252, const MAX: felt252>;
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_builtin_alias_in_trait_generic_bound_as_type() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     trait Trait<T, +Into<u96<caret>, T>> {}
-    "#, @"none response")
+    "#, @r"
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
+    ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_builtin_alias_in_trait_generic_bound_as_type_parameter() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     trait Trait<T, +Into<Array<u96<caret>>, T>> {}
-    "#, @"none response")
+    "#, @r"
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
+    ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_builtin_alias_in_impl_associated_type_as_type() {
     test_transform!(goto_definition, r#"
@@ -539,17 +515,11 @@ fn test_builtin_alias_in_impl_associated_type_as_type() {
         type Type = u96<caret>;
     }
     "#, @r"
-    use core::circuit::u96;
-    trait Trait {
-        type <sel>Type</sel>;
-    }
-    impl Impl of Trait {
-        type Type = u96;
-    }
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_builtin_alias_in_impl_associated_type_as_type_parameter() {
     test_transform!(goto_definition, r#"
@@ -561,17 +531,11 @@ fn test_builtin_alias_in_impl_associated_type_as_type_parameter() {
         type Type = Array<u96<caret>>;
     }
     "#, @r"
-    use core::circuit::u96;
-    trait Trait {
-        type <sel>Type</sel>;
-    }
-    impl Impl of Trait {
-        type Type = Array<u96>;
-    }
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_impl_associated_const_as_type() {
     test_transform!(goto_definition, r#"
@@ -583,17 +547,11 @@ fn test_builtin_alias_in_impl_associated_const_as_type() {
         const Const: u96<caret> = 0x0;
     }
     "#, @r"
-    use core::circuit::u96;
-    trait Trait {
-        const <sel>Const</sel>: u96;
-    }
-    impl Impl of Trait {
-        const Const: u96 = 0x0;
-    }
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_builtin_alias_in_impl_associated_const_as_type_parameter() {
     test_transform!(goto_definition, r#"
@@ -605,32 +563,31 @@ fn test_builtin_alias_in_impl_associated_const_as_type_parameter() {
         const Const: Array<u96<caret>> = 0x0;
     }
     "#, @r"
-    use core::circuit::u96;
-    trait Trait {
-        const <sel>Const</sel>: u96;
-    }
-    impl Impl of Trait {
-        const Const: Array<u96> = 0x0;
-    }
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
     ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_builtin_alias_in_impl_generic_bound_as_type() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     trait Trait<T, +Into<u96, T>> {}
     impl<T, +Into<u96<caret>, T>> Impl of Trait<T> {}
-    "#, @"none response")
+    "#, @r"
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
+    ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_builtin_alias_in_impl_generic_bound_as_type_parameter() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     trait Trait<T, +Into<u96, T>> {}
     impl<T, +Into<Array<u96<caret>>, T>> Impl of Trait<T> {}
-    "#, @"none response")
+    "#, @r"
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
+    ")
 }

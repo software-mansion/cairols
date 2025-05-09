@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{SemanticGroup, get_resolver_data_options};
+use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -13,9 +14,11 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::ResolvedGenericItem::TraitItem;
-use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
+use cairo_lang_semantic::resolve::{
+    AsSegments, ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData,
+};
 use cairo_lang_semantic::{Expr, TypeLongId};
-use cairo_lang_syntax::node::helpers::HasName;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -54,6 +57,7 @@ pub fn find_definition(
         .or_else(|| try_variant_declaration(db, identifier))
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
         .or_else(|| try_impl_items(db, identifier))
+        .or_else(|| try_concrete_type_or_impl(db, identifier, lookup_items))
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
 }
@@ -97,36 +101,45 @@ fn try_impl_items(
     if let Some(function) =
         identifier.as_syntax_node().parent_of_type::<ast::FunctionDeclaration>(db)
     {
-        let fn_name = function.name(db);
-        if fn_name == *identifier {
-            let impl_func_name = function.name(db).text(db);
-            let trait_fn = db.trait_function_by_name(trait_id, impl_func_name).ok()??;
-
-            return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Function(trait_fn))));
+        let function_name = function.name(db);
+        if &function_name == identifier {
+            let function_name = function_name.text(db);
+            let function = db.trait_function_by_name(trait_id, function_name).ok()??;
+            return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Function(function))));
         }
     }
 
     if let Some(constant) = identifier.as_syntax_node().ancestor_of_type::<ast::ItemConstant>(db) {
-        let impl_const_name = constant.name(db).text(db);
-        let trait_const = db.trait_constant_by_name(trait_id, impl_const_name).ok()??;
-        return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Constant(trait_const))));
+        let constant_name = constant.name(db);
+        if &constant_name == identifier {
+            let constant_name = constant_name.text(db);
+            let constant = db.trait_constant_by_name(trait_id, constant_name).ok()??;
+            return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Constant(constant))));
+        }
     }
+
     if let Some(associated_type) =
         identifier.as_syntax_node().ancestor_of_type::<ast::ItemTypeAlias>(db)
     {
-        let associated_type_name = associated_type.name(db).text(db);
-        let impl_associated_type = db.trait_type_by_name(trait_id, associated_type_name).ok()??;
-        return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Type(impl_associated_type))));
+        let associated_type_name = associated_type.name(db);
+        if &associated_type_name == identifier {
+            let associated_type_name = associated_type_name.text(db);
+            let associated_type = db.trait_type_by_name(trait_id, associated_type_name).ok()??;
+            return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Type(associated_type))));
+        }
     }
 
     if let Some(associated_impl) =
         identifier.as_syntax_node().ancestor_of_type::<ast::ItemImplAlias>(db)
     {
-        let associated_impl_name = associated_impl.name(db).text(db);
-        let impl_associated_impl = db.trait_impl_by_name(trait_id, associated_impl_name).ok()??;
-
-        return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Impl(impl_associated_impl))));
+        let associated_impl_name = associated_impl.name(db);
+        if &associated_impl_name == identifier {
+            let associated_impl_name = associated_impl_name.text(db);
+            let associated_impl = db.trait_impl_by_name(trait_id, associated_impl_name).ok()??;
+            return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Impl(associated_impl))));
+        }
     }
+
     None
 }
 
@@ -307,6 +320,74 @@ fn try_variable_declaration(
             .find(|var| var.name == identifier.text(db))?;
         let var_id = VarId::Local(pattern_variable.var.id);
         return Some(ResolvedItem::Generic(ResolvedGenericItem::Variable(var_id)));
+    }
+
+    None
+}
+
+/// Resolves concrete type identifiers and impl identifiers in type-level expressions and type annotations.
+/// In particular, handles **type and impl aliases** which require special care.
+fn try_concrete_type_or_impl(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<ResolvedItem> {
+    let ptr = identifier.stable_ptr(db);
+    let module_file_id = db.find_module_file_containing_node(&identifier.as_syntax_node())?;
+
+    for &lookup_item_id in lookup_items {
+        let resolved_generic = db.lookup_resolved_generic_item_by_ptr(lookup_item_id, ptr);
+
+        // If the type obviously resolves to an alias, return immedietely.
+        // This happens only in the `use` path.
+        match resolved_generic {
+            Some(item @ ResolvedGenericItem::GenericTypeAlias(_)) => {
+                return Some(ResolvedItem::Generic(item));
+            }
+            Some(item @ ResolvedGenericItem::GenericImplAlias(_)) => {
+                return Some(ResolvedItem::Generic(item));
+            }
+            _ => (),
+        }
+
+        // Compiler resolves the type/impl aliases recursively, until it reaches a concrete type.
+        // If we call [`SemanticGroup::resolve_concrete_item_by_ptr`] on the identifier,
+        // we will receive the aliased type/impl instead of the alias.
+        //
+        // To avoid this, we try resolving the identifier as a path, which is handled differently by the resolver.
+        // This allows us to reach the definition of the alias.
+
+        let type_path_segments =
+            identifier.as_syntax_node().ancestor_of_type::<ast::ExprPath>(db)?.to_segments(db);
+
+        if type_path_segments
+            .last()
+            .is_none_or(|segment| segment.identifier(db) != identifier.text(db))
+        {
+            return None;
+        }
+
+        let mut resolver =
+            Resolver::new(db, module_file_id, InferenceId::LookupItemDeclaration(lookup_item_id));
+
+        // Concrete types and type/impl aliases resolve correctly when interpreted as paths.
+        let resolved_item = resolver
+            .resolve_generic_path_with_args(
+                &mut SemanticDiagnostics::default(),
+                type_path_segments,
+                NotFoundItemType::Identifier,
+            )
+            .ok()?;
+
+        match &resolved_item {
+            ResolvedGenericItem::GenericType(_)
+            | ResolvedGenericItem::GenericTypeAlias(_)
+            | ResolvedGenericItem::Impl(_)
+            | ResolvedGenericItem::GenericImplAlias(_) => {
+                return Some(ResolvedItem::Generic(resolved_item));
+            }
+            _ => (),
+        }
     }
 
     None
