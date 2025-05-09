@@ -194,23 +194,26 @@ fn test_extern_type_in_trait_associated_const_as_type_parameter() {
     ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_extern_type_in_trait_generic_bound_as_type() {
     test_transform!(find_references, r#"
     trait Trait<T, +Into<u32<caret>, T>> {}
-    "#, @"none response")
+    "#, @r"
+    // found several references in the core crate
+    trait Trait<T, +Into<<sel>u32</sel>, T>> {}
+    ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_extern_type_in_trait_generic_bound_as_type_parameter() {
     test_transform!(find_references, r#"
     trait Trait<T, +Into<Array<u32<caret>>, T>> {}
-    "#, @"none response")
+    "#, @r"
+    // found several references in the core crate
+    trait Trait<T, +Into<Array<<sel>u32</sel>>, T>> {}
+    ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_extern_type_in_impl_associated_type_as_type() {
     test_transform!(find_references, r#"
@@ -221,16 +224,16 @@ fn test_extern_type_in_impl_associated_type_as_type() {
         type Type = u32<caret>;
     }
     "#, @r"
+    // found several references in the core crate
     trait Trait {
-        type <sel=declaration>Type</sel>;
+        type Type;
     }
     impl Impl of Trait {
-        type Type = u32;
+        type Type = <sel>u32</sel>;
     }
     ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_extern_type_in_impl_associated_type_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -241,16 +244,16 @@ fn test_extern_type_in_impl_associated_type_as_type_parameter() {
         type Type = Array<u32<caret>>;
     }
     "#, @r"
+    // found several references in the core crate
     trait Trait {
-        type <sel=declaration>Type</sel>;
+        type Type;
     }
     impl Impl of Trait {
-        type Type = Array<u32>;
+        type Type = Array<<sel>u32</sel>>;
     }
     ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_extern_type_in_impl_associated_const_as_type() {
     test_transform!(find_references, r#"
@@ -261,16 +264,16 @@ fn test_extern_type_in_impl_associated_const_as_type() {
         const Const: u32<caret> = 0x0;
     }
     "#, @r"
+    // found several references in the core crate
     trait Trait {
-        const <sel=declaration>Const</sel>: u32;
+        const Const: <sel>u32</sel>;
     }
     impl Impl of Trait {
-        const <sel>Const</sel>: u32 = 0x0;
+        const Const: <sel>u32</sel> = 0x0;
     }
     ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_extern_type_in_impl_associated_const_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -281,31 +284,38 @@ fn test_extern_type_in_impl_associated_const_as_type_parameter() {
         const Const: Array<u32<caret>> = 0x0;
     }
     "#, @r"
+    // found several references in the core crate
     trait Trait {
-        const <sel=declaration>Const</sel>: u32;
+        const Const: <sel>u32</sel>;
     }
     impl Impl of Trait {
-        const <sel>Const</sel>: Array<u32> = 0x0;
+        const Const: Array<<sel>u32</sel>> = 0x0;
     }
     ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_extern_type_in_impl_generic_bound_as_type() {
     test_transform!(find_references, r#"
     trait Trait<T, +Into<u32, T>> {}
     impl<T, +Into<u32<caret>, T>> Impl of Trait<T> {}
-    "#, @"none response")
+    "#, @r"
+    // found several references in the core crate
+    trait Trait<T, +Into<<sel>u32</sel>, T>> {}
+    impl<T, +Into<<sel>u32</sel>, T>> Impl of Trait<T> {}
+    ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_extern_type_in_impl_generic_bound_as_type_parameter() {
     test_transform!(find_references, r#"
     trait Trait<T, +Into<u32, T>> {}
     impl<T, +Into<Array<u32<caret>>, T>> Impl of Trait<T> {}
-    "#, @"none response")
+    "#, @r"
+    // found several references in the core crate
+    trait Trait<T, +Into<<sel>u32</sel>, T>> {}
+    impl<T, +Into<Array<<sel>u32</sel>>, T>> Impl of Trait<T> {}
+    ")
 }
 
 #[test]
@@ -325,7 +335,6 @@ fn test_type_alias_in_use() {
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_alias_as_type() {
     test_transform!(find_references, r#"
@@ -333,13 +342,12 @@ fn test_type_alias_in_alias_as_type() {
     type SomeTypeAlias = Struct;
     type TypeAlias = SomeTypeAlias<caret>;
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
-    type TypeAlias = SomeTypeAlias;
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    type TypeAlias = <sel>SomeTypeAlias</sel>;
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_alias_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -347,13 +355,12 @@ fn test_type_alias_in_alias_as_type_parameter() {
     type SomeTypeAlias = Struct;
     type TypeAlias = Array<SomeTypeAlias<caret>>;
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
-    type TypeAlias = Array<SomeTypeAlias>;
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    type TypeAlias = Array<<sel>SomeTypeAlias</sel>>;
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_variable_as_type() {
     test_transform!(find_references,
@@ -364,15 +371,14 @@ fn test_type_alias_in_variable_as_type() {
         let x: SomeTypeAlias<caret> = 0x0;
     }
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
     fn foo() {
-        let x: SomeTypeAlias = 0x0;
+        let x: <sel>SomeTypeAlias</sel> = 0x0;
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_variable_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -382,15 +388,14 @@ fn test_type_alias_in_variable_as_type_parameter() {
         let x: Array<SomeTypeAlias<caret>> = 0x0;
     }
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
     fn foo() {
-        let x: Array<SomeTypeAlias> = 0x0;
+        let x: Array<<sel>SomeTypeAlias</sel>> = 0x0;
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_function_argument_as_type() {
     test_transform!(find_references, r#"
@@ -398,13 +403,12 @@ fn test_type_alias_in_function_argument_as_type() {
     type SomeTypeAlias = Struct;
     fn foo(x: SomeTypeAlias<caret>) {}
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
-    fn foo(x: SomeTypeAlias) {}
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    fn foo(x: <sel>SomeTypeAlias</sel>) {}
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_function_argument_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -412,13 +416,12 @@ fn test_type_alias_in_function_argument_as_type_parameter() {
     type SomeTypeAlias = Struct;
     fn foo(x: Array<SomeTypeAlias<caret>>) {}
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
-    fn foo(x: Array<SomeTypeAlias>) {}
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    fn foo(x: Array<<sel>SomeTypeAlias</sel>>) {}
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_return_type_as_type() {
     test_transform!(find_references, r#"
@@ -426,13 +429,12 @@ fn test_type_alias_in_return_type_as_type() {
     type SomeTypeAlias = Struct;
     fn foo() -> SomeTypeAlias<caret> { 0x0 }
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
-    fn foo() -> SomeTypeAlias { 0x0 }
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    fn foo() -> <sel>SomeTypeAlias</sel> { 0x0 }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_return_type_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -440,13 +442,12 @@ fn test_type_alias_in_return_type_as_type_parameter() {
     type SomeTypeAlias = Struct;
     fn foo() -> Array<SomeTypeAlias<caret>> { 0x0 }
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
-    fn foo() -> Array<SomeTypeAlias> { 0x0 }
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    fn foo() -> Array<<sel>SomeTypeAlias</sel>> { 0x0 }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_struct_field_as_type() {
     test_transform!(find_references, r#"
@@ -457,14 +458,13 @@ fn test_type_alias_in_struct_field_as_type() {
     }
     "#, @r"
     struct Struct {}
-    type SomeTypeAlias = <sel>Struct</sel>;
-    struct <sel=declaration>Struct</sel> {
-        x: SomeTypeAlias
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    struct Struct {
+        x: <sel>SomeTypeAlias</sel>
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_struct_field_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -475,14 +475,13 @@ fn test_type_alias_in_struct_field_as_type_parameter() {
     }
     "#, @r"
     struct Struct {}
-    type SomeTypeAlias = <sel>Struct</sel>;
-    struct <sel=declaration>Struct</sel> {
-        x: Array<SomeTypeAlias>
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    struct Struct {
+        x: Array<<sel>SomeTypeAlias</sel>>
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_turbofish_enum_as_type() {
     test_transform!(find_references, r#"
@@ -492,15 +491,14 @@ fn test_type_alias_in_turbofish_enum_as_type() {
         let x = Result::<SomeTypeAlias<caret>>::Err(());
     }
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
     fn foo() {
-        let x = Result::<SomeTypeAlias>::Err(());
+        let x = Result::<<sel>SomeTypeAlias</sel>>::Err(());
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_turbofish_enum_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -510,10 +508,10 @@ fn test_type_alias_in_turbofish_enum_as_type_parameter() {
         let x = Result::<Array<SomeTypeAlias<caret>>>::Err(());
     }
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
     fn foo() {
-        let x = Result::<Array<SomeTypeAlias>>::Err(());
+        let x = Result::<Array<<sel>SomeTypeAlias</sel>>>::Err(());
     }
     ")
 }
@@ -542,7 +540,6 @@ fn test_type_alias_in_trait_associated_type_as_type_parameter() {
     "#, @"none response")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_trait_associated_const_as_type() {
     test_transform!(find_references, r#"
@@ -552,15 +549,14 @@ fn test_type_alias_in_trait_associated_const_as_type() {
         const Const: SomeTypeAlias<caret>;
     }
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
     trait Trait {
-        const Const: SomeTypeAlias;
+        const Const: <sel>SomeTypeAlias</sel>;
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_trait_associated_const_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -570,35 +566,40 @@ fn test_type_alias_in_trait_associated_const_as_type_parameter() {
         const Const: Array<SomeTypeAlias<caret>>;
     }
     "#, @r"
-    struct <sel=declaration>Struct</sel> {}
-    type SomeTypeAlias = <sel>Struct</sel>;
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
     trait Trait {
-        const Const: Array<SomeTypeAlias>;
+        const Const: Array<<sel>SomeTypeAlias</sel>>;
     }
     ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_type_alias_in_trait_generic_bound_as_type() {
     test_transform!(find_references, r#"
     struct Struct {}
     type SomeTypeAlias = Struct;
     trait Trait<T, +Into<SomeTypeAlias<caret>, T>> {}
-    "#, @"none response")
+    "#, @r"
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    trait Trait<T, +Into<<sel>SomeTypeAlias</sel>, T>> {}
+    ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_type_alias_in_trait_generic_bound_as_type_parameter() {
     test_transform!(find_references, r#"
     struct Struct {}
     type SomeTypeAlias = Struct;
     trait Trait<T, +Into<Array<SomeTypeAlias<caret>>, T>> {}
-    "#, @"none response")
+    "#, @r"
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    trait Trait<T, +Into<Array<<sel>SomeTypeAlias</sel>>, T>> {}
+    ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_type_alias_in_impl_associated_type_as_type() {
     test_transform!(find_references, r#"
@@ -612,17 +613,16 @@ fn test_type_alias_in_impl_associated_type_as_type() {
     }
     "#, @r"
     struct Struct {}
-    type SomeTypeAlias = Struct;
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
     trait Trait {
-        type <sel=declaration>Type</sel>;
+        type Type;
     }
     impl Impl of Trait {
-        type Type = SomeTypeAlias;
+        type Type = <sel>SomeTypeAlias</sel>;
     }
     ")
 }
 
-// FIXME(#405)
 #[test]
 fn test_type_alias_in_impl_associated_type_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -636,17 +636,16 @@ fn test_type_alias_in_impl_associated_type_as_type_parameter() {
     }
     "#, @r"
     struct Struct {}
-    type SomeTypeAlias = Struct;
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
     trait Trait {
-        type <sel=declaration>Type</sel>;
+        type Type;
     }
     impl Impl of Trait {
-        type Type = Array<SomeTypeAlias>;
+        type Type = Array<<sel>SomeTypeAlias</sel>>;
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_impl_associated_const_as_type() {
     test_transform!(find_references, r#"
@@ -660,17 +659,16 @@ fn test_type_alias_in_impl_associated_const_as_type() {
     }
     "#, @r"
     struct Struct {}
-    type SomeTypeAlias = Struct;
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
     trait Trait {
-        const <sel=declaration>Const</sel>: SomeTypeAlias;
+        const Const: <sel>SomeTypeAlias</sel>;
     }
     impl Impl of Trait {
-        const <sel>Const</sel>: SomeTypeAlias = 0x0;
+        const Const: <sel>SomeTypeAlias</sel> = 0x0;
     }
     ")
 }
 
-// FIXME(#466)
 #[test]
 fn test_type_alias_in_impl_associated_const_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -684,17 +682,16 @@ fn test_type_alias_in_impl_associated_const_as_type_parameter() {
     }
     "#, @r"
     struct Struct {}
-    type SomeTypeAlias = Struct;
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
     trait Trait {
-        const <sel=declaration>Const</sel>: Array<SomeTypeAlias>;
+        const Const: Array<<sel>SomeTypeAlias</sel>>;
     }
     impl Impl of Trait {
-        const <sel>Const</sel>: Array<SomeTypeAlias> = 0x0;
+        const Const: Array<<sel>SomeTypeAlias</sel>> = 0x0;
     }
     ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_type_alias_in_impl_generic_bound_as_type() {
     test_transform!(find_references, r#"
@@ -702,10 +699,14 @@ fn test_type_alias_in_impl_generic_bound_as_type() {
     type SomeTypeAlias = Struct;
     trait Trait<T, +Into<SomeTypeAlias, T>> {}
     impl<T, +Into<SomeTypeAlias<caret>, T>> Impl of Trait<T> {}
-    "#, @"none response")
+    "#, @r"
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    trait Trait<T, +Into<<sel>SomeTypeAlias</sel>, T>> {}
+    impl<T, +Into<<sel>SomeTypeAlias</sel>, T>> Impl of Trait<T> {}
+    ")
 }
 
-// FIXME(#51)
 #[test]
 fn test_type_alias_in_impl_generic_bound_as_type_parameter() {
     test_transform!(find_references, r#"
@@ -713,5 +714,10 @@ fn test_type_alias_in_impl_generic_bound_as_type_parameter() {
     type SomeTypeAlias = Struct;
     trait Trait<T, +Into<SomeTypeAlias, T>> {}
     impl<T, +Into<Array<SomeTypeAlias<caret>>, T>> Impl of Trait<T> {}
-    "#, @"none response")
+    "#, @r"
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    trait Trait<T, +Into<<sel>SomeTypeAlias</sel>, T>> {}
+    impl<T, +Into<Array<<sel>SomeTypeAlias</sel>>, T>> Impl of Trait<T> {}
+    ")
 }
