@@ -209,13 +209,13 @@ fn impl_method_via_definition() {
     fn main() {
         let foo = Foo {};
         let x = foo.area();
-        let y = FooTrait::area(foo);
+        let y = FooTrait::area(@foo);
     }
     "#, @r"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        fn RENAMED(self: @Foo) -> u64;
+        fn area(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
         fn RENAMED(self: @Foo) -> u64 { 0 }
@@ -231,7 +231,7 @@ fn impl_method_via_definition() {
     fn main() {
         let foo = Foo {};
         let x = foo.RENAMED();
-        let y = FooTrait::RENAMED(foo);
+        let y = FooTrait::RENAMED(@foo);
     }
     ")
 }
