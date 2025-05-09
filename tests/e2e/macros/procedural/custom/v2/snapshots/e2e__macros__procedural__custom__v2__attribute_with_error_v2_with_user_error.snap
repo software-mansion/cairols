@@ -1,21 +1,23 @@
 ---
 source: tests/e2e/macros/procedural/custom/v2/mod.rs
-description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[error_attribute_macro_v2]\nfn foo() {}"
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[error_attribute_macro_v2]\nfn foo() { \"a\" + \"b\"; }"
 expression: report
 ---
 [[expansions]]
-analyzed_lines = """
+analyzed_lines = '''
 #[error_attribute_macro_v2]<caret>
-fn f<caret>oo() {}
-fn foo() {<caret>}
-"""
-generated_code = """
+fn f<caret>oo() { "a" + "b"; }
+fn foo() { "a" + "b"; <caret>}
+'''
+generated_code = '''
 // lib.cairo
 // ---------
 
 #[error_attribute_macro_v2]
-fn foo() {}
-"""
+fn foo() {
+    "a" + "b";
+}
+'''
 
 mapped_diagnostics:
 - url: '[ROOT_URL]test_package/src/lib.cairo'
