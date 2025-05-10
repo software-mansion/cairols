@@ -3,7 +3,7 @@ use attribute::derive::derive_completions;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::{
-    self, Attribute, ExprStructCtorCall, ItemModule, TerminalIdentifier, UsePathLeaf, UsePathSingle,
+    self, Attribute, ExprStructCtorCall, ItemModule, TerminalIdentifier, UsePathSingle,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
@@ -103,15 +103,6 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
         then {
             completions.extend(dot_completions);
-        }
-    );
-
-    if_chain!(
-        if let Some(leaf) = node.ancestor_of_type::<UsePathLeaf>(db);
-        if let Some(use_completions) = use_statement(db, ast::UsePath::Leaf(leaf), &ctx);
-
-        then {
-            completions.extend(use_completions);
         }
     );
 
