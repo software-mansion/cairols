@@ -1,8 +1,5 @@
-use std::collections::{HashMap, HashSet};
-use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+use std::collections::HashMap;
 
-use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
@@ -12,17 +9,14 @@ use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::LookupIntern;
 use lsp_types::{Diagnostic, Url};
-use tracing::{error, info_span};
 
-use crate::lang::db::AnalysisDatabase;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
-use crate::server::panic::is_cancelled;
 
-/// Result of processing a single on disk file in search for diagnostics.
-/// Note that it may contain diagnostics for virtual files originating from the processed file.
+/// Result of processing a single on disk file `root_on_disk_file` and virtual files that are its
+/// descendants in search for diagnostics.
 ///
 /// ## Comparisons
 ///
@@ -31,85 +25,49 @@ use crate::server::panic::is_cancelled;
 ///
 /// ## Virtual files
 ///
-/// When collecting diagnostics using [`FileDiagnostics::collect`], all virtual files related
+/// When collecting diagnostics using [`FilesDiagnostics::collect`], all virtual files related
 /// to the given `file` will also be visited and their diagnostics collected.
 #[derive(Clone, PartialEq, Eq)]
-pub struct FileDiagnostics {
-    pub processed_file: (Url, FileId),
+pub struct FilesDiagnostics {
+    pub root_on_disk_file: (Url, FileId),
     pub parser: Diagnostics<ParserDiagnostic>,
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
 }
 
-impl FileDiagnostics {
-    /// Collects all diagnostics kinds by processing an on disk `file`
-    /// and constructs a new `FileDiagnostics`.
-    ///
-    /// The `processed_modules` in/out parameter is used to avoid constructing two overlapping
-    /// `FileDiagnostics` in a single batch.
-    /// Any [`ModuleId`] present in this collection will be skipped (leaving empty diagnostics in
-    /// constructed `FileDiagnostics`), and new module IDs will be added.
-    pub fn collect(
-        db: &AnalysisDatabase,
-        processed_file: FileId,
-        processed_modules: &mut HashSet<ModuleId>,
-    ) -> Option<Self> {
-        macro_rules! query {
-            ($query:expr) => {
-                info_span!(stringify!($query)).in_scope(|| {
-                    catch_unwind(AssertUnwindSafe(|| $query)).map_err(|err| {
-                        if is_cancelled(err.as_ref()) {
-                            resume_unwind(err);
-                        } else {
-                            error!(
-                                "caught panic when computing diagnostics for file: {:?}",
-                                processed_file.lookup_intern(db)
-                            );
-                            err
-                        }
-                    })
-                })
-            };
-        }
-
-        let processed_file_url = query!(db.url_for_file(processed_file)).ok()??;
-        let module_ids = query!(db.file_modules(processed_file)).ok()?.ok()?;
+impl FilesDiagnostics {
+    /// Collects all diagnostics kinds by processing an on disk `root_on_disk_file` together with
+    /// virtual files that are its descendants.
+    pub fn collect(db: &AnalysisDatabase, root_on_disk_file: FileId) -> Option<Self> {
+        let root_on_disk_file_url = db.url_for_file(root_on_disk_file)?;
 
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
+        let mut parser_file_diagnostics: Vec<ParserDiagnostic> = vec![];
 
-        for &module_id in module_ids.iter() {
-            if !processed_modules.contains(&module_id) {
-                semantic_file_diagnostics.extend(
-                    query!(db.module_semantic_diagnostics(module_id))
-                        .map(Result::unwrap_or_default)
-                        .unwrap_or_default()
-                        .get_all(),
-                );
-                lowering_file_diagnostics.extend(
-                    query!(db.module_lowering_diagnostics(module_id))
-                        .map(Result::unwrap_or_default)
-                        .unwrap_or_default()
-                        .get_all(),
-                );
+        let (files_to_process, modules_to_process) =
+            db.file_and_subfiles_with_corresponding_modules(root_on_disk_file)?;
 
-                processed_modules.insert(module_id);
-            }
+        for module_id in modules_to_process.into_iter() {
+            semantic_file_diagnostics
+                .extend(db.module_semantic_diagnostics(module_id).unwrap_or_default().get_all());
+            lowering_file_diagnostics
+                .extend(db.module_lowering_diagnostics(module_id).unwrap_or_default().get_all());
         }
 
-        // TODO: collect parser diags for virtual files - check generated files.
-        let parser_file_diagnostics =
-            query!(db.file_syntax_diagnostics(processed_file)).unwrap_or_default();
+        for file_id in files_to_process.into_iter() {
+            parser_file_diagnostics.extend(db.file_syntax_diagnostics(file_id).get_all());
+        }
 
-        Some(FileDiagnostics {
-            processed_file: (processed_file_url, processed_file),
-            parser: parser_file_diagnostics,
+        Some(FilesDiagnostics {
+            root_on_disk_file: (root_on_disk_file_url, root_on_disk_file),
+            parser: Diagnostics::from_iter(parser_file_diagnostics),
             semantic: Diagnostics::from_iter(semantic_file_diagnostics),
             lowering: Diagnostics::from_iter(lowering_file_diagnostics),
         })
     }
 
-    /// Converts all diagnostics from this [`FileDiagnostics`] to mapping from [`Url`] and
+    /// Converts all diagnostics from this [`FilesDiagnostics`] to mapping from [`Url`] and
     /// [`FileId`] to [`Diagnostic`].
     ///
     /// The key in the mapping refers to either the processed on disk file or
@@ -143,10 +101,10 @@ impl FileDiagnostics {
         // even when they are supposed to be empty.
         // Processed file is the only on disk file in here - ensure we send
         // empty diagnostics when appropriate.
-        if !diagnostics.contains_key(&self.processed_file) {
-            diagnostics.insert(self.processed_file.clone(), Vec::new());
+        if !diagnostics.contains_key(&self.root_on_disk_file) {
+            diagnostics.insert(self.root_on_disk_file.clone(), Vec::new());
         }
 
-        (self.processed_file.0.clone(), diagnostics)
+        (self.root_on_disk_file.0.clone(), diagnostics)
     }
 }

@@ -1,0 +1,68 @@
+---
+source: tests/e2e/macros/procedural/custom/v2/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[mod_attribute_macro_v2]\nfn foo() { \"a\" + \"b\"; }"
+expression: report
+---
+[[expansions]]
+analyzed_lines = '''
+#[mod_attribute_macro_v2]<caret>
+fn f<caret>oo() { "a" + "b"; }
+fn foo() { "a" + "b"; <caret>}
+'''
+generated_code = '''
+// lib.cairo
+// ---------
+
+#[mod_attribute_macro_v2]
+fn foo() {
+    "a" + "b";
+}
+
+// proc_macro_mod_attribute_macro_v2
+// ---------------------------------
+
+mod modzik {
+    fn foo() {
+        "a" + "b";
+    }
+let x = ; }
+'''
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: '{ "a" + "b";'
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 9
+        end:
+          line: 1
+          character: 21
+      severity: 1
+      message: Type annotations needed. Failed to infer ?0.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_mod_attribute_macro_v2.cairo
+          range:
+            start:
+              line: 0
+              character: 22
+            end:
+              line: 0
+              character: 31
+        message: Diagnostic mapped from here.
+- url: vfs://proc_macro_mod_attribute_macro_v2.cairo
+  diagnostics:
+  - related_code: let x=;
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 35
+        end:
+          line: 0
+          character: 42
+      severity: 1
+      message: 'Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.'

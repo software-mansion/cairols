@@ -37,28 +37,6 @@ fn generated_function_v2() {}
 mapped_diagnostics:
 - url: '[ROOT_URL]test_package/src/lib.cairo'
   diagnostics:
-  - related_code: 5_u32
-    diagnostic:
-      range:
-        start:
-          line: 1
-          character: 23
-        end:
-          line: 1
-          character: 28
-      severity: 1
-      message: 'Unexpected argument type. Expected: "core::integer::u8", found: "core::integer::u32".'
-      relatedInformation:
-      - location:
-          uri: vfs://proc_macro_complex_attribute_macro_v2.cairo
-          range:
-            start:
-              line: 0
-              character: 23
-            end:
-              line: 0
-              character: 28
-        message: Diagnostic mapped from here.
   - related_code: x
     diagnostic:
       range:
@@ -81,4 +59,26 @@ mapped_diagnostics:
             end:
               line: 0
               character: 16
+        message: Diagnostic mapped from here.
+  - related_code: 5_u32
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 23
+        end:
+          line: 1
+          character: 28
+      severity: 1
+      message: 'Unexpected argument type. Expected: "core::integer::u8", found: "core::integer::u32".'
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_complex_attribute_macro_v2.cairo
+          range:
+            start:
+              line: 0
+              character: 23
+            end:
+              line: 0
+              character: 28
         message: Diagnostic mapped from here.
