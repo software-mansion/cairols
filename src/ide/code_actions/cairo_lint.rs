@@ -4,7 +4,7 @@ use crate::lang::{
     lsp::{LsProtoGroup, ToLsp},
 };
 use cairo_lang_semantic::db::SemanticGroup;
-use lsp_types::{CodeAction, TextEdit, WorkspaceEdit};
+use lsp_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
 
 pub fn cairo_lint(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Option<Vec<CodeAction>> {
     let diags = db.module_semantic_diagnostics(ctx.module_id).ok()?;
@@ -28,6 +28,7 @@ pub fn cairo_lint(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Option<Ve
             fixes.into_iter().flat_map(move |fix| {
                 Some(CodeAction {
                     title: "Fix lint".to_string(),
+                    kind: Some(CodeActionKind::QUICKFIX),
                     edit: Some(WorkspaceEdit {
                         changes: Some(
                             [(
