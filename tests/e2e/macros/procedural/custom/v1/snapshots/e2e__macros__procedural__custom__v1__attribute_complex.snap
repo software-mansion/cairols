@@ -1,5 +1,6 @@
 ---
-source: tests/e2e/macros/procedural/custom/mod.rs
+source: tests/e2e/macros/procedural/custom/v1/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros = { path = \"/Users/piotr/Projects/cairols/tests/scarb_procedural_macros\" }\n\n// → test_package/src/lib.cairo\n#[complex_attribute_macro]\nfn foo() {}"
 expression: report
 ---
 [[expansions]]
@@ -9,20 +10,5 @@ fn <caret>foo() {}
 fn foo() {<caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
-#[complex_attribute_macro]
-fn foo() {}
-
-// proc_macro_complex_attribute_macro
-// ----------------------------------
-
-#[simple_attribute_macro]
-fn generated_function_with_other_attribute() {}
-
-// proc_macro_simple_attribute_macro
-// ---------------------------------
-
 fn generated_function() {}
 """
