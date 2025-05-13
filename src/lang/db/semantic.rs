@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::{
     ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
     TraitItemId, TraitLongId, UseLongId, VarId,
 };
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::Binding;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
@@ -16,6 +17,7 @@ use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, Upcast};
+use std::collections::{HashSet, VecDeque};
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// Language server-specific extensions to the semantic group.
@@ -175,6 +177,46 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup {
                 None
             }
         }
+    }
+
+    /// Collects `file` and all its descendants together with modules from all these files.
+    ///
+    /// **CAVEAT**: it does not collect descendant files that come from inline macros - it will when
+    /// the compiler moves inline macros resolving to [`DefsGroup`].
+    fn file_and_subfiles_with_corresponding_modules(
+        &self,
+        file: FileId,
+    ) -> Option<(HashSet<FileId>, HashSet<ModuleId>)> {
+        let mut modules: HashSet<_> = self.file_modules(file).ok()?.iter().copied().collect();
+        let mut files = HashSet::from([file]);
+        // Collect descendants of `file`
+        // and modules from all virtual files that are descendants of `file`.
+        //
+        // Caveat: consider a situation `file1` --(child)--> `file2` with file contents:
+        // - `file1`: `mod file2_origin_module { #[file2]fn sth() {} }`
+        // - `file2`: `mod mod_from_file2 { }`
+        //  It is important that `file2` content contains a module.
+        //
+        // Problem: in this situation it is not enough to call `db.file_modules(file1_id)` since
+        //  `mod_from_file2` won't be in the result of this query.
+        // Solution: we can find file id of `file2`
+        //  (note that we only have file id of `file1` at this point)
+        //  in `db.module_files(mod_from_file1_from_which_file2_origins)`.
+        //  Then we can call `db.file_modules(file2_id)` to obtain module id of `mod_from_file2`.
+        //  We repeat this procedure until there is nothing more to collect.
+        let mut modules_queue: VecDeque<_> = modules.iter().copied().collect();
+        while let Some(module_id) = modules_queue.pop_front() {
+            for file_id in self.module_files(module_id).ok()?.iter() {
+                if files.insert(*file_id) {
+                    for module_id in self.file_modules(*file_id).ok()?.iter() {
+                        if modules.insert(*module_id) {
+                            modules_queue.push_back(*module_id);
+                        }
+                    }
+                }
+            }
+        }
+        Some((files, modules))
     }
 }
 

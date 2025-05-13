@@ -17,7 +17,7 @@ use std::sync::{Arc, RwLock};
 #[derive(Clone)]
 pub struct ProjectDiagnostics {
     /// A map from an [`Url`] of an on disk file to diagnostics of the file and virtual files
-    /// originating from the file.
+    /// that are descendants of the file.
     ///
     /// ## Invariants
     /// 1. Any [`Url`] key in the *outer* mapping **MUST** correspond to an on disk file.
@@ -40,20 +40,21 @@ impl ProjectDiagnostics {
         Self { file_diagnostics: Default::default() }
     }
 
-    /// Update existing diagnostics based on new diagnostics obtained by processing an on disk file.
+    /// Update existing diagnostics based on new diagnostics obtained by processing an on disk file
+    /// identified by `root_on_disk_file_url` and virtual files originating from it.
     ///
-    /// Returns mapping from file to its diagnostics for files which diagnostics changed
+    /// Returns mapping from a file to its diagnostics for files which diagnostics changed
     /// as a result of the update.
     pub fn update(
         &self,
-        processed_file_url: Url,
+        root_on_disk_file_url: Url,
         new_diags: SelfAndOriginatingFilesDiagnostics,
     ) -> HashMap<Url, Vec<Diagnostic>> {
         let old_diags = self
             .file_diagnostics
             .read()
             .expect("file diagnostics are poisoned, bailing out")
-            .get(&processed_file_url)
+            .get(&root_on_disk_file_url)
             .cloned()
             .unwrap_or_default();
 
@@ -64,7 +65,7 @@ impl ProjectDiagnostics {
         self.file_diagnostics
             .write()
             .expect("file diagnostics are poisoned, bailing out")
-            .insert(processed_file_url.clone(), new_diags.clone());
+            .insert(root_on_disk_file_url.clone(), new_diags.clone());
 
         let mut diags_to_send = HashMap::new();
 

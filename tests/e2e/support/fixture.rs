@@ -80,6 +80,10 @@ impl Fixture {
         fs::read_to_string(self.file_absolute_path(path)).unwrap()
     }
 
+    pub fn maybe_read_file(&self, path: impl AsRef<Path>) -> Option<String> {
+        fs::read_to_string(self.file_absolute_path(path)).ok()
+    }
+
     /// If the url refers to a possible file in this fixture, returns the path of this file
     /// (relative to fixture root); otherwise, returns an error string.
     /// This method does not check the existence of the file.

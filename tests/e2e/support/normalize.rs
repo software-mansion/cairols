@@ -46,33 +46,26 @@ fn normalize_path(path: &Path) -> String {
     normalize_paths(path.to_string_lossy().to_string())
 }
 
-/// Normalizes paths, sorts the diagnostics by the URL, filters out corelib diagnostics
+/// Normalizes paths, sorts the diagnostics by the normalized URL and ranges.
 /// Returns a list of tuples containing: (Original URL, Normalized URL, Normalized Diagnostics for
-/// given URL)
+/// given URL).
 pub fn normalize_diagnostics(
     fixture: &impl AsRef<Fixture>,
     diagnostics: impl IntoIterator<Item = (Url, Vec<Diagnostic>)>,
 ) -> Vec<(Url, String, Vec<Diagnostic>)> {
     diagnostics
         .into_iter()
-        .filter(|(url, _)| !url.path().contains("core/src"))
-        .sorted_by(|(url_a, _), (url_b, _)| url_a.path().cmp(url_b.path()))
         .map(|(url, diagnostics)| {
             (
                 url.clone(),
                 normalize(fixture, &url),
                 diagnostics
-                    .iter()
+                    .into_iter()
+                    .sorted_by_key(|x| (x.range.start, x.range.end))
                     .map(|diag| Diagnostic {
-                        range: diag.range,
-                        severity: diag.severity,
-                        code: diag.code.clone(),
-                        code_description: diag.code_description.clone(),
-                        source: diag.source.clone(),
-                        message: diag.message.clone(),
-                        related_information: diag.related_information.clone().map(|infos| {
+                        related_information: diag.related_information.map(|infos| {
                             infos
-                                .iter()
+                                .into_iter()
                                 .map(|x| DiagnosticRelatedInformation {
                                     location: Location {
                                         uri: Url::from_str(&normalize(
@@ -82,15 +75,15 @@ pub fn normalize_diagnostics(
                                         .unwrap(),
                                         range: x.location.range,
                                     },
-                                    message: x.message.clone(),
+                                    message: x.message,
                                 })
                                 .collect()
                         }),
-                        tags: diag.tags.clone(),
-                        data: diag.data.clone(),
+                        ..diag
                     })
                     .collect(),
             )
         })
+        .sorted_by(|(_, norm_url1, _), (_, norm_url2, _)| norm_url1.cmp(norm_url2))
         .collect()
 }
