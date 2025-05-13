@@ -262,6 +262,7 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup + LsSyntaxG
         }
         Some((files, modules))
     }
+
     /// We use the term `resultants` to refer to generated nodes that are mapped to the original node and are not deleted.
     /// Efectively (user nodes + generated nodes - removed nodes) set always contains resultants for any user defined node.
     /// Semantic data may be available only for resultants.
