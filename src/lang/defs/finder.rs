@@ -26,6 +26,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::{Intern, LookupIntern};
+use itertools::Itertools;
 
 /// A language element that can be a result of name resolution performed by CairoLS.
 ///
@@ -58,10 +59,70 @@ pub fn find_definition(
         .or_else(|| try_member_declaration(db, identifier))
         .or_else(|| try_variant_declaration(db, identifier))
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
-        // FIXME(#589): .or_else(|| try_consts(db, identifier))
+        .or_else(|| try_impl_item_usages(db, identifier, lookup_items))
         .or_else(|| try_concrete_type_or_impl(db, identifier, lookup_items))
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
+}
+
+fn try_impl_item_usages(
+    db: &AnalysisDatabase,
+    identifier: &TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<ResolvedItem> {
+    // Find if we're on ExprPath
+    let path_item_segments =
+        identifier.as_syntax_node().ancestor_of_type::<ast::ExprPath>(db)?.to_segments(db);
+
+    // Snip off the path the end after the identifier we're on
+    let path_item_segments_cloned = path_item_segments
+        .iter()
+        .take_while_inclusive(|segment| segment.identifier(db) != identifier.text(db))
+        .cloned()
+        .collect_vec();
+
+    // The last element is the member name
+    let (member_name_candidate, impl_prefix_candidate) = path_item_segments_cloned.split_last()?;
+    let impl_prefix_candidate = impl_prefix_candidate.iter().cloned().collect_vec();
+    if impl_prefix_candidate.is_empty() {
+        return None;
+    }
+
+    let try_find_impl_id = || {
+        for &lookup_item_id in lookup_items {
+            let module_file_id =
+                db.find_module_file_containing_node(&identifier.as_syntax_node())?;
+            let mut resolver = Resolver::new(
+                db,
+                module_file_id,
+                InferenceId::LookupItemDeclaration(lookup_item_id),
+            );
+
+            let diags = &mut SemanticDiagnostics::default();
+            if let Ok(ResolvedConcreteItem::Impl(impl_id)) = resolver.resolve_concrete_path(
+                diags,
+                impl_prefix_candidate.clone(),
+                NotFoundItemType::Impl,
+            ) {
+                return Some(impl_id);
+            }
+        }
+        None
+    };
+    let impl_id = try_find_impl_id()?;
+
+    let ImplLongId::Concrete(concrete_impl_id) = db.lookup_intern_impl(impl_id) else {
+        return None;
+    };
+
+    let concrete_impl_long_id = db.lookup_intern_concrete_impl(concrete_impl_id);
+    let item = db
+        .impl_item_by_name(
+            concrete_impl_long_id.impl_def_id,
+            member_name_candidate.as_syntax_node().get_text_without_trivia(db).parse().unwrap(),
+        )
+        .ok()??;
+    Some(ResolvedItem::ImplItem(item))
 }
 
 pub fn find_declaration(
