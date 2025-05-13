@@ -38,3 +38,14 @@ pub fn error_attribute_macro_v2(_args: TokenStream, _item: TokenStream) -> ProcM
     ProcMacroResult::new(TokenStream::empty())
         .with_diagnostics(Diagnostic::error("Error from procedural macro").into())
 }
+
+#[attribute_macro]
+pub fn mod_attribute_macro_v2(_args: TokenStream, item: TokenStream) -> ProcMacroResult {
+    let ts = quote! {
+        mod modzik {
+            #item
+            let x = ;
+        }
+    };
+    ProcMacroResult::new(ts)
+}

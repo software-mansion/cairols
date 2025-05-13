@@ -39,6 +39,116 @@ mapped_diagnostics:
           line: 0
           character: 28
       severity: 1
+      message: Missing tokens. Expected an expression.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 11
+            end:
+              line: 1
+              character: 11
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 28
+      severity: 1
+      message: 'Consecutive comparison operators are not allowed: ''<'' followed by ''>'''
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 10
+            end:
+              line: 1
+              character: 10
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 28
+      severity: 1
+      message: 'Consecutive comparison operators are not allowed: ''>'' followed by ''<'''
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 13
+            end:
+              line: 1
+              character: 13
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 28
+      severity: 1
+      message: Missing tokens. Expected an expression.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 22
+            end:
+              line: 1
+              character: 22
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 28
+      severity: 1
+      message: 'Skipped tokens. Expected: statement.'
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 22
+            end:
+              line: 1
+              character: 24
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 28
+      severity: 1
       code: E0006
       message: Identifier not found.
       relatedInformation:

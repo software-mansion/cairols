@@ -34,28 +34,6 @@ fn added_fun_v2() {
 mapped_diagnostics:
 - url: '[ROOT_URL]test_package/src/lib.cairo'
   diagnostics:
-  - related_code: 5_felt252
-    diagnostic:
-      range:
-        start:
-          line: 1
-          character: 18
-        end:
-          line: 1
-          character: 27
-      severity: 1
-      message: 'Unexpected argument type. Expected: "core::integer::u8", found: "core::felt252".'
-      relatedInformation:
-      - location:
-          uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
-          range:
-            start:
-              line: 0
-              character: 18
-            end:
-              line: 0
-              character: 27
-        message: Diagnostic mapped from here.
   - related_code: '#[improper_attribute_macro_v2]'
     diagnostic:
       range:
@@ -123,4 +101,26 @@ mapped_diagnostics:
             end:
               line: 0
               character: 51
+        message: Diagnostic mapped from here.
+  - related_code: 5_felt252
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 18
+        end:
+          line: 1
+          character: 27
+      severity: 1
+      message: 'Unexpected argument type. Expected: "core::integer::u8", found: "core::felt252".'
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
+          range:
+            start:
+              line: 0
+              character: 18
+            end:
+              line: 0
+              character: 27
         message: Diagnostic mapped from here.

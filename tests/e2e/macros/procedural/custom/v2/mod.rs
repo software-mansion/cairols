@@ -292,6 +292,20 @@ fn attribute_with_error_v2_with_user_error() {
 }
 
 #[test]
+fn attribute_with_mod_v2_with_user_error() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacrosV2,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                #[mod_attribute_macro_v2]<caret>
+                fn f<caret>oo() { "a" + "b"; <caret>}
+            "#)
+        }
+    );
+}
+
+#[test]
 fn derive_simple_v2_with_user_error() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithCustomMacrosV2,
@@ -342,6 +356,20 @@ fn derive_with_error_v2_with_user_error() {
             "test_package/src/lib.cairo" => indoc!(r#"
                 #[derive<caret>(Error<caret>DeriveMacroV2)]
                 struct Empty<caret>Struct { a: b, <caret>}
+            "#)
+        }
+    );
+}
+
+#[test]
+fn derive_with_mod_v2_with_user_error() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacrosV2,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                #[derive<caret>(Mod<caret>DeriveMacroV2)]
+                struct My<caret>Struct { a: b, <caret>}
             "#)
         }
     );
