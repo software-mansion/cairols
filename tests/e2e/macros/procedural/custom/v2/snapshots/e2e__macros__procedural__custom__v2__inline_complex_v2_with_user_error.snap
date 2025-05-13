@@ -1,0 +1,63 @@
+---
+source: tests/e2e/macros/procedural/custom/v2/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\nfn foo() {\n    let _x = complex_inline_macro_v2!([1_u8, 2_felt252]);\n}"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+    let _x = complex<caret>_inline_macro_v2!([1_u8, 2_felt252]);
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+simple_inline_macro_v2!(([1_u8, 2_felt252])) + simple_inline_macro_v2!(([1_u8, 2_felt252]))
+"""
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: 2_felt252
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 45
+        end:
+          line: 1
+          character: 54
+      severity: 1
+      message: 'Unexpected argument type. Expected: "core::integer::u8", found: "core::felt252".'
+      relatedInformation:
+      - location:
+          uri: vfs://inline_proc_macro.cairo
+          range:
+            start:
+              line: 0
+              character: 9
+            end:
+              line: 0
+              character: 18
+        message: Diagnostic mapped from here.
+  - related_code: 2_felt252
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 45
+        end:
+          line: 1
+          character: 54
+      severity: 1
+      message: 'Unexpected argument type. Expected: "core::integer::u8", found: "core::felt252".'
+      relatedInformation:
+      - location:
+          uri: vfs://inline_proc_macro.cairo
+          range:
+            start:
+              line: 0
+              character: 9
+            end:
+              line: 0
+              character: 18
+        message: Diagnostic mapped from here.

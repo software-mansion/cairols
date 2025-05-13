@@ -1,8 +1,7 @@
 ---
 source: tests/e2e/macros/procedural/custom/v1_and_v2/mod.rs
-description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros = { path = \"/Users/timelock/swm/starkware/cairols/tests/scarb_procedural_macros\" }\ncairols_test_macros_v2 = { path = \"/Users/timelock/swm/starkware/cairols/tests/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[derive(ErrorDeriveMacro)]\nstruct EmptyStruct {}\n\n#[derive(ErrorDeriveMacroV2)]\nstruct EmptyStructV2 {}"
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros = { path = \"/scarb_procedural_macros\" }\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[derive(ErrorDeriveMacro)]\nstruct EmptyStruct {}\n\n#[derive(ErrorDeriveMacroV2)]\nstruct EmptyStructV2 {}"
 expression: report
-snapshot_kind: text
 ---
 [[expansions]]
 analyzed_lines = """

@@ -1,25 +1,29 @@
 ---
 source: tests/e2e/macros/procedural/custom/v2/mod.rs
-description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[improper_attribute_macro_v2]\nfn foo() {}"
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[improper_attribute_macro_v2]\nfn foo() { 5_u8 + 5_felt252; }"
 expression: report
 ---
 [[expansions]]
 analyzed_lines = """
 #[improper_attribute_macro_v2]<caret>
-fn f<caret>oo() {}
-fn foo() {<caret>}
+fn f<caret>oo() { 5_u8 + 5_felt252; }
+fn foo() { 5_u8 + 5_felt252; <caret>}
 """
 generated_code = """
 // lib.cairo
 // ---------
 
 #[improper_attribute_macro_v2]
-fn foo() {}
+fn foo() {
+    5_u8 + 5_felt252;
+}
 
 // proc_macro_improper_attribute_macro_v2
 // --------------------------------------
 
-fn foo() {}
+fn foo() {
+    5_u8 + 5_felt252;
+}
 fn added_fun_v2() {
     {
         a = b;
@@ -30,28 +34,27 @@ fn added_fun_v2() {
 mapped_diagnostics:
 - url: '[ROOT_URL]test_package/src/lib.cairo'
   diagnostics:
-  - related_code: '#[improper_attribute_macro_v2]'
+  - related_code: 5_felt252
     diagnostic:
       range:
         start:
-          line: 0
-          character: 0
+          line: 1
+          character: 18
         end:
-          line: 0
-          character: 30
+          line: 1
+          character: 27
       severity: 1
-      code: E0006
-      message: Identifier not found.
+      message: 'Unexpected argument type. Expected: "core::integer::u8", found: "core::felt252".'
       relatedInformation:
       - location:
           uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
           range:
             start:
               line: 0
-              character: 31
+              character: 18
             end:
               line: 0
-              character: 32
+              character: 27
         message: Diagnostic mapped from here.
   - related_code: '#[improper_attribute_macro_v2]'
     diagnostic:
@@ -71,10 +74,33 @@ mapped_diagnostics:
           range:
             start:
               line: 0
-              character: 33
+              character: 50
             end:
               line: 0
-              character: 34
+              character: 51
+        message: Diagnostic mapped from here.
+  - related_code: '#[improper_attribute_macro_v2]'
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 0
+        end:
+          line: 0
+          character: 30
+      severity: 1
+      code: E0006
+      message: Identifier not found.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
+          range:
+            start:
+              line: 0
+              character: 52
+            end:
+              line: 0
+              character: 53
         message: Diagnostic mapped from here.
   - related_code: '#[improper_attribute_macro_v2]'
     diagnostic:
@@ -93,8 +119,8 @@ mapped_diagnostics:
           range:
             start:
               line: 0
-              character: 31
+              character: 50
             end:
               line: 0
-              character: 32
+              character: 51
         message: Diagnostic mapped from here.
