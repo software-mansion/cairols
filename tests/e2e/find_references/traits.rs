@@ -322,7 +322,6 @@ fn dual_implementations_of_trait_via_trait_function() {
     ")
 }
 
-// FIXME(#170): This should return all of the below occurrences
 #[test]
 fn dual_implementations_of_trait_via_trait_type() {
     test_transform!(find_references, r#"
@@ -340,7 +339,22 @@ fn dual_implementations_of_trait_via_trait_type() {
         let v1: FooImpl::OverrideMe = 123;
         let v2: BarImpl::OverrideMe = 123;
     }
-    "#, @"none response")
+    "#, @r"
+    trait FooTrait {
+        type <sel=declaration>OverrideMe</sel>;
+    }
+    impl FooImpl of FooTrait {
+        type <sel>OverrideMe</sel> = u256;
+    }
+
+    impl BarImpl of FooTrait {
+        type <sel>OverrideMe</sel> = felt252;
+    }
+    fn main() {
+        let v1: FooImpl::<sel>OverrideMe</sel> = 123;
+        let v2: BarImpl::<sel>OverrideMe</sel> = 123;
+    }
+    ")
 }
 
 #[test]

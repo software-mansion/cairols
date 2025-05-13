@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     FreeFunctionLongId, ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId,
     ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
     ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
-    TraitItemId, TraitLongId, UseLongId, VarId,
+    TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::Binding;
@@ -320,6 +320,15 @@ fn lookup_item_from_ast(
                 TraitImplLongId(
                     module_file_id,
                     ast::TraitItemImpl::from_syntax_node(db, node).stable_ptr(db),
+                )
+                .intern(db),
+            ))]
+        }
+        SyntaxKind::TraitItemType => {
+            vec![LookupItemId::TraitItem(TraitItemId::Type(
+                TraitTypeLongId(
+                    module_file_id,
+                    ast::TraitItemType::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
             ))]
