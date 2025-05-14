@@ -171,6 +171,7 @@ impl ProcMacroClientController {
         match db.proc_macro_server_status() {
             ServerStatus::Starting(client) => {
                 let Ok(defined_macros) = client.finish_initialize() else {
+                    drop(client);
                     self.handle_error(db, config);
 
                     return;
@@ -209,7 +210,7 @@ impl ProcMacroClientController {
                 );
             }
             ServerStatus::Ready(client) => {
-                self.apply_responses(db, config, &client);
+                self.apply_responses(db, config, client);
             }
             _ => {}
         }
@@ -287,6 +288,8 @@ impl ProcMacroClientController {
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
+    /// NOTE: while this function is being called, there **MUST NOT** exist
+    /// any [`Arc`]s with [`ProcMacroClient`] anywhere in this thread except in the `db`.
     fn clean_up_previous_proc_macro_server(&mut self, db: &mut AnalysisDatabase) {
         // We have to make sure that snapshots will not report errors from the previous client after
         // we create a new one.
@@ -301,7 +304,7 @@ impl ProcMacroClientController {
             self.set_proc_macro_server_status(db, ServerStatus::Pending);
 
             let client = Arc::try_unwrap(client)
-                .expect("only one strong reference client is expected at this point");
+                .expect("only one strong reference to client is expected at this point");
 
             // This has to be done *before* clearing channels, so we don't receive a response signal
             // from the old proc macro server when we come back to the main event loop.
@@ -331,7 +334,7 @@ impl ProcMacroClientController {
         &mut self,
         db: &mut AnalysisDatabase,
         config: &Config,
-        client: &ProcMacroClient,
+        client: Arc<ProcMacroClient>,
     ) {
         let mut attribute_resolutions = Arc::unwrap_or_clone(db.attribute_macro_resolution());
         let mut attribute_resolutions_changed = false;
@@ -374,6 +377,7 @@ impl ProcMacroClientController {
         // This must be called AFTER `client.available_responses()` is dropped, otherwise we can
         // deadlock.
         if error_occurred {
+            drop(client);
             self.handle_error(db, config);
         }
 
