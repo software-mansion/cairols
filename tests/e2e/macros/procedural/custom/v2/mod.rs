@@ -204,7 +204,6 @@ fn inline_complex_v2_with_user_error() {
     );
 }
 
-// FIXME: mapping is a bit off
 #[test]
 fn inline_improper_v2_with_user_error() {
     test_macro_expansion_and_diagnostics!(
