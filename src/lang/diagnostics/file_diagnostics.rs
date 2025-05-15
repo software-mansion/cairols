@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
 use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::db::FilesGroup;
@@ -9,8 +10,11 @@ use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_utils::LookupIntern;
 use lsp_types::{Diagnostic, Url};
+use tracing::{error, info_span};
 
+use crate::is_cancelled;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
@@ -39,6 +43,24 @@ impl FilesDiagnostics {
     /// Collects all diagnostics kinds by processing an on disk `root_on_disk_file` together with
     /// virtual files that are its descendants.
     pub fn collect(db: &AnalysisDatabase, root_on_disk_file: FileId) -> Option<Self> {
+        macro_rules! query {
+            ($query:expr) => {
+                info_span!(stringify!($query)).in_scope(|| {
+                    catch_unwind(AssertUnwindSafe(|| $query)).map_err(|err| {
+                        if is_cancelled(err.as_ref()) {
+                            resume_unwind(err);
+                        } else {
+                            error!(
+                                "caught panic when computing diagnostics for file: {:?}",
+                                root_on_disk_file.lookup_intern(db)
+                            );
+                            err
+                        }
+                    })
+                })
+            };
+        }
+
         let root_on_disk_file_url = db.url_for_file(root_on_disk_file)?;
 
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
@@ -50,9 +72,9 @@ impl FilesDiagnostics {
 
         for module_id in modules_to_process.into_iter() {
             semantic_file_diagnostics
-                .extend(db.module_semantic_diagnostics(module_id).unwrap_or_default().get_all());
+                .extend(query!(db.module_semantic_diagnostics(module_id)).ok()?.ok()?.get_all());
             lowering_file_diagnostics
-                .extend(db.module_lowering_diagnostics(module_id).unwrap_or_default().get_all());
+                .extend(query!(db.module_lowering_diagnostics(module_id)).ok()?.ok()?.get_all());
         }
 
         for file_id in files_to_process.into_iter() {
