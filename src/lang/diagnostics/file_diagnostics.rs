@@ -10,6 +10,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use lsp_types::{Diagnostic, Url};
+use tracing::info_span;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
@@ -49,10 +50,16 @@ impl FilesDiagnostics {
             db.file_and_subfiles_with_corresponding_modules(root_on_disk_file)?;
 
         for module_id in modules_to_process.into_iter() {
-            semantic_file_diagnostics
-                .extend(db.module_semantic_diagnostics(module_id).unwrap_or_default().get_all());
-            lowering_file_diagnostics
-                .extend(db.module_lowering_diagnostics(module_id).unwrap_or_default().get_all());
+            semantic_file_diagnostics.extend(
+                info_span!("db.module_semantic_diagnostics").in_scope(|| {
+                    db.module_semantic_diagnostics(module_id).unwrap_or_default().get_all()
+                }),
+            );
+            lowering_file_diagnostics.extend(
+                info_span!("db.module_lowering_diagnostics").in_scope(|| {
+                    db.module_lowering_diagnostics(module_id).unwrap_or_default().get_all()
+                }),
+            );
         }
 
         for file_id in files_to_process.into_iter() {

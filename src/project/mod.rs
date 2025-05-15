@@ -136,7 +136,7 @@ impl ProjectController {
                 );
             }
             ProjectUpdate::CairoProjectToml(maybe_project_config) => {
-                if let Some(project_config) = maybe_project_config {
+                if let Some(project_config) = *maybe_project_config {
                     update_crate_roots_from_project_config(db, &project_config);
 
                     // Make sure cfg(test) is not set if the core crate comes from the Scarb cache.
@@ -217,11 +217,10 @@ impl ProjectController {
 
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
-#[expect(clippy::large_enum_variant)]
 pub enum ProjectUpdate {
     Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf },
     ScarbMetadataFailed,
-    CairoProjectToml(Option<ProjectConfig>),
+    CairoProjectToml(Box<Option<ProjectConfig>>),
     NoConfig(PathBuf),
 }
 
@@ -315,7 +314,7 @@ impl ProjectControllerThread {
                         });
                     })
                     .ok();
-                ProjectUpdate::CairoProjectToml(maybe_project_config)
+                ProjectUpdate::CairoProjectToml(Box::new(maybe_project_config))
             }
 
             None => ProjectUpdate::NoConfig(project_update_request.file_path),
