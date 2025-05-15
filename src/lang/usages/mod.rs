@@ -94,10 +94,14 @@ impl<'a> FindUsages<'a> {
     pub fn search(self, sink: &mut dyn FnMut(FoundUsage) -> ControlFlow<(), ()>) {
         let db = self.db;
 
+        #[allow(unused_doc_comments)]
+        /// We include definition instead of declaration here.
+        /// It is done to ensure better UX when finding references of impl items.
+        /// For details, refer to [`SymbolSearch::find_definition`] and [`SymbolSearch::find_declaration`].
         if self.include_declaration {
             if let Some(stable_ptr) = self.symbol.definition_stable_ptr(db) {
-                let usage = FoundUsage::from_stable_ptr(db, stable_ptr);
                 // Definition can be in vfs, common for `#[generate_trait]`, map it back to user code.
+                let usage = FoundUsage::from_stable_ptr(db, stable_ptr);
                 flow!(sink(usage.originating_location(db)));
             }
         }
@@ -162,30 +166,27 @@ impl<'a> FindUsages<'a> {
             return ControlFlow::Continue(());
         }
 
-        let Some(found_symbol_definition) =
-            SymbolSearch::find_definition(self.db, &identifier).map(|ss| ss.def)
-        else {
-            return ControlFlow::Continue(());
-        };
+        // Declaration search is used here to ensure that all appropriate impl items are included
+        // when looking for usages of trait items.
+        let found_symbol_definition =
+            SymbolSearch::find_definition(self.db, &identifier).map(|ss| ss.def);
+        let found_symbol_declaration =
+            SymbolSearch::find_declaration(self.db, &identifier).map(|ss| ss.def);
 
-        if found_symbol_definition == *self.symbol {
+        let mut matches = false;
+
+        if let Some(definition) = found_symbol_definition {
+            matches = definition == *self.symbol
+        }
+
+        if let Some(declaration) = found_symbol_declaration {
+            matches |= declaration == *self.symbol
+        }
+
+        if matches {
             let usage = FoundUsage::from_syntax_node(self.db, identifier.as_syntax_node());
             sink(usage)
         } else {
-            // If the said symbol's declaration matches, then we should add it to usages
-            if let Some(found_symbol_declaration) = SymbolSearch::find_declaration(
-                self.db,
-                &TerminalIdentifier::from_syntax_node(
-                    db,
-                    found_symbol_definition.definition_stable_ptr(db).unwrap().lookup(db),
-                ),
-            ) {
-                if found_symbol_declaration.def == *self.symbol {
-                    let usage = FoundUsage::from_syntax_node(self.db, identifier.as_syntax_node());
-                    return sink(usage);
-                }
-            }
-
             ControlFlow::Continue(())
         }
     }

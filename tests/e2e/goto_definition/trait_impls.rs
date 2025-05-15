@@ -102,22 +102,55 @@ fn trait_impls() {
 }
 
 #[test]
-fn impl_fn_usages() {
+fn impl_fn_usage_via_struct() {
     test_transform!(goto_definition, r"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
         fn area(self: @Foo) -> u64;
     }
-    
+
     impl FooImpl of FooTrait {
         fn area(self: @Foo) -> u64 { 0 }
     }
-    
+
     fn main() {
         let foo = Foo {};
-        
         let x = foo.a<caret>rea();
+    }
+    ", @r"
+    #[derive(Drop)]
+    struct Foo {}
+    trait FooTrait {
+        fn area(self: @Foo) -> u64;
+    }
+
+    impl FooImpl of FooTrait {
+        fn <sel>area</sel>(self: @Foo) -> u64 { 0 }
+    }
+
+    fn main() {
+        let foo = Foo {};
+        let x = foo.area();
+    }
+    ")
+}
+
+#[test]
+fn impl_fn_usage_via_trait() {
+    test_transform!(goto_definition, r"
+    #[derive(Drop)]
+    struct Foo {}
+    trait FooTrait {
+        fn area(self: @Foo) -> u64;
+    }
+
+    impl FooImpl of FooTrait {
+        fn area(self: @Foo) -> u64 { 0 }
+    }
+
+    fn main() {
+        let foo = Foo {};
         let y = FooTrait::ar<caret>ea(@foo);
     }
     ", @r"
@@ -133,8 +166,6 @@ fn impl_fn_usages() {
 
     fn main() {
         let foo = Foo {};
-        
-        let x = foo.area();
         let y = FooTrait::area(@foo);
     }
     ")

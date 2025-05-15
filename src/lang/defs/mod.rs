@@ -9,14 +9,13 @@ use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::smol_str::SmolStr;
 
 pub use self::finder::ResolvedItem;
-pub use self::finder::find_definition;
+pub use self::finder::{find_declaration, find_definition};
 pub use self::item::ItemDef;
 pub use self::member::MemberDef;
 pub use self::module::ModuleDef;
 pub use self::variable::VariableDef;
 pub use self::variant::VariantDef;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::lang::defs::finder::find_declaration;
 use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
 
@@ -27,6 +26,10 @@ mod module;
 mod variable;
 mod variant;
 
+/// Keeps information about the symbol that is being searched for/inspected.
+///
+/// This is an ephemeral data structure.
+/// Do not store it in any kind of state.
 #[derive(Eq, PartialEq)]
 pub enum SymbolDef {
     Item(ItemDef),
@@ -37,18 +40,21 @@ pub enum SymbolDef {
     Module(ModuleDef),
 }
 
-/// Keeps information about the symbol that is being searched for/inspected.
-///
-/// This is an ephemeral data structure.
-/// Do not store it in any kind of state.
+/// An instance of Search (for definition or declaration).
+/// Keeps result (def) and context information about the conducted search.
 pub struct SymbolSearch {
+    /// Result of the search
     pub def: SymbolDef,
+    /// Intermediate result, used to construct `def`
     pub resolved_item: ResolvedItem,
+    /// State of the resolver after this search
     pub resolver_data: Option<ResolverData>,
 }
 
 impl SymbolSearch {
     /// Finds definition of the symbol referred to by the given identifier.
+    /// Gets you to the "nearest" point upwards in terms of top-down code breakdown
+    /// (most likely you would use it to get this: usage -> impl)
     pub fn find_definition(
         db: &AnalysisDatabase,
         identifier: &ast::TerminalIdentifier,
@@ -61,12 +67,17 @@ impl SymbolSearch {
         Self::from_resolved_item(db, resolved_item, resolver_data)
     }
 
+    /// Finds declaration of the symbol referred to by given identifier.
+    /// This is always the same as definition except for any identifier referring to an impl item
+    /// - for which it will return a corresponding item in the definition of a trait.
     pub fn find_declaration(
         db: &AnalysisDatabase,
         identifier: &ast::TerminalIdentifier,
     ) -> Option<Self> {
-        let resolver_data = None;
-        let resolved_item = find_declaration(db, identifier)?;
+        // Get the resolved item info and the syntax node of the definition.
+        let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
+        let mut resolver_data = None;
+        let resolved_item = find_declaration(db, identifier, &lookup_items, &mut resolver_data)?;
 
         Self::from_resolved_item(db, resolved_item, resolver_data)
     }

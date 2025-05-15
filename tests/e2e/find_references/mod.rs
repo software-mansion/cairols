@@ -1,14 +1,15 @@
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 
-use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
-use crate::support::cursor::render_selections_with_attrs;
-use crate::support::{cursors, sandbox};
 use itertools::Itertools;
 use lsp_types::{
     ClientCapabilities, Location, ReferenceClientCapabilities, ReferenceContext, ReferenceParams,
     TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
 };
+
+use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
+use crate::support::cursor::render_selections_with_attrs;
+use crate::support::{cursors, sandbox};
 
 mod consts;
 mod enums;
