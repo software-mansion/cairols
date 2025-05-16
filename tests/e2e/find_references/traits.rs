@@ -407,6 +407,136 @@ fn dual_implementations_of_trait_via_trait_impl() {
 }
 
 #[test]
+fn impl_impl_via_usage() {
+    test_transform!(find_references, r#"
+    trait Bush {
+        fn bush() -> felt252;
+    }
+
+    trait BushTrait {
+        impl BushImplementation: Bush;
+    }
+
+    impl GeorgeBush of Bush {
+        fn bush() -> felt252 {
+            911
+        }
+    }
+
+    impl KateBush of Bush {
+        fn bush() -> felt252 {
+            1978
+        }
+    }
+
+    impl GeorgeImpl of BushTrait {
+        impl BushImplementation = GeorgeBush;
+    }
+
+
+    fn main() {
+        let v1 = GeorgeImpl::BushImplemen<caret>tation::bush();
+        let v2 = GeorgeImpl::BushImplementation::bush();
+    }
+    "#, @r"
+    trait Bush {
+        fn bush() -> felt252;
+    }
+
+    trait BushTrait {
+        impl BushImplementation: Bush;
+    }
+
+    impl GeorgeBush of Bush {
+        fn bush() -> felt252 {
+            911
+        }
+    }
+
+    impl KateBush of Bush {
+        fn bush() -> felt252 {
+            1978
+        }
+    }
+
+    impl GeorgeImpl of BushTrait {
+        impl <sel=declaration>BushImplementation</sel> = GeorgeBush;
+    }
+
+
+    fn main() {
+        let v1 = GeorgeImpl::<sel>BushImplementation</sel>::bush();
+        let v2 = GeorgeImpl::<sel>BushImplementation</sel>::bush();
+    }
+    ")
+}
+
+#[test]
+fn impl_impl_via_trait() {
+    test_transform!(find_references, r#"
+    trait Bush {
+        fn bush() -> felt252;
+    }
+
+    trait BushTrait {
+        impl BushImple<caret>mentation: Bush;
+    }
+
+    impl GeorgeBush of Bush {
+        fn bush() -> felt252 {
+            911
+        }
+    }
+
+    impl KateBush of Bush {
+        fn bush() -> felt252 {
+            1978
+        }
+    }
+
+    impl GeorgeImpl of BushTrait {
+        impl BushImplementation = GeorgeBush;
+    }
+
+
+    fn main() {
+        let v1 = GeorgeImpl::BushImplementation::bush();
+        let v2 = GeorgeImpl::BushImplementation::bush();
+    }
+    "#, @r"
+    trait Bush {
+        fn bush() -> felt252;
+    }
+
+    trait BushTrait {
+        impl <sel=declaration>BushImplementation</sel>: Bush;
+    }
+
+    impl GeorgeBush of Bush {
+        fn bush() -> felt252 {
+            911
+        }
+    }
+
+    impl KateBush of Bush {
+        fn bush() -> felt252 {
+            1978
+        }
+    }
+
+    impl GeorgeImpl of BushTrait {
+        impl <sel>BushImplementation</sel> = GeorgeBush;
+    }
+
+
+    fn main() {
+        let v1 = GeorgeImpl::<sel>BushImplementation</sel>::bush();
+        let v2 = GeorgeImpl::<sel>BushImplementation</sel>::bush();
+    }
+    ")
+}
+
+#[test]
 fn associated_impl_member_const_usage() {
     test_transform!(find_references, r#"
     trait ConstCarryingTrait {
