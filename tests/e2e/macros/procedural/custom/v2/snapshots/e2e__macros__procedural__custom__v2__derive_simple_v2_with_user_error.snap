@@ -1,0 +1,47 @@
+---
+source: tests/e2e/macros/procedural/custom/v2/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[derive(SimpleDeriveMacroV2)]\nstruct EmptyStruct { x: unknown_type }"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+#[derive<caret>(SimpleDeriveMacroV2)]
+#[derive(Simple<caret>DeriveMacroV2)]
+struct Empty<caret>Struct { x: unknown_type }
+struct EmptyStruct { x: unknown_type <caret>}
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+#[derive(SimpleDeriveMacroV2)]
+struct EmptyStruct {
+    x: unknown_type,
+}
+
+// proc_macro_derive
+// -----------------
+
+trait MyTrait<T> {
+    fn foo(t: T);
+}
+impl MyTraitImpl of MyTrait<felt252> {
+    fn foo(t: felt252) {}
+}
+"""
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: unknown_type
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 24
+        end:
+          line: 1
+          character: 36
+      severity: 1
+      code: E0006
+      message: Type not found.

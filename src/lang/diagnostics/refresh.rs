@@ -1,10 +1,9 @@
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::diagnostics::file_diagnostics::FileDiagnostics;
+use crate::lang::diagnostics::file_diagnostics::FilesDiagnostics;
 use crate::lang::diagnostics::project_diagnostics::ProjectDiagnostics;
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
-use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_utils::LookupIntern;
@@ -23,14 +22,11 @@ pub fn refresh_diagnostics(
     notifier: Notifier,
     scarb_toolchain: ScarbToolchain,
 ) {
-    let mut processed_modules: HashSet<ModuleId> = HashSet::default();
-
     for file in batch {
         refresh_file_diagnostics(
             db,
             file,
             trace_macro_diagnostics,
-            &mut processed_modules,
             &project_diagnostics,
             &notifier,
             &scarb_toolchain,
@@ -38,28 +34,28 @@ pub fn refresh_diagnostics(
     }
 }
 
-/// Refresh diagnostics for a single file.
+/// Refresh diagnostics for a single on disk file.
 ///
 /// IMPORTANT: keep updating diagnostics state between server and client ATOMIC!
 /// I.e, if diagnostics are updated on the server side they MUST be sent successfully to the
 /// client (and vice-versa).
-#[tracing::instrument(skip_all, fields(url = tracing_file_url(db, file)))]
+#[tracing::instrument(skip_all, fields(url = tracing_file_url(db, root_on_disk_file)))]
 fn refresh_file_diagnostics(
     db: &AnalysisDatabase,
-    file: FileId,
+    root_on_disk_file: FileId,
     trace_macro_diagnostics: bool,
-    processed_modules: &mut HashSet<ModuleId>,
     project_diagnostics: &ProjectDiagnostics,
     notifier: &Notifier,
     scarb_toolchain: &ScarbToolchain,
 ) {
-    let Some(new_file_diagnostics) = FileDiagnostics::collect(db, file, processed_modules) else {
+    let Some(new_files_diagnostics) = FilesDiagnostics::collect(db, root_on_disk_file) else {
         return;
     };
 
     // IMPORTANT: DO NOT change the order of operations here. `to_lsp` may panic, so it has to come
     // before `update`. It is to make sure that if `update` succeeds, `notify` executes as well.
-    let (processed_file_url, new_diags) = new_file_diagnostics.to_lsp(db, trace_macro_diagnostics);
+    let (root_on_disk_file_url, new_diags) =
+        new_files_diagnostics.to_lsp(db, trace_macro_diagnostics);
 
     let new_diags = new_diags
         .into_iter()
@@ -67,7 +63,7 @@ fn refresh_file_diagnostics(
             // We want to ensure better UX by avoiding showing anything but errors from code that is
             // not controlled by a user (dependencies from git/package register).
             // Therefore, we filter non-error diagnostics for files residing in Scarb cache
-            // and virtual files originating from them.
+            // and virtual files that are their descendants.
             let is_dependency = scarb_toolchain.cache_path().is_some_and(|cache_path| {
                 originating_file_path(db, file_id).is_some_and(|p| p.starts_with(cache_path))
             });
@@ -85,7 +81,7 @@ fn refresh_file_diagnostics(
         })
         .collect();
 
-    let diags_to_send = project_diagnostics.update(processed_file_url, new_diags);
+    let diags_to_send = project_diagnostics.update(root_on_disk_file_url, new_diags);
     for (url, diagnostics) in diags_to_send {
         notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
             uri: url,

@@ -1,5 +1,6 @@
 ---
 source: tests/e2e/macros/builtin/mod.rs
+description: "// → test_package/cairo_project.toml\n[crate_roots]\ntest_package = \"src\"\n\n[config.global]\nedition = \"2024_07\"\n\n// → test_package/src/lib.cairo\n#[derive(Drop)]\nstruct A {\n    a: felt252\n}\n\n#[generate_trait]\nimpl ImplA of ATrait {\n    fn c(self: A) {\n        println!(\"a\");\n        self.a + 1;\n    }\n}"
 expression: report
 ---
 [[expansions]]

@@ -1,0 +1,55 @@
+---
+source: tests/e2e/macros/procedural/custom/v2/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[derive(ModDeriveMacroV2)]\nstruct MyStruct { a: b, }"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+#[derive<caret>(ModDeriveMacroV2)]
+#[derive(Mod<caret>DeriveMacroV2)]
+struct My<caret>Struct { a: b, }
+struct MyStruct { a: b, <caret>}
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+#[derive(ModDeriveMacroV2)]
+struct MyStruct {
+    a: b,
+}
+
+// proc_macro_derive
+// -----------------
+
+mod modzik {let x = ; }
+"""
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: b
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 21
+        end:
+          line: 1
+          character: 22
+      severity: 1
+      code: E0006
+      message: Type not found.
+- url: vfs://proc_macro_derive.cairo
+  diagnostics:
+  - related_code: let x=;
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 11
+        end:
+          line: 0
+          character: 18
+      severity: 1
+      message: 'Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.'

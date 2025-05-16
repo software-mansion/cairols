@@ -80,6 +80,10 @@ impl Fixture {
         fs::read_to_string(self.file_absolute_path(path)).unwrap()
     }
 
+    pub fn maybe_read_file(&self, path: impl AsRef<Path>) -> Option<String> {
+        fs::read_to_string(self.file_absolute_path(path)).ok()
+    }
+
     /// If the url refers to a possible file in this fixture, returns the path of this file
     /// (relative to fixture root); otherwise, returns an error string.
     /// This method does not check the existence of the file.
@@ -120,7 +124,13 @@ impl Fixture {
         self.files
             .iter()
             .sorted()
-            .map(|path| (path, self.read_file(path).trim().to_owned()))
+            .map(|path| {
+                let test_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
+                (
+                    path,
+                    self.read_file(path).trim().to_owned().replace(test_dir.to_str().unwrap(), ""),
+                )
+            })
             .filter(|(path, contents)| {
                 // We know paths here are always file paths that are UTF-8.
                 let str_file_name = path.file_name().unwrap().to_str().unwrap();

@@ -1,0 +1,84 @@
+---
+source: tests/e2e/macros/procedural/custom/v2/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[complex_attribute_macro_v2]\nfn foo() { let x: u8 = 5_u32; }"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+#[complex_attribute_macro_v2]<caret>
+fn <caret>foo() { let x: u8 = 5_u32; }
+fn foo() { let x: u8 = 5_u32; <caret>}
+"""
+generated_code = """
+// lib.cairo
+// ---------
+
+#[complex_attribute_macro_v2]
+fn foo() {
+    let x: u8 = 5_u32;
+}
+
+// proc_macro_complex_attribute_macro_v2
+// -------------------------------------
+
+fn foo() {
+    let x: u8 = 5_u32;
+}
+#[simple_attribute_macro_v2]
+fn generated_function_with_other_attribute_v2() {}
+
+// proc_macro_simple_attribute_macro_v2
+// ------------------------------------
+
+fn generated_function_with_other_attribute_v2() {}
+fn generated_function_v2() {}
+"""
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: x
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 15
+        end:
+          line: 1
+          character: 16
+      severity: 2
+      code: E0001
+      message: Unused variable. Consider ignoring by prefixing with `_`.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_complex_attribute_macro_v2.cairo
+          range:
+            start:
+              line: 0
+              character: 15
+            end:
+              line: 0
+              character: 16
+        message: Diagnostic mapped from here.
+  - related_code: 5_u32
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 23
+        end:
+          line: 1
+          character: 28
+      severity: 1
+      message: 'Unexpected argument type. Expected: "core::integer::u8", found: "core::integer::u32".'
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_complex_attribute_macro_v2.cairo
+          range:
+            start:
+              line: 0
+              character: 23
+            end:
+              line: 0
+              character: 28
+        message: Diagnostic mapped from here.

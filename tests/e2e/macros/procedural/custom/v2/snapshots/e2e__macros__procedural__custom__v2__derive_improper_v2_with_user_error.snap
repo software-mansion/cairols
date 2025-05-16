@@ -1,26 +1,28 @@
 ---
-source: tests/e2e/macros/procedural/custom/v1/mod.rs
-description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros = { path = \"/scarb_procedural_macros\" }\n\n// → test_package/src/lib.cairo\n#[derive(ImproperDeriveMacro)]\nstruct EmptyStruct {}"
+source: tests/e2e/macros/procedural/custom/v2/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[derive(ImproperDeriveMacroV2)]\nstruct EmptyStruct { a: b,}"
 expression: report
 ---
 [[expansions]]
 analyzed_lines = """
-#[derive<caret>(ImproperDeriveMacro)]
-#[derive(Improper<caret>DeriveMacro)]
-struct Empty<caret>Struct {}
-struct EmptyStruct {<caret>}
+#[derive<caret>(ImproperDeriveMacroV2)]
+#[derive(Improper<caret>DeriveMacroV2)]
+struct Empty<caret>Struct { a: b,}
+struct EmptyStruct { a: b,<caret>}
 """
 generated_code = """
 // lib.cairo
 // ---------
 
-#[derive(ImproperDeriveMacro)]
-struct EmptyStruct {}
+#[derive(ImproperDeriveMacroV2)]
+struct EmptyStruct {
+    a: b,
+}
 
 // proc_macro_derive
 // -----------------
 
-fn generated_function() {
+fn generated_function_v2() {
     some < *> haskell <
     $ > syntax
 }
@@ -29,7 +31,7 @@ fn generated_function() {
 mapped_diagnostics:
 - url: '[ROOT_URL]test_package/src/lib.cairo'
   diagnostics:
-  - related_code: ImproperDeriveMacro
+  - related_code: ImproperDeriveMacroV2
     diagnostic:
       range:
         start:
@@ -37,7 +39,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 28
+          character: 30
       severity: 1
       message: Missing tokens. Expected an expression.
       relatedInformation:
@@ -45,13 +47,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 1
-              character: 11
+              line: 0
+              character: 33
             end:
-              line: 1
-              character: 11
+              line: 0
+              character: 33
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacro
+  - related_code: ImproperDeriveMacroV2
     diagnostic:
       range:
         start:
@@ -59,7 +61,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 28
+          character: 30
       severity: 1
       message: 'Consecutive comparison operators are not allowed: ''<'' followed by ''>'''
       relatedInformation:
@@ -67,13 +69,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 1
-              character: 10
+              line: 0
+              character: 32
             end:
-              line: 1
-              character: 10
+              line: 0
+              character: 32
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacro
+  - related_code: ImproperDeriveMacroV2
     diagnostic:
       range:
         start:
@@ -81,7 +83,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 28
+          character: 30
       severity: 1
       message: 'Consecutive comparison operators are not allowed: ''>'' followed by ''<'''
       relatedInformation:
@@ -89,13 +91,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 1
-              character: 13
+              line: 0
+              character: 34
             end:
-              line: 1
-              character: 13
+              line: 0
+              character: 34
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacro
+  - related_code: ImproperDeriveMacroV2
     diagnostic:
       range:
         start:
@@ -103,7 +105,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 28
+          character: 30
       severity: 1
       message: Missing tokens. Expected an expression.
       relatedInformation:
@@ -111,13 +113,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 1
-              character: 22
+              line: 0
+              character: 42
             end:
-              line: 1
-              character: 22
+              line: 0
+              character: 42
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacro
+  - related_code: ImproperDeriveMacroV2
     diagnostic:
       range:
         start:
@@ -125,29 +127,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 28
-      severity: 1
-      message: 'Skipped tokens. Expected: statement.'
-      relatedInformation:
-      - location:
-          uri: vfs://proc_macro_derive.cairo
-          range:
-            start:
-              line: 1
-              character: 22
-            end:
-              line: 1
-              character: 24
-        message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacro
-    diagnostic:
-      range:
-        start:
-          line: 0
-          character: 9
-        end:
-          line: 0
-          character: 28
+          character: 30
       severity: 1
       code: E0006
       message: Identifier not found.
@@ -156,13 +136,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 1
-              character: 4
+              line: 0
+              character: 27
             end:
-              line: 1
-              character: 8
+              line: 0
+              character: 31
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacro
+  - related_code: ImproperDeriveMacroV2
     diagnostic:
       range:
         start:
@@ -170,7 +150,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 28
+          character: 30
       severity: 1
       message: Are you missing a `::`?.
       relatedInformation:
@@ -178,13 +158,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 1
-              character: 9
+              line: 0
+              character: 31
             end:
-              line: 1
-              character: 10
+              line: 0
+              character: 32
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacro
+  - related_code: ImproperDeriveMacroV2
     diagnostic:
       range:
         start:
@@ -192,7 +172,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 28
+          character: 30
       severity: 1
       code: E0006
       message: Identifier not found.
@@ -201,13 +181,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 1
-              character: 13
+              line: 0
+              character: 34
             end:
-              line: 1
-              character: 20
+              line: 0
+              character: 41
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacro
+  - related_code: ImproperDeriveMacroV2
     diagnostic:
       range:
         start:
@@ -215,7 +195,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 28
+          character: 30
       severity: 1
       message: Are you missing a `::`?.
       relatedInformation:
@@ -223,13 +203,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 1
-              character: 21
+              line: 0
+              character: 41
             end:
-              line: 1
-              character: 22
+              line: 0
+              character: 42
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacro
+  - related_code: ImproperDeriveMacroV2
     diagnostic:
       range:
         start:
@@ -237,7 +217,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 28
+          character: 30
       severity: 1
       message: Missing semicolon
       relatedInformation:
@@ -245,13 +225,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 1
-              character: 22
+              line: 0
+              character: 42
             end:
-              line: 1
-              character: 22
+              line: 0
+              character: 42
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacro
+  - related_code: ImproperDeriveMacroV2
     diagnostic:
       range:
         start:
@@ -259,7 +239,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 28
+          character: 30
       severity: 1
       code: E0006
       message: Identifier not found.
@@ -268,9 +248,34 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 1
-              character: 25
+              line: 0
+              character: 44
             end:
-              line: 1
-              character: 31
+              line: 0
+              character: 50
         message: Diagnostic mapped from here.
+  - related_code: b
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 24
+        end:
+          line: 1
+          character: 25
+      severity: 1
+      code: E0006
+      message: Type not found.
+- url: vfs://proc_macro_derive.cairo
+  diagnostics:
+  - related_code: $>
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 42
+        end:
+          line: 0
+          character: 44
+      severity: 1
+      message: 'Skipped tokens. Expected: statement.'

@@ -1,5 +1,6 @@
 ---
 source: tests/e2e/macros/procedural/snforge/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dev-dependencies]\nsnforge_std = \"0.37.0\"\nsnforge_scarb_plugin = \"0.37.0\"\n\n[tool.scarb]\nallow-prebuilt-plugins = [\"snforge_scarb_plugin\"]\n\n[[tool.snforge.fork]]\nname = \"SEPOLIA_LATEST\"\nurl = \"https://starknet-sepolia.public.blastapi.io/rpc/v0_7\"\nblock_id.tag = \"latest\"\n\n// → test_package/lib.cairo\n\n\n// → test_package/tests/test.cairo\n#[test]\n#[fork(\"SEPOLIA_LATEST\")]\n#[fuzzer(runs: 100, seed: 0x1234)]\nfn test_nothing(x: felt252) {\n    assert(x == x, 'Who knows');\n}"
 expression: report
 ---
 [[expansions]]

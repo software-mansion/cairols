@@ -46,3 +46,13 @@ pub fn error_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
     ProcMacroResult::new(TokenStream::empty())
         .with_diagnostics(Diagnostic::error("Error from procedural macro").into())
 }
+
+#[derive_macro]
+pub fn mod_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
+    let ts = quote! {
+        mod modzik {
+            let x = ;
+        }
+    };
+    ProcMacroResult::new(ts)
+}
