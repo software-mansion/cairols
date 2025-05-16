@@ -10,7 +10,7 @@ use cairo_lang_utils::smol_str::format_smolstr;
 use memchr::memmem::Finder;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::SymbolDef;
+use crate::lang::defs::{SymbolDef, SymbolSearch};
 use cairo_lang_filesystem::db::get_originating_location;
 use search_scope::SearchScope;
 
@@ -94,10 +94,14 @@ impl<'a> FindUsages<'a> {
     pub fn search(self, sink: &mut dyn FnMut(FoundUsage) -> ControlFlow<(), ()>) {
         let db = self.db;
 
+        #[allow(unused_doc_comments)]
+        /// We include definition instead of declaration here.
+        /// It is done to ensure better UX when finding references of impl items.
+        /// For details, refer to [`SymbolSearch::find_definition`] and [`SymbolSearch::find_declaration`].
         if self.include_declaration {
             if let Some(stable_ptr) = self.symbol.definition_stable_ptr(db) {
-                let usage = FoundUsage::from_stable_ptr(db, stable_ptr);
                 // Definition can be in vfs, common for `#[generate_trait]`, map it back to user code.
+                let usage = FoundUsage::from_stable_ptr(db, stable_ptr);
                 flow!(sink(usage.originating_location(db)));
             }
         }
@@ -161,10 +165,25 @@ impl<'a> FindUsages<'a> {
         if Some(identifier.stable_ptr(self.db).untyped()) == self.symbol.definition_stable_ptr(db) {
             return ControlFlow::Continue(());
         }
-        let Some(found_symbol) = SymbolDef::find(self.db, &identifier) else {
-            return ControlFlow::Continue(());
-        };
-        if found_symbol == *self.symbol {
+
+        // Declaration search is used here to ensure that all appropriate impl items are included
+        // when looking for usages of trait items.
+        let found_symbol_definition =
+            SymbolSearch::find_definition(self.db, &identifier).map(|ss| ss.def);
+        let found_symbol_declaration =
+            SymbolSearch::find_declaration(self.db, &identifier).map(|ss| ss.def);
+
+        let mut matches = false;
+
+        if let Some(definition) = found_symbol_definition {
+            matches = definition == *self.symbol
+        }
+
+        if let Some(declaration) = found_symbol_declaration {
+            matches |= declaration == *self.symbol
+        }
+
+        if matches {
             let usage = FoundUsage::from_syntax_node(self.db, identifier.as_syntax_node());
             sink(usage)
         } else {

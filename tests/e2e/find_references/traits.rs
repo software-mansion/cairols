@@ -209,16 +209,16 @@ fn impl_method_via_definition() {
     fn main() {
         let foo = Foo {};
         let x = foo.area();
-        let y = FooTrait::area(foo);
+        let y = FooTrait::area(@foo);
     }
     "#, @r"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        fn <sel=declaration>area</sel>(self: @Foo) -> u64;
+        fn area(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
-        fn <sel>area</sel>(self: @Foo) -> u64 { 0 }
+        fn <sel=declaration>area</sel>(self: @Foo) -> u64 { 0 }
     }
     #[derive(Drop)]
     struct Bar {}
@@ -231,7 +231,7 @@ fn impl_method_via_definition() {
     fn main() {
         let foo = Foo {};
         let x = foo.<sel>area</sel>();
-        let y = FooTrait::<sel>area</sel>(foo);
+        let y = FooTrait::<sel>area</sel>(@foo);
     }
     ")
 }
@@ -247,7 +247,7 @@ fn dual_implementations_of_trait_via_trait_function() {
     impl FooImpl of FooTrait<Foo> {
         fn area(self: @Foo) -> u64 { 0 }
     }
-    
+
     #[derive(Drop)]
     struct Bar {}
     impl BarImpl of FooTrait<Bar> {
@@ -257,10 +257,10 @@ fn dual_implementations_of_trait_via_trait_function() {
         let foo = Foo {};
         let x_foo = foo.area();
         let y_foo = FooTrait::area(foo);
-        
+
         let bar = Bar {};
         let x_bar = bar.area();
-        let y_bar = FooTrait::area(bar);
+        let y_bar = FooTrait::area(@bar);
     }
     "#, @r"
     #[derive(Drop)]
@@ -281,15 +281,15 @@ fn dual_implementations_of_trait_via_trait_function() {
         let foo = Foo {};
         let x_foo = foo.<sel>area</sel>();
         let y_foo = FooTrait::<sel>area</sel>(foo);
-        
+
         let bar = Bar {};
         let x_bar = bar.<sel>area</sel>();
-        let y_bar = FooTrait::<sel>area</sel>(bar);
+        let y_bar = FooTrait::<sel>area</sel>(@bar);
     }
     ")
 }
 
-// FIXME(#170)
+// FIXME(#170): This should return all of the below occurrences
 #[test]
 fn dual_implementations_of_trait_via_trait_type() {
     test_transform!(find_references, r#"
@@ -299,7 +299,7 @@ fn dual_implementations_of_trait_via_trait_type() {
     impl FooImpl of FooTrait {
         type OverrideMe = u256;
     }
-    
+
     impl BarImpl of FooTrait {
         type OverrideMe = felt252;
     }
@@ -319,18 +319,18 @@ fn dual_implementations_of_trait_via_trait_impl() {
     trait FooTrait {
         impl ValueCa<caret>rrier: ConstCarryingTrait;
     }
-    
+
     impl Carry123 of ConstCarryingTrait {
-        const value: felt252 = 123; 
+        const value: felt252 = 123;
     }
     impl Carry456 of ConstCarryingTrait {
-        const value: felt252 = 456; 
+        const value: felt252 = 456;
     }
-    
+
     impl Foo123 of FooTrait {
         impl ValueCarrier = Carry123;
     }
-    
+
     impl Bar456 of FooTrait {
         impl ValueCarrier = Carry456;
     }
@@ -343,10 +343,10 @@ fn dual_implementations_of_trait_via_trait_impl() {
     }
 
     impl Carry123 of ConstCarryingTrait {
-        const value: felt252 = 123; 
+        const value: felt252 = 123;
     }
     impl Carry456 of ConstCarryingTrait {
-        const value: felt252 = 456; 
+        const value: felt252 = 456;
     }
 
     impl Foo123 of FooTrait {
@@ -358,3 +358,5 @@ fn dual_implementations_of_trait_via_trait_impl() {
     }
     ")
 }
+
+// FIXME(#170): Add a test case for associated impl member usage

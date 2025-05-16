@@ -145,22 +145,13 @@ fn self_type_member_method_call() {
     """
     popover = """
     ```cairo
-    core::num::traits::one::One
+    core::felt_252::Felt252One
     ```
     ```cairo
-    pub trait One<T>
-    fn is_one<T, T>(self: @T) -> bool
+    pub(crate) impl Felt252One of One<felt252>;
+    fn is_one(self: felt252) -> bool
     ```
-    ---
-    Returns true if `self` is equal to the multiplicative identity.
-    # Examples
-
-    ```cairo
-    use core::num::traits::One;
-
-    assert!(1.is_one());
-    assert!(!0.is_one());
-    ```"""
+    """
     "#)
 }
 

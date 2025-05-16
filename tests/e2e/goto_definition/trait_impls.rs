@@ -15,13 +15,13 @@ fn trait_method() {
     }
     ", @r"
     pub trait Foo<T> {
-        fn <sel>foo</sel>(self: T);
+        fn foo(self: T);
     }
 
     #[derive(Copy, Drop)]
     pub struct Bar {}
     impl FooBar of Foo<Bar> {
-        fn foo(self: Bar) {}
+        fn <sel>foo</sel>(self: Bar) {}
     }
     ")
 }
@@ -38,11 +38,11 @@ fn trait_const() {
     }
     ", @r"
     pub trait Foo<T> {
-        const <sel>VERY_IMPORTANT_CONST</sel>: T;
+        const VERY_IMPORTANT_CONST: T;
     }
 
     impl FooBar of Foo<felt252> {
-        const VERY_IMPORTANT_CONST: felt252 = 213;
+        const <sel>VERY_IMPORTANT_CONST</sel>: felt252 = 213;
     }
     ")
 }
@@ -59,11 +59,11 @@ fn trait_types() {
     }
     ", @r"
     pub trait Foo {
-        type <sel>VERY_IMPORTANT_TYPE</sel>;
+        type VERY_IMPORTANT_TYPE;
     }
 
     impl FooBar of Foo {
-        type VERY_IMPORTANT_TYPE = felt252;
+        type <sel>VERY_IMPORTANT_TYPE</sel> = felt252;
     }
     ")
 }
@@ -89,14 +89,84 @@ fn trait_impls() {
         const value: felt252;
     }
     trait FooTrait {
-        impl <sel>VeryImportantImpl</sel>: ConstCarryingTrait;
+        impl VeryImportantImpl: ConstCarryingTrait;
     }
 
     impl ConstCarryingTraitOneTwoThree of ConstCarryingTrait {
         const value: felt252 = 123;
     }
     impl FooImpl of FooTrait {
-        impl VeryImportantImpl = ConstCarryingTraitOneTwoThree;
+        impl <sel>VeryImportantImpl</sel> = ConstCarryingTraitOneTwoThree;
+    }
+    ")
+}
+
+#[test]
+fn impl_fn_usage_via_struct() {
+    test_transform!(goto_definition, r"
+    #[derive(Drop)]
+    struct Foo {}
+    trait FooTrait {
+        fn area(self: @Foo) -> u64;
+    }
+
+    impl FooImpl of FooTrait {
+        fn area(self: @Foo) -> u64 { 0 }
+    }
+
+    fn main() {
+        let foo = Foo {};
+        let x = foo.a<caret>rea();
+    }
+    ", @r"
+    #[derive(Drop)]
+    struct Foo {}
+    trait FooTrait {
+        fn area(self: @Foo) -> u64;
+    }
+
+    impl FooImpl of FooTrait {
+        fn <sel>area</sel>(self: @Foo) -> u64 { 0 }
+    }
+
+    fn main() {
+        let foo = Foo {};
+        let x = foo.area();
+    }
+    ")
+}
+
+#[test]
+fn impl_fn_usage_via_trait() {
+    test_transform!(goto_definition, r"
+    #[derive(Drop)]
+    struct Foo {}
+    trait FooTrait {
+        fn area(self: @Foo) -> u64;
+    }
+
+    impl FooImpl of FooTrait {
+        fn area(self: @Foo) -> u64 { 0 }
+    }
+
+    fn main() {
+        let foo = Foo {};
+        let y = FooTrait::ar<caret>ea(@foo);
+    }
+    ", @r"
+    #[derive(Drop)]
+    struct Foo {}
+    trait FooTrait {
+        fn area(self: @Foo) -> u64;
+    }
+
+    impl FooImpl of FooTrait {
+        fn <sel>area</sel>(self: @Foo) -> u64 { 0 }
+    }
+
+    fn main() {
+        let foo = Foo {};
+        let y = FooTrait::area(@foo);
     }
     ")
 }

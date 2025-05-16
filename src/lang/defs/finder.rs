@@ -17,7 +17,9 @@ use cairo_lang_semantic::resolve::ResolvedGenericItem::TraitItem;
 use cairo_lang_semantic::resolve::{
     AsSegments, ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData,
 };
-use cairo_lang_semantic::{Expr, TypeLongId};
+use cairo_lang_semantic::substitution::SemanticRewriter;
+use cairo_lang_semantic::{ConcreteImplId, Expr, TypeLongId};
+use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -56,10 +58,22 @@ pub fn find_definition(
         .or_else(|| try_member_declaration(db, identifier))
         .or_else(|| try_variant_declaration(db, identifier))
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
-        .or_else(|| try_impl_items(db, identifier))
+        // FIXME(#589): .or_else(|| try_consts(db, identifier))
         .or_else(|| try_concrete_type_or_impl(db, identifier, lookup_items))
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
+}
+
+pub fn find_declaration(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+    resolver_data: &mut Option<ResolverData>,
+) -> Option<ResolvedItem> {
+    let def = find_definition(db, identifier, lookup_items, resolver_data)?;
+    let decl = try_impl_items(db, &TerminalIdentifier::cast(db, def.definition_node(db)?)?);
+
+    decl.or(Some(def))
 }
 
 fn try_inline_macro(
@@ -417,8 +431,47 @@ fn lookup_resolved_items(
                     .into_iter()
                     .find(|resolver_data| resolver_data.resolved_items.concrete.contains_key(&ptr))
                     .map(|data| data.clone_with_inference_id(db, InferenceId::NoContext));
-                return Some(ResolvedItem::Concrete(item));
+                // We infer the impl function here manually, since it cannot be handled via resolver directly.
+                // This would default to generic function later, which we don't want to happen if we can infer it.
+                return try_infer_impl_function(db, resolver_data, item.clone()).or(Some(ResolvedItem::Concrete(item)));
             }
+        }
+    }
+    None
+}
+
+/// Tries to redirect from the usage of the trait function to a concrete impl in user code
+fn try_infer_impl_function(
+    db: &AnalysisDatabase,
+    resolver_data: &mut Option<ResolverData>,
+    item: ResolvedConcreteItem,
+) -> Option<ResolvedItem> {
+    if let ResolvedConcreteItem::Function(function_id) = item {
+        let concrete_fn = function_id.get_concrete(db);
+        if let GenericFunctionId::Impl(impl_generic_function_id) = concrete_fn.generic_function {
+            let impl_long_id = impl_generic_function_id.impl_id.lookup_intern(db);
+            let concrete_impl_id = rewrite_impl(db, impl_long_id, resolver_data)?;
+            let impl_func_id = concrete_impl_id
+                .get_impl_function(db, impl_generic_function_id.function)
+                .ok()??;
+
+            return Some(ResolvedItem::ImplItem(ImplItemId::Function(impl_func_id)));
+        }
+    }
+    None
+}
+
+/// Tries to rewrite trait function usage to a concrete function of an impl
+fn rewrite_impl(
+    db: &AnalysisDatabase,
+    impl_long_id: ImplLongId,
+    resolver_data: &mut Option<ResolverData>,
+) -> Option<ConcreteImplId> {
+    if let Some(resolver_data) = resolver_data {
+        let mut inference = resolver_data.inference_data.inference(db);
+        let rewritten = inference.rewrite(impl_long_id).ok()?;
+        if let ImplLongId::Concrete(concrete_impl_id) = rewritten {
+            return Some(concrete_impl_id);
         }
     }
     None
