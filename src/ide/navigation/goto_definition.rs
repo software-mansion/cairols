@@ -1,5 +1,5 @@
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::SymbolDef;
+use crate::lang::defs::{SymbolDef, SymbolSearch};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
@@ -19,7 +19,7 @@ pub fn goto_definition(
     let position = params.text_document_position_params.position.to_cairo();
 
     let identifier = db.find_identifier_at_position(file, position)?;
-    let symbol = SymbolDef::find(db, &identifier)?;
+    let symbol = SymbolSearch::find_definition(db, &identifier)?.def;
 
     let (found_file, span) = try_special_case_non_inline_module(db, &symbol)
         .map_or_else(|| symbol.definition_location(db), Some)?;

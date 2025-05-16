@@ -30,13 +30,33 @@ fn const_item_via_other_const_expr() {
     ");
 }
 
+// FIXME(#589): Const usage should also be renamed here
 #[test]
 fn associated_const_via_trait_declaration() {
     test_transform!(rename, r#"
     trait Shape<T> { const SIDE<caret>S: u32; }
-    "#, @"trait Shape<T> { const RENAMED: u32; }");
+
+    struct Triangle {}
+    impl TriangleShape of Shape<Triangle> { const SIDES: u32 = 3; }
+
+    fn main() {
+        let tri = Triangle {};
+        assert!(tri::SIDES == 3, 'lul');
+    }
+    "#, @r"
+    trait Shape<T> { const RENAMED: u32; }
+
+    struct Triangle {}
+    impl TriangleShape of Shape<Triangle> { const RENAMED: u32 = 3; }
+
+    fn main() {
+        let tri = Triangle {};
+        assert!(tri::SIDES == 3, 'lul');
+    }
+    ");
 }
 
+// FIXME(#648): This is an exception and should rename the trait as well
 #[test]
 fn associated_const_via_impl_definition() {
     test_transform!(rename, r#"
@@ -44,7 +64,7 @@ fn associated_const_via_impl_definition() {
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const SIDE<caret>S: u32 = 3; }
     "#, @r"
-    trait Shape<T> { const RENAMED: u32; }
+    trait Shape<T> { const SIDES: u32; }
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const RENAMED: u32 = 3; }
     ");

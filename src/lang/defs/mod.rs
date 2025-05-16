@@ -9,14 +9,13 @@ use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::smol_str::SmolStr;
 
 pub use self::finder::ResolvedItem;
-pub use self::finder::find_definition;
+pub use self::finder::{find_declaration, find_definition};
 pub use self::item::ItemDef;
 pub use self::member::MemberDef;
 pub use self::module::ModuleDef;
 pub use self::variable::VariableDef;
 pub use self::variant::VariantDef;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-
 use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
 
@@ -41,21 +40,53 @@ pub enum SymbolDef {
     Module(ModuleDef),
 }
 
-impl SymbolDef {
-    /// Finds definition of the symbol referred to by the given identifier.
-    pub fn find(db: &AnalysisDatabase, identifier: &ast::TerminalIdentifier) -> Option<Self> {
-        Self::find_with_resolved_item(db, identifier).map(|(_, _, def)| def)
-    }
+/// An instance of Search (for definition or declaration).
+/// Keeps result (def) and context information about the conducted search.
+pub struct SymbolSearch {
+    /// Result of the search
+    pub def: SymbolDef,
+    /// Intermediate result, used to construct `def`
+    pub resolved_item: ResolvedItem,
+    /// State of the resolver after this search
+    pub resolver_data: Option<ResolverData>,
+}
 
-    pub fn find_with_resolved_item(
+impl SymbolSearch {
+    /// Finds definition of the symbol referred to by the given identifier.
+    /// Gets you to the "nearest" point upwards in terms of top-down code breakdown
+    /// (most likely you would use it to get this: usage -> impl)
+    pub fn find_definition(
         db: &AnalysisDatabase,
         identifier: &ast::TerminalIdentifier,
-    ) -> Option<(ResolvedItem, Option<ResolverData>, Self)> {
+    ) -> Option<Self> {
         // Get the resolved item info and the syntax node of the definition.
         let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
         let mut resolver_data = None;
         let resolved_item = find_definition(db, identifier, &lookup_items, &mut resolver_data)?;
 
+        Self::from_resolved_item(db, resolved_item, resolver_data)
+    }
+
+    /// Finds declaration of the symbol referred to by given identifier.
+    /// This is always the same as definition except for any identifier referring to an impl item
+    /// - for which it will return a corresponding item in the definition of a trait.
+    pub fn find_declaration(
+        db: &AnalysisDatabase,
+        identifier: &ast::TerminalIdentifier,
+    ) -> Option<Self> {
+        // Get the resolved item info and the syntax node of the definition.
+        let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
+        let mut resolver_data = None;
+        let resolved_item = find_declaration(db, identifier, &lookup_items, &mut resolver_data)?;
+
+        Self::from_resolved_item(db, resolved_item, resolver_data)
+    }
+
+    fn from_resolved_item(
+        db: &AnalysisDatabase,
+        resolved_item: ResolvedItem,
+        resolver_data: Option<ResolverData>,
+    ) -> Option<Self> {
         match resolved_item {
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericFunction(_))
@@ -72,53 +103,46 @@ impl SymbolDef {
             | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_))
             | ResolvedItem::ImplItem(_) => {
-                ItemDef::new(db, &resolved_item.definition_node(db)?).map(Self::Item)
+                ItemDef::new(db, &resolved_item.definition_node(db)?).map(SymbolDef::Item)
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Module(id))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Module(id)) => {
-                Some(Self::Module(ModuleDef::new(db, id, resolved_item.definition_node(db)?)))
+                Some(SymbolDef::Module(ModuleDef::new(db, id, resolved_item.definition_node(db)?)))
             }
 
-            ResolvedItem::Generic(ResolvedGenericItem::Variable(var_id)) => Some(Self::Variable(
-                VariableDef::new(db, var_id, resolved_item.definition_node(db)?),
-            )),
+            ResolvedItem::Generic(ResolvedGenericItem::Variable(var_id)) => {
+                Some(SymbolDef::Variable(VariableDef::new(
+                    db,
+                    var_id,
+                    resolved_item.definition_node(db)?,
+                )))
+            }
 
             ResolvedItem::Member(member_id) => {
-                MemberDef::new(db, member_id, resolved_item.definition_node(db)?).map(Self::Member)
+                MemberDef::new(db, member_id, resolved_item.definition_node(db)?)
+                    .map(SymbolDef::Member)
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Variant(ref variant)) => {
                 VariantDef::new(db, variant.id, resolved_item.definition_node(db)?)
-                    .map(Self::Variant)
+                    .map(SymbolDef::Variant)
             }
 
             ResolvedItem::Concrete(ResolvedConcreteItem::Variant(ref concrete_variant)) => {
                 VariantDef::new(db, concrete_variant.id, resolved_item.definition_node(db)?)
-                    .map(Self::Variant)
+                    .map(SymbolDef::Variant)
             }
 
             ResolvedItem::ExprInlineMacro(ref inline_macro) => {
-                Some(Self::ExprInlineMacro(inline_macro.clone()))
+                Some(SymbolDef::ExprInlineMacro(inline_macro.clone()))
             }
         }
-        .map(|def| (resolved_item, resolver_data, def))
+        .map(|def| Self { def, resolved_item, resolver_data })
     }
+}
 
-    /// Gets a stable pointer to the "most interesting" syntax node of the symbol.
-    ///
-    /// Typically, this is this symbol's name node.
-    pub fn definition_stable_ptr(&self, db: &dyn SyntaxGroup) -> Option<SyntaxStablePtrId> {
-        match self {
-            Self::Item(d) => Some(d.definition_stable_ptr()),
-            Self::Variable(d) => Some(d.definition_stable_ptr(db)),
-            Self::ExprInlineMacro(_) => None,
-            Self::Member(d) => Some(d.definition_stable_ptr()),
-            Self::Variant(d) => Some(d.definition_stable_ptr()),
-            Self::Module(d) => Some(d.definition_stable_ptr()),
-        }
-    }
-
+impl SymbolDef {
     /// Gets the [`FileId`] and [`TextSpan`] of symbol's definition node's originating location.
     pub fn definition_location(&self, db: &AnalysisDatabase) -> Option<(FileId, TextSpan)> {
         let stable_ptr = self.definition_stable_ptr(db)?;
@@ -165,6 +189,20 @@ impl SymbolDef {
 
             // TODO(#195): Use visibility information to narrow down search scopes.
             _ => SearchScope::everything(db),
+        }
+    }
+
+    /// Gets a stable pointer to the "most interesting" syntax node of the symbol.
+    ///
+    /// Typically, this is this symbol's name node.
+    pub fn definition_stable_ptr(&self, db: &dyn SyntaxGroup) -> Option<SyntaxStablePtrId> {
+        match self {
+            Self::Item(d) => Some(d.definition_stable_ptr()),
+            Self::Variable(d) => Some(d.definition_stable_ptr(db)),
+            Self::ExprInlineMacro(_) => None,
+            Self::Member(d) => Some(d.definition_stable_ptr()),
+            Self::Variant(d) => Some(d.definition_stable_ptr()),
+            Self::Module(d) => Some(d.definition_stable_ptr()),
         }
     }
 

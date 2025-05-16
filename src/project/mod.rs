@@ -217,6 +217,7 @@ impl ProjectController {
 
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
+#[expect(clippy::large_enum_variant)]
 pub enum ProjectUpdate {
     Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf },
     ScarbMetadataFailed,

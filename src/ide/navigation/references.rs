@@ -2,7 +2,7 @@ use itertools::Itertools;
 use lsp_types::{Location, ReferenceParams};
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::SymbolDef;
+use crate::lang::defs::SymbolSearch;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<Location>> {
@@ -13,9 +13,10 @@ pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<
 
     let identifier = db.find_identifier_at_position(file, position)?;
 
-    let symbol = SymbolDef::find(db, &identifier)?;
+    let search_result = SymbolSearch::find_definition(db, &identifier)?;
 
-    let locations = symbol
+    let locations = search_result
+        .def
         .usages(db)
         .include_declaration(include_declaration)
         .locations()
