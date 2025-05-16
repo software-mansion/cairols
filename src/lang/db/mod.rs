@@ -9,7 +9,9 @@ use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{ExternalFiles, FilesDatabase, FilesGroup, init_files_group};
 use cairo_lang_filesystem::ids::{CrateId, VirtualFile};
-use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
+use cairo_lang_lowering::db::{
+    ExternalCodeSizeEstimator, LoweringDatabase, LoweringGroup, init_lowering_group,
+};
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_semantic::db::{
@@ -245,5 +247,15 @@ impl Upcast<dyn LoweringGroup> for AnalysisDatabase {
 impl Upcast<dyn ParserGroup> for AnalysisDatabase {
     fn upcast(&self) -> &(dyn ParserGroup + 'static) {
         self
+    }
+}
+
+// We don't need this implementation at the moment but it's required by `LoweringGroup`.
+impl ExternalCodeSizeEstimator for AnalysisDatabase {
+    fn estimate_size(
+        &self,
+        _function_id: cairo_lang_lowering::ids::ConcreteFunctionWithBodyId,
+    ) -> cairo_lang_diagnostics::Maybe<isize> {
+        cairo_lang_diagnostics::Maybe::Ok(0)
     }
 }
