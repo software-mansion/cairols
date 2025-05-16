@@ -50,7 +50,6 @@ fn associated_const_via_impl_definition() {
     ");
 }
 
-// FIXME(#589)
 #[test]
 fn associated_trait_const_via_usages() {
     test_transform!(find_references, r#"
@@ -63,7 +62,17 @@ fn associated_trait_const_via_usages() {
         let b = TriangleShape::SIDES == 2;
         let c = TriangleShape::SIDES == 3;
     }
-    "#, @r"none response");
+    "#, @r"
+    trait Shape<T> { const SIDES: u32; }
+    struct Triangle {}
+    impl TriangleShape of Shape<Triangle> { const <sel=declaration>SIDES</sel>: u32 = 3; }
+
+    fn main() {
+        let a = TriangleShape::<sel>SIDES</sel> == 1;
+        let b = TriangleShape::<sel>SIDES</sel> == 2;
+        let c = TriangleShape::<sel>SIDES</sel> == 3;
+    }
+    ");
 }
 
 #[test]
@@ -110,7 +119,6 @@ fn associated_const_via_expr_use() {
     ");
 }
 
-// FIXME(#589)
 #[test]
 fn dual_trait_const_via_trait_function() {
     test_transform!(find_references, r#"
@@ -142,8 +150,8 @@ fn dual_trait_const_via_trait_function() {
     }
 
     fn main() {
-        let foo: felt252 = FooImpl::FOO_CONSTANT;
-        let bar: u256 = BarImpl::FOO_CONSTANT;
+        let foo: felt252 = FooImpl::<sel>FOO_CONSTANT</sel>;
+        let bar: u256 = BarImpl::<sel>FOO_CONSTANT</sel>;
     }
     ")
 }

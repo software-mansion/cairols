@@ -90,6 +90,39 @@ fn trait_method_via_definition() {
 }
 
 #[test]
+fn trait_method_via_impl_call() {
+    test_transform!(find_references, r#"
+    #[derive(Drop)]
+    struct Foo {}
+    trait FooTrait {
+        fn are<caret>a() -> u64;
+    }
+    impl FooImpl of FooTrait {
+        fn area() -> u64 { 0 }
+    }
+
+    fn main() {
+        let y = FooImpl::area();
+        let z = FooImpl::area();
+    }
+    "#, @r"
+    #[derive(Drop)]
+    struct Foo {}
+    trait FooTrait {
+        fn <sel=declaration>area</sel>() -> u64;
+    }
+    impl FooImpl of FooTrait {
+        fn <sel>area</sel>() -> u64 { 0 }
+    }
+
+    fn main() {
+        let y = FooImpl::<sel>area</sel>();
+        let z = FooImpl::<sel>area</sel>();
+    }
+    ")
+}
+
+#[test]
 fn trait_method_via_dot_call() {
     test_transform!(find_references, r#"
     #[derive(Drop)]
@@ -359,4 +392,187 @@ fn dual_implementations_of_trait_via_trait_impl() {
     ")
 }
 
-// FIXME(#170): Add a test case for associated impl member usage
+#[test]
+fn associated_impl_member_const_usage() {
+    test_transform!(find_references, r#"
+    trait ConstCarryingTrait {
+        const value: felt252;
+    }
+    trait FooTrait {
+        impl ValueCarrier: ConstCarryingTrait;
+    }
+
+    impl Carry123 of ConstCarryingTrait {
+        const value: felt252 = 123;
+    }
+    impl Carry456 of ConstCarryingTrait {
+        const val<caret>ue: felt252 = 456;
+    }
+
+    impl Foo123 of FooTrait {
+        impl ValueCarrier = Carry123;
+    }
+
+    impl Bar456 of FooTrait {
+        impl ValueCarrier = Carry456;
+    }
+
+    fn main() {
+        let _a = Bar456::ValueCarrier::value;
+        let _b = Bar456::ValueCarrier::value;
+    }
+    "#, @r"
+    trait ConstCarryingTrait {
+        const value: felt252;
+    }
+    trait FooTrait {
+        impl ValueCarrier: ConstCarryingTrait;
+    }
+
+    impl Carry123 of ConstCarryingTrait {
+        const value: felt252 = 123;
+    }
+    impl Carry456 of ConstCarryingTrait {
+        const <sel=declaration>value</sel>: felt252 = 456;
+    }
+
+    impl Foo123 of FooTrait {
+        impl ValueCarrier = Carry123;
+    }
+
+    impl Bar456 of FooTrait {
+        impl ValueCarrier = Carry456;
+    }
+
+    fn main() {
+        let _a = Bar456::ValueCarrier::<sel>value</sel>;
+        let _b = Bar456::ValueCarrier::<sel>value</sel>;
+    }
+    ")
+}
+
+#[test]
+fn associated_impl_function_usage() {
+    test_transform!(find_references, r#"
+    trait FunctionImplementingTrait {
+        fn function() -> felt252;
+    }
+    trait FooTrait {
+        impl FunctionImplementer: FunctionImplementingTrait;
+    }
+
+    impl Func123 of FunctionImplementingTrait {
+        fn function() -> felt252 {
+            123
+        }
+    }
+    impl Func456 of FunctionImplementingTrait {
+        fn fun<caret>ction() -> felt252 {
+            456
+        }
+    }
+
+    impl Foo123 of FooTrait {
+        impl FunctionImplementer = Func123;
+    }
+
+    impl Bar456 of FooTrait {
+        impl FunctionImplementer = Func456;
+    }
+
+    fn main() {
+        let _a = Bar456::FunctionImplementer::function();
+        let _b = Bar456::FunctionImplementer::function();
+    }
+    "#, @r"
+    trait FunctionImplementingTrait {
+        fn function() -> felt252;
+    }
+    trait FooTrait {
+        impl FunctionImplementer: FunctionImplementingTrait;
+    }
+
+    impl Func123 of FunctionImplementingTrait {
+        fn function() -> felt252 {
+            123
+        }
+    }
+    impl Func456 of FunctionImplementingTrait {
+        fn <sel=declaration>function</sel>() -> felt252 {
+            456
+        }
+    }
+
+    impl Foo123 of FooTrait {
+        impl FunctionImplementer = Func123;
+    }
+
+    impl Bar456 of FooTrait {
+        impl FunctionImplementer = Func456;
+    }
+
+    fn main() {
+        let _a = Bar456::FunctionImplementer::<sel>function</sel>();
+        let _b = Bar456::FunctionImplementer::<sel>function</sel>();
+    }
+    ")
+}
+
+#[test]
+fn associated_impl_type_usage() {
+    test_transform!(find_references, r#"
+    trait TypeCarryingTrait {
+        type Numeric;
+    }
+    trait FooTrait {
+        impl TypeCarrier: TypeCarryingTrait;
+    }
+
+    impl CarryFelt252 of TypeCarryingTrait {
+        type Numeric = felt252;
+    }
+    impl CarryU256 of TypeCarryingTrait {
+        type Num<caret>eric = u256;
+    }
+
+    impl Foo123 of FooTrait {
+        impl TypeCarrier = CarryFelt252;
+    }
+
+    impl Bar456 of FooTrait {
+        impl TypeCarrier = CarryU256;
+    }
+
+    fn main() {
+        let _a: Bar456::TypeCarrier::Numeric = 123;
+        let _b: Bar456::TypeCarrier::Numeric = 123;
+    }
+    "#, @r"
+    trait TypeCarryingTrait {
+        type Numeric;
+    }
+    trait FooTrait {
+        impl TypeCarrier: TypeCarryingTrait;
+    }
+
+    impl CarryFelt252 of TypeCarryingTrait {
+        type Numeric = felt252;
+    }
+    impl CarryU256 of TypeCarryingTrait {
+        type <sel=declaration>Numeric</sel> = u256;
+    }
+
+    impl Foo123 of FooTrait {
+        impl TypeCarrier = CarryFelt252;
+    }
+
+    impl Bar456 of FooTrait {
+        impl TypeCarrier = CarryU256;
+    }
+
+    fn main() {
+        let _a: Bar456::TypeCarrier::<sel>Numeric</sel> = 123;
+        let _b: Bar456::TypeCarrier::<sel>Numeric</sel> = 123;
+    }
+    ")
+}
