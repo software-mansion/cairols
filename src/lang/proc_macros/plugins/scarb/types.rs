@@ -20,6 +20,10 @@ impl<'a> TokenStreamBuilder<'a> {
         self.nodes.push(node);
     }
 
+    pub fn with_metadata(&mut self, metadata: TokenStreamMetadata) {
+        self.metadata = Some(metadata);
+    }
+
     pub fn build(&self, ctx: &AllocationContext) -> TokenStream {
         let result: Vec<TokenTree> = self
             .nodes

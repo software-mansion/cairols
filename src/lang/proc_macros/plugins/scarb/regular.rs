@@ -4,7 +4,7 @@ use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use std::collections::HashSet;
 
-use super::{FromSyntaxNode, into_cairo_diagnostics};
+use super::into_cairo_diagnostics;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::{get_attribute_expansion, get_derive_expansion};
 use crate::lang::proc_macros::plugins::scarb::conversion::{
@@ -582,8 +582,11 @@ fn expand_derives(
     item_ast: ast::ModuleItem,
     stream_metadata: TokenStreamMetadata,
 ) -> Option<PluginResult> {
-    let token_stream =
-        TokenStream::from_syntax_node(db, &item_ast).with_metadata(stream_metadata.clone());
+    let mut token_stream_builder = TokenStreamBuilder::new(db);
+    token_stream_builder.add_node(item_ast.as_syntax_node());
+    token_stream_builder.with_metadata(stream_metadata.clone());
+    let ctx = AllocationContext::default();
+    let token_stream = token_stream_builder.build(&ctx);
 
     // All derives to be applied.
     let derives = parse_derive(db, defined_derives, item_ast.clone());

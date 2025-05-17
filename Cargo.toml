@@ -42,7 +42,6 @@ cairo-lang-lowering = "*"
 cairo-lang-macro = { git = "https://github.com/software-mansion/scarb.git", rev = "af5795e3b04ee39a15debaabf77db2d96b9031b8" }
 cairo-lang-macro-v1 = { version = "0.1", package = "cairo-lang-macro", features = ["serde"] }
 cairo-lang-parser = "*"
-cairo-lang-primitive-token = "1.0.0"
 cairo-lang-project = "*"
 cairo-lang-semantic = "*"
 cairo-lang-starknet = "*"
