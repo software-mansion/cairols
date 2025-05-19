@@ -270,7 +270,6 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup + LsSyntaxG
     /// This function analyzes the specified original `SyntaxNode` and returns a list
     /// of all resultant nodes. These nodes represent the final state after all processing
     /// (by macros). If no transformations have occurred, this function returns the original node itself.
-    #[expect(dead_code)]
     fn get_node_resultants(&self, node: SyntaxNode) -> Option<Vec<SyntaxNode>> {
         let db: &dyn SemanticGroup = self.upcast();
 
