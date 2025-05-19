@@ -65,6 +65,21 @@ pub fn find_definition(
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
 }
 
+pub fn find_declaration(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+    resolver_data: &mut Option<ResolverData>,
+) -> Option<ResolvedItem> {
+    let def = find_definition(db, identifier, lookup_items, resolver_data)?;
+    let decl = try_impl_items(db, &TerminalIdentifier::cast(db, def.definition_node(db)?)?);
+
+    decl.or(Some(def))
+}
+
+/// Tries to find a trait's impl item via trait's item usage, if we're on using its' path (ExprPath) in code.
+/// This needs to be done because resolver skips a step where a associated type/impl is bound to a specific impl,
+/// and resolves the aforementioned path to the bound type/impl directly.
 fn try_impl_item_usages(
     db: &AnalysisDatabase,
     identifier: &TerminalIdentifier,
@@ -74,24 +89,25 @@ fn try_impl_item_usages(
     let path_item_segments =
         identifier.as_syntax_node().ancestor_of_type::<ast::ExprPath>(db)?.to_segments(db);
 
-    // Snip off the path the end after the identifier we're on
-    let path_item_segments_cloned = path_item_segments
+    // Snip off the path after the identifier we're on
+    let path_item_segments_cloned: Vec<_> = path_item_segments
         .iter()
         .take_while_inclusive(|segment| segment.identifier(db) != identifier.text(db))
         .cloned()
-        .collect_vec();
+        .collect();
 
-    // The last element is the member name
-    let (member_name_candidate, impl_prefix_candidate) = path_item_segments_cloned.split_last()?;
-    let impl_prefix_candidate = impl_prefix_candidate.iter().cloned().collect_vec();
+    // The last element is the name
+    let (associated_item_name_candidate, impl_prefix_candidate) =
+        path_item_segments_cloned.split_last()?;
+    let impl_prefix_candidate = impl_prefix_candidate.to_vec();
     if impl_prefix_candidate.is_empty() {
         return None;
     }
 
+    let module_file_id = db.find_module_file_containing_node(&identifier.as_syntax_node())?;
+
     let try_find_impl_id = || {
         for &lookup_item_id in lookup_items {
-            let module_file_id =
-                db.find_module_file_containing_node(&identifier.as_syntax_node())?;
             let mut resolver = Resolver::new(
                 db,
                 module_file_id,
@@ -115,26 +131,18 @@ fn try_impl_item_usages(
         return None;
     };
 
-    let concrete_impl_long_id = db.lookup_intern_concrete_impl(concrete_impl_id);
+    let concrete_impl_long_id = concrete_impl_id.lookup_intern(db);
     let item = db
         .impl_item_by_name(
             concrete_impl_long_id.impl_def_id,
-            member_name_candidate.as_syntax_node().get_text_without_trivia(db).parse().unwrap(),
+            associated_item_name_candidate
+                .as_syntax_node()
+                .get_text_without_trivia(db)
+                .parse()
+                .unwrap(),
         )
         .ok()??;
     Some(ResolvedItem::ImplItem(item))
-}
-
-pub fn find_declaration(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-    resolver_data: &mut Option<ResolverData>,
-) -> Option<ResolvedItem> {
-    let def = find_definition(db, identifier, lookup_items, resolver_data)?;
-    let decl = try_impl_items(db, &TerminalIdentifier::cast(db, def.definition_node(db)?)?);
-
-    decl.or(Some(def))
 }
 
 fn try_inline_macro(
