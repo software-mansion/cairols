@@ -321,7 +321,6 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup + LsSyntaxG
     ///
     /// Therefore for `FooTrait` from file 1, `FooTrait` from file 1 and `FooTrait` from file 2 are returned.
     #[expect(clippy::test_attr_in_doctest)]
-    #[expect(dead_code)]
     fn get_node_resultants(&self, node: SyntaxNode) -> Option<Vec<SyntaxNode>> {
         let db: &dyn SemanticGroup = self.upcast();
 
