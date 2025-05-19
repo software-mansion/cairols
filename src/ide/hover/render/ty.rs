@@ -70,7 +70,7 @@ fn path(
 ) -> Option<String> {
     let path = underscore.as_syntax_node().ancestor_of_type::<ExprPath>(db)?;
 
-    let mut segments = path.elements(db);
+    let mut segments = path.segments(db).elements(db);
 
     while matches!(segments.last(), Some(PathSegment::Missing(_))) {
         segments.pop();

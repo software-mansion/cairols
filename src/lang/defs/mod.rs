@@ -1,3 +1,4 @@
+use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
@@ -136,6 +137,14 @@ impl SymbolSearch {
 
             ResolvedItem::ExprInlineMacro(ref inline_macro) => {
                 Some(SymbolDef::ExprInlineMacro(inline_macro.clone()))
+            }
+
+            ResolvedItem::Concrete(ResolvedConcreteItem::Macro(ref inline_macro)) => {
+                Some(SymbolDef::ExprInlineMacro(inline_macro.name(db)))
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::Macro(ref inline_macro)) => {
+                Some(SymbolDef::ExprInlineMacro(inline_macro.name(db)))
             }
         }
         .map(|def| Self { def, resolved_item, resolver_data })

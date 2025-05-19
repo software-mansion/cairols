@@ -683,6 +683,9 @@ impl ResolvedItem {
                 }
             },
 
+            ResolvedItem::Generic(ResolvedGenericItem::Macro(_))
+            | ResolvedItem::ExprInlineMacro(_) => return None,
+
             // Other variants.
             ResolvedItem::Member(member_id) => {
                 member_id.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
@@ -702,7 +705,6 @@ impl ResolvedItem {
                     impl_impl.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
             },
-            ResolvedItem::ExprInlineMacro(_) => return None,
         };
         Some(stable_ptr)
     }
