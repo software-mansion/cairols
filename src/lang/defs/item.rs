@@ -33,7 +33,8 @@ pub struct ItemDef {
 impl ItemDef {
     /// Constructs new [`ItemDef`] instance.
     pub(super) fn new(db: &AnalysisDatabase, definition_node: &SyntaxNode) -> Option<Self> {
-        let mut lookup_item_ids = db.collect_lookup_items_stack(definition_node)?.into_iter();
+        let mut lookup_item_ids =
+            db.collect_lookup_items_with_parent_files(definition_node)?.into_iter();
 
         // Pull the lookup item representing the defining item.
         let lookup_item_id = lookup_item_ids.next()?;

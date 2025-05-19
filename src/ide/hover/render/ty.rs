@@ -33,7 +33,7 @@ pub fn ty(
     file_id: FileId,
     importables: &OrderedHashMap<ImportableId, String>,
 ) -> Option<Hover> {
-    let lookup_items = db.collect_lookup_items_stack(&underscore.as_syntax_node())?;
+    let lookup_items = db.collect_lookup_items_with_parent_files(&underscore.as_syntax_node())?;
 
     let result = pattern(db, underscore.clone(), &lookup_items, importables)
         .or_else(|| path(db, underscore.clone(), &lookup_items, importables))?;

@@ -1,5 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::{FileIndex, ModuleFileId, NamedLanguageElementId};
+use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -29,7 +29,7 @@ pub fn path_suffix_completions(
         if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none();
         // Enum patterns are handled in a separate function.
         if ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none();
-        if let Some(importables) = db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)));
+        if let Some(importables) = db.visible_importables_from_module(ctx.module_file_id);
         if let Some(typed_text_segments) = ctx.node.ancestor_of_type::<ExprPath>(db).map(|path| path.segments(db).elements(db));
         if !typed_text_segments.is_empty();
 
@@ -129,12 +129,17 @@ pub fn path_prefix_completions(
                 let resolved_item = ResolvedGenericItem::from_module_item(db, *item).ok()?;
                 let item_info = db.module_item_info_by_name(module_id, item.name(db)).ok()??;
 
-                peek_visible_in_with_edition(db, item_info.visibility, module_id, ctx.module_id)
-                    .then(|| CompletionItem {
-                        label: item.name(db).to_string(),
-                        kind: Some(resolved_generic_item_completion_kind(resolved_item)),
-                        ..CompletionItem::default()
-                    })
+                peek_visible_in_with_edition(
+                    db,
+                    item_info.visibility,
+                    module_id,
+                    ctx.module_file_id,
+                )
+                .then(|| CompletionItem {
+                    label: item.name(db).to_string(),
+                    kind: Some(resolved_generic_item_completion_kind(resolved_item)),
+                    ..CompletionItem::default()
+                })
             })
             .collect(),
         ResolvedConcreteItem::Trait(item) | ResolvedConcreteItem::SelfTrait(item) => db

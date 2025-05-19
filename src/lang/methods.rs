@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{FileIndex, ModuleFileId, NamedLanguageElementId, TraitFunctionId};
+use cairo_lang_defs::ids::{NamedLanguageElementId, TraitFunctionId};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_semantic::db::SemanticGroup;
@@ -103,8 +103,7 @@ pub fn available_traits_for_method(
         return None;
     }
 
-    let module_visible_traits =
-        db.visible_traits_from_module(ModuleFileId(ctx.module_id, FileIndex(0)))?;
+    let module_visible_traits = db.visible_traits_from_module(ctx.module_file_id)?;
     let unknown_method_name = ctx.node.get_text(db);
 
     Some(
