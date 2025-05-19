@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use cairo_lang_defs::ids::{
-    FileIndex, ImportableId, ModuleFileId, NamedLanguageElementId, TraitConstantId, TraitFunctionId,
+    ImportableId, NamedLanguageElementId, TraitConstantId, TraitFunctionId,
 };
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
@@ -27,8 +27,7 @@ pub fn fill_trait_members(
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
     let file = db.find_module_file_containing_node(&ctx.node)?.file_id(db).ok()?;
-    let importables =
-        db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)))?;
+    let importables = db.visible_importables_from_module(ctx.module_file_id)?;
 
     let item_impl = ctx.node.ancestor_of_type::<ItemImpl>(db)?;
 

@@ -3,7 +3,6 @@ use lsp_types::{CodeAction, CodeActionKind, Url, WorkspaceEdit};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
-use cairo_lang_defs::ids::{FileIndex, ModuleFileId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax::node::ast::ExprPath;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
@@ -25,7 +24,7 @@ pub fn missing_import(
         .rev()
         .collect();
 
-    let items = db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)))?;
+    let items = db.visible_importables_from_module(ctx.module_file_id)?;
 
     let items: Vec<_> = items
         .iter()

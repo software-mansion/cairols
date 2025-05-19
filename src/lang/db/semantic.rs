@@ -1,3 +1,4 @@
+use super::LsSyntaxGroup;
 use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
@@ -23,7 +24,7 @@ use std::collections::{HashSet, VecDeque};
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// Language server-specific extensions to the semantic group.
-pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup {
+pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup + LsSyntaxGroup {
     /// Returns a [`LookupItemId`] corresponding to the node or its first parent all the way up to
     /// syntax root in the file.
     ///
@@ -45,12 +46,41 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup {
             .find_map(|node| lookup_item_from_ast(self.upcast(), module_file_id, node))
     }
 
+    /// Like [`LsSemanticGroup::collect_lookup_items_stack_in_file`], but also checks parent files nodes using code mappings.
+    fn collect_lookup_items_stack(&self, node: &SyntaxNode) -> Option<Vec<LookupItemId>> {
+        let mut node = Some(*node);
+        let mut result = vec![];
+
+        while let Some(current_node) = node {
+            result.extend(self.collect_lookup_items_stack_in_file(&current_node)?);
+
+            node = self.corresponding_node_in_parent_file(&current_node);
+        }
+
+        Some(result)
+    }
+
+    /// Finds node in parent file that is pointed to by `node` code mappings. Tries to find widest node available.
+    fn corresponding_node_in_parent_file(&self, node: &SyntaxNode) -> Option<SyntaxNode> {
+        let db: &dyn SemanticGroup = self.upcast();
+
+        let (parent, mappings) = get_parent_and_mapping(db, node.stable_ptr(db).file_id(db))?;
+
+        let span_in_parent = translate_location(&mappings, node.span(db))?;
+        let precise_node = self.find_syntax_node_at_offset(parent, span_in_parent.start)?;
+
+        precise_node
+            .ancestors_with_self(db)
+            .take_while(|new_node| span_in_parent.contains(new_node.span(db)))
+            .last()
+    }
+
     /// Returns [`LookupItemId`]s corresponding to the node and its parents all the way up to syntax
     /// root in the file.
     ///
     /// Returns `None` if there is missing data in the compiler database.
     /// It is not expected for this function to return `Some([])`, but do not assume this.
-    fn collect_lookup_items_stack(&self, node: &SyntaxNode) -> Option<Vec<LookupItemId>> {
+    fn collect_lookup_items_stack_in_file(&self, node: &SyntaxNode) -> Option<Vec<LookupItemId>> {
         let module_file_id = self.find_module_file_containing_node(node)?;
 
         Some(
@@ -68,7 +98,21 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup {
     /// return a [`ModuleFileId`] pointing to the main, user-written file of the module.
     fn find_module_file_containing_node(&self, node: &SyntaxNode) -> Option<ModuleFileId> {
         let module_id = self.find_module_containing_node(node)?;
-        let file_index = FileIndex(0);
+        let file = node.stable_ptr(self.upcast()).file_id(self.upcast());
+
+        let i = self
+            .module_files(module_id)
+            .map(|files| {
+                files
+                    .iter()
+                    .enumerate()
+                    .find(|(_, f)| **f == file)
+                    .map(|(i, _)| i)
+                    .unwrap_or_default()
+            })
+            .unwrap_or_default();
+
+        let file_index = FileIndex(i);
         Some(ModuleFileId(module_id, file_index))
     }
 

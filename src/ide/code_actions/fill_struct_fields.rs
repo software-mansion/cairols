@@ -23,7 +23,6 @@ pub fn fill_struct_fields(
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
     let module_file_id = db.find_module_file_containing_node(&node)?;
-    let module_id = module_file_id.0;
     let file_id = module_file_id.file_id(db).ok()?;
     let function_id = db.find_lookup_item(&node)?.function_with_body()?;
 
@@ -97,7 +96,7 @@ pub fn fill_struct_fields(
                 db,
                 member.visibility,
                 struct_parent_module_id,
-                module_id,
+                module_file_id,
             ) {
                 Some(format!("{name}: ()"))
             } else {

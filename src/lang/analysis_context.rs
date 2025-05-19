@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{LookupItemId, ModuleId};
+use cairo_lang_defs::ids::{LookupItemId, ModuleFileId};
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::lookup_item::HasResolverData;
 use cairo_lang_semantic::resolve::Resolver;
@@ -8,7 +8,7 @@ use super::db::{AnalysisDatabase, LsSemanticGroup};
 
 pub struct AnalysisContext<'db> {
     pub node: SyntaxNode,
-    pub module_id: ModuleId,
+    pub module_file_id: ModuleFileId,
     pub lookup_item_id: Option<LookupItemId>,
     resolver: Resolver<'db>,
 }
@@ -25,9 +25,7 @@ impl<'db> AnalysisContext<'db> {
             None => Resolver::new(db, module_file_id, InferenceId::NoContext),
         };
 
-        let module_id = module_file_id.0;
-
-        Some(Self { node, module_id, lookup_item_id, resolver })
+        Some(Self { node, module_file_id, lookup_item_id, resolver })
     }
 
     pub fn resolver(&self, db: &'db AnalysisDatabase) -> Resolver<'db> {
