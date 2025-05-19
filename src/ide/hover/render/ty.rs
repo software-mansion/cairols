@@ -1,17 +1,12 @@
 use super::super::super::markdown::fenced_code_block;
 use crate::{
-    ide::{
-        hover::markdown_contents,
-        ty::{InferredValue, format_type},
-    },
+    ide::ty::{InferredValue, format_type},
     lang::{
         db::{AnalysisDatabase, LsSemanticGroup},
         defs::{ResolvedItem, find_definition},
-        lsp::ToLsp,
     },
 };
 use cairo_lang_defs::ids::{ImportableId, LookupItemId};
-use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::{
     db::SemanticGroup,
     expr::inference::InferenceId,
@@ -25,27 +20,18 @@ use cairo_lang_syntax::node::{
     ast::{ExprPath, PathSegment, Pattern, TerminalUnderscore},
 };
 use cairo_lang_utils::{LookupIntern, ordered_hash_map::OrderedHashMap};
-use lsp_types::Hover;
 
 pub fn ty(
     db: &AnalysisDatabase,
     underscore: TerminalUnderscore,
-    file_id: FileId,
     importables: &OrderedHashMap<ImportableId, String>,
-) -> Option<Hover> {
+) -> Option<String> {
     let lookup_items = db.collect_lookup_items_stack(&underscore.as_syntax_node())?;
 
     let result = pattern(db, underscore.clone(), &lookup_items, importables)
         .or_else(|| path(db, underscore.clone(), &lookup_items, importables))?;
 
-    Some(Hover {
-        contents: markdown_contents(fenced_code_block(&result)),
-        range: underscore
-            .as_syntax_node()
-            .span_without_trivia(db)
-            .position_in_file(db, file_id)
-            .map(|position| position.to_lsp()),
-    })
+    Some(fenced_code_block(&result))
 }
 
 fn pattern(
