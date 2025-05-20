@@ -305,6 +305,226 @@ fn test_type_alias_in_impl_associated_type_as_type() {
     ")
 }
 
+// FIXME(#648): This is an exception and should rename the trait as well
+#[test]
+fn test_type_alias_in_impl_associated_type_via_usage() {
+    test_transform!(rename, r#"
+    struct Struct {};
+    type TypeAlias = Struct;
+    trait Trait {
+        type Type;
+    }
+    impl Impl of Trait {
+        type Type = TypeAlias;
+    }
+
+    fn foo() {
+        let v: Impl::Ty<caret>pe = Struct { };
+    }
+    "#, @r"
+    struct Struct {};
+    type TypeAlias = Struct;
+    trait Trait {
+        type Type;
+    }
+    impl Impl of Trait {
+        type RENAMED = TypeAlias;
+    }
+
+    fn foo() {
+        let v: Impl::RENAMED = Struct { };
+    }
+    ")
+}
+
+// FIXME(#648): This is an exception and should rename the trait as well
+#[test]
+fn test_type_alias_in_impl_associated_type_via_impl() {
+    test_transform!(rename, r#"
+    struct Struct {};
+    type TypeAlias = Struct;
+    trait Trait {
+        type Type;
+    }
+    impl Impl of Trait {
+        type Ty<caret>pe = TypeAlias;
+    }
+
+    fn foo() {
+        let v: Impl::Type = Struct { };
+    }
+    "#, @r"
+    struct Struct {};
+    type TypeAlias = Struct;
+    trait Trait {
+        type Type;
+    }
+    impl Impl of Trait {
+        type RENAMED = TypeAlias;
+    }
+
+    fn foo() {
+        let v: Impl::RENAMED = Struct { };
+    }
+    ")
+}
+
+#[test]
+fn test_type_alias_in_impl_associated_type_via_trait() {
+    test_transform!(rename, r#"
+    struct Struct {};
+    type TypeAlias = Struct;
+    trait Trait {
+        type Ty<caret>pe;
+    }
+    impl Impl of Trait {
+        type Type = TypeAlias;
+    }
+
+    fn foo() {
+        let v: Impl::Type = Struct { };
+    }
+    "#, @r"
+    struct Struct {};
+    type TypeAlias = Struct;
+    trait Trait {
+        type RENAMED;
+    }
+    impl Impl of Trait {
+        type RENAMED = TypeAlias;
+    }
+
+    fn foo() {
+        let v: Impl::RENAMED = Struct { };
+    }
+    ")
+}
+
+// FIXME(#648): This is an exception and should rename the trait as well
+#[test]
+fn test_impl_impl_via_usage() {
+    test_transform!(rename, r#"
+    trait ImplementMe {
+        const A: felt252;
+    }
+    trait Trait {
+        impl ImplImpl: ImplementMe;
+    }
+    impl Implementer of ImplementMe {
+        const A: felt252 = 123;
+    }
+
+    impl Impl of Trait {
+        impl ImplImpl = Implementer;
+    }
+
+    fn foo() {
+        let _v = Impl::ImplIm<caret>pl::A;
+    }
+    "#, @r"
+    trait ImplementMe {
+        const A: felt252;
+    }
+    trait Trait {
+        impl ImplImpl: ImplementMe;
+    }
+    impl Implementer of ImplementMe {
+        const A: felt252 = 123;
+    }
+
+    impl Impl of Trait {
+        impl RENAMED = Implementer;
+    }
+
+    fn foo() {
+        let _v = Impl::RENAMED::A;
+    }
+    ")
+}
+
+// FIXME(#648): This is an exception and should rename the trait as well
+#[test]
+fn test_impl_impl_via_impl() {
+    test_transform!(rename, r#"
+    trait ImplementMe {
+        const A: felt252;
+    }
+    trait Trait {
+        impl ImplImpl: ImplementMe;
+    }
+    impl Implementer of ImplementMe {
+        const A: felt252 = 123;
+    }
+
+    impl Impl of Trait {
+        impl ImplIm<caret>pl = Implementer;
+    }
+
+    fn foo() {
+        let _v = Impl::ImplImpl::A;
+    }
+    "#, @r"
+    trait ImplementMe {
+        const A: felt252;
+    }
+    trait Trait {
+        impl ImplImpl: ImplementMe;
+    }
+    impl Implementer of ImplementMe {
+        const A: felt252 = 123;
+    }
+
+    impl Impl of Trait {
+        impl RENAMED = Implementer;
+    }
+
+    fn foo() {
+        let _v = Impl::RENAMED::A;
+    }
+    ")
+}
+
+#[test]
+fn test_impl_impl_via_trait() {
+    test_transform!(rename, r#"
+    trait ImplementMe {
+        const A: felt252;
+    }
+    trait Trait {
+        impl Impl<caret>Impl: ImplementMe;
+    }
+    impl Implementer of ImplementMe {
+        const A: felt252 = 123;
+    }
+
+    impl Impl of Trait {
+        impl ImplImpl = Implementer;
+    }
+
+    fn foo() {
+        let _v = Impl::ImplImpl::A;
+    }
+    "#, @r"
+    trait ImplementMe {
+        const A: felt252;
+    }
+    trait Trait {
+        impl RENAMED: ImplementMe;
+    }
+    impl Implementer of ImplementMe {
+        const A: felt252 = 123;
+    }
+
+    impl Impl of Trait {
+        impl RENAMED = Implementer;
+    }
+
+    fn foo() {
+        let _v = Impl::RENAMED::A;
+    }
+    ")
+}
+
 #[test]
 fn test_type_alias_in_impl_associated_type_as_type_parameter() {
     test_transform!(rename, r#"
