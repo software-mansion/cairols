@@ -102,6 +102,47 @@ fn trait_impls() {
 }
 
 #[test]
+fn trait_impls_via_usage() {
+    test_transform!(goto_definition, r"
+    trait ConstCarryingTrait {
+        const value: felt252;
+    }
+    trait FooTrait {
+        impl VeryImportantImpl: ConstCarryingTrait;
+    }
+
+    impl ConstCarryingTraitOneTwoThree of ConstCarryingTrait {
+        const value: felt252 = 123;
+    }
+    impl FooImpl of FooTrait {
+        impl VeryImportantImpl = ConstCarryingTraitOneTwoThree;
+    }
+
+    fn foo() {
+        let _v = FooImpl::VeryImportan<caret>tImpl::value;
+    }
+    ", @r"
+    trait ConstCarryingTrait {
+        const value: felt252;
+    }
+    trait FooTrait {
+        impl VeryImportantImpl: ConstCarryingTrait;
+    }
+
+    impl ConstCarryingTraitOneTwoThree of ConstCarryingTrait {
+        const value: felt252 = 123;
+    }
+    impl FooImpl of FooTrait {
+        impl <sel>VeryImportantImpl</sel> = ConstCarryingTraitOneTwoThree;
+    }
+
+    fn foo() {
+        let _v = FooImpl::VeryImportantImpl::value;
+    }
+    ")
+}
+
+#[test]
 fn impl_fn_usage_via_struct() {
     test_transform!(goto_definition, r"
     #[derive(Drop)]
