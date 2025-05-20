@@ -173,17 +173,10 @@ impl<'a> FindUsages<'a> {
         let found_symbol_declaration =
             SymbolSearch::find_declaration(self.db, &identifier).map(|ss| ss.def);
 
-        let mut matches = false;
-
-        if let Some(definition) = found_symbol_definition {
-            matches = definition == *self.symbol
-        }
-
-        if let Some(declaration) = found_symbol_declaration {
-            matches |= declaration == *self.symbol
-        }
-
-        if matches {
+        // Check if declaration or definition matches
+        if found_symbol_definition.as_ref() == Some(self.symbol)
+            || found_symbol_declaration.as_ref() == Some(self.symbol)
+        {
             let usage = FoundUsage::from_syntax_node(self.db, identifier.as_syntax_node());
             sink(usage)
         } else {
