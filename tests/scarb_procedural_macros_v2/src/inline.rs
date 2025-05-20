@@ -1,4 +1,4 @@
-use cairo_lang_macro::{Diagnostic, ProcMacroResult, TokenStream, inline_macro, quote};
+use cairo_lang_macro::{Diagnostic, ProcMacroResult, TokenStream, TokenTree, inline_macro, quote};
 
 #[inline_macro]
 pub fn simple_inline_macro_v2(item: TokenStream) -> ProcMacroResult {
@@ -25,6 +25,16 @@ pub fn improper_inline_macro_v2(item: TokenStream) -> ProcMacroResult {
         }
     };
     ProcMacroResult::new(ts)
+}
+
+#[inline_macro]
+pub fn error_inline_with_location_macro_v2(item: TokenStream) -> ProcMacroResult {
+    let first_token_span = match &item.tokens[0] {
+        TokenTree::Ident(t) => t.span.clone(),
+    };
+    ProcMacroResult::new(TokenStream::empty()).with_diagnostics(
+        Diagnostic::span_error(first_token_span, "Error from procedural macro").into(),
+    )
 }
 
 #[inline_macro]

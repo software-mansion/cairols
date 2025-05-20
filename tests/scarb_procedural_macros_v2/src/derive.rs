@@ -1,4 +1,4 @@
-use cairo_lang_macro::{Diagnostic, ProcMacroResult, TokenStream, derive_macro, quote};
+use cairo_lang_macro::{Diagnostic, ProcMacroResult, TokenStream, TokenTree, derive_macro, quote};
 
 #[derive_macro]
 pub fn simple_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
@@ -45,6 +45,16 @@ pub fn improper_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
 pub fn error_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
     ProcMacroResult::new(TokenStream::empty())
         .with_diagnostics(Diagnostic::error("Error from procedural macro").into())
+}
+
+#[derive_macro]
+pub fn error_derive_with_location_macro_v2(item: TokenStream) -> ProcMacroResult {
+    let first_token_span = match &item.tokens[0] {
+        TokenTree::Ident(t) => t.span.clone(),
+    };
+    ProcMacroResult::new(TokenStream::empty()).with_diagnostics(
+        Diagnostic::span_error(first_token_span, "Error from procedural macro").into(),
+    )
 }
 
 #[derive_macro]
