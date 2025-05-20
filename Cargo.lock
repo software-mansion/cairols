@@ -430,7 +430,7 @@ dependencies = [
 [[package]]
 name = "cairo-lang-macro"
 version = "0.2.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=af5795e3b04ee39a15debaabf77db2d96b9031b8#af5795e3b04ee39a15debaabf77db2d96b9031b8"
+source = "git+https://github.com/software-mansion/scarb?rev=af5795e3b04ee39a15debaabf77db2d96b9031b8#af5795e3b04ee39a15debaabf77db2d96b9031b8"
 dependencies = [
  "bumpalo",
  "cairo-lang-macro-attributes 0.2.0",
@@ -455,7 +455,7 @@ dependencies = [
 [[package]]
 name = "cairo-lang-macro-attributes"
 version = "0.2.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=af5795e3b04ee39a15debaabf77db2d96b9031b8#af5795e3b04ee39a15debaabf77db2d96b9031b8"
+source = "git+https://github.com/software-mansion/scarb?rev=af5795e3b04ee39a15debaabf77db2d96b9031b8#af5795e3b04ee39a15debaabf77db2d96b9031b8"
 dependencies = [
  "quote",
  "scarb-stable-hash",
@@ -471,7 +471,7 @@ checksum = "c49906d6b1c215e5814be7c5c65ecf2328898b335bee8c2409ec07cfb5530daf"
 [[package]]
 name = "cairo-lang-macro-stable"
 version = "2.0.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=af5795e3b04ee39a15debaabf77db2d96b9031b8#af5795e3b04ee39a15debaabf77db2d96b9031b8"
+source = "git+https://github.com/software-mansion/scarb?rev=af5795e3b04ee39a15debaabf77db2d96b9031b8#af5795e3b04ee39a15debaabf77db2d96b9031b8"
 
 [[package]]
 name = "cairo-lang-parser"
@@ -542,7 +542,7 @@ dependencies = [
 [[package]]
 name = "cairo-lang-quote"
 version = "0.1.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=af5795e3b04ee39a15debaabf77db2d96b9031b8#af5795e3b04ee39a15debaabf77db2d96b9031b8"
+source = "git+https://github.com/software-mansion/scarb?rev=af5795e3b04ee39a15debaabf77db2d96b9031b8#af5795e3b04ee39a15debaabf77db2d96b9031b8"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2782,7 +2782,7 @@ dependencies = [
 [[package]]
 name = "scarb-proc-macro-server-types"
 version = "0.2.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=af5795e3b04ee39a15debaabf77db2d96b9031b8#af5795e3b04ee39a15debaabf77db2d96b9031b8"
+source = "git+https://github.com/software-mansion/scarb?rev=af5795e3b04ee39a15debaabf77db2d96b9031b8#af5795e3b04ee39a15debaabf77db2d96b9031b8"
 dependencies = [
  "cairo-lang-macro 0.1.1",
  "cairo-lang-macro 0.2.0",

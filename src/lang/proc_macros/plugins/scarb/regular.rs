@@ -284,7 +284,8 @@ fn do_expand_inner_attr(
         },
     );
 
-    let expanded = context.register_result(token_stream.to_string(), result, call_site.stable_ptr);
+    let expanded =
+        context.register_result(db, token_stream.to_string(), result, call_site.stable_ptr);
     item_builder.add_modified(RewriteNode::Mapped {
         origin: func.as_syntax_node().span(db),
         node: Box::new(RewriteNode::Text(expanded.to_string())),
@@ -306,6 +307,7 @@ impl InnerAttrExpansionContext {
 
     pub fn register_result(
         &mut self,
+        db: &dyn SyntaxGroup,
         original: String,
         result: ProcMacroResult,
         stable_ptr: SyntaxStablePtrId,
@@ -313,7 +315,7 @@ impl InnerAttrExpansionContext {
         let expanded = result.token_stream.to_string();
         let changed = expanded.as_str() != original;
 
-        self.diagnostics.extend(into_cairo_diagnostics(result.diagnostics, stable_ptr));
+        self.diagnostics.extend(into_cairo_diagnostics(db, result.diagnostics, stable_ptr));
 
         self.any_changed = self.any_changed || changed;
 
@@ -639,7 +641,7 @@ fn expand_derives(
                 diagnostics_note: Some(note),
             })
         },
-        diagnostics: into_cairo_diagnostics(result.diagnostics, stable_ptr),
+        diagnostics: into_cairo_diagnostics(db, result.diagnostics, stable_ptr),
         // Note that we don't remove the original item here, unlike for attributes.
         // We do not add the original code to the generated file either.
         remove_original_item: false,
@@ -674,7 +676,7 @@ fn expand_attribute(
     if result.token_stream.is_empty() {
         // Remove original code
         return PluginResult {
-            diagnostics: into_cairo_diagnostics(result.diagnostics, call_site.stable_ptr),
+            diagnostics: into_cairo_diagnostics(db, result.diagnostics, call_site.stable_ptr),
             code: None,
             remove_original_item: true,
         };
@@ -694,7 +696,7 @@ fn expand_attribute(
         return PluginResult {
             code: None,
             remove_original_item: false,
-            diagnostics: into_cairo_diagnostics(result.diagnostics, call_site.stable_ptr),
+            diagnostics: into_cairo_diagnostics(db, result.diagnostics, call_site.stable_ptr),
         };
     }
 
@@ -719,7 +721,7 @@ fn expand_attribute(
                 name
             )),
         }),
-        diagnostics: into_cairo_diagnostics(result.diagnostics, call_site.stable_ptr),
+        diagnostics: into_cairo_diagnostics(db, result.diagnostics, call_site.stable_ptr),
         remove_original_item: true,
     }
 }

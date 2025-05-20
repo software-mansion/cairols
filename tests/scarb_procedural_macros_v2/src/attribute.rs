@@ -1,4 +1,6 @@
-use cairo_lang_macro::{Diagnostic, ProcMacroResult, TokenStream, attribute_macro, quote};
+use cairo_lang_macro::{
+    Diagnostic, ProcMacroResult, TokenStream, TokenTree, attribute_macro, quote,
+};
 
 #[attribute_macro]
 pub fn simple_attribute_macro_v2(_args: TokenStream, item: TokenStream) -> ProcMacroResult {
@@ -37,6 +39,19 @@ pub fn improper_attribute_macro_v2(_args: TokenStream, item: TokenStream) -> Pro
 pub fn error_attribute_macro_v2(_args: TokenStream, _item: TokenStream) -> ProcMacroResult {
     ProcMacroResult::new(TokenStream::empty())
         .with_diagnostics(Diagnostic::error("Error from procedural macro").into())
+}
+
+#[attribute_macro]
+pub fn error_attribute_with_location_macro_v2(
+    _args: TokenStream,
+    item: TokenStream,
+) -> ProcMacroResult {
+    let first_token_span = match &item.tokens[0] {
+        TokenTree::Ident(t) => t.span.clone(),
+    };
+    ProcMacroResult::new(TokenStream::empty()).with_diagnostics(
+        Diagnostic::span_error(first_token_span, "Error from procedural macro").into(),
+    )
 }
 
 #[attribute_macro]

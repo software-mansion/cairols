@@ -63,6 +63,21 @@ fn inline_with_error_v2() {
 }
 
 #[test]
+fn inline_with_location_error_v2() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacrosV2,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                fn foo() {
+                    error<caret>_inline_with_location_macro_v2!(10 +<caret> 10);
+                }
+            "#)
+        }
+    );
+}
+
+#[test]
 fn attribute_simple_v2() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithCustomMacrosV2,
@@ -119,6 +134,20 @@ fn attribute_with_error_v2() {
 }
 
 #[test]
+fn attribute_with_location_error_v2() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacrosV2,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                #[error_attribute_with_location_macro_v2]<caret>
+                fn f<caret>oo() {<caret>}
+            "#)
+        }
+    );
+}
+
+#[test]
 fn derive_simple_v2() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithCustomMacrosV2,
@@ -168,6 +197,20 @@ fn derive_with_error_v2() {
         files {
             "test_package/src/lib.cairo" => indoc!(r#"
                 #[derive<caret>(Error<caret>DeriveMacroV2)]
+                struct Empty<caret>Struct {<caret>}
+            "#)
+        }
+    );
+}
+
+#[test]
+fn derive_with_location_error_v2() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacrosV2,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                #[derive<caret>(Error<caret>DeriveWithLocationMacroV2)]
                 struct Empty<caret>Struct {<caret>}
             "#)
         }
