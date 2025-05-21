@@ -72,9 +72,14 @@ pub fn find_declaration(
     resolver_data: &mut Option<ResolverData>,
 ) -> Option<ResolvedItem> {
     let def = find_definition(db, identifier, lookup_items, resolver_data)?;
-    let decl = try_impl_items(db, &TerminalIdentifier::cast(db, def.definition_node(db)?)?);
 
-    decl.or(Some(def))
+    get_declaration_of(db, &def).or(Some(def))
+}
+
+fn get_declaration_of(db: &AnalysisDatabase, def: &ResolvedItem) -> Option<ResolvedItem> {
+    let definition_node = def.definition_node(db)?;
+    let terminal_identifier = TerminalIdentifier::cast(db, definition_node)?;
+    try_impl_items(db, &terminal_identifier)
 }
 
 /// Tries to find a trait's impl item via trait's item usage, if we're on using its' path (ExprPath) in code.
