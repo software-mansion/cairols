@@ -559,7 +559,7 @@ fn parse_derive(
             let Expr::Path(path) = value else {
                 return None;
             };
-            let path = path.elements(db);
+            let path = path.segments(db).elements(db);
             let path = path.last()?;
             let PathSegment::Simple(segment) = path else {
                 return None;

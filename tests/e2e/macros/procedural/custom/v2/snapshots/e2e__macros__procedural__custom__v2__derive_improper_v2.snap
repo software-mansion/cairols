@@ -21,8 +21,7 @@ struct EmptyStruct {}
 // -----------------
 
 fn generated_function_v2() {
-    some < *> haskell <
-    $ > syntax
+    some < *> haskell < $> syntax
 }
 """
 
@@ -105,7 +104,51 @@ mapped_diagnostics:
           line: 0
           character: 30
       severity: 1
-      message: Missing tokens. Expected an expression.
+      message: Placeholder expression ($expression) is allowed only in the context of a macro rule.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 0
+              character: 42
+            end:
+              line: 0
+              character: 43
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacroV2
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 30
+      severity: 1
+      message: Missing tokens. Expected a path segment.
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 0
+              character: 43
+            end:
+              line: 0
+              character: 43
+        message: Diagnostic mapped from here.
+  - related_code: ImproperDeriveMacroV2
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 30
+      severity: 1
+      message: 'Consecutive comparison operators are not allowed: ''<'' followed by ''>'''
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -217,28 +260,6 @@ mapped_diagnostics:
           line: 0
           character: 30
       severity: 1
-      message: Missing semicolon
-      relatedInformation:
-      - location:
-          uri: vfs://proc_macro_derive.cairo
-          range:
-            start:
-              line: 0
-              character: 42
-            end:
-              line: 0
-              character: 42
-        message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
-    diagnostic:
-      range:
-        start:
-          line: 0
-          character: 9
-        end:
-          line: 0
-          character: 30
-      severity: 1
       code: E0006
       message: Identifier not found.
       relatedInformation:
@@ -252,16 +273,3 @@ mapped_diagnostics:
               line: 0
               character: 50
         message: Diagnostic mapped from here.
-- url: vfs://proc_macro_derive.cairo
-  diagnostics:
-  - related_code: $>
-    diagnostic:
-      range:
-        start:
-          line: 0
-          character: 42
-        end:
-          line: 0
-          character: 44
-      severity: 1
-      message: 'Skipped tokens. Expected: statement.'

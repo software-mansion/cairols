@@ -1,7 +1,6 @@
 use crate::rename::rename;
 
 #[test]
-#[should_panic(expected = "not supported")]
 fn inline_macro() {
     rename(
         r#"

@@ -15,7 +15,7 @@ pub fn params_completions(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> V
     let (params, typed_text) = if_chain!(
         if let Some(path) = expr_selector(db, &ctx.node);
         if dot_expr_rhs(db, &ctx.node).is_none();
-        if let [PathSegment::Simple(segment)] = path.elements(db).as_slice();
+        if let [PathSegment::Simple(segment)] = path.segments(db).elements(db).as_slice();
 
         if let Some(lookup_item_id) = ctx.lookup_item_id;
         if let Some(function_id) = lookup_item_id.function_with_body();

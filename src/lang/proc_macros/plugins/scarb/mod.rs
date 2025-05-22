@@ -48,6 +48,7 @@ pub fn into_cairo_diagnostics(
                     SeverityV2::Error => cairo_lang_diagnostics::Severity::Error,
                     SeverityV2::Warning => cairo_lang_diagnostics::Severity::Warning,
                 },
+                inner_span: None,
             }
         })
         .collect_vec()

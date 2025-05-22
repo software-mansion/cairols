@@ -122,7 +122,7 @@ fn find_concrete_trait_id(
 
     match resolver.resolve_concrete_path(
         &mut diagnostics,
-        item_impl.trait_path(db).elements(db),
+        item_impl.trait_path(db).segments(db).elements(db),
         NotFoundItemType::Trait,
     ) {
         Ok(ResolvedConcreteItem::Trait(id)) => Some(id),

@@ -269,7 +269,7 @@ fn test_nothing() {
 analyzed_lines = '''
         <caret>assert_eq!(1, 1, "Who knows");
 '''
-generated_code = """
+generated_code = '''
 // lib.cairo
 // ---------
 
@@ -283,46 +283,16 @@ generated_code = """
             core::traits::Default::default();
         core::result::ResultTrait::<
             (), core::fmt::Error,
-        >::unwrap(
-            {
-                core::byte_array::ByteArrayTrait::append_word(
-                    ref __formatter_for_assert_eq_macro_.buffer,
-                    0x617373657274696f6e206031203d3d203160206661696c6564,
-                    25,
-                );
-                core::result::Result::<(), core::fmt::Error>::Ok(())
-            },
-        );
+        >::unwrap(write!(__formatter_for_assert_eq_macro_, "assertion `\u{31} == \u{31}` failed"));
         core::result::ResultTrait::<
             (), core::fmt::Error,
-        >::unwrap(
-            {
-                core::byte_array::ByteArrayTrait::append_word(
-                    ref __formatter_for_assert_eq_macro_.buffer, 0x3a20, 2,
-                );
-                core::result::Result::<(), core::fmt::Error>::Ok(())
-            },
-        );
+        >::unwrap(write!(__formatter_for_assert_eq_macro_, ": "));
         core::result::ResultTrait::<
             (), core::fmt::Error,
-        >::unwrap(
-            {
-                core::byte_array::ByteArrayTrait::append_word(
-                    ref __formatter_for_assert_eq_macro_.buffer, 0x57686f206b6e6f77730a, 10,
-                );
-                core::result::Result::<(), core::fmt::Error>::Ok(())
-            },
-        );
+        >::unwrap(writeln!(__formatter_for_assert_eq_macro_, "Who knows"));
         core::result::ResultTrait::<
             (), core::fmt::Error,
-        >::unwrap(
-            {
-                core::byte_array::ByteArrayTrait::append_word(
-                    ref __formatter_for_assert_eq_macro_.buffer, 0x313a20, 3,
-                );
-                core::result::Result::<(), core::fmt::Error>::Ok(())
-            },
-        );
+        >::unwrap(write!(__formatter_for_assert_eq_macro_, "\u{31}: "));
         core::result::ResultTrait::<
             (), core::fmt::Error,
         >::unwrap(
@@ -332,14 +302,7 @@ generated_code = """
         );
         core::result::ResultTrait::<
             (), core::fmt::Error,
-        >::unwrap(
-            {
-                core::byte_array::ByteArrayTrait::append_word(
-                    ref __formatter_for_assert_eq_macro_.buffer, 0xa313a20, 4,
-                );
-                core::result::Result::<(), core::fmt::Error>::Ok(())
-            },
-        );
+        >::unwrap(write!(__formatter_for_assert_eq_macro_, "\n\u{31}: "));
         core::result::ResultTrait::<
             (), core::fmt::Error,
         >::unwrap(
@@ -350,4 +313,4 @@ generated_code = """
         core::panics::panic_with_byte_array(@__formatter_for_assert_eq_macro_.buffer)
     }
 }
-"""
+'''
