@@ -1,24 +1,20 @@
-use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::plugin::InlineMacroExprPlugin;
-use cairo_lang_doc::db::DocGroup;
-use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_syntax::node::ast::{
-    FunctionDeclaration, GenericParam, OptionWrappedGenericParamList, TerminalIdentifier,
-};
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
-use lsp_types::Hover;
-
-use crate::ide::hover::markdown_contents;
 use crate::ide::markdown::{RULE, fenced_code_block};
 use crate::ide::ty::InferredValue;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch};
-use crate::lang::lsp::ToLsp;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ImportableId;
+use cairo_lang_defs::plugin::InlineMacroExprPlugin;
+use cairo_lang_doc::db::DocGroup;
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolverData};
 use cairo_lang_semantic::substitution::SemanticRewriter;
+use cairo_lang_syntax::node::ast::{
+    FunctionDeclaration, GenericParam, OptionWrappedGenericParamList, TerminalIdentifier,
+};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.
@@ -27,7 +23,7 @@ pub fn definition(
     identifier: &TerminalIdentifier,
     file_id: FileId,
     importables: &OrderedHashMap<ImportableId, String>,
-) -> Option<Hover> {
+) -> Option<String> {
     let search = SymbolSearch::find_definition(db, identifier)?;
 
     let md = match &search.def {
@@ -104,14 +100,7 @@ pub fn definition(
         }
     };
 
-    Some(Hover {
-        contents: markdown_contents(md),
-        range: identifier
-            .as_syntax_node()
-            .span_without_trivia(db)
-            .position_in_file(db, file_id)
-            .map(|p| p.to_lsp()),
-    })
+    Some(md)
 }
 
 fn concrete_signature(
