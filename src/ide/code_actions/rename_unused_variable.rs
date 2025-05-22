@@ -19,7 +19,7 @@ pub fn rename_unused_variable(
 
     if_chain!(
         if let Some(node) = node.ancestor_of_kind(db, SyntaxKind::PathSegmentSimple);
-        if let Some(path) = node.parent_of_kind(db, SyntaxKind::ExprPath);
+        if let Some(path) = node.ancestor_of_kind(db, SyntaxKind::ExprPath);
         if let Some(_) = path.parent_of_kind(db, SyntaxKind::StatementLet);
 
         then {
