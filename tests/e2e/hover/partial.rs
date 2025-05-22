@@ -11,14 +11,6 @@ fn uninfered_mut_ident() {
     source_context = """
         let mut xy<caret>z = unknown_function();
     """
-    highlight = """
-        let mut <sel>xyz</sel> = unknown_function();
-    """
-    popover = """
-    ```cairo
-    let mut xyz: <missing>
-    ```
-    """
     "#)
 }
 
@@ -46,14 +38,6 @@ fn uninfered_usage() {
     source_context = """
         let y = xy<caret>z * 2;
     """
-    highlight = """
-        let y = <sel>xyz</sel> * 2;
-    """
-    popover = """
-    ```cairo
-    let mut xyz: <missing>
-    ```
-    """
     "#)
 }
 
@@ -67,14 +51,6 @@ fn missing_type_param() {
     source_context = """
     fn f(ab<caret>c) -> felt252 {
     """
-    highlight = """
-    fn f(<sel>abc</sel>) -> felt252 {
-    """
-    popover = """
-    ```cairo
-    abc: <missing>
-    ```
-    """
     "#)
 }
 
@@ -87,14 +63,6 @@ fn missing_type_param_usage() {
     "#,@r#"
     source_context = """
         2 * ab<caret>c
-    """
-    highlight = """
-        2 * <sel>abc</sel>
-    """
-    popover = """
-    ```cairo
-    abc: <missing>
-    ```
     """
     "#)
 }

@@ -23,9 +23,6 @@ fn generated_element_use() {
     ```cairo
     hello
     ```
-    ```cairo
-    <missing>
-    ```
     """
     "#)
 }
@@ -172,9 +169,6 @@ fn trait_name_generated() {
     popover = """
     ```cairo
     hello
-    ```
-    ```cairo
-    <missing>
     ```
     """
     "#)

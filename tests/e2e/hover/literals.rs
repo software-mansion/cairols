@@ -33,12 +33,32 @@ fn const_initializer_value_wrong_type() {
     highlight = """
     const WRONG_TYPE_CONST: u8 = <sel>123_felt252</sel>;
     """
-    popover = """
-    ```cairo
-    <missing>
-    ```
-    ---
-    value of literal: `123 (0x7b | 0b1111011)`
+    popover = "value of literal: `123 (0x7b | 0b1111011)`"
+    "#)
+}
+
+#[test]
+fn const_initializer_value_wrong_type_shortstring() {
+    test_transform!(test_hover,r#"
+    const WRONG_TYPE_CONST: u8 = 'ab<caret>cd';
+    "#,@r#"
+    source_context = """
+    const WRONG_TYPE_CONST: u8 = 'ab<caret>cd';
+    """
+    highlight = """
+    const WRONG_TYPE_CONST: u8 = <sel>'abcd'</sel>;
+    """
+    popover = "value of literal: `'abcd' (0x61626364)`"
+    "#)
+}
+
+#[test]
+fn const_initializer_value_wrong_type_bytearray() {
+    test_transform!(test_hover,r#"
+    const WRONG_TYPE_CONST: u8 = "ab<caret>cd";
+    "#,@r#"
+    source_context = """
+    const WRONG_TYPE_CONST: u8 = "ab<caret>cd";
     """
     "#)
 }
