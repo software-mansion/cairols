@@ -146,24 +146,48 @@ fn test_extern_type_in_turbofish_enum_as_type_parameter() {
     )
 }
 
-// FIXME(#404)
 #[test]
 fn test_extern_type_in_trait_associated_type_as_type() {
     test_transform!(find_references, r#"
     trait Trait {
-        type Type = u32<caret>
+        type Type;
     }
-    "#, @"none response")
+
+    impl Impl of Trait {
+        type Type = u3<caret>2;
+    }
+    "#, @r"
+    // found several references in the core crate
+    trait Trait {
+        type Type;
+    }
+
+    impl Impl of Trait {
+        type Type = <sel>u32</sel>;
+    }
+    ")
 }
 
-// FIXME(#404)
 #[test]
 fn test_extern_type_in_trait_associated_type_as_type_parameter() {
     test_transform!(find_references, r#"
     trait Trait {
-        type Type = Array<u32<caret>>
+        type Type;
     }
-    "#, @"none response")
+
+    impl Impl of Trait {
+        type Type = Array<u32<caret>>;
+    }
+    "#, @r"
+    // found several references in the core crate
+    trait Trait {
+        type Type;
+    }
+
+    impl Impl of Trait {
+        type Type = Array<<sel>u32</sel>>;
+    }
+    ")
 }
 
 #[test]
@@ -516,28 +540,54 @@ fn test_type_alias_in_turbofish_enum_as_type_parameter() {
     ")
 }
 
-// FIXME(#404)
 #[test]
 fn test_type_alias_in_trait_associated_type_as_type() {
     test_transform!(find_references, r#"
     struct Struct {}
     type SomeTypeAlias = Struct;
     trait Trait {
-        type Type = SomeTypeAlias<caret>
+        type Type
     }
-    "#, @"none response")
+
+    impl TraitImpl of Trait {
+        type Type = SomeTypeAlias<caret>;
+    }
+    "#, @r"
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    trait Trait {
+        type Type
+    }
+
+    impl TraitImpl of Trait {
+        type Type = <sel>SomeTypeAlias</sel>;
+    }
+    ")
 }
 
-// FIXME(#404)
 #[test]
 fn test_type_alias_in_trait_associated_type_as_type_parameter() {
     test_transform!(find_references, r#"
     struct Struct {}
     type SomeTypeAlias = Struct;
     trait Trait {
-        type Type = Array<SomeTypeAlias<caret>>
+        type Type;
     }
-    "#, @"none response")
+
+    impl TraitImpl of Trait {
+        type Type = Array<SomeTypeAlias<caret>>;
+    }
+    "#, @r"
+    struct Struct {}
+    type <sel=declaration>SomeTypeAlias</sel> = Struct;
+    trait Trait {
+        type Type;
+    }
+
+    impl TraitImpl of Trait {
+        type Type = Array<<sel>SomeTypeAlias</sel>>;
+    }
+    ")
 }
 
 #[test]
@@ -649,26 +699,32 @@ fn test_type_alias_in_impl_associated_type_as_type_parameter() {
 #[test]
 fn test_type_alias_in_impl_associated_type_via_usage() {
     test_transform!(find_references, r#"
+    struct Struct {}
+    type SomeTypeAlias = Struct;
+
     trait Trait {
         type Type;
     }
     impl Impl of Trait {
-        type Type = felt252;
-    }
-    
-    fn foo() {
-        let _v: Impl::Ty<caret>pe = 123; 
-    }
-    "#, @r"
-    trait Trait {
-        type Type;
-    }
-    impl Impl of Trait {
-        type <sel=declaration>Type</sel> = felt252;
+        type Type = SomeTypeAlias;
     }
 
     fn foo() {
-        let _v: Impl::<sel>Type</sel> = 123; 
+        let _v: Impl::Ty<caret>pe = SomeTypeAlias {};
+    }
+    "#, @r"
+    struct Struct {}
+    type SomeTypeAlias = Struct;
+
+    trait Trait {
+        type Type;
+    }
+    impl Impl of Trait {
+        type <sel=declaration>Type</sel> = SomeTypeAlias;
+    }
+
+    fn foo() {
+        let _v: Impl::<sel>Type</sel> = SomeTypeAlias {};
     }
     ")
 }

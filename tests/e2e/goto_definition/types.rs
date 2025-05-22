@@ -133,24 +133,36 @@ fn test_extern_type_in_turbofish_enum_as_type_parameter() {
     ")
 }
 
-// FIXME(#404)
 #[test]
 fn test_extern_type_in_trait_associated_type_as_type() {
     test_transform!(goto_definition, r#"
     trait Trait {
-        type Type = u32<caret>
+        type Type;
     }
-    "#, @"none response")
+
+    impl Impl of Trait {
+        type Type = u32<caret>;
+    }
+    "#, @r"
+    // → core/src/integer.cairo
+    pub extern type <sel>u32</sel>;
+    ")
 }
 
-// FIXME(#404)
 #[test]
 fn test_extern_type_in_trait_associated_type_as_type_parameter() {
     test_transform!(goto_definition, r#"
     trait Trait {
-        type Type = Array<u32<caret>>
+        type Type;
     }
-    "#, @"none response")
+
+    impl Impl of Trait {
+        type Type = Arrat<u32<caret>>;
+    }
+    "#, @r"
+    // → core/src/integer.cairo
+    pub extern type <sel>u32</sel>;
+    ")
 }
 
 #[test]
@@ -434,15 +446,21 @@ fn test_builtin_alias_in_turbofish_enum_as_type_parameter() {
     ")
 }
 
-// FIXME(#404)
 #[test]
 fn test_builtin_alias_in_trait_associated_type_as_type() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     trait Trait {
-        type Type = u96<caret>
+        type Type;
     }
-    "#, @"none response")
+
+    impl TraitImpl of Trait {
+        type Type = u96<caret>;
+    }
+    "#, @r"
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
+    ")
 }
 
 #[test]
@@ -451,38 +469,44 @@ fn test_associated_type_via_usage() {
     trait Trait {
         type Type;
     }
-    
-    impl TraitImpl of Trait { 
+
+    impl TraitImpl of Trait {
         type Type = felt252;
     }
-    
+
     fn foo() {
-        let _v: TraitImpl::Ty<caret>pe = 123;    
+        let _v: TraitImpl::Ty<caret>pe = 123;
     }
     "#, @r"
     trait Trait {
         type Type;
     }
 
-    impl TraitImpl of Trait { 
+    impl TraitImpl of Trait {
         type <sel>Type</sel> = felt252;
     }
 
     fn foo() {
-        let _v: TraitImpl::Type = 123;    
+        let _v: TraitImpl::Type = 123;
     }
     ")
 }
 
-// FIXME(#404)
 #[test]
 fn test_builtin_alias_in_trait_associated_type_as_type_parameter() {
     test_transform!(goto_definition, r#"
     use core::circuit::u96;
     trait Trait {
-        type Type = Array<u96<caret>>
+        type Type;
     }
-    "#, @"none response")
+
+    impl Impl of Trait {
+        type Type = Array<u96<caret>>;
+    }
+    "#, @r"
+    // → core/src/circuit.cairo
+    pub type <sel>u96</sel> =
+    ")
 }
 
 #[test]
