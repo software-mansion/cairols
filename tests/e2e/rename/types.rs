@@ -198,28 +198,58 @@ fn test_type_alias_in_turbofish_enum_as_type_parameter() {
     ")
 }
 
-// FIXME(#404)
 #[test]
 fn test_type_alias_in_trait_associated_type_as_type() {
     test_transform!(rename, r#"
-    struct Struct {};
+    struct Struct {}
     type TypeAlias = Struct;
     trait Trait {
-        type Type = TypeAlias<caret>
+        type Type;
     }
-    "#, @"none response")
+
+    impl Impl of Trait {
+        type Type = Typ<caret>eAlias;
+    }
+    "#, @r"
+    struct Struct {}
+    type RENAMED = Struct;
+    trait Trait {
+        type Type;
+    }
+
+    impl Impl of Trait {
+        type Type = RENAMED;
+    }
+    ")
 }
 
-// FIXME(#404)
 #[test]
 fn test_type_alias_in_trait_associated_type_as_type_parameter() {
     test_transform!(rename, r#"
-    struct Struct {};
+    struct Struct {
+        a: felt252,
+    }
     type TypeAlias = Struct;
     trait Trait {
-        type Type = Array<TypeAlias<caret>>
+        type Type;
     }
-    "#, @"none response")
+
+    impl Impl of Trait {
+        type Type = Array<Typ<caret>eAlias>;
+    }
+    "#, @r"
+    struct Struct {
+        a: felt252,
+    }
+    type RENAMED = Struct;
+    trait Trait {
+        type Type;
+    }
+
+    impl Impl of Trait {
+        type Type = Array<RENAMED>;
+    }
+    ")
 }
 
 #[test]
