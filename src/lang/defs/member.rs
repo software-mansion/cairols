@@ -7,7 +7,7 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::defs::ItemDef;
 
 /// Information about a struct member.
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub struct MemberDef {
     member_id: MemberId,
     struct_item: ItemDef,
