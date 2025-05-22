@@ -81,30 +81,6 @@ fn multi_segment_path() {
 }
 
 #[test]
-fn enum_pattern() {
-    test_transform!(test_completions_text_edits,"
-    enum Foo {
-        Abc,
-        Qwerty,
-    }
-
-    fn a() {
-        let Foo::<caret> = 1234567;
-    }
-    ",@r#"
-    caret = """
-        let Foo::<caret> = 1234567;
-    """
-
-    [[completions]]
-    completion_label = "Abc"
-
-    [[completions]]
-    completion_label = "Qwerty"
-    "#);
-}
-
-#[test]
 fn multi_segment_path_partial() {
     test_transform!(test_completions_text_edits,"
     mod foo {
@@ -128,5 +104,29 @@ fn multi_segment_path_partial() {
     use foo::bar;
 
     """]
+    "#);
+}
+
+#[test]
+fn enum_variant() {
+    test_transform!(test_completions_text_edits,"
+    enum Enumik {
+        A,
+        B,
+    }
+
+    fn func() {
+        let x = Enumik::<caret>
+    }
+    ",@r#"
+    caret = """
+        let x = Enumik::<caret>
+    """
+
+    [[completions]]
+    completion_label = "A"
+
+    [[completions]]
+    completion_label = "B"
     "#);
 }

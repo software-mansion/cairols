@@ -10,11 +10,11 @@ use indoc::indoc;
 mod attribute;
 mod methods_text_edits;
 mod mod_file;
-mod module_items;
 mod path;
 mod patterns;
 mod structs;
 mod traits;
+mod uses;
 mod vars_and_params;
 
 /// Perform completions text edits test. Notice that the test shows many possible completions,
