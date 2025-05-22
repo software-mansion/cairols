@@ -142,3 +142,48 @@ fn non_existent_module() {
     completions = []
     "#);
 }
+
+#[test]
+fn in_use_path_multi() {
+    test_transform!(test_completions_text_edits,"
+    mod module {
+        pub fn x() {}
+        pub fn y() {}
+    }
+
+    use module::{<caret>
+    ",@r#"
+    caret = """
+    use module::{<caret>
+    """
+
+    [[completions]]
+    completion_label = "x"
+
+    [[completions]]
+    completion_label = "y"
+    "#);
+}
+
+// FIXME(#673)
+#[test]
+fn in_use_path_multi_with_one_in_scope() {
+    test_transform!(test_completions_text_edits,"
+    mod module {
+        pub fn x() {}
+        pub fn y() {}
+    }
+
+    use module::{x, <caret>
+    ",@r#"
+    caret = """
+    use module::{x, <caret>
+    """
+
+    [[completions]]
+    completion_label = "x"
+
+    [[completions]]
+    completion_label = "y"
+    "#);
+}
