@@ -25,7 +25,7 @@ pub fn macro_call_completions(
         if let [PathSegment::Simple(path_segment)] = path.segments(db).elements(db).as_slice();
 
         then {
-            let crate_id = ctx.module_id.owning_crate(db);
+            let crate_id = ctx.module_file_id.0.owning_crate(db);
 
             let inline_plugins = db.crate_inline_macro_plugins(crate_id);
 
