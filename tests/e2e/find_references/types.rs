@@ -647,6 +647,33 @@ fn test_type_alias_in_impl_associated_type_as_type_parameter() {
 }
 
 #[test]
+fn test_type_alias_in_impl_associated_type_via_usage() {
+    test_transform!(find_references, r#"
+    trait Trait {
+        type Type;
+    }
+    impl Impl of Trait {
+        type Type = felt252;
+    }
+    
+    fn foo() {
+        let _v: Impl::Ty<caret>pe = 123; 
+    }
+    "#, @r"
+    trait Trait {
+        type Type;
+    }
+    impl Impl of Trait {
+        type <sel=declaration>Type</sel> = felt252;
+    }
+
+    fn foo() {
+        let _v: Impl::<sel>Type</sel> = 123; 
+    }
+    ")
+}
+
+#[test]
 fn test_type_alias_in_impl_associated_const_as_type() {
     test_transform!(find_references, r#"
     struct Struct {}

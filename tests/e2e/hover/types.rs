@@ -1286,6 +1286,82 @@ fn test_builtin_alias_in_impl_associated_type_as_type_parameter() {
     "#)
 }
 
+// FIXME(#660): This should be inferred
+#[test]
+fn test_impl_associated_type_with_path_reference() {
+    test_transform!(test_hover, r#"
+    trait Trait {
+        type Type;
+    }
+
+    impl Impl of Trait {
+        type Type = felt252;
+    }
+
+    fn foo() {
+         let num: Impl::Typ<caret>e = 123;
+    }
+    "#, @r#"
+    source_context = """
+         let num: Impl::Typ<caret>e = 123;
+    """
+    highlight = """
+         let num: Impl::<sel>Type</sel> = 123;
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    impl Impl of Trait;
+    <missing>
+    ```
+    """
+    "#)
+}
+
+// FIXME(#660): This should be inferred
+#[test]
+fn test_impl_associated_impl_with_path_reference() {
+    test_transform!(test_hover, r#"
+    trait SubTraitor {
+        const ABC: felt252;
+    }
+
+    trait Trait {
+        impl SubTrait: SubTraitor;
+    }
+
+    impl SubTraitor911 of SubTraitor {
+        const ABC: felt252 = 123;
+    }
+
+    impl Impl of Trait {
+        impl SubTrait = SubTraitor911;
+    }
+
+    fn foo() {
+         let num = Impl::SubTr<caret>ait::ABC;
+    }
+    "#, @r#"
+    source_context = """
+         let num = Impl::SubTr<caret>ait::ABC;
+    """
+    highlight = """
+         let num = Impl::<sel>SubTrait</sel>::ABC;
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    impl Impl of Trait;
+    <missing>
+    ```
+    """
+    "#)
+}
+
 #[test]
 fn test_builtin_alias_in_impl_associated_const_as_type() {
     test_transform!(test_hover, r#"

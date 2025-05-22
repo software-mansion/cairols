@@ -484,6 +484,83 @@ fn impl_impl_via_usage() {
 }
 
 #[test]
+fn impl_impl_via_definition() {
+    test_transform!(find_references, r#"
+    trait Bush {
+        fn bush() -> felt252;
+    }
+
+    trait BushTrait {
+        impl BushImplementation: Bush;
+    }
+
+    impl GeorgeBush of Bush {
+        fn bush() -> felt252 {
+            911
+        }
+    }
+
+    impl KateBush of Bush {
+        fn bush() -> felt252 {
+            1978
+        }
+    }
+
+    impl GeorgeImpl of BushTrait {
+        impl BushImplementation = GeorgeBush;
+    }
+    
+    impl KateImpl of BushTrait { 
+        impl BushImplem<caret>entation = KateBush;
+    }
+
+
+    fn main() {
+        let v1 = GeorgeImpl::BushImplementation::bush();
+        let v2 = GeorgeImpl::BushImplementation::bush();
+        let v3 = KateImpl::BushImplementation::bush();
+        let v4 = KateImpl::BushImplementation::bush();
+    }
+    "#, @r"
+    trait Bush {
+        fn bush() -> felt252;
+    }
+
+    trait BushTrait {
+        impl BushImplementation: Bush;
+    }
+
+    impl GeorgeBush of Bush {
+        fn bush() -> felt252 {
+            911
+        }
+    }
+
+    impl KateBush of Bush {
+        fn bush() -> felt252 {
+            1978
+        }
+    }
+
+    impl GeorgeImpl of BushTrait {
+        impl BushImplementation = GeorgeBush;
+    }
+
+    impl KateImpl of BushTrait { 
+        impl <sel=declaration>BushImplementation</sel> = KateBush;
+    }
+
+
+    fn main() {
+        let v1 = GeorgeImpl::BushImplementation::bush();
+        let v2 = GeorgeImpl::BushImplementation::bush();
+        let v3 = KateImpl::<sel>BushImplementation</sel>::bush();
+        let v4 = KateImpl::<sel>BushImplementation</sel>::bush();
+    }
+    ")
+}
+
+#[test]
 fn impl_impl_via_trait() {
     test_transform!(find_references, r#"
     trait Bush {
