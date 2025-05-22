@@ -35,6 +35,7 @@ use itertools::Itertools;
 /// therefore, we need to add some extra layer of code over it.
 /// As an example, the compiler never resolves to generic associated trait items
 /// because it is coded in such a way, 🤷.
+#[derive(Debug)]
 pub enum ResolvedItem {
     // Compiler-handled cases.
     Generic(ResolvedGenericItem),

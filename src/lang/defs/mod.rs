@@ -30,7 +30,7 @@ mod variant;
 ///
 /// This is an ephemeral data structure.
 /// Do not store it in any kind of state.
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub enum SymbolDef {
     Item(ItemDef),
     Variable(VariableDef),
