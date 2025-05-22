@@ -33,6 +33,13 @@ fn simple_trait() {
     completion_label = "Some"
 
     [[completions]]
+    completion_label = "Some"
+    text_edits = ["""
+    use core::internal::OptionRev::Some;
+
+    """]
+
+    [[completions]]
     completion_label = "add_assign()"
     detail = "core::ops::arith::AddAssign"
     insert_text = "add_assign($1)"
@@ -295,6 +302,13 @@ fn non_directly_visible_trait() {
 
     [[completions]]
     completion_label = "Some"
+
+    [[completions]]
+    completion_label = "Some"
+    text_edits = ["""
+    use core::internal::OptionRev::Some;
+
+    """]
 
     [[completions]]
     completion_label = "add_assign()"

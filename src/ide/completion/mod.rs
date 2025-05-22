@@ -3,7 +3,7 @@ use attribute::derive::derive_completions;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::{
-    self, Attribute, ExprStructCtorCall, ItemModule, TerminalIdentifier, UsePathSingle,
+    self, Attribute, ExprStructCtorCall, ItemModule, TerminalIdentifier, UsePathLeaf, UsePathSingle,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
@@ -12,9 +12,9 @@ use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
 use mod_item::mod_completions;
 use path::path_suffix_completions;
 use struct_constructor::struct_constructor_completions;
-use use_statement::use_statement;
 
 use self::dot_completions::dot_completions;
+use crate::ide::completion::use_statement::{use_statement, use_statement_first_segment};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
@@ -108,7 +108,18 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
     if_chain!(
         if let Some(single) = node.ancestor_of_type::<UsePathSingle>(db);
-        if let Some(use_completions) = use_statement(db, ast::UsePath::Single(single), &ctx);
+        if let Some(use_completions) = use_statement(db, single, &ctx);
+
+        then {
+            completions.extend(use_completions);
+        }
+    );
+
+    // If we are on the first segment of use e.g. `use co<caret>`.
+    if_chain!(
+        if node.ancestor_of_type::<UsePathSingle>(db).is_none();
+        if let Some(leaf) = node.ancestor_of_type::<UsePathLeaf>(db);
+        if let Some(use_completions) = use_statement_first_segment(db, leaf, &ctx);
 
         then {
             completions.extend(use_completions);
