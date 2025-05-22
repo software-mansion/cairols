@@ -445,6 +445,35 @@ fn test_builtin_alias_in_trait_associated_type_as_type() {
     "#, @"none response")
 }
 
+#[test]
+fn test_associated_type_via_usage() {
+    test_transform!(goto_definition, r#"
+    trait Trait {
+        type Type;
+    }
+    
+    impl TraitImpl of Trait { 
+        type Type = felt252;
+    }
+    
+    fn foo() {
+        let _v: TraitImpl::Ty<caret>pe = 123;    
+    }
+    "#, @r"
+    trait Trait {
+        type Type;
+    }
+
+    impl TraitImpl of Trait { 
+        type <sel>Type</sel> = felt252;
+    }
+
+    fn foo() {
+        let _v: TraitImpl::Type = 123;    
+    }
+    ")
+}
+
 // FIXME(#404)
 #[test]
 fn test_builtin_alias_in_trait_associated_type_as_type_parameter() {
