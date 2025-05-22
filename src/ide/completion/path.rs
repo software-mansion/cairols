@@ -28,7 +28,7 @@ pub fn path_suffix_completions(
     let (importables, typed_text) = if_chain!(
         if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none();
         if let Some(importables) = db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)));
-        if let Some(typed_text_segments) = ctx.node.ancestor_of_type::<ExprPath>(db).map(|path| path.elements(db));
+        if let Some(typed_text_segments) = ctx.node.ancestor_of_type::<ExprPath>(db).map(|path| path.segments(db).elements(db));
         if !typed_text_segments.is_empty();
 
         then {

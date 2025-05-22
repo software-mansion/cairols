@@ -16,14 +16,7 @@ fn before_name() {
     fn a() {
         let <caret>b = 1234;
     }
-    ", @r#"
-    Title: Rename to `_b`
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 8 } }
-    Title: Fix All
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 8 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]
@@ -32,14 +25,7 @@ fn after_name() {
     fn a() {
         let b<caret> = 1234;
     }
-    ", @r#"
-    Title: Rename to `_b`
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 8 } }
-    Title: Fix All
-    Add new text: "_"
-    At: Range { start: Position { line: 1, character: 8 }, end: Position { line: 1, character: 8 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]

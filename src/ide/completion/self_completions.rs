@@ -12,7 +12,7 @@ pub fn self_completions(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Vec
         let mut segments = expr.to_segments(db);
         let _ = {
             // If there is tail (ie. some::path::) last segment will be of type missing, remove it.
-            if expr.has_tail(db) {
+            if expr.segments(db).has_tail(db) {
                 segments.pop();
             }
         };

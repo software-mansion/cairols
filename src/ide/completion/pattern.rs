@@ -72,10 +72,10 @@ pub fn enum_pattern_completions(
     if_chain!(
         if let Some(pattern) = ctx.node.ancestor_of_type::<PatternEnum>(db);
         let path = pattern.path(db);
-        let mut segments = path.elements(db);
+        let mut segments = path.segments(db).elements(db);
         let _ = {
             // If there is tail (ie. some::path::) last segment will be of type missing, remove it.
-            if path.has_tail(db) {
+            if path.segments(db).has_tail(db) {
                 segments.pop();
             }
         };

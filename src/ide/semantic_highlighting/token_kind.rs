@@ -158,6 +158,7 @@ impl SemanticTokenKind {
                             TraitItemId::Constant(_) => SemanticTokenKind::EnumMember,
                             TraitItemId::Impl(_) => SemanticTokenKind::Class,
                         },
+                        ResolvedGenericItem::Macro(_) => SemanticTokenKind::InlineMacro,
                     });
                 }
                 if let Some(item) = db
@@ -173,6 +174,7 @@ impl SemanticTokenKind {
                             SemanticTokenKind::Interface
                         }
                         ResolvedConcreteItem::Impl(_) => SemanticTokenKind::Class,
+                        ResolvedConcreteItem::Macro(_) => SemanticTokenKind::InlineMacro,
                     });
                 }
 

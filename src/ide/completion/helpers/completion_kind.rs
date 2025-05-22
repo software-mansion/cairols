@@ -22,6 +22,7 @@ pub fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> Compl
             TraitItemId::Constant(_) => CompletionItemKind::CONSTANT,
             TraitItemId::Impl(_) => CompletionItemKind::CLASS,
         },
+        ResolvedGenericItem::Macro(_) => CompletionItemKind::FUNCTION,
     }
 }
 
@@ -40,5 +41,6 @@ pub fn importable_completion_kind(item: ImportableId) -> CompletionItemKind {
         ImportableId::Variant(_) => CompletionItemKind::ENUM_MEMBER,
         ImportableId::Trait(_) => CompletionItemKind::INTERFACE,
         ImportableId::Enum(_) => CompletionItemKind::ENUM,
+        ImportableId::MacroDeclaration(_) => CompletionItemKind::FUNCTION,
     }
 }

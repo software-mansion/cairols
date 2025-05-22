@@ -22,7 +22,7 @@ pub fn macro_call_completions(
 
         if let Some(path) = expr_selector(db, &ctx.node);
         // Currently inline macros can not be imported/exported
-        if let [PathSegment::Simple(path_segment)] = path.elements(db).as_slice();
+        if let [PathSegment::Simple(path_segment)] = path.segments(db).elements(db).as_slice();
 
         then {
             let crate_id = ctx.module_id.owning_crate(db);
