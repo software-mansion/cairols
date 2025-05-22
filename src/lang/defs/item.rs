@@ -13,7 +13,7 @@ use itertools::Itertools;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 /// Information about the definition of an item (function, trait, impl, module, etc.).
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub struct ItemDef {
     /// The [`LookupItemId`] associated with the item.
     lookup_item_id: LookupItemId,

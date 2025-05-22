@@ -8,7 +8,7 @@ use cairo_lang_utils::smol_str::SmolStr;
 use crate::lang::db::AnalysisDatabase;
 
 /// Information about the definition of a module.
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub struct ModuleDef {
     id: ModuleId,
     /// A full path to the parent module if [`ModuleId`] points to a submodule,

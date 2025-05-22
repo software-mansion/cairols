@@ -7,7 +7,7 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::defs::ItemDef;
 
 /// Information about an enum variant.
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub struct VariantDef {
     variant_id: VariantId,
     enum_item: ItemDef,

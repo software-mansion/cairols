@@ -10,7 +10,7 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// Information about the definition of a variable (local, function parameter).
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub struct VariableDef {
     var_id: VarId,
     identifier: ast::TerminalIdentifier,
