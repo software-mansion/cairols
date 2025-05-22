@@ -16,7 +16,7 @@ mod lint;
 mod macro_expand;
 mod missing_import;
 mod missing_trait;
-mod remove_unused_variable;
+mod rename_unused_variable;
 
 fn caps(base: ClientCapabilities) -> ClientCapabilities {
     ClientCapabilities {
