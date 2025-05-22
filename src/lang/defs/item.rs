@@ -69,21 +69,15 @@ impl ItemDef {
     pub fn signature(&self, db: &AnalysisDatabase) -> String {
         let contexts = self.context_items.iter().copied().rev();
         let this = iter::once(self.lookup_item_id);
-        contexts
-            .chain(this)
-            .map(|item| db.get_item_signature(item.into()).unwrap_or_else(|| "<missing>".into()))
-            .join("\n")
+        contexts.chain(this).filter_map(|item| db.get_item_signature(item.into())).join("\n")
     }
 
     /// Get item signature without its body including signatures of its contexts. Also adds text for this item only.
     pub fn signature_with_text(&self, db: &AnalysisDatabase, text: &str) -> String {
-        let this =
-            db.get_item_signature(self.lookup_item_id.into()).unwrap_or_else(|| "<missing>".into());
+        let this = db.get_item_signature(self.lookup_item_id.into()).unwrap_or_else(|| "".into());
 
         let contexts = self.context_items.iter().copied().rev();
-        let contexts = contexts
-            .map(|item| db.get_item_signature(item.into()).unwrap_or_else(|| "<missing>".into()))
-            .join("\n");
+        let contexts = contexts.filter_map(|item| db.get_item_signature(item.into())).join("\n");
 
         format!("{this}{text}{contexts}")
     }
