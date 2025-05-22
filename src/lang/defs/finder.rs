@@ -22,10 +22,10 @@ use cairo_lang_semantic::{ConcreteImplId, Expr, TypeLongId};
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::{Intern, LookupIntern};
+use if_chain::if_chain;
 use itertools::Itertools;
 
 /// A language element that can be a result of name resolution performed by CairoLS.
@@ -150,21 +150,20 @@ fn try_inline_macro(
     db: &AnalysisDatabase,
     identifier: &ast::TerminalIdentifier,
 ) -> Option<ResolvedItem> {
-    if let Some(parent) = identifier.as_syntax_node().parent(db) {
-        if parent.kind(db) == SyntaxKind::PathSegmentSimple
-            && parent.grandparent_kind(db) == Some(SyntaxKind::ExprInlineMacro)
-        {
-            return Some(ResolvedItem::ExprInlineMacro(
-                parent
-                    .parent(db)
-                    .expect("Grandparent already exists")
-                    .get_text_without_trivia(db)
-                    .into(),
-            ));
-        }
-    }
+    if_chain!(
+        if let Some(macro_call) = identifier.as_syntax_node().ancestor_of_type::<ast::ExprInlineMacro>(db);
+        let path_elements = macro_call.path(db).segments(db).elements(db);
+        if let Some(macro_name) = path_elements.last();
+        if macro_name.identifier(db) == identifier.text(db);
 
-    None
+        then {
+            Some(ResolvedItem::ExprInlineMacro(
+                macro_call.path(db).as_syntax_node().get_text_without_trivia(db).into(),
+            ))
+        } else {
+            None
+        }
+    )
 }
 
 /// Resolve elements of `impl`s to trait definitions.
