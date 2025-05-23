@@ -4,12 +4,12 @@ description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"
 expression: report
 ---
 [[expansions]]
-analyzed_lines = '''
+analyzed_lines = """
 #[error_attribute_macro_v2]<caret>
 fn f<caret>oo() { "a" + "b"; }
 fn foo() { "a" + "b"; <caret>}
-'''
-generated_code = '''
+"""
+generated_code = """
 // lib.cairo
 // ---------
 
@@ -17,7 +17,7 @@ generated_code = '''
 fn foo() {
     "a" + "b";
 }
-'''
+"""
 
 mapped_diagnostics:
 - url: '[ROOT_URL]test_package/src/lib.cairo'

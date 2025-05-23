@@ -29,12 +29,12 @@ fn println() {
         p<caret>rintln!("The value of x is: {}", x);
     }
     "#,@r#"
-    source_context = '''
+    source_context = """
         p<caret>rintln!("The value of x is: {}", x);
-    '''
-    highlight = '''
+    """
+    highlight = """
         <sel>println</sel>!("The value of x is: {}", x);
-    '''
+    """
     popover = '''
     ```cairo
     println

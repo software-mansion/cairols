@@ -4,13 +4,13 @@ description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"
 expression: report
 ---
 [[expansions]]
-analyzed_lines = '''
+analyzed_lines = """
 #[test]<caret>
 #[fork(<caret>"SEPOLIA_LATEST")]
 #[fuzzer(runs: 100,<caret> seed: 0x1234)]
     <caret>assert(x == x, 'Who knows');
-'''
-generated_code = '''
+"""
+generated_code = """
 // test.cairo
 // ----------
 
@@ -100,4 +100,4 @@ fn test_nothing(x: felt252) {
 
     assert(x == x, 'Who knows');
 }
-'''
+"""

@@ -143,8 +143,8 @@ fn issue_80() {
         format!("0x{}", str<caret>ing)
     }
     "#,@r#"
-    source_context = '''
+    source_context = """
         format!("0x{}", str<caret>ing)
-    '''
+    """
     "#)
 }
