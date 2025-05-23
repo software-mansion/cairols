@@ -187,7 +187,6 @@ fn trait_method_via_path_call() {
     ")
 }
 
-// FIXME(#648): This is an exception and should rename the trait as well
 #[test]
 fn impl_method_via_definition() {
     test_transform!(rename, r#"
@@ -216,7 +215,7 @@ fn impl_method_via_definition() {
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
-        fn area(self: @Foo) -> u64;
+        fn RENAMED(self: @Foo) -> u64;
     }
     impl FooImpl of FooTrait {
         fn RENAMED(self: @Foo) -> u64 { 0 }

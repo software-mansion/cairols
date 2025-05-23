@@ -41,7 +41,9 @@ pub fn rename(
         let position = params.text_document_position.position.to_cairo();
         let identifier = db.find_identifier_at_position(file, position)?;
 
-        SymbolSearch::find_definition(db, &identifier).map(|search| search.def)
+        // Declaration is used here because rename without changing the declaration would break the compilation
+        // e.g. when renaming trait usage - we also rename the trait
+        SymbolSearch::find_declaration(db, &identifier).map(|search| search.def)
     };
     let Some(symbol) = symbol() else {
         return Ok(None);

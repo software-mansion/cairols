@@ -56,7 +56,6 @@ fn associated_const_via_trait_declaration() {
     ");
 }
 
-// FIXME(#648): This is an exception and should rename the trait as well
 #[test]
 fn associated_const_via_impl_definition() {
     test_transform!(rename, r#"
@@ -64,7 +63,7 @@ fn associated_const_via_impl_definition() {
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const SIDE<caret>S: u32 = 3; }
     "#, @r"
-    trait Shape<T> { const SIDES: u32; }
+    trait Shape<T> { const RENAMED: u32; }
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const RENAMED: u32 = 3; }
     ");

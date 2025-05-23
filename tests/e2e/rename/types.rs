@@ -335,7 +335,6 @@ fn test_type_alias_in_impl_associated_type_as_type() {
     ")
 }
 
-// FIXME(#648): This is an exception and should rename the trait as well
 #[test]
 fn test_type_alias_in_impl_associated_type_via_usage() {
     test_transform!(rename, r#"
@@ -355,7 +354,7 @@ fn test_type_alias_in_impl_associated_type_via_usage() {
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait {
-        type Type;
+        type RENAMED;
     }
     impl Impl of Trait {
         type RENAMED = TypeAlias;
@@ -367,7 +366,6 @@ fn test_type_alias_in_impl_associated_type_via_usage() {
     ")
 }
 
-// FIXME(#648): This is an exception and should rename the trait as well
 #[test]
 fn test_type_alias_in_impl_associated_type_via_impl() {
     test_transform!(rename, r#"
@@ -387,7 +385,7 @@ fn test_type_alias_in_impl_associated_type_via_impl() {
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait {
-        type Type;
+        type RENAMED;
     }
     impl Impl of Trait {
         type RENAMED = TypeAlias;
@@ -430,7 +428,6 @@ fn test_type_alias_in_impl_associated_type_via_trait() {
     ")
 }
 
-// FIXME(#648): This is an exception and should rename the trait as well
 #[test]
 fn test_impl_impl_via_usage() {
     test_transform!(rename, r#"
@@ -456,7 +453,7 @@ fn test_impl_impl_via_usage() {
         const A: felt252;
     }
     trait Trait {
-        impl ImplImpl: ImplementMe;
+        impl RENAMED: ImplementMe;
     }
     impl Implementer of ImplementMe {
         const A: felt252 = 123;
@@ -472,7 +469,6 @@ fn test_impl_impl_via_usage() {
     ")
 }
 
-// FIXME(#648): This is an exception and should rename the trait as well
 #[test]
 fn test_impl_impl_via_impl() {
     test_transform!(rename, r#"
@@ -498,7 +494,7 @@ fn test_impl_impl_via_impl() {
         const A: felt252;
     }
     trait Trait {
-        impl ImplImpl: ImplementMe;
+        impl RENAMED: ImplementMe;
     }
     impl Implementer of ImplementMe {
         const A: felt252 = 123;
