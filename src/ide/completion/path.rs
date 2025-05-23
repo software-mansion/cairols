@@ -40,12 +40,21 @@ pub fn path_suffix_completions(
         }
     );
 
-    let mut typed_text: Vec<_> = typed_text
+    let mut typed_text = typed_text
         .into_iter()
-        .map(|segment| segment.as_syntax_node().get_text_without_trivia(db))
-        .collect();
+        .map(|segment| segment.as_syntax_node())
+        // Allow proposing items in the middle of the existing path by filtering out the nodes which lie after the cursor:
+        .filter(|segment_node| segment_node.offset(db) <= ctx.node.offset(db))
+        .map(|segment_node| segment_node.get_text_without_trivia(db))
+        .collect::<Vec<_>>();
 
-    let last_typed_segment = typed_text.pop().expect("typed path should not be empty");
+    // After `::`, we want to propose all importables available at the preceding path.
+    let last_typed_segment = if ctx.node.kind(db) == SyntaxKind::TerminalColonColon {
+        "".to_string()
+    } else {
+        // Otherwise, the last segment is a partial identifier we want to complete using fuzzy search.
+        typed_text.pop().expect("typed path should not be empty")
+    };
 
     importables
         .iter()
@@ -76,14 +85,22 @@ pub fn path_suffix_completions(
                 return None;
             }
 
-            let import = (is_not_in_scope && !path_segments.is_empty())
-                .then(|| new_import_edit(db, ctx, path_segments.join("::")))
-                .flatten();
+            let additional_text_edits = if_chain!(
+                if is_not_in_scope;
+                if !path_segments.is_empty();
+                if let Some(import_edit) = new_import_edit(db, ctx, path_segments.join("::"));
+
+                then {
+                    Some(vec![import_edit])
+                } else {
+                    None
+                }
+            );
 
             Some(CompletionItem {
                 label: last_segment.to_string(),
                 kind: Some(importable_completion_kind(*importable)),
-                additional_text_edits: import.map(|edit| vec![edit]),
+                additional_text_edits,
                 ..CompletionItem::default()
             })
         })

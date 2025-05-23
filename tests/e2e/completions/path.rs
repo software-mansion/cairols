@@ -130,3 +130,152 @@ fn enum_variant() {
     completion_label = "B"
     "#);
 }
+
+#[test]
+fn type_annotation() {
+    test_transform!(test_completions_text_edits,"
+    mod module {
+        pub type felt = felt252;
+        pub type int = i32;
+        type priv_int = i32;
+    }
+    fn foo() {
+        let x: module::<caret> = 0x0;
+    }
+    ",@r#"
+    caret = """
+        let x: module::<caret> = 0x0;
+    """
+
+    [[completions]]
+    completion_label = "felt"
+
+    [[completions]]
+    completion_label = "int"
+    "#);
+}
+
+#[test]
+fn type_annotation_with_dangling_path() {
+    test_transform!(test_completions_text_edits,"
+    mod module {
+        pub type felt = felt252;
+        pub type int = i32;
+        type priv_int = i32;
+
+        pub const CONST: u32 = 0;
+
+        pub mod nested_module {
+            pub type T = u32;
+        }
+    }
+    fn foo() -> u32 {
+        let x: module::<caret>
+            nested_module::T = 0x0;
+    }
+    ",@r#"
+    caret = """
+        let x: module::<caret>
+    """
+
+    [[completions]]
+    completion_label = "CONST"
+
+    [[completions]]
+    completion_label = "felt"
+
+    [[completions]]
+    completion_label = "int"
+
+    [[completions]]
+    completion_label = "nested_module"
+    "#);
+}
+
+#[test]
+fn type_annotation_with_trivia() {
+    test_transform!(test_completions_text_edits,"
+    mod module {
+        pub type felt = felt252;
+        pub type int = i32;
+        type priv_int = i32;
+    }
+    fn foo() {
+        let x: module::<caret> // comment
+            = 0x0;
+    }
+    ",@r#"
+    caret = """
+        let x: module::<caret> // comment
+    """
+
+    [[completions]]
+    completion_label = "felt"
+
+    [[completions]]
+    completion_label = "int"
+    "#);
+}
+
+#[test]
+fn generic_parameter() {
+    test_transform!(test_completions_text_edits,"
+    mod module {
+        pub type felt = felt252;
+        pub type int = i32;
+        type priv_int = i32;
+    }
+    fn foo() {
+        let x = Into::<module::<caret>, u32>(0);
+    }
+    ",@r#"
+    caret = """
+        let x = Into::<module::<caret>, u32>(0);
+    """
+
+    [[completions]]
+    completion_label = "felt"
+
+    [[completions]]
+    completion_label = "int"
+    "#);
+}
+
+#[test]
+fn generic_parameter_with_trivia() {
+    test_transform!(test_completions_text_edits,"
+    mod module {
+        pub type felt = felt252;
+        pub type int = i32;
+        type priv_int = i32;
+    }
+    fn foo() {
+        let x = Into::<module::<caret>//comment
+        , u32>(0);
+    }
+    ",@r#"
+    caret = """
+        let x = Into::<module::<caret>//comment
+    """
+
+    [[completions]]
+    completion_label = "felt"
+
+    [[completions]]
+    completion_label = "int"
+    "#);
+}
+
+#[test]
+fn function_implicit_parameter() {
+    test_transform!(test_completions_text_edits,"
+    fn foo() implicits(core::Range<caret>) {}
+    ",@r#"
+    caret = """
+    fn foo() implicits(core::Range<caret>) {}
+    """
+
+    [[completions]]
+    completion_label = "RangeCheck"
+    "#);
+}
