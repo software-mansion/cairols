@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::{
     ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
     TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
 };
+use cairo_lang_filesystem::db::{get_parent_and_mapping, translate_location};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::Binding;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -16,6 +17,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast};
 use std::collections::{HashSet, VecDeque};
 
@@ -218,6 +220,30 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup {
         }
         Some((files, modules))
     }
+
+    /// Retrieves the final versions of nodes based on the transformations applied.
+    ///
+    /// This function analyzes the specified original `SyntaxNode` and returns a list
+    /// of all resultant nodes. These nodes represent the final state after all processing
+    /// (by macros). If no transformations have occurred, this function returns the original node itself.
+    #[expect(dead_code)]
+    fn get_node_resultants(&self, node: SyntaxNode) -> Option<Vec<SyntaxNode>> {
+        let db: &dyn SemanticGroup = self.upcast();
+
+        let main_file = node.stable_ptr(db).file_id(db);
+
+        let (files, _) = self.file_and_subfiles_with_corresponding_modules(main_file)?;
+
+        let files: Vec<_> = files.into_iter().collect();
+        let resultants = find_generated_nodes(db, &files, node);
+
+        Some(if resultants.is_empty() {
+            // We are not on macro generated code, node itself is the resultant.
+            vec![node]
+        } else {
+            resultants.into_iter().collect()
+        })
+    }
 }
 
 impl<T> LsSemanticGroup for T where T: Upcast<dyn SemanticGroup> + SemanticGroup {}
@@ -388,4 +414,48 @@ fn lookup_item_from_ast(
         ))],
         _ => return None,
     })
+}
+
+/// See [`LsSemanticGroup::get_node_resultants`].
+fn find_generated_nodes(
+    db: &dyn SemanticGroup,
+    node_descendant_files: &[FileId],
+    node: SyntaxNode,
+) -> OrderedHashSet<SyntaxNode> {
+    let start_file = node.stable_ptr(db).file_id(db);
+
+    let mut result = OrderedHashSet::default();
+
+    for &file in node_descendant_files {
+        let Some((parent, mappings)) = get_parent_and_mapping(db, file) else {
+            continue;
+        };
+
+        if parent != start_file {
+            continue;
+        }
+
+        let Ok(file_syntax) = db.file_syntax(file) else {
+            continue;
+        };
+
+        for token in file_syntax.tokens(db) {
+            let Some(span_in_parent) = translate_location(&mappings, token.span(db)) else {
+                continue;
+            };
+
+            if !node.span(db).contains(span_in_parent) {
+                continue;
+            }
+
+            let nested_result = find_generated_nodes(db, node_descendant_files, token);
+            if nested_result.is_empty() {
+                result.insert(token);
+            } else {
+                result.extend(nested_result);
+            }
+        }
+    }
+
+    result
 }
