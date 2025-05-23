@@ -75,12 +75,12 @@ fn var_byte_array() {
         let b: ByteArray = "normal_string<caret>";
     }
     "#,@r#"
-    source_context = '''
+    source_context = """
         let b: ByteArray = "normal_string<caret>";
-    '''
-    highlight = '''
+    """
+    highlight = """
         let b: ByteArray = <sel>"normal_string"</sel>;
-    '''
+    """
     popover = """
     ```cairo
     ByteArray
@@ -241,12 +241,12 @@ fn var_string_to_u8() {
         let b: u8 = "some_st<caret>ring";
     }
     "#,@r#"
-    source_context = '''
+    source_context = """
         let b: u8 = "some_st<caret>ring";
-    '''
-    highlight = '''
+    """
+    highlight = """
         let b: u8 = <sel>"some_string"</sel>;
-    '''
+    """
     popover = """
     ```cairo
     u8

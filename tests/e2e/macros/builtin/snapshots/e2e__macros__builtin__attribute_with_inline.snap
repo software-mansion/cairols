@@ -3,11 +3,11 @@ source: tests/e2e/macros/builtin/mod.rs
 expression: report
 ---
 [[expansions]]
-analyzed_lines = '''
+analyzed_lines = """
 #[genera<caret>te_trait]
 impl ImplA of A<caret>Trait {
         println!("a");<caret>
-'''
+"""
 generated_code = """
 // generate_trait
 // --------------
@@ -43,10 +43,10 @@ impl ImplA of ATrait {
 """
 
 [[expansions]]
-analyzed_lines = '''
+analyzed_lines = """
         print<caret>ln!("a");
-'''
-generated_code = '''
+"""
+generated_code = """
 // lib.cairo
 // ---------
 
@@ -57,4 +57,4 @@ generated_code = '''
     >::unwrap(writeln!(__formatter_for_print_macros__, "a"));
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
 }
-'''
+"""

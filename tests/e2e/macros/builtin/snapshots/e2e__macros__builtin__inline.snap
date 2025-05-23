@@ -3,13 +3,13 @@ source: tests/e2e/macros/builtin/mod.rs
 expression: report
 ---
 [[expansions]]
-analyzed_lines = '''
+analyzed_lines = """
 fn fib<caret>(mut n: u32) -> u32 {
      println!("some text")<caret>;
      println!("some text");<caret>
     while n != 0<caret> {
         a = t<caret>emp;
-'''
+"""
 generated_code = """
 // lib.cairo
 // ---------
@@ -43,12 +43,12 @@ fn fib(mut n: u32) -> u32 {
 """
 
 [[expansions]]
-analyzed_lines = '''
+analyzed_lines = """
    <caret>  println!("some text");
      pr<caret>intln!("some text");
      println!<caret>("some text");
-'''
-generated_code = '''
+"""
+generated_code = """
 // lib.cairo
 // ---------
 
@@ -59,4 +59,4 @@ generated_code = '''
     >::unwrap(writeln!(__formatter_for_print_macros__, "some text"));
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
 }
-'''
+"""
