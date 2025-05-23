@@ -1,8 +1,9 @@
 use cairo_lang_defs::ids::{ImportableId, VarId};
-use cairo_lang_semantic::{Binding, Mutability};
+use cairo_lang_semantic::{Binding, Mutability, TypeLongId};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::smol_str::SmolStr;
 
 use crate::ide::ty::format_type;
@@ -64,9 +65,15 @@ impl VariableDef {
             },
         };
 
-        let ty = format_type(db, binding.ty(), importables);
+        let type_id = binding.ty();
+        let long_type_id = type_id.lookup_intern(db);
+        if matches!(long_type_id, TypeLongId::Missing(_)) {
+            None
+        } else {
+            let ty = format_type(db, type_id, importables);
 
-        Some(format!("{prefix}{mutability}{name}: {ty}"))
+            Some(format!("{prefix}{mutability}{name}: {ty}"))
+        }
     }
 
     /// Gets this variable's name.

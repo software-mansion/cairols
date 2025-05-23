@@ -1,5 +1,6 @@
 use cairo_lang_defs::ids::{ConstantLongId, FunctionWithBodyId, ImportableId};
 use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_semantic::TypeLongId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
@@ -8,7 +9,7 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::Intern;
+use cairo_lang_utils::{Intern, LookupIntern};
 use indoc::formatdoc;
 use lsp_types::Hover;
 
@@ -56,7 +57,7 @@ fn find_type(
     db: &AnalysisDatabase,
     node: SyntaxNode,
     importables: &OrderedHashMap<ImportableId, String>,
-) -> Option<String> {
+) -> Option<HoverType> {
     if let Some(function_id) = db.find_lookup_item(&node)?.function_with_body() {
         find_type_in_function_context(db, node, function_id, importables)
     } else {
@@ -71,10 +72,13 @@ fn find_type_in_function_context(
     node: SyntaxNode,
     function_id: FunctionWithBodyId,
     importables: &OrderedHashMap<ImportableId, String>,
-) -> Option<String> {
+) -> Option<HoverType> {
     let expr = Expr::from_syntax_node(db, node);
     let expr_id = db.lookup_expr_by_ptr(function_id, expr.stable_ptr(db)).ok()?;
-    Some(format_type(db, db.expr_semantic(function_id, expr_id).ty(), importables))
+    let type_id = db.expr_semantic(function_id, expr_id).ty();
+    let formatted = format_type(db, type_id, importables);
+
+    Some(HoverType { ty: type_id.lookup_intern(db), formatted })
 }
 
 /// Gets the type of an expression associated with [`SyntaxNode`] assuming it's a const item.
@@ -82,33 +86,52 @@ fn find_type_in_const_declaration(
     db: &AnalysisDatabase,
     node: SyntaxNode,
     importables: &OrderedHashMap<ImportableId, String>,
-) -> Option<String> {
+) -> Option<HoverType> {
     let module_file_id = db.find_module_file_containing_node(&node)?;
 
     let const_item = node.ancestor_of_type::<ItemConstant>(db)?;
     let const_item_id = ConstantLongId(module_file_id, const_item.stable_ptr(db)).intern(db);
 
-    Some(format_type(db, db.constant_const_type(const_item_id).ok()?, importables))
+    let type_id = db.constant_const_type(const_item_id).ok()?;
+    let formatted = format_type(db, type_id, importables);
+
+    Some(HoverType { ty: type_id.lookup_intern(db), formatted })
+}
+
+struct HoverType {
+    ty: TypeLongId,
+    formatted: String,
+}
+
+impl HoverType {
+    fn is_missing(&self) -> bool {
+        matches!(&self.ty, TypeLongId::Missing(_))
+    }
 }
 
 /// Formats the number literal writing its decimal, hexadecimal and binary value and type.
 fn number_hover(
     db: &AnalysisDatabase,
     literal: &TerminalLiteralNumber,
-    ty: &str,
+    hover_type: &HoverType,
     file_id: FileId,
 ) -> Option<Hover> {
     let value = literal.numeric_value(db)?;
 
-    let representation = formatdoc!(
-        "
-        ```cairo
-        {ty}
-        ```
-        ---
-        value of literal: `{value} ({value:#x} | {value:#b})`
-        "
-    );
+    let mut representation = formatdoc!("value of literal: `{value} ({value:#x} | {value:#b})`");
+
+    if !hover_type.is_missing() {
+        let ty = hover_type.formatted.clone();
+        representation = formatdoc!(
+            "
+            ```cairo
+            {ty}
+            ```
+            ---
+            {representation}
+            "
+        );
+    }
 
     Some(Hover {
         contents: markdown_contents(representation),
@@ -124,25 +147,30 @@ fn number_hover(
 fn string_hover(
     db: &AnalysisDatabase,
     literal: &TerminalString,
-    ty: &str,
+    hover_type: &HoverType,
     file_id: FileId,
 ) -> Option<Hover> {
-    let representation = formatdoc!(
-        r#"
-        ```cairo
-        {ty}
-        ```
-        "#
-    );
+    if hover_type.is_missing() {
+        None
+    } else {
+        let ty = hover_type.formatted.clone();
+        let representation = formatdoc!(
+            "
+            ```cairo
+            {ty}
+            ```
+            "
+        );
 
-    Some(Hover {
-        contents: markdown_contents(representation),
-        range: literal
-            .as_syntax_node()
-            .span_without_trivia(db)
-            .position_in_file(db, file_id)
-            .map(|position| position.to_lsp()),
-    })
+        Some(Hover {
+            contents: markdown_contents(representation),
+            range: literal
+                .as_syntax_node()
+                .span_without_trivia(db)
+                .position_in_file(db, file_id)
+                .map(|position| position.to_lsp()),
+        })
+    }
 }
 
 /// Formats the short string literal writing its textual and numeric value along with the
@@ -150,30 +178,29 @@ fn string_hover(
 fn short_string_hover(
     db: &AnalysisDatabase,
     literal: &TerminalShortString,
-    ty: &str,
+    hover_type: &HoverType,
     file_id: FileId,
 ) -> Option<Hover> {
-    let representation = match (literal.numeric_value(db), literal.string_value(db)) {
+    let mut representation = match (literal.numeric_value(db), literal.string_value(db)) {
         (None, _) => None,
-        (Some(numeric), None) => Some(formatdoc!(
-            "
-            ```cairo
-            {ty}
-            ```
-            ---
-            value of literal: `{numeric:#x}`
-            "
-        )),
-        (Some(numeric), Some(string)) => Some(formatdoc!(
-            "
-            ```cairo
-            {ty}
-            ```
-            ---
-            value of literal: `'{string}' ({numeric:#x})`
-            "
-        )),
+        (Some(numeric), None) => Some(formatdoc!("value of literal: `{numeric:#x}`")),
+        (Some(numeric), Some(string)) => {
+            Some(formatdoc!("value of literal: `'{string}' ({numeric:#x})`"))
+        }
     }?;
+
+    if !hover_type.is_missing() {
+        let ty = hover_type.formatted.clone();
+        representation = formatdoc!(
+            "
+            ```cairo
+            {ty}
+            ```
+            ---
+            {representation}
+            "
+        );
+    }
 
     Some(Hover {
         contents: markdown_contents(representation),
