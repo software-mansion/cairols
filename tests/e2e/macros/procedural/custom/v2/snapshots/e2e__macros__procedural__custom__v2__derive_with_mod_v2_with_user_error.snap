@@ -28,6 +28,28 @@ mod modzik {let x = ; }
 mapped_diagnostics:
 - url: '[ROOT_URL]test_package/src/lib.cairo'
   diagnostics:
+  - related_code: ModDeriveMacroV2
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 9
+        end:
+          line: 0
+          character: 25
+      severity: 1
+      message: 'Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.'
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 0
+              character: 11
+            end:
+              line: 0
+              character: 18
+        message: Diagnostic mapped from here.
   - related_code: b
     diagnostic:
       range:
@@ -40,16 +62,3 @@ mapped_diagnostics:
       severity: 1
       code: E0006
       message: Type not found.
-- url: vfs://proc_macro_derive.cairo
-  diagnostics:
-  - related_code: let x=;
-    diagnostic:
-      range:
-        start:
-          line: 0
-          character: 11
-        end:
-          line: 0
-          character: 18
-      severity: 1
-      message: 'Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.'
