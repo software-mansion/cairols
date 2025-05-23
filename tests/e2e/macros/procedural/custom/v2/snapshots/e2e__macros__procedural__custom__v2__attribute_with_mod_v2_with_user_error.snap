@@ -31,6 +31,28 @@ let x = ; }
 mapped_diagnostics:
 - url: '[ROOT_URL]test_package/src/lib.cairo'
   diagnostics:
+  - related_code: '#[mod_attribute_macro_v2]'
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 0
+        end:
+          line: 0
+          character: 25
+      severity: 1
+      message: 'Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.'
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_mod_attribute_macro_v2.cairo
+          range:
+            start:
+              line: 0
+              character: 35
+            end:
+              line: 0
+              character: 42
+        message: Diagnostic mapped from here.
   - related_code: '{ "a" + "b";'
     diagnostic:
       range:
@@ -53,16 +75,3 @@ mapped_diagnostics:
               line: 0
               character: 31
         message: Diagnostic mapped from here.
-- url: vfs://proc_macro_mod_attribute_macro_v2.cairo
-  diagnostics:
-  - related_code: let x=;
-    diagnostic:
-      range:
-        start:
-          line: 0
-          character: 35
-        end:
-          line: 0
-          character: 42
-      severity: 1
-      message: 'Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.'
