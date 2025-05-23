@@ -4,10 +4,10 @@ description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"
 expression: report
 ---
 [[expansions]]
-analyzed_lines = '''
+analyzed_lines = """
     error<caret>_inline_macro_v2!(10 + "wrong");
     error_inline_macro_v2!(10 +<caret> "wrong");
-'''
+"""
 generated_code = """
 No expansion information.
 """
