@@ -158,12 +158,7 @@ impl SymbolDef {
         let node = stable_ptr.lookup(db);
         let found_file = stable_ptr.file_id(db);
         let span = node.span_without_trivia(db);
-        let width = span.width();
-        let (file_id, mut span) = get_originating_location(db, found_file, span.start_only(), None);
-        if span.width().as_u32() == 0 {
-            span.end = span.end.add_width(width);
-        }
-        Some((file_id, span))
+        Some(get_originating_location(db, found_file, span, None))
     }
 
     /// Gets the name of the symbol.
