@@ -236,3 +236,170 @@ fn trait_name_generic_name() {
     """
     "#)
 }
+
+#[test]
+fn type_bound() {
+    test_transform!(test_hover, r#"
+    fn foo<T, +Dr<caret>op<T>>() {}
+    "#, @r#"
+    source_context = """
+    fn foo<T, +Dr<caret>op<T>>() {}
+    """
+    highlight = """
+    fn foo<T, +<sel>Drop</sel><T>>() {}
+    """
+    popover = """
+    ```cairo
+    core::traits
+    ```
+    ```cairo
+    pub trait Drop<T>
+    ```
+    ---
+    A trait for types that can be safely dropped.
+    Types implementing `Drop` can be automatically discarded when they go out of scope.
+    The drop operation is a no-op - it simply indicates to the compiler that this type
+    can be safely discarded.
+    # Deriving
+
+    This trait can be automatically derived using `#[derive(Drop)]`. All basic types
+    implement `Drop` by default, except for `Felt252Dict`.
+    # Examples
+
+    Without `Drop`:
+    ```cairo
+    struct Point {
+        x: u128,
+        y: u128,
+    }
+
+    fn foo(p: Point) {} // Error: `p` cannot be dropped
+    ```
+
+    With `Drop`:
+    ```cairo
+    #[derive(Drop)]
+    struct Point {
+        x: u128,
+        y: u128,
+    }
+
+    fn foo(p: Point) {} // OK: `p` is dropped at the end of the function
+    ```"""
+    "#)
+}
+
+#[test]
+fn negative_type_bound() {
+    test_transform!(test_hover, r#"
+    trait Trait<T> {}
+    impl Impl<T, -Dest<caret>ruct<T>> of Trait<T> {}
+    "#, @r#"
+    source_context = """
+    impl Impl<T, -Dest<caret>ruct<T>> of Trait<T> {}
+    """
+    highlight = """
+    impl Impl<T, -<sel>Destruct</sel><T>> of Trait<T> {}
+    """
+    popover = """
+    ```cairo
+    core::traits
+    ```
+    ```cairo
+    pub trait Destruct<T>
+    ```
+    ---
+    A trait that allows for custom destruction behavior of a type.
+    In Cairo, values must be explicitly handled - they cannot be silently dropped.
+    Types can only go out of scope in two ways:
+    1. Implement `Drop` - for types that can be discarded trivially
+    2. Implement `Destruct` - for types that need cleanup when destroyed. Typically, any type that
+    contains
+    a `Felt252Dict` must implement `Destruct`, as the `Felt252Dict` needs to be "squashed" when
+    going
+    out of scope to ensure a program is sound.
+
+    Generally, `Destruct` does not need to be implemented manually. It can be derived from the
+    `Drop` and `Destruct` implementations of the type's fields.
+    # Examples
+
+    Here's a simple type that wraps a `Felt252Dict` and needs to be destructed:
+    ```cairo
+    use core::dict::Felt252Dict;
+
+    // A struct containing a Felt252Dict must implement Destruct
+    #[derive(Destruct, Default)]
+    struct ResourceManager {
+        resources: Felt252Dict<u32>,
+        count: u32,
+    }
+
+    #[generate_trait]
+    impl ResourceManagerImpl of ResourceManagerTrait{
+       fn add_resource(ref self: ResourceManager, resource_id: felt252, amount: u32){
+           assert!(self.resources.get(resource_id) == 0, "Resource already exists");
+           self.resources.insert(resource_id, amount);
+           self.count += amount;
+       }
+    }
+
+    let mut manager = Default::default();
+
+    // Add some resources
+    manager.add_resource(1, 100);
+
+    // When manager goes out of scope here, Destruct is automatically called,
+    // which ensures the dictionary is properly squashed
+    ```"""
+    "#)
+}
+
+#[test]
+fn type_bound_user_trait() {
+    test_transform!(test_hover, r#"
+    /// Doc of Trait.
+    trait Trait<T> {}
+    fn foo<T, +Tr<caret>ait<T>>() {}
+    "#, @r#"
+    source_context = """
+    fn foo<T, +Tr<caret>ait<T>>() {}
+    """
+    highlight = """
+    fn foo<T, +<sel>Trait</sel><T>>() {}
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    trait Trait<T>
+    ```
+    ---
+    Doc of Trait."""
+    "#)
+}
+
+#[test]
+fn impl_bound_user_trait() {
+    test_transform!(test_hover, r#"
+    /// Doc of Trait.
+    trait Trait<T> {}
+    fn foo<T, impl Impl: Tr<caret>ait<T>>() {}
+    "#, @r#"
+    source_context = """
+    fn foo<T, impl Impl: Tr<caret>ait<T>>() {}
+    """
+    highlight = """
+    fn foo<T, impl Impl: <sel>Trait</sel><T>>() {}
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    trait Trait<T>
+    ```
+    ---
+    Doc of Trait."""
+    "#)
+}
