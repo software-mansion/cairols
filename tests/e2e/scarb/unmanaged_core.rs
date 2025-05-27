@@ -20,7 +20,7 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
 
     let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
-    insta::assert_snapshot!(normalize(&ls, analyzed_crates), @r##"
+    insta::assert_snapshot!(normalize(&ls, analyzed_crates), @r#"
     # Analyzed Crates
     ---
     ```json
@@ -38,7 +38,8 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
         "experimental_features": {
           "negative_impls": true,
           "associated_item_constraints": true,
-          "coupons": true
+          "coupons": true,
+          "user_defined_inline_macros": true
         }
       },
       "linter_configuration": "Off",
@@ -50,5 +51,5 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
       }
     }
     ```
-    "##);
+    "#);
 }
