@@ -1,14 +1,19 @@
 use itertools::Itertools;
 
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_filesystem::span::{TextOffset as CairoTextOffset, TextWidth as CairoTextWidth};
-use cairo_lang_macro::{Diagnostic as DiagnosticV2, Severity as SeverityV2, TextSpan};
+use cairo_lang_filesystem::span::{
+    TextOffset as CairoTextOffset, TextSpan, TextWidth as CairoTextWidth,
+};
+use cairo_lang_macro::{
+    Diagnostic as DiagnosticV2, Severity as SeverityV2, TextSpan as TextSpanV2,
+};
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::LookupIntern;
 
+mod child_nodes;
 mod conversion;
 mod expansion;
 pub mod inline;
@@ -70,7 +75,7 @@ fn get_root_ptr(db: &dyn SyntaxGroup, stable_ptr: SyntaxStablePtrId) -> SyntaxSt
 pub fn find_encompassing_node(
     root_syntax_node: &SyntaxNode,
     db: &dyn SyntaxGroup,
-    span: &TextSpan,
+    span: &TextSpanV2,
 ) -> Option<SyntaxNode> {
     let start_offset =
         CairoTextOffset::default().add_width(CairoTextWidth::new_for_testing(span.start));
@@ -92,12 +97,12 @@ pub fn find_encompassing_node(
 fn compute_relative_span(
     node: &SyntaxNode,
     db: &dyn SyntaxGroup,
-    absolute_span: &TextSpan,
-) -> cairo_lang_filesystem::span::TextSpan {
+    absolute_span: &TextSpanV2,
+) -> TextSpan {
     let offset = node.offset(db).as_u32();
     let relative_start = absolute_span.start.saturating_sub(offset);
     let relative_end = absolute_span.end.saturating_sub(offset);
-    cairo_lang_filesystem::span::TextSpan {
+    TextSpan {
         start: CairoTextOffset::default()
             .add_width(CairoTextWidth::new_for_testing(relative_start)),
         end: CairoTextOffset::default().add_width(CairoTextWidth::new_for_testing(relative_end)),
