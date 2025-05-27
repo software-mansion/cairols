@@ -215,4 +215,10 @@ impl Iterator for Responses<'_> {
 
         Some((params, response))
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let size = self.responses.len();
+
+        (size, Some(size))
+    }
 }
