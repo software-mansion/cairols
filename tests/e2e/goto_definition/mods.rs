@@ -21,7 +21,7 @@ fn item_defined_in_another_file() {
         "src/something.cairo" => "pub fn hello() {}",
     });
 
-    let result = test.request_snapshot("src/lib.cairo", cursors.caret(0));
+    let result = test.request_snapshot("src/lib.cairo", cursors.assert_single_caret());
 
     insta::assert_snapshot!(result, @r"
     // → src/something.cairo
@@ -47,7 +47,7 @@ fn non_inline_module_on_definition() {
         "src/something.cairo" => "pub fn hello() {\n}",
     });
 
-    let result = test.request_snapshot("src/lib.cairo", cursors.caret(0));
+    let result = test.request_snapshot("src/lib.cairo", cursors.assert_single_caret());
 
     insta::assert_snapshot!(result, @r"
     // → src/something.cairo
@@ -74,7 +74,7 @@ fn non_inline_module_on_usage() {
         "src/something.cairo" => "pub fn hello() {\n}",
     });
 
-    let result = test.request_snapshot("src/lib.cairo", cursors.caret(0));
+    let result = test.request_snapshot("src/lib.cairo", cursors.assert_single_caret());
 
     insta::assert_snapshot!(result, @r"
     // → src/something.cairo

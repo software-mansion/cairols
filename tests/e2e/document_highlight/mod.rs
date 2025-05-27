@@ -34,8 +34,7 @@ fn document_highlight(cairo_code: &str) -> String {
 
     ls.open_all_cairo_files_and_wait_for_project_update();
 
-    assert_eq!(cursors.carets().len(), 1);
-    let position = cursors.carets()[0];
+    let position = cursors.assert_single_caret();
 
     let params = DocumentHighlightParams {
         text_document_position_params: TextDocumentPositionParams {

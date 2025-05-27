@@ -45,7 +45,7 @@ fn goto_definition(cairo_code: &str) -> String {
         "src/lib.cairo" => cairo.clone(),
     });
 
-    let position = cursors.caret(0);
+    let position = cursors.assert_single_caret();
 
     test.request_snapshot("src/lib.cairo", position)
 }
