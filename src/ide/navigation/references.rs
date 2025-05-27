@@ -19,7 +19,7 @@ pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<
         .def
         .usages(db)
         .include_declaration(include_declaration)
-        .locations()
+        .originating_locations(db)
         .unique()
         .filter_map(|loc| db.lsp_location(loc))
         .collect();
