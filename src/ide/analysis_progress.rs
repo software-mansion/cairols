@@ -1,5 +1,5 @@
 use std::cmp::PartialEq;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use crate::config::Config;
@@ -18,6 +18,7 @@ pub enum ProcMacroServerStatus {
 #[derive(Clone)]
 pub struct ProcMacroServerTracker {
     procmacro_request_submitted: Arc<AtomicBool>,
+    procmacro_request_counter: Arc<AtomicU64>,
     procmacro_server_status: Arc<Mutex<ProcMacroServerStatus>>,
 }
 
@@ -26,6 +27,7 @@ impl ProcMacroServerTracker {
     pub fn new() -> Self {
         Self {
             procmacro_request_submitted: Arc::new(AtomicBool::new(false)),
+            procmacro_request_counter: Arc::new(AtomicU64::new(0)),
             procmacro_server_status: Arc::new(Mutex::new(ProcMacroServerStatus::Pending)),
         }
     }
@@ -34,6 +36,7 @@ impl ProcMacroServerTracker {
     /// diagnostics.
     pub fn register_procmacro_request(&self) {
         self.procmacro_request_submitted.store(true, Ordering::SeqCst);
+        self.procmacro_request_counter.fetch_add(1, Ordering::SeqCst);
     }
 
     pub fn set_server_status(&self, status: ProcMacroServerStatus) {
@@ -45,12 +48,17 @@ impl ProcMacroServerTracker {
         (*(self.procmacro_server_status.lock().unwrap())).clone()
     }
 
+    pub fn mark_requests_as_handled(&self, requests_count: u64) {
+        self.procmacro_request_counter.fetch_sub(requests_count, Ordering::SeqCst);
+    }
+
     pub fn reset_request_tracker(&self) {
         self.procmacro_request_submitted.store(false, Ordering::SeqCst);
     }
 
     pub fn get_did_submit_procmacro_request(&self) -> bool {
         self.procmacro_request_submitted.load(Ordering::SeqCst)
+            && self.procmacro_request_counter.load(Ordering::SeqCst) != 0
     }
 }
 
