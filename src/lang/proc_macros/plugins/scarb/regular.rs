@@ -7,6 +7,9 @@ use std::collections::HashSet;
 use super::into_cairo_diagnostics;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::{get_attribute_expansion, get_derive_expansion};
+use crate::lang::proc_macros::plugins::scarb::child_nodes::{
+    ChildNodesWithoutAttributes, ItemWithAttributes,
+};
 use crate::lang::proc_macros::plugins::scarb::conversion::{
     CallSiteLocation, code_mapping_from_proc_macro_server,
 };
@@ -166,12 +169,10 @@ fn expand_inner_attr(
                     if all_none {
                         InnerAttrExpansionResult::None
                     } else {
-                        let (code, mappings) = item_builder.build();
-                        InnerAttrExpansionResult::Some(context.into_result(
-                            code,
-                            mappings,
-                            used_attr_names.into_iter().collect(),
-                        ))
+                        InnerAttrExpansionResult::Some(
+                            context
+                                .into_result(item_builder, used_attr_names.into_iter().collect()),
+                        )
                     }
                 }
             }
@@ -234,12 +235,10 @@ fn expand_inner_attr(
                     if all_none {
                         InnerAttrExpansionResult::None
                     } else {
-                        let (code, mappings) = item_builder.build();
-                        InnerAttrExpansionResult::Some(context.into_result(
-                            code,
-                            mappings,
-                            used_attr_names.into_iter().collect(),
-                        ))
+                        InnerAttrExpansionResult::Some(
+                            context
+                                .into_result(item_builder, used_attr_names.into_iter().collect()),
+                        )
                     }
                 }
             }
@@ -258,14 +257,14 @@ fn do_expand_inner_attr(
     token_stream: TokenStream,
 ) -> bool {
     let mut all_none = true;
-    let (name, args, call_site) = match found {
-        AttrExpansionFound::Last(AttrExpansionArgs { name, args, call_site }) => {
+    let input = match found {
+        AttrExpansionFound::Last(input) => {
             all_none = false;
-            (name, args, call_site)
+            input
         }
-        AttrExpansionFound::Some(AttrExpansionArgs { name, args, call_site }) => {
+        AttrExpansionFound::Some(input) => {
             all_none = false;
-            (name, args, call_site)
+            input
         }
         AttrExpansionFound::None => {
             item_builder.add_node(func.as_syntax_node());
@@ -277,19 +276,29 @@ fn do_expand_inner_attr(
         db,
         ExpandAttributeParams {
             context: expansion_context,
-            attr: name,
-            args: args.clone(),
+            attr: input.name,
+            args: input.args.clone(),
             item: token_stream.clone(),
-            call_site: call_site.span,
+            call_site: input.call_site.span,
         },
     );
 
+    let code_mappings = result.code_mappings.clone();
     let expanded =
-        context.register_result(db, token_stream.to_string(), result, call_site.stable_ptr);
-    item_builder.add_modified(RewriteNode::Mapped {
-        origin: func.as_syntax_node().span(db),
-        node: Box::new(RewriteNode::Text(expanded.to_string())),
-    });
+        context.register_result(db, token_stream.to_string(), result, input.call_site.stable_ptr);
+
+    if let Some(code_mappings) = code_mappings {
+        // v2 logic.
+        let code_mappings =
+            code_mappings.into_iter().map(code_mapping_from_proc_macro_server).collect();
+        item_builder.add_modified(RewriteNode::TextAndMapping(expanded, code_mappings));
+    } else {
+        // v1 logic.
+        item_builder.add_modified(RewriteNode::Mapped {
+            origin: func.as_syntax_node().span(db),
+            node: Box::new(RewriteNode::Text(expanded.to_string())),
+        });
+    }
 
     all_none
 }
@@ -323,10 +332,14 @@ impl InnerAttrExpansionContext {
     }
     pub fn into_result(
         self,
-        expanded: String,
-        code_mappings: Vec<CodeMapping>,
+        item_builder: PatchBuilder<'_>,
         attr_names: Vec<String>,
     ) -> PluginResult {
+        let (expanded, mut code_mappings) = item_builder.build();
+        // PatchBuilder::build() adds additional mapping at the end,
+        // which wraps the whole outputted code.
+        // We remove it, so we can properly translate locations spanning multiple token spans.
+        code_mappings.pop();
         let msg = if attr_names.len() == 1 {
             "the attribute macro"
         } else {
@@ -387,101 +400,63 @@ pub(crate) fn parse_attribute(
 ) -> (AttrExpansionFound, TokenStream) {
     let mut token_stream_builder = TokenStreamBuilder::new(db);
     let input = match item_ast.clone() {
-        ast::ModuleItem::Trait(trait_ast) => {
-            let attrs = trait_ast.attributes(db).elements(db);
-            let expansion =
-                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
-            token_stream_builder.add_node(trait_ast.visibility(db).as_syntax_node());
-            token_stream_builder.add_node(trait_ast.trait_kw(db).as_syntax_node());
-            token_stream_builder.add_node(trait_ast.name(db).as_syntax_node());
-            token_stream_builder.add_node(trait_ast.generic_params(db).as_syntax_node());
-            token_stream_builder.add_node(trait_ast.body(db).as_syntax_node());
-            expansion
+        ast::ModuleItem::Trait(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
         }
-        ast::ModuleItem::Impl(impl_ast) => {
-            let attrs = impl_ast.attributes(db).elements(db);
-            let expansion =
-                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
-            token_stream_builder.add_node(impl_ast.visibility(db).as_syntax_node());
-            token_stream_builder.add_node(impl_ast.impl_kw(db).as_syntax_node());
-            token_stream_builder.add_node(impl_ast.name(db).as_syntax_node());
-            token_stream_builder.add_node(impl_ast.generic_params(db).as_syntax_node());
-            token_stream_builder.add_node(impl_ast.of_kw(db).as_syntax_node());
-            token_stream_builder.add_node(impl_ast.trait_path(db).as_syntax_node());
-            token_stream_builder.add_node(impl_ast.body(db).as_syntax_node());
-            expansion
+        ast::ModuleItem::Impl(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
         }
-        ast::ModuleItem::Module(module_ast) => {
-            let attrs = module_ast.attributes(db).elements(db);
-            let expansion =
-                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
-            token_stream_builder.add_node(module_ast.visibility(db).as_syntax_node());
-            token_stream_builder.add_node(module_ast.module_kw(db).as_syntax_node());
-            token_stream_builder.add_node(module_ast.name(db).as_syntax_node());
-            token_stream_builder.add_node(module_ast.body(db).as_syntax_node());
-            expansion
+        ast::ModuleItem::Module(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
         }
-        ast::ModuleItem::FreeFunction(free_func_ast) => {
-            let attrs = free_func_ast.attributes(db).elements(db);
-            let expansion =
-                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
-            token_stream_builder.add_node(free_func_ast.visibility(db).as_syntax_node());
-            token_stream_builder.add_node(free_func_ast.declaration(db).as_syntax_node());
-            token_stream_builder.add_node(free_func_ast.body(db).as_syntax_node());
-            expansion
+        ast::ModuleItem::FreeFunction(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
         }
-        ast::ModuleItem::ExternFunction(extern_func_ast) => {
-            let attrs = extern_func_ast.attributes(db).elements(db);
-            let expansion =
-                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
-            token_stream_builder.add_node(extern_func_ast.visibility(db).as_syntax_node());
-            token_stream_builder.add_node(extern_func_ast.extern_kw(db).as_syntax_node());
-            token_stream_builder.add_node(extern_func_ast.declaration(db).as_syntax_node());
-            token_stream_builder.add_node(extern_func_ast.semicolon(db).as_syntax_node());
-            expansion
+        ast::ModuleItem::ExternFunction(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
         }
-        ast::ModuleItem::ExternType(extern_type_ast) => {
-            let attrs = extern_type_ast.attributes(db).elements(db);
-            let expansion =
-                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
-            token_stream_builder.add_node(extern_type_ast.visibility(db).as_syntax_node());
-            token_stream_builder.add_node(extern_type_ast.extern_kw(db).as_syntax_node());
-            token_stream_builder.add_node(extern_type_ast.type_kw(db).as_syntax_node());
-            token_stream_builder.add_node(extern_type_ast.name(db).as_syntax_node());
-            token_stream_builder.add_node(extern_type_ast.generic_params(db).as_syntax_node());
-            token_stream_builder.add_node(extern_type_ast.semicolon(db).as_syntax_node());
-            expansion
+        ast::ModuleItem::ExternType(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
         }
-        ast::ModuleItem::Struct(struct_ast) => {
-            let attrs = struct_ast.attributes(db).elements(db);
-            let expansion =
-                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
-            token_stream_builder.add_node(struct_ast.visibility(db).as_syntax_node());
-            token_stream_builder.add_node(struct_ast.struct_kw(db).as_syntax_node());
-            token_stream_builder.add_node(struct_ast.name(db).as_syntax_node());
-            token_stream_builder.add_node(struct_ast.generic_params(db).as_syntax_node());
-            token_stream_builder.add_node(struct_ast.lbrace(db).as_syntax_node());
-            token_stream_builder.add_node(struct_ast.members(db).as_syntax_node());
-            token_stream_builder.add_node(struct_ast.rbrace(db).as_syntax_node());
-            expansion
+        ast::ModuleItem::Struct(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
         }
-        ast::ModuleItem::Enum(enum_ast) => {
-            let attrs = enum_ast.attributes(db).elements(db);
-            let expansion =
-                parse_attrs(db, &defined_attributes, &mut token_stream_builder, attrs, ctx);
-            token_stream_builder.add_node(enum_ast.visibility(db).as_syntax_node());
-            token_stream_builder.add_node(enum_ast.enum_kw(db).as_syntax_node());
-            token_stream_builder.add_node(enum_ast.name(db).as_syntax_node());
-            token_stream_builder.add_node(enum_ast.generic_params(db).as_syntax_node());
-            token_stream_builder.add_node(enum_ast.lbrace(db).as_syntax_node());
-            token_stream_builder.add_node(enum_ast.variants(db).as_syntax_node());
-            token_stream_builder.add_node(enum_ast.rbrace(db).as_syntax_node());
-            expansion
+        ast::ModuleItem::Enum(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
         }
-        _ => AttrExpansionFound::None,
+        ast::ModuleItem::Constant(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
+        }
+        ast::ModuleItem::Use(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
+        }
+        ast::ModuleItem::ImplAlias(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
+        }
+        ast::ModuleItem::TypeAlias(ast) => {
+            parse_item(&ast, db, &mut token_stream_builder, ctx, defined_attributes)
+        }
+        // The items below are not supported.
+        ast::ModuleItem::HeaderDoc(_) => AttrExpansionFound::None,
+        ast::ModuleItem::Missing(_) => AttrExpansionFound::None,
+        ast::ModuleItem::MacroDeclaration(_) => AttrExpansionFound::None,
+        ast::ModuleItem::InlineMacro(_) => AttrExpansionFound::None,
     };
     let token_stream = token_stream_builder.build(ctx);
     (input, token_stream)
+}
+
+fn parse_item<T: ItemWithAttributes + ChildNodesWithoutAttributes>(
+    ast: &T,
+    db: &dyn SyntaxGroup,
+    token_stream_builder: &mut TokenStreamBuilder<'_>,
+    ctx: &AllocationContext,
+    defined_attributes: Vec<String>,
+) -> AttrExpansionFound {
+    let attrs = ast.item_attributes(db);
+    let expansion = parse_attrs(db, &defined_attributes, token_stream_builder, attrs, ctx);
+    token_stream_builder.extend(ast.child_nodes_without_attributes(db));
+    expansion
 }
 
 fn parse_attrs(
