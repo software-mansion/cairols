@@ -140,18 +140,28 @@ impl Cursors {
         *self.selections.get(idx).unwrap_or_else(|| panic!("cursor not found: {idx}"))
     }
 
+    /// Assert there is exactly one selection or exactly one caret and return it.
     pub fn assert_single(&self) -> Cursor {
         match (&self.carets[..], &self.selections[..]) {
             ([caret], []) => Cursor::Caret(*caret),
             ([], [selection]) => Cursor::Selection(*selection),
-            _ => panic!("there should be exacly one caret or selection"),
+            _ => panic!("there should be exactly one caret or selection"),
         }
     }
 
+    /// Assert there are no selections and exactly one caret and return it.
+    pub fn assert_single_caret(&self) -> Position {
+        match (&self.carets[..], &self.selections[..]) {
+            ([caret], []) => *caret,
+            _ => panic!("there should be exactly one caret and no selections"),
+        }
+    }
+
+    /// Assert there are no carets and exactly one selection and return it.
     pub fn assert_single_selection(&self) -> Range {
         match (&self.carets[..], &self.selections[..]) {
             ([], [selection]) => *selection,
-            _ => panic!("there should be exacly one selection"),
+            _ => panic!("there should be exactly one selection and no carets"),
         }
     }
 }
