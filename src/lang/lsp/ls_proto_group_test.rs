@@ -30,6 +30,7 @@ fn file_url() {
             content: "".into(),
             code_mappings: [].into(),
             kind: FileKind::Module,
+            original_item_removed: false,
         }),
     );
     check(
@@ -40,6 +41,7 @@ fn file_url() {
             content: "".into(),
             code_mappings: [].into(),
             kind: FileKind::Module,
+            original_item_removed: false,
         }),
     );
 }

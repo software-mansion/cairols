@@ -398,6 +398,7 @@ fn scarb_package_experimental_features(package: &PackageMetadata) -> Experimenta
         negative_impls: contains("negative_impls"),
         associated_item_constraints: contains("associated_item_constraints"),
         coupons: contains("coupons"),
+        user_defined_inline_macros: contains("user_defined_inline_macros"),
     }
 }
 

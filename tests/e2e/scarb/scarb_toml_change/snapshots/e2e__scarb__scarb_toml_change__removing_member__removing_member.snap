@@ -41,7 +41,8 @@ analyzed_crates = '''
     "experimental_features": {
       "negative_impls": false,
       "associated_item_constraints": false,
-      "coupons": false
+      "coupons": false,
+      "user_defined_inline_macros": false
     }
   },
   "linter_configuration": "Off",
@@ -79,7 +80,8 @@ analyzed_crates = '''
     "experimental_features": {
       "negative_impls": false,
       "associated_item_constraints": false,
-      "coupons": false
+      "coupons": false,
+      "user_defined_inline_macros": false
     }
   },
   "linter_configuration": "Off",
@@ -113,7 +115,8 @@ analyzed_crates = '''
     "experimental_features": {
       "negative_impls": true,
       "associated_item_constraints": true,
-      "coupons": true
+      "coupons": true,
+      "user_defined_inline_macros": false
     }
   },
   "linter_configuration": "Off",
@@ -126,7 +129,7 @@ analyzed_crates = '''
 }
 ```'''
 analyzed_crates_diff = '''
-@@ -47,32 +47,31 @@
+@@ -48,32 +48,31 @@
    "source_paths": [
      "[ROOT]/b/src/lib.cairo"
    ],
@@ -157,7 +160,7 @@ analyzed_crates_diff = '''
      "experimental_features": {
        "negative_impls": false,
        "associated_item_constraints": false,
-       "coupons": false
+       "coupons": false,
+       "user_defined_inline_macros": false
      }
-   },
 '''

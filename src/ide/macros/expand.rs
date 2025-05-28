@@ -114,6 +114,7 @@ fn expanded_macro_files(
                         content: generated.content.into(),
                         code_mappings: Default::default(),
                         kind: FileKind::Module,
+                        original_item_removed: result.remove_original_item,
                     })
                     .intern(db);
 
@@ -177,6 +178,7 @@ fn format_output(output: &str, top_level_macro_kind: TopLevelMacroKind) -> Strin
         content: Default::default(),
         code_mappings: Default::default(),
         kind: FileKind::Module,
+        original_item_removed: false,
     })
     .intern(db);
 
@@ -277,6 +279,7 @@ fn expand_inline_macros_in_single_file(
             content: config.content.into(),
             code_mappings: Default::default(),
             kind: file.kind(db),
+            original_item_removed: false,
         })
         .intern(db);
 
