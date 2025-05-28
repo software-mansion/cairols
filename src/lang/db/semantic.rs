@@ -6,7 +6,8 @@ use cairo_lang_defs::ids::{
     ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
     TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
 };
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::db::{get_parent_and_mapping, translate_location};
+use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_semantic::Binding;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
@@ -16,6 +17,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
+use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast};
 use std::collections::{HashSet, VecDeque};
 
@@ -218,6 +221,80 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup {
         }
         Some((files, modules))
     }
+    /// We use the term `resultants` to refer to generated nodes that are mapped to the original node and are not deleted.
+    /// Efectively (user nodes + generated nodes - removed nodes) set always contains resultants for any user defined node.
+    /// Semantic data may be available only for resultants.
+    ///
+    /// Consider the following foundry code as an example:
+    /// ```
+    /// #[test]
+    /// #[available_gas(123)]
+    /// fn test_fn(){
+    /// }
+    /// ```
+    /// This code expands to something like:
+    /// ```
+    /// #[available_gas(123)]
+    /// fn test_fn(){
+    ///     if is_config_run {
+    ///         // do config check
+    ///         return;
+    ///     }
+    /// }
+    /// ```
+    /// It then further transforms to:
+    /// ```
+    /// fn test_fn(){
+    ///     if is_config_run {
+    ///         // do config check
+    ///         set_available_gas(123);
+    ///         return;
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// Let's label these as files 1, 2 and 3, respectively. The macros used here are attribute proc macros. They delete old code and generate new code.
+    /// In this process, `test_fn` from file 1 is deleted. However, `test_fn` from file 2 is mapped to it.
+    /// Therefore, we should ignore `test_fn` from file 1 as it no longer exists and
+    /// should use `test_fn` from file 2. But then, `test_fn` from file 2 is effectively replaced by `test_fn` from file 3, so `test_fn` from file 2 is now deleted.
+    ///
+    /// In this scenario, only `test_fn` from file 3 is a resultant. Both `test_fn` from files 1 and 2 were deleted.
+    ///
+    /// So for input being `test_fn` from file 1, only `test_fn` from file 3 is returned
+    ///
+    /// Now, consider another example:
+    ///
+    /// The `generate_trait` macro is a builtin macro that does not remove the original code. Thus, we have the following code:
+    ///
+    /// ```
+    /// #[generate_trait]
+    /// impl FooImpl for FooTrait {}
+    /// ```
+    /// This code generates the following:
+    /// ```
+    /// trait FooTrait {}
+    /// ```
+    ///
+    /// Both the original and the generated files are considered when calculating semantics, since original `FooTrait` was not removed.
+    /// Additionally `FooTrait` from file 2 is mapped to `FooTrait` from file 1.
+    ///
+    /// Therefore for `FooTrait` from file 1, `FooTrait` from file 1 and `FooTrait` from file 2 are returned.
+    #[expect(clippy::test_attr_in_doctest)]
+    #[expect(dead_code)]
+    fn get_node_resultants(&self, node: SyntaxNode) -> Option<Vec<SyntaxNode>> {
+        let db: &dyn SemanticGroup = self.upcast();
+
+        let main_file = node.stable_ptr(db).file_id(db);
+
+        let (mut files, _) = self.file_and_subfiles_with_corresponding_modules(main_file)?;
+
+        files.remove(&main_file);
+
+        let files: Vec<_> = files.into_iter().collect();
+        let resultants = find_generated_nodes(db, &files, node);
+
+        Some(resultants.into_iter().collect())
+    }
 }
 
 impl<T> LsSemanticGroup for T where T: Upcast<dyn SemanticGroup> + SemanticGroup {}
@@ -388,4 +465,57 @@ fn lookup_item_from_ast(
         ))],
         _ => return None,
     })
+}
+
+/// See [`LsSemanticGroup::get_node_resultants`].
+fn find_generated_nodes(
+    db: &dyn SemanticGroup,
+    node_descendant_files: &[FileId],
+    node: SyntaxNode,
+) -> OrderedHashSet<SyntaxNode> {
+    let start_file = node.stable_ptr(db).file_id(db);
+
+    let mut result = OrderedHashSet::default();
+
+    let mut is_replaced = false;
+
+    for &file in node_descendant_files {
+        let Some((parent, mappings)) = get_parent_and_mapping(db, file) else {
+            continue;
+        };
+
+        if parent != start_file {
+            continue;
+        }
+
+        let Ok(file_syntax) = db.file_syntax(file) else {
+            continue;
+        };
+
+        let is_replacing_og_item = match file.lookup_intern(db) {
+            FileLongId::Virtual(vfs) => vfs.original_item_removed,
+            FileLongId::External(id) => db.ext_as_virtual(id).original_item_removed,
+            _ => unreachable!(),
+        };
+
+        for token in file_syntax.tokens(db) {
+            let Some(span_in_parent) = translate_location(&mappings, token.span(db)) else {
+                continue;
+            };
+
+            if !node.span(db).contains(span_in_parent) {
+                continue;
+            }
+
+            is_replaced = is_replaced || is_replacing_og_item;
+
+            result.extend(find_generated_nodes(db, node_descendant_files, token));
+        }
+    }
+
+    if !is_replaced {
+        result.insert(node);
+    }
+
+    result
 }
