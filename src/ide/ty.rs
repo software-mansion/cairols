@@ -60,6 +60,7 @@ pub fn format_type(
                 format_type(db, closure.ret_ty, importables)
             )
         }
+        TypeLongId::Missing(_) => "?".to_string(),
         _ => ty.format(db),
     }
 }
@@ -94,9 +95,9 @@ impl InferredValue {
 }
 
 fn format_impl(db: &AnalysisDatabase, impl_id: ImplId) -> String {
-    // Translate unresolved impl to `<missing>` instead of printing its salsa ID.
+    // Translate unresolved impl to `<?>` instead of printing its salsa ID.
     if matches!(impl_id.lookup_intern(db), ImplLongId::ImplVar(_)) {
-        "<missing>".to_string()
+        "<?>".to_string()
     } else {
         impl_id.format(db)
     }

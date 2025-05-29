@@ -1314,7 +1314,6 @@ fn test_impl_associated_type_with_path_reference() {
     ```
     ```cairo
     impl Impl of Trait;
-    <missing>
     ```
     """
     "#)
@@ -1356,7 +1355,6 @@ fn test_impl_associated_impl_with_path_reference() {
     ```
     ```cairo
     impl Impl of Trait;
-    <missing>
     ```
     """
     "#)
