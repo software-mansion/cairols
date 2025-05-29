@@ -537,18 +537,29 @@ fn find_generated_nodes(
             _ => unreachable!(),
         };
 
+        let mut new_nodes: OrderedHashSet<_> = Default::default();
+
         for token in file_syntax.tokens(db) {
-            let Some(span_in_parent) = translate_location(&mappings, token.span(db)) else {
-                continue;
-            };
-
-            if !node.span(db).contains(span_in_parent) {
-                continue;
+            if let Some((new_node, _)) = token
+                .ancestors_with_self(db)
+                .map_while(|new_node| {
+                    translate_location(&mappings, new_node.span(db))
+                        .map(|span_in_parent| (new_node, span_in_parent))
+                })
+                .take_while(|(_, span_in_parent)| node.span(db).contains(*span_in_parent))
+                .last()
+            {
+                new_nodes.insert(new_node);
             }
+        }
 
+        // If there is no node found, don't mark it as potentially replaced.
+        if !new_nodes.is_empty() {
             is_replaced = is_replaced || is_replacing_og_item;
+        }
 
-            result.extend(find_generated_nodes(db, node_descendant_files, token));
+        for new_node in new_nodes {
+            result.extend(find_generated_nodes(db, node_descendant_files, new_node));
         }
     }
 
