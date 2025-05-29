@@ -8,7 +8,7 @@ use lsp_types::CompletionItem;
 use super::{helpers::completion_kind::importable_completion_kind, path::path_prefix_completions};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::{analysis_context::AnalysisContext, text_matching::text_matches};
-use cairo_lang_defs::ids::{FileIndex, ImportableId, ModuleFileId};
+use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax::node::ast::{UsePathLeaf, UsePathSingle};
 
@@ -50,8 +50,7 @@ fn first_segment(
     typed: &str,
     ctx: &AnalysisContext<'_>,
 ) -> Option<Vec<CompletionItem>> {
-    let importables =
-        db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)))?;
+    let importables = db.visible_importables_from_module(ctx.module_file_id)?;
 
     Some(
         importables

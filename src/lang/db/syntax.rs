@@ -1,6 +1,6 @@
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::{TextOffset, TextPosition};
+use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal};
@@ -12,6 +12,17 @@ pub trait LsSyntaxGroup: ParserGroup {
     fn find_syntax_node_at_offset(&self, file: FileId, offset: TextOffset) -> Option<SyntaxNode> {
         let db = self;
         Some(db.file_syntax(file).to_option()?.lookup_offset(db.upcast(), offset))
+    }
+
+    /// Finds the widest [`SyntaxNode`] within the given [`TextSpan`] in the file.
+    fn widest_node_within_span(&self, file: FileId, span: TextSpan) -> Option<SyntaxNode> {
+        let db = self.upcast();
+        let precise_node = self.find_syntax_node_at_offset(file, span.start)?;
+
+        precise_node
+            .ancestors_with_self(db)
+            .take_while(|new_node| span.contains(new_node.span(db)))
+            .last()
     }
 
     /// Finds the most specific [`SyntaxNode`] at the given [`TextPosition`] in the file.

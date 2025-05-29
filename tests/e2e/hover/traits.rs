@@ -4,27 +4,28 @@ use crate::support::insta::test_transform;
 #[test]
 fn generated_element_use() {
     test_transform!(test_hover,r#"
-    mod nested {
-        #[generate_trait]
-        impl MyTraitImpl<SelfType> of MyTrait<SelfType> {
-            fn some_method(ref self: SelfType) { }
-        }
+    #[generate_trait]
+    impl MyTraitImpl<SelfType> of MyTrait<SelfType> {
+        fn some_method(ref self: SelfType) { }
     }
 
-    use nested::MyTr<caret>ait;
+    mod nested {
+        use super::MyTr<caret>ait;
+    }
     "#,@r#"
     source_context = """
-    use nested::MyTr<caret>ait;
+        use super::MyTr<caret>ait;
     """
     highlight = """
-    use nested::<sel>MyTrait</sel>;
+        use super::<sel>MyTrait</sel>;
     """
     popover = """
     ```cairo
     hello
     ```
     ```cairo
-    <missing>
+    impl MyTraitImpl<SelfType> of MyTrait<SelfType>;
+    trait MyTrait<SelfType>
     ```
     """
     "#)
@@ -174,7 +175,8 @@ fn trait_name_generated() {
     hello
     ```
     ```cairo
-    <missing>
+    impl MyTraitImpl of MyTrait;
+    trait MyTrait
     ```
     """
     "#)

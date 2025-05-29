@@ -84,7 +84,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     }
 
     let ctx = AnalysisContext::from_node(db, node)?;
-    let crate_id = ctx.module_id.owning_crate(db);
+    let crate_id = ctx.module_file_id.0.owning_crate(db);
 
     let mut completions = vec![];
 
