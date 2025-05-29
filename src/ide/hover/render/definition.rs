@@ -93,7 +93,7 @@ pub fn definition(
             // path is too.
             md += &fenced_code_block(&variant.enum_item().definition_path(db));
             md += &fenced_code_block(
-                &concrete_signature(db, resolved_item, resolver_data, importables)
+                &concrete_signature(db, search.resolved_item, search.resolver_data, importables)
                     .map(|signature| variant.enum_item().signature_with_text(db, &signature))
                     .unwrap_or_else(|| variant.enum_item().signature(db)),
             );

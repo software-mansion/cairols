@@ -39,7 +39,7 @@ fn find_underscores_ex(
         (Expr::Path(path), TypeLongId::Concrete(ty)) => {
             let ty_generics = ty.generic_args(db);
 
-            for segment in path.elements(db) {
+            for segment in path.segments(db).elements(db) {
                 // Should happen only in last segment, but better safe than sorry.
                 if let Some(generics) = segment.generic_args(db) {
                     for (generic, ty) in generics.into_iter().zip(ty_generics.clone()) {
