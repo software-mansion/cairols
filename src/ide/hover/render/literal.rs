@@ -1,21 +1,16 @@
 use cairo_lang_defs::ids::{ConstantLongId, FunctionWithBodyId, ImportableId};
-use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::ast::{
     Expr, ItemConstant, TerminalLiteralNumber, TerminalShortString, TerminalString,
 };
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
 use indoc::formatdoc;
-use lsp_types::Hover;
 
-use crate::ide::hover::markdown_contents;
 use crate::ide::ty::format_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::lang::lsp::ToLsp;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// Narrows down [`SyntaxNode`] to [`TerminalLiteralNumber`], [`TerminalString`] or
@@ -24,31 +19,37 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn literal(
     db: &AnalysisDatabase,
-    node: &SyntaxNode,
-    file_id: FileId,
+    node: SyntaxNode,
     importables: &OrderedHashMap<ImportableId, String>,
-) -> Option<Hover> {
-    match node.kind(db) {
-        SyntaxKind::TokenLiteralNumber => {
-            let parent = node.parent(db)?;
-            let literal = TerminalLiteralNumber::from_syntax_node(db, parent);
-            let ty = find_type(db, parent, importables)?;
-            number_hover(db, &literal, &ty, file_id)
-        }
-        SyntaxKind::TokenString => {
-            let parent = node.parent(db)?;
-            let literal = TerminalString::from_syntax_node(db, parent);
-            let ty = find_type(db, parent, importables)?;
-            string_hover(db, &literal, &ty, file_id)
-        }
-        SyntaxKind::TokenShortString => {
-            let parent = node.parent(db)?;
-            let literal = TerminalShortString::from_syntax_node(db, parent);
-            let ty = find_type(db, parent, importables)?;
-            short_string_hover(db, &literal, &ty, file_id)
-        }
-        _ => None,
-    }
+) -> Option<String> {
+    node.ancestors_with_self(db)
+        .filter_map(|node| TerminalLiteralNumber::cast(db, node))
+        .filter_map(|literal| {
+            let ty = find_type(db, literal.as_syntax_node(), importables)?;
+
+            number_hover(db, &literal, &ty)
+        })
+        .next()
+        .or_else(|| {
+            node.ancestors_with_self(db)
+                .filter_map(|node| TerminalString::cast(db, node))
+                .filter_map(|literal| {
+                    let ty = find_type(db, literal.as_syntax_node(), importables)?;
+
+                    string_hover(&ty)
+                })
+                .next()
+        })
+        .or_else(|| {
+            node.ancestors_with_self(db)
+                .filter_map(|node| TerminalShortString::cast(db, node))
+                .filter_map(|literal| {
+                    let ty = find_type(db, literal.as_syntax_node(), importables)?;
+
+                    short_string_hover(db, &literal, &ty)
+                })
+                .next()
+        })
 }
 
 /// Gets the type of an expression associated with [`SyntaxNode`].
@@ -96,8 +97,7 @@ fn number_hover(
     db: &AnalysisDatabase,
     literal: &TerminalLiteralNumber,
     ty: &str,
-    file_id: FileId,
-) -> Option<Hover> {
+) -> Option<String> {
     let value = literal.numeric_value(db)?;
 
     let representation = formatdoc!(
@@ -110,23 +110,11 @@ fn number_hover(
         "
     );
 
-    Some(Hover {
-        contents: markdown_contents(representation),
-        range: literal
-            .as_syntax_node()
-            .span_without_trivia(db)
-            .position_in_file(db, file_id)
-            .map(|position| position.to_lsp()),
-    })
+    Some(representation)
 }
 
 /// Formats the number literal writing it along with the `core::byte_array::ByteArray` type.
-fn string_hover(
-    db: &AnalysisDatabase,
-    literal: &TerminalString,
-    ty: &str,
-    file_id: FileId,
-) -> Option<Hover> {
+fn string_hover(ty: &str) -> Option<String> {
     let representation = formatdoc!(
         r#"
         ```cairo
@@ -135,14 +123,7 @@ fn string_hover(
         "#
     );
 
-    Some(Hover {
-        contents: markdown_contents(representation),
-        range: literal
-            .as_syntax_node()
-            .span_without_trivia(db)
-            .position_in_file(db, file_id)
-            .map(|position| position.to_lsp()),
-    })
+    Some(representation)
 }
 
 /// Formats the short string literal writing its textual and numeric value along with the
@@ -151,8 +132,7 @@ fn short_string_hover(
     db: &AnalysisDatabase,
     literal: &TerminalShortString,
     ty: &str,
-    file_id: FileId,
-) -> Option<Hover> {
+) -> Option<String> {
     let representation = match (literal.numeric_value(db), literal.string_value(db)) {
         (None, _) => None,
         (Some(numeric), None) => Some(formatdoc!(
@@ -175,12 +155,5 @@ fn short_string_hover(
         )),
     }?;
 
-    Some(Hover {
-        contents: markdown_contents(representation),
-        range: literal
-            .as_syntax_node()
-            .span_without_trivia(db)
-            .position_in_file(db, file_id)
-            .map(|position| position.to_lsp()),
-    })
+    Some(representation)
 }
