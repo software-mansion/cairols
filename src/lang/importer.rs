@@ -27,10 +27,10 @@ pub fn new_import_edit(
 }
 
 fn use_position(db: &AnalysisDatabase, ctx: &AnalysisContext) -> Option<UsePosition> {
-    db.module_uses_ids(ctx.module_id)
+    db.module_uses_ids(ctx.module_file_id.0)
         .ok()
         .and_then(|uses| {
-            let module_main_file = db.module_main_file(ctx.module_id).ok()?;
+            let module_main_file = db.module_main_file(ctx.module_file_id.0).ok()?;
 
             uses.iter()
                 .find(|use_statement| {
@@ -51,7 +51,7 @@ fn use_position(db: &AnalysisDatabase, ctx: &AnalysisContext) -> Option<UsePosit
                 .map(|stable_ptr| UsePosition::new(db, stable_ptr, true))
                 .map(Some)
                 .unwrap_or_else(|| {
-                    db.module_items(ctx.module_id)
+                    db.module_items(ctx.module_file_id.0)
                         .ok()?
                         .iter()
                         .next()
@@ -59,7 +59,7 @@ fn use_position(db: &AnalysisDatabase, ctx: &AnalysisContext) -> Option<UsePosit
                 })
         })
         .unwrap_or_else(|| {
-            let ModuleId::Submodule(submodule) = ctx.module_id else { unreachable!() };
+            let ModuleId::Submodule(submodule) = ctx.module_file_id.0 else { unreachable!() };
 
             UsePosition::new(db, submodule.untyped_stable_ptr(db), false)
         })

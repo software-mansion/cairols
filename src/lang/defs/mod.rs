@@ -61,7 +61,8 @@ impl SymbolSearch {
         identifier: &ast::TerminalIdentifier,
     ) -> Option<Self> {
         // Get the resolved item info and the syntax node of the definition.
-        let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
+        let lookup_items =
+            db.collect_lookup_items_with_parent_files(&identifier.as_syntax_node())?;
         let mut resolver_data = None;
         let resolved_item = find_definition(db, identifier, &lookup_items, &mut resolver_data)?;
 
@@ -76,7 +77,8 @@ impl SymbolSearch {
         identifier: &ast::TerminalIdentifier,
     ) -> Option<Self> {
         // Get the resolved item info and the syntax node of the definition.
-        let lookup_items = db.collect_lookup_items_stack(&identifier.as_syntax_node())?;
+        let lookup_items =
+            db.collect_lookup_items_with_parent_files(&identifier.as_syntax_node())?;
         let mut resolver_data = None;
         let resolved_item = find_declaration(db, identifier, &lookup_items, &mut resolver_data)?;
 

@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{FileIndex, LanguageElementId, ModuleFileId};
+use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
@@ -17,11 +17,10 @@ pub fn struct_constructor_completions(
     ctx: &AnalysisContext<'_>,
     constructor: ast::ExprStructCtorCall,
 ) -> Option<Vec<CompletionItem>> {
-    let module_id = ctx.module_id;
+    let module_id = ctx.module_file_id;
     let lookup_item_id = ctx.lookup_item_id?;
     let function_id = lookup_item_id.function_with_body()?;
-    let importables =
-        db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)))?;
+    let importables = db.visible_importables_from_module(ctx.module_file_id)?;
 
     let already_present_members = constructor
         .arguments(db)

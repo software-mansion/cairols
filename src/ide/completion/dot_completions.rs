@@ -1,5 +1,5 @@
 use cairo_lang_defs::ids::{
-    FileIndex, LanguageElementId, ModuleFileId, NamedLanguageElementId, TopLevelLanguageElementId,
+    LanguageElementId, ModuleFileId, NamedLanguageElementId, TopLevelLanguageElementId,
     TraitFunctionId,
 };
 use cairo_lang_semantic::db::SemanticGroup;
@@ -27,8 +27,7 @@ pub fn dot_completions(
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let module_file_id = function_with_body.module_file_id(db);
     let resolver = ctx.resolver(db);
-    let importables =
-        db.visible_importables_from_module(ModuleFileId(ctx.module_id, FileIndex(0)))?;
+    let importables = db.visible_importables_from_module(ctx.module_file_id)?;
 
     // Extract lhs node.
     let node = expr.lhs(db);
