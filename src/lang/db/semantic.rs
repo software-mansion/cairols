@@ -267,14 +267,14 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup + LsSyntaxG
     /// Semantic data may be available only for resultants.
     ///
     /// Consider the following foundry code as an example:
-    /// ```
+    /// ```ignore
     /// #[test]
     /// #[available_gas(123)]
     /// fn test_fn(){
     /// }
     /// ```
     /// This code expands to something like:
-    /// ```
+    /// ```ignore
     /// #[available_gas(123)]
     /// fn test_fn(){
     ///     if is_config_run {
@@ -284,7 +284,7 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup + LsSyntaxG
     /// }
     /// ```
     /// It then further transforms to:
-    /// ```
+    /// ```ignore
     /// fn test_fn(){
     ///     if is_config_run {
     ///         // do config check
@@ -307,12 +307,12 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup + LsSyntaxG
     ///
     /// The `generate_trait` macro is a builtin macro that does not remove the original code. Thus, we have the following code:
     ///
-    /// ```
+    /// ```ignore
     /// #[generate_trait]
     /// impl FooImpl for FooTrait {}
     /// ```
     /// This code generates the following:
-    /// ```
+    /// ```ignore
     /// trait FooTrait {}
     /// ```
     ///
@@ -320,7 +320,6 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> + SemanticGroup + LsSyntaxG
     /// Additionally `FooTrait` from file 2 is mapped to `FooTrait` from file 1.
     ///
     /// Therefore for `FooTrait` from file 1, `FooTrait` from file 1 and `FooTrait` from file 2 are returned.
-    #[expect(clippy::test_attr_in_doctest)]
     fn get_node_resultants(&self, node: SyntaxNode) -> Option<Vec<SyntaxNode>> {
         let db: &dyn SemanticGroup = self.upcast();
 
