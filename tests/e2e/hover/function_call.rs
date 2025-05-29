@@ -131,7 +131,7 @@ fn generic_function_call_wrong_placeholder() {
     """
     popover = """
     ```cairo
-    <missing>
+    ?
     ```
     """
     "#);

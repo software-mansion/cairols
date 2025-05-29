@@ -16,7 +16,7 @@ fn uninfered_mut_ident() {
     """
     popover = """
     ```cairo
-    let mut xyz: <missing>
+    let mut xyz: ?
     ```
     """
     "#)
@@ -51,7 +51,7 @@ fn uninfered_usage() {
     """
     popover = """
     ```cairo
-    let mut xyz: <missing>
+    let mut xyz: ?
     ```
     """
     "#)
@@ -72,7 +72,7 @@ fn missing_type_param() {
     """
     popover = """
     ```cairo
-    abc: <missing>
+    abc: ?
     ```
     """
     "#)
@@ -93,7 +93,7 @@ fn missing_type_param_usage() {
     """
     popover = """
     ```cairo
-    abc: <missing>
+    abc: ?
     ```
     """
     "#)
