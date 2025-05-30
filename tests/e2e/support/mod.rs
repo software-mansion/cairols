@@ -9,6 +9,7 @@ pub mod jsonrpc;
 mod mock_client;
 pub mod normalize;
 pub mod scarb;
+pub mod transform;
 
 use serde_json::Value;
 
