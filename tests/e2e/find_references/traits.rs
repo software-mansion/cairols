@@ -432,8 +432,8 @@ fn impl_impl_via_usage() {
     impl GeorgeImpl of BushTrait {
         impl BushImplementation = GeorgeBush;
     }
-    
-    impl KateImpl of BushTrait { 
+
+    impl KateImpl of BushTrait {
         impl BushImplementation = KateBush;
     }
 
@@ -469,7 +469,7 @@ fn impl_impl_via_usage() {
         impl <sel=declaration>BushImplementation</sel> = GeorgeBush;
     }
 
-    impl KateImpl of BushTrait { 
+    impl KateImpl of BushTrait {
         impl BushImplementation = KateBush;
     }
 
@@ -509,8 +509,8 @@ fn impl_impl_via_definition() {
     impl GeorgeImpl of BushTrait {
         impl BushImplementation = GeorgeBush;
     }
-    
-    impl KateImpl of BushTrait { 
+
+    impl KateImpl of BushTrait {
         impl BushImplem<caret>entation = KateBush;
     }
 
@@ -546,7 +546,7 @@ fn impl_impl_via_definition() {
         impl BushImplementation = GeorgeBush;
     }
 
-    impl KateImpl of BushTrait { 
+    impl KateImpl of BushTrait {
         impl <sel=declaration>BushImplementation</sel> = KateBush;
     }
 
@@ -817,5 +817,48 @@ fn associated_impl_type_usage() {
         let _a: Bar456::TypeCarrier::<sel>Numeric</sel> = 123;
         let _b: Bar456::TypeCarrier::<sel>Numeric</sel> = 123;
     }
+    ")
+}
+
+#[test]
+fn type_bound() {
+    test_transform!(find_references, r"
+    fn foo<T, +Dro<caret>p<T>>() {}
+    ", @r"
+    // found several references in the core crate
+    fn foo<T, +<sel>Drop</sel><T>>() {}
+    ")
+}
+
+#[test]
+fn negative_type_bound() {
+    test_transform!(find_references, r"
+    trait Trait<T> {}
+    impl Impl<T, -Dro<caret>p<T>> of Trait<T> {}
+    ", @r"
+    // found several references in the core crate
+    trait Trait<T> {}
+    impl Impl<T, -<sel>Drop</sel><T>> of Trait<T> {}
+    ")
+}
+
+#[test]
+fn type_bound_user_trait() {
+    test_transform!(find_references, r"
+    trait Traicik<T> {}
+    fn foo<T, +Traicik<caret><T>>() {}
+    ", @r"
+    trait <sel=declaration>Traicik</sel><T> {}
+    fn foo<T, +<sel>Traicik</sel><T>>() {}
+    ")
+}
+
+#[test]
+fn impl_bound() {
+    test_transform!(find_references, r"
+    fn foo<T, impl Impl: Dro<caret>p<T>>() {}
+    ", @r"
+    // found several references in the core crate
+    fn foo<T, impl Impl: <sel>Drop</sel><T>>() {}
     ")
 }
