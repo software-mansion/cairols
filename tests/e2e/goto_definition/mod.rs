@@ -1,14 +1,15 @@
-use itertools::Itertools;
-use lsp_types::{
-    ClientCapabilities, GotoCapability, GotoDefinitionParams, GotoDefinitionResponse, Position,
-    TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
-};
-
+use crate::macros::SCARB_TEST_MACROS_V2_PACKAGE;
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::cursor::{render_selections, render_selections_relevant_lines};
 use crate::support::fixture::Fixture;
 use crate::support::scarb::scarb_core_path;
 use crate::support::{MockClient, cursors, fixture, sandbox};
+use indoc::formatdoc;
+use itertools::Itertools;
+use lsp_types::{
+    ClientCapabilities, GotoCapability, GotoDefinitionParams, GotoDefinitionResponse, Position,
+    TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
+};
 
 mod consts;
 mod enums;
@@ -37,13 +38,32 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
     }
 }
 
-fn goto_definition(cairo_code: &str) -> String {
+fn goto_definition(cairo_code: &str, with_macros: bool) -> String {
     let (cairo, cursors) = cursors(cairo_code);
 
-    let mut test = GotoDefinitionTest::begin(fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-        "src/lib.cairo" => cairo.clone(),
-    });
+    let mut fixture = if with_macros {
+        fixture! {
+            "Scarb.toml" => formatdoc!(
+                r#"
+                [package]
+                name = "hello"
+                version = "0.1.0"
+                edition = "2024_07"
+
+                [dependencies]
+                cairols_test_macros_v2 = {{ path = "{}" }}
+            "#,
+                SCARB_TEST_MACROS_V2_PACKAGE.display()
+            ),
+        }
+    } else {
+        fixture! {
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+
+        }
+    };
+    fixture.add_file("src/lib.cairo", cairo.clone());
+    let mut test = GotoDefinitionTest::begin(fixture, with_macros);
 
     let position = cursors.assert_single_caret();
 
@@ -56,13 +76,17 @@ struct GotoDefinitionTest {
 
 impl GotoDefinitionTest {
     /// Starts goto definition testing session on a given fixture.
-    fn begin(fixture: Fixture) -> Self {
+    fn begin(fixture: Fixture, with_macros: bool) -> Self {
         let mut ls = sandbox! {
             fixture = fixture;
             client_capabilities = caps;
         };
 
-        ls.open_all_cairo_files_and_wait_for_project_update();
+        if with_macros {
+            ls.open_all_and_wait_for_diagnostics_generation();
+        } else {
+            ls.open_all_cairo_files_and_wait_for_project_update();
+        }
 
         Self { ls }
     }

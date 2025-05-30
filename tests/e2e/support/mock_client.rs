@@ -443,7 +443,34 @@ impl MockClient {
         path: impl AsRef<Path>,
     ) -> HashMap<Url, Vec<Diagnostic>> {
         self.open(path);
+        self.wait_for_diagnostics_generation()
+    }
 
+    /// Opens each `*.cairo` file in the test fixture and waits until all procmacros,
+    /// and related diagnostics get resolved within one generation span (until
+    /// AnalysisStarted + AnalysisFinished get emitted via `cairo/serverStatus` notification).
+    pub fn open_all_and_wait_for_diagnostics_generation(
+        &mut self,
+    ) -> HashMap<Url, Vec<Diagnostic>> {
+        let cairo_files = self
+            .fixture
+            .files()
+            .iter()
+            .filter(|file| file.extension().is_some_and(|ext| ext == "cairo"))
+            .cloned()
+            .collect::<Vec<_>>();
+
+        for file in &cairo_files {
+            self.open(file);
+        }
+
+        self.wait_for_diagnostics_generation()
+    }
+
+    /// Waits until all procmacros, and related diagnostics get resolved within
+    /// one generation span (until AnalysisStarted + AnalysisFinished get emitted via
+    /// `cairo/serverStatus` notification).
+    fn wait_for_diagnostics_generation(&mut self) -> HashMap<Url, Vec<Diagnostic>> {
         let mut in_progress_open = false;
         let mut project_updated = false;
 
