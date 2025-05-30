@@ -4,6 +4,7 @@ use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::keyword::{CRATE_KW, SELF_TYPE_KW, SUPER_KW};
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
+use cairo_lang_syntax::node::ast::{TerminalIdentifier, TerminalIdentifierPtr};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use lsp_types::SemanticTokenType;
@@ -135,60 +136,63 @@ impl SemanticTokenKind {
                 _ => {}
             };
 
-            if let Some(lookup_item_id) = db.find_lookup_item(&node) {
-                // Resolved items.
-                if let Some(item) = db
-                    .lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr(db))
-                {
-                    return Some(match item {
-                        ResolvedGenericItem::GenericConstant(_) => SemanticTokenKind::EnumMember,
-                        ResolvedGenericItem::Module(_) => SemanticTokenKind::Namespace,
-                        ResolvedGenericItem::GenericFunction(_) => SemanticTokenKind::Function,
-                        ResolvedGenericItem::GenericType(_)
-                        | ResolvedGenericItem::GenericTypeAlias(_) => SemanticTokenKind::Type,
-                        ResolvedGenericItem::Variant(_) => SemanticTokenKind::EnumMember,
-                        ResolvedGenericItem::Trait(_) => SemanticTokenKind::Interface,
-                        ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_) => {
-                            SemanticTokenKind::Class
-                        }
-                        ResolvedGenericItem::Variable(_) => SemanticTokenKind::Variable,
-                        ResolvedGenericItem::TraitItem(trait_item) => match trait_item {
-                            TraitItemId::Function(_) => SemanticTokenKind::Function,
-                            TraitItemId::Type(_) => SemanticTokenKind::Interface,
-                            TraitItemId::Constant(_) => SemanticTokenKind::EnumMember,
-                            TraitItemId::Impl(_) => SemanticTokenKind::Class,
-                        },
-                        ResolvedGenericItem::Macro(_) => SemanticTokenKind::InlineMacro,
-                    });
-                }
-                if let Some(item) = db
-                    .lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr(db))
-                {
-                    return Some(match item {
-                        ResolvedConcreteItem::Constant(_) => SemanticTokenKind::EnumMember,
-                        ResolvedConcreteItem::Module(_) => SemanticTokenKind::Namespace,
-                        ResolvedConcreteItem::Function(_) => SemanticTokenKind::Function,
-                        ResolvedConcreteItem::Type(_) => SemanticTokenKind::Type,
-                        ResolvedConcreteItem::Variant(_) => SemanticTokenKind::EnumMember,
-                        ResolvedConcreteItem::Trait(_) | ResolvedConcreteItem::SelfTrait(_) => {
-                            SemanticTokenKind::Interface
-                        }
-                        ResolvedConcreteItem::Impl(_) => SemanticTokenKind::Class,
-                        ResolvedConcreteItem::Macro(_) => SemanticTokenKind::InlineMacro,
-                    });
-                }
-
-                // Exprs and patterns.
-                if let Some(function_id) = lookup_item_id.function_with_body() {
-                    if let Some(expr_path_ptr) = expr_path_ptr {
-                        if db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok() {
-                            return Some(SemanticTokenKind::Variable);
+            // We use resultants here to get semantics of the actual node that is generated
+            for (resultant, terminal_ptr) in
+                get_resultants_and_closest_terminals(db, identifier.as_syntax_node())
+            {
+                if let Some(lookup_item_id) = db.find_lookup_item(&resultant) {
+                    if let Some(item) =
+                        db.lookup_resolved_generic_item_by_ptr(lookup_item_id, terminal_ptr)
+                    {
+                        return Some(match item {
+                            ResolvedGenericItem::GenericConstant(_) => {
+                                SemanticTokenKind::EnumMember
+                            }
+                            ResolvedGenericItem::Module(_) => SemanticTokenKind::Namespace,
+                            ResolvedGenericItem::GenericFunction(_) => SemanticTokenKind::Function,
+                            ResolvedGenericItem::GenericType(_)
+                            | ResolvedGenericItem::GenericTypeAlias(_) => SemanticTokenKind::Type,
+                            ResolvedGenericItem::Variant(_) => SemanticTokenKind::EnumMember,
+                            ResolvedGenericItem::Trait(_) => SemanticTokenKind::Interface,
+                            ResolvedGenericItem::Impl(_)
+                            | ResolvedGenericItem::GenericImplAlias(_) => SemanticTokenKind::Class,
+                            ResolvedGenericItem::Variable(_) => SemanticTokenKind::Variable,
+                            ResolvedGenericItem::TraitItem(trait_item) => match trait_item {
+                                TraitItemId::Function(_) => SemanticTokenKind::Function,
+                                TraitItemId::Type(_) => SemanticTokenKind::Interface,
+                                TraitItemId::Constant(_) => SemanticTokenKind::EnumMember,
+                                TraitItemId::Impl(_) => SemanticTokenKind::Class,
+                            },
+                            ResolvedGenericItem::Macro(_) => SemanticTokenKind::InlineMacro,
+                        });
+                    }
+                    if let Some(item) =
+                        db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, terminal_ptr)
+                    {
+                        return Some(match item {
+                            ResolvedConcreteItem::Constant(_) => SemanticTokenKind::EnumMember,
+                            ResolvedConcreteItem::Module(_) => SemanticTokenKind::Namespace,
+                            ResolvedConcreteItem::Function(_) => SemanticTokenKind::Function,
+                            ResolvedConcreteItem::Type(_) => SemanticTokenKind::Type,
+                            ResolvedConcreteItem::Variant(_) => SemanticTokenKind::EnumMember,
+                            ResolvedConcreteItem::Trait(_) | ResolvedConcreteItem::SelfTrait(_) => {
+                                SemanticTokenKind::Interface
+                            }
+                            ResolvedConcreteItem::Impl(_) => SemanticTokenKind::Class,
+                            ResolvedConcreteItem::Macro(_) => SemanticTokenKind::InlineMacro,
+                        });
+                    }
+                    // Exprs and patterns.
+                    if let Some(function_id) = lookup_item_id.function_with_body() {
+                        if let Some(expr_path_ptr) = expr_path_ptr {
+                            if db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok() {
+                                return Some(SemanticTokenKind::Variable);
+                            }
                         }
                     }
                 }
             }
         }
-
         None
     }
     pub fn as_u32(&self) -> u32 {
@@ -241,4 +245,29 @@ impl SemanticTokenKind {
             SemanticTokenType::INTERFACE,
         ]
     }
+}
+
+// Retrieves the most-likely-usable resultant, and the terminal ptr we can use for semantic lookup
+fn get_resultants_and_closest_terminals(
+    db: &AnalysisDatabase,
+    node: SyntaxNode,
+) -> Vec<(SyntaxNode, TerminalIdentifierPtr)> {
+    let Some(resultants) = db.get_node_resultants(node) else {
+        return vec![];
+    };
+
+    resultants
+        .into_iter()
+        .filter_map(|resultant| {
+            let terminal = if resultant.kind(db).is_terminal() {
+                Some(resultant)
+            } else if resultant.kind(db).is_token() {
+                resultant.ancestors(db).find(|ancestor| ancestor.kind(db).is_terminal())
+            } else {
+                None
+            }?;
+
+            Some((resultant, TerminalIdentifier::cast(db, terminal)?.stable_ptr(db)))
+        })
+        .collect()
 }
