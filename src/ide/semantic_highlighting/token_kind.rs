@@ -256,15 +256,15 @@ fn get_resultants_and_closest_terminals(
         return vec![];
     };
 
-    // First resultant is the best bet to find the correct semantics
     resultants
         .into_iter()
         .filter_map(|resultant| {
             let terminal = if resultant.kind(db).is_terminal() {
                 Some(resultant)
+            } else if resultant.kind(db).is_token() {
+                resultant.ancestors(db).find(|ancestor| ancestor.kind(db).is_terminal())
             } else {
-                // Find first of the children of the resultant that can be cast to a TerminalIdentifier
-                resultant.get_children(db).iter().cloned().find(|x| x.kind(db).is_terminal())
+                None
             }?;
 
             Some((resultant, TerminalIdentifier::cast(db, terminal)?.stable_ptr(db)))
