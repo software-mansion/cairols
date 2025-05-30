@@ -1,9 +1,10 @@
-use crate::goto_definition::goto_definition;
-use crate::support::insta::test_transform;
+use lsp_types::request::GotoDefinition;
+
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn trait_method() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait Foo<T> {
         fn foo(self: T);
     }
@@ -28,7 +29,7 @@ fn trait_method() {
 
 #[test]
 fn trait_const() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait Foo<T> {
         const VERY_IMPORTANT_CONST: T;
     }
@@ -49,7 +50,7 @@ fn trait_const() {
 
 #[test]
 fn trait_types() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait Foo {
         type VERY_IMPORTANT_TYPE;
     }
@@ -70,7 +71,7 @@ fn trait_types() {
 
 #[test]
 fn trait_impls() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     trait ConstCarryingTrait {
         const value: felt252;
     }
@@ -103,7 +104,7 @@ fn trait_impls() {
 
 #[test]
 fn trait_impls_via_usage() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     trait ConstCarryingTrait {
         const value: felt252;
     }
@@ -144,7 +145,7 @@ fn trait_impls_via_usage() {
 
 #[test]
 fn impl_fn_usage_via_struct() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -179,7 +180,7 @@ fn impl_fn_usage_via_struct() {
 
 #[test]
 fn impl_fn_usage_via_trait() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -208,6 +209,37 @@ fn impl_fn_usage_via_trait() {
     fn main() {
         let foo = Foo {};
         let y = FooTrait::area(@foo);
+    }
+    ")
+}
+
+#[test]
+fn trait_method_with_macros() {
+    test_transform_with_macros!(GotoDefinition, r"
+    #[complex_attribute_macro_v2]
+    pub trait Foo<T> {
+        fn foo(self: T);
+    }
+
+    #[derive(Copy, Drop)]
+    pub struct Bar {}
+
+    #[complex_attribute_macro_v2]
+    impl FooBar of Foo<Bar> {
+        fn f<caret>oo(self: Bar) {}
+    }
+    ", @r"
+    #[complex_attribute_macro_v2]
+    pub trait Foo<T> {
+        fn foo(self: T);
+    }
+
+    #[derive(Copy, Drop)]
+    pub struct Bar {}
+
+    #[complex_attribute_macro_v2]
+    impl FooBar of Foo<Bar> {
+        fn <sel>foo</sel>(self: Bar) {}
     }
     ")
 }

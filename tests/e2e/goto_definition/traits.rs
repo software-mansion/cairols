@@ -1,9 +1,10 @@
-use crate::goto_definition::goto_definition;
-use crate::support::insta::test_transform;
+use lsp_types::request::GotoDefinition;
+
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn trait_name_in_impl() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait Foo<T> {
         fn foo(self: T);
     }
@@ -24,7 +25,7 @@ fn trait_name_in_impl() {
 
 #[test]
 fn full_path_trait_name_in_expr() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait Foo<T> {
         fn foo(self: T);
     }
@@ -55,7 +56,7 @@ fn full_path_trait_name_in_expr() {
 
 #[test]
 fn dot_method_in_expr() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait Foo<T> {
         fn foo(self: T);
     }
@@ -86,7 +87,7 @@ fn dot_method_in_expr() {
 
 #[test]
 fn full_path_method_in_expr() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait Foo<T> {
         fn foo(self: T);
     }
@@ -117,7 +118,7 @@ fn full_path_method_in_expr() {
 
 #[test]
 fn self_referred_method_in_default_method_impl() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     trait MyTrait<T> {
         fn inner(x: T, y: T) -> T;
         fn foo<+Copy<T>>(x: T) -> T {
@@ -142,7 +143,7 @@ fn self_referred_method_in_default_method_impl() {
 
 #[test]
 fn self_reference_in_default_method_impl() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     trait MyTrait<T> {
         fn inner(x: T, y: T) -> T;
         fn foo<+Copy<T>>(x: T) -> T {
@@ -167,7 +168,7 @@ fn self_reference_in_default_method_impl() {
 
 #[test]
 fn self_reference_in_method_impl() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     trait MyTrait<T> {
         fn inner(x: T, y: T) -> T;
         fn foo<+Copy<T>>(x: T) -> T;
@@ -196,7 +197,7 @@ fn self_reference_in_method_impl() {
 
 #[test]
 fn self_as_outside_impl() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     fn bar<+MyTrait>() {}
     trait MyTrait {
         fn default_impl() {
@@ -215,7 +216,7 @@ fn self_as_outside_impl() {
 
 #[test]
 fn self_in_associated_impl_bounds() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     trait Foorator<T> {}
     trait IntoFoorator<T> {
         type IntoFoor;
@@ -232,7 +233,7 @@ fn self_in_associated_impl_bounds() {
 
 #[test]
 fn self_in_return_type_position_in_trait_def() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait NegateHelper<T> {
         type Result;
         fn negate(self: T) -> Se<caret>lf::Result;
@@ -247,7 +248,7 @@ fn self_in_return_type_position_in_trait_def() {
 
 #[test]
 fn self_referred_associated_type_in_method_return_type() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait NegateHelper<T> {
         type Result;
         fn negate(self: T) -> Self::Resu<caret>lt;
@@ -262,7 +263,7 @@ fn self_referred_associated_type_in_method_return_type() {
 
 #[test]
 fn self_referred_associated_type_in_method_param_type() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait Foo<T> {
         type Item;
         fn frobnicate(self: T, item: Self::Ite<caret>m);
@@ -278,7 +279,7 @@ fn self_referred_associated_type_in_method_param_type() {
 // FIXME: https://github.com/software-mansion/cairols/issues/51
 #[test]
 fn self_in_method_bounds() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait Foo<T> {
         type Item;
         fn last<+Destruct<T>, +Destruct<Se<caret>lf::Item>>(self: T);
@@ -289,7 +290,7 @@ fn self_in_method_bounds() {
 // FIXME: https://github.com/software-mansion/cairols/issues/51
 #[test]
 fn self_referred_associated_type_in_method_bounds() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     pub trait Foo<T> {
         type Item;
         fn last<+Destruct<T>, +Destruct<Self::Ite<caret>m>>(self: T);
@@ -299,7 +300,7 @@ fn self_referred_associated_type_in_method_bounds() {
 
 #[test]
 fn starknet_interface_dispatcher() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     mod interface {
         #[starknet::interface]
         pub trait Foo<T> { }
@@ -318,7 +319,7 @@ fn starknet_interface_dispatcher() {
 
 #[test]
 fn generate_trait() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     mod interface {
         #[generate_trait]
         pub impl FooImpl of Foo { }
@@ -332,5 +333,34 @@ fn generate_trait() {
     }
 
     use interface::Foo;
+    ")
+}
+
+#[test]
+fn trait_name_in_impl_with_macros() {
+    test_transform_with_macros!(GotoDefinition, r"
+    #[complex_attribute_macro_v2]
+    pub trait Foo<T> {
+        fn foo(self: T);
+    }
+
+    pub struct Bar {}
+
+    #[complex_attribute_macro_v2]
+    impl FooBar of Fo<caret>o<Bar> {
+        fn foo(self: Bar) {}
+    }
+    ", @r"
+    #[complex_attribute_macro_v2]
+    pub trait <sel>Foo</sel><T> {
+        fn foo(self: T);
+    }
+
+    pub struct Bar {}
+
+    #[complex_attribute_macro_v2]
+    impl FooBar of Foo<Bar> {
+        fn foo(self: Bar) {}
+    }
     ")
 }
