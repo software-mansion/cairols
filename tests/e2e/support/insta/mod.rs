@@ -13,7 +13,6 @@ macro_rules! test_transform {
     }};
 }
 
-#[expect(unused_macros)]
 macro_rules! test_transform_and_macros {
     ($transform:expr, $code:literal, @$after:literal) => {{
         let code = ::indoc::indoc!($code);
@@ -37,5 +36,4 @@ macro_rules! test_transform_and_macros {
 }
 
 pub(crate) use test_transform;
-#[expect(unused_imports)]
 pub(crate) use test_transform_and_macros;

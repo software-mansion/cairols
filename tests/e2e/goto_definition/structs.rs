@@ -1,9 +1,9 @@
 use crate::goto_definition::goto_definition;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_and_macros;
 
 #[test]
 fn struct_item_in_constructor() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     struct Foo { }
     fn main() {
         let foo = Fo<caret>o {};
@@ -18,7 +18,7 @@ fn struct_item_in_constructor() {
 
 #[test]
 fn struct_item_in_type() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     struct Foo { }
     fn calc(foo: Fo<caret>o) {}
     ", @r"
@@ -29,7 +29,7 @@ fn struct_item_in_type() {
 
 #[test]
 fn struct_member_via_field_access() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     #[derive(Drop)]
     struct Circle { radius: u64 }
     fn foo(circle: Circle) -> u64 {
@@ -46,7 +46,7 @@ fn struct_member_via_field_access() {
 
 #[test]
 fn struct_member_in_constructor() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     #[derive(Drop)]
     struct Circle { radius: u64 }
     fn main() {
@@ -63,7 +63,7 @@ fn struct_member_in_constructor() {
 
 #[test]
 fn struct_member_right_side() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     struct ExecutionInfoMock {
         caller_address: Operation,
     }

@@ -2,7 +2,7 @@ use indoc::indoc;
 
 use crate::goto_definition::{GotoDefinitionTest, goto_definition};
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_and_macros;
 use crate::support::{cursors, fixture};
 
 #[test]
@@ -15,11 +15,14 @@ fn item_defined_in_another_file() {
         }
     "#});
 
-    let mut test = GotoDefinitionTest::begin(fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-        "src/lib.cairo" => lib_cairo,
-        "src/something.cairo" => "pub fn hello() {}",
-    });
+    let mut test = GotoDefinitionTest::begin(
+        fixture! {
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+            "src/lib.cairo" => lib_cairo,
+            "src/something.cairo" => "pub fn hello() {}",
+        },
+        false,
+    );
 
     let result = test.request_snapshot("src/lib.cairo", cursors.assert_single_caret());
 
@@ -41,11 +44,14 @@ fn non_inline_module_on_definition() {
         }
     "#});
 
-    let mut test = GotoDefinitionTest::begin(fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-        "src/lib.cairo" => lib_cairo,
-        "src/something.cairo" => "pub fn hello() {\n}",
-    });
+    let mut test = GotoDefinitionTest::begin(
+        fixture! {
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+            "src/lib.cairo" => lib_cairo,
+            "src/something.cairo" => "pub fn hello() {\n}",
+        },
+        false,
+    );
 
     let result = test.request_snapshot("src/lib.cairo", cursors.assert_single_caret());
 
@@ -68,11 +74,14 @@ fn non_inline_module_on_usage() {
         }
     "#});
 
-    let mut test = GotoDefinitionTest::begin(fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-        "src/lib.cairo" => lib_cairo,
-        "src/something.cairo" => "pub fn hello() {\n}",
-    });
+    let mut test = GotoDefinitionTest::begin(
+        fixture! {
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+            "src/lib.cairo" => lib_cairo,
+            "src/something.cairo" => "pub fn hello() {\n}",
+        },
+        false,
+    );
 
     let result = test.request_snapshot("src/lib.cairo", cursors.assert_single_caret());
 
@@ -85,7 +94,7 @@ fn non_inline_module_on_usage() {
 
 #[test]
 fn inline_module_on_usage() {
-    test_transform!(goto_definition, r#"
+    test_transform_and_macros!(goto_definition, r#"
     use crate::some<caret>thing::hello;
 
     mod something {
@@ -110,7 +119,7 @@ fn inline_module_on_usage() {
 
 #[test]
 fn inline_module_on_definition() {
-    test_transform!(goto_definition, r#"
+    test_transform_and_macros!(goto_definition, r#"
     use crate::something::hello;
 
     mod some<caret>thing {
@@ -135,7 +144,7 @@ fn inline_module_on_definition() {
 
 #[test]
 fn crate_module() {
-    test_transform!(goto_definition, r#"
+    test_transform_and_macros!(goto_definition, r#"
     use cra<caret>te::main;
 
     fn main() {

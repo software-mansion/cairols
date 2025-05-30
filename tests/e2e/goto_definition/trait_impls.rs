@@ -1,9 +1,9 @@
 use crate::goto_definition::goto_definition;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_and_macros;
 
 #[test]
 fn trait_method() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     pub trait Foo<T> {
         fn foo(self: T);
     }
@@ -28,7 +28,7 @@ fn trait_method() {
 
 #[test]
 fn trait_const() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     pub trait Foo<T> {
         const VERY_IMPORTANT_CONST: T;
     }
@@ -49,7 +49,7 @@ fn trait_const() {
 
 #[test]
 fn trait_types() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     pub trait Foo {
         type VERY_IMPORTANT_TYPE;
     }
@@ -70,7 +70,7 @@ fn trait_types() {
 
 #[test]
 fn trait_impls() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     trait ConstCarryingTrait {
         const value: felt252;
     }
@@ -103,7 +103,7 @@ fn trait_impls() {
 
 #[test]
 fn trait_impls_via_usage() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     trait ConstCarryingTrait {
         const value: felt252;
     }
@@ -144,7 +144,7 @@ fn trait_impls_via_usage() {
 
 #[test]
 fn impl_fn_usage_via_struct() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -179,7 +179,7 @@ fn impl_fn_usage_via_struct() {
 
 #[test]
 fn impl_fn_usage_via_trait() {
-    test_transform!(goto_definition, r"
+    test_transform_and_macros!(goto_definition, r"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
