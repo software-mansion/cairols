@@ -66,7 +66,7 @@ fn test_generic_type_alias() {
     hello
     ```
     ```cairo
-    type GenericTypeAlias = Result<T, ()>;
+    type GenericTypeAlias<T> = Result<T, ()>;
     ```
     """
     "#)
@@ -790,7 +790,7 @@ fn test_builtin_alias_in_use() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -814,7 +814,7 @@ fn test_builtin_alias_in_alias_as_type() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -838,7 +838,7 @@ fn test_builtin_alias_in_alias_as_type_parameter() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -864,7 +864,7 @@ fn test_builtin_alias_in_variable_as_type() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -890,7 +890,7 @@ fn test_builtin_alias_in_variable_as_type_parameter() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -914,7 +914,7 @@ fn test_builtin_alias_in_function_argument_as_type() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -938,7 +938,7 @@ fn test_builtin_alias_in_function_argument_as_type_parameter() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -962,7 +962,7 @@ fn test_builtin_alias_in_return_type_as_type() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -986,7 +986,7 @@ fn test_builtin_alias_in_return_type_as_type_parameter() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1012,7 +1012,7 @@ fn test_builtin_alias_in_struct_field_as_type() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1038,7 +1038,7 @@ fn test_builtin_alias_in_struct_field_as_type_parameter() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1064,7 +1064,7 @@ fn test_builtin_alias_in_turbofish_enum_as_type() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1090,7 +1090,7 @@ fn test_builtin_alias_in_turbofish_enum_as_type_parameter() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1146,7 +1146,7 @@ fn test_builtin_alias_in_trait_associated_const_as_type() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1172,7 +1172,7 @@ fn test_builtin_alias_in_trait_associated_const_as_type_parameter() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1197,7 +1197,7 @@ fn test_builtin_alias_in_trait_generic_bound_as_type() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1221,7 +1221,7 @@ fn test_builtin_alias_in_trait_generic_bound_as_type_parameter() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1250,7 +1250,7 @@ fn test_builtin_alias_in_impl_associated_type_as_type() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1279,7 +1279,7 @@ fn test_builtin_alias_in_impl_associated_type_as_type_parameter() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1382,7 +1382,7 @@ fn test_builtin_alias_in_impl_associated_const_as_type() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1411,7 +1411,7 @@ fn test_builtin_alias_in_impl_associated_const_as_type_parameter() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1436,7 +1436,7 @@ fn test_builtin_alias_in_impl_generic_bound_as_type() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
@@ -1461,7 +1461,7 @@ fn test_builtin_alias_in_impl_generic_bound_as_type_parameter() {
     core::circuit
     ```
     ```cairo
-    pub type u96 =     crate::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
+    pub type u96 = BoundedInt<0, 79228162514264337593543950335>;
     ```
     ---
     A 96-bit unsigned integer type used as the basic building block for multi-limb arithmetic."""
