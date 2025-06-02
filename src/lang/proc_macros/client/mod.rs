@@ -216,3 +216,9 @@ impl Iterator for Responses<'_> {
         Some((params, response))
     }
 }
+
+impl Responses<'_> {
+    pub fn len(&self) -> usize {
+        self.responses.len()
+    }
+}
