@@ -85,7 +85,7 @@ impl CodeLensProvider for TestCodeLensProvider {
         let node = db.find_syntax_node_at_position(file, position)?;
 
         let module_item = node.ancestor_of_type::<ModuleItem>(db)?;
-        let module_file_id = db.find_module_file_containing_node(&module_item.as_syntax_node())?;
+        let module_file_id = db.find_module_file_containing_node(module_item.as_syntax_node())?;
 
         let command = state.config.test_runner.command(
             TestFullQualifiedPath::new(db, module_item, module_file_id)?,

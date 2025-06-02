@@ -22,7 +22,7 @@ pub fn create_module_file(
 
     let mut is_crate_root = false;
 
-    if let ModuleId::Submodule(submodule) = db.find_module_containing_node(&node)? {
+    if let ModuleId::Submodule(submodule) = db.find_module_containing_node(node)? {
         if matches!(submodule.parent_module(db), ModuleId::CrateRoot(_)) {
             is_crate_root = true;
         }
