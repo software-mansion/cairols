@@ -347,7 +347,11 @@ impl ProcMacroClientController {
 
         let mut error_occurred = false;
 
-        for (params, response) in client.available_responses() {
+        let available_responses = client.available_responses();
+
+        let request_count = available_responses.len() as u64;
+
+        for (params, response) in available_responses {
             match parse_proc_macro_response(response) {
                 Ok(result) => {
                     match params {
@@ -392,6 +396,8 @@ impl ProcMacroClientController {
         if inline_macro_resolutions_changed {
             db.set_inline_macro_resolution(Arc::new(inline_macro_resolutions));
         }
+
+        self.proc_macro_server_tracker.mark_requests_as_handled(request_count)
     }
 }
 
