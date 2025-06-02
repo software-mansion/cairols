@@ -276,7 +276,6 @@ fn self_referred_associated_type_in_method_param_type() {
     ")
 }
 
-// FIXME: https://github.com/software-mansion/cairols/issues/51
 #[test]
 fn self_in_method_bounds() {
     test_transform_plain!(GotoDefinition, r"
@@ -284,10 +283,14 @@ fn self_in_method_bounds() {
         type Item;
         fn last<+Destruct<T>, +Destruct<Se<caret>lf::Item>>(self: T);
     }
-    ", @"none response")
+    ", @r"
+    pub trait <sel>Foo</sel><T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Self::Item>>(self: T);
+    }
+    ")
 }
 
-// FIXME: https://github.com/software-mansion/cairols/issues/51
 #[test]
 fn self_referred_associated_type_in_method_bounds() {
     test_transform_plain!(GotoDefinition, r"
@@ -295,7 +298,12 @@ fn self_referred_associated_type_in_method_bounds() {
         type Item;
         fn last<+Destruct<T>, +Destruct<Self::Ite<caret>m>>(self: T);
     }
-    ", @"none response")
+    ", @r"
+    pub trait Foo<T> {
+        type <sel>Item</sel>;
+        fn last<+Destruct<T>, +Destruct<Self::Item>>(self: T);
+    }
+    ")
 }
 
 #[test]
