@@ -43,12 +43,12 @@ pub fn rename(
 
         // Declaration is used here because rename without changing the declaration would break the compilation
         // e.g. when renaming trait usage - we also rename the trait
-        SymbolSearch::find_declaration(db, &identifier).map(|search| search.def)
+        SymbolSearch::find_declaration(db, &identifier)
     };
     let Some(symbol) = symbol() else {
         return Ok(None);
     };
-    if let SymbolDef::ExprInlineMacro(_) = symbol {
+    if let SymbolDef::ExprInlineMacro(_) = symbol.def {
         return Err(LSPError::new(
             anyhow!("Renaming inline macros is not supported"),
             ErrorCode::RequestFailed,
@@ -69,7 +69,7 @@ pub fn rename(
             acc
         });
 
-    let resource_op = if let SymbolDef::Module(module_def) = symbol {
+    let resource_op = if let SymbolDef::Module(module_def) = symbol.def {
         match module_def.module_id() {
             ModuleId::CrateRoot(_) => {
                 return Err(LSPError::new(
