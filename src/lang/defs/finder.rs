@@ -9,9 +9,11 @@ use cairo_lang_semantic::db::{SemanticGroup, get_resolver_data_options};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
+use cairo_lang_semantic::items::TraitOrImplContext;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
+use cairo_lang_semantic::keyword::SELF_TYPE_KW;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::ResolvedGenericItem::TraitItem;
 use cairo_lang_semantic::resolve::{
@@ -19,7 +21,7 @@ use cairo_lang_semantic::resolve::{
 };
 use cairo_lang_semantic::substitution::SemanticRewriter;
 use cairo_lang_semantic::{ConcreteImplId, Expr, TypeLongId};
-use cairo_lang_syntax::node::ast::TerminalIdentifier;
+use cairo_lang_syntax::node::ast::{PathSegment, TerminalIdentifier};
 use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -62,6 +64,7 @@ pub fn find_definition(
         .or_else(|| try_variant_declaration(db, identifier))
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
         .or_else(|| try_impl_item_usages(db, identifier, lookup_items))
+        .or_else(|| try_trait_or_impl_item_with_self_reference(db, identifier, lookup_items))
         .or_else(|| try_concrete_type_or_impl(db, identifier, lookup_items))
         .or_else(|| try_trait_as_generic_parameter_bound(db, identifier, lookup_items))
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))
@@ -83,6 +86,90 @@ fn get_declaration_of(db: &AnalysisDatabase, def: &ResolvedItem) -> Option<Resol
     let definition_node = def.definition_node(db)?;
     let terminal_identifier = TerminalIdentifier::cast(db, definition_node)?;
     try_impl_items(db, &terminal_identifier)
+}
+
+fn try_trait_or_impl_item_with_self_reference(
+    db: &AnalysisDatabase,
+    identifier: &TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<ResolvedItem> {
+    // Find if we're on ExprPath
+    let path_item_segments_origin =
+        identifier.as_syntax_node().ancestor_of_type::<ast::ExprPath>(db)?.to_segments(db);
+
+    // Snip off the path after the identifier we're on
+    let path_item_segments: Vec<_> = path_item_segments_origin
+        .iter()
+        .take_while_inclusive(|segment| segment.identifier(db) != identifier.text(db))
+        .cloned()
+        .collect();
+
+    let (first_segment, second_segment) = match path_item_segments.as_slice() {
+        [first, second, ..] => (first, Some(second)),
+        [first] => (first, None),
+        [] => return None,
+    };
+
+    let PathSegment::Simple(first_path_segment_simple) = first_segment else {
+        return None;
+    };
+
+    if first_path_segment_simple.ident(db).text(db) != SELF_TYPE_KW {
+        return None;
+    }
+
+    lookup_items.iter().find_map(|item| {
+        let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
+        let mut resolver =
+            Resolver::new(db, module_file_id, InferenceId::LookupItemDeclaration(*item));
+
+        let trait_or_impl_ctx = match item {
+            LookupItemId::ModuleItem(_) => None,
+            LookupItemId::TraitItem(x) => Some(TraitOrImplContext::Trait(x.trait_id(db))),
+            LookupItemId::ImplItem(x) => Some(TraitOrImplContext::Impl(x.impl_def_id(db))),
+        }?;
+        resolver.trait_or_impl_ctx = trait_or_impl_ctx;
+
+        let resolved_self = resolver
+            .resolve_concrete_path(
+                &mut SemanticDiagnostics::default(),
+                vec![first_segment.clone()],
+                NotFoundItemType::Identifier,
+            )
+            .ok()?;
+
+        // Sel<caret>f::something::etc
+        if second_segment.is_none() {
+            return Some(ResolvedItem::Concrete(resolved_self));
+        }
+
+        // Self::so<caret>mething::etc
+        let PathSegment::Simple(second_path_segment_simple) = second_segment? else {
+            return None;
+        };
+        let item_name = second_path_segment_simple.ident(db).text(db);
+
+        match resolved_self {
+            ResolvedConcreteItem::SelfTrait(concrete_trait_id) => {
+                let trait_item =
+                    db.trait_item_by_name(concrete_trait_id.trait_id(db), item_name).ok()??;
+
+                Some(ResolvedItem::Generic(TraitItem(trait_item)))
+            }
+            ResolvedConcreteItem::Impl(impl_id) => {
+                let impl_long_id = impl_id.lookup_intern(db);
+                let ImplLongId::Concrete(concrete_impl_id) = impl_long_id else {
+                    return None;
+                };
+
+                let impl_def_id = concrete_impl_id.impl_def_id(db);
+                let impl_item_id =
+                    db.impl_item_by_name(impl_def_id, item_name.parse().unwrap()).ok()??;
+                Some(ResolvedItem::ImplItem(impl_item_id))
+            }
+            _ => None,
+        }
+    })
 }
 
 /// Tries to find a trait's impl item via trait's item usage, if we're on using its' path (ExprPath) in code.
