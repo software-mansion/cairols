@@ -540,15 +540,23 @@ fn find_generated_nodes(
         let mut new_nodes: OrderedHashSet<_> = Default::default();
 
         for token in file_syntax.tokens(db) {
-            if let Some((new_node, _)) = token
+            let nodes: Vec<_> = token
                 .ancestors_with_self(db)
                 .map_while(|new_node| {
                     translate_location(&mappings, new_node.span(db))
                         .map(|span_in_parent| (new_node, span_in_parent))
                 })
                 .take_while(|(_, span_in_parent)| node.span(db).contains(*span_in_parent))
-                .last()
-            {
+                .collect();
+
+            if let Some((last_node, _)) = nodes.last().cloned() {
+                let (new_node, _) = nodes
+                    .into_iter()
+                    .rev()
+                    .take_while(|(node, _)| node.span(db) == last_node.span(db))
+                    .last()
+                    .unwrap();
+
                 new_nodes.insert(new_node);
             }
         }
