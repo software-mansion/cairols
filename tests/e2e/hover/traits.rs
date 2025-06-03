@@ -238,6 +238,70 @@ fn trait_name_generic_name() {
 }
 
 #[test]
+fn self_in_trait() {
+    test_transform!(test_hover,r#"
+    pub trait ShapeGeometry<T> {
+        type Unit;
+        fn area(self: T) -> Se<caret>lf::Unit;
+    }
+    "#,@r#"
+    source_context = """
+        fn area(self: T) -> Se<caret>lf::Unit;
+    """
+    highlight = """
+        fn area(self: T) -> <sel>Self</sel>::Unit;
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    pub trait ShapeGeometry<T>
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn self_in_impl() {
+    test_transform!(test_hover,r#"
+    pub trait ShapeGeometry<T> {
+        type Unit;
+        fn area(self: T) -> Self::Unit;
+    }
+
+    mod rectangle {
+        use super::ShapeGeometry;
+        #[derive(Copy, Drop)]
+        pub struct Rectangle { pub a: u64, pub b: u64 }
+
+        impl RectangleGeometry of ShapeGeometry<Rectangle> {
+            type Unit = u64;
+            fn area(self: Rectangle) -> Se<caret>lf::Unit {
+                let retval: Self::Unit = self.a * self.b;
+                retval
+            }
+        }
+    }
+    "#,@r#"
+    source_context = """
+            fn area(self: Rectangle) -> Se<caret>lf::Unit {
+    """
+    highlight = """
+            fn area(self: Rectangle) -> <sel>Self</sel>::Unit {
+    """
+    popover = """
+    ```cairo
+    hello::rectangle
+    ```
+    ```cairo
+    impl RectangleGeometry of ShapeGeometry<Rectangle>;
+    ```
+    """
+    "#)
+}
+
+#[test]
 fn type_bound() {
     test_transform!(test_hover, r#"
     fn foo<T, +Dr<caret>op<T>>() {}
