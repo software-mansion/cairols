@@ -278,3 +278,17 @@ fn impl_bound() {
     fn foo<T, impl Impl: RENAMED<T>>() {}
     ")
 }
+
+#[test]
+#[should_panic(expected = "Renaming via `Self` reference is not supported.")]
+fn no_rename_trait_via_self() {
+    rename(
+        r#"
+    pub trait ShapeGeometry<T> {
+        type Unit;
+        fn area(self: T) -> Se<caret>lf::Unit;
+        fn coeff(self: T) -> Self::Unit;
+    }
+    "#,
+    );
+}
