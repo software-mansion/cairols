@@ -3,8 +3,9 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_semantic::keyword::SELF_TYPE_KW;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 use lsp_server::ErrorCode;
@@ -42,6 +43,20 @@ pub fn rename(
     let Some(file) = db.file_for_url(&params.text_document_position.text_document.uri) else {
         return Ok(None);
     };
+    let position = params.text_document_position.position.to_cairo();
+    let Some(identifier) = db.find_identifier_at_position(file, position) else {
+        return Ok(None);
+    };
+
+    if identifier.text(db) == SELF_TYPE_KW {
+        return Err(LSPError::new(
+            anyhow!(
+                "Renaming via `{SELF_TYPE_KW}` reference is not supported. Rename the item directly instead."
+            ),
+            ErrorCode::RequestFailed,
+        ));
+    }
+
     let position = params.text_document_position.position.to_cairo();
     let Some(identifier) = db.find_identifier_at_position(file, position) else { return Ok(None) };
 
