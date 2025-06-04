@@ -22,7 +22,7 @@ impl VariantDef {
         definition_node: SyntaxNode,
     ) -> Option<Self> {
         let enum_ast = definition_node.ancestor_of_type::<ast::ItemEnum>(db)?;
-        let enum_item = ItemDef::new(db, &enum_ast.name(db).as_syntax_node())?;
+        let enum_item = ItemDef::new(db, enum_ast.name(db).as_syntax_node())?;
         Some(Self { variant_id, enum_item, definition_stable_ptr: definition_node.stable_ptr(db) })
     }
 

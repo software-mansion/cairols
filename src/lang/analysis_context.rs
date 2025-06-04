@@ -15,8 +15,8 @@ pub struct AnalysisContext<'db> {
 
 impl<'db> AnalysisContext<'db> {
     pub fn from_node(db: &'db AnalysisDatabase, node: SyntaxNode) -> Option<AnalysisContext<'db>> {
-        let module_file_id = db.find_module_file_containing_node(&node)?;
-        let lookup_item_id = db.find_lookup_item(&node);
+        let module_file_id = db.find_module_file_containing_node(node)?;
+        let lookup_item_id = db.find_lookup_item(node);
 
         let resolver = match lookup_item_id.and_then(|item| item.resolver_data(db).ok()) {
             Some(item) => {

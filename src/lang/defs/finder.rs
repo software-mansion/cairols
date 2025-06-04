@@ -110,7 +110,7 @@ fn try_impl_item_usages(
         return None;
     }
 
-    let module_file_id = db.find_module_file_containing_node(&identifier.as_syntax_node())?;
+    let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
 
     let try_find_impl_id = || {
         for &lookup_item_id in lookup_items {
@@ -180,7 +180,7 @@ fn try_impl_items(
         return None;
     };
     let long_id = ImplDefLongId(
-        db.find_module_file_containing_node(&identifier.as_syntax_node())?,
+        db.find_module_file_containing_node(identifier.as_syntax_node())?,
         item_impl.stable_ptr(db),
     )
     .intern(db);
@@ -241,7 +241,7 @@ fn try_submodule_name(
         .parent_of_type::<ast::ItemModule>(db)
         .filter(|item_module| item_module.name(db) == *identifier)?;
     let containing_module_file_id =
-        db.find_module_file_containing_node(&item_module.as_syntax_node())?;
+        db.find_module_file_containing_node(item_module.as_syntax_node())?;
     let submodule_id =
         SubmoduleLongId(containing_module_file_id, item_module.stable_ptr(db)).intern(db);
     Some(ResolvedItem::Generic(ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id))))
@@ -325,7 +325,7 @@ fn try_member_declaration(
         .filter(|member| member.name(db) == *identifier)?;
     let item_struct = member.as_syntax_node().ancestor_of_type::<ast::ItemStruct>(db)?;
     let struct_id = StructLongId(
-        db.find_module_file_containing_node(&item_struct.as_syntax_node())?,
+        db.find_module_file_containing_node(item_struct.as_syntax_node())?,
         item_struct.stable_ptr(db),
     )
     .intern(db);
@@ -345,7 +345,7 @@ fn try_variant_declaration(
         .filter(|variant| variant.name(db) == *identifier)?;
     let item_enum = variant.as_syntax_node().ancestor_of_type::<ast::ItemEnum>(db)?;
     let enum_id = EnumLongId(
-        db.find_module_file_containing_node(&item_enum.as_syntax_node())?,
+        db.find_module_file_containing_node(item_enum.as_syntax_node())?,
         item_enum.stable_ptr(db),
     )
     .intern(db);
@@ -421,7 +421,7 @@ fn try_concrete_type_or_impl(
     lookup_items: &[LookupItemId],
 ) -> Option<ResolvedItem> {
     let ptr = identifier.stable_ptr(db);
-    let module_file_id = db.find_module_file_containing_node(&identifier.as_syntax_node())?;
+    let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
 
     for &lookup_item_id in lookup_items {
         let resolved_generic = db.lookup_resolved_generic_item_by_ptr(lookup_item_id, ptr);

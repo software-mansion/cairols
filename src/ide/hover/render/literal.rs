@@ -55,7 +55,7 @@ pub fn literal(
 
 /// Gets the type of an expression associated with [`SyntaxNode`].
 fn find_type(db: &AnalysisDatabase, node: SyntaxNode) -> Option<TypeId> {
-    if let Some(function_id) = db.find_lookup_item(&node)?.function_with_body() {
+    if let Some(function_id) = db.find_lookup_item(node)?.function_with_body() {
         find_type_in_function_context(db, node, function_id)
     } else {
         find_type_in_const_declaration(db, node)
@@ -78,7 +78,7 @@ fn find_type_in_function_context(
 
 /// Gets the type of an expression associated with [`SyntaxNode`] assuming it's a const item.
 fn find_type_in_const_declaration(db: &AnalysisDatabase, node: SyntaxNode) -> Option<TypeId> {
-    let module_file_id = db.find_module_file_containing_node(&node)?;
+    let module_file_id = db.find_module_file_containing_node(node)?;
     let const_item = node.ancestor_of_type::<ItemConstant>(db)?;
     let const_item_id = ConstantLongId(module_file_id, const_item.stable_ptr(db)).intern(db);
     let type_id = db.constant_const_type(const_item_id).ok()?;

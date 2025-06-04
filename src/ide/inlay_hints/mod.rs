@@ -32,14 +32,14 @@ pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec
     let mut result = vec![];
 
     let importables =
-        db.visible_importables_from_module(db.find_module_file_containing_node(&syntax)?)?;
+        db.visible_importables_from_module(db.find_module_file_containing_node(syntax)?)?;
 
     for let_statement in syntax
         .descendants(db)
         .filter(|node| range.contains(node.span_without_trivia(db)))
         .filter_map(|node| StatementLet::cast(db, node))
     {
-        let Some(lookup_item) = db.find_lookup_item(&let_statement.as_syntax_node()) else {
+        let Some(lookup_item) = db.find_lookup_item(let_statement.as_syntax_node()) else {
             continue;
         };
         let Some(func) = lookup_item.function_with_body() else {
