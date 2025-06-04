@@ -26,7 +26,7 @@ pub fn fill_trait_members(
     ctx: &AnalysisContext<'_>,
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
-    let file = db.find_module_file_containing_node(&ctx.node)?.file_id(db).ok()?;
+    let file = db.find_module_file_containing_node(ctx.node)?.file_id(db).ok()?;
     let importables = db.visible_importables_from_module(ctx.module_file_id)?;
 
     let item_impl = ctx.node.ancestor_of_type::<ItemImpl>(db)?;

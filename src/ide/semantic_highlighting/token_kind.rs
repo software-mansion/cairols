@@ -140,7 +140,7 @@ impl SemanticTokenKind {
             for (resultant, terminal_ptr) in
                 get_resultants_and_closest_terminals(db, identifier.as_syntax_node())
             {
-                if let Some(lookup_item_id) = db.find_lookup_item(&resultant) {
+                if let Some(lookup_item_id) = db.find_lookup_item(resultant) {
                     if let Some(item) =
                         db.lookup_resolved_generic_item_by_ptr(lookup_item_id, terminal_ptr)
                     {

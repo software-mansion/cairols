@@ -44,7 +44,7 @@ fn render_hover(db: &AnalysisDatabase, node: SyntaxNode) -> Option<String> {
     let file_id = node.stable_ptr(db).file_id(db);
 
     let importables =
-        db.visible_importables_from_module(db.find_module_file_containing_node(&node)?)?;
+        db.visible_importables_from_module(db.find_module_file_containing_node(node)?)?;
 
     if let Some(hover) = render::literal(db, node, &importables) {
         return Some(hover);

@@ -80,7 +80,7 @@ impl UsePosition {
                 .span_start_without_trivia(db)
                 .position_in_file(
                     db,
-                    db.module_file(db.find_module_file_containing_node(&node)?).ok()?,
+                    db.module_file(db.find_module_file_containing_node(node)?).ok()?,
                 )?
                 .to_lsp(),
             is_sticking,
