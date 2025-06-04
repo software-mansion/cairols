@@ -6,7 +6,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 
-use crate::lang::db::AnalysisDatabase;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 #[derive(Clone, Default)]
 pub struct SearchScope {
@@ -28,7 +28,11 @@ impl SearchScope {
         for crate_id in db.crates() {
             for &module_id in db.crate_modules(crate_id).iter() {
                 if let Ok(file_id) = db.module_main_file(module_id) {
-                    this.entries.insert(file_id, None);
+                    if let Some((files, _)) =
+                        db.file_and_subfiles_with_corresponding_modules(file_id)
+                    {
+                        this.entries.extend(files.into_iter().map(|f| (f, None)));
+                    }
                 }
             }
         }
@@ -43,6 +47,11 @@ impl SearchScope {
     /// Builds a search scope spanning a slice of a single file.
     pub fn file_span(file: FileId, span: TextSpan) -> Self {
         Self { entries: [(file, Some(span))].into() }
+    }
+
+    /// Builds a search scope spanning slices of files.
+    pub fn files_spans(files: HashMap<FileId, Option<TextSpan>>) -> Self {
+        Self { entries: files }
     }
 
     /// Creates an iterator over all files and the optional search scope text spans.
