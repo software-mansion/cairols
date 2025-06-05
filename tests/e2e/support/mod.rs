@@ -9,7 +9,6 @@ pub mod jsonrpc;
 mod mock_client;
 pub mod normalize;
 pub mod scarb;
-#[expect(dead_code)]
 pub mod transform;
 
 use serde_json::Value;
