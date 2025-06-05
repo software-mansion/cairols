@@ -13,7 +13,6 @@ macro_rules! test_transform {
     }};
 }
 
-#[expect(unused_macros)]
 macro_rules! test_transform_inner {
     ($transform_type:ty, $fixture:expr, $before:literal, @$after:literal, $with_macros:expr) => {{
         let before = ::indoc::indoc!($before);
@@ -30,20 +29,18 @@ macro_rules! test_transform_inner {
     }};
 }
 
-#[expect(unused_macros)]
 macro_rules! test_transform_plain {
     ($transform_type:ty, $fixture:expr, $before:literal, @$after:literal) => {{
-        test_transform_inner!($transform_type, $fixture, $before, @$after, false);
+        crate::support::insta::test_transform_inner!($transform_type, $fixture, $before, @$after, false);
     }};
     ($transform_type:ty, $before:literal, @$after:literal) => {
         test_transform_plain!($transform_type, crate::support::fixture::Fixture::new(), $before, @$after)
     };
 }
 
-#[expect(unused_macros)]
 macro_rules! test_transform_with_macros {
     ($transform_type:ty, $fixture:expr, $before:literal, @$after:literal) => {{
-        test_transform_inner!($transform_type, $fixture, $before, @$after, true);
+        crate::support::insta::test_transform_inner!($transform_type, $fixture, $before, @$after, true);
     }};
     ($transform_type:ty, $before:literal, @$after:literal) => {
         test_transform_with_macros!($transform_type, crate::support::fixture::Fixture::new(), $before, @$after)
@@ -51,3 +48,6 @@ macro_rules! test_transform_with_macros {
 }
 
 pub(crate) use test_transform;
+pub(crate) use test_transform_inner;
+pub(crate) use test_transform_plain;
+pub(crate) use test_transform_with_macros;

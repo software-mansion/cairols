@@ -1,14 +1,14 @@
 use itertools::Itertools;
+use lsp_types::request::GotoDefinition;
 use lsp_types::{
     ClientCapabilities, GotoCapability, GotoDefinitionParams, GotoDefinitionResponse, Position,
     TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
 };
 
-use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
-use crate::support::cursor::{render_selections, render_selections_relevant_lines};
-use crate::support::fixture::Fixture;
+use crate::support::MockClient;
+use crate::support::cursor::{Cursors, render_selections, render_selections_relevant_lines};
 use crate::support::scarb::scarb_core_path;
-use crate::support::{MockClient, cursors, fixture, sandbox};
+use crate::support::transform::Transformer;
 
 mod consts;
 mod enums;
@@ -22,32 +22,28 @@ mod traits;
 mod types;
 mod vars;
 
-fn caps(base: ClientCapabilities) -> ClientCapabilities {
-    ClientCapabilities {
-        text_document: base.text_document.or_else(Default::default).map(|it| {
-            TextDocumentClientCapabilities {
-                definition: Some(GotoCapability {
-                    dynamic_registration: Some(false),
-                    link_support: None,
-                }),
-                ..it
-            }
-        }),
-        ..base
+impl Transformer for GotoDefinition {
+    fn capabilities(base: ClientCapabilities) -> ClientCapabilities {
+        ClientCapabilities {
+            text_document: base.text_document.or_else(Default::default).map(|it| {
+                TextDocumentClientCapabilities {
+                    definition: Some(GotoCapability {
+                        dynamic_registration: Some(false),
+                        link_support: None,
+                    }),
+                    ..it
+                }
+            }),
+            ..base
+        }
     }
-}
 
-fn goto_definition(cairo_code: &str) -> String {
-    let (cairo, cursors) = cursors(cairo_code);
+    fn transform(ls: MockClient, cursors: Cursors) -> String {
+        let position = cursors.assert_single_caret();
 
-    let mut test = GotoDefinitionTest::begin(fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-        "src/lib.cairo" => cairo.clone(),
-    });
-
-    let position = cursors.assert_single_caret();
-
-    test.request_snapshot("src/lib.cairo", position)
+        let mut test = GotoDefinitionTest { ls };
+        test.request_snapshot("src/lib.cairo", position)
+    }
 }
 
 struct GotoDefinitionTest {
@@ -55,18 +51,6 @@ struct GotoDefinitionTest {
 }
 
 impl GotoDefinitionTest {
-    /// Starts goto definition testing session on a given fixture.
-    fn begin(fixture: Fixture) -> Self {
-        let mut ls = sandbox! {
-            fixture = fixture;
-            client_capabilities = caps;
-        };
-
-        ls.open_all_cairo_files_and_wait_for_project_update();
-
-        Self { ls }
-    }
-
     /// Sends `textDocument/definition` request at given position in a given file and returns
     /// a list of target fixture file paths (relative) and rendered selections in these.
     fn request(

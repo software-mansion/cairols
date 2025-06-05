@@ -1,9 +1,10 @@
-use crate::goto_definition::goto_definition;
-use crate::support::insta::test_transform;
+use lsp_types::request::GotoDefinition;
+
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn struct_item_in_constructor() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     struct Foo { }
     fn main() {
         let foo = Fo<caret>o {};
@@ -18,7 +19,7 @@ fn struct_item_in_constructor() {
 
 #[test]
 fn struct_item_in_type() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     struct Foo { }
     fn calc(foo: Fo<caret>o) {}
     ", @r"
@@ -29,7 +30,7 @@ fn struct_item_in_type() {
 
 #[test]
 fn struct_member_via_field_access() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     #[derive(Drop)]
     struct Circle { radius: u64 }
     fn foo(circle: Circle) -> u64 {
@@ -46,7 +47,7 @@ fn struct_member_via_field_access() {
 
 #[test]
 fn struct_member_in_constructor() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     #[derive(Drop)]
     struct Circle { radius: u64 }
     fn main() {
@@ -63,7 +64,7 @@ fn struct_member_in_constructor() {
 
 #[test]
 fn struct_member_right_side() {
-    test_transform!(goto_definition, r"
+    test_transform_plain!(GotoDefinition, r"
     struct ExecutionInfoMock {
         caller_address: Operation,
     }
@@ -86,6 +87,27 @@ fn struct_member_right_side() {
         ExecutionInfoMock {
             caller_address: Operation::Retain,
         };
+    }
+    ")
+}
+
+#[test]
+fn struct_item_in_constructor_with_macros() {
+    test_transform_with_macros!(GotoDefinition, r"
+    #[complex_attribute_macro_v2]
+    struct Foo { }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let foo = Fo<caret>o {};
+    }
+    ", @r"
+    #[complex_attribute_macro_v2]
+    struct <sel>Foo</sel> { }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let foo = Foo {};
     }
     ")
 }

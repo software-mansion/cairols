@@ -1,29 +1,22 @@
-use indoc::indoc;
+use lsp_types::request::GotoDefinition;
 
-use crate::goto_definition::{GotoDefinitionTest, goto_definition};
-use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
-use crate::support::insta::test_transform;
-use crate::support::{cursors, fixture};
+use crate::support::fixture;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn item_defined_in_another_file() {
-    let (lib_cairo, cursors) = cursors(indoc! {r#"
-        use crate::something::hello;
-        mod something;
-        fn main() {
-            hel<caret>lo();
-        }
-    "#});
-
-    let mut test = GotoDefinitionTest::begin(fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-        "src/lib.cairo" => lib_cairo,
+    test_transform_plain!(GotoDefinition,
+    fixture! {
         "src/something.cairo" => "pub fn hello() {}",
-    });
+    }, r#"
+    use crate::something::hello;
 
-    let result = test.request_snapshot("src/lib.cairo", cursors.assert_single_caret());
+    mod something;
 
-    insta::assert_snapshot!(result, @r"
+    fn main() {
+        hel<caret>lo();
+    }
+    "#, @r"
     // → src/something.cairo
     pub fn <sel>hello</sel>() {}
     ")
@@ -31,61 +24,45 @@ fn item_defined_in_another_file() {
 
 #[test]
 fn non_inline_module_on_definition() {
-    let (lib_cairo, cursors) = cursors(indoc! {r#"
-        use crate::something::hello;
+    test_transform_plain!(GotoDefinition,
+    fixture! {
+        "src/something.cairo" => "pub fn hello() {}",
+    }, r#"
+    use crate::something::hello;
 
-        mod some<caret>thing;
+    mod some<caret>thing;
 
-        fn main() {
-            hello();
-        }
-    "#});
-
-    let mut test = GotoDefinitionTest::begin(fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-        "src/lib.cairo" => lib_cairo,
-        "src/something.cairo" => "pub fn hello() {\n}",
-    });
-
-    let result = test.request_snapshot("src/lib.cairo", cursors.assert_single_caret());
-
-    insta::assert_snapshot!(result, @r"
+    fn main() {
+        hello();
+    }
+    "#, @r"
     // → src/something.cairo
-    <sel>pub fn hello() {
-    }</sel>
+    <sel>pub fn hello() {}</sel>
     ")
 }
 
 #[test]
 fn non_inline_module_on_usage() {
-    let (lib_cairo, cursors) = cursors(indoc! {r#"
-        use crate::som<caret>ething::hello;
+    test_transform_plain!(GotoDefinition,
+    fixture! {
+        "src/something.cairo" => "pub fn hello() {}",
+    }, r#"
+    use crate::som<caret>ething::hello;
 
-        mod something;
+    mod something;
 
-        fn main() {
-            hello();
-        }
-    "#});
-
-    let mut test = GotoDefinitionTest::begin(fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-        "src/lib.cairo" => lib_cairo,
-        "src/something.cairo" => "pub fn hello() {\n}",
-    });
-
-    let result = test.request_snapshot("src/lib.cairo", cursors.assert_single_caret());
-
-    insta::assert_snapshot!(result, @r"
+    fn main() {
+        hello();
+    }
+    "#, @r"
     // → src/something.cairo
-    <sel>pub fn hello() {
-    }</sel>
+    <sel>pub fn hello() {}</sel>
     ")
 }
 
 #[test]
 fn inline_module_on_usage() {
-    test_transform!(goto_definition, r#"
+    test_transform_plain!(GotoDefinition, r#"
     use crate::some<caret>thing::hello;
 
     mod something {
@@ -110,7 +87,7 @@ fn inline_module_on_usage() {
 
 #[test]
 fn inline_module_on_definition() {
-    test_transform!(goto_definition, r#"
+    test_transform_plain!(GotoDefinition, r#"
     use crate::something::hello;
 
     mod some<caret>thing {
@@ -135,17 +112,58 @@ fn inline_module_on_definition() {
 
 #[test]
 fn crate_module() {
-    test_transform!(goto_definition, r#"
-    use cra<caret>te::main;
+    test_transform_plain!(GotoDefinition, r#"
+    mod modzik {
+        use cra<caret>te::main;
+    }
 
     fn main() {
         hello();
     }
     "#, @r"
-    <sel>use crate::main;
+    <sel>mod modzik {
+        use crate::main;
+    }
 
     fn main() {
         hello();
     }</sel>
+    ")
+}
+
+// FIXME(#721)
+#[test]
+fn crate_module_with_macros() {
+    test_transform_with_macros!(GotoDefinition, r#"
+    #[complex_attribute_macro_v2]
+    mod modzik {
+        #[complex_attribute_macro_v2]
+        use cra<caret>te::main;
+    }
+
+    fn main() {
+        hello();
+    }
+    "#, @"none response")
+}
+
+#[test]
+fn item_defined_in_another_file_with_macros() {
+    test_transform_with_macros!(GotoDefinition,
+    fixture! {
+        "src/something.cairo" => "pub fn hello() {}",
+    }, r#"
+    use crate::something::hello;
+
+    #[complex_attribute_macro_v2]
+    mod something;
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        hel<caret>lo();
+    }
+    "#, @r"
+    // → src/something.cairo
+    pub fn <sel>hello</sel>() {}
     ")
 }
