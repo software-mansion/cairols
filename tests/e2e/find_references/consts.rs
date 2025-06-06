@@ -1,16 +1,17 @@
-use crate::find_references::find_references;
-use crate::support::insta::test_transform;
+use lsp_types::request::References;
+
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn const_item_via_declaration() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     const FO<caret>O: u32 = 42;
     "#, @"const <sel=declaration>FOO</sel>: u32 = 42;");
 }
 
 #[test]
 fn const_item_via_expr() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     const FOO: u32 = 42;
     fn main() { let _ = FO<caret>O; }
     "#, @r"
@@ -21,7 +22,7 @@ fn const_item_via_expr() {
 
 #[test]
 fn const_item_via_other_const_expr() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     const FOO: u32 = 42;
     const BAR: u32 = FO<caret>O * 2;
     "#, @r"
@@ -32,14 +33,14 @@ fn const_item_via_other_const_expr() {
 
 #[test]
 fn associated_const_via_trait_declaration() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait Shape<T> { const SIDE<caret>S: u32; }
     "#, @"trait Shape<T> { const <sel=declaration>SIDES</sel>: u32; }");
 }
 
 #[test]
 fn associated_const_via_impl_definition() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait Shape<T> { const SIDES: u32; }
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const SIDE<caret>S: u32 = 3; }
@@ -52,7 +53,7 @@ fn associated_const_via_impl_definition() {
 
 #[test]
 fn associated_trait_const_via_usages() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait Shape<T> { const SIDES: u32; }
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const SIDES: u32 = 3; }
@@ -77,7 +78,7 @@ fn associated_trait_const_via_usages() {
 
 #[test]
 fn associated_module_const_via_usages() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     mod TriangleData {
         pub const SIDES: felt252 = 3;
     }
@@ -102,7 +103,7 @@ fn associated_module_const_via_usages() {
 
 #[test]
 fn associated_const_via_expr_use() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait Shape<T> { const SIDES: u32; }
     struct Triangle {}
     impl TriangleShape of Shape<Triangle> { const SIDES: u32 = 3; }
@@ -121,7 +122,7 @@ fn associated_const_via_expr_use() {
 
 #[test]
 fn dual_trait_const_via_trait_function() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait FooTrait<T> {
         const FOO_CONST<caret>ANT: felt252;
     }
@@ -149,6 +150,51 @@ fn dual_trait_const_via_trait_function() {
         const <sel>FOO_CONSTANT</sel>: u256 = 123_u256;
     }
 
+    fn main() {
+        let foo: felt252 = FooImpl::<sel>FOO_CONSTANT</sel>;
+        let bar: u256 = BarImpl::<sel>FOO_CONSTANT</sel>;
+    }
+    ")
+}
+
+#[test]
+fn dual_trait_const_via_trait_function_with_macros() {
+    test_transform_with_macros!(References, r#"
+    #[complex_attribute_macro_v2]
+    trait FooTrait<T> {
+        const FOO_CONST<caret>ANT: felt252;
+    }
+
+    #[complex_attribute_macro_v2]
+    impl FooImpl of FooTrait<felt252> {
+        const FOO_CONSTANT: felt252 = 123;
+    }
+
+    impl BarImpl of FooTrait<u256> {
+        const FOO_CONSTANT: u256 = 123_u256;
+    }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let foo: felt252 = FooImpl::FOO_CONSTANT;
+        let bar: u256 = BarImpl::FOO_CONSTANT;
+    }
+    "#, @r"
+    #[complex_attribute_macro_v2]
+    trait FooTrait<T> {
+        const <sel=declaration>FOO_CONSTANT</sel>: felt252;
+    }
+
+    #[complex_attribute_macro_v2]
+    impl FooImpl of FooTrait<felt252> {
+        const <sel>FOO_CONSTANT</sel>: felt252 = 123;
+    }
+
+    impl BarImpl of FooTrait<u256> {
+        const <sel>FOO_CONSTANT</sel>: u256 = 123_u256;
+    }
+
+    #[complex_attribute_macro_v2]
     fn main() {
         let foo: felt252 = FooImpl::<sel>FOO_CONSTANT</sel>;
         let bar: u256 = BarImpl::<sel>FOO_CONSTANT</sel>;
