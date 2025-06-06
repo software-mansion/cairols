@@ -16,7 +16,6 @@ pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<
     let search_result = SymbolSearch::find_definition(db, &identifier)?;
 
     let locations = search_result
-        .def
         .usages(db)
         .include_declaration(include_declaration)
         .locations()
