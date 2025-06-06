@@ -2,110 +2,105 @@ use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 
 use itertools::Itertools;
+use lsp_types::request::References;
 use lsp_types::{
     ClientCapabilities, Location, ReferenceClientCapabilities, ReferenceContext, ReferenceParams,
     TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
 };
 
-use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
-use crate::support::cursor::render_selections_with_attrs;
-use crate::support::{cursors, sandbox};
+use crate::support::MockClient;
+use crate::support::cursor::{Cursors, render_selections_with_attrs};
+use crate::support::transform::Transformer;
 
 mod consts;
 mod enums;
 mod fns;
+mod generated;
 mod macros;
 mod structs;
 mod traits;
 mod types;
 mod vars;
 
-fn caps(base: ClientCapabilities) -> ClientCapabilities {
-    ClientCapabilities {
-        text_document: base.text_document.or_else(Default::default).map(|it| {
-            TextDocumentClientCapabilities {
-                references: Some(ReferenceClientCapabilities { dynamic_registration: Some(false) }),
-                ..it
-            }
-        }),
-        ..base
-    }
-}
-
-fn find_references(cairo_code: &str) -> String {
-    let (cairo, cursors) = cursors(cairo_code);
-
-    let mut ls = sandbox! {
-        files {
-            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-            "src/lib.cairo" => cairo.clone(),
+impl Transformer for References {
+    fn capabilities(base: ClientCapabilities) -> ClientCapabilities {
+        ClientCapabilities {
+            text_document: base.text_document.or_else(Default::default).map(|it| {
+                TextDocumentClientCapabilities {
+                    references: Some(ReferenceClientCapabilities {
+                        dynamic_registration: Some(false),
+                    }),
+                    ..it
+                }
+            }),
+            ..base
         }
-        client_capabilities = caps;
-    };
+    }
 
-    ls.open_all_cairo_files_and_wait_for_project_update();
+    fn transform(mut ls: MockClient, cursors: Cursors) -> String {
+        let cairo = ls.fixture.read_file("src/lib.cairo");
+        let position = cursors.assert_single_caret();
 
-    let position = cursors.assert_single_caret();
-
-    let mut query = |include_declaration: bool| {
-        let params = ReferenceParams {
-            text_document_position: TextDocumentPositionParams {
-                text_document: ls.doc_id("src/lib.cairo"),
-                position,
-            },
-            context: ReferenceContext { include_declaration },
-            work_done_progress_params: Default::default(),
-            partial_result_params: Default::default(),
+        let mut query = |include_declaration: bool| {
+            let params = ReferenceParams {
+                text_document_position: TextDocumentPositionParams {
+                    text_document: ls.doc_id("src/lib.cairo"),
+                    position,
+                },
+                context: ReferenceContext { include_declaration },
+                work_done_progress_params: Default::default(),
+                partial_result_params: Default::default(),
+            };
+            let locations = ls.send_request::<lsp_request!("textDocument/references")>(params)?;
+            Some(locations.into_iter().map(LocationForComparison).collect::<HashSet<_>>())
         };
-        let locations = ls.send_request::<lsp_request!("textDocument/references")>(params)?;
-        Some(locations.into_iter().map(LocationForComparison).collect::<HashSet<_>>())
-    };
 
-    match (query(false), query(true)) {
-        (None, None) => "none response".into(),
-        (Some(_), None) => panic!(
-            "references excluding declaration returned response, but including declaration did not"
-        ),
-        (None, Some(_)) => panic!(
-            "references including declaration returned response, but excluding declaration did not"
-        ),
-        (Some(excluding_declaration), Some(including_declaration)) => {
-            assert!(
-                excluding_declaration.is_subset(&including_declaration),
-                "include_declarations: true should return a superset of include_declarations: \
+        match (query(false), query(true)) {
+            (None, None) => "none response".into(),
+            (Some(_), None) => panic!(
+                "references excluding declaration returned response, but including declaration did not"
+            ),
+            (None, Some(_)) => panic!(
+                "references including declaration returned response, but excluding declaration did not"
+            ),
+            (Some(excluding_declaration), Some(including_declaration)) => {
+                assert!(
+                    excluding_declaration.is_subset(&including_declaration),
+                    "include_declarations: true should return a superset of include_declarations: \
                  false"
-            );
+                );
 
-            let mut declarations: Vec<Location> = including_declaration
-                .difference(&excluding_declaration)
-                .sorted()
-                .map(|l| l.0.clone())
-                .collect();
+                let mut declarations: Vec<Location> = including_declaration
+                    .difference(&excluding_declaration)
+                    .sorted()
+                    .map(|l| l.0.clone())
+                    .collect();
 
-            let mut usages = excluding_declaration
-                .intersection(&including_declaration)
-                .sorted()
-                .map(|l| l.0.clone())
-                .collect::<Vec<_>>();
+                let mut usages = excluding_declaration
+                    .intersection(&including_declaration)
+                    .sorted()
+                    .map(|l| l.0.clone())
+                    .collect::<Vec<_>>();
 
-            let mut result = String::new();
+                let mut result = String::new();
 
-            let removed_via_declarations = remove_core_references(&mut declarations);
-            let removed_via_references = remove_core_references(&mut usages);
+                let removed_via_declarations = remove_core_references(&mut declarations);
+                let removed_via_references = remove_core_references(&mut usages);
 
-            if removed_via_declarations || removed_via_references {
-                result.push_str("// found several references in the core crate\n");
+                if removed_via_declarations || removed_via_references {
+                    result.push_str("// found several references in the core crate\n");
+                }
+
+                let ranges = declarations
+                    .into_iter()
+                    .map(|loc| (loc.range, Some("declaration".to_owned())))
+                    .chain(usages.into_iter().map(|loc| (loc.range, None)))
+                    .collect::<Vec<_>>();
+
+                result += &render_selections_with_attrs(&cairo, &ranges);
+
+                result
             }
-
-            let ranges = declarations
-                .into_iter()
-                .map(|loc| (loc.range, Some("declaration".to_owned())))
-                .chain(usages.into_iter().map(|loc| (loc.range, None)))
-                .collect::<Vec<_>>();
-
-            result += &render_selections_with_attrs(&cairo, &ranges);
-
-            result
         }
     }
 }
