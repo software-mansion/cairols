@@ -235,3 +235,46 @@ fn impl_method_via_definition() {
     }
     ")
 }
+
+#[test]
+fn type_bound() {
+    test_transform!(rename, r"
+    fn foo<T, +Dro<caret>p<T>>() {}
+    ", @r"
+    // found renames in the core crate
+    fn foo<T, +RENAMED<T>>() {}
+    ")
+}
+
+#[test]
+fn negative_type_bound() {
+    test_transform!(rename, r"
+    trait Trait<T> {}
+    impl Impl<T, -Dro<caret>p<T>> of Trait<T> {}
+    ", @r"
+    // found renames in the core crate
+    trait Trait<T> {}
+    impl Impl<T, -RENAMED<T>> of Trait<T> {}
+    ")
+}
+
+#[test]
+fn type_bound_user_trait() {
+    test_transform!(rename, r"
+    trait Traicik<T> {}
+    fn foo<T, +Traicik<caret><T>>() {}
+    ", @r"
+    trait RENAMED<T> {}
+    fn foo<T, +RENAMED<T>>() {}
+    ")
+}
+
+#[test]
+fn impl_bound() {
+    test_transform!(rename, r"
+    fn foo<T, impl Impl: Dro<caret>p<T>>() {}
+    ", @r"
+    // found renames in the core crate
+    fn foo<T, impl Impl: RENAMED<T>>() {}
+    ")
+}
