@@ -1,7 +1,14 @@
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
+use crate::lang::defs::{SymbolDef, SymbolSearch};
+use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lsp::capabilities::client::ClientCapabilitiesExt;
+use crate::lsp::result::{LSPError, LSPResult};
 use anyhow::anyhow;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_semantic::keyword::SELF_TYPE_KW;
+use cairo_lang_syntax::node::Terminal;
 use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 use lsp_server::ErrorCode;
@@ -11,12 +18,6 @@ use lsp_types::{
     TextDocumentEdit, TextEdit, Url, WorkspaceEdit,
 };
 use std::collections::HashMap;
-
-use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::{SymbolDef, SymbolSearch};
-use crate::lang::lsp::{LsProtoGroup, ToCairo};
-use crate::lsp::capabilities::client::ClientCapabilitiesExt;
-use crate::lsp::result::{LSPError, LSPResult};
 
 // TODO(#381): handle crates separately (manifest needs to be changed too).
 pub fn rename(
@@ -36,16 +37,26 @@ pub fn rename(
         ));
     }
 
-    let symbol = || {
-        let file = db.file_for_url(&params.text_document_position.text_document.uri)?;
-        let position = params.text_document_position.position.to_cairo();
-        let identifier = db.find_identifier_at_position(file, position)?;
-
-        // Declaration is used here because rename without changing the declaration would break the compilation
-        // e.g. when renaming trait usage - we also rename the trait
-        SymbolSearch::find_declaration(db, &identifier)
+    let Some(file) = db.file_for_url(&params.text_document_position.text_document.uri) else {
+        return Ok(None);
     };
-    let Some(symbol) = symbol() else {
+    let position = params.text_document_position.position.to_cairo();
+    let Some(identifier) = db.find_identifier_at_position(file, position) else {
+        return Ok(None);
+    };
+
+    if identifier.text(db) == SELF_TYPE_KW {
+        return Err(LSPError::new(
+            anyhow!(
+                "Renaming via `{SELF_TYPE_KW}` reference is not supported. Rename the item directly instead."
+            ),
+            ErrorCode::RequestFailed,
+        ));
+    }
+
+    // Declaration is used here because rename without changing the declaration would break the compilation
+    // e.g. when renaming trait usage - we also rename the trait
+    let Some(symbol) = SymbolSearch::find_declaration(db, &identifier) else {
         return Ok(None);
     };
     if let SymbolDef::ExprInlineMacro(_) = symbol.def {
