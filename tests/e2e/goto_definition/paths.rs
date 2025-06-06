@@ -198,7 +198,19 @@ fn crate_in_use_in_submodule_with_macros() {
         #[complex_attribute_macro_v2]
         pub fn func() {}
     }
-    ", @"none response")
+    ", @r"
+    <sel>#[complex_attribute_macro_v2]
+    mod bar {
+        #[complex_attribute_macro_v2]
+        use crate::foo::func;
+    }
+
+    #[complex_attribute_macro_v2]
+    mod foo {
+        #[complex_attribute_macro_v2]
+        pub fn func() {}
+    }</sel>
+    ")
 }
 
 // FIXME(#721)
@@ -215,7 +227,18 @@ fn use_item_via_crate_with_macros() {
         #[complex_attribute_macro_v2]
         use crate::Fo<caret>o;
     }
-    ", @"none response")
+    ", @r"
+    #[complex_attribute_macro_v2]
+    pub trait <sel>Foo</sel><T> {
+        fn foo(self: T);
+    }
+
+    #[complex_attribute_macro_v2]
+    mod module {
+        #[complex_attribute_macro_v2]
+        use crate::Foo;
+    }
+    ")
 }
 
 // FIXME(#721)
@@ -232,5 +255,16 @@ fn use_item_via_super_with_macros() {
         #[complex_attribute_macro_v2]
         use super::Fo<caret>o;
     }
-    ", @"none response")
+    ", @r"
+    #[complex_attribute_macro_v2]
+    pub trait <sel>Foo</sel><T> {
+        fn foo(self: T);
+    }
+
+    #[complex_attribute_macro_v2]
+    mod module {
+        #[complex_attribute_macro_v2]
+        use super::Foo;
+    }
+    ")
 }

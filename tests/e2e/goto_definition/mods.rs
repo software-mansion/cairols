@@ -144,7 +144,17 @@ fn crate_module_with_macros() {
     fn main() {
         hello();
     }
-    "#, @"none response")
+    "#, @r"
+    <sel>#[complex_attribute_macro_v2]
+    mod modzik {
+        #[complex_attribute_macro_v2]
+        use crate::main;
+    }
+
+    fn main() {
+        hello();
+    }</sel>
+    ")
 }
 
 #[test]
