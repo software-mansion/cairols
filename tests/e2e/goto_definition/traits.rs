@@ -364,3 +364,56 @@ fn trait_name_in_impl_with_macros() {
     }
     ")
 }
+
+#[test]
+fn type_bound() {
+    test_transform_with_macros!(GotoDefinition, r"
+    #[complex_attribute_macro_v2]
+    fn foo<T, +Dro<caret>p<T>>() {}
+    ", @r"
+    // → core/src/traits.cairo
+    pub trait <sel>Drop</sel><T>;
+    ")
+}
+
+#[test]
+fn negative_type_bound() {
+    test_transform_with_macros!(GotoDefinition, r"
+    #[complex_attribute_macro_v2]
+    trait Trait<T> {}
+
+    #[complex_attribute_macro_v2]
+    impl Impl<T, -Dro<caret>p<T>> of Trait<T> {}
+    ", @r"
+    // → core/src/traits.cairo
+    pub trait <sel>Drop</sel><T>;
+    ")
+}
+
+#[test]
+fn type_bound_user_trait() {
+    test_transform_with_macros!(GotoDefinition, r"
+    #[complex_attribute_macro_v2]
+    trait Traicik<T> {}
+
+    #[complex_attribute_macro_v2]
+    fn foo<T, +Traicik<caret><T>>() {}
+    ", @r"
+    #[complex_attribute_macro_v2]
+    trait <sel>Traicik</sel><T> {}
+
+    #[complex_attribute_macro_v2]
+    fn foo<T, +Traicik<T>>() {}
+    ")
+}
+
+#[test]
+fn impl_bound() {
+    test_transform_with_macros!(GotoDefinition, r"
+    #[complex_attribute_macro_v2]
+    fn foo<T, impl Impl: Dro<caret>p<T>>() {}
+    ", @r"
+    // → core/src/traits.cairo
+    pub trait <sel>Drop</sel><T>;
+    ")
+}

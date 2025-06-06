@@ -22,6 +22,7 @@ use cairo_lang_semantic::{ConcreteImplId, Expr, TypeLongId};
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::{Intern, LookupIntern};
@@ -62,6 +63,7 @@ pub fn find_definition(
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
         .or_else(|| try_impl_item_usages(db, identifier, lookup_items))
         .or_else(|| try_concrete_type_or_impl(db, identifier, lookup_items))
+        .or_else(|| try_trait_as_generic_parameter_bound(db, identifier, lookup_items))
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
 }
@@ -472,6 +474,50 @@ fn try_concrete_type_or_impl(
             | ResolvedGenericItem::GenericTypeAlias(_)
             | ResolvedGenericItem::Impl(_)
             | ResolvedGenericItem::GenericImplAlias(_) => {
+                return Some(ResolvedItem::Generic(resolved_item));
+            }
+            _ => (),
+        }
+    }
+
+    None
+}
+
+/// Resolves traits used as bounds for generic type parameters in functions, structs, enums, traits or impls,
+/// either as (positive or negative) type constraints like `fn foo<T, +Drop<T>>`
+/// or impl constraints like `fn foo<T, impl Impl: Drop<T>>`.
+fn try_trait_as_generic_parameter_bound(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<ResolvedItem> {
+    identifier.as_syntax_node().ancestor_of_kind(db, SyntaxKind::GenericParamList)?;
+
+    let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
+
+    for &lookup_item_id in lookup_items {
+        let type_path_segments =
+            identifier.as_syntax_node().ancestor_of_type::<ast::ExprPath>(db)?.to_segments(db);
+
+        let last_segment = type_path_segments.last()?;
+
+        if last_segment.identifier(db) != identifier.text(db) {
+            return None;
+        }
+
+        let mut resolver =
+            Resolver::new(db, module_file_id, InferenceId::LookupItemDeclaration(lookup_item_id));
+
+        let resolved_item = resolver
+            .resolve_generic_path_with_args(
+                &mut SemanticDiagnostics::default(),
+                type_path_segments.clone(),
+                NotFoundItemType::Identifier,
+            )
+            .ok()?;
+
+        match &resolved_item {
+            ResolvedGenericItem::Trait(_) | ResolvedGenericItem::Impl(_) => {
                 return Some(ResolvedItem::Generic(resolved_item));
             }
             _ => (),
