@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use if_chain::if_chain;
-use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
+use lsp_types::{CompletionItem, CompletionParams, CompletionResponse, CompletionTriggerKind};
 use mod_item::mod_completions;
 use path::path_suffix_completions;
 use struct_constructor::struct_constructor_completions;
@@ -16,14 +16,16 @@ use struct_constructor::struct_constructor_completions;
 use self::dot_completions::dot_completions;
 use crate::ide::completion::use_statement::{use_statement, use_statement_first_segment};
 use crate::lang::analysis_context::AnalysisContext;
-use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use expr::macro_call::macro_call_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
 use helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use pattern::{enum_pattern_completions, struct_pattern_completions};
 use self_completions::self_completions;
+use std::hash::Hash;
 
 mod attribute;
 mod dot_completions;
@@ -83,8 +85,31 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         node = node.parent(db).unwrap_or(node);
     }
 
+    let trigger_kind =
+        params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED);
+
+    let result: Vec<_> = db
+        .get_node_resultants(node)?
+        .into_iter()
+        .filter_map(|resultant| complete_ex(resultant, trigger_kind, db))
+        .flatten()
+        .map(CompletionItemHashable)
+        .collect::<OrderedHashSet<_>>()
+        .into_iter()
+        .map(|item| item.0)
+        .collect();
+
+    Some(CompletionResponse::Array(result))
+}
+
+fn complete_ex(
+    node: SyntaxNode,
+    trigger_kind: CompletionTriggerKind,
+    db: &AnalysisDatabase,
+) -> Option<Vec<CompletionItem>> {
     let ctx = AnalysisContext::from_node(db, node)?;
     let crate_id = ctx.module_file_id.0.owning_crate(db);
+    let file_id = node.stable_ptr(db).file_id(db);
 
     let mut completions = vec![];
 
@@ -194,13 +219,11 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     completions.extend(struct_pattern_completions(db, &ctx));
     completions.extend(enum_pattern_completions(db, &ctx));
 
-    if params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED)
-        == CompletionTriggerKind::INVOKED
-    {
+    if trigger_kind == CompletionTriggerKind::INVOKED {
         completions.extend(path_suffix_completions(db, &ctx))
     }
 
-    Some(CompletionResponse::Array(completions))
+    Some(completions)
 }
 
 fn find_last_meaning_node(db: &AnalysisDatabase, node: SyntaxNode) -> SyntaxNode {
@@ -223,4 +246,15 @@ fn find_last_meaning_node(db: &AnalysisDatabase, node: SyntaxNode) -> SyntaxNode
     }
 
     node
+}
+
+#[derive(PartialEq)]
+struct CompletionItemHashable(CompletionItem);
+
+impl Eq for CompletionItemHashable {}
+
+impl Hash for CompletionItemHashable {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        serde_json::to_string(&self.0).expect("serialization should not fail").hash(state);
+    }
 }
