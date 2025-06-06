@@ -13,6 +13,7 @@ use crate::support::transform::Transformer;
 mod consts;
 mod enums;
 mod fns;
+mod generated;
 mod macros;
 mod mods;
 mod paths;
