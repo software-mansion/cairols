@@ -8,9 +8,6 @@ analyzed_lines = """
     let _x = improper<caret>_inline_macro_v2!({ valid_syntax_btw = 10 });
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 {
     ({
         valid_syntax_btw = 10

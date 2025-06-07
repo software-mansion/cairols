@@ -7,19 +7,8 @@ expression: report
 analyzed_lines = """
 #[genera<caret>te_trait]
 impl ImplA of A<caret>Trait {
-        println!("a");<caret>
 """
 generated_code = """
-// generate_trait
-// --------------
-
-trait ATrait {
-    fn c(self: A);
-}
-
-// lib.cairo
-// ---------
-
 #[generate_trait]
 impl ImplA of ATrait {
     fn c(self: A) {
@@ -41,6 +30,10 @@ impl ImplA of ATrait {
         self.a + 1;
     }
 }
+//-----
+trait ATrait {
+    fn c(self: A);
+}
 """
 
 [[expansions]]
@@ -48,14 +41,43 @@ analyzed_lines = """
         print<caret>ln!("a");
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 {
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
     core::result::ResultTrait::<
         (), core::fmt::Error,
-    >::unwrap(writeln!(__formatter_for_print_macros__, "a"));
+    >::unwrap(
+        {
+            core::byte_array::ByteArrayTrait::append_word(
+                ref __formatter_for_print_macros__.buffer, 0x610a, 2,
+            );
+            core::result::Result::<(), core::fmt::Error>::Ok(())
+        },
+    );
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+}
+"""
+
+[[expansions]]
+analyzed_lines = """
+        println!("a");<caret>
+"""
+generated_code = """
+fn c(self: A) {
+    {
+        let mut __formatter_for_print_macros__: core::fmt::Formatter =
+            core::traits::Default::default();
+        core::result::ResultTrait::<
+            (), core::fmt::Error,
+        >::unwrap(
+            {
+                core::byte_array::ByteArrayTrait::append_word(
+                    ref __formatter_for_print_macros__.buffer, 0x610a, 2,
+                );
+                core::result::Result::<(), core::fmt::Error>::Ok(())
+            },
+        );
+        core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    }
+    self.a + 1;
 }
 """
