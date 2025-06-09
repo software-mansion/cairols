@@ -1,9 +1,10 @@
-use crate::find_references::find_references;
-use crate::support::insta::test_transform;
+use lsp_types::request::References;
+
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn enum_name() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     enum Fo<caret>o {
         Bar,
         Baz,
@@ -48,7 +49,7 @@ fn enum_name() {
 
 #[test]
 fn enum_variants_via_declaration() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     enum Foo { Ba<caret>r, Baz }
     fn main() {
         let foo = Foo::Bar;
@@ -71,7 +72,7 @@ fn enum_variants_via_declaration() {
 
 #[test]
 fn enum_variants_via_expr() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     enum Foo { Bar, Baz }
     fn main() {
         let foo = Foo::Ba<caret>r;
@@ -94,7 +95,7 @@ fn enum_variants_via_expr() {
 
 #[test]
 fn enum_variants_via_pattern() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     enum Foo { Bar, Baz }
     fn main() {
         let foo = Foo::Bar;
@@ -105,6 +106,35 @@ fn enum_variants_via_pattern() {
     }
     "#, @r"
     enum Foo { <sel=declaration>Bar</sel>, Baz }
+    fn main() {
+        let foo = Foo::<sel>Bar</sel>;
+        match foo {
+            Foo::<sel>Bar</sel> => {},
+            _ => {}
+        }
+    }
+    ")
+}
+
+#[test]
+fn enum_variants_via_pattern_with_macros() {
+    test_transform_with_macros!(References, r#"
+    #[complex_attribute_macro_v2]
+    enum Foo { Bar, Baz }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let foo = Foo::Bar;
+        match foo {
+            Foo::B<caret>ar => {},
+            _ => {}
+        }
+    }
+    "#, @r"
+    #[complex_attribute_macro_v2]
+    enum Foo { <sel=declaration>Bar</sel>, Baz }
+
+    #[complex_attribute_macro_v2]
     fn main() {
         let foo = Foo::<sel>Bar</sel>;
         match foo {
