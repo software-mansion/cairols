@@ -54,11 +54,22 @@ pub fn rename(
             ErrorCode::RequestFailed,
         ));
     }
+    let symbol_name = Some(symbol.name(db));
 
     let locations: Vec<_> = symbol
         .usages(db)
         .include_declaration(true)
-        .locations()
+        .originating_locations(db)
+        .filter(|(file, span)| {
+            db.find_syntax_node_at_offset(*file, span.start)
+                // 1. Sanity check: `span` is a span of a terminal identifier without trivia.
+                //    It should be the same as the span of a token at offset `span.start`.
+                // 2. Filter out any symbol with a different name than the definition.
+                //    Rationale: These symbols most likely are nodes mapped back to call site.
+                //    If this is not the case, it means that the macro does something unusual and
+                //    the user should rename the remaining cases themselves.
+                .is_some_and(|node| node.span(db) == *span && node.text(db) == symbol_name)
+        })
         .unique()
         .filter_map(|loc| db.lsp_location(loc))
         .collect();

@@ -184,10 +184,39 @@ impl SymbolDef {
                     db,
                     &[SyntaxKind::FunctionWithBody, SyntaxKind::TraitItemFunction],
                 ) {
-                    SearchScope::file_span(
-                        owning_function.stable_ptr(db).file_id(db),
-                        owning_function.span(db),
-                    )
+                    // Add generated virtual files to the search scope if such files could be
+                    // generated from this function;
+                    // i.e. if there is an attribute on the function or an inline macro inside it.
+                    // Otherwise, search only the function scope.
+                    if owning_function
+                        .ancestor_of_kinds(
+                            db,
+                            &[SyntaxKind::AttributeList, SyntaxKind::ExprInlineMacro],
+                        )
+                        .is_some()
+                    {
+                        let file_id = owning_function.stable_ptr(db).file_id(db);
+                        let files_spans = db
+                            .file_and_subfiles_with_corresponding_modules(file_id)
+                            .unwrap_or_default()
+                            .0
+                            .into_iter()
+                            .map(|f| {
+                                if f == file_id {
+                                    (f, Some(owning_function.span(db)))
+                                } else {
+                                    (f, None)
+                                }
+                            })
+                            .collect();
+
+                        SearchScope::files_spans(files_spans)
+                    } else {
+                        SearchScope::file_span(
+                            owning_function.stable_ptr(db).file_id(db),
+                            owning_function.span(db),
+                        )
+                    }
                 } else {
                     SearchScope::file(var.definition_stable_ptr(db).file_id(db))
                 }

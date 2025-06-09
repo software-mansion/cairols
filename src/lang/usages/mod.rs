@@ -89,6 +89,14 @@ impl<'a> FindUsages<'a> {
         self.collect().into_iter().map(FoundUsage::location)
     }
 
+    /// Collects just the originating locations of all found usages.
+    pub fn originating_locations(
+        self,
+        db: &AnalysisDatabase,
+    ) -> impl Iterator<Item = (FileId, TextSpan)> {
+        self.collect().into_iter().map(|usage| usage.originating_location(db).location())
+    }
+
     /// Executes this search and calls the given sink for each found usage.
     #[tracing::instrument(skip_all)]
     pub fn search(self, sink: &mut dyn FnMut(FoundUsage) -> ControlFlow<(), ()>) {
@@ -102,7 +110,7 @@ impl<'a> FindUsages<'a> {
             if let Some(stable_ptr) = self.symbol.definition_stable_ptr(db) {
                 // Definition can be in vfs, common for `#[generate_trait]`, map it back to user code.
                 let usage = FoundUsage::from_stable_ptr(db, stable_ptr);
-                flow!(sink(usage.originating_location(db)));
+                flow!(sink(usage));
             }
         }
 
