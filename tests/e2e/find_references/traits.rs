@@ -1,9 +1,10 @@
-use crate::find_references::find_references;
-use crate::support::insta::test_transform;
+use lsp_types::request::References;
+
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn trait_via_definition() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     pub trait ShapeGeometry<T> {
         fn area(self: T) -> u64;
     }
@@ -42,7 +43,7 @@ fn trait_via_definition() {
 
 #[test]
 fn trait_method_via_definition() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -91,7 +92,7 @@ fn trait_method_via_definition() {
 
 #[test]
 fn trait_method_via_impl_call() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -124,7 +125,7 @@ fn trait_method_via_impl_call() {
 
 #[test]
 fn trait_method_via_dot_call() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -173,7 +174,7 @@ fn trait_method_via_dot_call() {
 
 #[test]
 fn trait_method_via_path_call() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -222,7 +223,7 @@ fn trait_method_via_path_call() {
 
 #[test]
 fn impl_method_via_definition() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -271,7 +272,7 @@ fn impl_method_via_definition() {
 
 #[test]
 fn dual_implementations_of_trait_via_trait_function() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait<T> {
@@ -324,7 +325,7 @@ fn dual_implementations_of_trait_via_trait_function() {
 
 #[test]
 fn dual_implementations_of_trait_via_trait_type() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait FooTrait {
         type Overrid<caret>eMe;
     }
@@ -359,7 +360,7 @@ fn dual_implementations_of_trait_via_trait_type() {
 
 #[test]
 fn dual_implementations_of_trait_via_trait_impl() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait ConstCarryingTrait {
         const value: felt252;
     }
@@ -408,7 +409,7 @@ fn dual_implementations_of_trait_via_trait_impl() {
 
 #[test]
 fn impl_impl_via_usage() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait Bush {
         fn bush() -> felt252;
     }
@@ -485,7 +486,7 @@ fn impl_impl_via_usage() {
 
 #[test]
 fn impl_impl_via_definition() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait Bush {
         fn bush() -> felt252;
     }
@@ -562,7 +563,7 @@ fn impl_impl_via_definition() {
 
 #[test]
 fn impl_impl_via_trait() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait Bush {
         fn bush() -> felt252;
     }
@@ -637,7 +638,7 @@ fn impl_impl_via_trait() {
 
 #[test]
 fn associated_impl_member_const_usage() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait ConstCarryingTrait {
         const value: felt252;
     }
@@ -696,7 +697,7 @@ fn associated_impl_member_const_usage() {
 
 #[test]
 fn associated_impl_function_usage() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait FunctionImplementingTrait {
         fn function() -> felt252;
     }
@@ -763,7 +764,7 @@ fn associated_impl_function_usage() {
 
 #[test]
 fn associated_impl_type_usage() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait TypeCarryingTrait {
         type Numeric;
     }
@@ -822,7 +823,7 @@ fn associated_impl_type_usage() {
 
 #[test]
 fn type_bound() {
-    test_transform!(find_references, r"
+    test_transform_plain!(References, r"
     fn foo<T, +Dro<caret>p<T>>() {}
     ", @r"
     // found several references in the core crate
@@ -832,7 +833,7 @@ fn type_bound() {
 
 #[test]
 fn negative_type_bound() {
-    test_transform!(find_references, r"
+    test_transform_plain!(References, r"
     trait Trait<T> {}
     impl Impl<T, -Dro<caret>p<T>> of Trait<T> {}
     ", @r"
@@ -844,7 +845,7 @@ fn negative_type_bound() {
 
 #[test]
 fn type_bound_user_trait() {
-    test_transform!(find_references, r"
+    test_transform_plain!(References, r"
     trait Traicik<T> {}
     fn foo<T, +Traicik<caret><T>>() {}
     ", @r"
@@ -855,10 +856,55 @@ fn type_bound_user_trait() {
 
 #[test]
 fn impl_bound() {
-    test_transform!(find_references, r"
+    test_transform_plain!(References, r"
     fn foo<T, impl Impl: Dro<caret>p<T>>() {}
     ", @r"
     // found several references in the core crate
     fn foo<T, impl Impl: <sel>Drop</sel><T>>() {}
+    ")
+}
+
+#[test]
+fn trait_method_via_impl_call_with_macros() {
+    test_transform_with_macros!(References, r#"
+    #[derive(Drop)]
+    #[complex_attribute_macro_v2]
+    struct Foo {}
+
+    #[complex_attribute_macro_v2]
+    trait FooTrait {
+        fn are<caret>a() -> u64;
+    }
+
+    #[complex_attribute_macro_v2]
+    impl FooImpl of FooTrait {
+        fn area() -> u64 { 0 }
+    }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let y = FooImpl::area();
+        let z = FooImpl::area();
+    }
+    "#, @r"
+    #[derive(Drop)]
+    #[complex_attribute_macro_v2]
+    struct Foo {}
+
+    #[complex_attribute_macro_v2]
+    trait FooTrait {
+        fn <sel=declaration>area</sel>() -> u64;
+    }
+
+    #[complex_attribute_macro_v2]
+    impl FooImpl of FooTrait {
+        fn <sel>area</sel>() -> u64 { 0 }
+    }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let y = FooImpl::<sel>area</sel>();
+        let z = FooImpl::<sel>area</sel>();
+    }
     ")
 }

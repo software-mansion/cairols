@@ -1,9 +1,10 @@
-use crate::find_references::find_references;
-use crate::support::insta::test_transform;
+use lsp_types::request::References;
+
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn var_via_binding() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn main() {
         let foo<caret>bar = 1233; // good
         let x = foobar + 1; // good
@@ -24,7 +25,7 @@ fn var_via_binding() {
 
 #[test]
 fn var_via_use() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn main() {
         let foobar = 1233; // good
         let x = foo<caret>bar + 1; // good
@@ -45,7 +46,7 @@ fn var_via_use() {
 
 #[test]
 fn complex_binding() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn main() {
         let (foobar, foobar2) = (1, 2); // good
         let x = foo<caret>bar + foobar2; // good
@@ -64,7 +65,7 @@ fn complex_binding() {
 
 #[test]
 fn var_captured_by_closure_outside() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn main() {
         let foobar = 1;
         let x = foo<caret>bar + 1;
@@ -81,7 +82,7 @@ fn var_captured_by_closure_outside() {
 
 #[test]
 fn var_captured_by_closure_inside() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn main() {
         let foobar = 1;
         let x = foobar + 1;
@@ -98,7 +99,7 @@ fn var_captured_by_closure_inside() {
 
 #[test]
 fn shadowing1() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn main() {
         let foobar = 1;
         let x = foo<caret>bar + 1;
@@ -117,7 +118,7 @@ fn shadowing1() {
 
 #[test]
 fn shadowing2() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn main() {
         let foobar = 1;
         let x = foobar + 1;
@@ -136,7 +137,7 @@ fn shadowing2() {
 
 #[test]
 fn param_via_binding() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn pow(nu<caret>m: felt252) -> felt252 {
         num * num
     }
@@ -149,7 +150,7 @@ fn param_via_binding() {
 
 #[test]
 fn param_via_use() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn pow(num: felt252) -> felt252 {
         nu<caret>m * num
     }
@@ -162,7 +163,7 @@ fn param_via_use() {
 
 #[test]
 fn param_captured_by_closure() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn pow(num: felt252) -> felt252 {
         let f = |x| nu<caret>m * x;
         num * f(num)
@@ -177,7 +178,7 @@ fn param_captured_by_closure() {
 
 #[test]
 fn var_in_trait_function_default_body() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     trait Foo<T> {
         fn foo() {
             let foobar = 42;
@@ -202,7 +203,7 @@ fn var_in_trait_function_default_body() {
 
 #[test]
 fn closure_param_via_use() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn main() {
         let f = |abc: felt252| a<caret>bc + 1;
     }
@@ -215,13 +216,36 @@ fn closure_param_via_use() {
 
 #[test]
 fn closure_param_via_binding() {
-    test_transform!(find_references, r#"
+    test_transform_plain!(References, r#"
     fn main() {
         let f = |a<caret>bc: felt252| abc + 1;
     }
     "#, @r"
     fn main() {
         let f = |<sel=declaration>abc</sel>: felt252| <sel>abc</sel> + 1;
+    }
+    ")
+}
+
+#[test]
+fn var_via_binding_with_macros() {
+    test_transform_with_macros!(References, r#"
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let foo<caret>bar = 1233; // good
+        let x = foobar + 1; // good
+    }
+    fn bar() {
+        let foobar = 42; // bad
+    }
+    "#, @r"
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let <sel=declaration>foobar</sel> = 1233; // good
+        let x = <sel>foobar</sel> + 1; // good
+    }
+    fn bar() {
+        let foobar = 42; // bad
     }
     ")
 }
