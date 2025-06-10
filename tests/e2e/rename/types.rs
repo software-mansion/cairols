@@ -1,9 +1,10 @@
-use crate::rename::rename;
-use crate::support::insta::test_transform;
+use lsp_types::request::Rename;
+
+use crate::support::insta::test_transform_plain;
 
 #[test]
 fn test_type_alias_in_use() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     mod mod1 {
         struct Struct {};
         type TypeAlias = Struct;
@@ -20,7 +21,7 @@ fn test_type_alias_in_use() {
 
 #[test]
 fn test_type_alias_in_alias_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     type AnotherTypeAlias = TypeAlias<caret>;
@@ -33,7 +34,7 @@ fn test_type_alias_in_alias_as_type() {
 
 #[test]
 fn test_type_alias_in_alias_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     type AnotherTypeAlias = Array<TypeAlias<caret>>;
@@ -46,7 +47,7 @@ fn test_type_alias_in_alias_as_type_parameter() {
 
 #[test]
 fn test_type_alias_in_variable_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     fn foo() {
@@ -63,7 +64,7 @@ fn test_type_alias_in_variable_as_type() {
 
 #[test]
 fn test_type_alias_in_variable_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     fn foo() {
@@ -80,7 +81,7 @@ fn test_type_alias_in_variable_as_type_parameter() {
 
 #[test]
 fn test_type_alias_in_function_argument_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     fn foo(x: TypeAlias<caret>) {}
@@ -93,7 +94,7 @@ fn test_type_alias_in_function_argument_as_type() {
 
 #[test]
 fn test_type_alias_in_function_argument_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     fn foo(x: Array<TypeAlias<caret>>) {}
@@ -106,7 +107,7 @@ fn test_type_alias_in_function_argument_as_type_parameter() {
 
 #[test]
 fn test_type_alias_in_return_type_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     fn foo() -> TypeAlias<caret> { 0x0 }
@@ -119,7 +120,7 @@ fn test_type_alias_in_return_type_as_type() {
 
 #[test]
 fn test_type_alias_in_return_type_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     fn foo() -> Array<TypeAlias<caret>> { 0x0 }
@@ -132,7 +133,7 @@ fn test_type_alias_in_return_type_as_type_parameter() {
 
 #[test]
 fn test_type_alias_in_struct_field_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     struct Struct {
@@ -149,7 +150,7 @@ fn test_type_alias_in_struct_field_as_type() {
 
 #[test]
 fn test_type_alias_in_struct_field_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     struct Struct {
@@ -166,7 +167,7 @@ fn test_type_alias_in_struct_field_as_type_parameter() {
 
 #[test]
 fn test_type_alias_in_turbofish_enum_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     fn foo() {
@@ -183,7 +184,7 @@ fn test_type_alias_in_turbofish_enum_as_type() {
 
 #[test]
 fn test_type_alias_in_turbofish_enum_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     fn foo() {
@@ -200,7 +201,7 @@ fn test_type_alias_in_turbofish_enum_as_type_parameter() {
 
 #[test]
 fn test_type_alias_in_trait_associated_type_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {}
     type TypeAlias = Struct;
     trait Trait {
@@ -225,7 +226,7 @@ fn test_type_alias_in_trait_associated_type_as_type() {
 
 #[test]
 fn test_type_alias_in_trait_associated_type_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {
         a: felt252,
     }
@@ -254,7 +255,7 @@ fn test_type_alias_in_trait_associated_type_as_type_parameter() {
 
 #[test]
 fn test_type_alias_in_trait_associated_const_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait {
@@ -271,7 +272,7 @@ fn test_type_alias_in_trait_associated_const_as_type() {
 
 #[test]
 fn test_type_alias_in_trait_associated_const_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait {
@@ -288,7 +289,7 @@ fn test_type_alias_in_trait_associated_const_as_type_parameter() {
 
 #[test]
 fn test_type_alias_in_trait_generic_bound_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait<T, +Into<TypeAlias<caret>, T>> {}
@@ -301,7 +302,7 @@ fn test_type_alias_in_trait_generic_bound_as_type() {
 
 #[test]
 fn test_type_alias_in_trait_generic_bound_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait<T, +Into<Array<TypeAlias<caret>>, T>> {}
@@ -314,7 +315,7 @@ fn test_type_alias_in_trait_generic_bound_as_type_parameter() {
 
 #[test]
 fn test_type_alias_in_impl_associated_type_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait {
@@ -337,7 +338,7 @@ fn test_type_alias_in_impl_associated_type_as_type() {
 
 #[test]
 fn test_type_alias_in_impl_associated_type_via_usage() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait {
@@ -368,7 +369,7 @@ fn test_type_alias_in_impl_associated_type_via_usage() {
 
 #[test]
 fn test_type_alias_in_impl_associated_type_via_impl() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait {
@@ -399,7 +400,7 @@ fn test_type_alias_in_impl_associated_type_via_impl() {
 
 #[test]
 fn test_type_alias_in_impl_associated_type_via_trait() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait {
@@ -430,7 +431,7 @@ fn test_type_alias_in_impl_associated_type_via_trait() {
 
 #[test]
 fn test_impl_impl_via_usage() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     trait ImplementMe {
         const A: felt252;
     }
@@ -471,7 +472,7 @@ fn test_impl_impl_via_usage() {
 
 #[test]
 fn test_impl_impl_via_impl() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     trait ImplementMe {
         const A: felt252;
     }
@@ -512,7 +513,7 @@ fn test_impl_impl_via_impl() {
 
 #[test]
 fn test_impl_impl_via_trait() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     trait ImplementMe {
         const A: felt252;
     }
@@ -553,7 +554,7 @@ fn test_impl_impl_via_trait() {
 
 #[test]
 fn test_type_alias_in_impl_associated_type_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait {
@@ -576,7 +577,7 @@ fn test_type_alias_in_impl_associated_type_as_type_parameter() {
 
 #[test]
 fn test_type_alias_in_impl_associated_const_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait {
@@ -599,7 +600,7 @@ fn test_type_alias_in_impl_associated_const_as_type() {
 
 #[test]
 fn test_type_alias_in_impl_associated_const_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait {
@@ -622,7 +623,7 @@ fn test_type_alias_in_impl_associated_const_as_type_parameter() {
 
 #[test]
 fn test_type_alias_in_impl_generic_bound_as_type() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait<T, +Into<TypeAlias, T>> {}
@@ -637,7 +638,7 @@ fn test_type_alias_in_impl_generic_bound_as_type() {
 
 #[test]
 fn test_type_alias_in_impl_generic_bound_as_type_parameter() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     struct Struct {};
     type TypeAlias = Struct;
     trait Trait<T, +Into<TypeAlias, T>> {}
@@ -647,5 +648,28 @@ fn test_type_alias_in_impl_generic_bound_as_type_parameter() {
     type RENAMED = Struct;
     trait Trait<T, +Into<RENAMED, T>> {}
     impl<T, +Into<Array<RENAMED>, T>> Impl of Trait<T> {}
+    ")
+}
+
+#[test]
+fn test_type_alias_in_use_with_macros() {
+    test_transform_plain!(Rename, r#"
+    #[complex_attribute_macro_v2]
+    mod mod1 {
+        struct Struct {};
+        type TypeAlias = Struct;
+    }
+
+    #[complex_attribute_macro_v2]
+    use mod1::TypeAlias<caret>;
+    "#, @r"
+    #[complex_attribute_macro_v2]
+    mod mod1 {
+        struct Struct {};
+        type RENAMED = Struct;
+    }
+
+    #[complex_attribute_macro_v2]
+    use mod1::RENAMED;
     ")
 }

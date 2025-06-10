@@ -38,7 +38,11 @@ impl Transformer for Hover {
         }
     }
 
-    fn transform(mut ls: MockClient, cursors: Cursors) -> String {
+    fn transform(
+        mut ls: MockClient,
+        cursors: Cursors,
+        _config: Option<serde_json::Value>,
+    ) -> String {
         let cairo = ls.fixture.read_file("src/lib.cairo");
         let position = cursors.assert_single_caret();
 

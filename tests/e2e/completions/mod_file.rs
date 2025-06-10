@@ -96,7 +96,7 @@ impl Transformer for OtherTopLevelFile {
         Completion::capabilities(base)
     }
 
-    fn transform(ls: MockClient, cursors: Cursors) -> String {
+    fn transform(ls: MockClient, cursors: Cursors, _config: Option<serde_json::Value>) -> String {
         transform(ls, cursors, Self::main_file())
     }
 
@@ -185,7 +185,7 @@ impl Transformer for NestedFile {
         Completion::capabilities(base)
     }
 
-    fn transform(ls: MockClient, cursors: Cursors) -> String {
+    fn transform(ls: MockClient, cursors: Cursors, _config: Option<serde_json::Value>) -> String {
         transform(ls, cursors, Self::main_file())
     }
 
