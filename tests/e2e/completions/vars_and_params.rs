@@ -1,9 +1,9 @@
-use super::test_completions_text_edits;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::request::Completion;
 
 #[test]
 fn all_prefixed() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     fn a(param: felt252, param2: felt252, param3: felt252){
         let foo = 1;
         let bar = 1;
@@ -62,7 +62,7 @@ fn all_prefixed() {
 
 #[test]
 fn only_before_cursor() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     fn a(param: felt252, param2: felt252, param3: felt252){
         let foo = 1;
         let bar = 1;
@@ -118,7 +118,7 @@ fn only_before_cursor() {
 
 #[test]
 fn disallow_recursive_definition() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     fn a(param: felt252, param2: felt252, param3: felt252){
         let foo = fo<caret>;
     }
@@ -156,7 +156,7 @@ fn disallow_recursive_definition() {
 
 #[test]
 fn disallow_nested_recursive_definition() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     fn a(param: felt252, param2: felt252, param3: felt252){
         let foo_bar_baz = {
             let b = foo_bar_b<caret>;
@@ -172,7 +172,7 @@ fn disallow_nested_recursive_definition() {
 
 #[test]
 fn work_with_params() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     // funny names so there is no corelib completion in test
     fn a(paxram: felt252, paxram2: felt252, paxram3: felt252){
         paxr<caret>
@@ -212,7 +212,7 @@ fn work_with_params() {
 
 #[test]
 fn mixed_params_vars() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     fn a(bar: felt252, param2: felt252, param3: felt252){
         let baz = 1;
         ba<caret>
@@ -267,7 +267,7 @@ fn mixed_params_vars() {
 
 #[test]
 fn ignores_from_macros() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     fn a(param: felt252, param2: felt252, param3: felt252){
         // this generates variable __array_builder_macro_result__ in nested block
         array![1_felt252];
@@ -285,7 +285,7 @@ fn ignores_from_macros() {
 
 #[test]
 fn ignores_from_blocks() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     fn a(param: felt252, param2: felt252, param3: felt252){
         {
             let bbb = 1234;
@@ -304,7 +304,7 @@ fn ignores_from_blocks() {
 
 #[test]
 fn works_in_same_block() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     fn a(param: felt252, param2: felt252, param3: felt252){
         {
 
@@ -327,7 +327,7 @@ fn works_in_same_block() {
 
 #[test]
 fn works_usage_in_block() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     fn a(param: felt252, param2: felt252, param3: felt252){
         {
 
