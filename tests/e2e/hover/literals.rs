@@ -1,9 +1,9 @@
-use crate::hover::test_hover;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::Hover;
 
 #[test]
 fn const_initializer_value() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     const SOME_CONST: felt252 = 0x<caret>123;
     "#,@r#"
     source_context = """
@@ -24,7 +24,7 @@ fn const_initializer_value() {
 
 #[test]
 fn const_initializer_value_wrong_type() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     const WRONG_TYPE_CONST: u8 = 123_<caret>felt252;
     "#,@r#"
     source_context = """
@@ -39,7 +39,7 @@ fn const_initializer_value_wrong_type() {
 
 #[test]
 fn const_initializer_value_wrong_type_shortstring() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     const WRONG_TYPE_CONST: u8 = 'ab<caret>cd';
     "#,@r#"
     source_context = """
@@ -54,7 +54,7 @@ fn const_initializer_value_wrong_type_shortstring() {
 
 #[test]
 fn const_initializer_value_wrong_type_bytearray() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     const WRONG_TYPE_CONST: u8 = "ab<caret>cd";
     "#,@r#"
     source_context = """
@@ -65,7 +65,7 @@ fn const_initializer_value_wrong_type_bytearray() {
 
 #[test]
 fn var_short_string() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// Declares many variables and does nothing.
     fn many_variables() {
         let a = 'short<caret>_string';
@@ -89,7 +89,7 @@ fn var_short_string() {
 
 #[test]
 fn var_byte_array() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// Declares many variables and does nothing.
     fn many_variables() {
         let b: ByteArray = "normal_string<caret>";
@@ -111,7 +111,7 @@ fn var_byte_array() {
 
 #[test]
 fn var_explicit_felt() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// Declares many variables and does nothing.
     fn many_variables() {
         let c = <caret>0x21_felt252;
@@ -135,7 +135,7 @@ fn var_explicit_felt() {
 
 #[test]
 fn var_explicit_u32() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// Declares many variables and does nothing.
     fn many_variables() {
         let d = 0x3<caret>3_u32;
@@ -159,7 +159,7 @@ fn var_explicit_u32() {
 
 #[test]
 fn var_dec_felt() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// Declares many variables and does nothing.
     fn many_variables() {
         let e = 5<caret>0;
@@ -183,7 +183,7 @@ fn var_dec_felt() {
 
 #[test]
 fn var_bin_felt() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// Declares many variables and does nothing.
     fn many_variables() {
         let f = 0b<caret>1111;
@@ -207,7 +207,7 @@ fn var_bin_felt() {
 
 #[test]
 fn var_oct_felt() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// Declares many variables and does nothing.
     fn many_variables() {
         let g = 0o<caret>77;
@@ -231,7 +231,7 @@ fn var_oct_felt() {
 
 #[test]
 fn var_explicit_hex_felt_to_u32() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// Declares many variables generating errors.
     fn many_wrong_variables() {
         let a: u32 = 0x<caret>170_felt252;
@@ -255,7 +255,7 @@ fn var_explicit_hex_felt_to_u32() {
 
 #[test]
 fn var_string_to_u8() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// Declares many variables generating errors.
     fn many_wrong_variables() {
         let b: u8 = "some_st<caret>ring";
@@ -277,7 +277,7 @@ fn var_string_to_u8() {
 
 #[test]
 fn var_hex_felt_to_u8() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// Declares many variables generating errors.
     fn many_wrong_variables() {
         let c: u8 = 0x<caret>fff;
