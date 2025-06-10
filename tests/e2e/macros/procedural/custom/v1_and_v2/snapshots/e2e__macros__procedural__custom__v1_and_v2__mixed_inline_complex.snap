@@ -9,10 +9,7 @@ analyzed_lines = """
     let _x = complex_inline_macro!(10 +<caret> 10);
 """
 generated_code = """
-// lib.cairo
-// ---------
-
-simple_inline_macro!((10 + 10)) + simple_inline_macro!((10 + 10))
+12 + 11
 """
 
 [[expansions]]
@@ -21,8 +18,5 @@ analyzed_lines = """
     let _y = complex_inline_macro_v2!(10 +<caret> 10);
 """
 generated_code = """
-// lib.cairo
-// ---------
-
-simple_inline_macro_v2!((10 + 10)) + simple_inline_macro_v2!((10 + 10))
+((10 + 10)) + ((10 + 10))
 """

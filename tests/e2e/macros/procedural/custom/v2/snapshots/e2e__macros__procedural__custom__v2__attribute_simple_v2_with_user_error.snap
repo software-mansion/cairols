@@ -10,17 +10,6 @@ fn <caret>foo() { a = 5; }
 fn foo() { a = 5; <caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
-#[simple_attribute_macro_v2]
-fn foo() {
-    a = 5;
-}
-
-// proc_macro_simple_attribute_macro_v2
-// ------------------------------------
-
 fn foo() {
     a = 5;
 }

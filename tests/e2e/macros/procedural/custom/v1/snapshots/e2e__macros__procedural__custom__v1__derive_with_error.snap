@@ -11,9 +11,6 @@ struct Empty<caret>Struct {}
 struct EmptyStruct {<caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 #[derive(ErrorDeriveMacro)]
 struct EmptyStruct {}
 """

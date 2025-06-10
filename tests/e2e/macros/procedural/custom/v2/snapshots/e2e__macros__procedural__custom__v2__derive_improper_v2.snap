@@ -11,15 +11,9 @@ struct Empty<caret>Struct {}
 struct EmptyStruct {<caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 #[derive(ImproperDeriveMacroV2)]
 struct EmptyStruct {}
-
-// proc_macro_derive
-// -----------------
-
+//-----
 fn generated_function_v2() {
     some < *> haskell < $> syntax
 }

@@ -11,16 +11,10 @@ struct Empty<caret>Struct {}
 struct EmptyStruct {<caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 #[derive(ComplexDeriveMacro)]
 struct EmptyStruct {}
 
-// proc_macro_derive
-// -----------------
-
-#[simple_attribute_macro]
+//-----
 fn generated_function() {}
 
 trait MyTrait<T> {
@@ -30,11 +24,6 @@ trait MyTrait<T> {
 impl MyTraitImpl of MyTrait<felt252> {
     fn foo(t: felt252) {}
 }
-
-// proc_macro_simple_attribute_macro
-// ---------------------------------
-
-fn generated_function() {}
 """
 
 [[expansions]]
@@ -45,29 +34,19 @@ struct Empty<caret>StructV2 {}
 struct EmptyStructV2 {<caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 #[derive(ComplexDeriveMacroV2)]
 struct EmptyStructV2 {}
-
-// proc_macro_derive
-// -----------------
-
-#[simple_attribute_macro_v2]
+//-----
 fn another_generated_function_v2() {}
+fn generated_function_v2() {}
+
 trait MyTraitV2<T> {
     fn bar(t: T);
 }
+
 impl MyTraitImpl of MyTraitV2<felt252> {
     fn bar(t: felt252) {}
 }
-
-// proc_macro_simple_attribute_macro_v2
-// ------------------------------------
-
-fn another_generated_function_v2() {}
-fn generated_function_v2() {}
 """
 
 mapped_diagnostics:

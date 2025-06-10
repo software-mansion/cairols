@@ -10,15 +10,6 @@ fn f<caret>oo() {}
 fn foo() {<caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
-#[improper_attribute_macro_v2]
-fn foo() {}
-
-// proc_macro_improper_attribute_macro_v2
-// --------------------------------------
-
 fn foo() {}
 fn added_fun_v2() {
     {
