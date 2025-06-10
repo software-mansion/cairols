@@ -1,9 +1,9 @@
-use super::test_completions_text_edits;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::request::Completion;
 
 #[test]
 fn helper_module() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     mod helper_module {
         pub trait Trait1<T> {
             fn some_method(self: @T);
@@ -44,7 +44,7 @@ fn helper_module() {
 
 #[test]
 fn non_exporting_module() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     mod helper_module {
         pub trait Trait1<T> {
             fn some_method(self: @T);
@@ -77,7 +77,7 @@ fn non_exporting_module() {
 
 #[test]
 fn nested_module() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     mod helper_module {
         pub trait Trait1<T> {
             fn some_method(self: @T);
@@ -112,7 +112,7 @@ fn nested_module() {
 
 #[test]
 fn non_existent_module() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     mod helper_module {
         pub trait Trait1<T> {
             fn some_method(self: @T);
@@ -145,7 +145,7 @@ fn non_existent_module() {
 
 #[test]
 fn in_use_path_multi() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     mod module {
         pub fn x() {}
         pub fn y() {}
@@ -168,7 +168,7 @@ fn in_use_path_multi() {
 // FIXME(#673)
 #[test]
 fn in_use_path_multi_with_one_in_scope() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     mod module {
         pub fn x() {}
         pub fn y() {}
@@ -177,7 +177,7 @@ fn in_use_path_multi_with_one_in_scope() {
     use module::{x, <caret>
     ",@r#"
     caret = """
-    use module::{x, <caret>
+    use module::{x,<caret>
     """
 
     [[completions]]
@@ -190,7 +190,7 @@ fn in_use_path_multi_with_one_in_scope() {
 
 #[test]
 fn first_segment() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     mod my_module {
         pub trait Trait1<T> {
             fn some_method(self: @T);
@@ -215,7 +215,7 @@ fn first_segment() {
 
 #[test]
 fn first_segment_core() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     use co<caret>;
     ",@r#"
     caret = """
@@ -229,7 +229,7 @@ fn first_segment_core() {
 
 #[test]
 fn first_segment_enum() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     use My<caret>
 
     enum MyEnum {}
@@ -245,7 +245,7 @@ fn first_segment_enum() {
 
 #[test]
 fn nested_enum() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     mod modzik {
         pub enum MyAnotherEnum {
             A,
@@ -266,7 +266,7 @@ fn nested_enum() {
 
 #[test]
 fn enum_variant() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     mod modzik {
         pub enum MyAnotherEnum {
             A,
