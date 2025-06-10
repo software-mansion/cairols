@@ -1,9 +1,9 @@
-use crate::hover::test_hover;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::Hover;
 
 #[test]
 fn generated_element_use() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     #[generate_trait]
     impl MyTraitImpl<SelfType> of MyTrait<SelfType> {
         fn some_method(ref self: SelfType) { }
@@ -33,7 +33,7 @@ fn generated_element_use() {
 
 #[test]
 fn ref_self() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     #[generate_trait]
     impl MyTraitImpl<SelfType> of MyTrait<SelfType> {
         fn some_method(ref se<caret>lf: SelfType) { }
@@ -55,7 +55,7 @@ fn ref_self() {
 
 #[test]
 fn self_type() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     struct SelfType {
         a: felt252,
         b: felt252,
@@ -88,7 +88,7 @@ fn self_type() {
 
 #[test]
 fn self_type_member() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     struct SelfType {
         aaa: felt252,
         b: felt252,
@@ -123,7 +123,7 @@ fn self_type_member() {
 
 #[test]
 fn self_type_member_method_call() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     use core::num::traits::One;
 
     struct SelfType {
@@ -158,7 +158,7 @@ fn self_type_member_method_call() {
 
 #[test]
 fn trait_name_generated() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     #[generate_trait]
     impl MyTraitImpl of MyTra<caret>it {
         fn some_method() { }
@@ -184,7 +184,7 @@ fn trait_name_generated() {
 
 #[test]
 fn trait_name_generic_name_generated() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     #[generate_trait]
     impl MyTraitImpl<SelfType> of MyTrait<Self<caret>Type> {
         fn some_method() { }
@@ -209,7 +209,7 @@ fn trait_name_generic_name_generated() {
 
 #[test]
 fn trait_name_generic_name() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     struct Ab {}
 
     trait MyTrait<SelfType> {
@@ -239,7 +239,7 @@ fn trait_name_generic_name() {
 
 #[test]
 fn type_bound() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn foo<T, +Dr<caret>op<T>>() {}
     "#, @r#"
     source_context = """
@@ -291,7 +291,7 @@ fn type_bound() {
 
 #[test]
 fn negative_type_bound() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait<T> {}
     impl Impl<T, -Dest<caret>ruct<T>> of Trait<T> {}
     "#, @r#"
@@ -356,7 +356,7 @@ fn negative_type_bound() {
 
 #[test]
 fn type_bound_user_trait() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     /// Doc of Trait.
     trait Trait<T> {}
     fn foo<T, +Tr<caret>ait<T>>() {}
@@ -381,7 +381,7 @@ fn type_bound_user_trait() {
 
 #[test]
 fn impl_bound_user_trait() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     /// Doc of Trait.
     trait Trait<T> {}
     fn foo<T, impl Impl: Tr<caret>ait<T>>() {}

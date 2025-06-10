@@ -1,9 +1,9 @@
-use crate::hover::test_hover;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::Hover;
 
 #[test]
 fn uninfered_mut_ident() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let mut xy<caret>z = unknown_function();
     }
@@ -24,7 +24,7 @@ fn uninfered_mut_ident() {
 
 #[test]
 fn uninfered_value() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let mut xyz = unkn<caret>own_function();
     }
@@ -37,7 +37,7 @@ fn uninfered_value() {
 
 #[test]
 fn uninfered_usage() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let mut xyz = unknown_function();
         let y = xy<caret>z * 2;
@@ -59,7 +59,7 @@ fn uninfered_usage() {
 
 #[test]
 fn missing_type_param() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn f(ab<caret>c) -> felt252 {
         2 * abc
     }
@@ -80,7 +80,7 @@ fn missing_type_param() {
 
 #[test]
 fn missing_type_param_usage() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn f(abc) -> felt252 {
         2 * ab<caret>c
     }

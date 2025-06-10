@@ -1,9 +1,9 @@
-use crate::hover::test_hover;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::Hover;
 
 #[test]
 fn member_definition_name() {
-    test_transform!(test_hover,"
+    test_transform_plain!(Hover,"
     /// Docstring of Struct.
     struct Struct {
         /// Docstring of member1.
@@ -34,7 +34,7 @@ fn member_definition_name() {
 
 #[test]
 fn struct_init_first_member_name() {
-    test_transform!(test_hover,"
+    test_transform_plain!(Hover,"
     /// Docstring of Struct.
     struct Struct {
         /// Docstring of member1.
@@ -73,7 +73,7 @@ fn struct_init_first_member_name() {
 
 #[test]
 fn struct_init_second_member_name() {
-    test_transform!(test_hover,"
+    test_transform_plain!(Hover,"
     /// Docstring of Struct.
     struct Struct {
         /// Docstring of member1.
@@ -111,7 +111,7 @@ fn struct_init_second_member_name() {
 
 #[test]
 fn struct_init_first_member_shorthand() {
-    test_transform!(test_hover,"
+    test_transform_plain!(Hover,"
     /// Docstring of Struct.
     struct Struct {
         /// Docstring of member1.
@@ -151,7 +151,7 @@ fn struct_init_first_member_shorthand() {
 }
 #[test]
 fn struct_init_second_member_shorthand_after() {
-    test_transform!(test_hover,"
+    test_transform_plain!(Hover,"
     /// Docstring of Struct.
     struct Struct {
         /// Docstring of member1.
@@ -191,7 +191,7 @@ fn struct_init_second_member_shorthand_after() {
 
 #[test]
 fn struct_member_access_after_name() {
-    test_transform!(test_hover,"
+    test_transform_plain!(Hover,"
     /// Docstring of Struct.
     struct Struct {
         /// Docstring of member1.
@@ -231,7 +231,7 @@ fn struct_member_access_after_name() {
 
 #[test]
 fn non_existent_struct_member_init() {
-    test_transform!(test_hover,"
+    test_transform_plain!(Hover,"
     /// Docstring of Struct.
     struct Struct {
         /// Docstring of member1.

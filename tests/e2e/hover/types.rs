@@ -1,9 +1,9 @@
-use crate::hover::test_hover;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::Hover;
 
 #[test]
 fn test_extern_type_in_alias_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     type TypeAlias = u32<caret>;
     "#, @r#"
     source_context = """
@@ -26,7 +26,7 @@ fn test_extern_type_in_alias_as_type() {
 
 #[test]
 fn test_extern_type_in_alias_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     type TypeAlias = Array<u32<caret>>;
     "#, @r#"
     source_context = """
@@ -49,7 +49,7 @@ fn test_extern_type_in_alias_as_type_parameter() {
 
 #[test]
 fn test_generic_type_alias() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     type GenericTypeAlias<T> = Result<T, ()>;
     fn foo() -> Generic<caret>TypeAlias<()> {
         Result::Ok(())
@@ -74,7 +74,7 @@ fn test_generic_type_alias() {
 
 #[test]
 fn test_extern_type_in_variable_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn foo() {
         let x: u32<caret> = 0x0;
     }
@@ -99,7 +99,7 @@ fn test_extern_type_in_variable_as_type() {
 
 #[test]
 fn test_extern_type_in_variable_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn foo() {
         let x: Array<u32<caret>> = 0x0;
     }
@@ -124,7 +124,7 @@ fn test_extern_type_in_variable_as_type_parameter() {
 
 #[test]
 fn test_extern_type_in_function_argument_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn foo(x: u32<caret>) {}
     "#, @r#"
     source_context = """
@@ -147,7 +147,7 @@ fn test_extern_type_in_function_argument_as_type() {
 
 #[test]
 fn test_extern_type_in_function_argument_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn foo(x: Array<u32<caret>>) {}
     "#, @r#"
     source_context = """
@@ -170,7 +170,7 @@ fn test_extern_type_in_function_argument_as_type_parameter() {
 
 #[test]
 fn test_extern_type_in_return_type_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn foo() -> u32<caret> { 0x0 }
     "#, @r#"
     source_context = """
@@ -193,7 +193,7 @@ fn test_extern_type_in_return_type_as_type() {
 
 #[test]
 fn test_extern_type_in_return_type_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn foo() -> Array<u32<caret>> { 0x0 }
     "#, @r#"
     source_context = """
@@ -216,7 +216,7 @@ fn test_extern_type_in_return_type_as_type_parameter() {
 
 #[test]
 fn test_extern_type_in_struct_field_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     struct Struct {
         x: u32<caret>
     }
@@ -241,7 +241,7 @@ fn test_extern_type_in_struct_field_as_type() {
 
 #[test]
 fn test_extern_type_in_struct_field_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     struct Struct {
         x: Array<u32<caret>>
     }
@@ -266,7 +266,7 @@ fn test_extern_type_in_struct_field_as_type_parameter() {
 
 #[test]
 fn test_extern_type_in_turbofish_enum_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn foo() {
         let x = Result::<u32<caret>>::Err(());
     }
@@ -291,7 +291,7 @@ fn test_extern_type_in_turbofish_enum_as_type() {
 
 #[test]
 fn test_extern_type_in_turbofish_enum_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn foo() {
         let x = Result::<Array<u32<caret>>>::Err(());
     }
@@ -317,7 +317,7 @@ fn test_extern_type_in_turbofish_enum_as_type_parameter() {
 // FIXME(#563) - hovers for trait associated items have not yet been implemented.
 #[test]
 fn test_extern_type_in_trait_associated_type_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait {
         type Type = u32<caret>
     }
@@ -331,7 +331,7 @@ fn test_extern_type_in_trait_associated_type_as_type() {
 // FIXME(#563)
 #[test]
 fn test_extern_type_in_trait_associated_type_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait {
         type Type = Array<u32<caret>>
     }
@@ -344,7 +344,7 @@ fn test_extern_type_in_trait_associated_type_as_type_parameter() {
 
 #[test]
 fn test_extern_type_in_trait_associated_const_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait {
         const Const: u32<caret>;
     }
@@ -369,7 +369,7 @@ fn test_extern_type_in_trait_associated_const_as_type() {
 
 #[test]
 fn test_extern_type_in_trait_associated_const_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait {
         const Const: Array<u32<caret>>;
     }
@@ -394,7 +394,7 @@ fn test_extern_type_in_trait_associated_const_as_type_parameter() {
 
 #[test]
 fn test_extern_type_in_trait_generic_bound_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait<T, +Into<u32<caret>, T>> {}
     "#, @r#"
     source_context = """
@@ -417,7 +417,7 @@ fn test_extern_type_in_trait_generic_bound_as_type() {
 
 #[test]
 fn test_extern_type_in_trait_generic_bound_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait<T, +Into<Array<u32<caret>>, T>> {}
     "#, @r#"
     source_context = """
@@ -440,7 +440,7 @@ fn test_extern_type_in_trait_generic_bound_as_type_parameter() {
 
 #[test]
 fn test_extern_type_in_impl_associated_type_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait {
         type Type;
     }
@@ -468,7 +468,7 @@ fn test_extern_type_in_impl_associated_type_as_type() {
 
 #[test]
 fn test_extern_type_in_impl_associated_type_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait {
         type Type;
     }
@@ -496,7 +496,7 @@ fn test_extern_type_in_impl_associated_type_as_type_parameter() {
 
 #[test]
 fn test_extern_type_in_impl_associated_const_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait {
         const Const: u32;
     }
@@ -524,7 +524,7 @@ fn test_extern_type_in_impl_associated_const_as_type() {
 
 #[test]
 fn test_extern_type_in_impl_associated_const_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait {
         const Const: u32;
     }
@@ -552,7 +552,7 @@ fn test_extern_type_in_impl_associated_const_as_type_parameter() {
 
 #[test]
 fn test_simple_impl_in_impl_associated_impl() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait TraitA {}
     impl ImplA of TraitA {}
 
@@ -582,7 +582,7 @@ fn test_simple_impl_in_impl_associated_impl() {
 
 #[test]
 fn test_impl_alias_in_impl_associated_impl() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait TraitA {}
     impl ImplA of TraitA {}
     impl ImplAAlias = ImplA;
@@ -613,7 +613,7 @@ fn test_impl_alias_in_impl_associated_impl() {
 
 #[test]
 fn test_builtin_generic_impl_in_impl_associated_impl() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::{AddInputResultImpl, AddInputResultTrait, u96};
 
     trait Trait {
@@ -661,7 +661,7 @@ fn test_builtin_generic_impl_in_impl_associated_impl() {
 
 #[test]
 fn test_extern_type_in_impl_generic_bound_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait<T, +Into<u32, T>> {}
     impl<T, +Into<u32<caret>, T>> Impl of Trait<T> {}
     "#, @r#"
@@ -685,7 +685,7 @@ fn test_extern_type_in_impl_generic_bound_as_type() {
 
 #[test]
 fn test_extern_type_in_impl_generic_bound_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait<T, +Into<u32, T>> {}
     impl<T, +Into<Array<u32<caret>>, T>> Impl of Trait<T> {}
     "#, @r#"
@@ -709,7 +709,7 @@ fn test_extern_type_in_impl_generic_bound_as_type_parameter() {
 
 #[test]
 fn test_builtin_impl_in_impl_generic_bound() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::{AddInputResultImpl, AddInputResultTrait};
     trait Trait<T, impl I: AddInputResultTrait<T>> {}
     impl Impl of Trait<felt252, AddInputResult<caret>Impl<felt252>> {}
@@ -751,7 +751,7 @@ fn test_builtin_impl_in_impl_generic_bound() {
 
 #[test]
 fn test_impl_alias_in_impl_generic_bound() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::{AddInputResultImpl, AddInputResultTrait};
     impl ImplAlias<T> = AddInputResultImpl<T>;
     trait Trait<T, impl I: AddInputResultTrait<T>> {}
@@ -776,7 +776,7 @@ fn test_impl_alias_in_impl_generic_bound() {
 
 #[test]
 fn test_builtin_alias_in_use() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96<caret>;
     "#, @r#"
     source_context = """
@@ -799,7 +799,7 @@ fn test_builtin_alias_in_use() {
 
 #[test]
 fn test_builtin_alias_in_alias_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     type TypeAlias = u96<caret>
     "#, @r#"
@@ -823,7 +823,7 @@ fn test_builtin_alias_in_alias_as_type() {
 
 #[test]
 fn test_builtin_alias_in_alias_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     type TypeAlias = Array<u96<caret>>
     "#, @r#"
@@ -847,7 +847,7 @@ fn test_builtin_alias_in_alias_as_type_parameter() {
 
 #[test]
 fn test_builtin_alias_in_variable_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     fn foo() {
         let x: u96<caret> = 0x0;
@@ -873,7 +873,7 @@ fn test_builtin_alias_in_variable_as_type() {
 
 #[test]
 fn test_builtin_alias_in_variable_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     fn foo() {
         let x: Array<u96<caret>> = 0x0;
@@ -899,7 +899,7 @@ fn test_builtin_alias_in_variable_as_type_parameter() {
 
 #[test]
 fn test_builtin_alias_in_function_argument_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     fn foo(x: u96<caret>) {}
     "#, @r#"
@@ -923,7 +923,7 @@ fn test_builtin_alias_in_function_argument_as_type() {
 
 #[test]
 fn test_builtin_alias_in_function_argument_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     fn foo(x: Array<u96<caret>>) {}
     "#, @r#"
@@ -947,7 +947,7 @@ fn test_builtin_alias_in_function_argument_as_type_parameter() {
 
 #[test]
 fn test_builtin_alias_in_return_type_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     fn foo() -> u96<caret> { 0x0 }
     "#, @r#"
@@ -971,7 +971,7 @@ fn test_builtin_alias_in_return_type_as_type() {
 
 #[test]
 fn test_builtin_alias_in_return_type_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     fn foo() -> Array<u96<caret>> { 0x0 }
     "#, @r#"
@@ -995,7 +995,7 @@ fn test_builtin_alias_in_return_type_as_type_parameter() {
 
 #[test]
 fn test_builtin_alias_in_struct_field_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     struct Struct {
         x: u96<caret>
@@ -1021,7 +1021,7 @@ fn test_builtin_alias_in_struct_field_as_type() {
 
 #[test]
 fn test_builtin_alias_in_struct_field_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     struct Struct {
         x: Array<u96<caret>>
@@ -1047,7 +1047,7 @@ fn test_builtin_alias_in_struct_field_as_type_parameter() {
 
 #[test]
 fn test_builtin_alias_in_turbofish_enum_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     fn foo() {
         let x = Result::<u96<caret>>::Err(());
@@ -1073,7 +1073,7 @@ fn test_builtin_alias_in_turbofish_enum_as_type() {
 
 #[test]
 fn test_builtin_alias_in_turbofish_enum_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     fn foo() {
         let x = Result::<Array<u96<caret>>>::Err(());
@@ -1100,7 +1100,7 @@ fn test_builtin_alias_in_turbofish_enum_as_type_parameter() {
 // FIXME(#563)
 #[test]
 fn test_builtin_alias_in_trait_associated_type_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     trait Trait {
         type Type = u96<caret>
@@ -1115,7 +1115,7 @@ fn test_builtin_alias_in_trait_associated_type_as_type() {
 // FIXME(#563)
 #[test]
 fn test_builtin_alias_in_trait_associated_type_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     trait Trait {
         type Type = Array<u96<caret>>
@@ -1129,7 +1129,7 @@ fn test_builtin_alias_in_trait_associated_type_as_type_parameter() {
 
 #[test]
 fn test_builtin_alias_in_trait_associated_const_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     trait Trait {
         const Const: u96<caret>;
@@ -1155,7 +1155,7 @@ fn test_builtin_alias_in_trait_associated_const_as_type() {
 
 #[test]
 fn test_builtin_alias_in_trait_associated_const_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     trait Trait {
         const Const: Array<u96<caret>>;
@@ -1181,7 +1181,7 @@ fn test_builtin_alias_in_trait_associated_const_as_type_parameter() {
 
 #[test]
 fn test_builtin_alias_in_trait_generic_bound_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
 
     trait Trait<T, +Into<u96<caret>, T>> {}
@@ -1206,7 +1206,7 @@ fn test_builtin_alias_in_trait_generic_bound_as_type() {
 
 #[test]
 fn test_builtin_alias_in_trait_generic_bound_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     trait Trait<T, +Into<Array<u96<caret>>, T>> {}
     "#, @r#"
@@ -1230,7 +1230,7 @@ fn test_builtin_alias_in_trait_generic_bound_as_type_parameter() {
 
 #[test]
 fn test_builtin_alias_in_impl_associated_type_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     trait Trait {
         type Type;
@@ -1259,7 +1259,7 @@ fn test_builtin_alias_in_impl_associated_type_as_type() {
 
 #[test]
 fn test_builtin_alias_in_impl_associated_type_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     trait Trait {
         type Type;
@@ -1289,7 +1289,7 @@ fn test_builtin_alias_in_impl_associated_type_as_type_parameter() {
 // FIXME(#660): This should be inferred
 #[test]
 fn test_impl_associated_type_with_path_reference() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Trait {
         type Type;
     }
@@ -1322,7 +1322,7 @@ fn test_impl_associated_type_with_path_reference() {
 // FIXME(#660): This should be inferred
 #[test]
 fn test_impl_associated_impl_with_path_reference() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait SubTraitor {
         const ABC: felt252;
     }
@@ -1362,7 +1362,7 @@ fn test_impl_associated_impl_with_path_reference() {
 
 #[test]
 fn test_builtin_alias_in_impl_associated_const_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     trait Trait {
         const Const: u96;
@@ -1391,7 +1391,7 @@ fn test_builtin_alias_in_impl_associated_const_as_type() {
 
 #[test]
 fn test_builtin_alias_in_impl_associated_const_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     trait Trait {
         const Const: u96;
@@ -1420,7 +1420,7 @@ fn test_builtin_alias_in_impl_associated_const_as_type_parameter() {
 
 #[test]
 fn test_builtin_alias_in_impl_generic_bound_as_type() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     trait Trait<T, +Into<u96, T>> {}
     impl<T, +Into<u96<caret>, T>> Impl of Trait<T> {}
@@ -1445,7 +1445,7 @@ fn test_builtin_alias_in_impl_generic_bound_as_type() {
 
 #[test]
 fn test_builtin_alias_in_impl_generic_bound_as_type_parameter() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     use core::circuit::u96;
     trait Trait<T, +Into<u96, T>> {}
     impl<T, +Into<Array<u96<caret>>, T>> Impl of Trait<T> {}
