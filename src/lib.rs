@@ -54,10 +54,12 @@ use crossbeam::channel::{Receiver, select_biased};
 use governor::{Quota, RateLimiter};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
+use lsp_types::request::SemanticTokensRefresh;
 use tracing::{debug, error, info};
 
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros::controller::ProcMacroChannels;
+use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
 };
@@ -407,6 +409,14 @@ impl Backend {
             &state.client_capabilities,
             requester,
         );
+
+        if state.analysis_progress_controller.has_analysis_finished()
+            && state.client_capabilities.workspace_semantic_tokens_refresh_support()
+        {
+            if let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing()) {
+                error!("semantic tokens refresh failed: {err:#?}");
+            }
+        }
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
