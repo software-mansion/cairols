@@ -1,9 +1,9 @@
-use super::test_completions_text_edits;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::request::Completion;
 
 #[test]
 fn partially_typed() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -26,7 +26,7 @@ fn partially_typed() {
 
 #[test]
 fn partially_typed_wrong() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -47,7 +47,7 @@ fn partially_typed_wrong() {
 
 #[test]
 fn partially_typed_some_filled() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -71,7 +71,7 @@ fn partially_typed_some_filled() {
 
 #[test]
 fn untyped() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -97,7 +97,7 @@ fn untyped() {
 
 #[test]
 fn untyped_some_filled() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -121,7 +121,7 @@ fn untyped_some_filled() {
 
 #[test]
 fn struct_unavailable() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     mod foo {
         struct Foo {
             abc: felt252,
@@ -145,7 +145,7 @@ fn struct_unavailable() {
 
 #[test]
 fn wrong_value() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -169,7 +169,7 @@ fn wrong_value() {
 
 #[test]
 fn partially_typed_nested() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -198,7 +198,7 @@ fn partially_typed_nested() {
 
 #[test]
 fn enum_pattern() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion,"
     enum Foo {
         Abc,
         Qwerty,
