@@ -1,16 +1,14 @@
 use indoc::indoc;
 
-use crate::support::MockClient;
-use crate::support::cursor::Cursors;
+use crate::completions::completion_fixture;
+use crate::support::fixture;
 use crate::support::fixture::Fixture;
 use crate::support::insta::test_transform_plain;
-use crate::support::transform::Transformer;
-use lsp_types::ClientCapabilities;
 use lsp_types::request::Completion;
 
 #[test]
 fn simple_trait() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(),"
     mod hidden_trait {
         pub trait ATrait1<T> {
             fn some_method(self: @T);
@@ -280,7 +278,7 @@ fn simple_trait() {
 
 #[test]
 fn non_directly_visible_trait() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(),"
     mod hidden_trait {
         pub trait ATrait1<T> {
             fn some_method(self: @T);
@@ -549,10 +547,20 @@ fn non_directly_visible_trait() {
     "#);
 }
 
-fn add_dep_content(fixture: &mut Fixture) {
-    fixture.add_file(
-        "dep/lib.cairo",
-        indoc! {
+fn only_dependencies_methods_included_fixture() -> Fixture {
+    fixture! {
+        "cairo_project.toml" => indoc! {r#"
+            [crate_roots]
+            this = "src"
+            dep = "dep"
+
+            [config.override.this]
+            edition = "2024_07"
+
+            [config.override.this.dependencies]
+            dep = { discriminator = "dep" }
+        "#},
+        "dep/lib.cairo" =>  indoc! {
         r#"
             pub trait X<T> {
                 fn some_method(self: @T);
@@ -560,44 +568,13 @@ fn add_dep_content(fixture: &mut Fixture) {
             impl MyImpl of X<felt252> {
                 fn some_method(self: @felt252) {}
             }
-        "#},
-    );
-}
-
-struct OnlyDependenciesMethodsIncluded;
-
-impl Transformer for OnlyDependenciesMethodsIncluded {
-    fn capabilities(base: ClientCapabilities) -> ClientCapabilities {
-        Completion::capabilities(base)
-    }
-
-    fn transform(ls: MockClient, cursors: Cursors) -> String {
-        Completion::transform(ls, cursors)
-    }
-
-    fn files(fixture: &mut Fixture) {
-        fixture.add_file(
-            "cairo_project.toml",
-            indoc! {r#"
-                [crate_roots]
-                this = "src"
-                dep = "dep"
-
-                [config.override.this]
-                edition = "2024_07"
-
-                [config.override.this.dependencies]
-                dep = { discriminator = "dep" }
-            "#},
-        );
-
-        add_dep_content(fixture);
+        "#}
     }
 }
 
 #[test]
 fn methods_from_deps_included() {
-    test_transform_plain!(OnlyDependenciesMethodsIncluded, "
+    test_transform_plain!(Completion, only_dependencies_methods_included_fixture(), "
     fn func() {
         let x = 5_felt252;
         x.some_metho<caret>
@@ -825,34 +802,28 @@ fn methods_from_deps_included() {
     "#);
 }
 
-struct OnlyDependenciesMethodsExcluded;
-
-impl Transformer for OnlyDependenciesMethodsExcluded {
-    fn capabilities(base: ClientCapabilities) -> ClientCapabilities {
-        Completion::capabilities(base)
-    }
-
-    fn transform(ls: MockClient, cursors: Cursors) -> String {
-        Completion::transform(ls, cursors)
-    }
-
-    fn files(fixture: &mut Fixture) {
-        fixture.add_file(
-            "cairo_project.toml",
-            indoc! {r#"
-                [crate_roots]
-                this = "src"
-                dep = "dep"
-            "#},
-        );
-
-        add_dep_content(fixture);
+fn only_dependencies_methods_excluded_fixture() -> Fixture {
+    fixture! {
+        "cairo_project.toml" => indoc! {r#"
+            [crate_roots]
+            this = "src"
+            dep = "dep"
+        "#},
+        "dep/lib.cairo" =>  indoc! {
+        r#"
+            pub trait X<T> {
+                fn some_method(self: @T);
+            }
+            impl MyImpl of X<felt252> {
+                fn some_method(self: @felt252) {}
+            }
+        "#}
     }
 }
 
 #[test]
 fn methods_from_non_deps_excluded() {
-    test_transform_plain!(OnlyDependenciesMethodsExcluded, "
+    test_transform_plain!(Completion, only_dependencies_methods_excluded_fixture(), "
     fn func() {
         let x = 5_felt252;
         x.some_method<caret>

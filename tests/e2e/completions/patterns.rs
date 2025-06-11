@@ -1,9 +1,9 @@
-use crate::support::insta::test_transform_plain;
+use crate::{completions::completion_fixture, support::insta::test_transform_plain};
 use lsp_types::request::Completion;
 
 #[test]
 fn partially_typed() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(), "
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -26,7 +26,7 @@ fn partially_typed() {
 
 #[test]
 fn partially_typed_wrong() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(), "
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -47,7 +47,7 @@ fn partially_typed_wrong() {
 
 #[test]
 fn partially_typed_some_filled() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(), "
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -71,7 +71,7 @@ fn partially_typed_some_filled() {
 
 #[test]
 fn untyped() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(), "
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -97,7 +97,7 @@ fn untyped() {
 
 #[test]
 fn untyped_some_filled() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(), "
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -121,7 +121,7 @@ fn untyped_some_filled() {
 
 #[test]
 fn struct_unavailable() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(), "
     mod foo {
         struct Foo {
             abc: felt252,
@@ -145,7 +145,7 @@ fn struct_unavailable() {
 
 #[test]
 fn wrong_value() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(), "
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -169,7 +169,7 @@ fn wrong_value() {
 
 #[test]
 fn partially_typed_nested() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(), "
     struct Foo {
         abc: felt252,
         qwerty: felt252,
@@ -198,7 +198,7 @@ fn partially_typed_nested() {
 
 #[test]
 fn enum_pattern() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(), "
     enum Foo {
         Abc,
         Qwerty,

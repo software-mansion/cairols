@@ -1,9 +1,9 @@
-use crate::support::insta::test_transform_plain;
+use crate::{completions::completion_fixture, support::insta::test_transform_plain};
 use lsp_types::request::Completion;
 
 #[test]
 fn derive() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(),"
     #[derive(D<caret>)]
     pub struct Struct {
         x: u32,
@@ -31,7 +31,7 @@ fn derive() {
 
 #[test]
 fn derive_after_comma() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(),"
     #[derive(D,<caret>)]
     pub struct Struct {
         x: u32,
@@ -83,7 +83,7 @@ fn derive_after_comma() {
 
 #[test]
 fn attribute() {
-    test_transform_plain!(Completion,"
+    test_transform_plain!(Completion, completion_fixture(),"
     #[d<caret>]
     pub struct Struct {
         x: u32,

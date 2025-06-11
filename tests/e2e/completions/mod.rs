@@ -3,9 +3,10 @@ use std::fmt::Display;
 use lsp_types::{CompletionParams, TextDocumentPositionParams, lsp_request};
 use serde::Serialize;
 
-use crate::support::MockClient;
 use crate::support::cursor::{Cursors, peek_caret};
+use crate::support::fixture::Fixture;
 use crate::support::transform::Transformer;
+use crate::support::{MockClient, fixture};
 use indoc::indoc;
 use lsp_types::request::Completion;
 
@@ -27,38 +28,29 @@ impl Transformer for Completion {
     fn transform(ls: MockClient, cursors: Cursors) -> String {
         transform(ls, cursors, Self::main_file())
     }
+}
 
-    fn files(fixture: &mut crate::support::fixture::Fixture) {
-        fixture
-            .add_file(
-                "cairo_project.toml",
-                indoc!(
-                    r#"
-                    [crate_roots]
-                    hello = "src"
-                    dep = "dep"
+fn completion_fixture() -> Fixture {
+    fixture! {
+        "cairo_project.toml" => indoc!(r#"
+            [crate_roots]
+            hello = "src"
+            dep = "dep"
 
-                    [config.override.hello]
-                    edition = "2024_07"
-                    [config.override.dep]
-                    edition = "2023_10" # Edition with visibility ignores
+            [config.override.hello]
+            edition = "2024_07"
+            [config.override.dep]
+            edition = "2023_10" # Edition with visibility ignores
 
-                    [config.override.hello.dependencies]
-                    dep = { discriminator = "dep" }
-                "#
-                ),
-            )
-            .add_file(
-                "dep/lib.cairo",
-                indoc!(
-                    "
-                    struct Foo {
-                        a: felt252
-                        pub b: felt252
-                    }
-                "
-                ),
-            );
+            [config.override.hello.dependencies]
+            dep = { discriminator = "dep" }
+        "#),
+        "dep/lib.cairo" => indoc!("
+            struct Foo {
+                a: felt252
+                pub b: felt252
+            }
+        ")
     }
 }
 

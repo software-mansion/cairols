@@ -18,8 +18,6 @@ pub fn conduct_transformation<T: Transformer>(
     let mut fixture = initial_fixture;
     fixture.add_file(T::main_file(), cairo.clone());
 
-    T::files(&mut fixture);
-
     if with_macros {
         fixture.add_file_if_not_exists(
             "Scarb.toml",
@@ -75,6 +73,4 @@ pub trait Transformer {
     fn main_file() -> &'static str {
         "src/lib.cairo"
     }
-
-    fn files(_fixture: &mut Fixture) {}
 }
