@@ -31,13 +31,31 @@ impl Fixture {
 /// Builder methods.
 impl Fixture {
     /// Creates a new file in the fixture with provided contents.
-    pub fn add_file(&mut self, path: impl AsRef<Path>, contents: impl AsRef<str>) {
+    pub fn add_file(&mut self, path: impl AsRef<Path>, contents: impl AsRef<str>) -> &mut Self {
         self.files.push(path.as_ref().to_owned());
         self.edit_file(path, contents);
+
+        self
     }
 
-    pub fn edit_file(&mut self, path: impl AsRef<Path>, contents: impl AsRef<str>) {
+    pub fn add_file_if_not_exists(
+        &mut self,
+        path: impl AsRef<Path>,
+        contents: impl AsRef<str>,
+    ) -> &mut Self {
+        let path = path.as_ref().to_owned();
+        if self.files.contains(&path) {
+            return self;
+        }
+        self.add_file(path, contents);
+
+        self
+    }
+
+    pub fn edit_file(&mut self, path: impl AsRef<Path>, contents: impl AsRef<str>) -> &mut Self {
         self.t.child(path).write_str(contents.as_ref().trim()).unwrap();
+
+        self
     }
 
     /// Copies the `.tool-versions` file of this repo to the fixture directory.
