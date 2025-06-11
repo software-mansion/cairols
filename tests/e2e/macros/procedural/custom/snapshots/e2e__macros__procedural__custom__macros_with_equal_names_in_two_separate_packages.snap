@@ -8,9 +8,6 @@ analyzed_lines = """
     let _name = which_<caret>macro_package!();
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 'cairols_test_macros'
 """
 
@@ -19,8 +16,5 @@ analyzed_lines = """
     let _name = which_<caret>macro_package!();
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 'another_test_macros'
 """

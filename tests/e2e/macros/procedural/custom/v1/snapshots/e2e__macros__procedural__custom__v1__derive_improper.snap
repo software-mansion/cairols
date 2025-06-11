@@ -1,22 +1,20 @@
 ---
-source: tests/e2e/macros/procedural/custom/v2/mod.rs
-description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[derive(ImproperDeriveMacroV2)]\nstruct EmptyStruct { a: b,}"
+source: tests/e2e/macros/procedural/custom/v1/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros = { path = \"/scarb_procedural_macros\" }\n\n// → test_package/src/lib.cairo\n#[derive(ImproperDeriveMacro)]\nstruct EmptyStruct {}"
 expression: report
 ---
 [[expansions]]
 analyzed_lines = """
-#[derive<caret>(ImproperDeriveMacroV2)]
-#[derive(Improper<caret>DeriveMacroV2)]
-struct Empty<caret>Struct { a: b,}
-struct EmptyStruct { a: b,<caret>}
+#[derive<caret>(ImproperDeriveMacro)]
+#[derive(Improper<caret>DeriveMacro)]
+struct Empty<caret>Struct {}
+struct EmptyStruct {<caret>}
 """
 generated_code = """
-#[derive(ImproperDeriveMacroV2)]
-struct EmptyStruct {
-    a: b,
-}
+#[derive(ImproperDeriveMacro)]
+struct EmptyStruct {}
 //-----
-fn generated_function_v2() {
+fn generated_function() {
     some < *> haskell < $> syntax
 }
 """
@@ -24,7 +22,7 @@ fn generated_function_v2() {
 mapped_diagnostics:
 - url: '[ROOT_URL]test_package/src/lib.cairo'
   diagnostics:
-  - related_code: ImproperDeriveMacroV2
+  - related_code: ImproperDeriveMacro
     diagnostic:
       range:
         start:
@@ -32,7 +30,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 30
+          character: 28
       severity: 1
       message: Missing tokens. Expected an expression.
       relatedInformation:
@@ -40,13 +38,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 0
-              character: 33
+              line: 1
+              character: 11
             end:
-              line: 0
-              character: 33
+              line: 1
+              character: 11
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
+  - related_code: ImproperDeriveMacro
     diagnostic:
       range:
         start:
@@ -54,7 +52,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 30
+          character: 28
       severity: 1
       message: 'Consecutive comparison operators are not allowed: ''<'' followed by ''>'''
       relatedInformation:
@@ -62,13 +60,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 0
-              character: 32
+              line: 1
+              character: 10
             end:
-              line: 0
-              character: 32
+              line: 1
+              character: 10
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
+  - related_code: ImproperDeriveMacro
     diagnostic:
       range:
         start:
@@ -76,7 +74,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 30
+          character: 28
       severity: 1
       message: 'Consecutive comparison operators are not allowed: ''>'' followed by ''<'''
       relatedInformation:
@@ -84,13 +82,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 0
-              character: 34
+              line: 1
+              character: 13
             end:
-              line: 0
-              character: 34
+              line: 1
+              character: 13
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
+  - related_code: ImproperDeriveMacro
     diagnostic:
       range:
         start:
@@ -98,7 +96,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 30
+          character: 28
       severity: 1
       message: Placeholder expression ($expression) is allowed only in the context of a macro rule.
       relatedInformation:
@@ -106,13 +104,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 0
-              character: 42
+              line: 1
+              character: 22
             end:
-              line: 0
-              character: 43
+              line: 1
+              character: 23
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
+  - related_code: ImproperDeriveMacro
     diagnostic:
       range:
         start:
@@ -120,7 +118,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 30
+          character: 28
       severity: 1
       message: Missing tokens. Expected a path segment.
       relatedInformation:
@@ -128,13 +126,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 0
-              character: 43
+              line: 1
+              character: 23
             end:
-              line: 0
-              character: 43
+              line: 1
+              character: 23
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
+  - related_code: ImproperDeriveMacro
     diagnostic:
       range:
         start:
@@ -142,7 +140,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 30
+          character: 28
       severity: 1
       message: 'Consecutive comparison operators are not allowed: ''<'' followed by ''>'''
       relatedInformation:
@@ -150,13 +148,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 0
-              character: 42
+              line: 1
+              character: 22
             end:
-              line: 0
-              character: 42
+              line: 1
+              character: 22
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
+  - related_code: ImproperDeriveMacro
     diagnostic:
       range:
         start:
@@ -164,7 +162,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 30
+          character: 28
       severity: 1
       code: E0006
       message: Identifier not found.
@@ -173,13 +171,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 0
-              character: 27
+              line: 1
+              character: 4
             end:
-              line: 0
-              character: 31
+              line: 1
+              character: 8
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
+  - related_code: ImproperDeriveMacro
     diagnostic:
       range:
         start:
@@ -187,7 +185,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 30
+          character: 28
       severity: 1
       message: Are you missing a `::`?.
       relatedInformation:
@@ -195,13 +193,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 0
-              character: 31
+              line: 1
+              character: 9
             end:
-              line: 0
-              character: 32
+              line: 1
+              character: 10
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
+  - related_code: ImproperDeriveMacro
     diagnostic:
       range:
         start:
@@ -209,7 +207,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 30
+          character: 28
       severity: 1
       code: E0006
       message: Identifier not found.
@@ -218,13 +216,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 0
-              character: 34
+              line: 1
+              character: 13
             end:
-              line: 0
-              character: 41
+              line: 1
+              character: 20
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
+  - related_code: ImproperDeriveMacro
     diagnostic:
       range:
         start:
@@ -232,7 +230,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 30
+          character: 28
       severity: 1
       message: Are you missing a `::`?.
       relatedInformation:
@@ -240,13 +238,13 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 0
-              character: 41
+              line: 1
+              character: 21
             end:
-              line: 0
-              character: 42
+              line: 1
+              character: 22
         message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
+  - related_code: ImproperDeriveMacro
     diagnostic:
       range:
         start:
@@ -254,7 +252,7 @@ mapped_diagnostics:
           character: 9
         end:
           line: 0
-          character: 30
+          character: 28
       severity: 1
       code: E0006
       message: Identifier not found.
@@ -263,21 +261,9 @@ mapped_diagnostics:
           uri: vfs://proc_macro_derive.cairo
           range:
             start:
-              line: 0
-              character: 44
+              line: 1
+              character: 25
             end:
-              line: 0
-              character: 50
+              line: 1
+              character: 31
         message: Diagnostic mapped from here.
-  - related_code: b
-    diagnostic:
-      range:
-        start:
-          line: 1
-          character: 24
-        end:
-          line: 1
-          character: 25
-      severity: 1
-      code: E0006
-      message: Type not found.

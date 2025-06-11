@@ -9,9 +9,6 @@ fn f<caret>oo() {}
 fn foo() {<caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 #[error_attribute_macro]
 fn foo() {}
 """
