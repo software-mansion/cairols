@@ -19,7 +19,6 @@ use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_defs::ids::SubmoduleLongId;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_defs::plugin::MacroPlugin;
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -173,7 +172,7 @@ impl AvailableTestRunners {
         });
 
         // This will not work with crate renames in `Scarb.toml`, but there is no better way to do this now.
-        let snforge = db.crate_config(crate_id)?.settings.dependencies.contains_key("snforge_std");
+        let snforge = true; //db.crate_config(crate_id)?.settings.dependencies.contains_key("snforge_std");
 
         Some(Self { cairo_test, snforge })
     }
