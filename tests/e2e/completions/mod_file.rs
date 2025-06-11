@@ -1,25 +1,36 @@
-use super::{Report, test_completions_text_edits_inner};
+use crate::completions::transform;
+use crate::support::MockClient;
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
-use crate::support::insta::test_transform;
-use crate::support::sandbox;
+use crate::support::cursor::Cursors;
+use crate::support::fixture::Fixture;
+use crate::support::insta::test_transform_plain;
+use crate::support::transform::Transformer;
+use lsp_types::ClientCapabilities;
+use lsp_types::request::Completion;
 
-fn lib_cairo(cairo_code: &str) -> Report {
-    test_completions_text_edits_inner(cairo_code, "src/lib.cairo", |cairo| {
-        sandbox! {
-            files {
-                "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-                "src/lib.cairo" => cairo,
-                "src/aaaa.cairo" => "",
-                "src/bbbb.cairo" => "",
-                "src/cccc.cairo" => "",
-            }
-        }
-    })
+struct LibCairo;
+
+impl Transformer for LibCairo {
+    fn capabilities(base: ClientCapabilities) -> ClientCapabilities {
+        Completion::capabilities(base)
+    }
+
+    fn transform(ls: MockClient, cursors: Cursors) -> String {
+        Completion::transform(ls, cursors)
+    }
+
+    fn files(fixture: &mut Fixture) {
+        fixture
+            .add_file("cairo_project.toml", CAIRO_PROJECT_TOML_2024_07)
+            .add_file("src/aaaa.cairo", "")
+            .add_file("src/bbbb.cairo", "")
+            .add_file("src/cccc.cairo", "");
+    }
 }
 
 #[test]
 fn lib_cairo_with_body() {
-    test_transform!(lib_cairo,
+    test_transform_plain!(LibCairo,
     "mod cccc; mod <caret>{}",
     @r#"
     caret = """
@@ -31,7 +42,7 @@ fn lib_cairo_with_body() {
 
 #[test]
 fn lib_cairo_without_name_with_semicolon() {
-    test_transform!(lib_cairo,
+    test_transform_plain!(LibCairo,
     "mod cccc; mod <caret>;",
     @r#"
     caret = """
@@ -48,11 +59,11 @@ fn lib_cairo_without_name_with_semicolon() {
 
 #[test]
 fn lib_cairo_without_name_without_semicolon() {
-    test_transform!(lib_cairo,
+    test_transform_plain!(LibCairo,
     "mod cccc; mod <caret>",
     @r#"
     caret = """
-    mod cccc; mod <caret>
+    mod cccc; mod<caret>
     """
 
     [[completions]]
@@ -65,7 +76,7 @@ fn lib_cairo_without_name_without_semicolon() {
 
 #[test]
 fn lib_cairo_with_partial_name_with_semicolon() {
-    test_transform!(lib_cairo,
+    test_transform_plain!(LibCairo,
     "mod cccc; mod aa<caret>;",
     @r#"
     caret = """
@@ -79,7 +90,7 @@ fn lib_cairo_with_partial_name_with_semicolon() {
 
 #[test]
 fn lib_cairo_with_full_name_with_semicolon() {
-    test_transform!(lib_cairo,
+    test_transform_plain!(LibCairo,
     "mod cccc; mod bbbb<caret>;",
     @r#"
     caret = """
@@ -89,25 +100,35 @@ fn lib_cairo_with_full_name_with_semicolon() {
     "#);
 }
 
-fn other_top_level_file(cairo_code: &str) -> Report {
-    test_completions_text_edits_inner(cairo_code, "src/aaaa.cairo", |cairo| {
-        sandbox! {
-            files {
-                "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-                "src/lib.cairo" => "mod aaaa;",
-                "src/aaaa.cairo" => cairo,
-                "src/aaaa/bbbb.cairo" => "",
-                "src/bbbb.cairo" => "",
-                "src/aaaa/cccc.cairo" => "",
-                "src/cccc.cairo" => "",
-            }
-        }
-    })
+struct OtherTopLevelFile;
+
+impl Transformer for OtherTopLevelFile {
+    fn capabilities(base: ClientCapabilities) -> ClientCapabilities {
+        Completion::capabilities(base)
+    }
+
+    fn transform(ls: MockClient, cursors: Cursors) -> String {
+        transform(ls, cursors, Self::main_file())
+    }
+
+    fn files(fixture: &mut Fixture) {
+        fixture
+            .add_file("cairo_project.toml", CAIRO_PROJECT_TOML_2024_07)
+            .add_file("src/lib.cairo", "mod aaaa;")
+            .add_file("src/aaaa/bbbb.cairo", "")
+            .add_file("src/bbbb.cairo", "")
+            .add_file("src/aaaa/cccc.cairo", "")
+            .add_file("src/cccc.cairo", "");
+    }
+
+    fn main_file() -> &'static str {
+        "src/aaaa.cairo"
+    }
 }
 
 #[test]
 fn other_top_level_file_with_body() {
-    test_transform!(other_top_level_file,
+    test_transform_plain!(OtherTopLevelFile,
     "mod cccc; mod <caret>{}",
     @r#"
     caret = """
@@ -119,7 +140,7 @@ fn other_top_level_file_with_body() {
 
 #[test]
 fn other_top_level_file_without_name_with_semicolon() {
-    test_transform!(other_top_level_file,
+    test_transform_plain!(OtherTopLevelFile,
     "mod cccc; mod <caret>;",
     @r#"
     caret = """
@@ -133,7 +154,7 @@ fn other_top_level_file_without_name_with_semicolon() {
 
 #[test]
 fn other_top_level_file_with_partial_name_with_semicolon() {
-    test_transform!(other_top_level_file,
+    test_transform_plain!(OtherTopLevelFile,
     "mod cccc; mod aa<caret>;",
     @r#"
     caret = """
@@ -145,7 +166,7 @@ fn other_top_level_file_with_partial_name_with_semicolon() {
 
 #[test]
 fn other_top_level_file_with_partial_name_without_semicolon() {
-    test_transform!(other_top_level_file,
+    test_transform_plain!(OtherTopLevelFile,
     "mod cccc; mod aa<caret>",
     @r#"
     caret = """
@@ -157,7 +178,7 @@ fn other_top_level_file_with_partial_name_without_semicolon() {
 
 #[test]
 fn other_top_level_file_with_full_name_with_semicolon() {
-    test_transform!(other_top_level_file,
+    test_transform_plain!(OtherTopLevelFile,
     "mod cccc; mod bbbb<caret>;",
     @r#"
     caret = """
@@ -167,26 +188,36 @@ fn other_top_level_file_with_full_name_with_semicolon() {
     "#);
 }
 
-fn nested_file(cairo_code: &str) -> Report {
-    test_completions_text_edits_inner(cairo_code, "src/x/d.cairo", |cairo| {
-        sandbox! {
-            files {
-                "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
-                "src/lib.cairo" => "mod x;",
-                "src/x/d/aaaa.cairo" => "",
-                "src/x/d/bbbb.cairo" => "",
-                "src/x/d/cccc.cairo" => "",
-                "src/x/d.cairo" => cairo,
-                "src/x.cairo" => "mod d;",
-                "src/dddd.cairo" => "",
-            }
-        }
-    })
+struct NestedFile;
+
+impl Transformer for NestedFile {
+    fn capabilities(base: ClientCapabilities) -> ClientCapabilities {
+        Completion::capabilities(base)
+    }
+
+    fn transform(ls: MockClient, cursors: Cursors) -> String {
+        transform(ls, cursors, Self::main_file())
+    }
+
+    fn files(fixture: &mut Fixture) {
+        fixture
+            .add_file("cairo_project.toml", CAIRO_PROJECT_TOML_2024_07)
+            .add_file("src/lib.cairo", "mod x;")
+            .add_file("src/x/d/aaaa.cairo", "")
+            .add_file("src/x/d/bbbb.cairo", "")
+            .add_file("src/x/d/cccc.cairo", "")
+            .add_file("src/x.cairo", "mod d;")
+            .add_file("src/dddd.cairo", "");
+    }
+
+    fn main_file() -> &'static str {
+        "src/x/d.cairo"
+    }
 }
 
 #[test]
 fn nested_file_with_body() {
-    test_transform!(nested_file,
+    test_transform_plain!(NestedFile,
     "mod cccc; mod <caret>{}",
     @r#"
     caret = """
@@ -198,7 +229,7 @@ fn nested_file_with_body() {
 
 #[test]
 fn nested_file_without_name_with_semicolon() {
-    test_transform!(nested_file,
+    test_transform_plain!(NestedFile,
     "mod cccc; mod <caret>;",
     @r#"
     caret = """
@@ -215,7 +246,7 @@ fn nested_file_without_name_with_semicolon() {
 
 #[test]
 fn nested_file_with_partial_name_without_semicolon() {
-    test_transform!(nested_file,
+    test_transform_plain!(NestedFile,
     "mod cccc; mod aa<caret>",
     @r#"
     caret = """
@@ -229,7 +260,7 @@ fn nested_file_with_partial_name_without_semicolon() {
 
 #[test]
 fn nested_file_with_partial_name_with_semicolon() {
-    test_transform!(nested_file,
+    test_transform_plain!(NestedFile,
     "mod cccc; mod aa<caret>;",
     @r#"
     caret = """
@@ -243,7 +274,7 @@ fn nested_file_with_partial_name_with_semicolon() {
 
 #[test]
 fn nested_file_with_full_name_with_semicolon() {
-    test_transform!(nested_file,
+    test_transform_plain!(NestedFile,
     "mod cccc; mod bbbb<caret>;",
     @r#"
     caret = """
