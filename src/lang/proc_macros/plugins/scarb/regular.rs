@@ -13,8 +13,12 @@ use crate::lang::proc_macros::plugins::scarb::child_nodes::{
 use crate::lang::proc_macros::plugins::scarb::conversion::{
     CallSiteLocation, code_mapping_from_proc_macro_server,
 };
-use crate::lang::proc_macros::plugins::scarb::types::TokenStreamBuilder;
-use cairo_lang_filesystem::span::TextSpan as CairoTextSpan;
+use crate::lang::proc_macros::plugins::scarb::types::{
+    AdaptedCodeMapping, AdaptedDiagnostic, AdaptedTokenStream, ExpandableAttrLocation,
+    TokenStreamBuilder,
+};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan as CairoTextSpan};
+
 use cairo_lang_macro::{AllocationContext, TextSpan, TokenStream, TokenStreamMetadata};
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::ast::{
@@ -30,6 +34,8 @@ use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use scarb_proc_macro_server_types::methods::expand::{ExpandAttributeParams, ExpandDeriveParams};
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
 use scarb_stable_hash::StableHasher;
+
+use cairo_lang_utils::smol_str::{SmolStr, ToSmolStr};
 
 const DERIVE_ATTR: &str = "derive";
 
@@ -50,7 +56,7 @@ pub fn macro_generate_code(
     if let InnerAttrExpansionResult::Some(result) =
         expand_inner_attr(db, expansion_context.clone(), defined_attributes, item_ast.clone())
     {
-        return result;
+        return result.into();
     }
 
     // Expand first attribute.
@@ -60,28 +66,32 @@ pub fn macro_generate_code(
     let (input, body) = parse_attribute(db, Vec::from(defined_attributes), item_ast.clone(), &ctx);
 
     if let Some(result) = match input {
-        AttrExpansionFound::Last(AttrExpansionArgs { name, args, call_site }) => {
-            Some((name, args, call_site, true))
-        }
-        AttrExpansionFound::Some(AttrExpansionArgs { name, args, call_site }) => {
-            Some((name, args, call_site, false))
-        }
+        AttrExpansionFound::Last(AttrExpansionArgs {
+            name,
+            args,
+            call_site,
+            attribute_location,
+        }) => Some((name, args, call_site, attribute_location, true)),
+        AttrExpansionFound::Some(AttrExpansionArgs {
+            name,
+            args,
+            call_site,
+            attribute_location,
+        }) => Some((name, args, call_site, attribute_location, false)),
         AttrExpansionFound::None => None,
     }
-    .map(|(name, args, call_site, last)| {
+    .map(|(name, args, call_site, attribute_location, last)| {
         let token_stream = body.with_metadata(stream_metadata.clone());
         expand_attribute(
             db,
             expansion_context.clone(),
-            name,
             last,
-            args,
             token_stream,
-            call_site,
             item_ast.as_syntax_node(),
+            AttrExpansionArgs { name, call_site, args, attribute_location },
         )
     }) {
-        return result;
+        return result.into();
     }
 
     // Expand all derives.
@@ -106,33 +116,33 @@ fn expand_inner_attr(
     defined_attributes: &[String],
     item_ast: ast::ModuleItem,
 ) -> InnerAttrExpansionResult {
-    let mut context = InnerAttrExpansionContext::new();
-    let mut item_builder = PatchBuilder::new(db, &item_ast);
+    let mut context = InnerAttrExpansionContext::new(db, &item_ast);
     let mut used_attr_names: HashSet<String> = Default::default();
     let mut all_none = true;
     let ctx = AllocationContext::default();
+    let item_start_offset = item_ast.as_syntax_node().span(db).start;
 
     match item_ast.clone() {
         ast::ModuleItem::Trait(trait_ast) => {
-            item_builder.add_node(trait_ast.attributes(db).as_syntax_node());
-            item_builder.add_node(trait_ast.visibility(db).as_syntax_node());
-            item_builder.add_node(trait_ast.trait_kw(db).as_syntax_node());
-            item_builder.add_node(trait_ast.name(db).as_syntax_node());
-            item_builder.add_node(trait_ast.generic_params(db).as_syntax_node());
+            context.add_node(trait_ast.attributes(db).as_syntax_node());
+            context.add_node(trait_ast.visibility(db).as_syntax_node());
+            context.add_node(trait_ast.trait_kw(db).as_syntax_node());
+            context.add_node(trait_ast.name(db).as_syntax_node());
+            context.add_node(trait_ast.generic_params(db).as_syntax_node());
 
             // Parser attributes for inner functions.
             match trait_ast.body(db) {
                 MaybeTraitBody::None(terminal) => {
-                    item_builder.add_node(terminal.as_syntax_node());
+                    context.add_node(terminal.as_syntax_node());
                     InnerAttrExpansionResult::None
                 }
                 MaybeTraitBody::Some(body) => {
-                    item_builder.add_node(body.lbrace(db).as_syntax_node());
+                    context.add_node(body.lbrace(db).as_syntax_node());
 
                     let item_list = body.items(db);
                     for item in item_list.elements(db).iter() {
                         let ast::TraitItem::Function(func) = item else {
-                            item_builder.add_node(item.as_syntax_node());
+                            context.add_node(item.as_syntax_node());
                             continue;
                         };
 
@@ -143,6 +153,7 @@ fn expand_inner_attr(
                             defined_attributes,
                             &mut token_stream_builder,
                             attrs,
+                            item_start_offset,
                             &ctx,
                         );
                         if let Some(name) = found.as_name() {
@@ -152,26 +163,25 @@ fn expand_inner_attr(
                         token_stream_builder.add_node(func.body(db).as_syntax_node());
                         let token_stream = token_stream_builder.build(&ctx);
 
+                        let token_stream = found.adapt_token_stream(token_stream);
                         all_none = all_none
                             && do_expand_inner_attr(
                                 db,
                                 &mut context,
                                 expansion_context.clone(),
-                                &mut item_builder,
                                 found,
                                 func,
                                 token_stream,
                             );
                     }
 
-                    item_builder.add_node(body.rbrace(db).as_syntax_node());
+                    context.add_node(body.rbrace(db).as_syntax_node());
 
                     if all_none {
                         InnerAttrExpansionResult::None
                     } else {
                         InnerAttrExpansionResult::Some(
-                            context
-                                .into_result(item_builder, used_attr_names.into_iter().collect()),
+                            context.into_result(used_attr_names.into_iter().collect()),
                         )
                     }
                 }
@@ -179,26 +189,26 @@ fn expand_inner_attr(
         }
 
         ast::ModuleItem::Impl(impl_ast) => {
-            item_builder.add_node(impl_ast.attributes(db).as_syntax_node());
-            item_builder.add_node(impl_ast.visibility(db).as_syntax_node());
-            item_builder.add_node(impl_ast.impl_kw(db).as_syntax_node());
-            item_builder.add_node(impl_ast.name(db).as_syntax_node());
-            item_builder.add_node(impl_ast.generic_params(db).as_syntax_node());
-            item_builder.add_node(impl_ast.of_kw(db).as_syntax_node());
-            item_builder.add_node(impl_ast.trait_path(db).as_syntax_node());
+            context.add_node(impl_ast.attributes(db).as_syntax_node());
+            context.add_node(impl_ast.visibility(db).as_syntax_node());
+            context.add_node(impl_ast.impl_kw(db).as_syntax_node());
+            context.add_node(impl_ast.name(db).as_syntax_node());
+            context.add_node(impl_ast.generic_params(db).as_syntax_node());
+            context.add_node(impl_ast.of_kw(db).as_syntax_node());
+            context.add_node(impl_ast.trait_path(db).as_syntax_node());
 
             match impl_ast.body(db) {
                 MaybeImplBody::None(terminal) => {
-                    item_builder.add_node(terminal.as_syntax_node());
+                    context.add_node(terminal.as_syntax_node());
                     InnerAttrExpansionResult::None
                 }
                 MaybeImplBody::Some(body) => {
-                    item_builder.add_node(body.lbrace(db).as_syntax_node());
+                    context.add_node(body.lbrace(db).as_syntax_node());
 
                     let items = body.items(db);
                     for item in items.elements(db) {
                         let ImplItem::Function(func) = item else {
-                            item_builder.add_node(item.as_syntax_node());
+                            context.add_node(item.as_syntax_node());
                             continue;
                         };
 
@@ -209,6 +219,7 @@ fn expand_inner_attr(
                             defined_attributes,
                             &mut token_stream_builder,
                             attrs,
+                            item_start_offset,
                             &ctx,
                         );
                         if let Some(name) = found.as_name() {
@@ -218,26 +229,25 @@ fn expand_inner_attr(
                         token_stream_builder.add_node(func.declaration(db).as_syntax_node());
                         token_stream_builder.add_node(func.body(db).as_syntax_node());
                         let token_stream = token_stream_builder.build(&ctx);
+                        let token_stream = found.adapt_token_stream(token_stream);
                         all_none = all_none
                             && do_expand_inner_attr(
                                 db,
                                 &mut context,
                                 expansion_context.clone(),
-                                &mut item_builder,
                                 found,
                                 &func,
                                 token_stream,
                             );
                     }
 
-                    item_builder.add_node(body.rbrace(db).as_syntax_node());
+                    context.add_node(body.rbrace(db).as_syntax_node());
 
                     if all_none {
                         InnerAttrExpansionResult::None
                     } else {
                         InnerAttrExpansionResult::Some(
-                            context
-                                .into_result(item_builder, used_attr_names.into_iter().collect()),
+                            context.into_result(used_attr_names.into_iter().collect()),
                         )
                     }
                 }
@@ -251,10 +261,9 @@ fn do_expand_inner_attr(
     db: &AnalysisDatabase,
     context: &mut InnerAttrExpansionContext,
     expansion_context: ProcMacroScope,
-    item_builder: &mut PatchBuilder<'_>,
     found: AttrExpansionFound,
     func: &impl TypedSyntaxNode,
-    token_stream: TokenStream,
+    token_stream: AdaptedTokenStream,
 ) -> bool {
     let mut all_none = true;
     let input = match found {
@@ -267,7 +276,7 @@ fn do_expand_inner_attr(
             input
         }
         AttrExpansionFound::None => {
-            item_builder.add_node(func.as_syntax_node());
+            context.add_node(func.as_syntax_node());
             return all_none;
         }
     };
@@ -276,95 +285,120 @@ fn do_expand_inner_attr(
         db,
         ExpandAttributeParams {
             context: expansion_context,
-            attr: input.name,
+            attr: input.name.clone(),
             args: input.args.clone(),
-            item: token_stream.clone(),
-            call_site: input.call_site.span,
+            item: TokenStream::from(token_stream.clone()),
+            call_site: input.call_site.span.clone(),
+            adapted_call_site: input.attribute_location.adapted_call_site().into(),
         },
     );
 
-    let code_mappings = result.code_mappings.clone();
-    let expanded =
-        context.register_result(db, token_stream.to_string(), result, input.call_site.stable_ptr);
-
-    if let Some(code_mappings) = code_mappings {
+    if result.code_mappings.is_some() {
         // v2 logic.
-        let code_mappings =
-            code_mappings.into_iter().map(code_mapping_from_proc_macro_server).collect();
-        item_builder.add_modified(RewriteNode::TextAndMapping(expanded, code_mappings));
+        context.register_result_metadata_v2(db, &input, token_stream.to_string(), result.clone());
     } else {
         // v1 logic.
-        item_builder.add_modified(RewriteNode::Mapped {
-            origin: func.as_syntax_node().span(db),
-            node: Box::new(RewriteNode::Text(expanded.to_string())),
-        });
+        context.register_result_metadata_v1(
+            result.token_stream.to_string(),
+            func.as_syntax_node().span(db),
+        );
     }
 
     all_none
 }
 
-struct InnerAttrExpansionContext {
+struct InnerAttrExpansionContext<'a> {
     // Metadata returned for expansions.
     diagnostics: Vec<PluginDiagnostic>,
     any_changed: bool,
+    item_builder: PatchBuilder<'a>,
 }
 
-impl InnerAttrExpansionContext {
-    pub fn new() -> Self {
-        Self { diagnostics: Vec::new(), any_changed: false }
+impl<'a> InnerAttrExpansionContext<'a> {
+    pub fn new(db: &'a dyn SyntaxGroup, item_ast: &'a ast::ModuleItem) -> Self {
+        Self {
+            diagnostics: Vec::new(),
+            any_changed: false,
+            item_builder: PatchBuilder::new(db, item_ast),
+        }
     }
 
-    pub fn register_result(
+    pub fn add_node(&mut self, node: SyntaxNode) {
+        self.item_builder.add_node(node);
+    }
+
+    fn register_diagnotics(
         &mut self,
         db: &dyn SyntaxGroup,
+        diagnostics: Vec<AdaptedDiagnostic>,
+        stable_ptr: SyntaxStablePtrId,
+    ) {
+        let diagnostics = diagnostics.into_iter().map(Into::into).collect();
+        self.diagnostics.extend(into_cairo_diagnostics(db, diagnostics, stable_ptr));
+    }
+
+    pub fn register_result_metadata_v2(
+        &mut self,
+        db: &dyn SyntaxGroup,
+        input: &AttrExpansionArgs,
         original: String,
         result: ProcMacroResult,
-        stable_ptr: SyntaxStablePtrId,
-    ) -> String {
+    ) {
         let expanded = result.token_stream.to_string();
         let changed = expanded.as_str() != original;
 
-        self.diagnostics.extend(into_cairo_diagnostics(db, result.diagnostics, stable_ptr));
+        let diagnostics = input.attribute_location.adapt_diagnostics(result.diagnostics);
+        self.register_diagnotics(db, diagnostics, input.call_site.stable_ptr);
 
         self.any_changed = self.any_changed || changed;
 
-        expanded
+        let code_mappings = result.code_mappings.unwrap_or_default();
+        let code_mappings =
+            code_mappings.into_iter().map(code_mapping_from_proc_macro_server).collect();
+        let adapted_code_mappings = input.attribute_location.adapt_code_mappings(code_mappings);
+        self.item_builder.add_modified(rewrite_node_patch_from_expansion_result(
+            adapted_code_mappings,
+            result.token_stream.to_string(),
+        ));
     }
-    pub fn into_result(
-        self,
-        item_builder: PatchBuilder<'_>,
-        attr_names: Vec<String>,
-    ) -> PluginResult {
-        let (expanded, mut code_mappings) = item_builder.build();
-        // PatchBuilder::build() adds additional mapping at the end,
-        // which wraps the whole outputted code.
-        // We remove it, so we can properly translate locations spanning multiple token spans.
-        code_mappings.pop();
+
+    pub fn register_result_metadata_v1(&mut self, result: String, origin_span: CairoTextSpan) {
+        self.item_builder.add_modified(RewriteNode::Mapped {
+            origin: origin_span,
+            node: Box::new(RewriteNode::Text(result)),
+        });
+    }
+
+    pub fn into_result(self, attr_names: Vec<String>) -> AttributePluginResult {
         let msg = if attr_names.len() == 1 {
             "the attribute macro"
         } else {
             "one of the attribute macros"
         };
-        let derive_names = attr_names.iter().map(ToString::to_string).join("`, `");
+        let derive_names = attr_names.iter().join("`, `");
         let note = format!("this error originates in {msg}: `{derive_names}`");
 
-        PluginResult {
-            code: Some(PluginGeneratedFile {
-                name: "proc_attr_inner".into(),
-                content: expanded,
-                aux_data: None,
-                code_mappings,
-                diagnostics_note: Some(note),
-            }),
-            diagnostics: self.diagnostics,
-            remove_original_item: true,
-        }
+        AttributePluginResult::new()
+            .with_remove_original_item(true)
+            .with_plugin_diagnostics(self.diagnostics)
+            .with_generated_file(
+                AttributeGeneratedFile::from_patch_builder("proc_attr_inner", self.item_builder)
+                    .with_diagnostics_note(note),
+            )
     }
+}
+
+fn rewrite_node_patch_from_expansion_result(
+    code_mappings: Vec<AdaptedCodeMapping>,
+    expanded: String,
+) -> RewriteNode {
+    let code_mappings = code_mappings.into_iter().map(Into::into).collect_vec();
+    RewriteNode::TextAndMapping(expanded, code_mappings)
 }
 
 enum InnerAttrExpansionResult {
     None,
-    Some(PluginResult),
+    Some(AttributePluginResult),
 }
 
 pub enum AttrExpansionFound {
@@ -377,6 +411,7 @@ pub struct AttrExpansionArgs {
     pub name: String,
     pub args: TokenStream,
     pub call_site: CallSiteLocation,
+    pub attribute_location: ExpandableAttrLocation,
 }
 
 impl AttrExpansionFound {
@@ -397,7 +432,7 @@ pub(crate) fn parse_attribute(
     defined_attributes: Vec<String>,
     item_ast: ast::ModuleItem,
     ctx: &AllocationContext,
-) -> (AttrExpansionFound, TokenStream) {
+) -> (AttrExpansionFound, AdaptedTokenStream) {
     let mut token_stream_builder = TokenStreamBuilder::new(db);
     let input = match item_ast.clone() {
         ast::ModuleItem::Trait(ast) => {
@@ -442,7 +477,7 @@ pub(crate) fn parse_attribute(
         ast::ModuleItem::MacroDeclaration(_) => AttrExpansionFound::None,
         ast::ModuleItem::InlineMacro(_) => AttrExpansionFound::None,
     };
-    let token_stream = token_stream_builder.build(ctx);
+    let token_stream = input.adapt_token_stream(token_stream_builder.build(ctx));
     (input, token_stream)
 }
 
@@ -453,8 +488,10 @@ fn parse_item<T: ItemWithAttributes + ChildNodesWithoutAttributes>(
     ctx: &AllocationContext,
     defined_attributes: Vec<String>,
 ) -> AttrExpansionFound {
+    let span = ast.span_with_trivia(db);
     let attrs = ast.item_attributes(db);
-    let expansion = parse_attrs(db, &defined_attributes, token_stream_builder, attrs, ctx);
+    let expansion =
+        parse_attrs(db, &defined_attributes, token_stream_builder, attrs, span.start, ctx);
     token_stream_builder.extend(ast.child_nodes_without_attributes(db));
     expansion
 }
@@ -463,7 +500,8 @@ fn parse_attrs(
     db: &dyn SyntaxGroup,
     defined_attributes: &[String],
     builder: &mut TokenStreamBuilder<'_>,
-    attrs: Vec<ast::Attribute>,
+    item_attrs: Vec<ast::Attribute>,
+    item_start_offset: TextOffset,
     ctx: &AllocationContext,
 ) -> AttrExpansionFound {
     // This function parses attributes of the item,
@@ -477,7 +515,7 @@ fn parse_attrs(
     // nor will they cause the item to be rewritten.
     let mut expansion = None;
     let mut last = true;
-    for attr in attrs {
+    for attr in item_attrs {
         // We ensure that this flag is changed *after* the expansion is found.
         if last {
             let structured_attr = attr.clone().structurize(db);
@@ -491,6 +529,11 @@ fn parse_attrs(
                         name: attr.attr(db).as_syntax_node().get_text_without_trivia(db),
                         args,
                         call_site: CallSiteLocation::new(&attr, db),
+                        attribute_location: ExpandableAttrLocation::new(
+                            &attr,
+                            item_start_offset,
+                            db,
+                        ),
                     });
                     // Do not add the attribute for found expansion.
                     continue;
@@ -627,34 +670,35 @@ fn expand_derives(
 fn expand_attribute(
     db: &AnalysisDatabase,
     expansion_context: ProcMacroScope,
-    name: String,
     last: bool,
-    args: TokenStream,
-    token_stream: TokenStream,
-    call_site: CallSiteLocation,
+    token_stream: AdaptedTokenStream,
     original_node: SyntaxNode,
-) -> PluginResult {
+    input: AttrExpansionArgs,
+) -> AttributePluginResult {
     // region: Modified scarb code
     let result = get_attribute_expansion(
         db,
         ExpandAttributeParams {
             context: expansion_context,
-            args,
-            attr: name.clone(),
-            item: token_stream.clone(),
-            call_site: call_site.span,
+            args: input.args.clone(),
+            attr: input.name.clone(),
+            item: token_stream.clone().into(),
+            call_site: input.call_site.span,
+            adapted_call_site: input.attribute_location.adapted_call_site().into(),
         },
     );
     // endregion
+    let diagnostics =
+        input.attribute_location.adapt_diagnostics(result.diagnostics).into_iter().collect();
 
     // Handle token stream.
     if result.token_stream.is_empty() {
         // Remove original code
-        return PluginResult {
-            diagnostics: into_cairo_diagnostics(db, result.diagnostics, call_site.stable_ptr),
-            code: None,
-            remove_original_item: true,
-        };
+        return AttributePluginResult::new().with_remove_original_item(true).with_diagnostics(
+            db,
+            input.call_site.stable_ptr,
+            diagnostics,
+        );
     }
 
     // This is a minor optimization.
@@ -668,37 +712,47 @@ fn expand_attribute(
     // called again for this AST item.
     // This optimization limits the number of generated nodes a bit.
     if last && token_stream.to_string() == result.token_stream.to_string() {
-        return PluginResult {
-            code: None,
-            remove_original_item: false,
-            diagnostics: into_cairo_diagnostics(db, result.diagnostics, call_site.stable_ptr),
-        };
+        return AttributePluginResult::new().with_diagnostics(
+            db,
+            input.call_site.stable_ptr,
+            diagnostics,
+        );
     }
 
-    let file_name = format!("proc_macro_{}", name);
+    let file_name = format!("proc_macro_{}", input.name);
     let content = result.token_stream.to_string();
-    PluginResult {
-        code: Some(PluginGeneratedFile {
-            name: file_name.into(),
-            code_mappings: result
+
+    let mappings: Vec<CodeMapping> = input
+        .attribute_location
+        .adapt_code_mappings(
+            result
                 .code_mappings
-                .map(|x| x.into_iter().map(code_mapping_from_proc_macro_server).collect())
+                .map(|mappings| {
+                    mappings.into_iter().map(code_mapping_from_proc_macro_server).collect()
+                })
                 .unwrap_or_else(|| {
                     vec![CodeMapping {
                         origin: CodeOrigin::Span(original_node.span_without_trivia(db)),
                         span: CairoTextSpan::from_str(&content),
                     }]
                 }),
-            content,
-            aux_data: None,
-            diagnostics_note: Some(format!(
-                "this error originates in the attribute macro: `{}`",
-                name
-            )),
-        }),
-        diagnostics: into_cairo_diagnostics(db, result.diagnostics, call_site.stable_ptr),
-        remove_original_item: true,
-    }
+        )
+        .into_iter()
+        .map(Into::into)
+        .collect();
+
+    AttributePluginResult::new()
+        .with_remove_original_item(true)
+        .with_diagnostics(db, input.call_site.stable_ptr, diagnostics)
+        .with_generated_file(
+            AttributeGeneratedFile::new(file_name)
+                .with_content(content)
+                .with_code_mappings(mappings)
+                .with_diagnostics_note(format!(
+                    "this error originates in the attribute macro: `{}`",
+                    input.name
+                )),
+        )
 }
 
 fn calculate_metadata(
@@ -717,4 +771,112 @@ fn calculate_metadata(
     let file_id = short_hash(file_path.clone());
     let edition = serde_json::to_value(edition).unwrap();
     TokenStreamMetadata::new(file_path, file_id, edition)
+}
+
+#[derive(Default)]
+pub struct AttributePluginResult {
+    diagnostics: Vec<PluginDiagnostic>,
+    remove_original_item: bool,
+    code: Option<PluginGeneratedFile>,
+}
+
+impl AttributePluginResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_diagnostics(
+        mut self,
+        db: &dyn SyntaxGroup,
+        call_site_stable_ptr: SyntaxStablePtrId,
+        diagnostics: Vec<AdaptedDiagnostic>,
+    ) -> Self {
+        let diagnostics = diagnostics.into_iter().map(Into::into).collect();
+        self.diagnostics = into_cairo_diagnostics(db, diagnostics, call_site_stable_ptr);
+        self
+    }
+
+    pub fn with_plugin_diagnostics(mut self, diagnostics: Vec<PluginDiagnostic>) -> Self {
+        self.diagnostics = diagnostics;
+        self
+    }
+
+    pub fn with_remove_original_item(mut self, remove: bool) -> Self {
+        self.remove_original_item = remove;
+        self
+    }
+
+    pub fn with_generated_file(mut self, generated_file: AttributeGeneratedFile) -> Self {
+        self.code = Some(generated_file.into());
+        self
+    }
+}
+
+impl From<AttributePluginResult> for PluginResult {
+    fn from(value: AttributePluginResult) -> Self {
+        PluginResult {
+            diagnostics: value.diagnostics,
+            remove_original_item: value.remove_original_item,
+            code: value.code,
+        }
+    }
+}
+
+pub struct AttributeGeneratedFile {
+    name: SmolStr,
+    content: String,
+    code_mappings: Vec<CodeMapping>,
+    diagnostics_note: Option<String>,
+}
+
+impl AttributeGeneratedFile {
+    pub fn new(name: impl ToSmolStr) -> Self {
+        Self {
+            name: name.to_smolstr(),
+            content: Default::default(),
+            code_mappings: Default::default(),
+            diagnostics_note: Default::default(),
+        }
+    }
+
+    pub fn from_patch_builder(name: impl ToSmolStr, item_builder: PatchBuilder<'_>) -> Self {
+        let (expanded, mut code_mappings) = item_builder.build();
+        // PatchBuilder::build() adds additional mapping at the end,
+        // which wraps the whole outputted code.
+        // We remove it, so we can properly translate locations spanning multiple token spans.
+        code_mappings.pop();
+        Self {
+            name: name.to_smolstr(),
+            content: expanded,
+            code_mappings,
+            diagnostics_note: Default::default(),
+        }
+    }
+
+    pub fn with_content(mut self, content: impl ToString) -> Self {
+        self.content = content.to_string();
+        self
+    }
+
+    pub fn with_code_mappings(mut self, code_mappings: Vec<CodeMapping>) -> Self {
+        self.code_mappings = code_mappings;
+        self
+    }
+
+    pub fn with_diagnostics_note(mut self, diagnostics_note: impl ToString) -> Self {
+        self.diagnostics_note = Some(diagnostics_note.to_string());
+        self
+    }
+}
+
+impl From<AttributeGeneratedFile> for PluginGeneratedFile {
+    fn from(value: AttributeGeneratedFile) -> Self {
+        PluginGeneratedFile {
+            name: value.name,
+            content: value.content,
+            code_mappings: value.code_mappings,
+            aux_data: None,
+            diagnostics_note: value.diagnostics_note,
+        }
+    }
 }
