@@ -908,3 +908,71 @@ fn trait_method_via_impl_call_with_macros() {
     }
     ")
 }
+
+#[test]
+fn self_item_references_via_impl_item() {
+    test_transform_plain!(References, r#"
+    pub trait Foo<T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Self::Item>>(self: T);
+    }
+
+    impl FooImplerFelt252 of Foo<felt252> {
+        type Item = u256;
+
+        fn last<+Destruct<felt252>, +Destruct<Self::It<caret>em>>(self: felt252) {
+            Self::Item { low: 123, high: 456 };
+            123;
+        }
+    }
+    "#, @r"
+    pub trait Foo<T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Self::Item>>(self: T);
+    }
+
+    impl FooImplerFelt252 of Foo<felt252> {
+        type <sel=declaration>Item</sel> = u256;
+
+        fn last<+Destruct<felt252>, +Destruct<Self::<sel>Item</sel>>>(self: felt252) {
+            Self::<sel>Item</sel> { low: 123, high: 456 };
+            123;
+        }
+    }
+    ")
+}
+
+#[test]
+fn trait_item_prefixed_with_self_references() {
+    test_transform_plain!(References, r#"
+    pub trait Foo<T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Self::I<caret>tem>>(self: T);
+        fn next_to_last<+Destruct<Self::Item>>(self: T);
+    }
+
+    impl FooImplerFelt252 of Foo<felt252> {
+        type Item = u256;
+
+        fn last<+Destruct<felt252>, +Destruct<Self::Item>>(self: felt252) {
+            Self::Item { low: 123, high: 456 };
+            123;
+        }
+    }
+    "#, @r"
+    pub trait Foo<T> {
+        type <sel=declaration>Item</sel>;
+        fn last<+Destruct<T>, +Destruct<Self::<sel>Item</sel>>>(self: T);
+        fn next_to_last<+Destruct<Self::<sel>Item</sel>>>(self: T);
+    }
+
+    impl FooImplerFelt252 of Foo<felt252> {
+        type <sel>Item</sel> = u256;
+
+        fn last<+Destruct<felt252>, +Destruct<Self::<sel>Item</sel>>>(self: felt252) {
+            Self::<sel>Item</sel> { low: 123, high: 456 };
+            123;
+        }
+    }
+    ")
+}
