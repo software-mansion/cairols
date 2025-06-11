@@ -243,3 +243,65 @@ fn trait_method_with_macros() {
     }
     ")
 }
+
+#[test]
+fn self_in_method_bounds() {
+    test_transform_plain!(GotoDefinition, r"
+    pub trait Foo<T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Self::Item>>(self: T);
+    }
+
+    impl FooImplerFelt252 of Foo<felt252> {
+        type Item = ();
+
+        fn last<+Destruct<felt252>, +Destruct<Sel<caret>f::Item>>(self: felt252) {
+            123;
+        }
+    }
+    ", @r"
+    pub trait Foo<T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Self::Item>>(self: T);
+    }
+
+    impl <sel>FooImplerFelt252</sel> of Foo<felt252> {
+        type Item = ();
+
+        fn last<+Destruct<felt252>, +Destruct<Self::Item>>(self: felt252) {
+            123;
+        }
+    }
+    ")
+}
+
+#[test]
+fn self_referred_associated_type_in_impl_method() {
+    test_transform_plain!(GotoDefinition, r"
+    pub trait Foo<T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Self::Item>>(self: T);
+    }
+
+    impl FooImplerFelt252 of Foo<felt252> {
+        type Item = ();
+
+        fn last<+Destruct<felt252>, +Destruct<Self::I<caret>tem>>(self: felt252) {
+            123;
+        }
+    }
+    ", @r"
+    pub trait Foo<T> {
+        type Item;
+        fn last<+Destruct<T>, +Destruct<Self::Item>>(self: T);
+    }
+
+    impl FooImplerFelt252 of Foo<felt252> {
+        type <sel>Item</sel> = ();
+
+        fn last<+Destruct<felt252>, +Destruct<Self::Item>>(self: felt252) {
+            123;
+        }
+    }
+    ")
+}
