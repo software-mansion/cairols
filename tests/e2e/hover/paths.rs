@@ -1,9 +1,9 @@
-use crate::hover::test_hover;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::Hover;
 
 #[test]
 fn simple_mod() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_<caret>module { }
     "#,@r#"
@@ -27,7 +27,7 @@ fn simple_mod() {
 
 #[test]
 fn simple_nested_mod() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -54,7 +54,7 @@ fn simple_nested_mod() {
 
 #[test]
 fn use_in_nested() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -86,7 +86,7 @@ fn use_in_nested() {
 
 #[test]
 fn mod_in_nested() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module2 docstring.
@@ -118,7 +118,7 @@ fn mod_in_nested() {
 
 #[test]
 fn super_mod() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -149,7 +149,7 @@ fn super_mod() {
 
 #[test]
 fn super_mod_nested_trait() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -184,7 +184,7 @@ fn super_mod_nested_trait() {
 
 #[test]
 fn super_mod_nested_nested() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -216,7 +216,7 @@ fn super_mod_nested_nested() {
 
 #[test]
 fn trait_impl() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -253,7 +253,7 @@ fn trait_impl() {
 
 #[test]
 fn trait_impl_partial() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -292,7 +292,7 @@ fn trait_impl_partial() {
 
 #[test]
 fn function_with_path_super() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -325,7 +325,7 @@ fn function_with_path_super() {
 
 #[test]
 fn function_with_path_middle() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -362,7 +362,7 @@ fn function_with_path_middle() {
 
 #[test]
 fn function_with_path_last() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -398,7 +398,7 @@ fn function_with_path_last() {
 
 #[test]
 fn function_with_partial_path_nested() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -436,7 +436,7 @@ fn function_with_partial_path_nested() {
 
 #[test]
 fn function_with_partial_path() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -479,7 +479,7 @@ fn function_with_partial_path() {
 
 #[test]
 fn struct_constructor_with_path_first() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -512,7 +512,7 @@ fn struct_constructor_with_path_first() {
 
 #[test]
 fn struct_constructor_with_path_middle() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -549,7 +549,7 @@ fn struct_constructor_with_path_middle() {
 
 #[test]
 fn struct_constructor_with_path_last() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -585,7 +585,7 @@ fn struct_constructor_with_path_last() {
 
 #[test]
 fn private() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -620,7 +620,7 @@ fn private() {
 
 #[test]
 fn private_struct() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module docstring.
@@ -658,7 +658,7 @@ fn private_struct() {
 
 #[test]
 fn private_struct_partial_path() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     /// some_module docstring.
     mod some_module {
         /// internal_module2 docstring.

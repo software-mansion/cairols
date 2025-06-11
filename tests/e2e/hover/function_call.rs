@@ -1,9 +1,9 @@
-use crate::hover::test_hover;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::Hover;
 
 #[test]
 fn generic_function_call() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn a<
         T,
         +Copy<T>,
@@ -43,7 +43,7 @@ fn generic_function_call() {
 
 #[test]
 fn generic_function_call_placeholder() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn a<
         T,
         +Copy<T>,
@@ -74,7 +74,7 @@ fn generic_function_call_placeholder() {
 
 #[test]
 fn generic_function_call_wrong() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn a<
         T,
         +Copy<T>,
@@ -108,7 +108,7 @@ fn generic_function_call_wrong() {
 
 #[test]
 fn generic_function_call_wrong_placeholder() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     fn a<
         T,
         +Copy<T>,
@@ -139,7 +139,7 @@ fn generic_function_call_wrong_placeholder() {
 
 #[test]
 fn generic_trait_function_call_placeholder() {
-    test_transform!(test_hover, r#"
+    test_transform_plain!(Hover, r#"
     trait Foo<T> {
         fn foo(a: @T) { }
     }
