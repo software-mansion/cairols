@@ -10,17 +10,6 @@ fn f<caret>oo() { 5_u8 + 5_felt252; }
 fn foo() { 5_u8 + 5_felt252; <caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
-#[improper_attribute_macro_v2]
-fn foo() {
-    5_u8 + 5_felt252;
-}
-
-// proc_macro_improper_attribute_macro_v2
-// --------------------------------------
-
 fn foo() {
     5_u8 + 5_felt252;
 }

@@ -8,10 +8,7 @@ analyzed_lines = """
     let _x = complex<caret>_inline_macro_v2!([1_u8, 2_felt252]);
 """
 generated_code = """
-// lib.cairo
-// ---------
-
-simple_inline_macro_v2!(([1_u8, 2_felt252])) + simple_inline_macro_v2!(([1_u8, 2_felt252]))
+(([1_u8, 2_felt252])) + (([1_u8, 2_felt252]))
 """
 
 mapped_diagnostics:

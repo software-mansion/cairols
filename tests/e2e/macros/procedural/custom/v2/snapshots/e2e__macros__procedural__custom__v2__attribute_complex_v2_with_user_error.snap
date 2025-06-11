@@ -10,26 +10,9 @@ fn <caret>foo() { let x: u8 = 5_u32; }
 fn foo() { let x: u8 = 5_u32; <caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
-#[complex_attribute_macro_v2]
 fn foo() {
     let x: u8 = 5_u32;
 }
-
-// proc_macro_complex_attribute_macro_v2
-// -------------------------------------
-
-fn foo() {
-    let x: u8 = 5_u32;
-}
-#[simple_attribute_macro_v2]
-fn generated_function_with_other_attribute_v2() {}
-
-// proc_macro_simple_attribute_macro_v2
-// ------------------------------------
-
 fn generated_function_with_other_attribute_v2() {}
 fn generated_function_v2() {}
 """

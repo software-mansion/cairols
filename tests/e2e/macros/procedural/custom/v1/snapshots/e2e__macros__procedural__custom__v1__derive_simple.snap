@@ -11,15 +11,9 @@ struct Empty<caret>Struct {}
 struct EmptyStruct {<caret>}
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 #[derive(SimpleDeriveMacro)]
 struct EmptyStruct {}
-
-// proc_macro_derive
-// -----------------
-
+//-----
 trait MyTrait<T> {
     fn foo(t: T);
 }

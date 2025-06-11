@@ -11,18 +11,13 @@ analyzed_lines = """
 struct <caret>A {
 """
 generated_code = """
-// lib.cairo
-// ---------
-
 #[derive(Drop, Serde)]
 struct A {
     a: felt252,
 }
-
-// impls
-// -----
-
+//-----
 impl ADrop<> of core::traits::Drop<A>;
+
 impl ASerde<> of core::serde::Serde<A> {
     fn serialize(self: @A, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<felt252>::serialize(self.a, ref output)
