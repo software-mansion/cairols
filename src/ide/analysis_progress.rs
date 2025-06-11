@@ -86,6 +86,14 @@ impl AnalysisProgressController {
             );
         }
     }
+
+    /// Tells if all procedural macros have been resolved.
+    pub fn has_analysis_finished(&self) -> bool {
+        self.state.lock().unwrap().has_analysis_finished(
+            self.server_tracker.get_did_submit_procmacro_request(),
+            self.server_tracker.get_server_status(),
+        )
+    }
 }
 
 impl AnalysisProgressController {
@@ -133,18 +141,27 @@ impl AnalysisProgressControllerState {
         did_submit_procmacro_request: bool,
         proc_macro_server_status: ProcMacroServerStatus,
     ) {
+        if !self.has_analysis_finished(did_submit_procmacro_request, proc_macro_server_status) {
+            return;
+        }
+
+        self.analysis_in_progress = false;
+        self.notifier.notify::<ServerStatus>(ServerStatusParams {
+            event: ServerStatusEvent::AnalysisFinished,
+            idle: true,
+        });
+    }
+
+    fn has_analysis_finished(
+        &self,
+        did_submit_procmacro_request: bool,
+        proc_macro_server_status: ProcMacroServerStatus,
+    ) -> bool {
         let config_not_loaded = self.procmacros_enabled.is_none();
-        if ((!did_submit_procmacro_request
-            && proc_macro_server_status == ProcMacroServerStatus::Ready)
+        let is_ready = proc_macro_server_status == ProcMacroServerStatus::Ready;
+        ((!did_submit_procmacro_request && is_ready)
             || config_not_loaded
             || (self.procmacros_enabled == Some(false)))
             && self.analysis_in_progress
-        {
-            self.analysis_in_progress = false;
-            self.notifier.notify::<ServerStatus>(ServerStatusParams {
-                event: ServerStatusEvent::AnalysisFinished,
-                idle: true,
-            });
-        }
     }
 }
