@@ -3,9 +3,12 @@ use std::fmt::Display;
 use lsp_types::{CompletionParams, TextDocumentPositionParams, lsp_request};
 use serde::Serialize;
 
-use crate::support::cursor::peek_caret;
-use crate::support::{MockClient, cursors, sandbox};
+use crate::support::cursor::{Cursors, peek_caret};
+use crate::support::fixture::Fixture;
+use crate::support::transform::Transformer;
+use crate::support::{MockClient, fixture};
 use indoc::indoc;
+use lsp_types::request::Completion;
 
 mod attribute;
 mod methods_text_edits;
@@ -17,60 +20,49 @@ mod traits;
 mod uses;
 mod vars_and_params;
 
-/// Perform completions text edits test. Notice that the test shows many possible completions,
-/// however in practice only those who have the same prefix as the existing code are shown.
-///
-/// This function spawns a sandbox language server with the given code in the `src/lib.cairo` file.
-/// The Cairo source code is expected to contain caret markers.
-/// The function then requests quick fixes at each caret position and compares the result with the
-/// expected quick fixes from the snapshot file.
-fn test_completions_text_edits(cairo_code: &str) -> Report {
-    test_completions_text_edits_inner(cairo_code, "src/lib.cairo", |cairo| {
-        sandbox! {
-            files {
-                "cairo_project.toml" => indoc!(r#"
-                    [crate_roots]
-                    hello = "src"
-                    dep = "dep"
+impl Transformer for Completion {
+    fn capabilities(base: lsp_types::ClientCapabilities) -> lsp_types::ClientCapabilities {
+        base
+    }
 
-                    [config.override.hello]
-                    edition = "2024_07"
-                    [config.override.dep]
-                    edition = "2023_10" # Edition with visibility ignores
-
-                    [config.override.hello.dependencies]
-                    dep = { discriminator = "dep" }
-                "#),
-                "src/lib.cairo" => cairo,
-                "dep/lib.cairo" => indoc! ("
-                    struct Foo {
-                        a: felt252
-                        pub b: felt252
-                    }
-                "),
-            }
-        }
-    })
+    fn transform(ls: MockClient, cursors: Cursors) -> String {
+        transform(ls, cursors, Self::main_file())
+    }
 }
 
-fn test_completions_text_edits_inner(
-    cairo_code: &str,
-    file: &str,
-    ls: impl FnOnce(&str) -> MockClient,
-) -> Report {
-    let (cairo, cursors) = cursors(cairo_code);
+fn completion_fixture() -> Fixture {
+    fixture! {
+        "cairo_project.toml" => indoc!(r#"
+            [crate_roots]
+            hello = "src"
+            dep = "dep"
 
-    let mut ls = ls(&cairo);
+            [config.override.hello]
+            edition = "2024_07"
+            [config.override.dep]
+            edition = "2023_10" # Edition with visibility ignores
 
-    ls.open_all_cairo_files_and_wait_for_project_update();
+            [config.override.hello.dependencies]
+            dep = { discriminator = "dep" }
+        "#),
+        "dep/lib.cairo" => indoc!("
+            struct Foo {
+                a: felt252
+                pub b: felt252
+            }
+        ")
+    }
+}
 
+fn transform(mut ls: MockClient, cursors: Cursors, main_file: &str) -> String {
+    let cairo = ls.fixture.read_file(main_file);
     let position = cursors.assert_single_caret();
 
     let caret = peek_caret(&cairo, position);
 
     let completion_params = CompletionParams {
         text_document_position: TextDocumentPositionParams {
-            text_document: ls.doc_id(file),
+            text_document: ls.doc_id(main_file),
             position,
         },
         work_done_progress_params: Default::default(),
@@ -107,6 +99,7 @@ fn test_completions_text_edits_inner(
             })
             .collect(),
     }
+    .to_string()
 }
 
 #[derive(Serialize)]

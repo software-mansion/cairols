@@ -1,9 +1,9 @@
-use crate::hover::test_hover;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::Hover;
 
 #[test]
 fn mod_kw() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     m<caret>od missing;
     "#,@r#"
     source_context = """
@@ -14,7 +14,7 @@ fn mod_kw() {
 
 #[test]
 fn after_mod_kw() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     mod<caret> missing;
     "#,@r#"
     source_context = """
@@ -25,7 +25,7 @@ fn after_mod_kw() {
 
 #[test]
 fn mod_name() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     mod miss<caret>ing;
     "#,@r#"
     source_context = """

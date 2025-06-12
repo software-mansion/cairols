@@ -1,9 +1,9 @@
-use crate::hover::test_hover;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::Hover;
 
 #[test]
 fn ident_typed() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let ab<caret>c: felt252 = 0;
     }
@@ -24,7 +24,7 @@ fn ident_typed() {
 
 #[test]
 fn ident() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let xy<caret>z = 3;
     }
@@ -45,7 +45,7 @@ fn ident() {
 
 #[test]
 fn ident_mut() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let abc: felt252 = 0;
         let mut de<caret>f = abc * 2;
@@ -67,7 +67,7 @@ fn ident_mut() {
 
 #[test]
 fn value_mut() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let abc: felt252 = 0;
         let mut def = ab<caret>c * 2;
@@ -89,7 +89,7 @@ fn value_mut() {
 
 #[test]
 fn star_lhs() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let mut def: felt252 = 0;
         let xyz = 0;
@@ -112,7 +112,7 @@ fn star_lhs() {
 
 #[test]
 fn star_rhs() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let mut def: felt252 = 0;
         let xyz = 0;
@@ -136,7 +136,7 @@ fn star_rhs() {
 /// https://github.com/software-mansion/cairols/issues/80
 #[test]
 fn issue_80() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     use core::to_byte_array::FormatAsByteArray;
     pub fn to_base_16_string_no_padding(value: felt252) -> ByteArray {
         let string = value.format_as_byte_array(16);

@@ -1,9 +1,9 @@
-use super::test_completions_text_edits;
-use crate::support::insta::test_transform;
+use crate::{completions::completion_fixture, support::insta::test_transform_plain};
+use lsp_types::request::Completion;
 
 #[test]
 fn empty() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     pub struct Struct {
         x: u32,
         pub y: felt252,
@@ -40,7 +40,7 @@ fn empty() {
 
 #[test]
 fn after_prop() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     pub struct Struct {
         x: u32,
         pub y: felt252,
@@ -73,7 +73,7 @@ fn after_prop() {
 
 #[test]
 fn after_prop_before_spread() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     pub struct Struct {
         x: u32,
         pub y: felt252,
@@ -110,7 +110,7 @@ fn after_prop_before_spread() {
 
 #[test]
 fn after_prop_before_spread_same_line() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     pub struct Struct {
         x: u32,
         pub y: felt252,
@@ -146,7 +146,7 @@ fn after_prop_before_spread_same_line() {
 
 #[test]
 fn before_spread_same_line() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     pub struct Struct {
         x: u32,
         pub y: felt252,
@@ -183,7 +183,7 @@ fn before_spread_same_line() {
 
 #[test]
 fn imported_empty() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     pub struct Struct {
         x: u32,
         pub y: felt252,
@@ -218,7 +218,7 @@ fn imported_empty() {
 
 #[test]
 fn some_field_private() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     mod wrapper {
         pub struct Struct {
             x: u32,
@@ -244,7 +244,7 @@ fn some_field_private() {
 
 #[test]
 fn imported_after_prop() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     pub struct Struct {
         x: u32,
         pub y: felt252,
@@ -275,7 +275,7 @@ fn imported_after_prop() {
 
 #[test]
 fn imported_after_two_prop() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     pub struct Struct {
         x: u32,
         pub y: felt252,
@@ -302,7 +302,7 @@ fn imported_after_two_prop() {
 
 #[test]
 fn not_imported() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     mod unhappy_cases {
         fn foo() {
             let a = NonexsitentStruct { <caret> };
@@ -318,7 +318,7 @@ fn not_imported() {
 
 #[test]
 fn dep_without_visibility_support() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     fn a() {
         dep::Foo { // This struct is partially private
             <caret>

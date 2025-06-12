@@ -1,9 +1,9 @@
-use super::test_completions_text_edits;
-use crate::support::insta::test_transform;
+use crate::{completions::completion_fixture, support::insta::test_transform_plain};
+use lsp_types::request::Completion;
 
 #[test]
 fn self_completions() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     trait Foo {
         fn bar() {
             Self::<caret>
@@ -21,7 +21,7 @@ fn self_completions() {
 
 #[test]
 fn type_bound() {
-    test_transform!(test_completions_text_edits, r#"
+    test_transform_plain!(Completion, completion_fixture(), r#"
     fn foo<T, +D<caret>>() {}
     "#, @r#"
     caret = """
@@ -127,7 +127,7 @@ fn type_bound() {
 
 #[test]
 fn negative_type_bound() {
-    test_transform!(test_completions_text_edits, r#"
+    test_transform_plain!(Completion, completion_fixture(), r#"
     trait Trait<T> {}
     impl Impl<T, -D<caret>> of Trait<T> {}
     "#, @r#"
@@ -234,7 +234,7 @@ fn negative_type_bound() {
 
 #[test]
 fn impl_bound() {
-    test_transform!(test_completions_text_edits, r#"
+    test_transform_plain!(Completion, completion_fixture(), r#"
     fn foo<T, +D<caret>>() {}
     "#, @r#"
     caret = """
@@ -340,7 +340,7 @@ fn impl_bound() {
 
 #[test]
 fn type_bound_user_trait() {
-    test_transform!(test_completions_text_edits, r#"
+    test_transform_plain!(Completion, completion_fixture(), r#"
     trait Traicik<T> {}
     fn foo<T, +Trai<caret>>() {}
     "#, @r#"

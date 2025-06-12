@@ -1,9 +1,9 @@
-use super::test_completions_text_edits;
-use crate::support::insta::test_transform;
+use crate::{completions::completion_fixture, support::insta::test_transform_plain};
+use lsp_types::request::Completion;
 
 #[test]
 fn single_element_path() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     struct ByteA_ActuallyNotByteArray {}
 
     fn a() {
@@ -61,7 +61,7 @@ fn single_element_path() {
 
 #[test]
 fn multi_segment_path() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     mod foo {
         struct Bar {}
         pub struct Baz {}
@@ -82,7 +82,7 @@ fn multi_segment_path() {
 
 #[test]
 fn multi_segment_path_partial() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     mod foo {
         pub mod bar {
             pub struct Baz {}
@@ -109,7 +109,7 @@ fn multi_segment_path_partial() {
 
 #[test]
 fn enum_variant() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     enum Enumik {
         A,
         B,
@@ -133,7 +133,7 @@ fn enum_variant() {
 
 #[test]
 fn type_annotation() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     mod module {
         pub type felt = felt252;
         pub type int = i32;
@@ -157,7 +157,7 @@ fn type_annotation() {
 
 #[test]
 fn type_annotation_with_dangling_path() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     mod module {
         pub type felt = felt252;
         pub type int = i32;
@@ -194,7 +194,7 @@ fn type_annotation_with_dangling_path() {
 
 #[test]
 fn type_annotation_with_trivia() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     mod module {
         pub type felt = felt252;
         pub type int = i32;
@@ -219,7 +219,7 @@ fn type_annotation_with_trivia() {
 
 #[test]
 fn generic_parameter() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     mod module {
         pub type felt = felt252;
         pub type int = i32;
@@ -243,7 +243,7 @@ fn generic_parameter() {
 
 #[test]
 fn generic_parameter_with_trivia() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     mod module {
         pub type felt = felt252;
         pub type int = i32;
@@ -268,7 +268,7 @@ fn generic_parameter_with_trivia() {
 
 #[test]
 fn function_implicit_parameter() {
-    test_transform!(test_completions_text_edits,"
+    test_transform_plain!(Completion, completion_fixture(), "
     fn foo() implicits(core::Range<caret>) {}
     ",@r#"
     caret = """
