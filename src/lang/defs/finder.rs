@@ -17,7 +17,8 @@ use cairo_lang_semantic::keyword::SELF_TYPE_KW;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::ResolvedGenericItem::TraitItem;
 use cairo_lang_semantic::resolve::{
-    AsSegments, ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData,
+    AsSegments, ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver,
+    ResolverData,
 };
 use cairo_lang_semantic::substitution::SemanticRewriter;
 use cairo_lang_semantic::{ConcreteImplId, Expr, TypeLongId};
@@ -553,6 +554,7 @@ fn try_concrete_type_or_impl(
                 &mut SemanticDiagnostics::default(),
                 type_path_segments,
                 NotFoundItemType::Identifier,
+                ResolutionContext::Default,
             )
             .ok()?;
 
@@ -600,6 +602,7 @@ fn try_trait_as_generic_parameter_bound(
                 &mut SemanticDiagnostics::default(),
                 type_path_segments.clone(),
                 NotFoundItemType::Identifier,
+                ResolutionContext::Default,
             )
             .ok()?;
 
