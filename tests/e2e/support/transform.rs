@@ -16,9 +16,10 @@ pub fn conduct_transformation<T: Transformer>(
     let (cairo, cursors) = cursors(cairo_code_with_cursors);
 
     let mut fixture = initial_fixture;
-    fixture.add_file("src/lib.cairo", cairo.clone());
+    fixture.add_file(T::main_file(), cairo.clone());
+
     if with_macros {
-        fixture.add_file(
+        fixture.add_file_if_not_exists(
             "Scarb.toml",
             formatdoc!(
                 r#"
@@ -35,7 +36,7 @@ pub fn conduct_transformation<T: Transformer>(
             ),
         );
     } else {
-        fixture.add_file("cairo_project.toml", CAIRO_PROJECT_TOML_2024_07);
+        fixture.add_file_if_not_exists("cairo_project.toml", CAIRO_PROJECT_TOML_2024_07);
     };
 
     let workspace_config = if with_macros {
@@ -68,4 +69,8 @@ pub trait Transformer {
     fn capabilities(base: ClientCapabilities) -> ClientCapabilities;
 
     fn transform(ls: MockClient, cursors: Cursors) -> String;
+
+    fn main_file() -> &'static str {
+        "src/lib.cairo"
+    }
 }

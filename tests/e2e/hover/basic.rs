@@ -1,9 +1,9 @@
-use crate::hover::test_hover;
-use crate::support::insta::test_transform;
+use crate::support::insta::test_transform_plain;
+use lsp_types::Hover;
 
 #[test]
 fn let_mut() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let mut x<caret> = 5;
     }
@@ -24,7 +24,7 @@ fn let_mut() {
 
 #[test]
 fn println() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         p<caret>rintln!("The value of x is: {}", x);
     }
@@ -60,7 +60,7 @@ fn println() {
 
 #[test]
 fn assign_lhs() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let mut x = 5;
         x<caret> = add_two(x);;
@@ -88,7 +88,7 @@ fn assign_lhs() {
 
 #[test]
 fn assign_rhs_before() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let mut x = 5;
         x = <caret>add_two(x);
@@ -120,7 +120,7 @@ fn assign_rhs_before() {
 
 #[test]
 fn assign_rhs_on_fn_name() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let mut x = 5;
         x = add<caret>_two(x);
@@ -152,7 +152,7 @@ fn assign_rhs_on_fn_name() {
 
 #[test]
 fn assign_rhs_after_fn_name() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     fn main() {
         let mut x = 5;
         x = add_two<caret>(x);
@@ -184,7 +184,7 @@ fn assign_rhs_after_fn_name() {
 
 #[test]
 fn enum_name() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     enum Co<caret>in {
         Penny,
     }
@@ -210,7 +210,7 @@ fn enum_name() {
 
 #[test]
 fn enum_member() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     enum Coin {
         Penn<caret>y,
     }
@@ -236,7 +236,7 @@ fn enum_member() {
 
 #[test]
 fn fn_name() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     enum Coin {
         Penny,
     }
@@ -266,7 +266,7 @@ fn fn_name() {
 
 #[test]
 fn param_name() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     enum Coin {
         Penny,
     }
@@ -293,7 +293,7 @@ fn param_name() {
 
 #[test]
 fn param_type() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     enum Coin {
         Penny,
     }
@@ -325,7 +325,7 @@ fn param_type() {
 
 #[test]
 fn enum_value() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     enum Coin {
         Penny,
     }
@@ -352,7 +352,7 @@ fn enum_value() {
 
 #[test]
 fn enum_member_in_match() {
-    test_transform!(test_hover,r#"
+    test_transform_plain!(Hover,r#"
     enum Coin {
         Penny,
     }
