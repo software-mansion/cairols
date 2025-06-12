@@ -107,6 +107,13 @@ fn type_bound() {
     completion_label = "DivRem"
 
     [[completions]]
+    completion_label = "DivRem"
+    text_edits = ["""
+    use core::num::traits::DivRem;
+
+    """]
+
+    [[completions]]
     completion_label = "Done"
     text_edits = ["""
     use core::circuit::AddInputResult::Done;
@@ -214,6 +221,13 @@ fn negative_type_bound() {
     completion_label = "DivRem"
 
     [[completions]]
+    completion_label = "DivRem"
+    text_edits = ["""
+    use core::num::traits::DivRem;
+
+    """]
+
+    [[completions]]
     completion_label = "Done"
     text_edits = ["""
     use core::circuit::AddInputResult::Done;
@@ -318,6 +332,13 @@ fn impl_bound() {
 
     [[completions]]
     completion_label = "DivRem"
+
+    [[completions]]
+    completion_label = "DivRem"
+    text_edits = ["""
+    use core::num::traits::DivRem;
+
+    """]
 
     [[completions]]
     completion_label = "Done"
