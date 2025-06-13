@@ -3,8 +3,9 @@ use scarb_proc_macro_server_types::methods::expand::{
 };
 
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PlainExpandAttributeParams {
     pub context: ProcMacroScope,
     pub attr: String,
@@ -12,14 +13,14 @@ pub struct PlainExpandAttributeParams {
     pub item: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PlainExpandDeriveParams {
     pub context: ProcMacroScope,
     pub derives: Vec<String>,
     pub item: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PlainExpandInlineParams {
     pub context: ProcMacroScope,
     pub name: String,
