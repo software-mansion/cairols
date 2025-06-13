@@ -1,7 +1,10 @@
 use anyhow::anyhow;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_filesystem::ids::{FileId, FileLongId};
+use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_syntax::node::ast::TerminalIdentifier;
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 use lsp_server::ErrorCode;
@@ -12,7 +15,7 @@ use lsp_types::{
 };
 use std::collections::HashMap;
 
-use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::defs::{SymbolDef, SymbolSearch};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
@@ -36,27 +39,89 @@ pub fn rename(
         ));
     }
 
-    let symbol = || {
-        let file = db.file_for_url(&params.text_document_position.text_document.uri)?;
-        let position = params.text_document_position.position.to_cairo();
-        let identifier = db.find_identifier_at_position(file, position)?;
-
-        // Declaration is used here because rename without changing the declaration would break the compilation
-        // e.g. when renaming trait usage - we also rename the trait
-        SymbolSearch::find_declaration(db, &identifier).map(|search| search.def)
-    };
-    let Some(symbol) = symbol() else {
+    let Some(file) = db.file_for_url(&params.text_document_position.text_document.uri) else {
         return Ok(None);
     };
-    if let SymbolDef::ExprInlineMacro(_) = symbol {
-        return Err(LSPError::new(
-            anyhow!("Renaming inline macros is not supported"),
-            ErrorCode::RequestFailed,
-        ));
+    let position = params.text_document_position.position.to_cairo();
+    let Some(identifier) = db.find_identifier_at_position(file, position) else { return Ok(None) };
+
+    let Some(resultants) = db.get_node_resultants(identifier.as_syntax_node()) else {
+        return Ok(None);
+    };
+
+    let symbols: Vec<_> =
+        resultants.into_iter().filter_map(|node| declaration_from_resultant(db, node)).collect();
+
+    let mut resource_ops = vec![];
+    // Handle special cases.
+    for symbol in &symbols {
+        if let SymbolDef::ExprInlineMacro(_) = symbol {
+            return Err(LSPError::new(
+                anyhow!("Renaming inline macros is not supported"),
+                ErrorCode::RequestFailed,
+            ));
+        }
+
+        if let SymbolDef::Module(module_def) = symbol {
+            match module_def.module_id() {
+                ModuleId::CrateRoot(_) => {
+                    return Err(LSPError::new(
+                        anyhow!("Rename for crates is not yet supported"),
+                        ErrorCode::RequestFailed,
+                    ));
+                }
+                ModuleId::Submodule(submodule_id) => {
+                    if !db.is_submodule_inline(submodule_id) {
+                        let res_op = resource_op_for_non_inline_submodule(
+                            db,
+                            module_def.module_id(),
+                            client_capabilities,
+                            &new_name,
+                        )?;
+                        resource_ops.extend(res_op);
+                    }
+                }
+            }
+        }
     }
+
+    let locations = symbols
+        .into_iter()
+        .flat_map(|symbol| find_usages(db, symbol))
+        .filter_map(|loc| db.lsp_location(loc))
+        .collect::<Vec<_>>();
+
+    let changes: HashMap<_, Vec<TextEdit>> =
+        locations.into_iter().fold(HashMap::new(), |mut acc, Location { uri, range }| {
+            acc.entry(uri).or_default().push(TextEdit { range, new_text: new_name.clone() });
+            acc
+        });
+
+    let workspace_edit = if client_capabilities.workspace_edit_rename_resource_support() {
+        WorkspaceEdit {
+            changes: None,
+            document_changes: Some(merge_into_document_changes(changes, resource_ops)),
+            change_annotations: None,
+        }
+    } else {
+        WorkspaceEdit { changes: Some(changes), document_changes: None, change_annotations: None }
+    };
+
+    Ok(Some(workspace_edit))
+}
+
+fn declaration_from_resultant(db: &AnalysisDatabase, resultant: SyntaxNode) -> Option<SymbolDef> {
+    let identifier =
+        resultant.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
+    // Declaration is used here because rename without changing the declaration would break the compilation,
+    // e.g. when renaming trait usage - we also rename the trait
+    SymbolSearch::find_declaration(db, &identifier).map(|search| search.def)
+}
+
+fn find_usages(db: &AnalysisDatabase, symbol: SymbolDef) -> Vec<(FileId, TextSpan)> {
     let symbol_name = Some(symbol.name(db));
 
-    let locations: Vec<_> = symbol
+    symbol
         .usages(db)
         .include_declaration(true)
         .originating_locations(db)
@@ -71,51 +136,7 @@ pub fn rename(
                 .is_some_and(|node| node.span(db) == *span && node.text(db) == symbol_name)
         })
         .unique()
-        .filter_map(|loc| db.lsp_location(loc))
-        .collect();
-
-    let changes: HashMap<_, Vec<TextEdit>> =
-        locations.into_iter().fold(HashMap::new(), |mut acc, Location { uri, range }| {
-            acc.entry(uri).or_default().push(TextEdit { range, new_text: new_name.clone() });
-            acc
-        });
-
-    let resource_op = if let SymbolDef::Module(module_def) = symbol {
-        match module_def.module_id() {
-            ModuleId::CrateRoot(_) => {
-                return Err(LSPError::new(
-                    anyhow!("Rename for crates is not yet supported"),
-                    ErrorCode::RequestFailed,
-                ));
-            }
-            ModuleId::Submodule(submodule_id) => {
-                if db.is_submodule_inline(submodule_id) {
-                    None
-                } else {
-                    resource_op_for_non_inline_submodule(
-                        db,
-                        module_def.module_id(),
-                        client_capabilities,
-                        &new_name,
-                    )?
-                }
-            }
-        }
-    } else {
-        None
-    };
-
-    let workspace_edit = if client_capabilities.workspace_edit_rename_resource_support() {
-        WorkspaceEdit {
-            changes: None,
-            document_changes: Some(merge_into_document_changes(changes, resource_op)),
-            change_annotations: None,
-        }
-    } else {
-        WorkspaceEdit { changes: Some(changes), document_changes: None, change_annotations: None }
-    };
-
-    Ok(Some(workspace_edit))
+        .collect()
 }
 
 fn resource_op_for_non_inline_submodule(
@@ -168,7 +189,7 @@ fn resource_op_for_non_inline_submodule(
 
 fn merge_into_document_changes(
     changes: HashMap<Url, Vec<TextEdit>>,
-    resource_op: Option<ResourceOp>,
+    resource_ops: Vec<ResourceOp>,
 ) -> DocumentChanges {
     let text_document_edits: Vec<_> = changes
         .into_iter()
@@ -179,7 +200,7 @@ fn merge_into_document_changes(
         .map(DocumentChangeOperation::Edit)
         .collect();
 
-    let document_change_operations = resource_op
+    let document_change_operations = resource_ops
         .into_iter()
         .map(DocumentChangeOperation::Op)
         .chain(text_document_edits)
