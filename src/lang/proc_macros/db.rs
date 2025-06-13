@@ -11,7 +11,7 @@ use super::client::ServerStatus;
 use crate::lang::proc_macros::client::plain_request_response::{
     PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
 };
-use cairo_lang_macro::{TextSpan, TokenStream, TokenTree};
+use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
 
 /// A set of queries that enable access to proc macro client from compiler plugins
 /// `.generate_code()` methods.
@@ -206,8 +206,10 @@ impl SpansStabilizer {
         }
 
         for diagnostic in &mut result.diagnostics {
-            if let Some(span) = &mut diagnostic.span {
-                self.apply_original_offset_to_span(span);
+            if let Some(mut span) = diagnostic.span() {
+                self.apply_original_offset_to_span(&mut span);
+                *diagnostic =
+                    Diagnostic::spanned(span, diagnostic.severity(), diagnostic.message());
             }
         }
 
