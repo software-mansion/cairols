@@ -538,6 +538,13 @@ fn find_generated_nodes(
         let mut new_nodes: OrderedHashSet<_> = Default::default();
 
         for token in file_syntax.tokens(db) {
+            // Skip end of the file terminal, which is also a syntax tree leaf.
+            // As `ModuleItemList` and `TerminalEndOfFile` have the same parent,
+            // which is the `SyntaxFile`, so we don't want to take the `SyntaxFile`
+            // as an additional resultant.
+            if token.kind(db) == SyntaxKind::TerminalEndOfFile {
+                continue;
+            }
             let nodes: Vec<_> = token
                 .ancestors_with_self(db)
                 .map_while(|new_node| {
