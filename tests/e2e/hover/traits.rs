@@ -3,7 +3,7 @@ use lsp_types::Hover;
 
 #[test]
 fn generated_element_use() {
-    test_transform_plain!(Hover,r#"
+    test_transform_plain!(Hover, r#"
     #[generate_trait]
     impl MyTraitImpl<SelfType> of MyTrait<SelfType> {
         fn some_method(ref self: SelfType) { }
@@ -33,7 +33,7 @@ fn generated_element_use() {
 
 #[test]
 fn ref_self() {
-    test_transform_plain!(Hover,r#"
+    test_transform_plain!(Hover, r#"
     #[generate_trait]
     impl MyTraitImpl<SelfType> of MyTrait<SelfType> {
         fn some_method(ref se<caret>lf: SelfType) { }
@@ -55,7 +55,7 @@ fn ref_self() {
 
 #[test]
 fn self_type() {
-    test_transform_plain!(Hover,r#"
+    test_transform_plain!(Hover, r#"
     struct SelfType {
         a: felt252,
         b: felt252,
@@ -88,7 +88,7 @@ fn self_type() {
 
 #[test]
 fn self_type_member() {
-    test_transform_plain!(Hover,r#"
+    test_transform_plain!(Hover, r#"
     struct SelfType {
         aaa: felt252,
         b: felt252,
@@ -123,7 +123,7 @@ fn self_type_member() {
 
 #[test]
 fn self_type_member_method_call() {
-    test_transform_plain!(Hover,r#"
+    test_transform_plain!(Hover, r#"
     use core::num::traits::One;
 
     struct SelfType {
@@ -158,7 +158,7 @@ fn self_type_member_method_call() {
 
 #[test]
 fn trait_name_generated() {
-    test_transform_plain!(Hover,r#"
+    test_transform_plain!(Hover, r#"
     #[generate_trait]
     impl MyTraitImpl of MyTra<caret>it {
         fn some_method() { }
@@ -184,7 +184,7 @@ fn trait_name_generated() {
 
 #[test]
 fn trait_name_generic_name_generated() {
-    test_transform_plain!(Hover,r#"
+    test_transform_plain!(Hover, r#"
     #[generate_trait]
     impl MyTraitImpl<SelfType> of MyTrait<Self<caret>Type> {
         fn some_method() { }
@@ -209,7 +209,7 @@ fn trait_name_generic_name_generated() {
 
 #[test]
 fn trait_name_generic_name() {
-    test_transform_plain!(Hover,r#"
+    test_transform_plain!(Hover, r#"
     struct Ab {}
 
     trait MyTrait<SelfType> {
@@ -232,6 +232,70 @@ fn trait_name_generic_name() {
     ```
     ```cairo
     struct Ab {}
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn self_in_trait() {
+    test_transform_plain!(Hover, r#"
+    pub trait ShapeGeometry<T> {
+        type Unit;
+        fn area(self: T) -> Se<caret>lf::Unit;
+    }
+    "#,@r#"
+    source_context = """
+        fn area(self: T) -> Se<caret>lf::Unit;
+    """
+    highlight = """
+        fn area(self: T) -> <sel>Self</sel>::Unit;
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    pub trait ShapeGeometry<T>
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn self_in_impl() {
+    test_transform_plain!(Hover, r#"
+    pub trait ShapeGeometry<T> {
+        type Unit;
+        fn area(self: T) -> Self::Unit;
+    }
+
+    mod rectangle {
+        use super::ShapeGeometry;
+        #[derive(Copy, Drop)]
+        pub struct Rectangle { pub a: u64, pub b: u64 }
+
+        impl RectangleGeometry of ShapeGeometry<Rectangle> {
+            type Unit = u64;
+            fn area(self: Rectangle) -> Se<caret>lf::Unit {
+                let retval: Self::Unit = self.a * self.b;
+                retval
+            }
+        }
+    }
+    "#,@r#"
+    source_context = """
+            fn area(self: Rectangle) -> Se<caret>lf::Unit {
+    """
+    highlight = """
+            fn area(self: Rectangle) -> <sel>Self</sel>::Unit {
+    """
+    popover = """
+    ```cairo
+    hello::rectangle
+    ```
+    ```cairo
+    impl RectangleGeometry of ShapeGeometry<Rectangle>;
     ```
     """
     "#)
