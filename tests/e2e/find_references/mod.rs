@@ -1,16 +1,15 @@
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 
+use crate::support::MockClient;
+use crate::support::cursor::{Cursors, render_selections_with_attrs};
+use crate::support::transform::Transformer;
 use itertools::Itertools;
 use lsp_types::request::References;
 use lsp_types::{
     ClientCapabilities, Location, ReferenceClientCapabilities, ReferenceContext, ReferenceParams,
     TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
 };
-
-use crate::support::MockClient;
-use crate::support::cursor::{Cursors, render_selections_with_attrs};
-use crate::support::transform::Transformer;
 
 mod consts;
 mod enums;
@@ -37,7 +36,11 @@ impl Transformer for References {
         }
     }
 
-    fn transform(mut ls: MockClient, cursors: Cursors) -> String {
+    fn transform(
+        mut ls: MockClient,
+        cursors: Cursors,
+        _additional_data: Option<serde_json::Value>,
+    ) -> String {
         let cairo = ls.fixture.read_file("src/lib.cairo");
         let position = cursors.assert_single_caret();
 

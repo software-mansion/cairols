@@ -1,5 +1,9 @@
+use crate::support::MockClient;
+use crate::support::cursor::{Cursors, render_text_edits_and_file_renames};
+use crate::support::transform::Transformer;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
+use lsp_types::request::Rename;
 use lsp_types::{
     ClientCapabilities, DocumentChangeOperation, DocumentChanges, OneOf, RenameClientCapabilities,
     RenameFile, RenameParams, ResourceOp, ResourceOperationKind, TextDocumentClientCapabilities,
@@ -7,10 +11,7 @@ use lsp_types::{
     WorkspaceEditClientCapabilities, lsp_request,
 };
 use std::collections::HashMap;
-
-use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
-use crate::support::cursor::render_text_edits_and_file_renames;
-use crate::support::{cursors, sandbox};
+use std::ffi::OsStr;
 
 mod consts;
 mod enums;
@@ -25,88 +26,65 @@ mod vars;
 
 const DEFAULT_NEW_NAME: &'_ str = "RENAMED";
 
-fn caps(base: ClientCapabilities) -> ClientCapabilities {
-    ClientCapabilities {
-        text_document: base.text_document.or_else(Default::default).map(|it| {
-            TextDocumentClientCapabilities {
-                rename: Some(RenameClientCapabilities {
-                    dynamic_registration: Some(false),
-                    prepare_support: None,
-                    prepare_support_default_behavior: None,
-                    honors_change_annotations: None,
-                }),
-                ..it
-            }
-        }),
-        workspace: base.workspace.or_else(Default::default).map(|it| WorkspaceClientCapabilities {
-            workspace_edit: Some(WorkspaceEditClientCapabilities {
-                resource_operations: Some(vec![ResourceOperationKind::Rename]),
-                ..Default::default()
+impl Transformer for Rename {
+    fn capabilities(base: ClientCapabilities) -> ClientCapabilities {
+        ClientCapabilities {
+            text_document: base.text_document.or_else(Default::default).map(|it| {
+                TextDocumentClientCapabilities {
+                    rename: Some(RenameClientCapabilities {
+                        dynamic_registration: Some(false),
+                        prepare_support: None,
+                        prepare_support_default_behavior: None,
+                        honors_change_annotations: None,
+                    }),
+                    ..it
+                }
             }),
-            ..it
-        }),
-        ..base
-    }
-}
-
-type FileContents<'a> = HashMap<&'a str, &'a str>;
-
-fn rename(cairo_code: &str) -> String {
-    rename_with_new_name(cairo_code, DEFAULT_NEW_NAME)
-}
-
-fn rename_with_additional_files(file_contents: FileContents) -> String {
-    rename_with_additional_files_and_new_name(file_contents, DEFAULT_NEW_NAME)
-}
-
-fn rename_with_new_name(cairo_code: &str, new_name: &str) -> String {
-    rename_with_additional_files_and_new_name(
-        HashMap::from([("src/lib.cairo", cairo_code)]),
-        new_name,
-    )
-}
-
-fn rename_with_additional_files_and_new_name(
-    file_contents: FileContents,
-    new_name: &str,
-) -> String {
-    let mut ls = sandbox! {
-        files {
-            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+            workspace: base.workspace.or_else(Default::default).map(|it| {
+                WorkspaceClientCapabilities {
+                    workspace_edit: Some(WorkspaceEditClientCapabilities {
+                        resource_operations: Some(vec![ResourceOperationKind::Rename]),
+                        ..Default::default()
+                    }),
+                    ..it
+                }
+            }),
+            ..base
         }
-        client_capabilities = caps;
-    };
-
-    let mut carets = vec![];
-    let file_contents: Vec<_> = file_contents
-        .into_iter()
-        .map(|(path, code_with_carets)| {
-            let (cairo, cursors) = cursors(code_with_carets);
-            assert!(cursors.carets().len() <= 1);
-
-            if let Some(caret) = cursors.carets().into_iter().next() {
-                carets.push((path, caret));
-            }
-
-            (path, cairo)
-        })
-        .collect();
-
-    for (path, cairo) in &file_contents {
-        ls.fixture.add_file(path, cairo);
     }
 
-    ls.open_all_cairo_files_and_wait_for_project_update();
+    fn transform(
+        ls: MockClient,
+        cursors: Cursors,
+        additional_data: Option<serde_json::Value>,
+    ) -> String {
+        let new_name = if let Some(data) = additional_data {
+            data.get("new_name").unwrap().as_str().unwrap().to_string()
+        } else {
+            DEFAULT_NEW_NAME.to_string()
+        };
 
-    assert_eq!(carets.len(), 1);
-    let (path, position) = carets.into_iter().next().unwrap();
+        rename(ls, cursors, new_name)
+    }
+}
+
+fn rename(mut ls: MockClient, cursors: Cursors, new_name: String) -> String {
+    let caret = cursors.assert_single_caret();
+
+    let file_contents: Vec<_> = ls
+        .fixture
+        .files()
+        .iter()
+        .filter(|path| path.extension() == Some(OsStr::new("cairo")))
+        .map(|path| (path.to_string_lossy().to_string(), ls.fixture.read_file(path)))
+        .collect();
 
     let params = RenameParams {
         text_document_position: TextDocumentPositionParams {
-            text_document: ls.doc_id(path),
-            position,
+            text_document: ls.doc_id("src/lib.cairo"),
+            position: caret,
         },
-        new_name: new_name.to_string(),
+        new_name,
         work_done_progress_params: Default::default(),
     };
     let Some(request) = ls.send_request::<lsp_request!("textDocument/rename")>(params) else {
@@ -117,7 +95,7 @@ fn rename_with_additional_files_and_new_name(
 
     let file_contents = file_contents
         .into_iter()
-        .map(|(path, content)| (ls.fixture.file_url(path), (path, content)))
+        .map(|(path, content)| (ls.fixture.file_url(&path), (path, content)))
         .collect();
 
     let file_renames: HashMap<_, _> = file_renames

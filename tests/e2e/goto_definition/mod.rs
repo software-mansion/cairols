@@ -39,7 +39,11 @@ impl Transformer for GotoDefinition {
         }
     }
 
-    fn transform(ls: MockClient, cursors: Cursors) -> String {
+    fn transform(
+        ls: MockClient,
+        cursors: Cursors,
+        _additional_data: Option<serde_json::Value>,
+    ) -> String {
         let position = cursors.assert_single_caret();
 
         let mut test = GotoDefinitionTest { ls };

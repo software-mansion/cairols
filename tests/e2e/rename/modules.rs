@@ -1,34 +1,26 @@
-use crate::rename::{rename, rename_with_additional_files};
-use crate::support::insta::test_transform;
 use indoc::indoc;
-use std::collections::HashMap;
+use lsp_types::request::Rename;
+
+use crate::support::fixture;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn non_inline_module_on_definition() {
-    let result = rename_with_additional_files(HashMap::from([
-        (
-            "src/lib.cairo",
-            indoc! {r#"
-                use crate::modzik::stuff;
+    test_transform_plain!(Rename,
+    fixture! {
+        "src/modzik.cairo" => indoc!(r#"
+            use crate::modzik::stuff;
+            fn stuff() {}
+        "#),
+    }, r#"
+    use crate::modzik::stuff;
 
-                mod mod<caret>zik;
+    mod mod<caret>zik;
 
-                fn main() {
-                    modzik::more_stuff();
-                }
-            "#},
-        ),
-        (
-            "src/modzik.cairo",
-            indoc! {r#"
-                use crate::modzik::stuff;
-
-                fn stuff() {}
-            "#},
-        ),
-    ]));
-
-    insta::assert_snapshot!(result, @r"
+    fn main() {
+        modzik::more_stuff();
+    }
+    "#, @r"
     // → src/lib.cairo
     use crate::RENAMED::stuff;
 
@@ -39,37 +31,27 @@ fn non_inline_module_on_definition() {
     }
     // → src/modzik.cairo → src/RENAMED.cairo
     use crate::RENAMED::stuff;
-
     fn stuff() {}
     ");
 }
 
 #[test]
 fn non_inline_module_on_usage() {
-    let result = rename_with_additional_files(HashMap::from([
-        (
-            "src/lib.cairo",
-            indoc! {r#"
-                use crate::mo<caret>dzik::stuff;
+    test_transform_plain!(Rename,
+    fixture! {
+        "src/modzik.cairo" => indoc!(r#"
+            use crate::modzik::stuff;
+            fn stuff() {}
+        "#),
+    }, r#"
+    use crate::mo<caret>dzik::stuff;
 
-                mod modzik;
+    mod modzik;
 
-                fn main() {
-                    modzik::more_stuff();
-                }
-            "#},
-        ),
-        (
-            "src/modzik.cairo",
-            indoc! {r#"
-                use crate::modzik::stuff;
-
-                fn stuff() {}
-            "#},
-        ),
-    ]));
-
-    insta::assert_snapshot!(result, @r"
+    fn main() {
+        modzik::more_stuff();
+    }
+    "#, @r"
     // → src/lib.cairo
     use crate::RENAMED::stuff;
 
@@ -80,14 +62,13 @@ fn non_inline_module_on_usage() {
     }
     // → src/modzik.cairo → src/RENAMED.cairo
     use crate::RENAMED::stuff;
-
     fn stuff() {}
     ");
 }
 
 #[test]
 fn inline_module_on_definition() {
-    test_transform!(rename ,r#"
+    test_transform_plain!(Rename ,r#"
     use crate::modzik::stuff;
 
     mod mod<caret>zik {
@@ -116,7 +97,7 @@ fn inline_module_on_definition() {
 
 #[test]
 fn inline_module_on_usage() {
-    test_transform!(rename ,r#"
+    test_transform_plain!(Rename ,r#"
     use crate::modzik::stuff;
 
     mod modzik {
@@ -141,4 +122,86 @@ fn inline_module_on_usage() {
         RENAMED::more_stuff();
     }
     ")
+}
+
+#[test]
+fn non_inline_module_on_usage_with_macros() {
+    test_transform_with_macros!(Rename,
+    fixture! {
+        "src/modzik.cairo" => indoc!(r#"
+            use crate::modzik::stuff;
+
+            #[complex_attribute_macro_v2]
+            fn stuff() {}
+        "#),
+    }, r#"
+    #[complex_attribute_macro_v2]
+    use crate::mo<caret>dzik::stuff;
+
+    #[complex_attribute_macro_v2]
+    mod modzik;
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        modzik::more_stuff();
+    }
+    "#, @r"
+    // → src/lib.cairo
+    #[complex_attribute_macro_v2]
+    use crate::RENAMED::stuff;
+
+    #[complex_attribute_macro_v2]
+    mod RENAMED;
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        RENAMED::more_stuff();
+    }
+    // → src/modzik.cairo → src/RENAMED.cairo
+    use crate::RENAMED::stuff;
+
+    #[complex_attribute_macro_v2]
+    fn stuff() {}
+    ");
+}
+
+#[test]
+fn non_inline_module_on_definition_with_macros() {
+    test_transform_with_macros!(Rename,
+    fixture! {
+        "src/modzik.cairo" => indoc!(r#"
+            use crate::modzik::stuff;
+
+            #[complex_attribute_macro_v2]
+            fn stuff() {}
+        "#),
+    }, r#"
+    #[complex_attribute_macro_v2]
+    use crate::modzik::stuff;
+
+    #[complex_attribute_macro_v2]
+    mod mod<caret>zik;
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        modzik::more_stuff();
+    }
+    "#, @r"
+    // → src/lib.cairo
+    #[complex_attribute_macro_v2]
+    use crate::RENAMED::stuff;
+
+    #[complex_attribute_macro_v2]
+    mod RENAMED;
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        RENAMED::more_stuff();
+    }
+    // → src/modzik.cairo → src/RENAMED.cairo
+    use crate::RENAMED::stuff;
+
+    #[complex_attribute_macro_v2]
+    fn stuff() {}
+    ");
 }
