@@ -18,7 +18,6 @@ pub fn highlight(
     let symbol_search = SymbolSearch::find_definition(db, &identifier)?;
 
     let highlights = symbol_search
-        .def
         .usages(db)
         .include_declaration(true)
         .in_scope(SearchScope::file(file))

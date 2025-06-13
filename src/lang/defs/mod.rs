@@ -151,6 +151,11 @@ impl SymbolSearch {
         }
         .map(|def| Self { def, resolved_item, resolver_data })
     }
+
+    /// Starts a find-usages search for this symbol.
+    pub fn usages<'a>(&'a self, db: &'a AnalysisDatabase) -> FindUsages<'a> {
+        FindUsages::new(&self.def, &self.resolved_item, db)
+    }
 }
 
 impl SymbolDef {
@@ -239,10 +244,5 @@ impl SymbolDef {
             Self::Variant(d) => Some(d.definition_stable_ptr()),
             Self::Module(d) => Some(d.definition_stable_ptr()),
         }
-    }
-
-    /// Starts a find-usages search for this symbol.
-    pub fn usages<'a>(&'a self, db: &'a AnalysisDatabase) -> FindUsages<'a> {
-        FindUsages::new(self, db)
     }
 }
