@@ -2,7 +2,6 @@ use indoc::formatdoc;
 use lsp_types::ClientCapabilities;
 use serde_json::json;
 
-use crate::macros::SCARB_TEST_MACROS_V2_PACKAGE;
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::cursor::Cursors;
 use crate::support::fixture::Fixture;
