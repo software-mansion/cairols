@@ -1,9 +1,72 @@
-use crate::{completions::completion_fixture, support::insta::test_transform_plain};
+use crate::{
+    completions::completion_fixture,
+    support::insta::{test_transform_plain, test_transform_with_macros},
+};
 use lsp_types::request::Completion;
 
 #[test]
 fn all_prefixed() {
     test_transform_plain!(Completion, completion_fixture(), "
+    fn a(param: felt252, param2: felt252, param3: felt252){
+        let foo = 1;
+        let bar = 1;
+        let baz = 1;
+        let foo2 = 1;
+
+        ba<caret>
+    }
+    ",@r#"
+    caret = """
+        ba<caret>
+    """
+
+    [[completions]]
+    completion_label = "bar"
+
+    [[completions]]
+    completion_label = "baz"
+
+    [[completions]]
+    completion_label = "blake"
+    text_edits = ["""
+    use core::blake;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_compress"
+    text_edits = ["""
+    use core::blake::blake2s_compress;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize"
+    text_edits = ["""
+    use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "byte_array"
+    text_edits = ["""
+    use core::byte_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "library_call_syscall"
+    text_edits = ["""
+    use starknet::syscalls::library_call_syscall;
+
+    """]
+    "#);
+}
+
+#[test]
+fn all_prefixed_macro() {
+    test_transform_with_macros!(Completion, completion_fixture(), "
+    #[complex_attribute_macro_v2]
     fn a(param: felt252, param2: felt252, param3: felt252){
         let foo = 1;
         let bar = 1;

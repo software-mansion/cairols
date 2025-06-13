@@ -42,6 +42,48 @@ fn generic_function_call() {
 }
 
 #[test]
+fn generic_function_call_macro() {
+    test_transform_plain!(Hover, r#"
+    #[complex_attribute_macro_v2]
+    fn a<
+        T,
+        +Copy<T>,
+        impl One: core::num::traits::One<T>
+    >(
+        b: @T,
+    ) -> T {
+        *b
+    }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let _: felt252 = a<caret>(@123);
+    }
+    "#, @r#"
+    source_context = """
+        let _: felt252 = a<caret>(@123);
+    """
+    highlight = """
+        let _: felt252 = <sel>a</sel>(@123);
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    fn a<T, +Copy<T>, impl One: One<T>>(b: @T) -> T
+
+    T = felt252
+    +Copy<T> = core::felt252Copy
+    impl One: core::num::traits::One<T> = core::felt_252::Felt252One
+
+
+    ```
+    """
+    "#);
+}
+
+#[test]
 fn generic_function_call_placeholder() {
     test_transform_plain!(Hover, r#"
     fn a<
