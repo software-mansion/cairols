@@ -25,7 +25,7 @@ impl Transformer for Completion {
         base
     }
 
-    fn transform(ls: MockClient, cursors: Cursors) -> String {
+    fn transform(ls: MockClient, cursors: Cursors, _config: Option<serde_json::Value>) -> String {
         transform(ls, cursors, Self::main_file())
     }
 }

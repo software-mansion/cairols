@@ -263,8 +263,8 @@ pub fn render_text_with_annotations(
 /// renames.
 pub fn render_text_edits_and_file_renames(
     text_edits: OrderedHashMap<Url, Vec<TextEdit>>,
-    file_renames: HashMap<Url, PathBuf>,
-    file_contents: &HashMap<Url, (&str, String)>,
+    mut file_renames: HashMap<Url, PathBuf>,
+    file_contents: &HashMap<Url, (String, String)>,
 ) -> String {
     let is_from_core = |uri: &Url| {
         let path = uri.path();
@@ -272,7 +272,7 @@ pub fn render_text_edits_and_file_renames(
     };
 
     let mut core_reference_found = false;
-    let result = text_edits
+    let mut result = text_edits
         .into_iter()
         .map(|(uri, edits)| {
             if is_from_core(&uri) {
@@ -289,7 +289,7 @@ pub fn render_text_edits_and_file_renames(
                 content.replace_range(start_idx..stop_idx, &edit.new_text);
             }
 
-            if let Some(new_path) = file_renames.get(&uri) {
+            if let Some(new_path) = file_renames.remove(&uri) {
                 format!("// → {path} → {}\n{content}\n", new_path.display())
             } else if file_contents.len() == 1 {
                 content
@@ -301,6 +301,11 @@ pub fn render_text_edits_and_file_renames(
             acc += &file_report;
             acc
         });
+
+    for (uri, new_path) in file_renames {
+        let old_path = uri.to_file_path().unwrap();
+        result += &format!("// → {} → {}\n", old_path.display(), new_path.display());
+    }
 
     if core_reference_found {
         "// found renames in the core crate\n".to_string() + &result

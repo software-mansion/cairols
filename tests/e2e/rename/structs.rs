@@ -1,9 +1,10 @@
-use crate::rename::rename;
-use crate::support::insta::test_transform;
+use lsp_types::request::Rename;
+
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn felt_in_struct() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     #[derive(Drop)]
     struct Foo { field: felt2<caret>52 }
     "#, @r"
@@ -15,7 +16,7 @@ fn felt_in_struct() {
 
 #[test]
 fn usize_in_struct() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     #[derive(Drop)]
     struct Foo { field: usi<caret>ze }
     "#, @r"
@@ -27,7 +28,7 @@ fn usize_in_struct() {
 
 #[test]
 fn struct_by_name() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     #[derive(Drop)]
     struct Fo<caret>o { field: felt252 }
     fn main() {
@@ -52,7 +53,7 @@ fn struct_by_name() {
 
 #[test]
 fn struct_member_via_definition() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     #[derive(Drop)]
     struct Foo { wi<caret>dth: u64 }
     fn main() {
@@ -71,7 +72,7 @@ fn struct_member_via_definition() {
 
 #[test]
 fn struct_member_via_constructor() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     #[derive(Drop)]
     struct Foo { width: u64 }
     fn main() {
@@ -90,7 +91,7 @@ fn struct_member_via_constructor() {
 
 #[test]
 fn struct_member_via_field_access() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     #[derive(Drop)]
     struct Foo { width: u64 }
     fn main() {
@@ -104,5 +105,19 @@ fn struct_member_via_field_access() {
         let foo = Foo { RENAMED: 0 };
         let x = foo.RENAMED * 2;
     }
+    ")
+}
+
+#[test]
+fn felt_in_struct_with_macros() {
+    test_transform_with_macros!(Rename, r#"
+    #[complex_attribute_macro_v2]
+    #[derive(Drop)]
+    struct Foo { field: felt2<caret>52 }
+    "#, @r"
+    // found renames in the core crate
+    #[complex_attribute_macro_v2]
+    #[derive(Drop)]
+    struct Foo { field: RENAMED }
     ")
 }

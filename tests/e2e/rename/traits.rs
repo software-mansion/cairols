@@ -1,9 +1,10 @@
-use crate::rename::rename;
-use crate::support::insta::test_transform;
+use lsp_types::request::Rename;
+
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn trait_via_definition() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     pub trait ShapeGeometry<T> {
         fn area(self: T) -> u64;
     }
@@ -42,7 +43,7 @@ fn trait_via_definition() {
 
 #[test]
 fn trait_method_via_definition() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -91,7 +92,7 @@ fn trait_method_via_definition() {
 
 #[test]
 fn trait_method_via_dot_call() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -140,7 +141,7 @@ fn trait_method_via_dot_call() {
 
 #[test]
 fn trait_method_via_path_call() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -189,7 +190,7 @@ fn trait_method_via_path_call() {
 
 #[test]
 fn impl_method_via_definition() {
-    test_transform!(rename, r#"
+    test_transform_plain!(Rename, r#"
     #[derive(Drop)]
     struct Foo {}
     trait FooTrait {
@@ -238,7 +239,7 @@ fn impl_method_via_definition() {
 
 #[test]
 fn type_bound() {
-    test_transform!(rename, r"
+    test_transform_plain!(Rename, r"
     fn foo<T, +Dro<caret>p<T>>() {}
     ", @r"
     // found renames in the core crate
@@ -248,7 +249,7 @@ fn type_bound() {
 
 #[test]
 fn negative_type_bound() {
-    test_transform!(rename, r"
+    test_transform_plain!(Rename, r"
     trait Trait<T> {}
     impl Impl<T, -Dro<caret>p<T>> of Trait<T> {}
     ", @r"
@@ -260,7 +261,7 @@ fn negative_type_bound() {
 
 #[test]
 fn type_bound_user_trait() {
-    test_transform!(rename, r"
+    test_transform_plain!(Rename, r"
     trait Traicik<T> {}
     fn foo<T, +Traicik<caret><T>>() {}
     ", @r"
@@ -271,10 +272,73 @@ fn type_bound_user_trait() {
 
 #[test]
 fn impl_bound() {
-    test_transform!(rename, r"
+    test_transform_plain!(Rename, r"
     fn foo<T, impl Impl: Dro<caret>p<T>>() {}
     ", @r"
     // found renames in the core crate
     fn foo<T, impl Impl: RENAMED<T>>() {}
+    ")
+}
+
+#[test]
+fn trait_via_definition_with_macros() {
+    test_transform_with_macros!(Rename, r#"
+    #[complex_attribute_macro_v2]
+    pub trait ShapeGeometry<T> {
+        fn area(self: T) -> u64;
+    }
+
+    #[complex_attribute_macro_v2]
+    mod rectangle {
+        #[complex_attribute_macro_v2]
+        use super::ShapeGeometry;
+
+        #[derive(Copy, Drop)]
+        #[complex_attribute_macro_v2]
+        pub struct Rectangle {}
+
+        #[complex_attribute_macro_v2]
+        impl RectangleGeometry of ShapeGeometry<Rectangle> {
+            fn area(self: Rectangle) -> u64 { 0 }
+        }
+    }
+
+    #[complex_attribute_macro_v2]
+    use rectangle::Rectangle;
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let rect = Rectangle {};
+        let area = ShapeGeo<caret>metry::area(rect);
+    }
+    "#, @r"
+    #[complex_attribute_macro_v2]
+    pub trait RENAMED<T> {
+        fn area(self: T) -> u64;
+    }
+
+    #[complex_attribute_macro_v2]
+    mod rectangle {
+        #[complex_attribute_macro_v2]
+        use super::RENAMED;
+
+        #[derive(Copy, Drop)]
+        #[complex_attribute_macro_v2]
+        pub struct Rectangle {}
+
+        #[complex_attribute_macro_v2]
+        impl RectangleGeometry of RENAMED<Rectangle> {
+            fn area(self: Rectangle) -> u64 { 0 }
+        }
+    }
+
+    #[complex_attribute_macro_v2]
+    use rectangle::Rectangle;
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let rect = Rectangle {};
+        let area = RENAMED::area(rect);
+    }
     ")
 }

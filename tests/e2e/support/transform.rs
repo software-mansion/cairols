@@ -1,6 +1,6 @@
 use indoc::formatdoc;
 use lsp_types::ClientCapabilities;
-use serde_json::{Value, json};
+use serde_json::json;
 
 use crate::macros::SCARB_TEST_MACROS_V2_PACKAGE;
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
@@ -12,6 +12,7 @@ pub fn conduct_transformation<T: Transformer>(
     cairo_code_with_cursors: &str,
     with_macros: bool,
     initial_fixture: Fixture,
+    config: Option<serde_json::Value>,
 ) -> String {
     let (cairo, cursors) = cursors(cairo_code_with_cursors);
 
@@ -46,7 +47,7 @@ pub fn conduct_transformation<T: Transformer>(
             }
         })
     } else {
-        Value::Object(Default::default())
+        serde_json::Value::Object(Default::default())
     };
 
     let mut ls = sandbox! {
@@ -62,13 +63,13 @@ pub fn conduct_transformation<T: Transformer>(
         ls.open_all_cairo_files_and_wait_for_project_update();
     }
 
-    T::transform(ls, cursors)
+    T::transform(ls, cursors, config)
 }
 
 pub trait Transformer {
     fn capabilities(base: ClientCapabilities) -> ClientCapabilities;
 
-    fn transform(ls: MockClient, cursors: Cursors) -> String;
+    fn transform(ls: MockClient, cursors: Cursors, config: Option<serde_json::Value>) -> String;
 
     fn main_file() -> &'static str {
         "src/lib.cairo"
