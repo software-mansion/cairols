@@ -55,14 +55,14 @@ pub fn rename(
     let mut resource_ops = vec![];
     // Handle special cases.
     for symbol in &symbols {
-        if let SymbolDef::ExprInlineMacro(_) = symbol {
+        if let SymbolDef::ExprInlineMacro(_) = &symbol.def {
             return Err(LSPError::new(
                 anyhow!("Renaming inline macros is not supported"),
                 ErrorCode::RequestFailed,
             ));
         }
 
-        if let SymbolDef::Module(module_def) = symbol {
+        if let SymbolDef::Module(module_def) = &symbol.def {
             match module_def.module_id() {
                 ModuleId::CrateRoot(_) => {
                     return Err(LSPError::new(
@@ -110,16 +110,19 @@ pub fn rename(
     Ok(Some(workspace_edit))
 }
 
-fn declaration_from_resultant(db: &AnalysisDatabase, resultant: SyntaxNode) -> Option<SymbolDef> {
+fn declaration_from_resultant(
+    db: &AnalysisDatabase,
+    resultant: SyntaxNode,
+) -> Option<SymbolSearch> {
     let identifier =
         resultant.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
     // Declaration is used here because rename without changing the declaration would break the compilation,
     // e.g. when renaming trait usage - we also rename the trait
-    SymbolSearch::find_declaration(db, &identifier).map(|search| search.def)
+    SymbolSearch::find_declaration(db, &identifier)
 }
 
-fn find_usages(db: &AnalysisDatabase, symbol: SymbolDef) -> Vec<(FileId, TextSpan)> {
-    let symbol_name = Some(symbol.name(db));
+fn find_usages(db: &AnalysisDatabase, symbol: SymbolSearch) -> Vec<(FileId, TextSpan)> {
+    let symbol_name = Some(symbol.def.name(db));
 
     symbol
         .usages(db)

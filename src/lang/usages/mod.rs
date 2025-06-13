@@ -10,8 +10,10 @@ use cairo_lang_utils::smol_str::format_smolstr;
 use memchr::memmem::Finder;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::{SymbolDef, SymbolSearch};
+use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch};
 use cairo_lang_filesystem::db::get_originating_location;
+use cairo_lang_semantic::keyword::SELF_TYPE_KW;
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use search_scope::SearchScope;
 
 pub mod search_scope;
@@ -33,6 +35,7 @@ macro_rules! flow {
 /// and then each match is checked using a precise goto-definition algorithm.
 pub struct FindUsages<'a> {
     symbol: &'a SymbolDef,
+    symbol_item: &'a ResolvedItem,
     db: &'a AnalysisDatabase,
     include_declaration: bool,
     in_scope: Option<SearchScope>,
@@ -53,8 +56,12 @@ impl FoundUsage {
 }
 
 impl<'a> FindUsages<'a> {
-    pub(super) fn new(symbol: &'a SymbolDef, db: &'a AnalysisDatabase) -> Self {
-        Self { symbol, db, include_declaration: false, in_scope: None }
+    pub(super) fn new(
+        symbol: &'a SymbolDef,
+        symbol_item: &'a ResolvedItem,
+        db: &'a AnalysisDatabase,
+    ) -> Self {
+        Self { symbol, symbol_item, db, include_declaration: false, in_scope: None }
     }
 
     /// If set to `true`, treat the symbol's declaration as a usage and include it in search
@@ -114,6 +121,13 @@ impl<'a> FindUsages<'a> {
             }
         }
 
+        let search_for_self_usages = matches!(
+            self.symbol_item,
+            ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
+                | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_))
+                | ResolvedItem::Generic(ResolvedGenericItem::Trait(_))
+        );
+
         let search_scope = self.in_scope.clone().unwrap_or_else(|| self.symbol.search_scope(db));
 
         let needle = match self.symbol {
@@ -124,10 +138,18 @@ impl<'a> FindUsages<'a> {
         };
 
         let finder = Finder::new(needle.as_bytes());
+        let self_finder = Finder::new(SELF_TYPE_KW.as_bytes());
 
         for (file, text, search_span) in search_scope.files_contents_and_spans(db) {
+            let mut found_offsets: Vec<TextOffset> =
+                Self::match_offsets(&finder, &text, search_span).collect();
+            if search_for_self_usages {
+                let mut self_usages_offsets =
+                    Self::match_offsets(&self_finder, &text, search_span).collect();
+                found_offsets.append(&mut self_usages_offsets);
+            }
             // Search occurrences of the symbol's name.
-            for offset in Self::match_offsets(&finder, &text, search_span) {
+            for offset in found_offsets {
                 if let Some(node) = db.find_syntax_node_at_offset(file, offset) {
                     if let Some(identifier) = TerminalIdentifier::cast_token(db, node) {
                         flow!(self.found_identifier(db, identifier, sink));

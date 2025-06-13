@@ -35,7 +35,7 @@ fn find_references(
 ) -> Option<Vec<Location>> {
     let identifier =
         syntax_node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
-    let symbol = SymbolSearch::find_definition(db, &identifier)?.def;
+    let symbol = SymbolSearch::find_definition(db, &identifier)?;
 
     Some(
         symbol
@@ -47,7 +47,7 @@ fn find_references(
                     // We want to show definition location (if requested),
                     // even if it comes from a derive macro.
                     // Common case - impl declared in the derive macro.
-                    || (include_declaration && Some(loc) == symbol.definition_location(db).as_ref())
+                    || (include_declaration && Some(loc) == symbol.def.definition_location(db).as_ref())
             })
             .filter_map(|loc| db.lsp_location(loc))
             .collect(),

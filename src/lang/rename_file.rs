@@ -81,11 +81,8 @@ fn handle_rename(
 
     let mod_name = submodule.name_identifier(db);
 
-    for usage in SymbolSearch::find_definition(db, &mod_name)?
-        .def
-        .usages(db)
-        .include_declaration(true)
-        .collect()
+    for usage in
+        SymbolSearch::find_definition(db, &mod_name)?.usages(db).include_declaration(true).collect()
     {
         let file = db.url_for_file(usage.file)?;
         let range = usage.span.position_in_file(db, usage.file)?;
