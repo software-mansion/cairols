@@ -67,6 +67,11 @@ pub struct Config {
     /// The property is set by the user under the `cairo1.testRunner` key in client
     /// configuration.
     pub test_runner: TestRunner,
+
+    /// Whether to use experimental cache for procedural macros.
+    ///
+    /// This is *NOT* invalidated and can produce wrong inputs. In this case removing cache file manually should fix it.
+    pub enable_experimental_proc_macro_cache: bool,
 }
 
 impl Default for Config {
@@ -78,6 +83,7 @@ impl Default for Config {
             enable_linter: true,
             run_test_command: String::new(),
             test_runner: TestRunner::Auto,
+            enable_experimental_proc_macro_cache: false,
         }
     }
 }
