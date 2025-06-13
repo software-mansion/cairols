@@ -1,4 +1,4 @@
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use lsp_types::Hover;
 
 #[test]
@@ -17,6 +17,28 @@ fn ident_typed() {
     popover = """
     ```cairo
     let abc: felt252
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn ident_macro() {
+    test_transform_with_macros!(Hover,r#"
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let xy<caret>z = 3;
+    }
+    "#,@r#"
+    source_context = """
+        let xy<caret>z = 3;
+    """
+    highlight = """
+        let <sel>xyz</sel> = 3;
+    """
+    popover = """
+    ```cairo
+    let xyz: felt252
     ```
     """
     "#)

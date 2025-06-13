@@ -1,10 +1,41 @@
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use lsp_types::Hover;
 
 #[test]
 fn generated_element_use() {
     test_transform_plain!(Hover,r#"
     #[generate_trait]
+    impl MyTraitImpl<SelfType> of MyTrait<SelfType> {
+        fn some_method(ref self: SelfType) { }
+    }
+
+    mod nested {
+        use super::MyTr<caret>ait;
+    }
+    "#,@r#"
+    source_context = """
+        use super::MyTr<caret>ait;
+    """
+    highlight = """
+        use super::<sel>MyTrait</sel>;
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    impl MyTraitImpl<SelfType> of MyTrait<SelfType>;
+    trait MyTrait<SelfType>
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn generated_element_use_macro() {
+    test_transform_with_macros!(Hover,r#"
+    #[generate_trait]
+    #[complex_attribute_macro_v2]
     impl MyTraitImpl<SelfType> of MyTrait<SelfType> {
         fn some_method(ref self: SelfType) { }
     }

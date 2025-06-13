@@ -1,9 +1,33 @@
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use lsp_types::Hover;
 
 #[test]
 fn test_extern_type_in_alias_as_type() {
     test_transform_plain!(Hover, r#"
+    type TypeAlias = u32<caret>;
+    "#, @r#"
+    source_context = """
+    type TypeAlias = u32<caret>;
+    """
+    highlight = """
+    type TypeAlias = <sel>u32</sel>;
+    """
+    popover = """
+    ```cairo
+    core::integer
+    ```
+    ```cairo
+    pub extern type u32;
+    ```
+    ---
+    The 32-bit unsigned integer type."""
+    "#)
+}
+
+#[test]
+fn test_extern_type_in_alias_as_type_macro() {
+    test_transform_with_macros!(Hover, r#"
+    #[complex_attribute_macro_v2]
     type TypeAlias = u32<caret>;
     "#, @r#"
     source_context = """

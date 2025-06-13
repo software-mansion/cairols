@@ -1,4 +1,7 @@
-use crate::{completions::completion_fixture, support::insta::test_transform_plain};
+use crate::{
+    completions::completion_fixture,
+    support::insta::{test_transform_plain, test_transform_with_macros},
+};
 use lsp_types::request::Completion;
 
 #[test]
@@ -9,6 +12,31 @@ fn partially_typed() {
         qwerty: felt252,
     }
 
+    fn a() {
+        let Foo {
+            ab<caret>
+        } = Foo { }
+    }
+    ",@r#"
+    caret = """
+            ab<caret>
+    """
+
+    [[completions]]
+    completion_label = "abc"
+    "#);
+}
+
+#[test]
+fn partially_typed_macro() {
+    test_transform_with_macros!(Completion, completion_fixture(), "
+    #[complex_attribute_macro_v2]
+    struct Foo {
+        abc: felt252,
+        qwerty: felt252,
+    }
+
+    #[complex_attribute_macro_v2]
     fn a() {
         let Foo {
             ab<caret>

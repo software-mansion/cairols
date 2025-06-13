@@ -2,7 +2,7 @@ use crate::completions::transform;
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::cursor::Cursors;
 use crate::support::fixture::Fixture;
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use crate::support::transform::Transformer;
 use crate::support::{MockClient, fixture};
 use lsp_types::ClientCapabilities;
@@ -36,6 +36,23 @@ fn lib_cairo_without_name_with_semicolon() {
     @r#"
     caret = """
     mod cccc; mod <caret>;
+    """
+
+    [[completions]]
+    completion_label = "aaaa"
+
+    [[completions]]
+    completion_label = "bbbb"
+    "#);
+}
+
+#[test]
+fn lib_cairo_without_name_with_semicolon_macro() {
+    test_transform_with_macros!(Completion, lib_cairo_fixture(),
+    "#[complex_attribute_macro_v2] mod cccc;#[complex_attribute_macro_v2] mod <caret>;",
+    @r#"
+    caret = """
+    #[complex_attribute_macro_v2] mod cccc;#[complex_attribute_macro_v2] mod <caret>;
     """
 
     [[completions]]
