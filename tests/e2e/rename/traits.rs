@@ -342,3 +342,30 @@ fn trait_via_definition_with_macros() {
     }
     ")
 }
+
+#[test]
+#[should_panic(expected = "Renaming via `Self` reference is not supported.")]
+fn no_rename_trait_via_self() {
+    test_transform_plain!(Rename, r#"
+        pub trait ShapeGeometry<T> {
+            type Unit;
+            fn area(self: T) -> Se<caret>lf::Unit;
+            fn coeff(self: T) -> Self::Unit;
+        }
+    "#, @""
+    );
+}
+
+#[test]
+#[should_panic(expected = "Renaming via `Self` reference is not supported.")]
+fn no_rename_trait_via_self_with_macros() {
+    test_transform_with_macros!(Rename, r#"
+        #[complex_attribute_macro_v2]
+        pub trait ShapeGeometry<T> {
+            type Unit;
+            fn area(self: T) -> Se<caret>lf::Unit;
+            fn coeff(self: T) -> Self::Unit;
+        }
+    "#, @""
+    );
+}
