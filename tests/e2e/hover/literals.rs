@@ -1,9 +1,31 @@
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use lsp_types::Hover;
 
 #[test]
 fn const_initializer_value() {
     test_transform_plain!(Hover,r#"
+    const SOME_CONST: felt252 = 0x<caret>123;
+    "#,@r#"
+    source_context = """
+    const SOME_CONST: felt252 = 0x<caret>123;
+    """
+    highlight = """
+    const SOME_CONST: felt252 = <sel>0x123</sel>;
+    """
+    popover = """
+    ```cairo
+    felt252
+    ```
+    ---
+    value of literal: `291 (0x123 | 0b100100011)`
+    """
+    "#)
+}
+
+#[test]
+fn const_initializer_value_macro() {
+    test_transform_with_macros!(Hover,r#"
+    #[complex_attribute_macro_v2]
     const SOME_CONST: felt252 = 0x<caret>123;
     "#,@r#"
     source_context = """
