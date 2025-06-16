@@ -78,7 +78,7 @@ pub fn get_attribute_expansion(
     db: &dyn ProcMacroGroup,
     mut params: ExpandAttributeParams,
 ) -> ProcMacroResult {
-    let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.item);
+    // let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.item);
 
     let result = db.get_stored_attribute_expansion(params.clone().into()).unwrap_or_else(|| {
         let token_stream = params.item.clone();
@@ -87,21 +87,19 @@ pub fn get_attribute_expansion(
             client.request_attribute(params);
         }
 
-        ProcMacroResult {
-            token_stream: token_stream_v2_to_v1(&token_stream),
-            diagnostics: Default::default(),
-            code_mappings: None,
-        }
+        ProcMacroResult { token_stream, diagnostics: Default::default(), code_mappings: None }
     });
 
-    stabilizer.apply_original_offsets_to_result(result)
+    result
+
+    // stabilizer.apply_original_offsets_to_result(result)
 }
 
 pub fn get_derive_expansion(
     db: &dyn ProcMacroGroup,
     mut params: ExpandDeriveParams,
 ) -> ProcMacroResult {
-    let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.item);
+    // let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.item);
 
     let result = db.get_stored_derive_expansion(params.clone().into()).unwrap_or_else(|| {
         if let Some(client) = db.proc_macro_server_status().ready() {
@@ -116,14 +114,16 @@ pub fn get_derive_expansion(
         }
     });
 
-    stabilizer.apply_original_offsets_to_result(result)
+    result
+
+    // stabilizer.apply_original_offsets_to_result(result)
 }
 
 pub fn get_inline_macros_expansion(
     db: &dyn ProcMacroGroup,
     mut params: ExpandInlineMacroParams,
 ) -> ProcMacroResult {
-    let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.args);
+    // let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.args);
 
     let result =
         db.get_stored_inline_macros_expansion(params.clone().into()).unwrap_or_else(|| {
@@ -141,7 +141,9 @@ pub fn get_inline_macros_expansion(
             }
         });
 
-    stabilizer.apply_original_offsets_to_result(result)
+    result
+
+    // stabilizer.apply_original_offsets_to_result(result)
 }
 
 /// When storing a procedural macro result, parameters are used as the cache key.

@@ -26,6 +26,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
 use convert_case::{Case, Casing};
 use itertools::Itertools;
+use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use scarb_proc_macro_server_types::methods::expand::{ExpandAttributeParams, ExpandDeriveParams};
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
@@ -277,8 +278,8 @@ fn do_expand_inner_attr(
         ExpandAttributeParams {
             context: expansion_context,
             attr: input.name,
-            args: input.args.clone(),
-            item: token_stream.clone(),
+            args: token_stream_v2_to_v1(&input.args),
+            item: token_stream_v2_to_v1(&token_stream),
             call_site: input.call_site.span,
         },
     );
@@ -584,7 +585,7 @@ fn expand_derives(
         ExpandDeriveParams {
             context: expansion_context,
             derives: derive_names.clone(),
-            item: token_stream,
+            item: token_stream_v2_to_v1(&token_stream),
             call_site,
         },
     );
@@ -639,9 +640,9 @@ fn expand_attribute(
         db,
         ExpandAttributeParams {
             context: expansion_context,
-            args,
+            args: token_stream_v2_to_v1(&args),
             attr: name.clone(),
-            item: token_stream.clone(),
+            item: token_stream_v2_to_v1(&token_stream),
             call_site: call_site.span,
         },
     );

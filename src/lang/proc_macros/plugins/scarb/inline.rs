@@ -3,6 +3,7 @@ use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::TextSpan as CairoTextSpan;
 use cairo_lang_macro::AllocationContext;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
 use scarb_proc_macro_server_types::methods::expand::ExpandInlineMacroParams;
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
 
@@ -33,7 +34,7 @@ pub fn inline_macro_generate_code(
         ExpandInlineMacroParams {
             context: expansion_context,
             name: inline_macro_name.clone(),
-            args: token_stream,
+            args: token_stream_v2_to_v1(&token_stream),
             call_site: call_site.span,
         },
     );
