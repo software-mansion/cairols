@@ -1,6 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 use std::fmt::{Debug, Formatter};
-use std::sync::{Mutex, MutexGuard};
+use std::sync::{MutexGuard, RwLock, RwLockWriteGuard};
 
 use anyhow::{Context, Result, anyhow, ensure};
 use connection::ProcMacroServerConnection;
@@ -28,7 +28,7 @@ mod id_generator;
 pub mod plain_request_response;
 pub mod status;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum RequestParams {
     Attribute(PlainExpandAttributeParams),
     Derive(PlainExpandDeriveParams),
@@ -38,7 +38,7 @@ pub enum RequestParams {
 pub struct ProcMacroClient {
     connection: ProcMacroServerConnection,
     id_generator: id_generator::IdGenerator,
-    requests_params: Mutex<HashMap<RequestId, RequestParams>>,
+    requests_params: RwLock<HashMap<RequestId, RequestParams>>,
     error_channel: Sender<()>,
     proc_macro_server_tracker: ProcMacroServerTracker,
 }
@@ -56,6 +56,12 @@ impl ProcMacroClient {
             error_channel,
             proc_macro_server_tracker,
         }
+    }
+
+    pub fn was_requested(&self, request_params: RequestParams) -> bool {
+        let requests = self.requests_params.read().unwrap();
+
+        requests.values().any(|params| params == &request_params)
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
@@ -95,7 +101,7 @@ impl ProcMacroClient {
     /// blocked.
     pub fn available_responses(&self) -> Responses<'_> {
         let responses = self.connection.responses.lock().unwrap();
-        let requests = self.requests_params.lock().unwrap();
+        let requests = self.requests_params.write().unwrap();
 
         Responses { responses, requests }
     }
@@ -169,7 +175,7 @@ impl ProcMacroClient {
         let id = self.id_generator.unique_id();
         // This must be locked before sending request so sending request and tracking is atomic
         // operation.
-        let mut requests_params = self.requests_params.lock().unwrap();
+        let mut requests_params = self.requests_params.write().unwrap();
 
         match self.send_request_untracked::<M>(id, &params) {
             Ok(()) => {
@@ -203,7 +209,7 @@ impl Debug for ProcMacroClient {
 
 pub struct Responses<'a> {
     responses: MutexGuard<'a, VecDeque<RpcResponse>>,
-    requests: MutexGuard<'a, HashMap<RequestId, RequestParams>>,
+    requests: RwLockWriteGuard<'a, HashMap<RequestId, RequestParams>>,
 }
 
 impl Iterator for Responses<'_> {

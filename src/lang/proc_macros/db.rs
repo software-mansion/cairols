@@ -7,7 +7,7 @@ use scarb_proc_macro_server_types::methods::expand::{
 };
 use scarb_proc_macro_server_types::methods::{CodeOrigin, ProcMacroResult};
 
-use super::client::ServerStatus;
+use super::client::{RequestParams, ServerStatus};
 use crate::lang::proc_macros::client::plain_request_response::{
     PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
 };
@@ -84,7 +84,9 @@ pub fn get_attribute_expansion(
         let token_stream = params.item.clone();
 
         if let Some(client) = db.proc_macro_server_status().ready() {
-            client.request_attribute(params);
+            if !client.was_requested(RequestParams::Attribute(params.clone().into())) {
+                client.request_attribute(params);
+            }
         }
 
         ProcMacroResult {
@@ -105,7 +107,9 @@ pub fn get_derive_expansion(
 
     let result = db.get_stored_derive_expansion(params.clone().into()).unwrap_or_else(|| {
         if let Some(client) = db.proc_macro_server_status().ready() {
-            client.request_derives(params);
+            if !client.was_requested(RequestParams::Derive(params.clone().into())) {
+                client.request_derives(params);
+            }
         }
 
         ProcMacroResult {
@@ -131,7 +135,9 @@ pub fn get_inline_macros_expansion(
             let unit = "()".to_string();
 
             if let Some(client) = db.proc_macro_server_status().ready() {
-                client.request_inline_macros(params);
+                if !client.was_requested(RequestParams::Inline(params.clone().into())) {
+                    client.request_inline_macros(params);
+                }
             }
 
             ProcMacroResult {
