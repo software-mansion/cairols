@@ -72,6 +72,40 @@ fn after_prop() {
 }
 
 #[test]
+fn after_prop_macro() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    #[complex_attribute_macro_v2]
+    pub struct Struct {
+        x: u32,
+        pub y: felt252,
+        pub z: i16
+    }
+
+    fn build_struct() {
+        let s = Struct {
+            x: 0x0,
+            y: 0x0,
+            z: 0x0
+        };
+
+        let b = Struct { x: 0x0, <caret> };
+    }
+    ",@r#"
+    caret = """
+        let b = Struct { x: 0x0, <caret> };
+    """
+
+    [[completions]]
+    completion_label = "y"
+    detail = "felt252"
+
+    [[completions]]
+    completion_label = "z"
+    detail = "i16"
+    "#);
+}
+
+#[test]
 fn after_prop_before_spread() {
     test_transform_plain!(Completion, completion_fixture(), "
     pub struct Struct {

@@ -1,9 +1,32 @@
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use lsp_types::Hover;
 
 #[test]
 fn const_item_via_declaration() {
     test_transform_plain!(Hover, r#"
+    const FO<caret>O: u32 = 42;
+    "#, @r#"
+    source_context = """
+    const FO<caret>O: u32 = 42;
+    """
+    highlight = """
+    const <sel>FOO</sel>: u32 = 42;
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    const FOO: u32 = 42;
+    ```
+    """
+    "#);
+}
+
+#[test]
+fn const_item_via_declaration_macro() {
+    test_transform_with_macros!(Hover, r#"
+    #[complex_attribute_macro_v2]
     const FO<caret>O: u32 = 42;
     "#, @r#"
     source_context = """
