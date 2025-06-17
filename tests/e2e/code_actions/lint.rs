@@ -10,7 +10,7 @@ fn check_for_lint() {
         }
     }
     ", @r#"
-    Title: Remove unnecessary parentheses from break
+    Title: Fix lint
     Add new text: "        break;
     "
     At: Range { start: Position { line: 2, character: 0 }, end: Position { line: 3, character: 0 } }
