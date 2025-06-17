@@ -19,7 +19,7 @@ pub fn cairo_lint(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Option<Ve
         })
         .collect();
 
-    let fixes = cairo_lint::get_fixes(db, diagnostics);
+    let fixes = cairo_lint::get_separated_fixes(db, diagnostics);
 
     let result = fixes
         .into_iter()
@@ -27,7 +27,7 @@ pub fn cairo_lint(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Option<Ve
         .flat_map(|(file, file_url, fixes)| {
             fixes.into_iter().flat_map(move |fix| {
                 Some(CodeAction {
-                    title: "Fix lint".to_string(),
+                    title: fix.description,
                     kind: Some(CodeActionKind::QUICKFIX),
                     edit: Some(WorkspaceEdit {
                         changes: Some(
