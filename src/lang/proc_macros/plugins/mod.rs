@@ -31,6 +31,7 @@ pub fn proc_macro_plugin_suites(
                  inline_macros,
                  derives,
                  executables,
+                 ..
              }| {
                 let mut plugin_suite = PluginSuite::default();
 

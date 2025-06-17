@@ -52,6 +52,7 @@ mod unsafe_downcast_ref_tests {
         let output = ProcMacroResult {
             token_stream: TokenStream::new("asd".to_string()),
             diagnostics: Default::default(),
+            code_mappings: None,
         };
         let macro_resolution: HashMap<_, _> = [(input, output)].into_iter().collect();
         let macro_resolution = Arc::new(macro_resolution);

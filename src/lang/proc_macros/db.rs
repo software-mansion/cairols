@@ -49,7 +49,7 @@ fn get_attribute_expansion(
             client.request_attribute(params);
         }
 
-        ProcMacroResult { token_stream, diagnostics: Default::default() }
+        ProcMacroResult { token_stream, diagnostics: Default::default(), code_mappings: None }
     })
 }
 
@@ -61,7 +61,7 @@ fn get_derive_expansion(db: &dyn ProcMacroGroup, params: ExpandDeriveParams) -> 
             client.request_derives(params);
         }
 
-        ProcMacroResult { token_stream, diagnostics: Default::default() }
+        ProcMacroResult { token_stream, diagnostics: Default::default(), code_mappings: None }
     })
 }
 
@@ -77,6 +77,6 @@ fn get_inline_macros_expansion(
             client.request_inline_macros(params);
         }
 
-        ProcMacroResult { token_stream, diagnostics: Default::default() }
+        ProcMacroResult { token_stream, diagnostics: Default::default(), code_mappings: None }
     })
 }
