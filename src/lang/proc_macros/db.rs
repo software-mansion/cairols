@@ -1,17 +1,19 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
+use super::client::{RequestParams, ServerStatus};
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
+use crate::lang::proc_macros::client::plain_request_response::{
+    PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
+};
+use cairo_lang_filesystem::db::get_originating_location;
+use cairo_lang_syntax::node::SyntaxNode;
 use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
 use scarb_proc_macro_server_types::methods::expand::{
     ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
 };
 use scarb_proc_macro_server_types::methods::{CodeOrigin, ProcMacroResult};
 
-use super::client::{RequestParams, ServerStatus};
-use crate::lang::proc_macros::client::plain_request_response::{
-    PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
-};
 use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 /// A set of queries that enable access to proc macro client from compiler plugins
 /// `.generate_code()` methods.
@@ -232,4 +234,12 @@ impl SpansStabilizer {
             };
         }
     }
+}
+
+/// Retrieves the widest matching original node in user code, which corresponds to passed node.
+pub fn get_og_node(db: &AnalysisDatabase, node: SyntaxNode) -> Option<SyntaxNode> {
+    let (og_file, og_span) =
+        get_originating_location(db, node.stable_ptr(db).file_id(db), node.span(db), None);
+
+    db.widest_node_within_span(og_file, og_span)
 }
