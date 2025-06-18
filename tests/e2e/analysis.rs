@@ -60,3 +60,27 @@ fn test_reload() {
 
     assert_eq!(expected, actual);
 }
+
+#[test]
+fn assert_macros_with_no_cairo_test() {
+    let mut ls = sandbox! {
+        files {
+            "Scarb.toml" => indoc! (r#"
+                [package]
+                name = "a"
+                version = "0.1.0"
+                edition = "2024_07"
+
+                [dependencies]
+                assert_macros = "2"
+            "#),
+            "src/lib.cairo" => "fn main() {}",
+        }
+    };
+
+    ls.open_all_cairo_files_and_wait_for_project_update();
+
+    let output = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+
+    insta::assert_snapshot!("view_analyzed_crates_assert_macros", normalize(&ls, output));
+}

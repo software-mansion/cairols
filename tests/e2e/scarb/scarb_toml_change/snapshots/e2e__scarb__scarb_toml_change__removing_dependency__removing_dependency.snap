@@ -121,6 +121,7 @@ analyzed_crates = '''
   "linter_configuration": "Off",
   "plugins": {
     "builtin_plugins": [
+      "AssertMacros",
       "Executable",
       "CairoTest"
     ]
