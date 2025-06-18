@@ -46,6 +46,13 @@ fn type_bound() {
     completion_label = "Default"
 
     [[completions]]
+    completion_label = "DeploymentParams"
+    text_edits = ["""
+    use starknet::deployment::DeploymentParams;
+
+    """]
+
+    [[completions]]
     completion_label = "Deref"
 
     [[completions]]
@@ -160,6 +167,13 @@ fn negative_type_bound() {
     completion_label = "Default"
 
     [[completions]]
+    completion_label = "DeploymentParams"
+    text_edits = ["""
+    use starknet::deployment::DeploymentParams;
+
+    """]
+
+    [[completions]]
     completion_label = "Deref"
 
     [[completions]]
@@ -271,6 +285,13 @@ fn impl_bound() {
 
     [[completions]]
     completion_label = "Default"
+
+    [[completions]]
+    completion_label = "DeploymentParams"
+    text_edits = ["""
+    use starknet::deployment::DeploymentParams;
+
+    """]
 
     [[completions]]
     completion_label = "Deref"
