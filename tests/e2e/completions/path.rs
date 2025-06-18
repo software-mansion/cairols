@@ -1,4 +1,7 @@
-use crate::{completions::completion_fixture, support::insta::test_transform_plain};
+use crate::{
+    completions::completion_fixture,
+    support::insta::{test_transform_plain, test_transform_with_macros},
+};
 use lsp_types::request::Completion;
 
 #[test]
@@ -90,6 +93,34 @@ fn multi_segment_path_partial() {
         pub struct Boo {}
     }
 
+    fn a() {
+        bar::B<caret>
+    }
+    ",@r#"
+    caret = """
+        bar::B<caret>
+    """
+
+    [[completions]]
+    completion_label = "Baz"
+    text_edits = ["""
+    use foo::bar;
+
+    """]
+    "#);
+}
+
+#[test]
+fn multi_segment_path_partial_macro() {
+    test_transform_with_macros!(Completion, completion_fixture(), "
+    mod foo {
+        pub mod bar {
+            pub struct Baz {}
+        }
+        pub struct Boo {}
+    }
+
+    #[complex_attribute_macro_v2]
     fn a() {
         bar::B<caret>
     }

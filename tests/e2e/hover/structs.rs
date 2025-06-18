@@ -1,9 +1,41 @@
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use lsp_types::Hover;
 
 #[test]
 fn member_definition_name() {
     test_transform_plain!(Hover,"
+    /// Docstring of Struct.
+    struct Struct {
+        /// Docstring of member1.
+        member<caret>1: felt252,
+        member2: u256
+    }
+    ",@r#"
+    source_context = """
+        member<caret>1: felt252,
+    """
+    highlight = """
+        <sel>member1</sel>: felt252,
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    struct Struct {
+        member1: felt252,
+        member2: u256,
+    }
+    ```
+    ---
+    Docstring of member1."""
+    "#)
+}
+
+#[test]
+fn member_definition_name_macro() {
+    test_transform_with_macros!(Hover,"
+    #[complex_attribute_macro_v2]
     /// Docstring of Struct.
     struct Struct {
         /// Docstring of member1.

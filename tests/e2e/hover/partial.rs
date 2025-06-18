@@ -1,4 +1,4 @@
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use lsp_types::Hover;
 
 #[test]
@@ -25,6 +25,20 @@ fn uninfered_mut_ident() {
 #[test]
 fn uninfered_value() {
     test_transform_plain!(Hover,r#"
+    fn main() {
+        let mut xyz = unkn<caret>own_function();
+    }
+    "#,@r#"
+    source_context = """
+        let mut xyz = unkn<caret>own_function();
+    """
+    "#)
+}
+
+#[test]
+fn uninfered_value_macro() {
+    test_transform_with_macros!(Hover,r#"
+    #[complex_attribute_macro_v2]
     fn main() {
         let mut xyz = unkn<caret>own_function();
     }

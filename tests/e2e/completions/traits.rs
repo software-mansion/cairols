@@ -1,9 +1,31 @@
-use crate::{completions::completion_fixture, support::insta::test_transform_plain};
+use crate::{
+    completions::completion_fixture,
+    support::insta::{test_transform_plain, test_transform_with_macros},
+};
 use lsp_types::request::Completion;
 
 #[test]
 fn self_completions() {
     test_transform_plain!(Completion, completion_fixture(), "
+    trait Foo {
+        fn bar() {
+            Self::<caret>
+        }
+    }
+    ",@r#"
+    caret = """
+            Self::<caret>
+    """
+
+    [[completions]]
+    completion_label = "bar"
+    "#);
+}
+
+#[test]
+fn self_completions_macro() {
+    test_transform_with_macros!(Completion, completion_fixture(), "
+    #[complex_attribute_macro_v2]
     trait Foo {
         fn bar() {
             Self::<caret>

@@ -1,9 +1,34 @@
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use lsp_types::Hover;
 
 #[test]
 fn simple_mod() {
     test_transform_plain!(Hover,r#"
+    /// some_module docstring.
+    mod some_<caret>module { }
+    "#,@r#"
+    source_context = """
+    mod some_<caret>module { }
+    """
+    highlight = """
+    mod <sel>some_module</sel> { }
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    mod some_module
+    ```
+    ---
+    some_module docstring."""
+    "#)
+}
+
+#[test]
+fn simple_mod_macro() {
+    test_transform_with_macros!(Hover,r#"
+    #[complex_attribute_macro_v2]
     /// some_module docstring.
     mod some_<caret>module { }
     "#,@r#"

@@ -165,6 +165,30 @@ fn in_use_path_multi() {
     "#);
 }
 
+#[test]
+fn in_use_path_multi_macro() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    #[complex_attribute_macro_v2]
+    mod module {
+        pub fn x() {}
+        pub fn y() {}
+    }
+
+    #[complex_attribute_macro_v2]
+    use module::{<caret>
+    ",@r#"
+    caret = """
+    use module::{<caret>
+    """
+
+    [[completions]]
+    completion_label = "x"
+
+    [[completions]]
+    completion_label = "y"
+    "#);
+}
+
 // FIXME(#673)
 #[test]
 fn in_use_path_multi_with_one_in_scope() {
