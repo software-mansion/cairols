@@ -121,8 +121,8 @@ impl MacroPlugin for CairoRunPlugin {
 /// are private and cannot be accessed outside the compiler.
 static PLUGIN_TYPE_IDS: LazyLock<HashMap<TypeId, BuiltinPlugin>> = LazyLock::new(|| {
     chain!(
-        plugin_type_ids(test_assert_suite()).map(|id| (id, BuiltinPlugin::AssertMacros)),
         plugin_type_ids(test_plugin_suite()).map(|id| (id, BuiltinPlugin::CairoTest)),
+        plugin_type_ids(test_assert_suite()).map(|id| (id, BuiltinPlugin::AssertMacros)),
         plugin_type_ids(cairo_run_plugin_suite()).map(|id| (id, BuiltinPlugin::CairoRun)),
         plugin_type_ids(executable_plugin_suite()).map(|id| (id, BuiltinPlugin::Executable)),
         plugin_type_ids(starknet_plugin_suite()).map(|id| (id, BuiltinPlugin::Starknet)),
