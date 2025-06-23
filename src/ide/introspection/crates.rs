@@ -121,7 +121,12 @@ impl Plugins {
     fn for_crate(db: &AnalysisDatabase, crate_id: CrateId) -> Self {
         let analyzer_plugins = db.crate_analyzer_plugins(crate_id);
         let macro_plugins = db.crate_macro_plugins(crate_id);
-        let inline_plugins = db.crate_inline_macro_plugins(crate_id);
+        let inline_macros = db.crate_inline_macro_plugins(crate_id);
+        let inline_plugins: Vec<_> = inline_macros
+            .iter()
+            // The same plugin can handle multiple inline macros.
+            .unique_by(|(_, id)| **id)
+            .collect();
 
         let plugins = chain!(
             analyzer_plugins.iter().filter_map(|id| Plugin::try_from(id.lookup_intern(db)).ok()),
@@ -141,8 +146,14 @@ impl Plugins {
 
         let builtin_plugins = builtin_plugins.into_iter().unique().sorted().collect_vec();
 
-        let proc_macros =
-            proc_macros.into_iter().flat_map(|m| m.source_packages).sorted().collect_vec();
+        let proc_macros = proc_macros
+            .into_iter()
+            .flat_map(|m| m.source_packages)
+            .sorted()
+            // Deduplicate since `InlineProcMacroPlugin` has the same `source_packages` as
+            // `ProcMacroPlugin`.
+            .unique()
+            .collect_vec();
 
         Self { builtin_plugins, proc_macros }
     }
