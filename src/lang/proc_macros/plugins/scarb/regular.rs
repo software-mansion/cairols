@@ -288,7 +288,6 @@ fn do_expand_inner_attr(
             attr: input.name.clone(),
             args: input.args.clone(),
             item: TokenStream::from(token_stream.clone()),
-            call_site: input.call_site.span.clone(),
             adapted_call_site: input.attribute_location.adapted_call_site().into(),
         },
     );
@@ -683,7 +682,6 @@ fn expand_attribute(
             args: input.args.clone(),
             attr: input.name.clone(),
             item: token_stream.clone().into(),
-            call_site: input.call_site.span,
             adapted_call_site: input.attribute_location.adapted_call_site().into(),
         },
     );

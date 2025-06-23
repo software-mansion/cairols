@@ -178,7 +178,6 @@ impl SpansStabilizer {
             start: Self::STABLE_CALL_SITE_START,
             end: call_site.end - call_site.start,
         };
-
         let original_call_site = std::mem::replace(call_site, stable_call_site);
 
         // First token start is offset of whole item.

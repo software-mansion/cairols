@@ -5,6 +5,12 @@ fn only_functions() {
     test_transform!(test_code_lens_snforge, r#"
     #[test]
     fn a() {}
+    #[test]<caret>
+    fn b() {}
+
+
+    #[test]
+    fn c() {}
     "#, @r#"
     [[lenses]]
     line = 0
@@ -13,16 +19,20 @@ fn only_functions() {
     file_path = "src/lib.cairo"
 
     [[lenses]]
-    line = 0
+    line = 2
     command = "▶ Run test"
     index = 1
     file_path = "src/lib.cairo"
 
     [[lenses]]
-    line = 0
+    line = 6
     command = "▶ Run test"
     index = 2
     file_path = "src/lib.cairo"
+
+    [execute_in_terminal]
+    command = "snforge test hello::b --exact"
+    cwd = "./"
     "#)
 }
 
