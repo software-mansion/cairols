@@ -721,25 +721,24 @@ fn expand_attribute(
 
     let file_name = format!("proc_macro_{}", input.name);
     let content = result.token_stream.to_string();
-
-    let mappings: Vec<CodeMapping> = input
-        .attribute_location
-        .adapt_code_mappings(
-            result
-                .code_mappings
-                .map(|mappings| {
-                    mappings.into_iter().map(code_mapping_from_proc_macro_server).collect()
-                })
-                .unwrap_or_else(|| {
-                    vec![CodeMapping {
-                        origin: CodeOrigin::Span(original_node.span_without_trivia(db)),
-                        span: CairoTextSpan::from_str(&content),
-                    }]
-                }),
-        )
-        .into_iter()
-        .map(Into::into)
-        .collect();
+    let mappings: Vec<CodeMapping> = result
+        .code_mappings
+        .map(|mappings| {
+            input
+                .attribute_location
+                .adapt_code_mappings(
+                    mappings.into_iter().map(code_mapping_from_proc_macro_server).collect(),
+                )
+                .into_iter()
+                .map(Into::into)
+                .collect()
+        })
+        .unwrap_or_else(|| {
+            vec![CodeMapping {
+                origin: CodeOrigin::Span(original_node.span_without_trivia(db)),
+                span: CairoTextSpan::from_str(&content),
+            }]
+        });
 
     AttributePluginResult::new()
         .with_remove_original_item(true)
