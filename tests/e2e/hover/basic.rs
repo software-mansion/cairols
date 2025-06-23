@@ -1,4 +1,4 @@
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use lsp_types::Hover;
 
 #[test]
@@ -198,6 +198,33 @@ fn enum_name() {
     popover = """
     ```cairo
     hello
+    ```
+    ```cairo
+    enum Coin {
+        Penny,
+    }
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn enum_name_macro() {
+    test_transform_with_macros!(Hover,r#"
+    #[mod_attribute_macro_v2]
+    enum Co<caret>in {
+        Penny,
+    }
+    "#,@r#"
+    source_context = """
+    enum Co<caret>in {
+    """
+    highlight = """
+    enum <sel>Coin</sel> {
+    """
+    popover = """
+    ```cairo
+    hello::modzik
     ```
     ```cairo
     enum Coin {

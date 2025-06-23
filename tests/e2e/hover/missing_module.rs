@@ -1,9 +1,21 @@
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use lsp_types::Hover;
 
 #[test]
 fn mod_kw() {
     test_transform_plain!(Hover,r#"
+    m<caret>od missing;
+    "#,@r#"
+    source_context = """
+    m<caret>od missing;
+    """
+    "#)
+}
+
+#[test]
+fn mod_kw_macro() {
+    test_transform_with_macros!(Hover,r#"
+    #[complex_attribute_macro_v2]
     m<caret>od missing;
     "#,@r#"
     source_context = """
