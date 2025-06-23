@@ -1,0 +1,92 @@
+---
+source: tests/e2e/analysis.rs
+description: "// → Scarb.toml\n[package]\nname = \"a\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\nassert_macros = \"2\"\n\n// → src/lib.cairo\nfn main() {}"
+expression: "normalize(&ls, output)"
+---
+# Analyzed Crates
+---
+```json
+{
+  "name": "a",
+  "source_paths": [
+    "[ROOT]/src/lib.cairo"
+  ],
+  "settings": {
+    "name": "a",
+    "edition": "2024_07",
+    "version": "0.1.0",
+    "cfg_set": [
+      [
+        "target",
+        "lib"
+      ],
+      [
+        "target",
+        "test"
+      ],
+      "test"
+    ],
+    "dependencies": {
+      "a": {
+        "discriminator": "a 0.1.0 (path+[ROOT_URL]Scarb.toml)"
+      },
+      "core": {
+        "discriminator": null
+      }
+    },
+    "experimental_features": {
+      "negative_impls": false,
+      "associated_item_constraints": false,
+      "coupons": false,
+      "user_defined_inline_macros": false
+    }
+  },
+  "linter_configuration": "Off",
+  "plugins": {
+    "builtin_plugins": [
+      "AssertMacros"
+    ]
+  }
+}
+
+{
+  "name": "core",
+  "source_paths": [
+    "[SCARB_REGISTRY_STD]/core/src/lib.cairo"
+  ],
+  "settings": {
+    "name": "core",
+    "edition": "2024_07",
+    "version": "2.11.4",
+    "cfg_set": [
+      [
+        "target",
+        "lib"
+      ],
+      [
+        "target",
+        "test"
+      ]
+    ],
+    "dependencies": {
+      "core": {
+        "discriminator": null
+      }
+    },
+    "experimental_features": {
+      "negative_impls": true,
+      "associated_item_constraints": true,
+      "coupons": true,
+      "user_defined_inline_macros": false
+    }
+  },
+  "linter_configuration": "Off",
+  "plugins": {
+    "builtin_plugins": [
+      "AssertMacros",
+      "Executable",
+      "CairoTest"
+    ]
+  }
+}
+```

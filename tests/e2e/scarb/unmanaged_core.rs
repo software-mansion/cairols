@@ -45,6 +45,7 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
       "linter_configuration": "Off",
       "plugins": {
         "builtin_plugins": [
+          "AssertMacros",
           "Executable",
           "CairoTest"
         ]
