@@ -13,6 +13,10 @@ use scarb_proc_macro_server_types::methods::defined_macros::{
 use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, ProcMacroScope};
 
 use crate::lang::plugins::DowncastRefUnchecked;
+use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::ast::{MaybeImplBody, MaybeTraitBody, ModuleItem};
+use cairo_lang_syntax::node::helpers::QueryAttrs;
+use std::collections::HashSet;
 
 mod downcast;
 // TODO(#6666) Evict this module when this is possible.
@@ -93,6 +97,46 @@ impl MacroPlugin for ProcMacroPlugin {
         item_ast: cairo_lang_syntax::node::ast::ModuleItem,
         metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
     ) -> cairo_lang_defs::plugin::PluginResult {
+        // Check on inner attributes too.
+        let inner_attrs: HashSet<_> = match &item_ast {
+            ModuleItem::Impl(imp) => {
+                if let MaybeImplBody::Some(body) = imp.body(db) {
+                    body.items(db)
+                        .elements(db)
+                        .into_iter()
+                        .flat_map(|item| item.attributes_elements(db))
+                        .map(|attr| attr.attr(db).as_syntax_node().get_text_without_trivia(db))
+                        .collect()
+                } else {
+                    Default::default()
+                }
+            }
+            ModuleItem::Trait(trt) => {
+                if let MaybeTraitBody::Some(body) = trt.body(db) {
+                    body.items(db)
+                        .elements(db)
+                        .into_iter()
+                        .flat_map(|item| item.attributes_elements(db))
+                        .map(|attr| attr.attr(db).as_syntax_node().get_text_without_trivia(db))
+                        .collect()
+                } else {
+                    Default::default()
+                }
+            }
+            _ => Default::default(),
+        };
+
+        if !self.declared_attributes().into_iter().any(|declared_attr|
+            item_ast.has_attr(db, &declared_attr) || inner_attrs.contains(&declared_attr)
+        )
+            // Plugins can implement own derives.
+            && !item_ast.has_attr(db, "derive")
+            // Plugins does not declare module inline macros they support.
+            && !matches!(item_ast, ModuleItem::InlineMacro(_))
+        {
+            return Default::default();
+        };
+
         // Safety: We use this plugin only in AnalysisDatabase.
         let analysis_db = unsafe { unsafe_downcast_ref(db) };
 
