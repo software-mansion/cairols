@@ -5,16 +5,15 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_utils::{LookupIntern, Upcast};
 use lsp_types::{
     Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Range,
-    Url,
 };
-use std::collections::HashMap;
 use tracing::{error, trace};
 
 /// Converts internal diagnostics to LSP format.
 pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
     db: &T::DbType,
-    diags: &mut HashMap<(Url, FileId), Vec<Diagnostic>>,
+    diags: &mut Vec<Diagnostic>,
     diagnostics: &Diagnostics<T>,
+    processed_file_id: FileId,
     trace_macro_diagnostics: bool,
 ) {
     for diagnostic in if trace_macro_diagnostics {
@@ -46,6 +45,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
                 message += &format!("\nnote: {}", note.text);
             }
         }
+
         let Some((range, mapped_file_id)) = get_mapped_range_and_add_mapping_note(
             db,
             &diagnostic.location(db),
@@ -55,7 +55,10 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
             continue;
         };
 
-        let diagnostic = Diagnostic {
+        if mapped_file_id != processed_file_id {
+            continue;
+        }
+        diags.push(Diagnostic {
             range,
             message,
             related_information: (!related_information.is_empty()).then_some(related_information),
@@ -65,12 +68,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
             }),
             code: diagnostic.error_code().map(|code| NumberOrString::String(code.to_string())),
             ..Diagnostic::default()
-        };
-        let Some(mapped_file_url) = db.url_for_file(mapped_file_id) else {
-            continue;
-        };
-
-        diags.entry((mapped_file_url, mapped_file_id)).or_default().push(diagnostic);
+        });
     }
 }
 
