@@ -1,6 +1,5 @@
 use crate::support::MockClient;
 use crate::support::cursor::text_chunk_at_range;
-use cairo_language_server::lsp::ext::{ProvideVirtualFile, ProvideVirtualFileRequest};
 use lsp_types::{Diagnostic, Url};
 use serde::Serialize;
 
@@ -17,16 +16,11 @@ pub struct DiagnosticAndRelatedInfo {
 }
 
 pub fn get_related_diagnostic_code(
-    client: &mut MockClient,
+    client: &MockClient,
     diagnostic: &Diagnostic,
     file_url: &Url,
 ) -> String {
     let fixture = client.as_ref();
-    let file_content = fixture.maybe_read_file(file_url.path()).unwrap_or_else(|| {
-        client
-            .send_request::<ProvideVirtualFile>(ProvideVirtualFileRequest { uri: file_url.clone() })
-            .content
-            .unwrap()
-    });
+    let file_content = fixture.read_file(file_url.path());
     text_chunk_at_range(file_content, diagnostic.range)
 }

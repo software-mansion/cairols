@@ -175,6 +175,7 @@ pub trait MacroTest {
         };
 
         let diagnostics = ls.open_and_wait_for_diagnostics_generation(&paths[0]);
+
         let mapped_diagnostics = normalize_diagnostics(&ls, diagnostics)
             .into_iter()
             .filter_map(|(original_url, normalized_url, diagnostics)| {
@@ -187,11 +188,7 @@ pub trait MacroTest {
                     diagnostics: diagnostics
                         .into_iter()
                         .map(|diag| DiagnosticAndRelatedInfo {
-                            related_code: get_related_diagnostic_code(
-                                &mut ls,
-                                &diag,
-                                &original_url,
-                            ),
+                            related_code: get_related_diagnostic_code(&ls, &diag, &original_url),
                             diagnostic: diag,
                         })
                         .collect(),
