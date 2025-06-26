@@ -19,7 +19,6 @@ pub fn missing_import(
     let typed_path_segments: Vec<_> = typed_path_generic
         .segments(db)
         .elements(db)
-        .into_iter()
         .map(|e| e.identifier(db).to_string())
         .rev()
         .collect();

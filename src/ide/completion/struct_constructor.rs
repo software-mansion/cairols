@@ -26,7 +26,6 @@ pub fn struct_constructor_completions(
         .arguments(db)
         .arguments(db)
         .elements(db)
-        .into_iter()
         .filter_map(|member| match member {
             ast::StructArg::StructArgSingle(struct_arg_single) => {
                 Some(struct_arg_single.identifier(db).token(db).as_syntax_node().get_text(db))

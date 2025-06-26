@@ -140,14 +140,14 @@ fn expand_inner_attr(
                     context.add_node(body.lbrace(db).as_syntax_node());
 
                     let item_list = body.items(db);
-                    for item in item_list.elements(db).iter() {
+                    for item in item_list.elements(db) {
                         let ast::TraitItem::Function(func) = item else {
                             context.add_node(item.as_syntax_node());
                             continue;
                         };
 
                         let mut token_stream_builder = TokenStreamBuilder::new(db);
-                        let attrs = func.attributes(db).elements(db);
+                        let attrs = func.attributes(db).elements(db).collect_vec();
                         let found = parse_attrs(
                             db,
                             defined_attributes,
@@ -170,7 +170,7 @@ fn expand_inner_attr(
                                 &mut context,
                                 expansion_context.clone(),
                                 found,
-                                func,
+                                &func,
                                 token_stream,
                             );
                     }
@@ -213,7 +213,7 @@ fn expand_inner_attr(
                         };
 
                         let mut token_stream_builder = TokenStreamBuilder::new(db);
-                        let attrs = func.attributes(db).elements(db);
+                        let attrs = func.attributes(db).elements(db).collect_vec();
                         let found = parse_attrs(
                             db,
                             defined_attributes,
@@ -559,8 +559,10 @@ fn parse_derive(
     item_ast: ast::ModuleItem,
 ) -> Vec<(String, CallSiteLocation)> {
     let attrs = match item_ast {
-        ast::ModuleItem::Struct(struct_ast) => Some(struct_ast.query_attr(db, DERIVE_ATTR)),
-        ast::ModuleItem::Enum(enum_ast) => Some(enum_ast.query_attr(db, DERIVE_ATTR)),
+        ast::ModuleItem::Struct(struct_ast) => {
+            Some(struct_ast.query_attr(db, DERIVE_ATTR).collect_vec())
+        }
+        ast::ModuleItem::Enum(enum_ast) => Some(enum_ast.query_attr(db, DERIVE_ATTR).collect_vec()),
         _ => None,
     };
 
@@ -589,7 +591,7 @@ fn parse_derive(
                 .find(|derive| derive.to_case(Case::Pascal) == value)
                 .cloned()?;
 
-            Some((matching_derive, CallSiteLocation::new(segment, db)))
+            Some((matching_derive, CallSiteLocation::new(&segment, db)))
         })
         .collect()
 }

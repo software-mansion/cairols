@@ -4,6 +4,7 @@ use crate::lang::{
     lsp::{LsProtoGroup, ToLsp},
 };
 use cairo_lang_semantic::db::SemanticGroup;
+use itertools::Itertools;
 use lsp_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
 
 pub fn cairo_lint(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Option<Vec<CodeAction>> {
@@ -26,28 +27,36 @@ pub fn cairo_lint(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Option<Ve
         .filter_map(|(file, fixes)| db.url_for_file(file).map(|url| (file, url, fixes)))
         .flat_map(|(file, file_url, fixes)| {
             fixes.into_iter().flat_map(move |fix| {
-                Some(CodeAction {
-                    title: fix.description,
-                    kind: Some(CodeActionKind::QUICKFIX),
-                    edit: Some(WorkspaceEdit {
-                        changes: Some(
-                            [(
-                                file_url.clone(),
-                                vec![TextEdit {
-                                    range: fix.span.position_in_file(db, file)?.to_lsp(),
-                                    new_text: fix.suggestion,
-                                }],
-                            )]
-                            .into_iter()
-                            .collect(),
-                        ),
-                        ..Default::default()
-                    }),
-                    ..Default::default()
-                })
+                fix.suggestions
+                    .into_iter()
+                    .filter_map(|suggestion| {
+                        Some(CodeAction {
+                            title: fix.description.clone(),
+                            kind: Some(CodeActionKind::QUICKFIX),
+                            edit: Some(WorkspaceEdit {
+                                changes: Some(
+                                    [(
+                                        file_url.clone(),
+                                        vec![TextEdit {
+                                            range: suggestion
+                                                .span
+                                                .position_in_file(db, file)?
+                                                .to_lsp(),
+                                            new_text: suggestion.code,
+                                        }],
+                                    )]
+                                    .into_iter()
+                                    .collect(),
+                                ),
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        })
+                    })
+                    .collect_vec()
             })
         })
-        .collect();
+        .collect_vec();
 
     Some(result)
 }

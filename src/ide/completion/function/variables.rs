@@ -2,6 +2,7 @@ use cairo_lang_semantic::FunctionBody;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use if_chain::if_chain;
+use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
 use crate::ide::completion::expr::selector::expr_selector;
@@ -23,7 +24,7 @@ pub fn variables_completions(
     if_chain!(
         if let Some(path) = expr_selector(db, &ctx.node);
         if dot_expr_rhs(db, &ctx.node).is_none();
-        if let [PathSegment::Simple(segment)] = path.segments(db).elements(db).as_slice();
+        if let [PathSegment::Simple(segment)] = path.segments(db).elements(db).take(2).collect_vec().as_slice();
 
         if let Some(lookup_item_id) = ctx.lookup_item_id;
         if let Some(function_id) = lookup_item_id.function_with_body();

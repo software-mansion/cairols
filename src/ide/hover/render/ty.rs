@@ -20,6 +20,7 @@ use cairo_lang_syntax::node::{
     ast::{ExprPath, PathSegment, Pattern, TerminalUnderscore},
 };
 use cairo_lang_utils::{LookupIntern, ordered_hash_map::OrderedHashMap};
+use itertools::Itertools;
 
 pub fn ty(
     db: &AnalysisDatabase,
@@ -56,7 +57,7 @@ fn path(
 ) -> Option<String> {
     let path = underscore.as_syntax_node().ancestor_of_type::<ExprPath>(db)?;
 
-    let mut segments = path.segments(db).elements(db);
+    let mut segments = path.segments(db).elements(db).collect_vec();
 
     while matches!(segments.last(), Some(PathSegment::Missing(_))) {
         segments.pop();
@@ -75,7 +76,6 @@ fn path(
         .generic_args(db)
         .generic_args(db)
         .elements(db)
-        .into_iter()
         .enumerate()
         .find(|(_, arg)| arg.as_syntax_node().is_ancestor(db, &underscore.as_syntax_node()))?;
     let identifier = generic.ident(db);

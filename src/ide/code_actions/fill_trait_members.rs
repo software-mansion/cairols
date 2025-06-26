@@ -40,7 +40,6 @@ pub fn fill_trait_members(
 
     let already_implemented_item_names = specified_impl_items
         .elements(db)
-        .iter()
         .filter_map(|item| match item {
             ImplItem::Function(item) => Some(item.declaration(db).name(db).token(db).text(db)),
             ImplItem::Type(item) => Some(item.name(db).token(db).text(db)),
@@ -121,7 +120,7 @@ fn find_concrete_trait_id(
 
     match resolver.resolve_concrete_path(
         &mut diagnostics,
-        item_impl.trait_path(db).segments(db).elements(db),
+        item_impl.trait_path(db).segments(db).elements(db).collect_vec(),
         NotFoundItemType::Trait,
     ) {
         Ok(ResolvedConcreteItem::Trait(id)) => Some(id),

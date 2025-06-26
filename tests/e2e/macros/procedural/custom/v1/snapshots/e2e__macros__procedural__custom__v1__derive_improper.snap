@@ -61,10 +61,10 @@ mapped_diagnostics:
           range:
             start:
               line: 1
-              character: 10
+              character: 11
             end:
               line: 1
-              character: 10
+              character: 11
         message: Diagnostic mapped from here.
   - related_code: ImproperDeriveMacro
     diagnostic:
@@ -83,10 +83,10 @@ mapped_diagnostics:
           range:
             start:
               line: 1
-              character: 13
+              character: 21
             end:
               line: 1
-              character: 13
+              character: 21
         message: Diagnostic mapped from here.
   - related_code: ImproperDeriveMacro
     diagnostic:
@@ -149,10 +149,10 @@ mapped_diagnostics:
           range:
             start:
               line: 1
-              character: 22
+              character: 23
             end:
               line: 1
-              character: 22
+              character: 23
         message: Diagnostic mapped from here.
   - related_code: ImproperDeriveMacro
     diagnostic:

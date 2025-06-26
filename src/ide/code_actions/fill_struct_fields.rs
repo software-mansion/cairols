@@ -58,7 +58,6 @@ pub fn fill_struct_fields(
     let struct_arguments = struct_arguments.arguments(db).elements(db);
 
     let already_present_arguments = struct_arguments
-        .iter()
         .map(|member| match member {
             StructArg::StructArgSingle(argument) => {
                 argument.identifier(db).token(db).as_syntax_node().get_text_without_trivia(db)
