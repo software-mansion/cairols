@@ -58,6 +58,7 @@ use lsp_types::request::SemanticTokensRefresh;
 use tracing::{debug, error, info};
 
 use crate::lang::lsp::LsProtoGroup;
+use crate::lang::proc_macros;
 use crate::lang::proc_macros::controller::ProcMacroChannels;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::capabilities::server::{
@@ -410,11 +411,15 @@ impl Backend {
             requester,
         );
 
-        if state.analysis_progress_controller.has_analysis_finished()
-            && state.client_capabilities.workspace_semantic_tokens_refresh_support()
-        {
-            if let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing()) {
-                error!("semantic tokens refresh failed: {err:#?}");
+        if state.analysis_progress_controller.has_analysis_finished() {
+            proc_macros::cache::save_proc_macro_cache(&state.db, &state.config);
+
+            if state.client_capabilities.workspace_semantic_tokens_refresh_support() {
+                if let Err(err) =
+                    requester.request::<SemanticTokensRefresh>((), |_| Task::nothing())
+                {
+                    error!("semantic tokens refresh failed: {err:#?}");
+                }
             }
         }
     }

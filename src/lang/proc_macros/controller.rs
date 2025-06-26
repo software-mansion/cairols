@@ -29,6 +29,7 @@ use super::db::init_proc_macro_group;
 use crate::config::Config;
 use crate::ide::analysis_progress::{ProcMacroServerStatus, ProcMacroServerTracker};
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::proc_macros::cache::load_proc_macro_cache;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suites;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
@@ -205,7 +206,9 @@ impl ProcMacroClientController {
                 self.set_proc_macro_server_status(db, ServerStatus::Ready(client));
 
                 ProcMacroClientController::on_supported_macros_response(
+                    db,
                     client_capabilities,
+                    config,
                     requester,
                 );
             }
@@ -233,7 +236,9 @@ impl ProcMacroClientController {
     /// Usage: should be called when the set of known macros is changed and all plugins with known
     /// macros will be in the db before the mutable db reference is released.
     fn on_supported_macros_response(
+        db: &mut AnalysisDatabase,
         client_capabilities: &ClientCapabilities,
+        config: &Config,
         requester: &mut Requester,
     ) {
         if client_capabilities.workspace_semantic_tokens_refresh_support() {
@@ -241,6 +246,9 @@ impl ProcMacroClientController {
                 error!("semantic tokens refresh failed: {err:#?}");
             }
         }
+
+        // Try loading proc macro cache if availale.
+        load_proc_macro_cache(db, config);
     }
 
     /// Tries starting proc-macro-server initialization process, if allowed by config.
