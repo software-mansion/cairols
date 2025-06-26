@@ -80,7 +80,7 @@ pub fn get_attribute_expansion(
     db: &dyn ProcMacroGroup,
     mut params: ExpandAttributeParams,
 ) -> ProcMacroResult {
-    let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.item);
+    let stabilizer = SpansStabilizer::new(&mut params.adapted_call_site, &mut params.item);
 
     let result = db.get_stored_attribute_expansion(params.clone().into()).unwrap_or_else(|| {
         let token_stream = params.item.clone();
@@ -178,7 +178,6 @@ impl SpansStabilizer {
             start: Self::STABLE_CALL_SITE_START,
             end: call_site.end - call_site.start,
         };
-
         let original_call_site = std::mem::replace(call_site, stable_call_site);
 
         // First token start is offset of whole item.

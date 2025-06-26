@@ -42,15 +42,15 @@ mapped_diagnostics:
               line: 0
               character: 42
         message: Diagnostic mapped from here.
-  - related_code: '#[mod_attribute_macro_v2]'
+  - related_code: '"a" + "b"'
     diagnostic:
       range:
         start:
-          line: 0
-          character: 0
+          line: 1
+          character: 11
         end:
-          line: 0
-          character: 25
+          line: 1
+          character: 20
       severity: 1
       message: Type annotations needed. Failed to infer ?0.
       relatedInformation:
