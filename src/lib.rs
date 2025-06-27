@@ -57,6 +57,7 @@ use lsp_types::RegistrationParams;
 use lsp_types::request::SemanticTokensRefresh;
 use tracing::{debug, error, info};
 
+use crate::ide::analysis_progress::AnalysisProgressStatus;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros;
 use crate::lang::proc_macros::controller::ProcMacroChannels;
@@ -255,6 +256,8 @@ impl Backend {
             let Self { mut state, connection } = self;
             let proc_macro_channels = state.proc_macro_controller.channels();
             let project_updates_receiver = state.project_controller.response_receiver();
+            let analysis_progress_receiver =
+                state.analysis_progress_controller.get_update_receiver();
 
             let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
 
@@ -274,6 +277,7 @@ impl Backend {
                 &connection,
                 proc_macro_channels,
                 project_updates_receiver,
+                analysis_progress_receiver,
                 scheduler,
             );
 
@@ -337,6 +341,7 @@ impl Backend {
         connection: &Connection,
         proc_macro_channels: ProcMacroChannels,
         project_updates_receiver: Receiver<ProjectUpdate>,
+        analysis_progress_status_receiver: Receiver<AnalysisProgressStatus>,
         mut scheduler: Scheduler<'_>,
     ) -> Result<()> {
         let incoming = connection.incoming();
@@ -384,6 +389,15 @@ impl Backend {
 
                     scheduler.local(Self::on_proc_macro_error);
                 }
+                recv(analysis_progress_status_receiver) -> analysis_progress_status => {
+                    let Ok(analysis_progress_status) = analysis_progress_status else { break };
+
+                    if analysis_progress_status == AnalysisProgressStatus::ResolvedAllProcMacros {
+                        scheduler.local(|state, _notifier, requester, _responder|
+                            Self::on_stopped_analysis(state, requester)
+                        );
+                    }
+                }
             }
         }
 
@@ -410,16 +424,15 @@ impl Backend {
             &state.client_capabilities,
             requester,
         );
+    }
 
-        if state.analysis_progress_controller.has_analysis_finished() {
-            proc_macros::cache::save_proc_macro_cache(&state.db, &state.config);
+    fn on_stopped_analysis(state: &mut State, requester: &mut Requester<'_>) {
+        proc_macros::cache::save_proc_macro_cache(&state.db, &state.config);
+        state.code_lens_controller.refresh_all_lenses(requester, &state.db, &state.config);
 
-            if state.client_capabilities.workspace_semantic_tokens_refresh_support() {
-                if let Err(err) =
-                    requester.request::<SemanticTokensRefresh>((), |_| Task::nothing())
-                {
-                    error!("semantic tokens refresh failed: {err:#?}");
-                }
+        if state.client_capabilities.workspace_semantic_tokens_refresh_support() {
+            if let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing()) {
+                error!("semantic tokens refresh failed: {err:#?}");
             }
         }
     }
