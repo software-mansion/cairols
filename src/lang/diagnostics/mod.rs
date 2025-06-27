@@ -132,8 +132,9 @@ impl DiagnosticsControllerThread {
             let diagnostics_results = self.join_and_clear_workers();
             let diagnostics_cancelled =
                 controller_cancelled || diagnostics_results.contains(&TaskResult::Cancelled);
-
-            self.analysis_progress_controller.try_stop_analysis(diagnostics_cancelled);
+            if !diagnostics_cancelled {
+                self.analysis_progress_controller.try_stop_analysis();
+            }
         }
     }
 
