@@ -24,6 +24,27 @@ pub struct CodeLensController {
 }
 
 impl CodeLensController {
+    pub fn refresh_all_lenses(
+        &self,
+        requester: &mut Requester<'_>,
+        db: &AnalysisDatabase,
+        config: &Config,
+    ) {
+        let lens_guard = self.state.read().unwrap();
+
+        // Invalidate all the files in the state
+        let files: Vec<_> = lens_guard
+            .lens
+            .keys()
+            .map(|url| FileChange { url: url.clone(), was_deleted: false })
+            .collect();
+
+        // Release so any panickable action is performed while not keeping state lock.
+        drop(lens_guard);
+
+        self.refresh_lenses_for(requester, db, config, files.into_iter());
+    }
+
     pub fn on_did_change(
         &self,
         requester: &mut Requester<'_>,
@@ -40,6 +61,16 @@ impl CodeLensController {
         // Release so any panickable action is performed while not keeping state lock.
         drop(lens_guard);
 
+        self.refresh_lenses_for(requester, db, config, files.into_iter());
+    }
+
+    fn refresh_lenses_for(
+        &self,
+        requester: &mut Requester<'_>,
+        db: &AnalysisDatabase,
+        config: &Config,
+        files: impl Iterator<Item = FileChange>,
+    ) {
         // Collect so any panickable action is performed while not keeping state lock.
         let entries: Vec<_> = files
             .into_iter()

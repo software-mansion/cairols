@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use crate::config::Config;
 use crate::lsp::ext::{ServerStatus, ServerStatusEvent, ServerStatusParams};
 use crate::server::client::Notifier;
+use crossbeam::channel::{Receiver, Sender};
 
 #[derive(Clone, PartialEq)]
 pub enum ProcMacroServerStatus {
@@ -18,6 +19,8 @@ pub enum ProcMacroServerStatus {
 #[derive(Clone)]
 pub struct ProcMacroServerTracker {
     procmacro_request_submitted: Arc<AtomicBool>,
+    // A field indicating if any proc macro request were sent during the previous diagnostics round.
+    procmacro_request_submitted_previously: Arc<AtomicBool>,
     procmacro_request_counter: Arc<AtomicU64>,
     procmacro_server_status: Arc<Mutex<ProcMacroServerStatus>>,
 }
@@ -27,6 +30,7 @@ impl ProcMacroServerTracker {
     pub fn new() -> Self {
         Self {
             procmacro_request_submitted: Arc::new(AtomicBool::new(false)),
+            procmacro_request_submitted_previously: Arc::new(AtomicBool::new(false)),
             procmacro_request_counter: Arc::new(AtomicU64::new(0)),
             procmacro_server_status: Arc::new(Mutex::new(ProcMacroServerStatus::Pending)),
         }
@@ -56,6 +60,20 @@ impl ProcMacroServerTracker {
         self.procmacro_request_submitted.store(false, Ordering::SeqCst);
     }
 
+    pub fn reset_previous_request_tracker(&self) {
+        self.procmacro_request_submitted_previously.store(false, Ordering::SeqCst);
+    }
+
+    pub fn store_previous_request_tracker(&self) {
+        let previous_value = self.procmacro_request_submitted.load(Ordering::SeqCst);
+
+        self.procmacro_request_submitted_previously.store(previous_value, Ordering::SeqCst);
+    }
+
+    pub fn get_did_submit_procmacro_request_previously(&self) -> bool {
+        self.procmacro_request_submitted_previously.load(Ordering::SeqCst)
+    }
+
     pub fn get_did_submit_procmacro_request(&self) -> bool {
         self.procmacro_request_submitted.load(Ordering::SeqCst)
             && self.procmacro_request_counter.load(Ordering::SeqCst) != 0
@@ -69,6 +87,10 @@ pub struct AnalysisProgressController {
 }
 
 impl AnalysisProgressController {
+    pub fn get_update_receiver(&self) -> Receiver<AnalysisProgressStatus> {
+        self.state.lock().unwrap().get_update_receiver()
+    }
+
     pub fn on_config_change(&self, config: &Config) {
         self.state.lock().unwrap().on_config_change(config)
     }
@@ -78,21 +100,17 @@ impl AnalysisProgressController {
         self.state.lock().unwrap().try_start_analysis()
     }
 
-    pub fn try_stop_analysis(&self, diagnostics_cancelled: bool) {
-        if !diagnostics_cancelled {
-            self.state.lock().unwrap().try_stop_analysis(
-                self.server_tracker.get_did_submit_procmacro_request(),
-                self.server_tracker.get_server_status(),
-            );
-        }
-    }
-
-    /// Tells if all procedural macros have been resolved.
-    pub fn has_analysis_finished(&self) -> bool {
-        self.state.lock().unwrap().has_analysis_finished(
+    pub fn try_stop_analysis(&self) {
+        let stopped = self.state.lock().unwrap().try_stop_analysis(
             self.server_tracker.get_did_submit_procmacro_request(),
+            self.server_tracker.get_did_submit_procmacro_request_previously(),
             self.server_tracker.get_server_status(),
-        )
+        );
+        if stopped {
+            self.server_tracker.reset_previous_request_tracker();
+        } else {
+            self.server_tracker.store_previous_request_tracker();
+        }
     }
 }
 
@@ -105,12 +123,32 @@ impl AnalysisProgressController {
     }
 }
 
+// We don't need to track starts for now
+#[derive(PartialEq)]
+pub enum AnalysisProgressStatus {
+    ResolvedAllProcMacros,
+}
+
+#[derive(Clone)]
+struct AnalysisProgressUpdateChannels {
+    sender: Sender<AnalysisProgressStatus>,
+    receiver: Receiver<AnalysisProgressStatus>,
+}
+
+impl AnalysisProgressUpdateChannels {
+    fn new() -> Self {
+        let (sender, receiver) = crossbeam::channel::unbounded();
+        Self { sender, receiver }
+    }
+}
+
 /// Controller used to send notifications to the client about analysis progress.
 /// Uses information provided from other controllers (diagnostics controller, procmacro controller)
 /// to assess if diagnostics are in fact calculated.
 #[derive(Clone)]
 struct AnalysisProgressControllerState {
     notifier: Notifier,
+    update_channels: AnalysisProgressUpdateChannels,
     /// Indicates that a notification was sent and analysis (i.e. macro expansion) is taking place.
     analysis_in_progress: bool,
     /// Loaded asynchronously from config
@@ -119,7 +157,8 @@ struct AnalysisProgressControllerState {
 
 impl AnalysisProgressControllerState {
     fn new(notifier: Notifier) -> Self {
-        Self { notifier, analysis_in_progress: false, procmacros_enabled: None }
+        let update_channels = AnalysisProgressUpdateChannels::new();
+        Self { notifier, update_channels, analysis_in_progress: false, procmacros_enabled: None }
     }
 
     pub fn on_config_change(&mut self, config: &Config) {
@@ -136,13 +175,19 @@ impl AnalysisProgressControllerState {
         }
     }
 
+    /// Returns `true` if the analysis was stopped and notification was sent.
     fn try_stop_analysis(
         &mut self,
         did_submit_procmacro_request: bool,
+        did_submit_procmacro_request_previously: bool,
         proc_macro_server_status: ProcMacroServerStatus,
-    ) {
+    ) -> bool {
+        if !did_submit_procmacro_request && did_submit_procmacro_request_previously {
+            self.update_channels.sender.send(AnalysisProgressStatus::ResolvedAllProcMacros).unwrap()
+        }
+
         if !self.has_analysis_finished(did_submit_procmacro_request, proc_macro_server_status) {
-            return;
+            return false;
         }
 
         self.analysis_in_progress = false;
@@ -150,8 +195,10 @@ impl AnalysisProgressControllerState {
             event: ServerStatusEvent::AnalysisFinished,
             idle: true,
         });
+        true
     }
 
+    // WARNING: This should not be polled from outside the diagnostics main thread, it may yield inaccurate results
     fn has_analysis_finished(
         &self,
         did_submit_procmacro_request: bool,
@@ -163,5 +210,9 @@ impl AnalysisProgressControllerState {
             || config_not_loaded
             || (self.procmacros_enabled == Some(false)))
             && self.analysis_in_progress
+    }
+
+    fn get_update_receiver(&self) -> Receiver<AnalysisProgressStatus> {
+        self.update_channels.receiver.clone()
     }
 }
