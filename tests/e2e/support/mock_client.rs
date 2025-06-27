@@ -125,7 +125,7 @@ impl MockClient {
 
                 match result {
                     Ok(result) => return result,
-                    Err(err) => panic!("error response: {:#?}", err),
+                    Err(err) => panic!("error response: {err:#?}"),
                 }
             }
         }
@@ -195,7 +195,7 @@ impl MockClient {
                     let message = Message::Response(response);
                     self.client.sender.send(message).expect("failed to send response");
                 } else {
-                    panic!("unhandled request {:?}", request);
+                    panic!("unhandled request {request:?}");
                 }
             }
             if let Message::Notification(Notification { method, params }) = &message {

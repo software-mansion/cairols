@@ -97,8 +97,8 @@ fn completion_for_method(
     }
 
     let completion = CompletionItem {
-        label: format!("{}()", name),
-        insert_text: Some(format!("{}($1)", name)),
+        label: format!("{name}()"),
+        insert_text: Some(format!("{name}($1)")),
         insert_text_format: Some(InsertTextFormat::SNIPPET),
         detail: Some(detail),
         kind: Some(CompletionItemKind::METHOD),

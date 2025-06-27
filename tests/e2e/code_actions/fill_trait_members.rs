@@ -23,20 +23,19 @@ const TRAIT_CODE: &str = r#"
 "#;
 
 fn test_fill_trait(cairo_code: &str) -> String {
-    quick_fix(format!("{}{}", TRAIT_CODE, cairo_code).as_str())
+    quick_fix(format!("{TRAIT_CODE}{cairo_code}").as_str())
 }
 
 fn test_fill_trait_nested(cairo_code: &str) -> String {
     let nested_trait = format!(
         r#"
             mod trait_module {{
-                {}
+                {TRAIT_CODE}
             }}
             mod other_module {{
-                {}
+                {cairo_code}
             }}
-    "#,
-        TRAIT_CODE, cairo_code
+    "#
     );
     quick_fix(nested_trait.as_str())
 }
