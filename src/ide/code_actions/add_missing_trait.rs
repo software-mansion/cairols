@@ -21,7 +21,7 @@ pub fn add_missing_trait(
     let code_actions = trait_paths
         .into_iter()
         .map(|trait_path| CodeAction {
-            title: format!("Import {}", trait_path),
+            title: format!("Import {trait_path}"),
             kind: Some(CodeActionKind::QUICKFIX),
             is_preferred,
             edit: Some(WorkspaceEdit {

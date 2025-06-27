@@ -58,7 +58,8 @@ pub fn mod_completions(
 
             if text_matches(file_name, typed_module_name) {
                 let label = file_name.strip_suffix(".cairo").unwrap_or(file_name);
-                let semicolon = semicolon_missing.then(|| ";".to_string()).unwrap_or_default();
+                let semicolon =
+                    if semicolon_missing { ";".to_string() } else { Default::default() };
 
                 result.push(CompletionItem {
                     label: format!("{label}{semicolon}"),

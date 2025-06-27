@@ -89,7 +89,7 @@ fn render(h: Hover) -> String {
     match h.contents {
         HoverContents::Markup(MarkupContent { value, .. }) => value,
         contents => {
-            panic!("LS returned deprecated MarkedString-based hover contents: {:#?}", contents);
+            panic!("LS returned deprecated MarkedString-based hover contents: {contents:#?}");
         }
     }
 }

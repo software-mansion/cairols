@@ -9,10 +9,9 @@ fn quick_fix_struct_simple(cairo_code: &str) -> String {
                 pub y: felt252,
                 pub z: i16
             }}
-            {}
+            {cairo_code}
         }}
-        "#,
-        cairo_code
+        "#
     );
 
     quick_fix(code.as_str())
@@ -30,10 +29,9 @@ fn quick_fix_struct_with_modules(cairo_code: &str) -> String {
             }}
         }}
         mod other_module {{
-            {}
+            {cairo_code}
         }}
-        "#,
-        cairo_code
+        "#
     );
 
     quick_fix(code.as_str())

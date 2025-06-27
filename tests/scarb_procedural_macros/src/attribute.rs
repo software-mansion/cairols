@@ -21,7 +21,7 @@ pub fn complex_attribute_macro(_args: TokenStream, _item: TokenStream) -> ProcMa
 
 #[attribute_macro]
 pub fn improper_attribute_macro(_args: TokenStream, item: TokenStream) -> ProcMacroResult {
-    let result = format!("{} fn added_fun() {{ a = b; }}", item); // Syntax error
+    let result = format!("{item} fn added_fun() {{ a = b; }}"); // Syntax error
     ProcMacroResult::new(TokenStream::new(result))
 }
 
