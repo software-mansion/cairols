@@ -113,7 +113,20 @@ fn complete_ex(
 
     let mut completions = vec![];
 
+    let dot_binary_expression = dot_expr_rhs(db, &node);
+    let is_dot_expression = dot_binary_expression.is_some();
+
     if_chain!(
+        if let Some(binary_expression) = dot_binary_expression;
+        if let Some(dot_completions) = dot_completions(db, &ctx, binary_expression);
+
+        then {
+            completions.extend(dot_completions);
+        }
+    );
+
+    if_chain!(
+        if !is_dot_expression;
         if let Some(constructor) = node.ancestor_of_type::<ExprStructCtorCall>(db);
         if let Some(struct_completions) = struct_constructor_completions(db, &ctx, constructor);
 
@@ -123,15 +136,7 @@ fn complete_ex(
     );
 
     if_chain!(
-        if let Some(binary_expression) = dot_expr_rhs(db, &node);
-        if let Some(dot_completions) = dot_completions(db, &ctx, binary_expression);
-
-        then {
-            completions.extend(dot_completions);
-        }
-    );
-
-    if_chain!(
+        if !is_dot_expression;
         if let Some(single) = node.ancestor_of_type::<UsePathSingle>(db);
         if let Some(use_completions) = use_statement(db, single, &ctx);
 
@@ -142,6 +147,7 @@ fn complete_ex(
 
     // If we are on the first segment of use e.g. `use co<caret>`.
     if_chain!(
+        if !is_dot_expression;
         if node.ancestor_of_type::<UsePathSingle>(db).is_none();
         if let Some(leaf) = node.ancestor_of_type::<UsePathLeaf>(db);
         if let Some(use_completions) = use_statement_first_segment(db, leaf, &ctx);
@@ -155,6 +161,7 @@ fn complete_ex(
 
     // Check if cursor is on attribute name. `#[my_a<cursor>ttr(arg1, args2: 1234)]`
     if_chain!(
+        if !is_dot_expression;
         if let Some(node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath);
         if let Some(attr) = node.parent_of_type::<Attribute>(db);
         if let Some(attr_completions) = attribute_completions(db, attr, crate_id);
@@ -166,6 +173,7 @@ fn complete_ex(
 
     // Check if cursor is on `#[derive(Arg1, Ar<cursor>)]` arguments list.
     if_chain!(
+        if !is_dot_expression;
         if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath);
         if let Some(node) = path_node.parent_of_kind(db, SyntaxKind::ArgClauseUnnamed);
         if let Some(attr) = node.ancestor_of_type::<Attribute>(db);
@@ -178,6 +186,7 @@ fn complete_ex(
 
     // Check if cursor is on `#[derive(Arg1, <cursor>)]` arguments list.
     if_chain!(
+        if !is_dot_expression;
         if node.ancestor_of_kind(db, SyntaxKind::Arg).is_none();
         if let Some(attr) = node.ancestor_of_type::<Attribute>(db);
         if let Some(derive_completions) = derive_completions(db, "", attr, crate_id);
@@ -188,6 +197,7 @@ fn complete_ex(
     );
 
     if_chain!(
+        if !is_dot_expression;
         if let Some(ident) = TerminalIdentifier::cast(db, node);
         if let Some(module_item) = node.parent_of_type::<ItemModule>(db);
         // We are in nested mod, we should not show completions for file modules.
@@ -200,6 +210,7 @@ fn complete_ex(
     );
 
     if_chain!(
+        if !is_dot_expression;
         // if there is no name `mod <cursor>` we will be on `mod`.
         if node.kind(db) == SyntaxKind::TerminalModule;
         if let Some(module_item) = node.parent_of_type::<ItemModule>(db);
@@ -213,14 +224,16 @@ fn complete_ex(
         }
     );
 
-    completions.extend(params_completions(db, &ctx));
-    completions.extend(macro_call_completions(db, &ctx));
-    completions.extend(variables_completions(db, &ctx));
-    completions.extend(struct_pattern_completions(db, &ctx));
-    completions.extend(enum_pattern_completions(db, &ctx));
+    if !is_dot_expression {
+        completions.extend(params_completions(db, &ctx));
+        completions.extend(macro_call_completions(db, &ctx));
+        completions.extend(variables_completions(db, &ctx));
+        completions.extend(struct_pattern_completions(db, &ctx));
+        completions.extend(enum_pattern_completions(db, &ctx));
 
-    if trigger_kind == CompletionTriggerKind::INVOKED {
-        completions.extend(path_suffix_completions(db, &ctx))
+        if trigger_kind == CompletionTriggerKind::INVOKED {
+            completions.extend(path_suffix_completions(db, &ctx))
+        }
     }
 
     Some(completions)
