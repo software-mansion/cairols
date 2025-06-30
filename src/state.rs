@@ -70,7 +70,7 @@ impl State {
             analysis_progress_controller,
             proc_macro_controller,
             project_controller: ProjectController::initialize(scarb_toolchain, notifier),
-            code_lens_controller: CodeLensController::default(),
+            code_lens_controller: CodeLensController::new(),
         }
     }
 

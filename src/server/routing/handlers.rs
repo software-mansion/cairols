@@ -40,6 +40,7 @@ use crate::server::commands::ServerCommands;
 use crate::state::{State, StateSnapshot};
 use crate::toolchain::info::toolchain_info;
 use crate::{Backend, ide, lang};
+use salsa::ParallelDatabase;
 
 /// A request handler that needs mutable access to the session.
 /// This will block the main message receiver loop, meaning that no
@@ -147,7 +148,7 @@ impl SyncNotificationHandler for DidChangeTextDocument {
     fn run(
         state: &mut State,
         _notifier: Notifier,
-        requester: &mut Requester<'_>,
+        _requester: &mut Requester<'_>,
         params: DidChangeTextDocumentParams,
     ) -> LSPResult<()> {
         let text = if let Ok([TextDocumentContentChangeEvent { text, .. }]) =
@@ -164,9 +165,8 @@ impl SyncNotificationHandler for DidChangeTextDocument {
         };
 
         state.code_lens_controller.on_did_change(
-            requester,
-            &state.db,
-            &state.config,
+            state.db.snapshot(),
+            state.config.clone(),
             is_cairo_file_path(&params.text_document.uri)
                 .then(|| FileChange { url: params.text_document.uri.clone(), was_deleted: false })
                 .into_iter(),
@@ -212,20 +212,8 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
             }
         }
 
-        state.code_lens_controller.on_did_change(
-            requester,
-            &state.db,
-            &state.config,
-            params.changes.iter().filter(|event| is_cairo_file_path(&event.uri)).map(|event| {
-                FileChange {
-                    url: event.uri.clone(),
-                    was_deleted: event.typ == FileChangeType::DELETED,
-                }
-            }),
-        );
-
         // Reload workspace if a config file has changed.
-        for change in params.changes {
+        for change in &params.changes {
             let changed_file_path = change.uri.to_file_path().unwrap_or_default();
             let changed_file_name = changed_file_path.file_name().unwrap_or_default();
             // TODO(pmagiera): react to Scarb.lock. Keep in mind Scarb does save Scarb.lock on each
@@ -237,6 +225,17 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
                 state.proc_macro_controller.force_restart(&mut state.db, &state.config);
             }
         }
+
+        state.code_lens_controller.on_did_change(
+            state.db.snapshot(),
+            state.config.clone(),
+            params.changes.iter().filter(|event| is_cairo_file_path(&event.uri)).map(|event| {
+                FileChange {
+                    url: event.uri.clone(),
+                    was_deleted: event.typ == FileChangeType::DELETED,
+                }
+            }),
+        );
 
         Ok(())
     }
@@ -271,7 +270,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
     fn run(
         state: &mut State,
         _notifier: Notifier,
-        requester: &mut Requester<'_>,
+        _requester: &mut Requester<'_>,
         params: DidOpenTextDocumentParams,
     ) -> LSPResult<()> {
         let uri = params.text_document.uri;
@@ -288,9 +287,8 @@ impl SyncNotificationHandler for DidOpenTextDocument {
             state.open_files.insert(uri.clone());
             state.db.override_file_content(file_id, Some(params.text_document.text.into()));
             state.code_lens_controller.on_did_change(
-                requester,
-                &state.db,
-                &state.config,
+                state.db.snapshot(),
+                state.config.clone(),
                 is_cairo_file_path(&uri)
                     .then_some(FileChange { url: uri, was_deleted: false })
                     .into_iter(),

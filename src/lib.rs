@@ -58,6 +58,7 @@ use lsp_types::request::SemanticTokensRefresh;
 use tracing::{debug, error, info};
 
 use crate::ide::analysis_progress::AnalysisProgressStatus;
+use crate::ide::code_lens::CodeLensController;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros;
 use crate::lang::proc_macros::controller::ProcMacroChannels;
@@ -73,6 +74,7 @@ use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
 use crate::server::schedule::{Scheduler, Task, event_loop_thread};
 use crate::state::State;
+use salsa::ParallelDatabase;
 
 mod config;
 mod env_config;
@@ -258,6 +260,8 @@ impl Backend {
             let project_updates_receiver = state.project_controller.response_receiver();
             let analysis_progress_receiver =
                 state.analysis_progress_controller.get_update_receiver();
+            let code_lens_request_refresh_receiver =
+                state.code_lens_controller.request_refresh_receiver();
 
             let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
 
@@ -278,6 +282,7 @@ impl Backend {
                 proc_macro_channels,
                 project_updates_receiver,
                 analysis_progress_receiver,
+                code_lens_request_refresh_receiver,
                 scheduler,
             );
 
@@ -342,6 +347,7 @@ impl Backend {
         proc_macro_channels: ProcMacroChannels,
         project_updates_receiver: Receiver<ProjectUpdate>,
         analysis_progress_status_receiver: Receiver<AnalysisProgressStatus>,
+        code_lens_request_refresh_receiver: Receiver<()>,
         mut scheduler: Scheduler<'_>,
     ) -> Result<()> {
         let incoming = connection.incoming();
@@ -360,7 +366,7 @@ impl Backend {
                 recv(project_updates_receiver) -> project_update => {
                     let Ok(project_update) = project_update else { break };
 
-                    scheduler.local(move |state, notifier, requester, _| ProjectController::handle_update(state, notifier, requester, project_update));
+                    scheduler.local(move |state, notifier, _, _| ProjectController::handle_update(state, notifier, project_update));
                 }
                 recv(incoming) -> msg => {
                     let Ok(msg) = msg else { break };
@@ -398,6 +404,13 @@ impl Backend {
                         );
                     }
                 }
+                recv(code_lens_request_refresh_receiver) -> error => {
+                    let Ok(()) = error else { break };
+
+                    scheduler.local(|_, _, requester, _| {
+                        CodeLensController::handle_refresh(requester);
+                    });
+                }
             }
         }
 
@@ -428,7 +441,9 @@ impl Backend {
 
     fn on_stopped_analysis(state: &mut State, requester: &mut Requester<'_>) {
         proc_macros::cache::save_proc_macro_cache(&state.db, &state.config);
-        state.code_lens_controller.refresh_all_lenses(requester, &state.db, &state.config);
+        state
+            .code_lens_controller
+            .schedule_refreshing_all_lenses(state.db.snapshot(), state.config.clone());
 
         if state.client_capabilities.workspace_semantic_tokens_refresh_support() {
             if let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing()) {
