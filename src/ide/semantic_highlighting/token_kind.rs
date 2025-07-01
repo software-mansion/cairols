@@ -279,13 +279,13 @@ fn get_resultants_and_closest_terminals(
 fn is_inline_macro(db: &AnalysisDatabase, node: SyntaxNode) -> bool {
     if node.kind(db) == SyntaxKind::PathSegmentSimple
         && let Some(parent) = node.parent(db)
-            && parent.kind(db) == SyntaxKind::ExprPathInner
-            && let Some(grandparent) = parent.parent(db)
-                && grandparent.kind(db) == SyntaxKind::ExprPath
-            {
-                if let Some(great_grandparent) = grandparent.parent(db) {
-                    return great_grandparent.kind(db) == SyntaxKind::ExprInlineMacro;
-                }
-            }
+        && parent.kind(db) == SyntaxKind::ExprPathInner
+        && let Some(grandparent) = parent.parent(db)
+        && grandparent.kind(db) == SyntaxKind::ExprPath
+    {
+        if let Some(great_grandparent) = grandparent.parent(db) {
+            return great_grandparent.kind(db) == SyntaxKind::ExprInlineMacro;
+        }
+    }
     false
 }
