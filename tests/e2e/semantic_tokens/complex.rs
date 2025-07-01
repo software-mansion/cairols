@@ -129,3 +129,58 @@ fn consts() {
     }
     ")
 }
+
+#[test]
+fn inline_macro_with_same_name_as_module() {
+    test_transform!(semantic_tokens, r#"
+    use core::array;
+
+    fn main() {
+        array![5];
+    }
+    "#, @r"
+    <token=keyword>use</token> <token=namespace>core</token>::<token=namespace>array</token>;
+
+    <token=keyword>fn</token> <token=function>main</token>() {
+        <token=macro>array</token><token=macro>!</token>[<token=number>5</token>];
+    }
+    ")
+}
+
+#[test]
+fn inline_macro_with_same_name_as_enum() {
+    test_transform!(semantic_tokens, r#"
+    enum array {
+        Abc
+    }
+
+    fn main() {
+        array![5];
+    }
+    "#, @r"
+    <token=keyword>enum</token> <token=enum>array</token> {
+        <token=enumMember>Abc</token>
+    }
+
+    <token=keyword>fn</token> <token=function>main</token>() {
+        <token=macro>array</token><token=macro>!</token>[<token=number>5</token>];
+    }
+    ")
+}
+
+#[test]
+fn inline_macro_with_same_name_as_trait() {
+    test_transform!(semantic_tokens, r#"
+    trait array { }
+
+    fn main() {
+        array![5];
+    }
+    "#, @r"
+    <token=keyword>trait</token> <token=class>array</token> { }
+
+    <token=keyword>fn</token> <token=function>main</token>() {
+        <token=macro>array</token><token=macro>!</token>[<token=number>5</token>];
+    }
+    ")
+}
