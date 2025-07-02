@@ -249,7 +249,7 @@ fn find_last_meaning_node(db: &AnalysisDatabase, node: SyntaxNode) -> SyntaxNode
 }
 
 #[derive(PartialEq)]
-struct CompletionItemHashable(CompletionItem);
+pub struct CompletionItemHashable(CompletionItem);
 
 impl Eq for CompletionItemHashable {}
 

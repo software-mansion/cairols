@@ -14,6 +14,7 @@ use lsp_types::{CompletionItem, CompletionItemKind};
 use super::helpers::completion_kind::{
     importable_completion_kind, resolved_generic_item_completion_kind,
 };
+use crate::ide::completion::CompletionItemHashable;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
@@ -105,6 +106,7 @@ pub fn path_suffix_completions(
                 ..CompletionItem::default()
             })
         })
+        .unique_by(|completion| CompletionItemHashable(completion.clone()))
         .collect()
 }
 
