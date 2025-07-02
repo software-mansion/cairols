@@ -12,7 +12,7 @@ use crate::project::crate_data::CrateInfo;
 use crate::project::model::ProjectModel;
 use crate::project::scarb::extract_crates;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core_if_not_present;
-use crate::server::client::{Notifier, Requester};
+use crate::server::client::Notifier;
 use crate::server::is_cairo_file_path;
 use crate::server::schedule::thread;
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
@@ -27,6 +27,7 @@ use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
+use salsa::ParallelDatabase;
 use tracing::{debug, error, warn};
 
 pub mod builtin_plugins;
@@ -108,12 +109,7 @@ impl ProjectController {
     /// The project update is sent from [`ProjectControllerThread::send_project_update_for_file`]
     /// and received in the main [`event loop`](crate::Backend::event_loop).
     #[tracing::instrument(skip_all, fields(project_update))]
-    pub fn handle_update(
-        state: &mut State,
-        notifier: Notifier,
-        requester: &mut Requester,
-        project_update: ProjectUpdate,
-    ) {
+    pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
         let db = &mut state.db;
         match project_update {
             ProjectUpdate::Scarb { crates, workspace_dir } => {
@@ -177,11 +173,13 @@ impl ProjectController {
             }
         }
 
+        // Drop mut ref so we can obtain snapshot.
+        let _ = db;
+
         // Manifest may changed, update for open files
         state.code_lens_controller.on_did_change(
-            requester,
-            db,
-            &state.config,
+            state.db.snapshot(),
+            state.config.clone(),
             state
                 .open_files
                 .iter()
@@ -190,7 +188,7 @@ impl ProjectController {
                 .map(|file| FileChange { url: file, was_deleted: false }),
         );
 
-        if let Err(result) = validate_corelib(db) {
+        if let Err(result) = validate_corelib(&state.db) {
             notifier.notify::<CorelibVersionMismatch>(result.to_string());
         }
 
