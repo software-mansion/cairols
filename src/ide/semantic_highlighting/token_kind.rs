@@ -277,15 +277,11 @@ fn get_resultants_and_closest_terminals(
 
 /// Checks whether the given node is an inline macro invocation and not just the simple path segment.
 fn is_inline_macro(db: &AnalysisDatabase, node: SyntaxNode) -> bool {
-    if node.kind(db) == SyntaxKind::PathSegmentSimple
-        && let Some(parent) = node.parent(db)
-        && parent.kind(db) == SyntaxKind::ExprPathInner
-        && let Some(grandparent) = parent.parent(db)
-        && grandparent.kind(db) == SyntaxKind::ExprPath
+    if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
+        && let Some(maybe_macro) = path_node.parent(db)
     {
-        if let Some(great_grandparent) = grandparent.parent(db) {
-            return great_grandparent.kind(db) == SyntaxKind::ExprInlineMacro;
-        }
+        let kind = maybe_macro.kind(db);
+        return kind == SyntaxKind::ExprInlineMacro || kind == SyntaxKind::ItemInlineMacro;
     }
     false
 }
