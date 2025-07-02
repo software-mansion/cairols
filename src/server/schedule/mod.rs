@@ -49,7 +49,7 @@ impl<'s> Scheduler<'s> {
         Self {
             state,
             client: Client::new(sender),
-            background_pool: thread::Pool::new(),
+            background_pool: thread::Pool::new(usize::MAX),
             sync_task_hooks: Default::default(),
         }
     }

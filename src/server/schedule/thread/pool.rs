@@ -49,7 +49,7 @@ struct Job {
 }
 
 impl Pool {
-    pub fn new() -> Pool {
+    pub fn new(max_threads: usize) -> Pool {
         /// Custom stack size, larger than OS defaults, to avoid stack overflows on platforms with
         /// low stack size defaults.
         const STACK_SIZE: usize = 2 * 1024 * 1024;
@@ -64,8 +64,10 @@ impl Pool {
         /// necessary permissions on a multicore machine than on a single-core one.
         const DEFAULT_PARALLELISM: usize = 4;
 
-        let threads =
-            available_parallelism().map(usize::from).unwrap_or(DEFAULT_PARALLELISM).min(4);
+        let threads = available_parallelism()
+            .map(usize::from)
+            .unwrap_or(DEFAULT_PARALLELISM)
+            .min(max_threads);
 
         let (job_sender, job_receiver) = channel::unbounded();
 
