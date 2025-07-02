@@ -56,6 +56,10 @@ impl ProcMacroServerTracker {
         self.procmacro_request_counter.fetch_sub(requests_count, Ordering::SeqCst);
     }
 
+    pub fn mark_all_requests_as_handled(&self) {
+        self.procmacro_request_counter.store(0, Ordering::SeqCst);
+    }
+
     pub fn reset_request_tracker(&self) {
         self.procmacro_request_submitted.store(false, Ordering::SeqCst);
     }

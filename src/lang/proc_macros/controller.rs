@@ -321,6 +321,9 @@ impl ProcMacroClientController {
 
         // Otherwise we can get messages from the old client after an initialization of the new one.
         self.channels.clear_all();
+
+        // Otherwise we can be leaved with counter that can never go to 0.
+        self.proc_macro_server_tracker.mark_all_requests_as_handled();
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
