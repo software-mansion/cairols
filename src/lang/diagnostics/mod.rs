@@ -94,7 +94,9 @@ impl DiagnosticsControllerThread {
             receiver,
             notifier,
             analysis_progress_controller,
-            pool: thread::Pool::new(),
+            // Above 4 threads we start losing performance
+            // due to salsa locking and context switching.
+            pool: thread::Pool::new(4),
             project_diagnostics: ProjectDiagnostics::new(),
             worker_handles: Vec::new(),
             scarb_toolchain,
