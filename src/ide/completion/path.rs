@@ -8,6 +8,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
 use cairo_lang_utils::LookupIntern;
 use if_chain::if_chain;
+use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
 use super::helpers::completion_kind::{
@@ -30,7 +31,7 @@ pub fn path_suffix_completions(
         // Enum patterns are handled in a separate function.
         if ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none();
         if let Some(importables) = db.visible_importables_from_module(ctx.module_file_id);
-        if let Some(typed_text_segments) = ctx.node.ancestor_of_type::<ExprPath>(db).map(|path| path.segments(db).elements(db));
+        if let Some(typed_text_segments) = ctx.node.ancestor_of_type::<ExprPath>(db).map(|path| path.segments(db).elements(db).collect_vec());
         if !typed_text_segments.is_empty();
 
         then {

@@ -16,6 +16,7 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::Itertools;
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.
 pub fn definition(
@@ -175,7 +176,7 @@ fn get_generics(declaration: FunctionDeclaration, db: &AnalysisDatabase) -> Vec<
     match declaration.generic_params(db) {
         OptionWrappedGenericParamList::Empty(_) => vec![],
         OptionWrappedGenericParamList::WrappedGenericParamList(list) => {
-            list.generic_params(db).elements(db)
+            list.generic_params(db).elements(db).collect_vec()
         }
     }
 }

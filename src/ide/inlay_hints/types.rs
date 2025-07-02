@@ -66,7 +66,7 @@ fn find_underscores_ex(
             find_underscores_ex(db, unary_syntax.expr(db), ty, result);
         }
         (Expr::Tuple(tuple_syntax), TypeLongId::Tuple(types)) => {
-            for (expr, ty) in tuple_syntax.expressions(db).elements(db).into_iter().zip(types) {
+            for (expr, ty) in tuple_syntax.expressions(db).elements(db).zip(types) {
                 find_underscores_ex(db, expr, ty, result);
             }
         }

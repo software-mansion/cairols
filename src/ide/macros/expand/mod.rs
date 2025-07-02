@@ -100,7 +100,6 @@ fn expand_macro_ex(
                 .ok()?
                 .items(db)
                 .elements(db)
-                .into_iter()
                 .map(|item| {
                     expand_macro_ex(db, content.file, crate_id, metadata, item.as_syntax_node())
                         .unwrap()

@@ -4,6 +4,7 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::PathSegment;
 use if_chain::if_chain;
+use itertools::Itertools;
 use lsp_types::{CompletionItem, InsertTextFormat};
 
 use crate::ide::completion::expr::selector::expr_selector;
@@ -22,7 +23,7 @@ pub fn macro_call_completions(
 
         if let Some(path) = expr_selector(db, &ctx.node);
         // Currently inline macros can not be imported/exported
-        if let [PathSegment::Simple(path_segment)] = path.segments(db).elements(db).as_slice();
+        if let [PathSegment::Simple(path_segment)] = path.segments(db).elements(db).take(2).collect_vec().as_slice();
 
         then {
             let crate_id = ctx.module_file_id.0.owning_crate(db);

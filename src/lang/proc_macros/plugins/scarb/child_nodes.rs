@@ -5,6 +5,7 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use itertools::Itertools;
 
 pub trait ItemWithAttributes {
     fn item_attributes(&self, db: &dyn SyntaxGroup) -> Vec<Attribute>;
@@ -37,7 +38,7 @@ macro_rules! impl_item_with_attributes {
     ($t:ty) => {
         impl ItemWithAttributes for $t {
             fn item_attributes(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
-                self.attributes(db).elements(db)
+                self.attributes(db).elements(db).collect_vec()
             }
             fn span_with_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
                 self.as_syntax_node().span(db)

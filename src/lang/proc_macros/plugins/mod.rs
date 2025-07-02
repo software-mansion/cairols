@@ -5,6 +5,7 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use convert_case::{Case, Casing};
 use downcast::unsafe_downcast_ref;
+use itertools::Itertools;
 use scarb::inline::inline_macro_generate_code;
 use scarb::regular::macro_generate_code;
 use scarb_proc_macro_server_types::methods::defined_macros::{
@@ -103,8 +104,7 @@ impl MacroPlugin for ProcMacroPlugin {
                 if let MaybeImplBody::Some(body) = imp.body(db) {
                     body.items(db)
                         .elements(db)
-                        .into_iter()
-                        .flat_map(|item| item.attributes_elements(db))
+                        .flat_map(|item| item.attributes_elements(db).collect_vec())
                         .map(|attr| attr.attr(db).as_syntax_node().get_text_without_trivia(db))
                         .collect()
                 } else {
@@ -115,8 +115,7 @@ impl MacroPlugin for ProcMacroPlugin {
                 if let MaybeTraitBody::Some(body) = trt.body(db) {
                     body.items(db)
                         .elements(db)
-                        .into_iter()
-                        .flat_map(|item| item.attributes_elements(db))
+                        .flat_map(|item| item.attributes_elements(db).collect_vec())
                         .map(|attr| attr.attr(db).as_syntax_node().get_text_without_trivia(db))
                         .collect()
                 } else {
