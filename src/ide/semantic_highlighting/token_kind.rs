@@ -124,6 +124,9 @@ impl SemanticTokenKind {
         let mut expr_path_ptr = None;
 
         for node in identifier_parent.ancestors_with_self(db) {
+            if is_inline_macro(db, node) {
+                return Some(SemanticTokenKind::InlineMacro);
+            }
             match node.kind(db) {
                 SyntaxKind::ExprInlineMacro => return Some(SemanticTokenKind::InlineMacro),
                 SyntaxKind::ExprPath => {
@@ -270,4 +273,15 @@ fn get_resultants_and_closest_terminals(
             Some((resultant, TerminalIdentifier::cast(db, terminal)?.stable_ptr(db)))
         })
         .collect()
+}
+
+/// Checks whether the given node is an inline macro invocation and not just the simple path segment.
+fn is_inline_macro(db: &AnalysisDatabase, node: SyntaxNode) -> bool {
+    if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
+        && let Some(maybe_macro) = path_node.parent(db)
+    {
+        let kind = maybe_macro.kind(db);
+        return kind == SyntaxKind::ExprInlineMacro || kind == SyntaxKind::ItemInlineMacro;
+    }
+    false
 }
