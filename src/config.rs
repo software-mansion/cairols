@@ -162,6 +162,10 @@ impl Config {
                 section: Some("cairo1.runTestCommand".to_owned()),
             },
             ConfigurationItem { scope_uri: None, section: Some("cairo1.testRunner".to_owned()) },
+            ConfigurationItem {
+                scope_uri: None,
+                section: Some("cairo1.experimental.enableProcMacroCache".to_owned()),
+            },
         ];
         let expected_len = items.len();
 
@@ -208,6 +212,9 @@ impl Config {
                     if let Ok(value) = value.parse() {
                         state.config.test_runner = value;
                     }
+                }
+                if let Some(value) = response.pop_front().as_ref().and_then(Value::as_bool) {
+                    state.config.enable_experimental_proc_macro_cache = value;
                 }
 
                 debug!("reloaded configuration: {:#?}", state.config);
