@@ -64,7 +64,8 @@ impl Pool {
         /// necessary permissions on a multicore machine than on a single-core one.
         const DEFAULT_PARALLELISM: usize = 4;
 
-        let threads = available_parallelism().map(usize::from).unwrap_or(DEFAULT_PARALLELISM);
+        let threads =
+            available_parallelism().map(usize::from).unwrap_or(DEFAULT_PARALLELISM).min(4);
 
         let (job_sender, job_receiver) = channel::unbounded();
 
