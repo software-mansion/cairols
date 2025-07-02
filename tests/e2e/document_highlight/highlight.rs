@@ -1,9 +1,10 @@
-use crate::document_highlight::document_highlight;
-use crate::support::insta::test_transform;
+use lsp_types::DocumentHighlight;
+
+use crate::support::insta::test_transform_plain;
 
 #[test]
 fn highlight() {
-    test_transform!(document_highlight, r#"
+    test_transform_plain!(DocumentHighlight, r#"
     fn a(a: BBB, b: felt252) {
         core::array::ArrayTrait::<felt252>::ne<caret>w();
 
