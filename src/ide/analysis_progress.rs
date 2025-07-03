@@ -1,13 +1,14 @@
 use std::cmp::PartialEq;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::config::Config;
 use crate::lsp::ext::{ServerStatus, ServerStatusEvent, ServerStatusParams};
 use crate::server::client::Notifier;
+use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 use crossbeam::channel::{Receiver, Sender};
 
-#[derive(Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum ProcMacroServerStatus {
     Pending,
     Starting,
@@ -18,205 +19,203 @@ pub enum ProcMacroServerStatus {
 /// A struct that allows to track procmacro requests.
 #[derive(Clone)]
 pub struct ProcMacroServerTracker {
-    procmacro_request_submitted: Arc<AtomicBool>,
-    // A field indicating if any proc macro request were sent during the previous diagnostics round.
-    procmacro_request_submitted_previously: Arc<AtomicBool>,
     procmacro_request_counter: Arc<AtomicU64>,
-    procmacro_server_status: Arc<Mutex<ProcMacroServerStatus>>,
+    events_sender: Sender<AnalysisEvent>,
 }
 
 impl ProcMacroServerTracker {
-    #[expect(clippy::new_without_default)]
-    pub fn new() -> Self {
-        Self {
-            procmacro_request_submitted: Arc::new(AtomicBool::new(false)),
-            procmacro_request_submitted_previously: Arc::new(AtomicBool::new(false)),
-            procmacro_request_counter: Arc::new(AtomicU64::new(0)),
-            procmacro_server_status: Arc::new(Mutex::new(ProcMacroServerStatus::Pending)),
-        }
+    fn new(events_sender: Sender<AnalysisEvent>) -> Self {
+        Self { procmacro_request_counter: Arc::new(AtomicU64::new(0)), events_sender }
     }
 
-    /// Signals that a request to proc macro server was made during the current generation of
-    /// diagnostics.
+    /// Signals that a request to proc macro server was made.
     pub fn register_procmacro_request(&self) {
-        self.procmacro_request_submitted.store(true, Ordering::SeqCst);
         self.procmacro_request_counter.fetch_add(1, Ordering::SeqCst);
     }
 
     pub fn set_server_status(&self, status: ProcMacroServerStatus) {
-        let mut guard = self.procmacro_server_status.lock().unwrap();
-        *guard = status;
+        let _ = self.events_sender.send(AnalysisEvent::PMSStatusChange(status));
     }
 
-    pub fn get_server_status(&self) -> ProcMacroServerStatus {
-        (*(self.procmacro_server_status.lock().unwrap())).clone()
+    pub fn mark_requests_as_handled(&self, response_count: u64) {
+        let _ = self.events_sender.send(AnalysisEvent::ApplyResponses { response_count });
     }
 
-    pub fn mark_requests_as_handled(&self, requests_count: u64) {
-        self.procmacro_request_counter.fetch_sub(requests_count, Ordering::SeqCst);
-    }
-
-    pub fn mark_all_requests_as_handled(&self) {
-        self.procmacro_request_counter.store(0, Ordering::SeqCst);
-    }
-
-    pub fn reset_request_tracker(&self) {
-        self.procmacro_request_submitted.store(false, Ordering::SeqCst);
-    }
-
-    pub fn reset_previous_request_tracker(&self) {
-        self.procmacro_request_submitted_previously.store(false, Ordering::SeqCst);
-    }
-
-    pub fn store_previous_request_tracker(&self) {
-        let previous_value = self.procmacro_request_submitted.load(Ordering::SeqCst);
-
-        self.procmacro_request_submitted_previously.store(previous_value, Ordering::SeqCst);
-    }
-
-    pub fn get_did_submit_procmacro_request_previously(&self) -> bool {
-        self.procmacro_request_submitted_previously.load(Ordering::SeqCst)
-    }
-
-    pub fn get_did_submit_procmacro_request(&self) -> bool {
-        self.procmacro_request_submitted.load(Ordering::SeqCst)
-            && self.procmacro_request_counter.load(Ordering::SeqCst) != 0
+    pub fn reset_requests_counter(&self) {
+        self.procmacro_request_counter.store(0, Ordering::SeqCst)
     }
 }
 
 #[derive(Clone)]
 pub struct AnalysisProgressController {
-    state: Arc<Mutex<AnalysisProgressControllerState>>,
     server_tracker: ProcMacroServerTracker,
+    status_receiver: Receiver<AnalysisFinished>,
+    // Keep it last for drop.
+    _status_thread: Arc<JoinHandle<()>>,
 }
 
 impl AnalysisProgressController {
-    pub fn get_update_receiver(&self) -> Receiver<AnalysisProgressStatus> {
-        self.state.lock().unwrap().get_update_receiver()
+    pub fn new(notifier: Notifier) -> Self {
+        let (status_sender, status_receiver) = crossbeam::channel::unbounded();
+        let (events_sender, events_receiver) = crossbeam::channel::unbounded();
+        let server_tracker = ProcMacroServerTracker::new(events_sender);
+        let status_thread = AnalysisProgressThread::spawn(events_receiver, status_sender, notifier);
+
+        Self { server_tracker, status_receiver, _status_thread: Arc::new(status_thread) }
+    }
+
+    pub fn get_status_receiver(&self) -> Receiver<AnalysisFinished> {
+        self.status_receiver.clone()
     }
 
     pub fn on_config_change(&self, config: &Config) {
-        self.state.lock().unwrap().on_config_change(config)
+        self.send(AnalysisEvent::ConfigLoad { enable_proc_macros: config.enable_proc_macros });
     }
 
-    pub fn try_start_analysis(&self) {
-        self.server_tracker.reset_request_tracker();
-        self.state.lock().unwrap().try_start_analysis()
+    pub fn diagnostic_start(&self) {
+        self.send(AnalysisEvent::DiagnosticsTickStart);
     }
 
-    pub fn try_stop_analysis(&self) {
-        let stopped = self.state.lock().unwrap().try_stop_analysis(
-            self.server_tracker.get_did_submit_procmacro_request(),
-            self.server_tracker.get_did_submit_procmacro_request_previously(),
-            self.server_tracker.get_server_status(),
-        );
-        if stopped {
-            self.server_tracker.reset_previous_request_tracker();
-        } else {
-            self.server_tracker.store_previous_request_tracker();
-        }
+    pub fn diagnostic_end(&self, was_cancelled: bool) {
+        self.send(AnalysisEvent::DiagnosticsTickEnd {
+            was_cancelled,
+            all_request_count: self.server_tracker.procmacro_request_counter.load(Ordering::SeqCst),
+        });
     }
-}
 
-impl AnalysisProgressController {
-    pub fn new(notifier: Notifier, server_tracker: ProcMacroServerTracker) -> Self {
-        Self {
-            server_tracker,
-            state: Arc::new(Mutex::new(AnalysisProgressControllerState::new(notifier))),
-        }
+    pub fn mutation(&self) {
+        self.send(AnalysisEvent::Mutation);
+    }
+
+    pub fn server_tracker(&self) -> ProcMacroServerTracker {
+        self.server_tracker.clone()
+    }
+
+    fn send(&self, event: AnalysisEvent) {
+        let _ = self.server_tracker.events_sender.send(event);
     }
 }
 
 // We don't need to track starts for now
 #[derive(PartialEq)]
-pub enum AnalysisProgressStatus {
-    ResolvedAllProcMacros,
+pub struct AnalysisFinished;
+
+enum AnalysisEvent {
+    ConfigLoad {
+        /// Loaded asynchronously from config
+        enable_proc_macros: bool,
+    },
+    Mutation,
+    ApplyResponses {
+        response_count: u64,
+    },
+    DiagnosticsTickStart,
+    DiagnosticsTickEnd {
+        was_cancelled: bool,
+        /// Number of all requests sent to this point from the moment PMS was started. It is NOT only from this tick.
+        all_request_count: u64,
+    },
+    PMSStatusChange(ProcMacroServerStatus),
 }
 
-#[derive(Clone)]
-struct AnalysisProgressUpdateChannels {
-    sender: Sender<AnalysisProgressStatus>,
-    receiver: Receiver<AnalysisProgressStatus>,
-}
-
-impl AnalysisProgressUpdateChannels {
-    fn new() -> Self {
-        let (sender, receiver) = crossbeam::channel::unbounded();
-        Self { sender, receiver }
-    }
-}
-
-/// Controller used to send notifications to the client about analysis progress.
-/// Uses information provided from other controllers (diagnostics controller, procmacro controller)
-/// to assess if diagnostics are in fact calculated.
-#[derive(Clone)]
-struct AnalysisProgressControllerState {
+struct AnalysisProgressThread {
+    events_receiver: Receiver<AnalysisEvent>,
+    status_sender: Sender<AnalysisFinished>,
     notifier: Notifier,
-    update_channels: AnalysisProgressUpdateChannels,
-    /// Indicates that a notification was sent and analysis (i.e. macro expansion) is taking place.
-    analysis_in_progress: bool,
-    /// Loaded asynchronously from config
-    procmacros_enabled: Option<bool>,
 }
 
-impl AnalysisProgressControllerState {
-    fn new(notifier: Notifier) -> Self {
-        let update_channels = AnalysisProgressUpdateChannels::new();
-        Self { notifier, update_channels, analysis_in_progress: false, procmacros_enabled: None }
+impl AnalysisProgressThread {
+    pub fn spawn(
+        events_receiver: Receiver<AnalysisEvent>,
+        status_sender: Sender<AnalysisFinished>,
+        notifier: Notifier,
+    ) -> JoinHandle<()> {
+        let this = Self { events_receiver, status_sender, notifier };
+
+        thread::Builder::new(ThreadPriority::Worker)
+            .name("cairo-ls:analysis-progress".into())
+            .spawn(move || this.event_loop())
+            .expect("failed to spawn analysis progress thread")
     }
 
-    pub fn on_config_change(&mut self, config: &Config) {
-        self.procmacros_enabled = Some(config.enable_proc_macros);
-    }
+    fn event_loop(self) {
+        let mut analysis_in_progress = true;
 
-    fn try_start_analysis(&mut self) {
-        if !self.analysis_in_progress {
-            self.analysis_in_progress = true;
-            self.notifier.notify::<ServerStatus>(ServerStatusParams {
-                event: ServerStatusEvent::AnalysisStarted,
-                idle: false,
-            });
-        }
-    }
+        let mut enable_proc_macros = Config::ENABLE_PROC_MACROS_DEFAULT;
+        // To prevent underflow on u64 substraction (in case where [`AnalysisEvent::ApplyResponses`] comes before [`AnalysisEvent::DiagnosticsTickStart`]) use i128.
+        let mut all_prev_requests_count = 0_i128;
+        let mut received_responses = 0_i128;
+        let mut pending_requests = 0_i128;
+        let mut pms_status = ProcMacroServerStatus::default();
 
-    /// Returns `true` if the analysis was stopped and notification was sent.
-    fn try_stop_analysis(
-        &mut self,
-        did_submit_procmacro_request: bool,
-        did_submit_procmacro_request_previously: bool,
-        proc_macro_server_status: ProcMacroServerStatus,
-    ) -> bool {
-        if !did_submit_procmacro_request && did_submit_procmacro_request_previously {
-            self.update_channels.sender.send(AnalysisProgressStatus::ResolvedAllProcMacros).unwrap()
-        }
-
-        if !self.has_analysis_finished(did_submit_procmacro_request, proc_macro_server_status) {
-            return false;
-        }
-
-        self.analysis_in_progress = false;
         self.notifier.notify::<ServerStatus>(ServerStatusParams {
-            event: ServerStatusEvent::AnalysisFinished,
-            idle: true,
+            event: ServerStatusEvent::AnalysisStarted,
+            idle: false,
         });
-        true
-    }
 
-    // WARNING: This should not be polled from outside the diagnostics main thread, it may yield inaccurate results
-    fn has_analysis_finished(
-        &self,
-        did_submit_procmacro_request: bool,
-        proc_macro_server_status: ProcMacroServerStatus,
-    ) -> bool {
-        let config_not_loaded = self.procmacros_enabled.is_none();
-        let is_ready = proc_macro_server_status == ProcMacroServerStatus::Ready;
-        ((!did_submit_procmacro_request && is_ready)
-            || config_not_loaded
-            || (self.procmacros_enabled == Some(false)))
-            && self.analysis_in_progress
-    }
+        while let Ok(event) = self.events_receiver.recv() {
+            match event {
+                AnalysisEvent::ConfigLoad { enable_proc_macros: new_enable_proc_macros } => {
+                    enable_proc_macros = new_enable_proc_macros;
 
-    fn get_update_receiver(&self) -> Receiver<AnalysisProgressStatus> {
-        self.update_channels.receiver.clone()
+                    // Mutation event will happen after this, so no need to restart analysis here.
+                }
+                AnalysisEvent::ApplyResponses { response_count } => {
+                    // Response count is delta, add it.
+                    received_responses += response_count as i128;
+                }
+                AnalysisEvent::DiagnosticsTickStart => {
+                    pending_requests = all_prev_requests_count - received_responses;
+                }
+                AnalysisEvent::DiagnosticsTickEnd { was_cancelled, all_request_count } => {
+                    let request_count = all_request_count.into();
+
+                    if (!enable_proc_macros
+                        || (pms_status == ProcMacroServerStatus::Ready && pending_requests == 0))
+                        && (!was_cancelled && request_count == received_responses)
+                    {
+                        self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                            event: ServerStatusEvent::AnalysisFinished,
+                            idle: true,
+                        });
+                        let _ = self.status_sender.send(AnalysisFinished);
+
+                        analysis_in_progress = false;
+                    }
+
+                    all_prev_requests_count = request_count;
+                }
+                AnalysisEvent::Mutation => {
+                    if !analysis_in_progress {
+                        self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                            event: ServerStatusEvent::AnalysisStarted,
+                            idle: false,
+                        });
+                    }
+                    analysis_in_progress = true;
+                }
+                AnalysisEvent::PMSStatusChange(new_pms_status) => {
+                    match (pms_status, new_pms_status) {
+                        // Pending -> Starting and Starting -> Ready are natural flow, ignore this case.
+                        (ProcMacroServerStatus::Pending, ProcMacroServerStatus::Starting)
+                        | (ProcMacroServerStatus::Starting, ProcMacroServerStatus::Ready)
+                        // If state is unchanged, ignore this event.
+                        | (ProcMacroServerStatus::Pending, ProcMacroServerStatus::Pending)
+                        | (ProcMacroServerStatus::Starting, ProcMacroServerStatus::Starting)
+                        | (ProcMacroServerStatus::Ready, ProcMacroServerStatus::Ready)
+                        | (ProcMacroServerStatus::Crashed, ProcMacroServerStatus::Crashed) => { }
+                        // Every other case means that PMS either crashed or was restarted so reset PMS related data.
+                        _ => {
+                            all_prev_requests_count = 0;
+                            received_responses = 0;
+
+                            // Mutation event will happen after this, so no need to restart analysis here.
+                        }
+                    }
+
+                    pms_status = new_pms_status;
+                }
+            }
+        }
     }
 }
