@@ -189,8 +189,9 @@ impl DiagnosticsControllerThread {
 
     /// Makes batches out of `files` and spawns workers to run [`refresh_diagnostics`] on them.
     fn spawn_refresh_workers(&mut self, files: &[FileId], state_snapshots: Vec<StateSnapshot>) {
-        let files_batches = batches(files, self.pool.parallelism());
-        assert_eq!(files_batches.len(), state_snapshots.len());
+        let files_batches =
+            batches(files, self.pool.parallelism()).into_iter().filter(|v| !v.is_empty());
+
         for (batch, state) in zip(files_batches, state_snapshots) {
             let scarb_toolchain = self.scarb_toolchain.clone();
             self.spawn_worker(move |project_diagnostics, notifier| {
