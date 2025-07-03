@@ -45,6 +45,7 @@ impl ProjectDiagnostics {
     ///
     /// Returns mapping from a file to its diagnostics for files which diagnostics changed
     /// as a result of the update.
+    #[tracing::instrument(skip_all)]
     pub fn update(
         &self,
         root_on_disk_file_url: Url,
