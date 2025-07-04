@@ -1,6 +1,7 @@
 use lsp_types::{
-    ClientCapabilities, DocumentHighlight, DocumentHighlightParams, ReferenceClientCapabilities,
-    TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
+    ClientCapabilities, DocumentHighlight, DocumentHighlightClientCapabilities,
+    DocumentHighlightParams, TextDocumentClientCapabilities, TextDocumentPositionParams,
+    lsp_request,
 };
 
 use crate::support::cursor::render_selections_with_attrs;
@@ -13,7 +14,7 @@ impl Transformer for DocumentHighlight {
         ClientCapabilities {
             text_document: base.text_document.or_else(Default::default).map(|it| {
                 TextDocumentClientCapabilities {
-                    references: Some(ReferenceClientCapabilities {
+                    references: Some(DocumentHighlightClientCapabilities {
                         dynamic_registration: Some(false),
                     }),
                     ..it

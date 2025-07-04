@@ -1,6 +1,6 @@
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use itertools::Itertools;
 use lsp_types::{DocumentHighlight, DocumentHighlightParams};
 
@@ -22,35 +22,33 @@ pub fn highlight(
         .get_node_resultants(identifier)
         .unwrap_or_else(|| vec![identifier])
         .into_iter()
-        .filter_map(|node| {
-            let id = node.cast::<TerminalIdentifier>(db)?;
-            identifier_highlights(db, &id, file)
-        })
+        .filter_map(|node| highlights(db, &node, file))
         .flatten()
+        .unique()
+        .map(|range| DocumentHighlight { range, kind: None })
         .collect();
 
     Some(highlights)
 }
 
-/// Finds positions in the file to highlight as references to `identifier`.
-fn identifier_highlights(
+fn highlights(
     db: &AnalysisDatabase,
-    identifier: &TerminalIdentifier,
+    syntax_node: &SyntaxNode,
     file: FileId,
-) -> Option<Vec<DocumentHighlight>> {
-    let symbol_search = SymbolSearch::find_definition(db, identifier)?;
+) -> Option<Vec<lsp_types::Range>> {
+    let identifier =
+        syntax_node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
+    let symbol_search = SymbolSearch::find_definition(db, &identifier)?;
 
     let highlights = symbol_search
         .usages(db)
         .include_declaration(true)
-        .in_scope(SearchScope::file(file))
-        .locations()
-        .unique()
+        .in_scope(SearchScope::file_with_subfiles(db, file))
+        .originating_locations(db)
         .filter(|(found_file, _)| *found_file == file)
         .filter_map(|(file, text_span)| {
             text_span.position_in_file(db, file).as_ref().map(ToLsp::to_lsp)
         })
-        .map(|range| DocumentHighlight { range, kind: None })
         .collect();
 
     Some(highlights)

@@ -49,14 +49,20 @@ impl SearchScope {
         Self { entries: [(file, Some(span))].into() }
     }
 
+    /// Builds a search scope spanning an entire single file and files generated from it.
+    pub fn file_with_subfiles(db: &AnalysisDatabase, file: FileId) -> Self {
+        let mut this = Self { entries: [(file, None)].into() };
+
+        if let Some((files, _)) = db.file_and_subfiles_with_corresponding_modules(file) {
+            this.entries.extend(files.into_iter().map(|f| (f, None)));
+        }
+
+        this
+    }
+
     /// Builds a search scope spanning slices of files.
     pub fn files_spans(files: HashMap<FileId, Option<TextSpan>>) -> Self {
         Self { entries: files }
-    }
-
-    /// Creates an iterator over all files and the optional search scope text spans.
-    pub fn files_and_spans(&self) -> impl Iterator<Item = (FileId, Option<TextSpan>)> + use<'_> {
-        self.entries.iter().map(|(&file, &span)| (file, span))
     }
 
     /// Creates an iterator over all files, their contents and the optional search scope text spans.
@@ -64,7 +70,7 @@ impl SearchScope {
         &'a self,
         db: &'b AnalysisDatabase,
     ) -> impl Iterator<Item = (FileId, Arc<str>, Option<TextSpan>)> + use<'a, 'b> {
-        self.files_and_spans().filter_map(move |(file, span)| {
+        self.entries.iter().map(|(&file, &span)| (file, span)).filter_map(move |(file, span)| {
             let text = db.file_content(file)?;
             Some((file, text, span))
         })
