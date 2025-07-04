@@ -1,6 +1,6 @@
 use lsp_types::DocumentHighlight;
 
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn highlight() {
@@ -35,6 +35,45 @@ fn highlight() {
         fn a() {
             core::array::ArrayTrait::<felt252>::<sel>new</sel>();
         }
+    }
+    ")
+}
+
+#[test]
+fn identical_structs_in_different_scopes() {
+    test_transform_with_macros!(DocumentHighlight, r#"
+    mod module {
+        #[derive(ComplexDeriveMacroV2)]
+        struct S {
+            x: felt252
+        }
+    }
+
+    #[derive(ComplexDeriveMacroV2)]
+    struct S {
+        x: felt252
+    }
+
+    #[complex_attribute_macro_v2]
+    fn foo() {
+        let s = S<caret> { x: 0x0 };
+    }
+    "#, @r"
+    mod module {
+        #[derive(ComplexDeriveMacroV2)]
+        struct S {
+            x: felt252
+        }
+    }
+
+    #[derive(ComplexDeriveMacroV2)]
+    struct <sel>S</sel> {
+        x: felt252
+    }
+
+    #[complex_attribute_macro_v2]
+    fn foo() {
+        let s = <sel>S</sel> { x: 0x0 };
     }
     ")
 }
