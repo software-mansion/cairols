@@ -113,21 +113,24 @@ fn complete_ex(
 
     let mut completions = vec![];
 
+    let dot_binary_expression = dot_expr_rhs(db, &node);
+    let is_dot_expression = dot_binary_expression.is_some();
+
+    if_chain!(
+        if let Some(binary_expression) = dot_binary_expression;
+        if let Some(dot_completions) = dot_completions(db, &ctx, binary_expression);
+
+        then {
+            completions.extend(dot_completions);
+        }
+    );
+
     if_chain!(
         if let Some(constructor) = node.ancestor_of_type::<ExprStructCtorCall>(db);
         if let Some(struct_completions) = struct_constructor_completions(db, &ctx, constructor);
 
         then {
             completions.extend(struct_completions);
-        }
-    );
-
-    if_chain!(
-        if let Some(binary_expression) = dot_expr_rhs(db, &node);
-        if let Some(dot_completions) = dot_completions(db, &ctx, binary_expression);
-
-        then {
-            completions.extend(dot_completions);
         }
     );
 
@@ -214,13 +217,16 @@ fn complete_ex(
     );
 
     completions.extend(params_completions(db, &ctx));
-    completions.extend(macro_call_completions(db, &ctx));
     completions.extend(variables_completions(db, &ctx));
     completions.extend(struct_pattern_completions(db, &ctx));
     completions.extend(enum_pattern_completions(db, &ctx));
 
-    if trigger_kind == CompletionTriggerKind::INVOKED {
-        completions.extend(path_suffix_completions(db, &ctx))
+    if !is_dot_expression {
+        completions.extend(macro_call_completions(db, &ctx));
+
+        if trigger_kind == CompletionTriggerKind::INVOKED {
+            completions.extend(path_suffix_completions(db, &ctx))
+        }
     }
 
     Some(completions)
