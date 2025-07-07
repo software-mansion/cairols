@@ -182,7 +182,7 @@ impl Config {
             // This conversion is O(1), and makes popping from front also O(1).
             let mut response = VecDeque::from(response);
 
-            Task::local(move |state, _, _, _| {
+            Task::local_mut(move |state, _, _, _| {
                 *state.config = Config::default();
 
                 state.config.unmanaged_core_path = response

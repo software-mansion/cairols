@@ -17,7 +17,8 @@ mod task;
 pub mod thread;
 
 pub(super) use self::task::BackgroundSchedule;
-pub use self::task::{SyncTask, Task};
+pub use self::task::{SyncMutTask, Task};
+use crate::server::schedule::task::SyncTask;
 
 /// The event loop thread is actually a secondary thread that we spawn from the
 /// _actual_ main thread. This secondary thread has a larger stack size
@@ -63,7 +64,7 @@ impl<'s> Scheduler<'s> {
     /// executing it on a background thread pool.
     pub fn dispatch(&mut self, task: Task<'s>) {
         match task {
-            Task::Sync(SyncTask { func }) => {
+            Task::SyncMut(SyncMutTask { func }) => {
                 let notifier = self.client.notifier();
                 let responder = self.client.responder();
                 func(self.state, notifier.clone(), &mut self.client.requester, responder);
@@ -71,6 +72,11 @@ impl<'s> Scheduler<'s> {
                 for hook in &self.sync_task_hooks {
                     hook(self.state, notifier.clone());
                 }
+            }
+            Task::Sync(SyncTask { func }) => {
+                let notifier = self.client.notifier();
+                let responder = self.client.responder();
+                func(self.state, notifier.clone(), &mut self.client.requester, responder);
             }
             Task::Background(BackgroundTaskBuilder { schedule, builder: func }) => {
                 let static_func = func(self.state);
@@ -89,12 +95,22 @@ impl<'s> Scheduler<'s> {
         }
     }
 
+    /// Dispatches a local task with access to the mutable state.
+    ///
+    /// This is a shortcut for `dispatch(Task::local_mut(func))`.
+    pub fn local_mut(
+        &mut self,
+        func: impl FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's,
+    ) {
+        self.dispatch(Task::local_mut(func));
+    }
+
     /// Dispatches a local `task`.
     ///
     /// This is a shortcut for `dispatch(Task::local(func))`.
     pub fn local(
         &mut self,
-        func: impl FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's,
+        func: impl FnOnce(&State, Notifier, &mut Requester<'_>, Responder) + 's,
     ) {
         self.dispatch(Task::local(func));
     }
