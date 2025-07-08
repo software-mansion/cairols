@@ -79,7 +79,7 @@ impl Default for Config {
         Self {
             unmanaged_core_path: None,
             trace_macro_diagnostics: false,
-            enable_proc_macros: true,
+            enable_proc_macros: Self::ENABLE_PROC_MACROS_DEFAULT,
             enable_linter: true,
             run_test_command: String::new(),
             test_runner: TestRunner::Auto,
@@ -89,6 +89,7 @@ impl Default for Config {
 }
 
 impl Config {
+    pub const ENABLE_PROC_MACROS_DEFAULT: bool = true;
     /// Reloads the configuration from the language client.
     ///
     /// ## Note

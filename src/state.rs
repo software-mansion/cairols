@@ -7,7 +7,7 @@ use lsp_types::{ClientCapabilities, Url};
 use salsa::ParallelDatabase;
 
 use crate::config::Config;
-use crate::ide::analysis_progress::{AnalysisProgressController, ProcMacroServerTracker};
+use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::ide::code_lens::CodeLensController;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
@@ -42,14 +42,11 @@ impl State {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
 
-        let proc_macro_request_tracker = ProcMacroServerTracker::new();
-
-        let analysis_progress_controller =
-            AnalysisProgressController::new(notifier.clone(), proc_macro_request_tracker.clone());
+        let analysis_progress_controller = AnalysisProgressController::new(notifier.clone());
         let proc_macro_controller = ProcMacroClientController::new(
             scarb_toolchain.clone(),
             notifier.clone(),
-            proc_macro_request_tracker,
+            analysis_progress_controller.server_tracker(),
             cwd,
         );
 

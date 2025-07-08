@@ -57,7 +57,7 @@ use lsp_types::RegistrationParams;
 use lsp_types::request::SemanticTokensRefresh;
 use tracing::{debug, error, info};
 
-use crate::ide::analysis_progress::AnalysisProgressStatus;
+use crate::ide::analysis_progress::AnalysisFinished;
 use crate::ide::code_lens::CodeLensController;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros;
@@ -259,7 +259,7 @@ impl Backend {
             let proc_macro_channels = state.proc_macro_controller.channels();
             let project_updates_receiver = state.project_controller.response_receiver();
             let analysis_progress_receiver =
-                state.analysis_progress_controller.get_update_receiver();
+                state.analysis_progress_controller.get_status_receiver();
             let code_lens_request_refresh_receiver =
                 state.code_lens_controller.request_refresh_receiver();
 
@@ -276,6 +276,11 @@ impl Backend {
             // Although it is possible to mutate state without affecting the analysis database,
             // we basically never hit such a case in CairoLS in happy paths.
             scheduler.on_sync_task(Self::refresh_diagnostics);
+
+            // Keep it last, marks that db mutation might happened.
+            scheduler.on_sync_task(|state, _| {
+                state.analysis_progress_controller.mutation();
+            });
 
             let result = Self::event_loop(
                 &connection,
@@ -346,7 +351,7 @@ impl Backend {
         connection: &Connection,
         proc_macro_channels: ProcMacroChannels,
         project_updates_receiver: Receiver<ProjectUpdate>,
-        analysis_progress_status_receiver: Receiver<AnalysisProgressStatus>,
+        analysis_progress_status_receiver: Receiver<AnalysisFinished>,
         code_lens_request_refresh_receiver: Receiver<()>,
         mut scheduler: Scheduler<'_>,
     ) -> Result<()> {
@@ -396,13 +401,11 @@ impl Backend {
                     scheduler.local_mut(Self::on_proc_macro_error);
                 }
                 recv(analysis_progress_status_receiver) -> analysis_progress_status => {
-                    let Ok(analysis_progress_status) = analysis_progress_status else { break };
+                    let Ok(AnalysisFinished) = analysis_progress_status else { break };
 
-                    if analysis_progress_status == AnalysisProgressStatus::ResolvedAllProcMacros {
-                        scheduler.local(|state, _notifier, requester, _responder|
-                            Self::on_stopped_analysis(state, requester)
-                        );
-                    }
+                    scheduler.local(|state, _notifier, requester, _responder|
+                        Self::on_stopped_analysis(state, requester)
+                    );
                 }
                 recv(code_lens_request_refresh_receiver) -> error => {
                     let Ok(()) = error else { break };

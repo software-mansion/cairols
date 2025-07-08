@@ -116,7 +116,7 @@ impl DiagnosticsControllerThread {
     fn event_loop(&mut self) {
         while let Some(state_snapshots) = self.receiver.wait() {
             assert!(self.worker_handles.is_empty());
-            self.analysis_progress_controller.try_start_analysis();
+            self.analysis_progress_controller.diagnostic_start();
 
             let mut controller_cancelled = false;
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
@@ -134,9 +134,8 @@ impl DiagnosticsControllerThread {
             let diagnostics_results = self.join_and_clear_workers();
             let diagnostics_cancelled =
                 controller_cancelled || diagnostics_results.contains(&TaskResult::Cancelled);
-            if !diagnostics_cancelled {
-                self.analysis_progress_controller.try_stop_analysis();
-            }
+
+            self.analysis_progress_controller.diagnostic_end(diagnostics_cancelled);
         }
     }
 

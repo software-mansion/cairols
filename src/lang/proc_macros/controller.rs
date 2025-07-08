@@ -81,6 +81,12 @@ impl From<&ServerStatus> for ProcMacroServerStatus {
     }
 }
 
+impl Default for ProcMacroServerStatus {
+    fn default() -> Self {
+        (&ServerStatus::default()).into()
+    }
+}
+
 impl ProcMacroClientController {
     pub fn channels(&mut self) -> ProcMacroChannels {
         self.channels.clone()
@@ -323,7 +329,7 @@ impl ProcMacroClientController {
         self.channels.clear_all();
 
         // Otherwise we can be leaved with counter that can never go to 0.
-        self.proc_macro_server_tracker.mark_all_requests_as_handled();
+        self.proc_macro_server_tracker.reset_requests_counter();
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
