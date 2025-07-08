@@ -11,6 +11,7 @@ use self::task::BackgroundTaskBuilder;
 use self::thread::{JoinHandle, ThreadPriority};
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::ClientSender;
+use crate::server::schedule::task::BackgroundFnBuilder;
 use crate::state::State;
 
 mod task;
@@ -42,6 +43,11 @@ pub struct Scheduler<'s> {
     state: &'s mut State,
     client: Client<'s>,
     background_pool: thread::Pool,
+    /// Since the editor may wait for fmt response, we have a separate thread pool with one thread
+    /// for fmt tasks.
+    /// It ensures that when all other threads from the `background_pool` are busy when receiving
+    /// fmt request, it will still be processed fast.
+    fmt_pool: thread::Pool,
     sync_mut_task_hooks: Vec<SyncTaskHook>,
 }
 
@@ -51,6 +57,7 @@ impl<'s> Scheduler<'s> {
             state,
             client: Client::new(sender),
             background_pool: thread::Pool::new(usize::MAX, "worker"),
+            fmt_pool: thread::Pool::new(1, "fmt"),
             sync_mut_task_hooks: Default::default(),
         }
     }
@@ -63,6 +70,14 @@ impl<'s> Scheduler<'s> {
     /// Dispatches a `task` by either running it as a blocking function or
     /// executing it on a background thread pool.
     pub fn dispatch(&mut self, task: Task<'s>) {
+        let build_task_fn = |func: BackgroundFnBuilder| {
+            let static_func = func(self.state);
+            let notifier = self.client.notifier();
+            let responder = self.client.responder();
+
+            move || static_func(notifier, responder)
+        };
+
         match task {
             Task::SyncMut(SyncMutTask { func }) => {
                 let notifier = self.client.notifier();
@@ -90,10 +105,7 @@ impl<'s> Scheduler<'s> {
                 };
             }
             Task::Background(BackgroundTaskBuilder { schedule, builder: func }) => {
-                let static_func = func(self.state);
-                let notifier = self.client.notifier();
-                let responder = self.client.responder();
-                let task = move || static_func(notifier, responder);
+                let task = build_task_fn(func);
                 match schedule {
                     BackgroundSchedule::Worker => {
                         self.background_pool.spawn(ThreadPriority::Worker, task);
@@ -102,6 +114,11 @@ impl<'s> Scheduler<'s> {
                         self.background_pool.spawn(ThreadPriority::LatencySensitive, task);
                     }
                 }
+            }
+            Task::Fmt(func) => {
+                let task = build_task_fn(func);
+
+                self.fmt_pool.spawn(ThreadPriority::LatencySensitive, task);
             }
         }
     }

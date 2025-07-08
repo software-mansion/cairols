@@ -19,7 +19,7 @@ type LocalConditionFn<'s> = Box<dyn FnOnce(&State) -> bool + 's>;
 
 type BackgroundFn = Box<dyn FnOnce(Notifier, Responder) + Send + 'static>;
 
-type BackgroundFnBuilder<'s> = Box<dyn FnOnce(&State) -> BackgroundFn + 's>;
+pub type BackgroundFnBuilder<'s> = Box<dyn FnOnce(&State) -> BackgroundFn + 's>;
 
 /// Describes how the task should be run.
 #[derive(Clone, Copy, Debug, Default)]
@@ -41,6 +41,7 @@ pub enum BackgroundSchedule {
 /// local tasks will **block** the main event loop, so only use local tasks if you **need**
 /// mutable state access, or you need the absolute lowest latency possible.
 pub enum Task<'s> {
+    Fmt(BackgroundFnBuilder<'s>),
     Background(BackgroundTaskBuilder<'s>),
     Sync(SyncTask<'s>),
     SyncMut(SyncMutTask<'s>),
@@ -74,6 +75,13 @@ pub struct SyncConditionTask<'s> {
 }
 
 impl<'s> Task<'s> {
+    /// Creates a new fmt task.
+    pub fn fmt(
+        func: impl FnOnce(&State) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> + 's,
+    ) -> Self {
+        Self::Fmt(Box::new(func))
+    }
+
     /// Creates a new background task.
     pub fn background(
         schedule: BackgroundSchedule,
