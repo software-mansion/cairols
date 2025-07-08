@@ -298,9 +298,9 @@ impl Backend {
 
     /// Runs various setup tasks before entering the main event loop.
     fn dispatch_setup_tasks(scheduler: &mut Scheduler<'_>) {
-        scheduler.local(Self::register_dynamic_capabilities);
+        scheduler.local_mut(Self::register_dynamic_capabilities);
 
-        scheduler.local(|state, _notifier, requester, _responder| {
+        scheduler.local_mut(|state, _notifier, requester, _responder| {
             let _ = state.config.reload_on_start(
                 requester,
                 &mut state.db,
@@ -366,7 +366,7 @@ impl Backend {
                 recv(project_updates_receiver) -> project_update => {
                     let Ok(project_update) = project_update else { break };
 
-                    scheduler.local(move |state, notifier, _, _| ProjectController::handle_update(state, notifier, project_update));
+                    scheduler.local_mut(move |state, notifier, _, _| ProjectController::handle_update(state, notifier, project_update));
                 }
                 recv(incoming) -> msg => {
                     let Ok(msg) = msg else { break };
@@ -385,7 +385,7 @@ impl Backend {
                     let Ok(()) = response else { break };
 
                     if response_resolving_limiter.check().is_ok() {
-                        scheduler.local(Self::on_proc_macro_response);
+                        scheduler.local_mut(Self::on_proc_macro_response);
                     } else {
                         let _ = proc_macro_channels.response_sender.try_send(());
                     }
@@ -393,7 +393,7 @@ impl Backend {
                 recv(proc_macro_channels.error_receiver) -> error => {
                     let Ok(()) = error else { break };
 
-                    scheduler.local(Self::on_proc_macro_error);
+                    scheduler.local_mut(Self::on_proc_macro_error);
                 }
                 recv(analysis_progress_status_receiver) -> analysis_progress_status => {
                     let Ok(analysis_progress_status) = analysis_progress_status else { break };
@@ -439,7 +439,7 @@ impl Backend {
         );
     }
 
-    fn on_stopped_analysis(state: &mut State, requester: &mut Requester<'_>) {
+    fn on_stopped_analysis(state: &State, requester: &mut Requester<'_>) {
         proc_macros::cache::save_proc_macro_cache(&state.db, &state.config);
         state
             .code_lens_controller

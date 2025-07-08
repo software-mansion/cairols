@@ -150,7 +150,7 @@ fn local_request_task<'a, R: handlers::SyncRequestHandler>(
     request: Request,
 ) -> Result<Task<'a>, LSPError> {
     let (id, params) = cast_request::<R>(request)?;
-    Ok(Task::local(move |state, notifier, requester, responder| {
+    Ok(Task::local_mut(move |state, notifier, requester, responder| {
         let result = R::run(state, notifier, requester, params);
         respond::<R>(id, result, &responder);
     }))
@@ -187,7 +187,7 @@ fn local_notification_task<'a, N: handlers::SyncNotificationHandler>(
     notification: Notification,
 ) -> Result<Task<'a>, LSPError> {
     let (id, params) = cast_notification::<N>(notification)?;
-    Ok(Task::local(move |session, notifier, requester, _| {
+    Ok(Task::local_mut(move |session, notifier, requester, _| {
         if let Err(err) = N::run(session, notifier, requester, params) {
             error!("an error occurred while running {id}: {err}");
         }

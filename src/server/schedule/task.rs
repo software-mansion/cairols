@@ -13,7 +13,8 @@ use crate::lsp::result::LSPError;
 use crate::server::client::{Notifier, Requester, Responder};
 use crate::state::State;
 
-type LocalFn<'s> = Box<dyn FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's>;
+type LocalMutFn<'s> = Box<dyn FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's>;
+type LocalFn<'s> = Box<dyn FnOnce(&State, Notifier, &mut Requester<'_>, Responder) + 's>;
 
 type BackgroundFn = Box<dyn FnOnce(Notifier, Responder) + Send + 'static>;
 
@@ -41,6 +42,7 @@ pub enum BackgroundSchedule {
 pub enum Task<'s> {
     Background(BackgroundTaskBuilder<'s>),
     Sync(SyncTask<'s>),
+    SyncMut(SyncMutTask<'s>),
 }
 
 // The reason why this isn't just a 'static background closure
@@ -57,6 +59,10 @@ pub struct BackgroundTaskBuilder<'s> {
     pub builder: BackgroundFnBuilder<'s>,
 }
 
+pub struct SyncMutTask<'s> {
+    pub func: LocalMutFn<'s>,
+}
+
 pub struct SyncTask<'s> {
     pub func: LocalFn<'s>,
 }
@@ -71,9 +77,14 @@ impl<'s> Task<'s> {
     }
 
     /// Creates a new local task.
-    pub fn local(
+    pub fn local_mut(
         func: impl FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's,
     ) -> Self {
+        Self::SyncMut(SyncMutTask { func: Box::new(func) })
+    }
+
+    /// Creates a new local task without access to the mutable state.
+    pub fn local(func: impl FnOnce(&State, Notifier, &mut Requester<'_>, Responder) + 's) -> Self {
         Self::Sync(SyncTask { func: Box::new(func) })
     }
 
