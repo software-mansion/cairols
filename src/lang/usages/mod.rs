@@ -91,11 +91,6 @@ impl<'a> FindUsages<'a> {
         result
     }
 
-    /// Collects just the locations of all found usages.
-    pub fn locations(self) -> impl Iterator<Item = (FileId, TextSpan)> {
-        self.collect().into_iter().map(FoundUsage::location)
-    }
-
     /// Collects just the originating locations of all found usages.
     pub fn originating_locations(
         self,
