@@ -270,15 +270,15 @@ impl Backend {
             // Attempt to swap the database to reduce memory use.
             // Because diagnostics are always refreshed afterwards, the fresh database state will
             // be quickly repopulated.
-            scheduler.on_sync_task(Self::maybe_swap_database);
+            scheduler.on_sync_mut_task(Self::maybe_swap_database);
 
             // Refresh diagnostics each time state changes.
             // Although it is possible to mutate state without affecting the analysis database,
             // we basically never hit such a case in CairoLS in happy paths.
-            scheduler.on_sync_task(Self::refresh_diagnostics);
+            scheduler.on_sync_mut_task(Self::refresh_diagnostics);
 
             // Keep it last, marks that db mutation might happened.
-            scheduler.on_sync_task(|state, _| {
+            scheduler.on_sync_mut_task(|state, _| {
                 state.analysis_progress_controller.mutation();
             });
 
