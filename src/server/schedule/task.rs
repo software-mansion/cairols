@@ -15,6 +15,7 @@ use crate::state::State;
 
 type LocalMutFn<'s> = Box<dyn FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's>;
 type LocalFn<'s> = Box<dyn FnOnce(&State, Notifier, &mut Requester<'_>, Responder) + 's>;
+type LocalConditionFn<'s> = Box<dyn FnOnce(&State) -> bool + 's>;
 
 type BackgroundFn = Box<dyn FnOnce(Notifier, Responder) + Send + 'static>;
 
@@ -43,6 +44,7 @@ pub enum Task<'s> {
     Background(BackgroundTaskBuilder<'s>),
     Sync(SyncTask<'s>),
     SyncMut(SyncMutTask<'s>),
+    SyncConditional(SyncConditionTask<'s>),
 }
 
 // The reason why this isn't just a 'static background closure
@@ -66,6 +68,10 @@ pub struct SyncMutTask<'s> {
 pub struct SyncTask<'s> {
     pub func: LocalFn<'s>,
 }
+pub struct SyncConditionTask<'s> {
+    pub precondition_func: LocalConditionFn<'s>,
+    pub mut_func: LocalMutFn<'s>,
+}
 
 impl<'s> Task<'s> {
     /// Creates a new background task.
@@ -86,6 +92,19 @@ impl<'s> Task<'s> {
     /// Creates a new local task without access to the mutable state.
     pub fn local(func: impl FnOnce(&State, Notifier, &mut Requester<'_>, Responder) + 's) -> Self {
         Self::Sync(SyncTask { func: Box::new(func) })
+    }
+
+    /// Creates a new local task with access to the mutable state that runs only if a condition is satisfied.
+    ///
+    /// This pattern is useful when checking the precondition to running the task requires access to [`State`].
+    pub fn local_with_precondition(
+        precondition_func: impl FnOnce(&State) -> bool + 's,
+        mut_func: impl FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's,
+    ) -> Self {
+        Self::SyncConditional(SyncConditionTask {
+            precondition_func: Box::new(precondition_func),
+            mut_func: Box::new(mut_func),
+        })
     }
 
     /// Creates a local task that immediately responds with the provided `request`.

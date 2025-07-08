@@ -22,6 +22,7 @@ use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 use crate::server::trigger;
 use crate::state::{State, StateSnapshot};
 use crate::toolchain::scarb::ScarbToolchain;
+use crossbeam::channel::{Receiver, Sender};
 
 mod file_batches;
 mod file_diagnostics;
@@ -39,6 +40,7 @@ pub struct DiagnosticsController {
     //   Otherwise, the controller thread will never be requested to stop, and the controller's
     //   JoinHandle will never terminate.
     trigger: trigger::Sender<StateSnapshots>,
+    generate_code_complete_receiver: Receiver<()>,
     _thread: JoinHandle,
     state_snapshots_props: StateSnapshotsProps,
 }
@@ -50,18 +52,26 @@ impl DiagnosticsController {
         analysis_progress_tracker: AnalysisProgressController,
         scarb_toolchain: ScarbToolchain,
     ) -> Self {
+        let (generate_code_complete_sender, generate_code_complete_receiver) =
+            crossbeam::channel::bounded(1);
         let (trigger, receiver) = trigger::trigger();
         let (thread, parallelism) = DiagnosticsControllerThread::spawn(
             receiver,
+            generate_code_complete_sender,
             notifier,
             analysis_progress_tracker,
             scarb_toolchain,
         );
         Self {
             trigger,
+            generate_code_complete_receiver,
             _thread: thread,
             state_snapshots_props: StateSnapshotsProps { parallelism },
         }
+    }
+
+    pub fn generate_code_complete_receiver(&self) -> Receiver<()> {
+        self.generate_code_complete_receiver.clone()
     }
 
     /// Schedules diagnostics refreshing on snapshot(s) of the current state.
@@ -73,6 +83,7 @@ impl DiagnosticsController {
 /// Stores entire state of diagnostics controller's worker thread.
 struct DiagnosticsControllerThread {
     receiver: trigger::Receiver<StateSnapshots>,
+    generate_code_complete_sender: Sender<()>,
     notifier: Notifier,
     pool: thread::Pool,
     project_diagnostics: ProjectDiagnostics,
@@ -86,12 +97,14 @@ impl DiagnosticsControllerThread {
     /// and returns a handle to it and the amount of parallelism it provides.
     fn spawn(
         receiver: trigger::Receiver<StateSnapshots>,
+        generate_code_complete_sender: Sender<()>,
         notifier: Notifier,
         analysis_progress_controller: AnalysisProgressController,
         scarb_toolchain: ScarbToolchain,
     ) -> (JoinHandle, NonZero<usize>) {
         let mut this = Self {
             receiver,
+            generate_code_complete_sender,
             notifier,
             analysis_progress_controller,
             // Above 4 threads we start losing performance
@@ -145,10 +158,13 @@ impl DiagnosticsControllerThread {
         let (state, primary_snapshots, secondary_snapshots) = state_snapshots.split();
 
         let primary_set = find_primary_files(&state.db, &state.open_files);
+        let secondary = find_secondary_files(&state.db, &primary_set);
+        // Event meaning that all generate_code() calls from this tick were called.
+        // This is true because `find_primary_files`/`find_secondary_files` calls `db.file_modules()` and it does all generate_code() calls.
+        let _ = self.generate_code_complete_sender.send(());
+
         let primary: Vec<_> = primary_set.iter().copied().collect();
         self.spawn_refresh_workers(&primary, primary_snapshots);
-
-        let secondary = find_secondary_files(&state.db, &primary_set);
         self.spawn_refresh_workers(&secondary, secondary_snapshots);
 
         let files_to_preserve: HashSet<Url> = primary

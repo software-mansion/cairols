@@ -3,9 +3,9 @@ use std::io::{BufRead, BufReader, Write};
 use std::process::{Child, ChildStdin};
 use std::sync::{Arc, Mutex};
 
-use crossbeam::channel::{Receiver, Sender, TrySendError};
+use crossbeam::channel::{Receiver, Sender};
 use scarb_proc_macro_server_types::jsonrpc::{RpcRequest, RpcResponse};
-use tracing::{error, info};
+use tracing::error;
 
 use crate::server::trigger;
 
@@ -24,10 +24,7 @@ impl std::fmt::Debug for ProcMacroServerConnection {
 }
 
 impl ProcMacroServerConnection {
-    pub fn stdio(
-        mut proc_macro_server: std::process::Child,
-        response_channel_sender: Sender<()>,
-    ) -> Self {
+    pub fn stdio(mut proc_macro_server: std::process::Child) -> Self {
         let server_input =
             proc_macro_server.stdin.take().expect("proc-macro-server must use pipe on stdin");
 
@@ -38,12 +35,7 @@ impl ProcMacroServerConnection {
         let responses_writer = Arc::clone(&responses);
 
         std::thread::spawn(move || {
-            read_responses(
-                proc_macro_server,
-                responses_writer,
-                response_channel_sender,
-                server_killed_sender,
-            )
+            read_responses(proc_macro_server, responses_writer, server_killed_sender)
         });
 
         std::thread::spawn(move || write_requests(server_input, receiver));
@@ -55,7 +47,6 @@ impl ProcMacroServerConnection {
 fn read_responses(
     mut proc_macro_server: std::process::Child,
     responses_writer: Arc<Mutex<VecDeque<RpcResponse>>>,
-    response_channel_sender: Sender<()>,
     server_killed_sender: trigger::Sender<()>,
 ) {
     let server_output =
@@ -93,12 +84,6 @@ fn read_responses(
         };
 
         responses_writer.lock().unwrap().push_back(response);
-        if let Err(TrySendError::Disconnected(_)) = response_channel_sender.try_send(()) {
-            info!("stopped reading from proc-macro-server");
-
-            // No receiver exists so stop reading and drop this thread.
-            break;
-        }
     }
 
     server_killed_sender.activate(());

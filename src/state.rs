@@ -43,17 +43,19 @@ impl State {
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
 
         let analysis_progress_controller = AnalysisProgressController::new(notifier.clone());
-        let proc_macro_controller = ProcMacroClientController::new(
-            scarb_toolchain.clone(),
-            notifier.clone(),
-            analysis_progress_controller.server_tracker(),
-            cwd,
-        );
 
         let diagnostics_controller = DiagnosticsController::new(
             notifier.clone(),
             analysis_progress_controller.clone(),
             scarb_toolchain.clone(),
+        );
+
+        let proc_macro_controller = ProcMacroClientController::new(
+            scarb_toolchain.clone(),
+            notifier.clone(),
+            analysis_progress_controller.server_tracker(),
+            cwd,
+            diagnostics_controller.generate_code_complete_receiver(),
         );
 
         Self {
