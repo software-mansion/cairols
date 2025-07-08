@@ -49,7 +49,7 @@ struct Job {
 }
 
 impl Pool {
-    pub fn new(max_threads: usize) -> Pool {
+    pub fn new(max_threads: usize, thread_name: &str) -> Pool {
         /// Custom stack size, larger than OS defaults, to avoid stack overflows on platforms with
         /// low stack size defaults.
         const STACK_SIZE: usize = 2 * 1024 * 1024;
@@ -75,7 +75,7 @@ impl Pool {
         for i in 0..threads {
             let handle = Builder::new(INITIAL_PRIORITY)
                 .stack_size(STACK_SIZE)
-                .name(format!("cairo-ls:worker:{i}"))
+                .name(format!("cairo-ls:{thread_name}:{i}"))
                 .spawn({
                     let job_receiver: channel::Receiver<Job> = job_receiver.clone();
                     move || {
