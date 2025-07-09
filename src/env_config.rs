@@ -17,6 +17,7 @@ pub const CAIRO_LS_LOG: &'_ str = "CAIRO_LS_LOG";
 pub const CAIRO_LS_PROFILE: &'_ str = "CAIRO_LS_PROFILE";
 pub const SCARB: &'_ str = "SCARB";
 pub const SCARB_CACHE: &'_ str = "SCARB_CACHE";
+pub const SCARB_TARGET_DIR: &'_ str = "SCARB_TARGET_DIR";
 
 /// Interval between compiler database regenerations (to free unused memory).
 pub fn db_replace_interval() -> Duration {
@@ -47,6 +48,11 @@ pub fn scarb_path() -> Option<PathBuf> {
 /// Path to the Scarb cache directory. Available if LS is run via `scarb cairo-language-server`.
 pub fn scarb_cache_path() -> Option<PathBuf> {
     env::var_os(SCARB_CACHE).map(PathBuf::from)
+}
+
+/// Path to the Scarb target directory. Available if LS is run via `scarb cairo-language-server`.
+pub fn scarb_target_path() -> Option<PathBuf> {
+    env::var_os(SCARB_TARGET_DIR).map(PathBuf::from)
 }
 
 /// Print all environment variables values (or defaults) as debug messages in logs.
