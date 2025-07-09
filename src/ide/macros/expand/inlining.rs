@@ -5,7 +5,6 @@ use cairo_lang_filesystem::{
     span::{TextOffset, TextSpan},
 };
 use cairo_lang_syntax::node::SyntaxNode;
-use if_chain::if_chain;
 
 /// Computes the corresponding span in a new file after inlining modifications from an old file.
 ///
@@ -48,14 +47,12 @@ pub fn inline_files(
     let mut replacements = Vec::new();
 
     for file_with_origin in files {
-        if_chain! {
-            if let Some((parent, _)) = get_parent_and_mapping(db, file_with_origin.file);
-            if parent == file;
-            if let Some(child_content) = inline_files(db, file_with_origin.file, files);
-
-            then {
-                replacements.push((file_with_origin.generated_from.span(db).to_str_range(), child_content));
-            }
+        if let Some((parent, _)) = get_parent_and_mapping(db, file_with_origin.file)
+            && parent == file
+            && let Some(child_content) = inline_files(db, file_with_origin.file, files)
+        {
+            replacements
+                .push((file_with_origin.generated_from.span(db).to_str_range(), child_content));
         };
     }
 

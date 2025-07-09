@@ -7,7 +7,6 @@ use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
 use cairo_lang_utils::LookupIntern;
-use if_chain::if_chain;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
@@ -27,20 +26,20 @@ pub fn path_suffix_completions(
     db: &AnalysisDatabase,
     ctx: &AnalysisContext<'_>,
 ) -> Vec<CompletionItem> {
-    let (importables, typed_text) = if_chain!(
-        if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none();
+    let (importables, typed_text) = if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
         // Enum patterns are handled in a separate function.
-        if ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none();
-        if let Some(importables) = db.visible_importables_from_module(ctx.module_file_id);
-        if let Some(typed_text_segments) = ctx.node.ancestor_of_type::<ExprPath>(db).map(|path| path.segments(db).elements(db).collect_vec());
-        if !typed_text_segments.is_empty();
-
-        then {
-            (importables, typed_text_segments)
-        } else {
-            return Default::default();
-        }
-    );
+        && ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none()
+        && let Some(importables) = db.visible_importables_from_module(ctx.module_file_id)
+        && let Some(typed_text_segments) = ctx
+            .node
+            .ancestor_of_type::<ExprPath>(db)
+            .map(|path| path.segments(db).elements(db).collect_vec())
+        && !typed_text_segments.is_empty()
+    {
+        (importables, typed_text_segments)
+    } else {
+        return Default::default();
+    };
 
     let mut typed_text = typed_text
         .into_iter()
@@ -87,17 +86,14 @@ pub fn path_suffix_completions(
                 return None;
             }
 
-            let additional_text_edits = if_chain!(
-                if is_not_in_scope;
-                if !path_segments.is_empty();
-                if let Some(import_edit) = new_import_edit(db, ctx, path_segments.join("::"));
-
-                then {
-                    Some(vec![import_edit])
-                } else {
-                    None
-                }
-            );
+            let additional_text_edits = if is_not_in_scope
+                && !path_segments.is_empty()
+                && let Some(import_edit) = new_import_edit(db, ctx, path_segments.join("::"))
+            {
+                Some(vec![import_edit])
+            } else {
+                None
+            };
 
             Some(CompletionItem {
                 label: last_segment.to_string(),
