@@ -42,7 +42,7 @@ pub struct Scheduler<'s> {
     state: &'s mut State,
     client: Client<'s>,
     background_pool: thread::Pool,
-    sync_task_hooks: Vec<SyncTaskHook>,
+    sync_mut_task_hooks: Vec<SyncTaskHook>,
 }
 
 impl<'s> Scheduler<'s> {
@@ -51,7 +51,7 @@ impl<'s> Scheduler<'s> {
             state,
             client: Client::new(sender),
             background_pool: thread::Pool::new(usize::MAX, "worker"),
-            sync_task_hooks: Default::default(),
+            sync_mut_task_hooks: Default::default(),
         }
     }
 
@@ -69,7 +69,7 @@ impl<'s> Scheduler<'s> {
                 let responder = self.client.responder();
                 func(self.state, notifier.clone(), &mut self.client.requester, responder);
 
-                for hook in &self.sync_task_hooks {
+                for hook in &self.sync_mut_task_hooks {
                     hook(self.state, notifier.clone());
                 }
             }
@@ -115,15 +115,15 @@ impl<'s> Scheduler<'s> {
         self.dispatch(Task::local(func));
     }
 
-    /// Registers a hook to be called each time a synchronous task is executed.
+    /// Registers a hook to be called each time a synchronous task with access to mutable state is executed.
     ///
     /// All hooks are called right after task execution, in the same thread and with the same
     /// context.
     /// This mechanism is useful for doing various bookkeeping in reaction to user interaction
     /// such as scheduling diagnostics computation, starting manual GC, etc.
     /// This includes reacting to state changes, though note that this hook will be called even
-    /// after tasks that do not mutate the state.
-    pub fn on_sync_task(&mut self, hook: impl Fn(&mut State, Notifier) + 'static) {
-        self.sync_task_hooks.push(Box::new(hook));
+    /// after tasks that might, but did not mutate the state.
+    pub fn on_sync_mut_task(&mut self, hook: impl Fn(&mut State, Notifier) + 'static) {
+        self.sync_mut_task_hooks.push(Box::new(hook));
     }
 }
