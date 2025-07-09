@@ -29,6 +29,8 @@ pub fn save_proc_macro_cache(db: &dyn ProcMacroGroup, config: &Config) {
     };
 
     let buffer = encode_to_vec(resolution, standard()).expect("serialize should not fail");
+
+    let _ = fs::create_dir_all(cache_path.parent().expect("parent must exist"));
     let _ = fs::write(&cache_path, buffer);
 }
 
