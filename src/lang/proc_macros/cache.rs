@@ -1,5 +1,6 @@
 use crate::{
     config::Config,
+    env_config::scarb_target_path,
     lang::proc_macros::{
         client::plain_request_response::{
             PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
@@ -14,6 +15,7 @@ use bincode::{
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env::current_dir, fs, path::PathBuf, sync::Arc};
+use tracing::error;
 
 pub fn save_proc_macro_cache(db: &dyn ProcMacroGroup, config: &Config) {
     if !config.enable_experimental_proc_macro_cache {
@@ -31,7 +33,10 @@ pub fn save_proc_macro_cache(db: &dyn ProcMacroGroup, config: &Config) {
     let buffer = encode_to_vec(resolution, standard()).expect("serialize should not fail");
 
     let _ = fs::create_dir_all(cache_path.parent().expect("parent must exist"));
-    let _ = fs::write(&cache_path, buffer);
+
+    if let Err(err) = fs::write(&cache_path, buffer) {
+        error!("failed to save proc macro cache to disk {err:?}");
+    }
 }
 
 pub fn load_proc_macro_cache(db: &mut dyn ProcMacroGroup, config: &Config) {
@@ -61,10 +66,16 @@ pub fn load_proc_macro_cache(db: &mut dyn ProcMacroGroup, config: &Config) {
 }
 
 fn cache_path() -> Option<PathBuf> {
-    current_dir().ok().map(|mut cache_path| {
-        cache_path.push("target");
+    scarb_target_path().or_else(current_dir_target).map(|mut cache_path| {
         cache_path.push("cairo-language-server");
         cache_path.push("proc_macro.cache");
+        cache_path
+    })
+}
+
+fn current_dir_target() -> Option<PathBuf> {
+    current_dir().ok().map(|mut cache_path| {
+        cache_path.push("target");
         cache_path
     })
 }
