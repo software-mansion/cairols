@@ -3,7 +3,6 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::PathSegment;
-use if_chain::if_chain;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, InsertTextFormat};
 
@@ -16,31 +15,28 @@ pub fn macro_call_completions(
     db: &AnalysisDatabase,
     ctx: &AnalysisContext<'_>,
 ) -> Vec<CompletionItem> {
-    if_chain!(
-        if let Some(lookup_item_id) = ctx.lookup_item_id;
-        if let Some(function_id) = lookup_item_id.function_with_body();
-        if db.function_body(function_id).is_ok();
-
-        if let Some(path) = expr_selector(db, &ctx.node);
+    if let Some(lookup_item_id) = ctx.lookup_item_id
+        && let Some(function_id) = lookup_item_id.function_with_body()
+        && db.function_body(function_id).is_ok()
+        && let Some(path) = expr_selector(db, &ctx.node)
         // Currently inline macros can not be imported/exported
-        if let [PathSegment::Simple(path_segment)] = path.segments(db).elements(db).take(2).collect_vec().as_slice();
+        && let [PathSegment::Simple(path_segment)] =
+            path.segments(db).elements(db).take(2).collect_vec().as_slice()
+    {
+        let crate_id = ctx.module_file_id.0.owning_crate(db);
 
-        then {
-            let crate_id = ctx.module_file_id.0.owning_crate(db);
+        let inline_plugins = db.crate_inline_macro_plugins(crate_id);
 
-            let inline_plugins = db.crate_inline_macro_plugins(crate_id);
+        let typed = path_segment.ident(db).token(db).text(db).to_string();
 
-            let typed = path_segment.ident(db).token(db).text(db).to_string();
-
-            inline_plugins
-                .iter()
-                .filter(|(name,_)| text_matches(name, &typed))
-                .map(|(plugin_name, _)| snippet_completions_for_inline_plugins(plugin_name))
-                .collect()
-        } else {
-            Default::default()
-        }
-    )
+        inline_plugins
+            .iter()
+            .filter(|(name, _)| text_matches(name, &typed))
+            .map(|(plugin_name, _)| snippet_completions_for_inline_plugins(plugin_name))
+            .collect()
+    } else {
+        Default::default()
+    }
 }
 
 fn snippet_completions_for_inline_plugins(inline_macro_name: &str) -> CompletionItem {

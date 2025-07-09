@@ -1,7 +1,6 @@
 use cairo_lang_semantic::FunctionBody;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use if_chain::if_chain;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
@@ -21,22 +20,18 @@ pub fn variables_completions(
     db: &AnalysisDatabase,
     ctx: &AnalysisContext<'_>,
 ) -> Vec<CompletionItem> {
-    if_chain!(
-        if let Some(path) = expr_selector(db, &ctx.node);
-        if dot_expr_rhs(db, &ctx.node).is_none();
-        if let [PathSegment::Simple(segment)] = path.segments(db).elements(db).take(2).collect_vec().as_slice();
-
-        if let Some(lookup_item_id) = ctx.lookup_item_id;
-        if let Some(function_id) = lookup_item_id.function_with_body();
-        if let Ok(body) = db.function_body(function_id);
-
-        then {
-            patterns(&body, db, ctx, &segment.ident(db).token(db).text(db))
-        } else {
-            Default::default()
-        }
-
-    )
+    if let Some(path) = expr_selector(db, &ctx.node)
+        && dot_expr_rhs(db, &ctx.node).is_none()
+        && let [PathSegment::Simple(segment)] =
+            path.segments(db).elements(db).take(2).collect_vec().as_slice()
+        && let Some(lookup_item_id) = ctx.lookup_item_id
+        && let Some(function_id) = lookup_item_id.function_with_body()
+        && let Ok(body) = db.function_body(function_id)
+    {
+        patterns(&body, db, ctx, &segment.ident(db).token(db).text(db))
+    } else {
+        Default::default()
+    }
 }
 
 fn patterns(

@@ -902,7 +902,6 @@ dependencies = [
  "convert_case",
  "crossbeam",
  "governor",
- "if_chain",
  "indoc",
  "insta",
  "itertools",

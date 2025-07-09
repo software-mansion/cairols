@@ -55,7 +55,6 @@ colored = "3.0.0"
 convert_case = "0.8.0"
 crossbeam = "0.8.4"
 governor = { version = "0.8.0", default-features = false, features = ["std", "quanta"] }
-if_chain = "1"
 indoc = "2"
 itertools = "0.14.0"
 jaro_winkler = "0.1.0"

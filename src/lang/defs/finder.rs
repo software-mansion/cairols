@@ -29,7 +29,6 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::{Intern, LookupIntern};
-use if_chain::if_chain;
 use itertools::Itertools;
 
 /// A language element that can be a result of name resolution performed by CairoLS.
@@ -245,20 +244,17 @@ fn try_inline_macro(
     db: &AnalysisDatabase,
     identifier: &ast::TerminalIdentifier,
 ) -> Option<ResolvedItem> {
-    if_chain!(
-        if let Some(macro_call) = identifier.as_syntax_node().ancestor_of_type::<ast::ExprInlineMacro>(db);
-        let path_elements = macro_call.path(db).segments(db).elements(db);
-        if let Some(macro_name) = path_elements.last();
-        if macro_name.identifier(db) == identifier.text(db);
-
-        then {
-            Some(ResolvedItem::ExprInlineMacro(
-                macro_call.path(db).as_syntax_node().get_text_without_trivia(db).into(),
-            ))
-        } else {
-            None
-        }
-    )
+    if let Some(macro_call) =
+        identifier.as_syntax_node().ancestor_of_type::<ast::ExprInlineMacro>(db)
+        && let Some(macro_name) = macro_call.path(db).segments(db).elements(db).last()
+        && macro_name.identifier(db) == identifier.text(db)
+    {
+        Some(ResolvedItem::ExprInlineMacro(
+            macro_call.path(db).as_syntax_node().get_text_without_trivia(db).into(),
+        ))
+    } else {
+        None
+    }
 }
 
 /// Resolve elements of `impl`s to trait definitions.

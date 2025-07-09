@@ -11,7 +11,6 @@ use bincode::{
     config::standard,
     serde::{decode_from_slice, encode_to_vec},
 };
-use if_chain::if_chain;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env::current_dir, fs, path::PathBuf, sync::Arc};
@@ -34,16 +33,14 @@ pub fn save_proc_macro_cache(db: &dyn ProcMacroGroup, config: &Config) {
 }
 
 pub fn load_proc_macro_cache(db: &mut dyn ProcMacroGroup, config: &Config) {
-    let mut resolution = if_chain! {
-        if config.enable_experimental_proc_macro_cache;
-        if let Some(cache_path) = cache_path();
-        if let Ok(buffer) = fs::read(&cache_path);
-        if let Ok((resolution, _)) = decode_from_slice::<Resolution, _>(&buffer, standard());
-        then {
-            resolution
-        } else {
-            return
-        }
+    let mut resolution = if config.enable_experimental_proc_macro_cache
+        && let Some(cache_path) = cache_path()
+        && let Ok(buffer) = fs::read(&cache_path)
+        && let Ok((resolution, _)) = decode_from_slice::<Resolution, _>(&buffer, standard())
+    {
+        resolution
+    } else {
+        return;
     };
 
     macro_rules! override_with_local {

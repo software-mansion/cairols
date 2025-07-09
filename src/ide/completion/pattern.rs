@@ -1,4 +1,3 @@
-use if_chain::if_chain;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
@@ -21,27 +20,25 @@ pub fn struct_pattern_completions(
     db: &AnalysisDatabase,
     ctx: &AnalysisContext<'_>,
 ) -> Vec<CompletionItem> {
-    let (all_members, existing_members, typed) = if_chain!(
-        if let Some(pattern) = ctx.node.ancestor_of_type::<PatternStruct>(db);
-        if let typed = ctx.node.ancestor_of_type::<PatternIdentifier>(db).filter(|ident| {
+    let (all_members, existing_members, typed) = if let Some(pattern) =
+        ctx.node.ancestor_of_type::<PatternStruct>(db)
+        && let typed = ctx.node.ancestor_of_type::<PatternIdentifier>(db).filter(|ident| {
             ident.as_syntax_node().parent(db).and_then(|p| p.parent(db))
                 == Some(pattern.as_syntax_node())
-        });
-        if let Ok(ResolvedGenericItem::GenericType(GenericTypeId::Struct(struct_item))) =
+        })
+        && let Ok(ResolvedGenericItem::GenericType(GenericTypeId::Struct(struct_item))) =
             ctx.resolver(db).resolve_generic_path(
                 &mut Default::default(),
                 &pattern.path(db),
                 NotFoundItemType::Type,
                 ResolutionContext::Default,
-            );
-        if let Ok(all_members) = db.struct_members(struct_item);
-
-        then {
-            (all_members, pattern.params(db).elements(db), typed)
-        } else {
-            return Default::default()
-        }
-    );
+            )
+        && let Ok(all_members) = db.struct_members(struct_item)
+    {
+        (all_members, pattern.params(db).elements(db), typed)
+    } else {
+        return Default::default();
+    };
 
     let existing_members: HashSet<_> = existing_members
         .into_iter()
@@ -70,22 +67,19 @@ pub fn enum_pattern_completions(
     db: &AnalysisDatabase,
     ctx: &AnalysisContext<'_>,
 ) -> Vec<CompletionItem> {
-    if_chain!(
-        if let Some(pattern) = ctx.node.ancestor_of_type::<PatternEnum>(db);
-        let path = pattern.path(db);
-        let mut segments = path.segments(db).elements(db).collect_vec();
-        let _ = {
+    if let Some(pattern) = ctx.node.ancestor_of_type::<PatternEnum>(db)
+        && let path = pattern.path(db)
+        && let mut segments = path.segments(db).elements(db).collect_vec()
+        && let _ = {
             // If there is tail (ie. some::path::) last segment will be of type missing, remove it.
             if path.segments(db).has_tail(db) {
                 segments.pop();
             }
-        };
-        if let Some(result) = path_prefix_completions(db, ctx, segments);
-
-        then {
-            result
-        } else {
-            Default::default()
         }
-    )
+        && let Some(result) = path_prefix_completions(db, ctx, segments)
+    {
+        result
+    } else {
+        Default::default()
+    }
 }

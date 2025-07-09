@@ -1,6 +1,5 @@
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use if_chain::if_chain;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
@@ -13,21 +12,18 @@ use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::PathSegment;
 
 pub fn params_completions(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Vec<CompletionItem> {
-    let (params, typed_text) = if_chain!(
-        if let Some(path) = expr_selector(db, &ctx.node);
-        if dot_expr_rhs(db, &ctx.node).is_none();
-        if let [PathSegment::Simple(segment)] = path.segments(db).elements(db).take(2).collect_vec().as_slice();
-
-        if let Some(lookup_item_id) = ctx.lookup_item_id;
-        if let Some(function_id) = lookup_item_id.function_with_body();
-        if let Ok(signature) = db.function_with_body_signature(function_id);
-
-        then {
-            (signature.params, segment.ident(db).token(db).text(db))
-        } else {
-            Default::default()
-        }
-    );
+    let (params, typed_text) = if let Some(path) = expr_selector(db, &ctx.node)
+        && dot_expr_rhs(db, &ctx.node).is_none()
+        && let [PathSegment::Simple(segment)] =
+            path.segments(db).elements(db).take(2).collect_vec().as_slice()
+        && let Some(lookup_item_id) = ctx.lookup_item_id
+        && let Some(function_id) = lookup_item_id.function_with_body()
+        && let Ok(signature) = db.function_with_body_signature(function_id)
+    {
+        (signature.params, segment.ident(db).token(db).text(db))
+    } else {
+        Default::default()
+    };
 
     params
         .into_iter()
