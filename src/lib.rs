@@ -38,12 +38,11 @@
 //! }
 //! ```
 
-use std::num::NonZeroU32;
 use std::panic::RefUnwindSafe;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::OnceLock;
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 use std::{io, panic};
 
 use anyhow::Result;
@@ -51,7 +50,6 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use crossbeam::channel::{Receiver, select_biased};
-use governor::{Quota, RateLimiter};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use lsp_types::request::SemanticTokensRefresh;
@@ -61,7 +59,9 @@ use crate::ide::analysis_progress::AnalysisFinished;
 use crate::ide::code_lens::CodeLensController;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros;
+use crate::lang::proc_macros::client::ServerStatus;
 use crate::lang::proc_macros::controller::ProcMacroChannels;
+use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
@@ -357,12 +357,6 @@ impl Backend {
     ) -> Result<()> {
         let incoming = connection.incoming();
 
-        let response_resolving_limiter =
-            RateLimiter::direct(Quota::with_period(Duration::from_secs(3)).unwrap().allow_burst(
-                // Don't allow any burst.
-                NonZeroU32::new(1).unwrap(),
-            ));
-
         loop {
             select_biased! {
                 // Project updates may significantly change the state, therefore
@@ -386,14 +380,10 @@ impl Backend {
                     };
                     scheduler.dispatch(task);
                 }
-                recv(proc_macro_channels.response_receiver) -> response => {
+                recv(proc_macro_channels.poll_responses_receiver) -> response => {
                     let Ok(()) = response else { break };
 
-                    if response_resolving_limiter.check().is_ok() {
-                        scheduler.local_mut(Self::on_proc_macro_response);
-                    } else {
-                        let _ = proc_macro_channels.response_sender.try_send(());
-                    }
+                    scheduler.local_with_precondition(Self::proc_macro_response_check, Self::on_proc_macro_response);
                 }
                 recv(proc_macro_channels.error_receiver) -> error => {
                     let Ok(()) = error else { break };
@@ -424,6 +414,16 @@ impl Backend {
     /// work.
     fn on_proc_macro_error(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
         state.proc_macro_controller.handle_error(&mut state.db, &state.config);
+    }
+
+    fn proc_macro_response_check(state: &State) -> bool {
+        if let ServerStatus::Starting(client) | ServerStatus::Ready(client) =
+            state.db.proc_macro_server_status()
+        {
+            client.available_responses().len() != 0
+        } else {
+            false
+        }
     }
 
     /// Calls [`lang::proc_macros::controller::ProcMacroClientController::on_response`] to do its

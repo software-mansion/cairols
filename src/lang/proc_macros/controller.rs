@@ -32,9 +32,11 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::cache::load_proc_macro_cache;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suites;
+use crate::lang::proc_macros::response_poll::ResponsePollThread;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::server::client::{Notifier, Requester};
 use crate::server::schedule::Task;
+use crate::server::schedule::thread::JoinHandle;
 use crate::toolchain::scarb::ScarbToolchain;
 use std::path::PathBuf;
 
@@ -68,6 +70,7 @@ pub struct ProcMacroClientController {
     channels: ProcMacroChannels,
     proc_macro_server_tracker: ProcMacroServerTracker,
     cwd: PathBuf,
+    _response_poll_thread: JoinHandle<()>,
 }
 
 impl From<&ServerStatus> for ProcMacroServerStatus {
@@ -97,7 +100,10 @@ impl ProcMacroClientController {
         notifier: Notifier,
         proc_macro_server_tracker: ProcMacroServerTracker,
         cwd: PathBuf,
+        generate_code_complete_receiver: Receiver<()>,
     ) -> Self {
+        let (poll_response_sender, poll_responses_receiver) = crossbeam::channel::bounded(1);
+
         Self {
             scarb,
             notifier,
@@ -113,8 +119,12 @@ impl ProcMacroClientController {
                     NonZeroU32::new(RESTART_RATE_LIMITER_RETRIES).unwrap(),
                 ),
             ),
-            channels: ProcMacroChannels::new(),
+            channels: ProcMacroChannels::new(poll_responses_receiver),
             cwd,
+            _response_poll_thread: ResponsePollThread::spawn(
+                generate_code_complete_receiver,
+                poll_response_sender,
+            ),
         }
     }
 
@@ -281,10 +291,7 @@ impl ProcMacroClientController {
         match self.scarb.proc_macro_server(&self.cwd) {
             Ok(proc_macro_server) => {
                 let client = ProcMacroClient::new(
-                    ProcMacroServerConnection::stdio(
-                        proc_macro_server,
-                        self.channels.response_sender.clone(),
-                    ),
+                    ProcMacroServerConnection::stdio(proc_macro_server),
                     self.channels.error_sender.clone(),
                     self.proc_macro_server_tracker.clone(),
                 );
@@ -431,28 +438,23 @@ pub struct ProcMacroChannels {
     // A single element queue is used to notify when client occurred an error.
     error_sender: Sender<()>,
 
-    // A single element queue is used to notify when the response queue is pushed.
-    pub response_receiver: Receiver<()>,
-
-    // A single element queue is used to notify when the response queue is pushed.
-    pub response_sender: Sender<()>,
-
     // A single element queue is used to notify when client occurred an error.
     pub error_receiver: Receiver<()>,
+
+    // A single element queue is used to notify when responses should be applied.
+    pub poll_responses_receiver: Receiver<()>,
 }
 
 impl ProcMacroChannels {
-    fn new() -> Self {
-        let (response_sender, response_receiver) = crossbeam::channel::bounded(1);
+    fn new(poll_responses_receiver: Receiver<()>) -> Self {
         let (error_sender, error_receiver) = crossbeam::channel::bounded(1);
 
-        Self { response_sender, response_receiver, error_sender, error_receiver }
+        Self { error_sender, error_receiver, poll_responses_receiver }
     }
 
     /// Make all channels empty in a non-blocking manner.
     fn clear_all(&self) {
         self.error_receiver.try_iter().for_each(|_| {});
-        self.response_receiver.try_iter().for_each(|_| {});
     }
 }
 

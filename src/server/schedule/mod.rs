@@ -18,7 +18,7 @@ pub mod thread;
 
 pub(super) use self::task::BackgroundSchedule;
 pub use self::task::{SyncMutTask, Task};
-use crate::server::schedule::task::SyncTask;
+use crate::server::schedule::task::{SyncConditionTask, SyncTask};
 
 /// The event loop thread is actually a secondary thread that we spawn from the
 /// _actual_ main thread. This secondary thread has a larger stack size
@@ -78,6 +78,17 @@ impl<'s> Scheduler<'s> {
                 let responder = self.client.responder();
                 func(self.state, notifier.clone(), &mut self.client.requester, responder);
             }
+            Task::SyncConditional(SyncConditionTask { precondition_func, mut_func }) => {
+                if precondition_func(self.state) {
+                    let notifier = self.client.notifier();
+                    let responder = self.client.responder();
+                    mut_func(self.state, notifier.clone(), &mut self.client.requester, responder);
+
+                    for hook in &self.sync_mut_task_hooks {
+                        hook(self.state, notifier.clone());
+                    }
+                };
+            }
             Task::Background(BackgroundTaskBuilder { schedule, builder: func }) => {
                 let static_func = func(self.state);
                 let notifier = self.client.notifier();
@@ -113,6 +124,17 @@ impl<'s> Scheduler<'s> {
         func: impl FnOnce(&State, Notifier, &mut Requester<'_>, Responder) + 's,
     ) {
         self.dispatch(Task::local(func));
+    }
+
+    /// Dispatches a local conditional `task`.
+    ///
+    /// This is a shortcut for `dispatch(Task::local_with_precondition(precondition_func, mut_func))`.
+    pub fn local_with_precondition(
+        &mut self,
+        precondition_func: impl FnOnce(&State) -> bool + 's,
+        mut_func: impl FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's,
+    ) {
+        self.dispatch(Task::local_with_precondition(precondition_func, mut_func));
     }
 
     /// Registers a hook to be called each time a synchronous task with access to mutable state is executed.
