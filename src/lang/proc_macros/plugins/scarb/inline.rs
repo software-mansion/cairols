@@ -69,6 +69,7 @@ pub fn inline_macro_generate_code(
                 diagnostics_note: Some(format!(
                     "this error originates in the inline macro: `{inline_macro_name}`",
                 )),
+                is_unhygienic: false,
             }),
             diagnostics,
         }

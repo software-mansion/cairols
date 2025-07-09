@@ -658,6 +658,7 @@ fn expand_derives(
                 content,
                 aux_data: None,
                 diagnostics_note: Some(note),
+                is_unhygienic: false,
             })
         },
         diagnostics: into_cairo_diagnostics(db, result.diagnostics, stable_ptr),
@@ -876,6 +877,7 @@ impl From<AttributeGeneratedFile> for PluginGeneratedFile {
             code_mappings: value.code_mappings,
             aux_data: None,
             diagnostics_note: value.diagnostics_note,
+            is_unhygienic: false,
         }
     }
 }

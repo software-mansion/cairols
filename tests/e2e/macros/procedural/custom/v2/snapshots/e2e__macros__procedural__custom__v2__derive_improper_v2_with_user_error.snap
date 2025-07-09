@@ -100,28 +100,6 @@ mapped_diagnostics:
           line: 0
           character: 30
       severity: 1
-      message: Placeholder expression ($expression) is allowed only in the context of a macro rule.
-      relatedInformation:
-      - location:
-          uri: vfs://proc_macro_derive.cairo
-          range:
-            start:
-              line: 0
-              character: 42
-            end:
-              line: 0
-              character: 43
-        message: Diagnostic mapped from here.
-  - related_code: ImproperDeriveMacroV2
-    diagnostic:
-      range:
-        start:
-          line: 0
-          character: 9
-        end:
-          line: 0
-          character: 30
-      severity: 1
       message: Missing tokens. Expected a path segment.
       relatedInformation:
       - location:
