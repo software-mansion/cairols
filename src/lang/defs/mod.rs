@@ -160,12 +160,24 @@ impl SymbolSearch {
 
 impl SymbolDef {
     /// Gets the [`FileId`] and [`TextSpan`] of symbol's definition node's originating location.
-    pub fn definition_location(&self, db: &AnalysisDatabase) -> Option<(FileId, TextSpan)> {
+    pub fn definition_originating_location(
+        &self,
+        db: &AnalysisDatabase,
+    ) -> Option<(FileId, TextSpan)> {
         let stable_ptr = self.definition_stable_ptr(db)?;
         let node = stable_ptr.lookup(db);
         let found_file = stable_ptr.file_id(db);
         let span = node.span_without_trivia(db);
         Some(get_originating_location(db, found_file, span, None))
+    }
+
+    /// Gets the [`FileId`] and [`TextSpan`] of symbol's definition node's non-translated location.
+    pub fn definition_location(&self, db: &AnalysisDatabase) -> Option<(FileId, TextSpan)> {
+        let stable_ptr = self.definition_stable_ptr(db)?;
+        let node = stable_ptr.lookup(db);
+        let found_file = stable_ptr.file_id(db);
+        let span = node.span_without_trivia(db);
+        Some((found_file, span))
     }
 
     /// Gets the name of the symbol.

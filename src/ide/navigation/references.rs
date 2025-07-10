@@ -47,7 +47,7 @@ fn find_references(
                     // We want to show definition location (if requested),
                     // even if it comes from a derive macro.
                     // Common case - impl declared in the derive macro.
-                    || (include_declaration && Some(loc) == symbol.def.definition_location(db).as_ref())
+                    || (include_declaration && Some(loc) == symbol.def.definition_originating_location(db).as_ref())
             })
             .filter_map(|loc| db.lsp_location(loc))
             .collect(),
