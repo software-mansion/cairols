@@ -16,13 +16,13 @@ fn trait_method() {
     }
     ", @r"
     pub trait Foo<T> {
-        fn foo(self: T);
+        fn <sel>foo</sel>(self: T);
     }
 
     #[derive(Copy, Drop)]
     pub struct Bar {}
     impl FooBar of Foo<Bar> {
-        fn <sel>foo</sel>(self: Bar) {}
+        fn foo(self: Bar) {}
     }
     ")
 }
@@ -39,11 +39,11 @@ fn trait_const() {
     }
     ", @r"
     pub trait Foo<T> {
-        const VERY_IMPORTANT_CONST: T;
+        const <sel>VERY_IMPORTANT_CONST</sel>: T;
     }
 
     impl FooBar of Foo<felt252> {
-        const <sel>VERY_IMPORTANT_CONST</sel>: felt252 = 213;
+        const VERY_IMPORTANT_CONST: felt252 = 213;
     }
     ")
 }
@@ -60,11 +60,11 @@ fn trait_types() {
     }
     ", @r"
     pub trait Foo {
-        type VERY_IMPORTANT_TYPE;
+        type <sel>VERY_IMPORTANT_TYPE</sel>;
     }
 
     impl FooBar of Foo {
-        type <sel>VERY_IMPORTANT_TYPE</sel> = felt252;
+        type VERY_IMPORTANT_TYPE = felt252;
     }
     ")
 }
@@ -90,14 +90,14 @@ fn trait_impls() {
         const value: felt252;
     }
     trait FooTrait {
-        impl VeryImportantImpl: ConstCarryingTrait;
+        impl <sel>VeryImportantImpl</sel>: ConstCarryingTrait;
     }
 
     impl ConstCarryingTraitOneTwoThree of ConstCarryingTrait {
         const value: felt252 = 123;
     }
     impl FooImpl of FooTrait {
-        impl <sel>VeryImportantImpl</sel> = ConstCarryingTraitOneTwoThree;
+        impl VeryImportantImpl = ConstCarryingTraitOneTwoThree;
     }
     ")
 }
@@ -231,7 +231,7 @@ fn trait_method_with_macros() {
     ", @r"
     #[complex_attribute_macro_v2]
     pub trait Foo<T> {
-        fn foo(self: T);
+        fn <sel>foo</sel>(self: T);
     }
 
     #[derive(Copy, Drop)]
@@ -239,7 +239,7 @@ fn trait_method_with_macros() {
 
     #[complex_attribute_macro_v2]
     impl FooBar of Foo<Bar> {
-        fn <sel>foo</sel>(self: Bar) {}
+        fn foo(self: Bar) {}
     }
     ")
 }

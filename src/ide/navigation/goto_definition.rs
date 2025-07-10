@@ -41,8 +41,23 @@ fn goto(db: &AnalysisDatabase, syntax_node: SyntaxNode) -> Option<Location> {
         syntax_node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
     let symbol = SymbolSearch::find_definition(db, &identifier)?.def;
 
+    let og_location = (
+        identifier.as_syntax_node().stable_ptr(db).file_id(db),
+        identifier.as_syntax_node().span_without_trivia(db),
+    );
+
+    #[allow(unused_doc_comments)]
+    /// Try looking for declaration if we were on the definition.
+    /// It is done to ensure better UX when finding references of impl items.
+    /// For details, refer to [`SymbolSearch::find_declaration`].
+    let symbol = if Some(og_location) == symbol.definition_location(db) {
+        SymbolSearch::find_declaration(db, &identifier)?.def
+    } else {
+        symbol
+    };
+
     let (found_file, span) = try_special_case_non_inline_module(db, &symbol)
-        .map_or_else(|| symbol.definition_location(db), Some)?;
+        .map_or_else(|| symbol.definition_originating_location(db), Some)?;
 
     db.lsp_location((found_file, span))
 }
