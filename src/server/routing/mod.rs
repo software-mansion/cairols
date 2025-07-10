@@ -21,7 +21,7 @@ use lsp_types::request::{
 };
 use tracing::{error, trace, warn};
 
-use super::client::Responder;
+use super::client::{Notifier, Responder};
 use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ToolchainInfo, ViewAnalyzedCrates, ViewSyntaxTree,
 };
@@ -48,9 +48,7 @@ pub fn request<'a>(request: Request) -> Task<'a> {
         ExpandMacro::METHOD => {
             background_request_task::<ExpandMacro>(request, BackgroundSchedule::Worker)
         }
-        Formatting::METHOD => {
-            background_request_task::<Formatting>(request, BackgroundSchedule::LatencySensitive)
-        }
+        Formatting::METHOD => background_fmt_task::<Formatting>(request),
         GotoDefinition::METHOD => {
             background_request_task::<GotoDefinition>(request, BackgroundSchedule::LatencySensitive)
         }
@@ -156,12 +154,26 @@ fn local_request_task<'a, R: handlers::SyncRequestHandler>(
     }))
 }
 
-fn background_request_task<'a, R: handlers::BackgroundDocumentRequestHandler>(
+fn background_request_task<'a, R: handlers::BackgroundDocumentRequestHandler + 'a>(
     request: Request,
     schedule: BackgroundSchedule,
 ) -> Result<Task<'a>, LSPError> {
     let (id, params) = cast_request::<R>(request)?;
-    Ok(Task::background(schedule, move |state: &State| {
+    Ok(Task::background(schedule, create_background_fn_builder::<R>(id, params)))
+}
+
+fn background_fmt_task<'a, R: handlers::BackgroundDocumentRequestHandler + 'a>(
+    request: Request,
+) -> Result<Task<'a>, LSPError> {
+    let (id, params) = cast_request::<R>(request)?;
+    Ok(Task::fmt(create_background_fn_builder::<R>(id, params)))
+}
+
+fn create_background_fn_builder<R: handlers::BackgroundDocumentRequestHandler>(
+    id: RequestId,
+    params: <R as RequestTrait>::Params,
+) -> impl FnOnce(&State) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> {
+    move |state: &State| {
         let state_snapshot = state.snapshot();
         Box::new(move |notifier, responder| {
             let result = catch_unwind(AssertUnwindSafe(|| {
@@ -180,7 +192,7 @@ fn background_request_task<'a, R: handlers::BackgroundDocumentRequestHandler>(
             .and_then(|res| res);
             respond::<R>(id, result, &responder);
         })
-    }))
+    }
 }
 
 fn local_notification_task<'a, N: handlers::SyncNotificationHandler>(
