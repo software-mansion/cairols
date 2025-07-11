@@ -8,6 +8,7 @@ use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::project::Crate;
 use crate::project::crate_data::CrateInfo;
 use crate::state::{Owned, Snapshot};
+use crate::toolchain::scarb::ScarbToolchain;
 
 pub use self::configs_registry::{ConfigsRegistry, PackageConfig};
 
@@ -16,8 +17,8 @@ mod configs_registry;
 type WorkspaceRoot = PathBuf;
 type ManifestPath = PathBuf;
 
-#[derive(Default)]
 pub struct ProjectModel {
+    scarb_toolchain: ScarbToolchain,
     // The two fields below keep exactly the same information;
     // therefore, their contents should be kept synchronised.
     // We keep both of them for efficiency and ease of use.
@@ -35,6 +36,17 @@ pub struct ProjectModel {
 }
 
 impl ProjectModel {
+    pub fn new(scarb_toolchain: ScarbToolchain) -> Self {
+        Self {
+            scarb_toolchain,
+            loaded_workspaces: Default::default(),
+            loaded_crates: Default::default(),
+            manifests_of_members_from_loaded_workspaces: Default::default(),
+            configs_registry: Default::default(),
+            remove_crates_from_db_on_next_update: false,
+        }
+    }
+
     pub fn configs_registry(&self) -> Snapshot<ConfigsRegistry> {
         self.configs_registry.snapshot()
     }
@@ -143,7 +155,7 @@ impl ProjectModel {
             let lint_config = self
                 .configs_registry
                 .config_for_file(&cr.root)
-                .filter(|_| enable_linter)
+                .filter(|_| enable_linter && !self.is_from_scarb_cache(&cr.root))
                 .map(|member_config| member_config.lint);
 
             cr.apply(db, lint_config, proc_macro_plugin_suite.cloned());
@@ -170,5 +182,11 @@ impl ProjectModel {
         }
 
         self.loaded_workspaces.insert(workspace_dir.to_path_buf(), workspace_crates);
+    }
+
+    fn is_from_scarb_cache(&self, crate_root_path: &Path) -> bool {
+        self.scarb_toolchain
+            .cache_path()
+            .is_some_and(|cache_path| crate_root_path.starts_with(cache_path))
     }
 }

@@ -68,7 +68,7 @@ impl ProjectController {
         );
 
         ProjectController {
-            model: Default::default(),
+            model: ProjectModel::new(scarb_toolchain.clone()),
             scarb_toolchain,
             requests_sender,
             response_receiver,
