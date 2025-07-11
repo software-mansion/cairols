@@ -143,6 +143,13 @@ fn type_bound() {
     """]
 
     [[completions]]
+    completion_label = "DivRemHelper"
+    text_edits = ["""
+    use core::internal::bounded_int::DivRemHelper;
+
+    """]
+
+    [[completions]]
     completion_label = "Done"
     text_edits = ["""
     use core::circuit::AddInputResult::Done;
@@ -260,6 +267,13 @@ fn negative_type_bound() {
     completion_label = "DivRem"
     text_edits = ["""
     use core::num::traits::DivRem;
+
+    """]
+
+    [[completions]]
+    completion_label = "DivRemHelper"
+    text_edits = ["""
+    use core::internal::bounded_int::DivRemHelper;
 
     """]
 
@@ -384,6 +398,13 @@ fn impl_bound() {
     """]
 
     [[completions]]
+    completion_label = "DivRemHelper"
+    text_edits = ["""
+    use core::internal::bounded_int::DivRemHelper;
+
+    """]
+
+    [[completions]]
     completion_label = "Done"
     text_edits = ["""
     use core::circuit::AddInputResult::Done;
@@ -424,6 +445,20 @@ fn type_bound_user_trait() {
 
     [[completions]]
     completion_label = "Traicik"
+
+    [[completions]]
+    completion_label = "TrimMaxHelper"
+    text_edits = ["""
+    use core::internal::bounded_int::TrimMaxHelper;
+
+    """]
+
+    [[completions]]
+    completion_label = "TrimMinHelper"
+    text_edits = ["""
+    use core::internal::bounded_int::TrimMinHelper;
+
+    """]
 
     [[completions]]
     completion_label = "True"
