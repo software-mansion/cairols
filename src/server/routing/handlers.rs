@@ -285,7 +285,12 @@ impl SyncNotificationHandler for DidOpenTextDocument {
 
         if let Some(file_id) = state.db.file_for_url(&uri) {
             state.open_files.insert(uri.clone());
-            state.db.override_file_content(file_id, Some(params.text_document.text.into()));
+            if let Some(content) = state.db.file_content(file_id)
+                && *content != *params.text_document.text.as_str()
+            {
+                state.db.override_file_content(file_id, Some(params.text_document.text.into()));
+            }
+
             state.code_lens_controller.on_did_change(
                 state.db.snapshot(),
                 state.config.clone(),
