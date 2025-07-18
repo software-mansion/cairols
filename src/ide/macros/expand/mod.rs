@@ -126,7 +126,7 @@ fn expand_macro_ex(
         span_after_inlining(db, file_to_process, replaced_content_file, item_node.span(db))?;
 
     let new_file_content = db.file_content(replaced_content_file)?;
-    let replaced_content = new_span.take(&new_file_content);
+    let replaced_content = new_span.take(&new_file_content)?;
 
     let replaced_content = if extra_files.is_empty() {
         replaced_content.to_string()
