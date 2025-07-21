@@ -267,6 +267,9 @@ impl Backend {
 
             Self::dispatch_setup_tasks(&mut scheduler);
 
+            // Notify the swapper about state mutation.
+            scheduler.on_sync_mut_task(Self::register_mutation_in_swapper);
+
             // Attempt to swap the database to reduce memory use.
             // Because diagnostics are always refreshed afterwards, the fresh database state will
             // be quickly repopulated.
@@ -453,6 +456,10 @@ impl Backend {
                 error!("semantic tokens refresh failed: {err:#?}");
             }
         }
+    }
+
+    fn register_mutation_in_swapper(state: &mut State, _notifier: Notifier) {
+        state.db_swapper.register_mutation();
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
