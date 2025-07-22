@@ -12,7 +12,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
 use lsp_types::Url;
 use serde::Serialize;
-use tracing::{error, warn};
+use tracing::{error, trace, warn};
 
 use crate::config::Config;
 use crate::env_config;
@@ -57,17 +57,42 @@ impl Display for SwapReason {
 /// It is expected that diagnostics will be refreshed on it as quickly as possible, otherwise
 /// the entire workspace would be recompiled at an undetermined time leading to bad UX delays.
 pub struct AnalysisDatabaseSwapper {
-    last_replace_time: SystemTime,
+    stopwatch: Stopwatch,
     mutations_since_last_replace: u64,
     db_replace_min_interval: Duration,
     db_replace_min_mutations: u64,
+}
+
+#[derive(Default)]
+struct Stopwatch {
+    start_time: Option<SystemTime>,
+    total_elapsed_time: Duration,
+}
+
+impl Stopwatch {
+    fn start(&mut self) {
+        self.start_time = Some(SystemTime::now());
+    }
+
+    fn stop(&mut self) {
+        let Some(start_time) = self.start_time else {
+            return;
+        };
+
+        let elapsed_time = SystemTime::now().duration_since(start_time).unwrap_or_default();
+        self.total_elapsed_time += elapsed_time;
+    }
+
+    fn reset(&mut self) {
+        *self = Default::default();
+    }
 }
 
 impl AnalysisDatabaseSwapper {
     /// Creates a new `AnalysisDatabaseSwapper`.
     pub fn new() -> Self {
         Self {
-            last_replace_time: SystemTime::now(),
+            stopwatch: Stopwatch::default(),
             db_replace_min_interval: env_config::db_replace_interval(),
             mutations_since_last_replace: 0,
             db_replace_min_mutations: env_config::db_replace_mutations(),
@@ -76,6 +101,19 @@ impl AnalysisDatabaseSwapper {
 
     pub fn register_mutation(&mut self) {
         self.mutations_since_last_replace += 1;
+    }
+
+    pub fn start_stopwatch(&mut self) {
+        trace!("[Swapper] Stopwatch started!");
+        self.stopwatch.start();
+    }
+
+    pub fn stop_stopwatch(&mut self) {
+        self.stopwatch.stop();
+        trace!(
+            "[Swapper] Stopwatch stopped! Total elapsed time: {}s",
+            self.stopwatch.total_elapsed_time.as_secs()
+        );
     }
 
     /// Checks if enough time has passed since last db swap, and if so, swaps the database.
@@ -94,19 +132,10 @@ impl AnalysisDatabaseSwapper {
 
     /// Checks whether any swap condition has been met. Returns the reason if swap is possible, `None` otherwise.
     fn check_for_swap(&mut self) -> Option<SwapReason> {
-        let Ok(elapsed) = self.last_replace_time.elapsed() else {
-            warn!("system time went backwards, skipping db swap");
-
-            // Reset last replace time because in this place the old value will never make sense.
-            self.last_replace_time = SystemTime::now();
-
-            return None;
-        };
-
         if self.mutations_since_last_replace >= self.db_replace_min_mutations {
             Some(SwapReason::Mutations(self.mutations_since_last_replace))
-        } else if elapsed >= self.db_replace_min_interval {
-            Some(SwapReason::Time(elapsed))
+        } else if self.stopwatch.total_elapsed_time >= self.db_replace_min_interval {
+            Some(SwapReason::Time(self.stopwatch.total_elapsed_time))
         } else {
             None
         }
@@ -144,7 +173,7 @@ impl AnalysisDatabaseSwapper {
         *db = new_db;
 
         self.mutations_since_last_replace = 0;
-        self.last_replace_time = SystemTime::now();
+        self.stopwatch.reset();
     }
 
     /// Copies current default macro plugins into new db.

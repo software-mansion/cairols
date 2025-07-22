@@ -49,7 +49,7 @@ impl ProcMacroServerTracker {
 #[derive(Clone)]
 pub struct AnalysisProgressController {
     server_tracker: ProcMacroServerTracker,
-    status_receiver: Receiver<AnalysisFinished>,
+    status_receiver: Receiver<AnalysisStatus>,
     // Keep it last for drop.
     _status_thread: Arc<JoinHandle<()>>,
 }
@@ -64,7 +64,7 @@ impl AnalysisProgressController {
         Self { server_tracker, status_receiver, _status_thread: Arc::new(status_thread) }
     }
 
-    pub fn get_status_receiver(&self) -> Receiver<AnalysisFinished> {
+    pub fn get_status_receiver(&self) -> Receiver<AnalysisStatus> {
         self.status_receiver.clone()
     }
 
@@ -98,7 +98,10 @@ impl AnalysisProgressController {
 
 // We don't need to track starts for now
 #[derive(PartialEq)]
-pub struct AnalysisFinished;
+pub enum AnalysisStatus {
+    Started,
+    Finished,
+}
 
 enum AnalysisEvent {
     ConfigLoad {
@@ -120,14 +123,14 @@ enum AnalysisEvent {
 
 struct AnalysisProgressThread {
     events_receiver: Receiver<AnalysisEvent>,
-    status_sender: Sender<AnalysisFinished>,
+    status_sender: Sender<AnalysisStatus>,
     notifier: Notifier,
 }
 
 impl AnalysisProgressThread {
     pub fn spawn(
         events_receiver: Receiver<AnalysisEvent>,
-        status_sender: Sender<AnalysisFinished>,
+        status_sender: Sender<AnalysisStatus>,
         notifier: Notifier,
     ) -> JoinHandle<()> {
         let this = Self { events_receiver, status_sender, notifier };
@@ -152,6 +155,7 @@ impl AnalysisProgressThread {
             event: ServerStatusEvent::AnalysisStarted,
             idle: false,
         });
+        let _ = self.status_sender.send(AnalysisStatus::Started);
 
         while let Ok(event) = self.events_receiver.recv() {
             match event {
@@ -178,8 +182,7 @@ impl AnalysisProgressThread {
                             event: ServerStatusEvent::AnalysisFinished,
                             idle: true,
                         });
-                        let _ = self.status_sender.send(AnalysisFinished);
-
+                        let _ = self.status_sender.send(AnalysisStatus::Finished);
                         analysis_in_progress = false;
                     }
 
@@ -191,6 +194,7 @@ impl AnalysisProgressThread {
                             event: ServerStatusEvent::AnalysisStarted,
                             idle: false,
                         });
+                        let _ = self.status_sender.send(AnalysisStatus::Started);
                     }
                     analysis_in_progress = true;
                 }

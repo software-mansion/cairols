@@ -154,6 +154,15 @@ impl<'s> Scheduler<'s> {
         self.dispatch(Task::local_with_precondition(precondition_func, mut_func));
     }
 
+    /// Immedietely executes a function which mutates the underlying [`State`], bypassing the dispatch phase.
+    ///
+    /// # Warning
+    /// Use only for lightweight, instant actions and when `local_mut` task is not suitable.
+    /// Mind the potential race conditions caused by non-dispatched mutations.
+    pub fn instant(&mut self, func: impl FnOnce(&mut State) + 's) {
+        func(self.state);
+    }
+
     /// Registers a hook to be called each time a synchronous task with access to mutable state is executed.
     ///
     /// All hooks are called right after task execution, in the same thread and with the same

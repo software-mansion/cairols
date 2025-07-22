@@ -55,7 +55,7 @@ use lsp_types::RegistrationParams;
 use lsp_types::request::SemanticTokensRefresh;
 use tracing::{debug, error, info, trace};
 
-use crate::ide::analysis_progress::AnalysisFinished;
+use crate::ide::analysis_progress::AnalysisStatus;
 use crate::ide::code_lens::CodeLensController;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros;
@@ -354,7 +354,7 @@ impl Backend {
         connection: &Connection,
         proc_macro_channels: ProcMacroChannels,
         project_updates_receiver: Receiver<ProjectUpdate>,
-        analysis_progress_status_receiver: Receiver<AnalysisFinished>,
+        analysis_progress_status_receiver: Receiver<AnalysisStatus>,
         code_lens_request_refresh_receiver: Receiver<()>,
         mut scheduler: Scheduler<'_>,
     ) -> Result<()> {
@@ -394,11 +394,22 @@ impl Backend {
                     scheduler.local_mut(Self::on_proc_macro_error);
                 }
                 recv(analysis_progress_status_receiver) -> analysis_progress_status => {
-                    let Ok(AnalysisFinished) = analysis_progress_status else { break };
-
-                    scheduler.local(|state, _notifier, requester, _responder|
-                        Self::on_stopped_analysis(state, requester)
-                    );
+                    let Ok(analysis_status) = analysis_progress_status else { break };
+                    match analysis_status {
+                        AnalysisStatus::Started => {
+                            scheduler.instant(|state| {
+                                state.db_swapper.start_stopwatch();
+                            });
+                        },
+                        AnalysisStatus::Finished => {
+                            scheduler.instant(|state| {
+                                state.db_swapper.stop_stopwatch();
+                            });
+                            scheduler.local(|state, _notifier, requester, _responder|
+                                Self::on_stopped_analysis(state, requester)
+                            );
+                        },
+                    }
                 }
                 recv(code_lens_request_refresh_receiver) -> error => {
                     let Ok(()) = error else { break };
