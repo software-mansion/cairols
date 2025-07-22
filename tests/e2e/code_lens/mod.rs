@@ -17,9 +17,23 @@ use std::path::PathBuf;
 mod both_runners;
 mod cairo_test;
 mod custom;
+mod executable;
 mod no_runners;
 mod other_file;
 mod snforge;
+
+fn test_code_lens_scarb_execute(args: (&str, &str)) -> Report {
+    let (cairo_code, scarb_toml) = args;
+    test_code_lens(
+        cairo_code,
+        scarb_toml,
+        json!({
+            "cairo1": {
+                "enableProcMacros": true
+            }
+        }),
+    )
+}
 
 fn test_code_lens_snforge(cairo_code: &str) -> Report {
     test_code_lens(
