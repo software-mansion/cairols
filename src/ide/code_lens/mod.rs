@@ -3,25 +3,65 @@ use std::collections::hash_map::Entry;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, RwLock};
 
-use crossbeam::channel::{self, Receiver, Sender};
-use itertools::Itertools;
-use lsp_types::request::CodeLensRefresh;
-use lsp_types::{CodeLens, Url};
-use serde_json::Value;
-use tests::TestCodeLensProvider;
-
 use crate::config::Config;
-use crate::lang::db::AnalysisDatabase;
+use crate::ide::code_lens::executables::{ExecutableCodeLens, push_executable_code_lenses};
+use crate::ide::code_lens::tests::{TestCodeLens, push_test_code_lenses};
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::server::client::{Notifier, Requester};
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
 use crate::server::schedule::{Task, thread};
 use crate::state::State;
+use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::{ModuleId, ModuleItemId, TopLevelLanguageElementId};
+use cairo_lang_filesystem::db::get_originating_location;
+use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_syntax::node::ast::ModuleItem;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode};
+use crossbeam::channel::{self, Receiver, Sender};
+use itertools::Itertools;
+use lsp_types::request::CodeLensRefresh;
+use lsp_types::{CodeLens, Url};
+use serde::{Deserialize, Serialize};
+use serde_json::{Number, Value};
 
+mod executables;
 mod tests;
+
+trait LSCodeLensInterface {
+    fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()>;
+    fn get_lens(&self) -> CodeLens;
+}
+
+#[derive(Clone, PartialEq)]
+pub enum LSCodeLens {
+    Test(TestCodeLens),
+    Executable(ExecutableCodeLens),
+}
+
+impl LSCodeLens {
+    pub fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
+        match self {
+            LSCodeLens::Test(test_code_lens) => test_code_lens.execute(file_url, state, notifier),
+            LSCodeLens::Executable(executable_code_lens) => {
+                executable_code_lens.execute(file_url, state, notifier)
+            }
+        }
+    }
+    pub fn get_lens(&self) -> CodeLens {
+        match self {
+            LSCodeLens::Test(test) => test.get_lens(),
+            LSCodeLens::Executable(executable) => executable.get_lens(),
+        }
+    }
+}
+
+pub type FileCodeLens = Vec<LSCodeLens>;
 
 #[derive(Default)]
 pub struct CodeLensControllerState {
-    lens: HashMap<Url, Vec<(CodeLens, CodeLensKind)>>,
+    lens: HashMap<Url, FileCodeLens>,
 }
 
 #[derive(Clone)]
@@ -107,12 +147,12 @@ impl CodeLensController {
         db: &AnalysisDatabase,
         config: &Config,
     ) -> Option<Vec<CodeLens>> {
-        let state = self.state.read().unwrap();
+        let lens_state = self.state.read().unwrap();
 
-        let code_lens = if let Some(code_lens) = state.lens.get(&url) {
-            code_lens.iter().map(|(code_lens, _kind)| code_lens).cloned().collect()
+        let file_code_lens: FileCodeLens = if let Some(code_lens) = lens_state.lens.get(&url) {
+            code_lens.clone()
         } else {
-            drop(state);
+            drop(lens_state);
 
             let result = calculate_code_lens(url.clone(), db, config)?;
 
@@ -120,30 +160,31 @@ impl CodeLensController {
             let mut state = self.state.write().unwrap();
             let entry = state.lens.entry(url);
 
-            entry
-                .insert_entry(result)
-                .get()
-                .iter()
-                .map(|(code_lens, _kind)| code_lens)
-                .cloned()
-                .collect()
+            entry.insert_entry(result.clone());
+            result
         };
+
+        let code_lens = file_code_lens
+            .into_iter()
+            .map(|lens| lens.get_lens())
+            .sorted_by_key(|lens| lens.command.clone().unwrap_or_default().title)
+            .collect();
 
         Some(code_lens)
     }
 
     pub fn execute_code_lens(state: &State, notifier: Notifier, args: &[Value]) -> Option<()> {
-        let (index, url) = parse_args(args)?;
+        let (file_url, index) = parse_args(args)?;
 
-        // Drop state guard before doing any panickable actions.
-        let (code_lens, kind) =
-            state.code_lens_controller.state.read().ok()?.lens.get(&url)?.get(index)?.clone();
+        let ls_code_lens = {
+            let code_lens_state = state.code_lens_controller.state.read().ok()?;
+            let file_lens_state = code_lens_state.lens.get(&file_url)?;
+            let item_ref = file_lens_state.get(index)?;
+            item_ref.clone()
+        };
 
-        match kind {
-            CodeLensKind::Test => {
-                TestCodeLensProvider.execute_code_lens(state, notifier, url, code_lens)
-            }
-        }
+        ls_code_lens.execute(file_url, state, &notifier);
+        Some(())
     }
 
     #[tracing::instrument(skip_all)]
@@ -183,8 +224,8 @@ impl CodeLensRefreshThread {
             let message = self.refresh_receiver.try_iter().fold(message, |mut acc, next_messge| {
                 acc.db = next_messge.db; // Leave only single snapshot, drop others.
                 acc.config = next_messge.config; // Use last sent config.
-                acc.files.extend(next_messge.files);
 
+                acc.files.extend(next_messge.files);
                 acc
             });
 
@@ -249,49 +290,77 @@ pub struct FileChange {
     pub was_deleted: bool,
 }
 
-trait CodeLensProvider {
-    fn calculate_code_lens(
-        &self,
-        url: Url,
-        db: &AnalysisDatabase,
-        config: &Config,
-    ) -> Option<Vec<CodeLens>>;
-
-    fn execute_code_lens(
-        &self,
-        state: &State,
-        notifier: Notifier,
-        url: Url,
-        code_lens: CodeLens,
-    ) -> Option<()>;
-}
-
-#[derive(Clone, Copy, PartialEq)]
-enum CodeLensKind {
+#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum CodeLensKind {
     Test,
+    Executable,
 }
 
-fn calculate_code_lens(
-    url: Url,
-    db: &AnalysisDatabase,
-    config: &Config,
-) -> Option<Vec<(CodeLens, CodeLensKind)>> {
+fn calculate_code_lens(url: Url, db: &AnalysisDatabase, config: &Config) -> Option<FileCodeLens> {
     let mut result = vec![];
 
-    result.extend(
-        TestCodeLensProvider
-            .calculate_code_lens(url, db, config)?
-            .into_iter()
-            .map(|code_lens| (code_lens, CodeLensKind::Test)),
-    );
+    push_test_code_lenses(&mut result, url.clone(), db, config);
+    push_executable_code_lenses(&mut result, url, db);
 
     Some(result)
 }
 
-fn parse_args(args: &[Value]) -> Option<(usize, Url)> {
-    let [Value::Number(num), Value::String(url)] = args else { return None };
-    let index = num.as_u64()? as usize;
-    let url: Url = url.parse().ok()?;
+fn make_lens_args(file_url: Url, lens_index: usize) -> Vec<Value> {
+    vec![Value::String(file_url.to_string()), Value::Number(Number::from(lens_index))]
+}
 
-    Some((index, url))
+fn parse_args(args: &[Value]) -> Option<(Url, usize)> {
+    let [Value::String(url), Value::Number(lens_index)] = args else {
+        return None;
+    };
+    let url: Url = url.parse().ok()?;
+    let lens_index = lens_index.as_u64().unwrap() as usize;
+
+    Some((url, lens_index))
+}
+
+struct AnnotatedNode {
+    pub full_path: String,
+    pub attribute_ptr: SyntaxStablePtrId,
+}
+/// Collects functions with given attributes on them
+/// Returns tuples of (full path, pointer to found attribute)
+fn collect_functions_with_attrs(
+    db: &AnalysisDatabase,
+    module: ModuleId,
+    attributes: &[&str],
+) -> Vec<AnnotatedNode> {
+    let mut result = vec![];
+
+    if let Ok(functions) = db.module_free_functions(module) {
+        for (free_function_id, function) in functions.iter() {
+            let function_full_path = ModuleItemId::FreeFunction(*free_function_id).full_path(db);
+            result.extend(
+                attributes
+                    .iter()
+                    .filter_map(|attr_name| function.find_attr(db, attr_name))
+                    .map(|attr| AnnotatedNode {
+                        full_path: function_full_path.clone(),
+                        attribute_ptr: attr.stable_ptr(db).untyped(),
+                    })
+                    // If for some reason we found multiple attributes relevant for the code lens kind, push only the first one.
+                    .next(),
+            );
+        }
+    }
+
+    result
+}
+
+fn get_original_node_and_file(
+    db: &AnalysisDatabase,
+    ptr: SyntaxStablePtrId,
+) -> Option<(SyntaxNode, FileId)> {
+    let (file, span) =
+        get_originating_location(db, ptr.file_id(db), ptr.lookup(db).span_without_trivia(db), None);
+
+    db.find_syntax_node_at_offset(file, span.start)?
+        .ancestors_with_self(db)
+        .find(|n| ModuleItem::cast(db, *n).is_some())
+        .map(|syntax_node| (syntax_node, file))
 }

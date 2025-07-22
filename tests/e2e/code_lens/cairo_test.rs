@@ -15,20 +15,20 @@ fn only_functions() {
     [[lenses]]
     line = 0
     command = "▶ Run test"
-    index = 0
     file_path = "src/lib.cairo"
+    index = 0
 
     [[lenses]]
     line = 2
     command = "▶ Run test"
-    index = 1
     file_path = "src/lib.cairo"
+    index = 1
 
     [[lenses]]
     line = 6
     command = "▶ Run test"
-    index = 2
     file_path = "src/lib.cairo"
+    index = 2
 
     [execute_in_terminal]
     command = "scarb cairo-test --filter hello::b"
@@ -47,14 +47,14 @@ fn fn_in_mod() {
     [[lenses]]
     line = 0
     command = "▶ Run tests"
-    index = 1
     file_path = "src/lib.cairo"
+    index = 1
 
     [[lenses]]
     line = 1
     command = "▶ Run test"
-    index = 0
     file_path = "src/lib.cairo"
+    index = 0
 
     [execute_in_terminal]
     command = "scarb cairo-test --filter hello::b::a"
@@ -73,14 +73,14 @@ fn run_for_mod() {
     [[lenses]]
     line = 0
     command = "▶ Run tests"
-    index = 1
     file_path = "src/lib.cairo"
+    index = 1
 
     [[lenses]]
     line = 1
     command = "▶ Run test"
-    index = 0
     file_path = "src/lib.cairo"
+    index = 0
 
     [execute_in_terminal]
     command = "scarb cairo-test --filter hello::b"
@@ -119,19 +119,19 @@ fn complex() {
     [[lenses]]
     line = 4
     command = "▶ Run tests"
-    index = 2
     file_path = "src/lib.cairo"
+    index = 2
 
     [[lenses]]
     line = 5
     command = "▶ Run test"
-    index = 1
     file_path = "src/lib.cairo"
+    index = 1
 
     [[lenses]]
     line = 11
     command = "▶ Run test"
-    index = 0
     file_path = "src/lib.cairo"
+    index = 0
     "#)
 }
