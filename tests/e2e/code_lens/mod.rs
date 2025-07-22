@@ -17,9 +17,23 @@ use crate::support::{cursors, sandbox};
 mod both_runners;
 mod cairo_test;
 mod custom;
+mod executable;
 mod no_runners;
 mod other_file;
 mod snforge;
+
+fn test_code_lens_scarb_execute(args: (&str, &str)) -> Report {
+    let (cairo_code, scarb_toml) = args;
+    test_code_lens(
+        cairo_code,
+        scarb_toml,
+        json!({
+            "cairo1": {
+                "enableProcMacros": true
+            }
+        }),
+    )
+}
 
 fn test_code_lens_snforge(cairo_code: &str) -> Report {
     test_code_lens(
@@ -197,17 +211,16 @@ fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
                 .map(|code_lens| {
                     let command = code_lens.command.unwrap();
                     let args = command.arguments.unwrap();
-
                     assert_eq!(command.command, "cairo.executeCodeLens");
 
                     CodeLensReport {
                         line: code_lens.range.start.line,
                         command: command.title,
-                        index: args[0].as_u64().unwrap(),
                         file_path: ls
                             .fixture
-                            .url_path(&Url::parse(args[1].as_str().unwrap()).unwrap())
+                            .url_path(&Url::parse(args[0].as_str().unwrap()).unwrap())
                             .unwrap(),
+                        index: args[1].as_u64().unwrap() as u32,
                     }
                 })
                 .collect();
@@ -232,8 +245,8 @@ struct Report {
 struct CodeLensReport {
     line: u32,
     command: String,
-    index: u64,
     file_path: PathBuf,
+    index: u32,
 }
 
 #[derive(Serialize)]
