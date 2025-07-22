@@ -444,9 +444,11 @@ impl Backend {
 
     fn on_stopped_analysis(state: &State, requester: &mut Requester<'_>) {
         proc_macros::cache::save_proc_macro_cache(&state.db, &state.config);
-        state
-            .code_lens_controller
-            .schedule_refreshing_all_lenses(state.db.snapshot(), state.config.clone());
+        state.code_lens_controller.schedule_refreshing_all_lenses(
+            state.db.snapshot(),
+            state.config.clone(),
+            state.project_controller.compilation_units(),
+        );
 
         if state.client_capabilities.workspace_semantic_tokens_refresh_support() {
             if let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing()) {

@@ -15,19 +15,19 @@ fn only_functions() {
     [[lenses]]
     line = 0
     command = "▶ Run test"
-    index = 0
+    full_path = "hello::a"
     file_path = "src/lib.cairo"
 
     [[lenses]]
     line = 2
     command = "▶ Run test"
-    index = 1
+    full_path = "hello::b"
     file_path = "src/lib.cairo"
 
     [[lenses]]
     line = 6
     command = "▶ Run test"
-    index = 2
+    full_path = "hello::c"
     file_path = "src/lib.cairo"
 
     [execute_in_terminal]
@@ -47,13 +47,13 @@ fn fn_in_mod() {
     [[lenses]]
     line = 0
     command = "▶ Run tests"
-    index = 1
+    full_path = "hello::b"
     file_path = "src/lib.cairo"
 
     [[lenses]]
     line = 1
     command = "▶ Run test"
-    index = 0
+    full_path = "hello::b::a"
     file_path = "src/lib.cairo"
 
     [execute_in_terminal]
@@ -73,13 +73,13 @@ fn run_for_mod() {
     [[lenses]]
     line = 0
     command = "▶ Run tests"
-    index = 1
+    full_path = "hello::b"
     file_path = "src/lib.cairo"
 
     [[lenses]]
     line = 1
     command = "▶ Run test"
-    index = 0
+    full_path = "hello::b::a"
     file_path = "src/lib.cairo"
 
     [execute_in_terminal]
@@ -119,19 +119,19 @@ fn complex() {
     [[lenses]]
     line = 4
     command = "▶ Run tests"
-    index = 2
+    full_path = "hello::c"
     file_path = "src/lib.cairo"
 
     [[lenses]]
     line = 5
     command = "▶ Run test"
-    index = 1
+    full_path = "hello::c::d"
     file_path = "src/lib.cairo"
 
     [[lenses]]
     line = 11
     command = "▶ Run test"
-    index = 0
+    full_path = "hello::f"
     file_path = "src/lib.cairo"
     "#)
 }

@@ -11,13 +11,13 @@ fn other_file() {
     [[lenses]]
     line = 0
     command = "▶ Run test"
-    index = 0
+    full_path = "hello::a"
     file_path = "src/lib.cairo"
 
     [[lenses]]
     line = 3
     command = "▶ Run tests"
-    index = 1
+    full_path = "hello::foo"
     file_path = "src/lib.cairo"
 
     [execute_in_terminal]
@@ -37,7 +37,7 @@ fn other_file_no_test() {
     [[lenses]]
     line = 0
     command = "▶ Run test"
-    index = 0
+    full_path = "hello::a"
     file_path = "src/lib.cairo"
     "#)
 }
@@ -53,13 +53,13 @@ fn other_file_nested_test() {
     [[lenses]]
     line = 0
     command = "▶ Run test"
-    index = 0
+    full_path = "hello::a"
     file_path = "src/lib.cairo"
 
     [[lenses]]
     line = 3
     command = "▶ Run tests"
-    index = 1
+    full_path = "hello::baz"
     file_path = "src/lib.cairo"
 
     [execute_in_terminal]

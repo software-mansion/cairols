@@ -1,5 +1,6 @@
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateLongId;
+use scarb_metadata::CompilationUnitMetadata;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
@@ -33,6 +34,7 @@ pub struct ProjectModel {
     /// It is done to ensure diagnostics are not randomly cleared after a project manifest change/
     /// db swap/reload workspace command.
     remove_crates_from_db_on_next_update: bool,
+    compilation_units: Vec<CompilationUnitMetadata>,
 }
 
 impl ProjectModel {
@@ -43,12 +45,17 @@ impl ProjectModel {
             loaded_crates: Default::default(),
             manifests_of_members_from_loaded_workspaces: Default::default(),
             configs_registry: Default::default(),
+            compilation_units: Default::default(),
             remove_crates_from_db_on_next_update: false,
         }
     }
 
     pub fn configs_registry(&self) -> Snapshot<ConfigsRegistry> {
         self.configs_registry.snapshot()
+    }
+
+    pub fn compilation_units(&self) -> Vec<CompilationUnitMetadata> {
+        self.compilation_units.clone()
     }
 
     pub fn loaded_manifests(&self) -> Snapshot<HashSet<ManifestPath>> {
@@ -103,6 +110,10 @@ impl ProjectModel {
         self.add_crates(workspace_crates, &workspace_dir);
 
         self.apply_changes_to_db(db, proc_macro_controller, enable_linter);
+    }
+
+    pub fn load_compilation_units(&mut self, cus: Vec<CompilationUnitMetadata>) {
+        self.compilation_units = cus;
     }
 
     pub fn apply_changes_to_db(
