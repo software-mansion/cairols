@@ -13,7 +13,7 @@ pub fn format_output(output: &str, kind: SyntaxKind) -> String {
     let virtual_file = FileLongId::Virtual(VirtualFile {
         parent: Default::default(),
         name: Default::default(),
-        content: Default::default(),
+        content: output.to_owned().into(),
         code_mappings: Default::default(),
         kind: FileKind::Module,
         original_item_removed: false,
