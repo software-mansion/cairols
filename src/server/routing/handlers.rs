@@ -170,6 +170,7 @@ impl SyncNotificationHandler for DidChangeTextDocument {
             is_cairo_file_path(&params.text_document.uri)
                 .then(|| FileChange { url: params.text_document.uri.clone(), was_deleted: false })
                 .into_iter(),
+            state.project_controller.compilation_units(),
         );
 
         Ok(())
@@ -235,6 +236,7 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
                     was_deleted: event.typ == FileChangeType::DELETED,
                 }
             }),
+            state.project_controller.compilation_units(),
         );
 
         Ok(())
@@ -299,6 +301,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
                 is_cairo_file_path(&uri)
                     .then_some(FileChange { url: uri, was_deleted: false })
                     .into_iter(),
+                state.project_controller.compilation_units(),
             );
         }
 
@@ -469,6 +472,7 @@ impl BackgroundDocumentRequestHandler for CodeLensRequest {
             params.text_document.uri,
             &snapshot.db,
             &snapshot.config,
+            snapshot.compilation_units,
         ))
     }
 }

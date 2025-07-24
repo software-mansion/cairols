@@ -16,6 +16,7 @@ use crate::project::{ConfigsRegistry, ProjectController};
 use crate::server::client::Client;
 use crate::server::connection::ClientSender;
 use crate::toolchain::scarb::ScarbToolchain;
+use scarb_metadata::CompilationUnitMetadata;
 use std::path::PathBuf;
 
 /// State of Language server.
@@ -82,6 +83,7 @@ impl State {
             client_capabilities: self.client_capabilities.snapshot(),
             configs_registry: self.project_controller.configs_registry(),
             code_lens_controller: self.code_lens_controller.clone(),
+            compilation_units: self.project_controller.compilation_units(),
         }
     }
 }
@@ -95,6 +97,7 @@ pub struct StateSnapshot {
     pub client_capabilities: Snapshot<ClientCapabilities>,
     pub configs_registry: Snapshot<ConfigsRegistry>,
     pub code_lens_controller: CodeLensController,
+    pub compilation_units: Vec<CompilationUnitMetadata>,
 }
 
 impl std::panic::UnwindSafe for StateSnapshot {}

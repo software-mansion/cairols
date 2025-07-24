@@ -1,12 +1,14 @@
-use super::CodeLensProvider;
+use super::{
+    AnnotatedNode, CodeLensProvider, FileCodeLens, LSCodeLens, LensOwner, TEST_EXECUTABLES,
+    collect_functions_with_attrs, get_original_node_and_file,
+};
 use crate::config::Config;
 use crate::config::TestRunner;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::db::LsSemanticGroup;
 use crate::lang::db::LsSyntaxGroup;
-use crate::lang::lsp::LsProtoGroup;
 use crate::lang::lsp::ToCairo;
-use crate::lang::lsp::ToLsp;
+use crate::lang::lsp::{LsProtoGroup, ToLsp};
 use crate::lsp::ext::ExecuteInTerminal;
 use crate::lsp::ext::ExecuteInTerminalParams;
 use crate::server::client::Notifier;
@@ -19,12 +21,11 @@ use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_defs::ids::SubmoduleLongId;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_defs::plugin::MacroPlugin;
-use cairo_lang_filesystem::db::{FilesGroup, get_originating_location};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{
-    TypedStablePtr, TypedSyntaxNode, ast::ModuleItem, helpers::QueryAttrs,
-};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast::ModuleItem};
 use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::LookupIntern;
@@ -32,19 +33,33 @@ use lsp_types::Command;
 use lsp_types::Position;
 use lsp_types::Range;
 use lsp_types::{CodeLens, Url};
-use serde_json::Number;
+use scarb_metadata::CompilationUnitMetadata;
 use serde_json::Value;
+use std::collections::HashMap;
 use std::ops::Not;
 
 pub struct TestCodeLensProvider;
 
+#[derive(PartialEq)]
+pub struct TestCodeLens {
+    lens: CodeLens,
+}
+
+impl LensOwner for TestCodeLens {
+    fn get_lens(&self) -> CodeLens {
+        self.lens.clone()
+    }
+}
+
 impl CodeLensProvider for TestCodeLensProvider {
+    type LensOwner = TestCodeLens;
     fn calculate_code_lens(
         &self,
         url: Url,
         db: &AnalysisDatabase,
         config: &Config,
-    ) -> Option<Vec<CodeLens>> {
+        _compilation_units: Vec<CompilationUnitMetadata>,
+    ) -> Option<FileCodeLens> {
         let file = db.file_for_url(&url)?;
 
         let main_module = *db.file_modules(file).ok()?.first()?;
@@ -58,10 +73,10 @@ impl CodeLensProvider for TestCodeLensProvider {
             )
             .is_some();
 
-        let mut result = vec![];
+        let mut result = HashMap::default();
 
         if is_runner_available {
-            collect_tests(db, main_module, url, &mut result);
+            collect_test_lenses(db, main_module, url, &mut result);
         }
 
         Some(result)
@@ -72,11 +87,11 @@ impl CodeLensProvider for TestCodeLensProvider {
         state: &State,
         notifier: Notifier,
         url: Url,
-        code_lens: CodeLens,
+        code_lens: &TestCodeLens,
     ) -> Option<()> {
         let db = &state.db;
 
-        let position = code_lens.range.start.to_cairo();
+        let position = code_lens.get_lens().range.start.to_cairo();
 
         let file = db.file_for_url(&url)?;
         let file_path = url.to_file_path().ok()?;
@@ -199,18 +214,23 @@ impl TestRunner {
     }
 }
 
-fn collect_tests(
+fn collect_test_functions(db: &AnalysisDatabase, module: ModuleId) -> Vec<AnnotatedNode> {
+    collect_functions_with_attrs(db, module, Vec::from(TEST_EXECUTABLES))
+}
+
+fn collect_test_lenses(
     db: &AnalysisDatabase,
     module: ModuleId,
     file_url: Url,
-    file_state: &mut Vec<CodeLens>,
+    file_state: &mut FileCodeLens,
 ) {
-    for test_fn in collect_functions(db, module) {
+    for node in collect_test_functions(db, module) {
+        let full_path = node.full_path.clone();
         maybe_push_code_lens(
             db,
             file_state,
-            |position, index| make_code_lens(&file_url, index, position, false),
-            test_fn,
+            |position| make_test_code_lens(&file_url, &full_path, position, false),
+            node,
         );
     }
 
@@ -222,7 +242,7 @@ fn collect_tests(
         let has_tests = if is_inline {
             let tests_count = file_state.len();
 
-            collect_tests(db, ModuleId::Submodule(submodule), file_url.clone(), file_state);
+            collect_test_lenses(db, ModuleId::Submodule(submodule), file_url.clone(), file_state);
 
             // Append mod only if it contains tests.
             tests_count != file_state.len()
@@ -233,81 +253,62 @@ fn collect_tests(
         if has_tests {
             let ptr = submodule.stable_ptr(db).untyped();
 
+            let full_path = submodule.full_path(db);
+            let module_node = AnnotatedNode { full_path: full_path.clone(), attribute_ptr: ptr };
             maybe_push_code_lens(
                 db,
                 file_state,
-                |position, index| make_code_lens(&file_url, index, position, true),
-                ptr,
+                |position| make_test_code_lens(&file_url, &full_path, position, true),
+                module_node,
             );
         }
     }
 }
 
 fn has_any_test(db: &AnalysisDatabase, module: ModuleId) -> bool {
-    if collect_functions(db, module).is_empty().not() {
+    if collect_test_functions(db, module).is_empty().not() {
         return true;
     }
 
     let Ok(modules) = db.module_submodules_ids(module) else { return false };
 
     modules.iter().copied().map(ModuleId::Submodule).any(|submodule| {
-        collect_functions(db, submodule).is_empty().not() || has_any_test(db, submodule)
+        collect_test_functions(db, submodule).is_empty().not() || has_any_test(db, submodule)
     })
 }
 
-fn get_position(db: &AnalysisDatabase, ptr: SyntaxStablePtrId) -> Option<Position> {
-    let (file, span) =
-        get_originating_location(db, ptr.file_id(db), ptr.lookup(db).span_without_trivia(db), None);
-
-    let module_item = db
-        .find_syntax_node_at_offset(file, span.start)?
-        .ancestors_with_self(db)
-        .find(|n| ModuleItem::cast(db, *n).is_some())?;
-
-    module_item
-        // In original code it is always `#[test]`.
+fn get_test_lens_position(db: &AnalysisDatabase, ptr: SyntaxStablePtrId) -> Option<Position> {
+    let (original_node, original_file) = get_original_node_and_file(db, ptr)?;
+    original_node
         .find_attr(db, "test")
-        .map(|test| test.as_syntax_node())
+        .map(|attr| attr.as_syntax_node())
         // If attr is not found we are probably on mod.
-        .unwrap_or(module_item)
+        .unwrap_or(original_node)
         .span_start_without_trivia(db)
-        .position_in_file(db, file)
+        .position_in_file(db, original_file)
         .map(|position| position.to_lsp())
-}
-
-fn collect_functions(db: &AnalysisDatabase, module: ModuleId) -> Vec<SyntaxStablePtrId> {
-    let mut result = vec![];
-
-    if let Ok(functions) = db.module_free_functions(module) {
-        for function in functions.values() {
-            result.extend(
-                ["test", "snforge_internal_test_executable"]
-                    .iter()
-                    .filter_map(|test_attr| function.find_attr(db, test_attr))
-                    .map(|test_attr| test_attr.stable_ptr(db).untyped())
-                    // If for some weird reason we found both, push only first (prefer `#[test]`).
-                    .next(),
-            );
-        }
-    }
-
-    result
 }
 
 fn maybe_push_code_lens(
     db: &AnalysisDatabase,
-    file_state: &mut Vec<CodeLens>,
-    make_code_lens: impl FnOnce(Position, usize) -> CodeLens,
-    ptr: SyntaxStablePtrId,
+    file_state: &mut FileCodeLens,
+    make_code_lens: impl FnOnce(Position) -> CodeLens,
+    annotated_function: AnnotatedNode,
 ) {
-    if let Some(position) = get_position(db, ptr) {
-        let lens = make_code_lens(position, file_state.len());
+    let AnnotatedNode { attribute_ptr, full_path } = annotated_function;
+    if let Some(position) = get_test_lens_position(db, attribute_ptr) {
+        let lens = make_code_lens(position);
 
-        file_state.push(lens);
+        file_state.insert(full_path, LSCodeLens::Test(TestCodeLens { lens }));
     }
 }
 
-fn make_code_lens(file_url: &Url, index: usize, position: Position, is_plural: bool) -> CodeLens {
+fn make_test_code_lens(
+    file_url: &Url,
+    full_path: &str,
+    position: Position,
+    is_plural: bool,
+) -> CodeLens {
     let mut title = "▶ Run test".to_string();
 
     if is_plural {
@@ -318,7 +319,7 @@ fn make_code_lens(file_url: &Url, index: usize, position: Position, is_plural: b
         title,
         command: "cairo.executeCodeLens".to_string(),
         arguments: Some(vec![
-            Value::Number(Number::from(index)),
+            Value::String(full_path.parse().unwrap()),
             Value::String(file_url.to_string()),
         ]),
     };

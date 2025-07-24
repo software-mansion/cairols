@@ -28,6 +28,7 @@ use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
 use salsa::ParallelDatabase;
+use scarb_metadata::CompilationUnitMetadata;
 use tracing::{debug, error, warn};
 
 pub mod builtin_plugins;
@@ -80,6 +81,10 @@ impl ProjectController {
         self.model.configs_registry()
     }
 
+    pub fn compilation_units(&self) -> Vec<CompilationUnitMetadata> {
+        self.model.compilation_units()
+    }
+
     pub fn response_receiver(&self) -> Receiver<ProjectUpdate> {
         self.response_receiver.clone()
     }
@@ -112,7 +117,7 @@ impl ProjectController {
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
         let db = &mut state.db;
         match project_update {
-            ProjectUpdate::Scarb { crates, workspace_dir } => {
+            ProjectUpdate::Scarb { crates, workspace_dir, compilation_units } => {
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
 
                 state.project_controller.model.load_workspace(
@@ -122,6 +127,8 @@ impl ProjectController {
                     &state.proc_macro_controller,
                     state.config.enable_linter,
                 );
+
+                state.project_controller.model.load_compilation_units(compilation_units)
             }
             ProjectUpdate::ScarbMetadataFailed => {
                 // Try to set up a corelib at least if it is not in the db already.
@@ -176,7 +183,7 @@ impl ProjectController {
         // Drop mut ref so we can obtain snapshot.
         let _ = db;
 
-        // Manifest may changed, update for open files
+        // Manifest may have changed, update for open files
         state.code_lens_controller.on_did_change(
             state.db.snapshot(),
             state.config.clone(),
@@ -186,6 +193,7 @@ impl ProjectController {
                 .filter(|&url| is_cairo_file_path(url))
                 .cloned()
                 .map(|file| FileChange { url: file, was_deleted: false }),
+            state.project_controller.compilation_units(),
         );
 
         if let Err(result) = validate_corelib(&state.db) {
@@ -216,7 +224,11 @@ impl ProjectController {
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
 pub enum ProjectUpdate {
-    Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf },
+    Scarb {
+        crates: Vec<CrateInfo>,
+        workspace_dir: PathBuf,
+        compilation_units: Vec<CompilationUnitMetadata>,
+    },
     ScarbMetadataFailed,
     CairoProjectToml(Box<Option<ProjectConfig>>),
     NoConfig(PathBuf),
@@ -290,6 +302,7 @@ impl ProjectControllerThread {
                     .map(|metadata| ProjectUpdate::Scarb {
                         crates: extract_crates(&metadata),
                         workspace_dir: metadata.workspace.root.into_std_path_buf(),
+                        compilation_units: metadata.compilation_units,
                     })
                     .unwrap_or(ProjectUpdate::ScarbMetadataFailed)
             }
