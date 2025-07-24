@@ -164,9 +164,7 @@ impl CodeLensController {
     }
 
     pub fn execute_code_lens(state: &State, notifier: Notifier, args: &[Value]) -> Option<()> {
-        let lens_args = parse_args(args)?;
-
-        let (function_id, file_url) = lens_args;
+        let (function_id, file_url) = parse_args(args)?;
 
         // Drop state guard before doing any panickable actions.
         let code_lens_state = state.code_lens_controller.state.read().ok()?;
