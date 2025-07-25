@@ -5,14 +5,13 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69  |
 // +---------------------------------------------------+
 
-use anyhow::Result;
-
 use self::task::BackgroundTaskBuilder;
 use self::thread::{JoinHandle, ThreadPriority};
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::ClientSender;
 use crate::server::schedule::task::BackgroundFnBuilder;
-use crate::state::State;
+use crate::state::{MetaState, State};
+use anyhow::Result;
 
 mod task;
 pub mod thread;
@@ -49,6 +48,7 @@ pub struct Scheduler<'s> {
     /// fmt request, it will still be processed fast.
     fmt_pool: thread::Pool,
     sync_mut_task_hooks: Vec<SyncTaskHook>,
+    meta_state: MetaState,
 }
 
 impl<'s> Scheduler<'s> {
@@ -59,6 +59,7 @@ impl<'s> Scheduler<'s> {
             background_pool: thread::Pool::new(usize::MAX, "worker"),
             fmt_pool: thread::Pool::new(1, "fmt"),
             sync_mut_task_hooks: Default::default(),
+            meta_state: Default::default(),
         }
     }
 
@@ -71,7 +72,7 @@ impl<'s> Scheduler<'s> {
     /// executing it on a background thread pool.
     pub fn dispatch(&mut self, task: Task<'s>) {
         let build_task_fn = |func: BackgroundFnBuilder| {
-            let static_func = func(self.state);
+            let static_func = func(self.state, self.meta_state.clone());
             let notifier = self.client.notifier();
             let responder = self.client.responder();
 
@@ -91,7 +92,13 @@ impl<'s> Scheduler<'s> {
             Task::Sync(SyncTask { func }) => {
                 let notifier = self.client.notifier();
                 let responder = self.client.responder();
-                func(self.state, notifier.clone(), &mut self.client.requester, responder);
+                func(
+                    self.state,
+                    self.meta_state.clone(),
+                    notifier.clone(),
+                    &mut self.client.requester,
+                    responder,
+                );
             }
             Task::SyncConditional(SyncConditionTask { precondition_func, mut_func }) => {
                 if precondition_func(self.state) {
@@ -138,7 +145,7 @@ impl<'s> Scheduler<'s> {
     /// This is a shortcut for `dispatch(Task::local(func))`.
     pub fn local(
         &mut self,
-        func: impl FnOnce(&State, Notifier, &mut Requester<'_>, Responder) + 's,
+        func: impl FnOnce(&State, MetaState, Notifier, &mut Requester<'_>, Responder) + 's,
     ) {
         self.dispatch(Task::local(func));
     }

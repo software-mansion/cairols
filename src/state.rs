@@ -86,6 +86,11 @@ impl State {
     }
 }
 
+/// State keeps information about LS state (swapper, analysis state or other internal info)
+/// Mutations don't influence refreshing of diagnostics and hooks etc.
+#[derive(Default, Clone)]
+pub struct MetaState {}
+
 /// Readonly snapshot of Language server state.
 pub struct StateSnapshot {
     pub db: salsa::Snapshot<AnalysisDatabase>,

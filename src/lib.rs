@@ -341,14 +341,14 @@ impl Backend {
                 recv(analysis_progress_status_receiver) -> analysis_progress_status => {
                     let Ok(AnalysisFinished) = analysis_progress_status else { break };
 
-                    scheduler.local(|state, _notifier, requester, _responder|
+                    scheduler.local(|state, _, _notifier, requester, _responder|
                         Self::on_stopped_analysis(state, requester)
                     );
                 }
                 recv(code_lens_request_refresh_receiver) -> error => {
                     let Ok(()) = error else { break };
 
-                    scheduler.local(|_, _, requester, _| {
+                    scheduler.local(|_, _, _, requester, _| {
                         CodeLensController::handle_refresh(requester);
                     });
                 }
