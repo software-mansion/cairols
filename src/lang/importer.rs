@@ -1,5 +1,5 @@
-use super::{analysis_context::AnalysisContext, db::AnalysisDatabase};
-use crate::lang::{db::LsSemanticGroup, lsp::ToLsp};
+use std::fmt::Display;
+
 use cairo_lang_defs::{
     db::DefsGroup,
     ids::{LanguageElementId, ModuleId},
@@ -8,7 +8,9 @@ use cairo_lang_syntax::node::{
     TypedStablePtr, TypedSyntaxNode, ast::ItemUse, ids::SyntaxStablePtrId,
 };
 use lsp_types::{Position, Range, TextEdit};
-use std::fmt::Display;
+
+use super::{analysis_context::AnalysisContext, db::AnalysisDatabase};
+use crate::lang::{db::LsSemanticGroup, lsp::ToLsp};
 
 pub fn new_import_edit(
     db: &AnalysisDatabase,

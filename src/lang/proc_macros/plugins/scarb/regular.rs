@@ -1,8 +1,26 @@
+use std::collections::HashSet;
+
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
-use std::collections::HashSet;
+use cairo_lang_filesystem::span::{TextOffset, TextSpan as CairoTextSpan};
+use cairo_lang_macro::{AllocationContext, TextSpan, TokenStream, TokenStreamMetadata};
+use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
+use cairo_lang_syntax::node::ast::{
+    self, Expr, ImplItem, MaybeImplBody, MaybeTraitBody, PathSegment,
+};
+use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::smol_str::{SmolStr, ToSmolStr};
+use convert_case::{Case, Casing};
+use itertools::Itertools;
+use scarb_proc_macro_server_types::methods::ProcMacroResult;
+use scarb_proc_macro_server_types::methods::expand::{ExpandAttributeParams, ExpandDeriveParams};
+use scarb_proc_macro_server_types::scope::ProcMacroScope;
+use scarb_stable_hash::StableHasher;
 
 use super::into_cairo_diagnostics;
 use crate::lang::db::AnalysisDatabase;
@@ -17,25 +35,6 @@ use crate::lang::proc_macros::plugins::scarb::types::{
     AdaptedCodeMapping, AdaptedDiagnostic, AdaptedTokenStream, ExpandableAttrLocation,
     TokenStreamBuilder,
 };
-use cairo_lang_filesystem::span::{TextOffset, TextSpan as CairoTextSpan};
-
-use cairo_lang_macro::{AllocationContext, TextSpan, TokenStream, TokenStreamMetadata};
-use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
-use cairo_lang_syntax::node::ast::{
-    self, Expr, ImplItem, MaybeImplBody, MaybeTraitBody, PathSegment,
-};
-use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
-use convert_case::{Case, Casing};
-use itertools::Itertools;
-use scarb_proc_macro_server_types::methods::ProcMacroResult;
-use scarb_proc_macro_server_types::methods::expand::{ExpandAttributeParams, ExpandDeriveParams};
-use scarb_proc_macro_server_types::scope::ProcMacroScope;
-use scarb_stable_hash::StableHasher;
-
-use cairo_lang_utils::smol_str::{SmolStr, ToSmolStr};
 
 const DERIVE_ATTR: &str = "derive";
 

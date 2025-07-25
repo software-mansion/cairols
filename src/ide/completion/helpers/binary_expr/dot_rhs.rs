@@ -1,8 +1,9 @@
-use crate::lang::db::AnalysisDatabase;
 use cairo_lang_syntax::node::{
     SyntaxNode, TypedSyntaxNode,
     ast::{BinaryOperator, ExprBinary},
 };
+
+use crate::lang::db::AnalysisDatabase;
 
 pub fn dot_expr_rhs(db: &AnalysisDatabase, node: &SyntaxNode) -> Option<ExprBinary> {
     if let Some(binary_expression) = node.ancestor_of_type::<ExprBinary>(db)

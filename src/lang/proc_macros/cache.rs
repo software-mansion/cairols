@@ -1,3 +1,13 @@
+use std::{collections::HashMap, env::current_dir, fs, path::PathBuf, sync::Arc};
+
+use bincode::{
+    config::standard,
+    serde::{decode_from_slice, encode_to_vec},
+};
+use scarb_proc_macro_server_types::methods::ProcMacroResult;
+use serde::{Deserialize, Serialize};
+use tracing::error;
+
 use crate::{
     config::Config,
     env_config::scarb_target_path,
@@ -8,14 +18,6 @@ use crate::{
         db::ProcMacroGroup,
     },
 };
-use bincode::{
-    config::standard,
-    serde::{decode_from_slice, encode_to_vec},
-};
-use scarb_proc_macro_server_types::methods::ProcMacroResult;
-use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, env::current_dir, fs, path::PathBuf, sync::Arc};
-use tracing::error;
 
 pub fn save_proc_macro_cache(db: &dyn ProcMacroGroup, config: &Config) {
     if !config.enable_experimental_proc_macro_cache {

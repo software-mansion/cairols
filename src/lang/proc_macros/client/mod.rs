@@ -14,14 +14,13 @@ use scarb_proc_macro_server_types::methods::expand::{
     ExpandAttribute, ExpandAttributeParams, ExpandDerive, ExpandDeriveParams, ExpandInline,
     ExpandInlineMacroParams,
 };
+pub use status::ServerStatus;
 use tracing::error;
 
 use crate::ide::analysis_progress::ProcMacroServerTracker;
 use crate::lang::proc_macros::client::plain_request_response::{
     PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
 };
-
-pub use status::ServerStatus;
 
 pub mod connection;
 mod id_generator;

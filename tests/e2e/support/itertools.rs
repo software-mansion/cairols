@@ -1,7 +1,8 @@
+use std::hash::Hash;
+
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 #[cfg(doc)]
 use itertools::Itertools;
-use std::hash::Hash;
 
 pub trait IteratorExtension: Iterator {
     /// Groups the iterator identically to [`Itertools::into_group_map`]

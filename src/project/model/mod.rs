@@ -1,16 +1,16 @@
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::CrateLongId;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
+use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::CrateLongId;
+
+pub use self::configs_registry::{ConfigsRegistry, PackageConfig};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::project::Crate;
 use crate::project::crate_data::CrateInfo;
 use crate::state::{Owned, Snapshot};
 use crate::toolchain::scarb::ScarbToolchain;
-
-pub use self::configs_registry::{ConfigsRegistry, PackageConfig};
 
 mod configs_registry;
 

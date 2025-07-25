@@ -8,6 +8,7 @@
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use anyhow::anyhow;
+pub use handlers::is_cairo_file_path;
 use lsp_server::{ErrorCode, ExtractError, Notification, Request, RequestId};
 use lsp_types::notification::{
     Cancel, DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles,
@@ -29,7 +30,6 @@ use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::{BackgroundSchedule, Task};
 use crate::state::State;
-pub use handlers::is_cairo_file_path;
 
 mod handlers;
 

@@ -1,9 +1,9 @@
+use cairo_language_server::testing::SemanticTokenKind;
 use lsp_types::{Position, Range, lsp_request};
 
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2023_11;
 use crate::support::cursor::render_text_with_annotations;
 use crate::support::sandbox;
-use cairo_language_server::testing::SemanticTokenKind;
 
 mod complex;
 

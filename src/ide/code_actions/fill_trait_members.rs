@@ -10,6 +10,7 @@ use cairo_lang_semantic::substitution::GenericSubstitution;
 use cairo_lang_semantic::{ConcreteTraitId, GenericArgumentId, GenericParam, Parameter};
 use cairo_lang_syntax::node::ast::{ImplItem, ItemImpl, MaybeImplBody};
 use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{Itertools, chain};
 use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, WorkspaceEdit};
 
@@ -17,7 +18,6 @@ use crate::ide::ty::{InferredValue, format_type};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// Generates a completion adding all trait members that have not yet been specified.
 /// Functions are added with empty bodies, consts with placeholder values.

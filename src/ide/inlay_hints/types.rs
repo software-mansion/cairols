@@ -1,10 +1,11 @@
-use crate::{ide::ty::InferredValue, lang::db::AnalysisDatabase};
 use cairo_lang_semantic::{GenericArgumentId, TypeId, TypeLongId};
 use cairo_lang_syntax::node::{
     ast::{Expr, GenericArg, GenericArgValue, TerminalUnderscore, UnaryOperator},
     helpers::PathSegmentEx,
 };
 use cairo_lang_utils::LookupIntern;
+
+use crate::{ide::ty::InferredValue, lang::db::AnalysisDatabase};
 
 // Find all `_` in provided type caluse.
 pub fn find_underscores(

@@ -1,6 +1,5 @@
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
-use crate::lang::defs::{SymbolDef, SymbolSearch};
-use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use std::ops::Not;
+
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
@@ -11,7 +10,10 @@ use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location};
-use std::ops::Not;
+
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::defs::{SymbolDef, SymbolSearch};
+use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 /// Get the definition location of a symbol at a given text document position.
 pub fn goto_definition(

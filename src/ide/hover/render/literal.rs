@@ -7,12 +7,12 @@ use cairo_lang_syntax::node::ast::{
     Expr, ItemConstant, TerminalLiteralNumber, TerminalShortString, TerminalString,
 };
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
 use indoc::formatdoc;
 
 use crate::ide::ty::format_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// Narrows down [`SyntaxNode`] to [`TerminalLiteralNumber`], [`TerminalString`] or
 /// [`TerminalShortString`] if it represents some literal

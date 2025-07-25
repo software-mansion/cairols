@@ -1,7 +1,11 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::ast::{MaybeImplBody, MaybeTraitBody, ModuleItem};
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use convert_case::{Case, Casing};
 use downcast::unsafe_downcast_ref;
@@ -14,10 +18,6 @@ use scarb_proc_macro_server_types::methods::defined_macros::{
 use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, ProcMacroScope};
 
 use crate::lang::plugins::DowncastRefUnchecked;
-use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::{MaybeImplBody, MaybeTraitBody, ModuleItem};
-use cairo_lang_syntax::node::helpers::QueryAttrs;
-use std::collections::HashSet;
 
 mod downcast;
 // TODO(#6666) Evict this module when this is possible.

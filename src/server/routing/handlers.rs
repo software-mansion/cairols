@@ -25,6 +25,7 @@ use lsp_types::{
     RenameFilesParams, RenameParams, SemanticTokensParams, SemanticTokensResult,
     TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
+use salsa::ParallelDatabase;
 use serde_json::Value;
 use tracing::error;
 
@@ -40,7 +41,6 @@ use crate::server::commands::ServerCommands;
 use crate::state::{State, StateSnapshot};
 use crate::toolchain::info::toolchain_info;
 use crate::{Backend, ide, lang};
-use salsa::ParallelDatabase;
 
 /// A request handler that needs mutable access to the session.
 /// This will block the main message receiver loop, meaning that no

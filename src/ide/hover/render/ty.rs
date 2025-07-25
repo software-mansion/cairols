@@ -1,11 +1,3 @@
-use super::super::super::markdown::fenced_code_block;
-use crate::{
-    ide::ty::{InferredValue, format_type},
-    lang::{
-        db::{AnalysisDatabase, LsSemanticGroup},
-        defs::{ResolvedItem, find_definition},
-    },
-};
 use cairo_lang_defs::ids::{ImportableId, LookupItemId};
 use cairo_lang_semantic::{
     db::SemanticGroup,
@@ -21,6 +13,15 @@ use cairo_lang_syntax::node::{
 };
 use cairo_lang_utils::{LookupIntern, ordered_hash_map::OrderedHashMap};
 use itertools::Itertools;
+
+use super::super::super::markdown::fenced_code_block;
+use crate::{
+    ide::ty::{InferredValue, format_type},
+    lang::{
+        db::{AnalysisDatabase, LsSemanticGroup},
+        defs::{ResolvedItem, find_definition},
+    },
+};
 
 pub fn ty(
     db: &AnalysisDatabase,

@@ -6,6 +6,7 @@ use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
@@ -19,7 +20,6 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
 use crate::lang::text_matching::text_matches;
 use crate::lang::visibility::peek_visible_in_with_edition;
-use cairo_lang_syntax::node::kind::SyntaxKind;
 
 /// Treats provided path as suffix, proposing elements that can prefix this path.
 pub fn path_suffix_completions(

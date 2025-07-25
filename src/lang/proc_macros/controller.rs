@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::mem;
 use std::num::NonZeroU32;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -38,7 +39,6 @@ use crate::server::client::{Notifier, Requester};
 use crate::server::schedule::Task;
 use crate::server::schedule::thread::JoinHandle;
 use crate::toolchain::scarb::ScarbToolchain;
-use std::path::PathBuf;
 
 const RESTART_RATE_LIMITER_PERIOD_SEC: u64 = 180;
 const RESTART_RATE_LIMITER_RETRIES: u32 = 5;

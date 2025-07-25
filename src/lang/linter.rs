@@ -1,4 +1,5 @@
 use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::Directory;
 use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, SemanticGroupEx};
 use cairo_lint::plugin::cairo_lint_plugin_suite_without_metadata_validation;
 
@@ -6,7 +7,6 @@ use super::db::AnalysisDatabase;
 use super::plugins::AnalyzerPluginType;
 use crate::config::Config;
 use crate::project::ConfigsRegistry;
-use cairo_lang_filesystem::ids::Directory;
 
 pub struct LinterController;
 

@@ -1,12 +1,13 @@
+use std::collections::HashMap;
+
+use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_syntax::node::ast::ExprPath;
+use cairo_lang_syntax::node::helpers::GetIdentifier;
 use lsp_types::{CodeAction, CodeActionKind, Url, WorkspaceEdit};
 
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_syntax::node::ast::ExprPath;
-use cairo_lang_syntax::node::helpers::GetIdentifier;
-use std::collections::HashMap;
 
 pub fn missing_import(
     db: &AnalysisDatabase,

@@ -5,6 +5,7 @@ use std::num::NonZero;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use cairo_lang_filesystem::ids::FileId;
+use crossbeam::channel::{Receiver, Sender};
 use lsp_types::Url;
 use tracing::{error, trace};
 
@@ -22,7 +23,6 @@ use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 use crate::server::trigger;
 use crate::state::{State, StateSnapshot};
 use crate::toolchain::scarb::ScarbToolchain;
-use crossbeam::channel::{Receiver, Sender};
 
 mod file_batches;
 mod file_diagnostics;

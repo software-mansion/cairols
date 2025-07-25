@@ -9,15 +9,15 @@ use cairo_lang_syntax::node::ast::ModuleItem;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
-use lsp_types::TextDocumentPositionParams;
-
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
-use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use expr::expand_inline_macros_to_file;
 use format::format_output;
 use inlining::{inline_files, span_after_inlining};
 use itertools::Itertools;
+use lsp_types::TextDocumentPositionParams;
 use module_item::expand_module_item_macros;
+
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod expr;
 mod format;
