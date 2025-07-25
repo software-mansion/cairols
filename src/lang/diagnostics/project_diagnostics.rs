@@ -1,8 +1,9 @@
-use itertools::{Either, Itertools};
-use lsp_types::{Diagnostic, Url};
 use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::sync::{Arc, RwLock};
+
+use itertools::{Either, Itertools};
+use lsp_types::{Diagnostic, Url};
 
 /// Global storage of diagnostics for the entire analysed codebase(s).
 ///

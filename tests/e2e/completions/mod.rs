@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use indoc::indoc;
+use lsp_types::request::Completion;
 use lsp_types::{CompletionParams, TextDocumentPositionParams, lsp_request};
 use serde::Serialize;
 
@@ -7,8 +9,6 @@ use crate::support::cursor::{Cursors, peek_caret};
 use crate::support::fixture::Fixture;
 use crate::support::transform::Transformer;
 use crate::support::{MockClient, fixture};
-use indoc::indoc;
-use lsp_types::request::Completion;
 
 mod attribute;
 mod methods_text_edits;

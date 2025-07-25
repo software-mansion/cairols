@@ -1,10 +1,11 @@
-use crate::lang::db::AnalysisDatabase;
 use cairo_lang_filesystem::{
     db::{FilesGroup, get_parent_and_mapping},
     ids::FileId,
     span::{TextOffset, TextSpan},
 };
 use cairo_lang_syntax::node::SyntaxNode;
+
+use crate::lang::db::AnalysisDatabase;
 
 /// Computes the corresponding span in a new file after inlining modifications from an old file.
 ///

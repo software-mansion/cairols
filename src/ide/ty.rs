@@ -1,4 +1,3 @@
-use crate::lang::db::AnalysisDatabase;
 use cairo_lang_defs::ids::{GenericTypeId, ImportableId};
 use cairo_lang_semantic::{
     GenericArgumentId, TypeId, TypeLongId,
@@ -7,9 +6,10 @@ use cairo_lang_semantic::{
         imp::{ImplId, ImplLongId},
     },
 };
-
 use cairo_lang_utils::{LookupIntern, ordered_hash_map::OrderedHashMap};
 use itertools::Itertools;
+
+use crate::lang::db::AnalysisDatabase;
 
 pub fn format_type(
     db: &AnalysisDatabase,

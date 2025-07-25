@@ -1,8 +1,9 @@
-use crate::support::MockClient;
-use crate::support::cursor::text_chunk_at_range;
 use cairo_language_server::lsp::ext::{ProvideVirtualFile, ProvideVirtualFileRequest};
 use lsp_types::{Diagnostic, Url};
 use serde::Serialize;
+
+use crate::support::MockClient;
+use crate::support::cursor::text_chunk_at_range;
 
 #[derive(Debug, Serialize)]
 pub struct DiagnosticsWithUrl {

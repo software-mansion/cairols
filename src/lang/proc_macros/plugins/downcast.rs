@@ -24,16 +24,18 @@ pub(super) unsafe fn unsafe_downcast_ref(db: &dyn SyntaxGroup) -> &AnalysisDatab
 
 #[cfg(test)]
 mod unsafe_downcast_ref_tests {
-    use super::unsafe_downcast_ref;
-    use crate::lang::db::AnalysisDatabase;
-    use crate::lang::proc_macros::client::plain_request_response::PlainExpandAttributeParams;
-    use crate::lang::proc_macros::db::ProcMacroGroup;
+    use std::collections::HashMap;
+    use std::sync::Arc;
+
     use cairo_lang_macro_v1::TokenStream;
     use cairo_lang_syntax::node::db::SyntaxGroup;
     use scarb_proc_macro_server_types::methods::ProcMacroResult;
     use scarb_proc_macro_server_types::scope::ProcMacroScope;
-    use std::collections::HashMap;
-    use std::sync::Arc;
+
+    use super::unsafe_downcast_ref;
+    use crate::lang::db::AnalysisDatabase;
+    use crate::lang::proc_macros::client::plain_request_response::PlainExpandAttributeParams;
+    use crate::lang::proc_macros::db::ProcMacroGroup;
 
     #[test]
     fn cast_succeed() {

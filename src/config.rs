@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use anyhow::Context;
 use lsp_server::ErrorCode;
@@ -17,7 +18,6 @@ use crate::lsp::result::{LSPResult, LSPResultEx};
 use crate::project::ConfigsRegistry;
 use crate::server::client::Requester;
 use crate::server::schedule::Task;
-use std::str::FromStr;
 
 // TODO(mkaput): Write a macro that will auto-generate this struct and the `reload` logic.
 // TODO(mkaput): Write a test that checks that fields in this struct are sorted alphabetically.

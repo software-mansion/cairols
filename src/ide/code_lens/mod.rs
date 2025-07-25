@@ -1,19 +1,21 @@
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::sync::{Arc, RwLock};
+
+use crossbeam::channel::{self, Receiver, Sender};
+use itertools::Itertools;
+use lsp_types::request::CodeLensRefresh;
+use lsp_types::{CodeLens, Url};
+use serde_json::Value;
+use tests::TestCodeLensProvider;
+
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::server::client::{Notifier, Requester};
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
 use crate::server::schedule::{Task, thread};
 use crate::state::State;
-use crossbeam::channel::{self, Receiver, Sender};
-use itertools::Itertools;
-use lsp_types::request::CodeLensRefresh;
-use lsp_types::{CodeLens, Url};
-use serde_json::Value;
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
-use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::sync::{Arc, RwLock};
-use tests::TestCodeLensProvider;
 
 mod tests;
 

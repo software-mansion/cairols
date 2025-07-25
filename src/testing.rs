@@ -1,10 +1,11 @@
-use crate::Backend;
-use crate::server::connection::ConnectionInitializer;
-use crate::server::schedule::thread::JoinHandle;
+use std::path::PathBuf;
+
 use anyhow::Result;
 
+use crate::Backend;
 pub use crate::ide::semantic_highlighting::token_kind::SemanticTokenKind;
-use std::path::PathBuf;
+use crate::server::connection::ConnectionInitializer;
+use crate::server::schedule::thread::JoinHandle;
 
 /// Special object to run the language server in end-to-end tests.
 pub struct BackendForTesting(Backend);

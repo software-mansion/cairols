@@ -1,8 +1,9 @@
-use super::{expr::selector::expr_selector, path::path_prefix_completions};
-use crate::lang::{analysis_context::AnalysisContext, db::AnalysisDatabase};
 use cairo_lang_semantic::resolve::AsSegments;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use lsp_types::CompletionItem;
+
+use super::{expr::selector::expr_selector, path::path_prefix_completions};
+use crate::lang::{analysis_context::AnalysisContext, db::AnalysisDatabase};
 
 pub fn self_completions(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Vec<CompletionItem> {
     if let Some(expr) = expr_selector(db, &ctx.node)

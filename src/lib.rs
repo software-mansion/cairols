@@ -53,6 +53,7 @@ use crossbeam::channel::{Receiver, select_biased};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use lsp_types::request::SemanticTokensRefresh;
+use salsa::ParallelDatabase;
 use tracing::{debug, error, info};
 
 use crate::ide::analysis_progress::AnalysisFinished;
@@ -74,7 +75,6 @@ use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
 use crate::server::schedule::{Scheduler, Task, event_loop_thread};
 use crate::state::State;
-use salsa::ParallelDatabase;
 
 mod config;
 mod env_config;

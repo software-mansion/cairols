@@ -1,10 +1,11 @@
+use cairo_lang_semantic::db::SemanticGroup;
+use lsp_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
+
 use crate::lang::{
     analysis_context::AnalysisContext,
     db::AnalysisDatabase,
     lsp::{LsProtoGroup, ToLsp},
 };
-use cairo_lang_semantic::db::SemanticGroup;
-use lsp_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
 
 pub fn cairo_lint(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Option<Vec<CodeAction>> {
     let diags = db.module_semantic_diagnostics(ctx.module_file_id.0).ok()?;

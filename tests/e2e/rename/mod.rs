@@ -1,6 +1,6 @@
-use crate::support::MockClient;
-use crate::support::cursor::{Cursors, render_text_edits_and_file_renames};
-use crate::support::transform::Transformer;
+use std::collections::HashMap;
+use std::ffi::OsStr;
+
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use lsp_types::request::Rename;
@@ -10,8 +10,10 @@ use lsp_types::{
     TextDocumentPositionParams, TextEdit, Url, WorkspaceClientCapabilities, WorkspaceEdit,
     WorkspaceEditClientCapabilities, lsp_request,
 };
-use std::collections::HashMap;
-use std::ffi::OsStr;
+
+use crate::support::MockClient;
+use crate::support::cursor::{Cursors, render_text_edits_and_file_renames};
+use crate::support::transform::Transformer;
 
 mod consts;
 mod enums;

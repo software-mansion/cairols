@@ -1,6 +1,18 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
+use anyhow::Context;
+use cairo_lang_compiler::db::validate_corelib;
+use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
+use cairo_lang_filesystem::db::{CrateIdentifier, FilesGroup, FilesGroupEx};
+use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_project::ProjectConfig;
+use crossbeam::channel::{Receiver, Sender};
+use lsp_types::notification::ShowMessage;
+use lsp_types::{MessageType, ShowMessageParams};
+use salsa::ParallelDatabase;
+use tracing::{debug, error, warn};
+
 pub use self::crate_data::{Crate, extract_custom_file_stems};
 pub use self::model::ConfigsRegistry;
 pub use self::project_manifest_path::*;
@@ -18,17 +30,6 @@ use crate::server::schedule::thread;
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
 use crate::state::{Snapshot, State};
 use crate::toolchain::scarb::ScarbToolchain;
-use anyhow::Context;
-use cairo_lang_compiler::db::validate_corelib;
-use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_filesystem::db::{CrateIdentifier, FilesGroup, FilesGroupEx};
-use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_project::ProjectConfig;
-use crossbeam::channel::{Receiver, Sender};
-use lsp_types::notification::ShowMessage;
-use lsp_types::{MessageType, ShowMessageParams};
-use salsa::ParallelDatabase;
-use tracing::{debug, error, warn};
 
 pub mod builtin_plugins;
 mod crate_data;

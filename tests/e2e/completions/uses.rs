@@ -1,5 +1,6 @@
-use crate::{completions::completion_fixture, support::insta::test_transform_plain};
 use lsp_types::request::Completion;
+
+use crate::{completions::completion_fixture, support::insta::test_transform_plain};
 
 #[test]
 fn helper_module() {

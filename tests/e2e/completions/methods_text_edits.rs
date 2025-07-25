@@ -1,10 +1,10 @@
 use indoc::indoc;
+use lsp_types::request::Completion;
 
 use crate::completions::completion_fixture;
 use crate::support::fixture;
 use crate::support::fixture::Fixture;
 use crate::support::insta::{test_transform_plain, test_transform_with_macros};
-use lsp_types::request::Completion;
 
 #[test]
 fn simple_trait_macro() {

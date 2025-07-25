@@ -1,7 +1,6 @@
 use scarb_proc_macro_server_types::methods::expand::{
     ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
 };
-
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
 use serde::{Deserialize, Serialize};
 

@@ -1,3 +1,6 @@
+use lsp_types::ClientCapabilities;
+use lsp_types::request::Completion;
+
 use crate::completions::transform;
 use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
 use crate::support::cursor::Cursors;
@@ -5,8 +8,6 @@ use crate::support::fixture::Fixture;
 use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use crate::support::transform::Transformer;
 use crate::support::{MockClient, fixture};
-use lsp_types::ClientCapabilities;
-use lsp_types::request::Completion;
 
 fn lib_cairo_fixture() -> Fixture {
     fixture! {

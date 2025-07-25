@@ -3,11 +3,11 @@ use cairo_lang_semantic::{Binding, Mutability};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::smol_str::SmolStr;
 
 use crate::ide::ty::format_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// Information about the definition of a variable (local, function parameter).
 #[derive(Eq, PartialEq, Debug)]

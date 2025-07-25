@@ -1,6 +1,8 @@
-use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
-use crossbeam::channel::{Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
+
+use crossbeam::channel::{Receiver, RecvTimeoutError, Sender};
+
+use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 
 pub struct ResponsePollThread {
     generate_code_complete_receiver: Receiver<()>,

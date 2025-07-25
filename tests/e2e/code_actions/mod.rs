@@ -2,12 +2,12 @@ use lsp_types::{
     ClientCapabilities, CodeActionContext, CodeActionOrCommand, CodeActionParams,
     HoverClientCapabilities, MarkupKind, Range, TextDocumentClientCapabilities, lsp_request,
 };
+use serde_json::json;
 
 use crate::support::cairo_project_toml::{CAIRO_PROJECT_TOML, CAIRO_PROJECT_TOML_2024_07};
 use crate::support::cursor::Cursor;
 use crate::support::fixture::Fixture;
 use crate::support::{cursors, fixture, sandbox};
-use serde_json::json;
 
 mod create_module_file;
 mod fill_struct_fields;

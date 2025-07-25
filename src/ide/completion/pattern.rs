@@ -1,11 +1,5 @@
-use itertools::Itertools;
-use lsp_types::{CompletionItem, CompletionItemKind};
+use std::collections::HashSet;
 
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::text_matching::text_matches;
-use crate::{
-    ide::completion::path::path_prefix_completions, lang::analysis_context::AnalysisContext,
-};
 use cairo_lang_defs::ids::GenericTypeId;
 use cairo_lang_semantic::diagnostic::NotFoundItemType;
 use cairo_lang_semantic::resolve::ResolvedGenericItem;
@@ -14,7 +8,14 @@ use cairo_lang_syntax::node::{
     Token, TypedSyntaxNode,
     ast::{PatternEnum, PatternIdentifier, PatternStruct, PatternStructParam},
 };
-use std::collections::HashSet;
+use itertools::Itertools;
+use lsp_types::{CompletionItem, CompletionItemKind};
+
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::text_matching::text_matches;
+use crate::{
+    ide::completion::path::path_prefix_completions, lang::analysis_context::AnalysisContext,
+};
 
 pub fn struct_pattern_completions(
     db: &AnalysisDatabase,
