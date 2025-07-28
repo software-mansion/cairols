@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fmt::Display;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -10,7 +11,8 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
 use lsp_types::Url;
-use tracing::{error, warn};
+use serde::Serialize;
+use tracing::{error, trace, warn};
 
 use crate::config::Config;
 use crate::env_config;
@@ -19,6 +21,25 @@ use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::project::ProjectController;
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub enum SwapReason {
+    Time(Duration),
+    Mutations(u64),
+}
+
+impl Display for SwapReason {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SwapReason::Time(duration) => {
+                write!(f, "{}s passed since the last swap", duration.as_secs())
+            }
+            SwapReason::Mutations(mutations) => {
+                write!(f, "{mutations} mutations applied since the last swap")
+            }
+        }
+    }
+}
 
 /// Swaps entire [`AnalysisDatabase`] with empty one periodically.
 ///
@@ -29,27 +50,36 @@ use crate::project::ProjectController;
 /// This object realises a nuclear GC strategy by wiping the entire analysis database from time to
 /// time.
 ///
-/// The swapping period can be configured with environment variables.
-/// Consult [`env_config::db_replace_interval`] for more information.
+/// The swapping criteria can be configured with environment variables.
+/// Consult [`env_config::db_replace_interval`] and [`env_config::db_replace_mutations`]
+/// for more information.
 ///
 /// The new database has a clean state.
 /// It is expected that diagnostics will be refreshed on it as quickly as possible, otherwise
 /// the entire workspace would be recompiled at an undetermined time leading to bad UX delays.
 pub struct AnalysisDatabaseSwapper {
-    last_replace: SystemTime,
-    db_replace_interval: Duration,
+    last_replace_time: SystemTime,
+    mutations_since_last_replace: u64,
+    db_replace_min_interval: Duration,
+    db_replace_min_mutations: u64,
 }
 
 impl AnalysisDatabaseSwapper {
     /// Creates a new `AnalysisDatabaseSwapper`.
     pub fn new() -> Self {
         Self {
-            last_replace: SystemTime::now(),
-            db_replace_interval: env_config::db_replace_interval(),
+            last_replace_time: SystemTime::now(),
+            db_replace_min_interval: env_config::db_replace_interval(),
+            mutations_since_last_replace: 0,
+            db_replace_min_mutations: env_config::db_replace_mutations(),
         }
     }
 
-    /// Checks if enough time has passed since last db swap, and if so, swaps the database.
+    pub fn register_mutation(&mut self) {
+        self.mutations_since_last_replace += 1;
+    }
+
+    /// Checks for the swap criteria and swaps the database if they have been met.
     pub fn maybe_swap(
         &mut self,
         db: &mut AnalysisDatabase,
@@ -57,22 +87,31 @@ impl AnalysisDatabaseSwapper {
         project_controller: &mut ProjectController,
         proc_macro_client_controller: &ProcMacroClientController,
         config: &Config,
-    ) {
-        let Ok(elapsed) = self.last_replace.elapsed() else {
+    ) -> Option<SwapReason> {
+        let reason = self.check_for_swap()?;
+        self.swap(db, open_files, project_controller, proc_macro_client_controller, config);
+        trace!("Database swapped - {reason}");
+        Some(reason)
+    }
+
+    /// Checks whether any swap condition has been met. Returns the reason if swap is possible, `None` otherwise.
+    fn check_for_swap(&mut self) -> Option<SwapReason> {
+        let Ok(elapsed) = self.last_replace_time.elapsed() else {
             warn!("system time went backwards, skipping db swap");
 
             // Reset last replace time because in this place the old value will never make sense.
-            self.last_replace = SystemTime::now();
+            self.last_replace_time = SystemTime::now();
 
-            return;
+            return None;
         };
 
-        if elapsed <= self.db_replace_interval {
-            // Not enough time passed since the last swap.
-            return;
+        if self.mutations_since_last_replace >= self.db_replace_min_mutations {
+            Some(SwapReason::Mutations(self.mutations_since_last_replace))
+        } else if elapsed >= self.db_replace_min_interval {
+            Some(SwapReason::Time(elapsed))
+        } else {
+            None
         }
-
-        self.swap(db, open_files, project_controller, proc_macro_client_controller, config)
     }
 
     /// Swaps the database.
@@ -106,7 +145,8 @@ impl AnalysisDatabaseSwapper {
 
         *db = new_db;
 
-        self.last_replace = SystemTime::now();
+        self.mutations_since_last_replace = 0;
+        self.last_replace_time = SystemTime::now();
     }
 
     /// Copies current default macro plugins into new db.
