@@ -5,9 +5,6 @@ use std::path::Path;
 use std::time::Duration;
 use std::{fmt, process};
 
-use crate::support::fixture::Fixture;
-use crate::support::jsonrpc::RequestIdGenerator;
-use crate::support::mock_client::Action::{NoOp, RemoveFromTrace};
 use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, AnalysisStarted};
 use cairo_language_server::lsp::ext::ServerStatusParams;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
@@ -17,6 +14,10 @@ use lsp_types::notification::PublishDiagnostics;
 use lsp_types::request::{RegisterCapability, Request as LspRequest};
 use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url, lsp_notification, lsp_request};
 use serde_json::Value;
+
+use crate::support::fixture::Fixture;
+use crate::support::jsonrpc::RequestIdGenerator;
+use crate::support::mock_client::Action::{NoOp, RemoveFromTrace};
 
 /// A mock language client implementation that facilitates end-to-end testing language servers.
 ///

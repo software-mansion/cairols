@@ -1,5 +1,5 @@
-use super::inlining::{FileWithOrigin, inline_files, span_after_inlining};
-use crate::lang::db::AnalysisDatabase;
+use std::collections::HashSet;
+
 use cairo_lang_defs::{
     db::DefsGroup,
     plugin::{InlineMacroExprPlugin, MacroPluginMetadata},
@@ -11,7 +11,9 @@ use cairo_lang_filesystem::{
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast::ExprInlineMacro};
 use cairo_lang_utils::Intern;
-use std::collections::HashSet;
+
+use super::inlining::{FileWithOrigin, inline_files, span_after_inlining};
+use crate::lang::db::AnalysisDatabase;
 
 /// Expands inline macros for this file.
 pub fn expand_inline_macros_to_file(

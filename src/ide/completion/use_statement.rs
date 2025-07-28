@@ -1,4 +1,7 @@
+use cairo_lang_defs::ids::ImportableId;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::us::get_use_path_segments;
+use cairo_lang_syntax::node::ast::{UsePathLeaf, UsePathSingle};
 use cairo_lang_syntax::node::{
     Token,
     ast::{PathSegment, UsePath},
@@ -8,9 +11,6 @@ use lsp_types::CompletionItem;
 use super::{helpers::completion_kind::importable_completion_kind, path::path_prefix_completions};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::{analysis_context::AnalysisContext, text_matching::text_matches};
-use cairo_lang_defs::ids::ImportableId;
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_syntax::node::ast::{UsePathLeaf, UsePathSingle};
 
 pub fn use_statement(
     db: &AnalysisDatabase,

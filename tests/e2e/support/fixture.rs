@@ -1,11 +1,13 @@
-use crate::support::cairo_project_toml::WELL_KNOWN_CAIRO_PROJECT_TOMLS;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
+
 use assert_fs::TempDir;
 use assert_fs::prelude::*;
 use itertools::Itertools;
 use lsp_types::Url;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::sync::LazyLock;
+
+use crate::support::cairo_project_toml::WELL_KNOWN_CAIRO_PROJECT_TOMLS;
 
 const TOOL_VERSIONS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/.tool-versions"));
 

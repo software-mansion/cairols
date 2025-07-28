@@ -1,5 +1,12 @@
 use std::{fmt::Display, iter::zip, ops::Not, path::PathBuf, sync::LazyLock};
 
+use cairo_lang_utils::iterators::zip_eq3;
+use cairo_language_server::lsp::ext::ExpandMacro;
+use itertools::Itertools;
+use lsp_types::{Position, TextDocumentIdentifier, TextDocumentPositionParams};
+use serde::Serialize;
+use serde_json::json;
+
 use crate::support::{
     MockClient,
     cursor::peek_caret,
@@ -10,12 +17,6 @@ use crate::support::{
     normalize::normalize_diagnostics,
     sandbox,
 };
-use cairo_lang_utils::iterators::zip_eq3;
-use cairo_language_server::lsp::ext::ExpandMacro;
-use itertools::Itertools;
-use lsp_types::{Position, TextDocumentIdentifier, TextDocumentPositionParams};
-use serde::Serialize;
-use serde_json::json;
 
 mod builtin;
 mod fixtures;

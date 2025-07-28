@@ -1,6 +1,13 @@
+use std::collections::HashSet;
+
+use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::FunctionBody;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_syntax::node::ast::{PathSegment, StatementLet};
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
+use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
@@ -9,12 +16,6 @@ use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
-use cairo_lang_filesystem::ids::FileLongId;
-use cairo_lang_syntax::node::ast::{PathSegment, StatementLet};
-use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
-use cairo_lang_utils::LookupIntern;
-use std::collections::HashSet;
 
 pub fn variables_completions(
     db: &AnalysisDatabase,

@@ -1,9 +1,8 @@
 use indoc::{formatdoc, indoc};
 use serde_json::json;
 
-use crate::support::fixture::{Fixture, fixture};
-
 use super::{MacroTest, SCARB_TEST_MACROS_PACKAGE, SCARB_TEST_MACROS_V2_PACKAGE};
+use crate::support::fixture::{Fixture, fixture};
 
 pub struct ProjectWithCustomMacros;
 pub struct ProjectWithMultipleCrates;

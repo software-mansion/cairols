@@ -1,20 +1,20 @@
 use std::ops::ControlFlow;
 
+use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_semantic::keyword::SELF_TYPE_KW;
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::smol_str::format_smolstr;
 use memchr::memmem::Finder;
+use search_scope::SearchScope;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch};
-use cairo_lang_filesystem::db::get_originating_location;
-use cairo_lang_semantic::keyword::SELF_TYPE_KW;
-use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use search_scope::SearchScope;
 
 pub mod search_scope;
 

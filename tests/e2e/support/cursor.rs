@@ -1,10 +1,11 @@
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{Itertools, MultiPeek};
-use lsp_types::{Position, Range, TextEdit, Url};
 use std::cmp::min;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::Chars;
+
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::{Itertools, MultiPeek};
+use lsp_types::{Position, Range, TextEdit, Url};
 
 #[path = "cursor_test.rs"]
 mod test;

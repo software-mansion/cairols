@@ -2,11 +2,12 @@ use std::cmp::PartialEq;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use crossbeam::channel::{Receiver, Sender};
+
 use crate::config::Config;
 use crate::lsp::ext::{ServerStatus, ServerStatusEvent, ServerStatusParams};
 use crate::server::client::Notifier;
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
-use crossbeam::channel::{Receiver, Sender};
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum ProcMacroServerStatus {

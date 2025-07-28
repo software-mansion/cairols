@@ -1,5 +1,6 @@
-use crate::support::insta::test_transform_plain;
 use lsp_types::Hover;
+
+use crate::support::insta::test_transform_plain;
 
 #[test]
 fn generic_function_call() {

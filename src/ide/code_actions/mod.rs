@@ -1,5 +1,6 @@
 use ::cairo_lint::CorelibContext;
 use cairo_lang_syntax::node::SyntaxNode;
+use itertools::Itertools;
 use lsp_types::{
     CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams, CodeActionResponse,
     Diagnostic, NumberOrString, Range, TextEdit, Url, WorkspaceEdit,
@@ -11,8 +12,6 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::project::ConfigsRegistry;
-use crate::state::Snapshot;
-use itertools::Itertools;
 use std::collections::HashMap;
 
 mod add_missing_trait;

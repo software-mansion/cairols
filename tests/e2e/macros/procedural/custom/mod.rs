@@ -1,6 +1,7 @@
+use indoc::indoc;
+
 use crate::macros::fixtures::ProjectWithMultipleCrates;
 use crate::macros::test_macro_expansion_and_diagnostics;
-use indoc::indoc;
 
 mod v1;
 mod v1_and_v2;

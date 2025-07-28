@@ -1,6 +1,7 @@
-use itertools::Itertools;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+
+use itertools::Itertools;
 
 pub use self::package_config::PackageConfig;
 

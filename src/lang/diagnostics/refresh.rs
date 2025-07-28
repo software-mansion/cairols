@@ -1,16 +1,18 @@
+use std::collections::HashSet;
+use std::path::PathBuf;
+
+use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::{FileId, FileLongId};
+use cairo_lang_utils::LookupIntern;
+use lsp_types::notification::PublishDiagnostics;
+use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
+
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FilesDiagnostics;
 use crate::lang::diagnostics::project_diagnostics::ProjectDiagnostics;
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileId, FileLongId};
-use cairo_lang_utils::LookupIntern;
-use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
-use std::collections::HashSet;
-use std::path::PathBuf;
 
 /// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(skip_all)]

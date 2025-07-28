@@ -1,4 +1,5 @@
-use super::LsSyntaxGroup;
+use std::collections::{HashSet, VecDeque};
+
 use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
@@ -20,7 +21,8 @@ use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast};
-use std::collections::{HashSet, VecDeque};
+
+use super::LsSyntaxGroup;
 
 #[salsa::query_group(LsSemanticDatabase)]
 pub trait LsSemanticGroup: SemanticGroup + Upcast<dyn SemanticGroup> + LsSyntaxGroup {

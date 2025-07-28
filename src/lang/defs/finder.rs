@@ -1,4 +1,3 @@
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumLongId, GenericTypeId, ImplDefLongId, ImplItemId, LanguageElementId, LookupItemId,
@@ -30,6 +29,8 @@ use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxN
 use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::Itertools;
+
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 /// A language element that can be a result of name resolution performed by CairoLS.
 ///

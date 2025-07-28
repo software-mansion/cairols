@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::default::Default;
 use std::ops::{Deref, DerefMut};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use lsp_types::{ClientCapabilities, Url};
@@ -16,7 +17,6 @@ use crate::project::{ConfigsRegistry, ProjectController};
 use crate::server::client::Client;
 use crate::server::connection::ClientSender;
 use crate::toolchain::scarb::ScarbToolchain;
-use std::path::PathBuf;
 
 /// State of Language server.
 pub struct State {

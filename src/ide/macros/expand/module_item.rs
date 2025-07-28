@@ -1,5 +1,3 @@
-use super::inlining::FileWithOrigin;
-use crate::lang::db::AnalysisDatabase;
 use cairo_lang_defs::{
     db::DefsGroup,
     plugin::{MacroPlugin, MacroPluginMetadata},
@@ -8,6 +6,9 @@ use cairo_lang_filesystem::ids::{CrateId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast::ModuleItem};
 use cairo_lang_utils::Intern;
+
+use super::inlining::FileWithOrigin;
+use crate::lang::db::AnalysisDatabase;
 
 // Resursively expand module item.
 pub fn expand_module_item_macros(

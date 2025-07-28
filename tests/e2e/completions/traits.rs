@@ -1,8 +1,9 @@
+use lsp_types::request::Completion;
+
 use crate::{
     completions::completion_fixture,
     support::insta::{test_transform_plain, test_transform_with_macros},
 };
-use lsp_types::request::Completion;
 
 #[test]
 fn self_completions() {

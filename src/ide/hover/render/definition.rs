@@ -1,7 +1,3 @@
-use crate::ide::markdown::{RULE, fenced_code_block};
-use crate::ide::ty::InferredValue;
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_defs::plugin::InlineMacroExprPlugin;
@@ -17,6 +13,11 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
+
+use crate::ide::markdown::{RULE, fenced_code_block};
+use crate::ide::ty::InferredValue;
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch};
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.
 pub fn definition(

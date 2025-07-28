@@ -1,18 +1,18 @@
 use std::fmt::Display;
+use std::path::PathBuf;
 
+use cairo_language_server::lsp::ext::{ExecuteInTerminal, ExecuteInTerminalParams};
+use indoc::indoc;
+use lsp_types::request::{CodeLensRequest, ExecuteCommand};
 use lsp_types::{
     ClientCapabilities, CodeLensParams, DynamicRegistrationClientCapabilities,
     ExecuteCommandParams, TextDocumentClientCapabilities, Url,
 };
 use serde::Serialize;
+use serde_json::{Value, json};
 
 use crate::support::cursor::Cursor;
 use crate::support::{cursors, sandbox};
-use cairo_language_server::lsp::ext::{ExecuteInTerminal, ExecuteInTerminalParams};
-use indoc::indoc;
-use lsp_types::request::{CodeLensRequest, ExecuteCommand};
-use serde_json::{Value, json};
-use std::path::PathBuf;
 
 mod both_runners;
 mod cairo_test;

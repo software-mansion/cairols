@@ -1,9 +1,3 @@
-use super::{markdown::fenced_code_block, ty::format_type};
-use crate::lang::proc_macros::db::get_og_node;
-use crate::lang::{
-    db::{AnalysisDatabase, LsSemanticGroup},
-    lsp::{LsProtoGroup, ToCairo, ToLsp},
-};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::{
@@ -23,6 +17,13 @@ use lsp_types::{
     InlayHintParams, MarkupContent, MarkupKind,
 };
 use types::find_underscores;
+
+use super::{markdown::fenced_code_block, ty::format_type};
+use crate::lang::proc_macros::db::get_og_node;
+use crate::lang::{
+    db::{AnalysisDatabase, LsSemanticGroup},
+    lsp::{LsProtoGroup, ToCairo, ToLsp},
+};
 
 mod types;
 

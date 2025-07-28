@@ -8,6 +8,7 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
 use tracing::debug;
 
@@ -16,7 +17,6 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
 use crate::lang::methods::find_methods_for_type;
-use itertools::Itertools;
 
 pub fn dot_completions(
     db: &AnalysisDatabase,

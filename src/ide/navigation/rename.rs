@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use anyhow::anyhow;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
@@ -14,7 +16,6 @@ use lsp_types::{
     OptionalVersionedTextDocumentIdentifier, RenameFile, RenameParams, ResourceOp,
     TextDocumentEdit, TextEdit, Url, WorkspaceEdit,
 };
-use std::collections::HashMap;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::defs::{SymbolDef, SymbolSearch};

@@ -1,6 +1,7 @@
+use indoc::indoc;
+
 use crate::macros::fixtures::ProjectWithCustomMacrosV1AndV2;
 use crate::macros::test_macro_expansion_and_diagnostics;
-use indoc::indoc;
 
 #[test]
 fn mixed_inline_simple() {

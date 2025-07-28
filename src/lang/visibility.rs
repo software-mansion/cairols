@@ -1,10 +1,11 @@
-use super::db::AnalysisDatabase;
 use cairo_lang_defs::ids::{ModuleFileId, ModuleId};
 use cairo_lang_semantic::{
     expr::inference::InferenceId,
     items::visibility::{Visibility, peek_visible_in},
     resolve::Resolver,
 };
+
+use super::db::AnalysisDatabase;
 
 pub fn peek_visible_in_with_edition(
     db: &AnalysisDatabase,

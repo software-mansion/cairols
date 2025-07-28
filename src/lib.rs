@@ -53,6 +53,7 @@ use crossbeam::channel::{Receiver, select_biased};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use lsp_types::request::SemanticTokensRefresh;
+use salsa::ParallelDatabase;
 use tracing::{debug, error, info};
 
 use crate::ide::analysis_progress::AnalysisFinished;
@@ -74,7 +75,6 @@ use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
 use crate::server::schedule::{Scheduler, Task, event_loop_thread};
 use crate::state::State;
-use salsa::ParallelDatabase;
 
 mod config;
 mod env_config;
@@ -267,6 +267,9 @@ impl Backend {
 
             Self::dispatch_setup_tasks(&mut scheduler);
 
+            // Notify the swapper about state mutation.
+            scheduler.on_sync_mut_task(Self::register_mutation_in_swapper);
+
             // Attempt to swap the database to reduce memory use.
             // Because diagnostics are always refreshed afterwards, the fresh database state will
             // be quickly repopulated.
@@ -454,6 +457,10 @@ impl Backend {
         }
     }
 
+    fn register_mutation_in_swapper(state: &mut State, _notifier: Notifier) {
+        state.db_swapper.register_mutation();
+    }
+
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
     fn maybe_swap_database(state: &mut State, _notifier: Notifier) {
         state.db_swapper.maybe_swap(
@@ -461,7 +468,6 @@ impl Backend {
             &state.open_files,
             &mut state.project_controller,
             &state.proc_macro_controller,
-            // &state.config,
         );
     }
 

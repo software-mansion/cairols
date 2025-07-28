@@ -1,3 +1,5 @@
+use std::hash::Hash;
+
 use attribute::attribute_completions;
 use attribute::derive::derive_completions;
 use cairo_lang_diagnostics::ToOption;
@@ -7,9 +9,16 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use expr::macro_call::macro_call_completions;
+use function::params::params_completions;
+use function::variables::variables_completions;
+use helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use lsp_types::{CompletionItem, CompletionParams, CompletionResponse, CompletionTriggerKind};
 use mod_item::mod_completions;
 use path::path_suffix_completions;
+use pattern::{enum_pattern_completions, struct_pattern_completions};
+use self_completions::self_completions;
 use struct_constructor::struct_constructor_completions;
 
 use self::dot_completions::dot_completions;
@@ -17,14 +26,6 @@ use crate::ide::completion::use_statement::{use_statement, use_statement_first_s
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use expr::macro_call::macro_call_completions;
-use function::params::params_completions;
-use function::variables::variables_completions;
-use helpers::binary_expr::dot_rhs::dot_expr_rhs;
-use pattern::{enum_pattern_completions, struct_pattern_completions};
-use self_completions::self_completions;
-use std::hash::Hash;
 
 mod attribute;
 mod dot_completions;

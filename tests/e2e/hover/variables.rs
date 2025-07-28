@@ -1,5 +1,6 @@
-use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 use lsp_types::Hover;
+
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn ident_typed() {

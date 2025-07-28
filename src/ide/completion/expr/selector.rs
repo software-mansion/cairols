@@ -1,8 +1,9 @@
-use crate::lang::db::AnalysisDatabase;
 use cairo_lang_syntax::node::{
     SyntaxNode, TypedSyntaxNode,
     ast::{self, Expr, ExprPath},
 };
+
+use crate::lang::db::AnalysisDatabase;
 
 pub fn expr_selector(db: &AnalysisDatabase, node: &SyntaxNode) -> Option<ExprPath> {
     for node in node.ancestors_with_self(db) {

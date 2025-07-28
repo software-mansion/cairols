@@ -1,8 +1,8 @@
-use super::{db::AnalysisDatabase, lsp::LsProtoGroup};
-use crate::{
-    lang::{defs::SymbolSearch, lsp::ToLsp},
-    server::is_cairo_file_path,
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
 };
+
 use cairo_lang_defs::{
     db::DefsGroup,
     ids::{ModuleId, NamedLanguageElementId},
@@ -12,11 +12,13 @@ use cairo_lang_filesystem::{
     ids::Directory,
 };
 use lsp_types::{FileRename, RenameFilesParams, TextEdit, Url, WorkspaceEdit};
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
 use tracing::error;
+
+use super::{db::AnalysisDatabase, lsp::LsProtoGroup};
+use crate::{
+    lang::{defs::SymbolSearch, lsp::ToLsp},
+    server::is_cairo_file_path,
+};
 
 pub fn rename_files(db: &AnalysisDatabase, params: RenameFilesParams) -> Option<WorkspaceEdit> {
     let mut changes: HashMap<Url, Vec<TextEdit>> = Default::default();
