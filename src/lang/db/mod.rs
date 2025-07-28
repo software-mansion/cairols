@@ -33,7 +33,6 @@ pub use self::semantic::*;
 pub use self::swapper::*;
 pub use self::syntax::*;
 use super::proc_macros::db::{ProcMacroDatabase, init_proc_macro_group};
-use crate::TRICKS;
 use cairo_lint::{LinterDatabase, LinterGroup};
 
 mod semantic;
@@ -147,8 +146,6 @@ impl AnalysisDatabase {
     }
 
     fn default_global_plugin_suite() -> PluginSuite {
-        let tricks = TRICKS.get_or_init(Default::default);
-
         [
             get_default_plugin_suite(),
             starknet_plugin_suite(),
@@ -157,7 +154,6 @@ impl AnalysisDatabase {
             cairo_lint_allow_plugin_suite(),
         ]
         .into_iter()
-        .chain(tricks.extra_plugin_suites.iter().flat_map(|f| f()))
         .fold(PluginSuite::default(), |mut acc, suite| {
             acc.add(suite);
             acc
@@ -165,8 +161,6 @@ impl AnalysisDatabase {
     }
 
     fn default_corelib_plugin_suite() -> PluginSuite {
-        let tricks = TRICKS.get_or_init(Default::default);
-
         [
             get_default_plugin_suite(),
             test_plugin_suite(),
@@ -174,7 +168,6 @@ impl AnalysisDatabase {
             cairo_lint_allow_plugin_suite(),
         ]
         .into_iter()
-        .chain(tricks.extra_plugin_suites.iter().flat_map(|f| f()))
         .fold(PluginSuite::default(), |mut acc, suite| {
             acc.add(suite);
             acc
