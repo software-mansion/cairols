@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax as syntax;
@@ -20,7 +22,7 @@ pub mod token_kind;
 pub fn semantic_highlight_full(
     params: SemanticTokensParams,
     db: &AnalysisDatabase,
-    _ls_meta_state: MetaState,
+    _ls_meta_state: Arc<MetaState>,
 ) -> Option<SemanticTokensResult> {
     let file_uri = params.text_document.uri;
     let file = db.file_for_url(&file_uri)?;

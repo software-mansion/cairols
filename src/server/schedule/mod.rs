@@ -5,13 +5,16 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69  |
 // +---------------------------------------------------+
 
+use std::sync::Arc;
+
+use anyhow::Result;
+
 use self::task::BackgroundTaskBuilder;
 use self::thread::{JoinHandle, ThreadPriority};
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::ClientSender;
 use crate::server::schedule::task::BackgroundFnBuilder;
 use crate::state::{MetaState, State};
-use anyhow::Result;
 
 mod task;
 pub mod thread;
@@ -48,7 +51,7 @@ pub struct Scheduler<'s> {
     /// fmt request, it will still be processed fast.
     fmt_pool: thread::Pool,
     sync_mut_task_hooks: Vec<SyncTaskHook>,
-    meta_state: MetaState,
+    pub meta_state: Arc<MetaState>,
 }
 
 impl<'s> Scheduler<'s> {
@@ -145,7 +148,7 @@ impl<'s> Scheduler<'s> {
     /// This is a shortcut for `dispatch(Task::local(func))`.
     pub fn local(
         &mut self,
-        func: impl FnOnce(&State, MetaState, Notifier, &mut Requester<'_>, Responder) + 's,
+        func: impl FnOnce(&State, Arc<MetaState>, Notifier, &mut Requester<'_>, Responder) + 's,
     ) {
         self.dispatch(Task::local(func));
     }
