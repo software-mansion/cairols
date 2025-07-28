@@ -18,7 +18,6 @@ use cairo_lint::plugin::{
 };
 
 use super::builtin_plugins::BuiltinPlugin;
-use crate::TRICKS;
 use crate::lang::db::AnalysisDatabase;
 use crate::project::model::PackageConfig;
 
@@ -102,8 +101,6 @@ impl Crate {
             .builtin_plugins
             .iter()
             .map(BuiltinPlugin::suite)
-            // All crates should receive Tricks.
-            .chain(tricks())
             // All crates should receive CairoLintAllow.
             .chain(Some(cairo_lint_allow_plugin_suite()))
             .chain(lint_config.map(cairo_lint_plugin_suite_without_metadata_validation))
@@ -162,13 +159,4 @@ pub fn extract_custom_file_stems(db: &AnalysisDatabase, crate_id: CrateId) -> Op
         .filter(|line| !line.is_empty())
         .map(|line| Some(line.strip_prefix("mod ")?.strip_suffix(';')?.into()))
         .collect::<Option<Vec<_>>>()
-}
-
-/// Returns the extra [`PluginSuite`]s injected as [`Tricks`].
-fn tricks() -> Vec<PluginSuite> {
-    TRICKS
-        .get_or_init(Default::default)
-        .extra_plugin_suites
-        .map(|provider| provider())
-        .unwrap_or_default()
 }

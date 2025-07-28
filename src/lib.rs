@@ -13,42 +13,15 @@
 //!     cairo_language_server::start();
 //! }
 //! ```
-//!
-//! ## Running with customizations
-//!
-//! Due to the immaturity of various Cairo compiler parts (especially around potentially
-//! dynamically-loadable things), for some projects it might be necessary to provide a custom build
-//! of CairoLS that includes custom modifications to the compiler.
-//! The [`start_with_tricks`] function allows building a customized build of CairoLS that supports
-//! project-specific features.
-//! See the [`Tricks`] struct documentation for available customizations.
-//!
-//! ```no_run
-//! # #![allow(clippy::needless_doctest_main)]
-//! use cairo_language_server::Tricks;
-//!
-//! # fn dojo_plugin_suite() -> cairo_lang_semantic::plugin::PluginSuite {
-//! #    // Returning something realistic, to make sure restrictive trait bounds do compile.
-//! #    cairo_lang_starknet::starknet_plugin_suite()
-//! # }
-//! fn main() {
-//!     let mut tricks = Tricks::default();
-//!     tricks.extra_plugin_suites = Some(&|| vec![dojo_plugin_suite()]);
-//!     cairo_language_server::start_with_tricks(tricks);
-//! }
-//! ```
 
-use std::panic::RefUnwindSafe;
 use std::path::PathBuf;
 use std::process::ExitCode;
-use std::sync::OnceLock;
 use std::time::SystemTime;
 use std::{io, panic};
 
 use anyhow::Result;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
-use cairo_lang_semantic::plugin::PluginSuite;
 use crossbeam::channel::{Receiver, select_biased};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
@@ -88,45 +61,17 @@ mod state;
 pub mod testing;
 mod toolchain;
 
-/// A container to store global customizations initialized upon launch.
-pub static TRICKS: OnceLock<Tricks> = OnceLock::new();
-
-/// Carries various customizations that can be applied to CairoLS.
-///
-/// See [the top-level documentation][lib] documentation for usage examples.
-///
-/// [lib]: crate#running-with-customizations
-#[non_exhaustive]
-#[derive(Default, Clone)]
-pub struct Tricks {
-    /// A function that returns a list of additional compiler plugin suites to be loaded in the
-    /// language server database.
-    pub extra_plugin_suites:
-        Option<&'static (dyn Fn() -> Vec<PluginSuite> + Send + Sync + RefUnwindSafe)>,
-}
-
 /// Starts the language server.
 ///
 /// See [the top-level documentation][lib] documentation for usage examples.
 ///
 /// [lib]: crate#running-vanilla
 pub fn start() -> ExitCode {
-    start_with_tricks(Tricks::default())
-}
-
-/// Starts the language server with customizations.
-///
-/// See [the top-level documentation][lib] documentation for usage examples.
-///
-/// [lib]: crate#running-with-customizations
-pub fn start_with_tricks(tricks: Tricks) -> ExitCode {
     let _log_guard = init_logging();
     set_panic_hook();
 
     info!("language server starting");
     env_config::report_to_logs();
-
-    let _ = TRICKS.set(tricks);
 
     let exit_code = match Backend::new() {
         Ok(backend) => {
