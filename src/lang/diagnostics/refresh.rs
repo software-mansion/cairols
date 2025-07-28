@@ -7,17 +7,22 @@ use cairo_lang_utils::LookupIntern;
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
 
+use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FilesDiagnostics;
 use crate::lang::diagnostics::project_diagnostics::ProjectDiagnostics;
 use crate::lang::lsp::LsProtoGroup;
+use crate::project::ConfigsRegistry;
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 
 /// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(skip_all)]
+#[allow(clippy::too_many_arguments)]
 pub fn refresh_diagnostics(
     db: &AnalysisDatabase,
+    config: &Config,
+    config_registry: &ConfigsRegistry,
     batch: Vec<FileId>,
     trace_macro_diagnostics: bool,
     project_diagnostics: ProjectDiagnostics,
@@ -27,6 +32,8 @@ pub fn refresh_diagnostics(
     for file in batch {
         refresh_file_diagnostics(
             db,
+            config,
+            config_registry,
             file,
             trace_macro_diagnostics,
             &project_diagnostics,
@@ -42,15 +49,20 @@ pub fn refresh_diagnostics(
 /// I.e, if diagnostics are updated on the server side they MUST be sent successfully to the
 /// client (and vice-versa).
 #[tracing::instrument(skip_all, fields(url = tracing_file_url(db, root_on_disk_file)))]
+#[allow(clippy::too_many_arguments)]
 fn refresh_file_diagnostics(
     db: &AnalysisDatabase,
+    config: &Config,
+    config_registry: &ConfigsRegistry,
     root_on_disk_file: FileId,
     trace_macro_diagnostics: bool,
     project_diagnostics: &ProjectDiagnostics,
     notifier: &Notifier,
     scarb_toolchain: &ScarbToolchain,
 ) {
-    let Some(new_files_diagnostics) = FilesDiagnostics::collect(db, root_on_disk_file) else {
+    let Some(new_files_diagnostics) =
+        FilesDiagnostics::collect(db, config, config_registry, root_on_disk_file)
+    else {
         return;
     };
 

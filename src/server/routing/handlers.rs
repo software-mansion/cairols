@@ -84,12 +84,7 @@ impl BackgroundDocumentRequestHandler for CodeActionRequest {
         _notifier: Notifier,
         params: CodeActionParams,
     ) -> Result<Option<CodeActionResponse>, LSPError> {
-        Ok(ide::code_actions::code_actions(
-            params,
-            &snapshot.config,
-            &snapshot.configs_registry,
-            &snapshot.db,
-        ))
+        Ok(ide::code_actions::code_actions(params, &snapshot.configs_registry, &snapshot.db))
     }
 }
 

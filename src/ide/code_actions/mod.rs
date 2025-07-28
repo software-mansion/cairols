@@ -7,7 +7,6 @@ use lsp_types::{
 };
 use tracing::{debug, warn};
 
-use crate::config::Config;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
@@ -27,14 +26,13 @@ mod rename_unused_variable;
 /// either fix problems or to beautify/refactor code.
 pub fn code_actions(
     params: CodeActionParams,
-    config: &Config,
     config_registry: &ConfigsRegistry,
     db: &AnalysisDatabase,
 ) -> Option<CodeActionResponse> {
     let mut actions = Vec::with_capacity(params.context.diagnostics.len());
 
     actions.extend(
-        get_code_actions_for_diagnostics(db, config, config_registry, &params)
+        get_code_actions_for_diagnostics(db, config_registry, &params)
             .into_iter()
             .map(CodeActionOrCommand::from),
     );
@@ -58,7 +56,6 @@ pub fn code_actions(
 /// A vector of [`CodeAction`] objects that can be applied to resolve the diagnostics.
 fn get_code_actions_for_diagnostics(
     db: &AnalysisDatabase,
-    config: &Config,
     config_registry: &ConfigsRegistry,
     params: &CodeActionParams,
 ) -> Vec<CodeAction> {
@@ -82,14 +79,9 @@ fn get_code_actions_for_diagnostics(
             Some((code, diagnostic, ctx))
         })
         .flat_map(|(code, diagnostic, ctx)| match code {
-            None => {
-                if config.enable_linter {
-                    cairo_lint::cairo_lint(db, &ctx, &corelib_context, config_registry)
-                        .unwrap_or_default()
-                } else {
-                    vec![]
-                }
-            }
+            None => cairo_lint::cairo_lint(db, &ctx, &corelib_context, config_registry)
+                .unwrap_or_default(),
+
             Some("E0001") => rename_unused_variable::rename_unused_variable(
                 db,
                 &ctx.node,

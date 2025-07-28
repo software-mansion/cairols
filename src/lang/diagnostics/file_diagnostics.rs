@@ -1,5 +1,7 @@
 use std::collections::HashMap;
+use std::path::Path;
 
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
@@ -9,12 +11,16 @@ use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::diagnostic::SemanticDiagnosticKind;
+use cairo_lint::{CairoLintToolMetadata, CorelibContext, LinterDiagnosticParams, LinterGroup};
 use lsp_types::{Diagnostic, Url};
 use tracing::info_span;
 
+use crate::config::Config;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
+use crate::project::ConfigsRegistry;
 
 /// Result of processing a single on disk file `root_on_disk_file` and virtual files that are its
 /// descendants in search for diagnostics.
@@ -34,20 +40,38 @@ pub struct FilesDiagnostics {
     pub parser: Diagnostics<ParserDiagnostic>,
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
+    pub linter: Diagnostics<SemanticDiagnostic>,
 }
 
 impl FilesDiagnostics {
     /// Collects all diagnostics kinds by processing an on disk `root_on_disk_file` together with
     /// virtual files that are its descendants.
-    pub fn collect(db: &AnalysisDatabase, root_on_disk_file: FileId) -> Option<Self> {
+    pub fn collect(
+        db: &AnalysisDatabase,
+        config: &Config,
+        config_registry: &ConfigsRegistry,
+        root_on_disk_file: FileId,
+    ) -> Option<Self> {
         let root_on_disk_file_url = db.url_for_file(root_on_disk_file)?;
 
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
         let mut parser_file_diagnostics: Vec<ParserDiagnostic> = vec![];
+        let mut linter_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
+
+        let corelib_context = CorelibContext::new(db);
+        let linter_params = LinterDiagnosticParams {
+            only_generated_files: false,
+            tool_metadata: config_registry
+                .config_for_file(Path::new(&root_on_disk_file.full_path(db)))
+                .map_or_else(CairoLintToolMetadata::default, |config| config.lint.clone()),
+        };
 
         let (files_to_process, modules_to_process) =
-            db.file_and_subfiles_with_corresponding_modules(root_on_disk_file)?;
+            <AnalysisDatabase as LsSemanticGroup>::file_and_subfiles_with_corresponding_modules(
+                db,
+                root_on_disk_file,
+            )?;
 
         for module_id in modules_to_process.into_iter() {
             semantic_file_diagnostics.extend(
@@ -60,6 +84,24 @@ impl FilesDiagnostics {
                     db.module_lowering_diagnostics(module_id).unwrap_or_default().get_all()
                 }),
             );
+            if config.enable_linter {
+                linter_file_diagnostics.extend(info_span!("db.linter_diagnostics").in_scope(
+                    || {
+                        db.linter_diagnostics(
+                            corelib_context.clone(),
+                            linter_params.clone(),
+                            module_id,
+                        )
+                        .into_iter()
+                        .map(|diag| {
+                            SemanticDiagnostic::new(
+                                StableLocation::new(diag.stable_ptr),
+                                SemanticDiagnosticKind::PluginDiagnostic(diag),
+                            )
+                        })
+                    },
+                ));
+            }
         }
 
         for file_id in files_to_process.into_iter() {
@@ -71,6 +113,7 @@ impl FilesDiagnostics {
             parser: Diagnostics::from_iter(parser_file_diagnostics),
             semantic: Diagnostics::from_iter(semantic_file_diagnostics),
             lowering: Diagnostics::from_iter(lowering_file_diagnostics),
+            linter: Diagnostics::from_iter(linter_file_diagnostics),
         })
     }
 
@@ -101,6 +144,12 @@ impl FilesDiagnostics {
             db as &dyn SemanticGroup,
             &mut diagnostics,
             &self.lowering,
+            trace_macro_diagnostics,
+        );
+        map_cairo_diagnostics_to_lsp(
+            db as &dyn SemanticGroup,
+            &mut diagnostics,
+            &self.linter,
             trace_macro_diagnostics,
         );
 
