@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use crate::{
     lang::{
         analysis_context::AnalysisContext,
@@ -9,7 +7,7 @@ use crate::{
     project::ConfigsRegistry,
 };
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_filesystem::ids::{FileKind, FileLongId};
+use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::{
     SemanticDiagnostic, db::SemanticGroup, diagnostic::SemanticDiagnosticKind,
 };

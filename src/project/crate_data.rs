@@ -12,7 +12,6 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::smol_str::SmolStr;
-use cairo_lint::CairoLintToolMetadata;
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
 
 use super::builtin_plugins::BuiltinPlugin;

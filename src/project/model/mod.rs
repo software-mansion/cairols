@@ -1,6 +1,5 @@
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateLongId;
-use scarb_metadata::CompilationUnitMetadata;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
@@ -10,7 +9,6 @@ use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::project::Crate;
 use crate::project::crate_data::CrateInfo;
 use crate::state::{Owned, Snapshot};
-use crate::toolchain::scarb::ScarbToolchain;
 
 mod configs_registry;
 
@@ -18,7 +16,6 @@ type WorkspaceRoot = PathBuf;
 type ManifestPath = PathBuf;
 
 pub struct ProjectModel {
-    scarb_toolchain: ScarbToolchain,
     // The two fields below keep exactly the same information;
     // therefore, their contents should be kept synchronised.
     // We keep both of them for efficiency and ease of use.
@@ -33,28 +30,21 @@ pub struct ProjectModel {
     /// It is done to ensure diagnostics are not randomly cleared after a project manifest change/
     /// db swap/reload workspace command.
     remove_crates_from_db_on_next_update: bool,
-    compilation_units: Vec<CompilationUnitMetadata>,
 }
 
 impl ProjectModel {
-    pub fn new(scarb_toolchain: ScarbToolchain) -> Self {
+    pub fn new() -> Self {
         Self {
-            scarb_toolchain,
             loaded_workspaces: Default::default(),
             loaded_crates: Default::default(),
             manifests_of_members_from_loaded_workspaces: Default::default(),
             configs_registry: Default::default(),
-            compilation_units: Default::default(),
             remove_crates_from_db_on_next_update: false,
         }
     }
 
     pub fn configs_registry(&self) -> Snapshot<ConfigsRegistry> {
         self.configs_registry.snapshot()
-    }
-
-    pub fn compilation_units(&self) -> Vec<CompilationUnitMetadata> {
-        self.compilation_units.clone()
     }
 
     pub fn loaded_manifests(&self) -> Snapshot<HashSet<ManifestPath>> {
@@ -192,11 +182,5 @@ impl ProjectModel {
         }
 
         self.loaded_workspaces.insert(workspace_dir.to_path_buf(), workspace_crates);
-    }
-
-    fn is_from_scarb_cache(&self, crate_root_path: &Path) -> bool {
-        self.scarb_toolchain
-            .cache_path()
-            .is_some_and(|cache_path| crate_root_path.starts_with(cache_path))
     }
 }

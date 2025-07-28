@@ -14,7 +14,6 @@ use lsp_types::Url;
 use serde::Serialize;
 use tracing::{error, trace, warn};
 
-use crate::config::Config;
 use crate::env_config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
