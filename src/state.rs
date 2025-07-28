@@ -88,9 +88,8 @@ impl State {
 pub struct MetaStateInner {
     /// Database swapper.
     /// # Safety
-    /// Swapper does not communicate with other critical modules and thus cannot cause race conditions.
-    /// Its mutating methods are available here via interior mutability
-    /// because they do not access the [`State`] and are two lightweight to invoke them as dispatched tasks.
+    /// Swapper does not communicate with other critical modules and do not access the state.
+    /// Using it also does not affect the analysis. Thus, it's safe to place it here and access via interior mutability.
     pub db_swapper: AnalysisDatabaseSwapper,
 }
 

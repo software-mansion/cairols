@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::fmt::Display;
+use std::mem;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -58,7 +59,7 @@ impl Display for SwapReason {
 /// It is expected that diagnostics will be refreshed on it as quickly as possible, otherwise
 /// the entire workspace would be recompiled at an undetermined time leading to bad UX delays.
 pub struct AnalysisDatabaseSwapper {
-    last_replace_time: SystemTime,
+    stopwatch: Stopwatch,
     mutations_since_last_replace: u64,
     db_replace_min_interval: Duration,
     db_replace_min_mutations: u64,
@@ -67,7 +68,7 @@ pub struct AnalysisDatabaseSwapper {
 impl Default for AnalysisDatabaseSwapper {
     fn default() -> Self {
         Self {
-            last_replace_time: SystemTime::now(),
+            stopwatch: Stopwatch::default(),
             mutations_since_last_replace: 0,
             db_replace_min_interval: env_config::db_replace_interval(),
             db_replace_min_mutations: env_config::db_replace_mutations(),
@@ -78,6 +79,19 @@ impl Default for AnalysisDatabaseSwapper {
 impl AnalysisDatabaseSwapper {
     pub fn register_mutation(&mut self) {
         self.mutations_since_last_replace += 1;
+    }
+
+    pub fn start_stopwatch(&mut self) {
+        self.stopwatch.start();
+        trace!("Stopwatch started!");
+    }
+
+    pub fn stop_stopwatch(&mut self) {
+        self.stopwatch.stop();
+        trace!(
+            "Stopwatch stopped! Total elapsed time: {}s",
+            self.stopwatch.total_elapsed_time.as_secs()
+        );
     }
 
     /// Checks for the swap criteria and swaps the database if they have been met.
@@ -93,6 +107,7 @@ impl AnalysisDatabaseSwapper {
 
         self.swap(db, open_files, project_controller, proc_macro_client_controller, config);
         self.mutations_since_last_replace = 0;
+        self.stopwatch.reset();
 
         trace!("Database swapped - {reason}");
 
@@ -100,16 +115,8 @@ impl AnalysisDatabaseSwapper {
     }
 
     /// Checks whether any swap condition has been met. Returns the reason if swap is possible, `None` otherwise.
-    fn check_for_swap(&mut self) -> Option<SwapReason> {
-        let Ok(elapsed_time) = self.last_replace_time.elapsed() else {
-            warn!("system time went backwards, skipping db swap");
-
-            // Reset last replace time because in this place the old value will never make sense.
-            self.last_replace_time = SystemTime::now();
-
-            return None;
-        };
-
+    fn check_for_swap(&self) -> Option<SwapReason> {
+        let elapsed_time = self.stopwatch.total_elapsed_time;
         let mutations = self.mutations_since_last_replace;
 
         if mutations >= self.db_replace_min_mutations {
@@ -220,5 +227,36 @@ impl AnalysisDatabaseSwapper {
             }
         }
         new_db.set_file_overrides(Arc::new(new_overrides));
+    }
+}
+
+#[derive(Default)]
+struct Stopwatch {
+    start_time: Option<SystemTime>,
+    total_elapsed_time: Duration,
+}
+
+impl Stopwatch {
+    fn start(&mut self) {
+        self.start_time = Some(SystemTime::now());
+    }
+
+    fn stop(&mut self) {
+        let Some(start_time) = mem::take(&mut self.start_time) else {
+            error!("Tried to start a stopwatch which has not started");
+            return;
+        };
+
+        let Ok(elapsed_time) = start_time.elapsed() else {
+            // Unprobable case, would happen if system time somehow went backwards.
+            error!("Failed to read the elapsed time of the stopwatch");
+            return;
+        };
+
+        self.total_elapsed_time += elapsed_time;
+    }
+
+    fn reset(&mut self) {
+        *self = Self::default();
     }
 }

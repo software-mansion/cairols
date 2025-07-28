@@ -341,13 +341,26 @@ impl Backend {
                 recv(analysis_progress_status_receiver) -> analysis_progress_status => {
                     let Ok(analysis_status) = analysis_progress_status else { break };
 
-                    // TODO: Notify the swapper (Next PR)
+                    match analysis_status {
+                        AnalysisStatus::Started => {
+                            scheduler.meta_state
+                                .lock()
+                                .expect("should be able to acquire the MetaState")
+                                .db_swapper
+                                .start_stopwatch();
+                        }
+                        AnalysisStatus::Finished => {
+                            scheduler.meta_state
+                                .lock()
+                                .expect("should be able to acquire the MetaState")
+                                .db_swapper
+                                .stop_stopwatch();
 
-                    if let AnalysisStatus::Finished = analysis_status {
-                        scheduler.local(|state, _, _notifier, requester, _responder|
-                            Self::on_stopped_analysis(state, requester)
-                        );
-                    }
+                            scheduler.local(|state, _, _notifier, requester, _responder|
+                                Self::on_stopped_analysis(state, requester)
+                            );
+                        }
+                    };
                 }
                 recv(code_lens_request_refresh_receiver) -> error => {
                     let Ok(()) = error else { break };
