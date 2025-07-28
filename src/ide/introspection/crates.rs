@@ -37,7 +37,6 @@ struct CrateView {
     name: SmolStr,
     source_paths: Vec<PathBuf>,
     settings: CrateSettings,
-    // linter_configuration: LinterConfiguration,
     plugins: Plugins,
 }
 
@@ -69,43 +68,11 @@ impl CrateView {
             .map(|stems| stems.iter().map(|stem| root.join(format!("{stem}.cairo"))).collect_vec())
             .unwrap_or_else(|| vec![root.join("lib.cairo")]);
 
-        // let linter_configuration = LinterConfiguration::for_crate(db, crate_id);
         let plugins = Plugins::for_crate(db, crate_id);
 
         Some(Self { name, source_paths, settings, plugins })
     }
 }
-
-// #[derive(Debug, Serialize, PartialEq, Eq)]
-// enum LinterConfiguration {
-//     Off,
-//     #[serde(untagged)]
-//     On(HashMap<String, bool>),
-// }
-
-// impl LinterConfiguration {
-//     fn for_crate(db: &AnalysisDatabase, crate_id: CrateId) -> Self {
-//         let Some(id) = db
-//             .crate_analyzer_plugins(crate_id)
-//             .iter()
-//             .map(|id| id.lookup_intern(db))
-//             .find(|id| id.is_cairo_lint_plugin())
-//         else {
-//             return Self::Off;
-//         };
-
-//         // Safety: we check if `id` points to the `CairoLint` plugin.
-//         let plugin = unsafe { CairoLint::downcast_ref_unchecked(&*id.0) };
-
-//         let mut config = plugin.tool_metadata().clone();
-//         config.insert(
-//             "include_compiler_generated_files".to_owned(),
-//             plugin.include_compiler_generated_files(),
-//         );
-
-//         Self::On(config)
-//     }
-// }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
 struct Plugins {
