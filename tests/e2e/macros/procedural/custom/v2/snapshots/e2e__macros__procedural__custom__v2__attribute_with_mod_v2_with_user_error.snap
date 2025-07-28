@@ -30,7 +30,9 @@ mapped_diagnostics:
           line: 0
           character: 25
       severity: 1
-      message: 'Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.'
+      message: |-
+        Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+        note: this error originates in the attribute macro: `mod_attribute_macro_v2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_mod_attribute_macro_v2.cairo
@@ -52,7 +54,9 @@ mapped_diagnostics:
           line: 0
           character: 25
       severity: 1
-      message: 'Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.'
+      message: |-
+        Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+        note: this error originates in the attribute macro: `mod_attribute_macro_v2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_mod_attribute_macro_v2.cairo
@@ -74,7 +78,9 @@ mapped_diagnostics:
           line: 1
           character: 20
       severity: 1
-      message: Type annotations needed. Failed to infer ?0.
+      message: |-
+        Type annotations needed. Failed to infer ?0.
+        note: this error originates in the attribute macro: `mod_attribute_macro_v2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_mod_attribute_macro_v2.cairo

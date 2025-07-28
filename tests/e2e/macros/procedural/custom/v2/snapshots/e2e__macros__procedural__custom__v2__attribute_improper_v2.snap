@@ -32,7 +32,9 @@ mapped_diagnostics:
           character: 30
       severity: 1
       code: E0006
-      message: Identifier not found.
+      message: |-
+        Identifier not found.
+        note: this error originates in the attribute macro: `improper_attribute_macro_v2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
@@ -55,7 +57,9 @@ mapped_diagnostics:
           character: 30
       severity: 1
       code: E0006
-      message: Identifier not found.
+      message: |-
+        Identifier not found.
+        note: this error originates in the attribute macro: `improper_attribute_macro_v2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
@@ -77,7 +81,9 @@ mapped_diagnostics:
           line: 0
           character: 30
       severity: 1
-      message: Invalid left-hand side of assignment.
+      message: |-
+        Invalid left-hand side of assignment.
+        note: this error originates in the attribute macro: `improper_attribute_macro_v2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_improper_attribute_macro_v2.cairo

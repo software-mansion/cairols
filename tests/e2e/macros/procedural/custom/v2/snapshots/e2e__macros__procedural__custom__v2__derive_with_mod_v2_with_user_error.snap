@@ -32,7 +32,9 @@ mapped_diagnostics:
           line: 0
           character: 25
       severity: 1
-      message: 'Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.'
+      message: |-
+        Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+        note: this error originates in the derive macro: `mod_derive_macro_v2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -54,7 +56,9 @@ mapped_diagnostics:
           line: 0
           character: 25
       severity: 1
-      message: 'Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.'
+      message: |-
+        Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+        note: this error originates in the derive macro: `mod_derive_macro_v2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo

@@ -31,7 +31,9 @@ mapped_diagnostics:
           character: 16
       severity: 2
       code: E0001
-      message: Unused variable. Consider ignoring by prefixing with `_`.
+      message: |-
+        Unused variable. Consider ignoring by prefixing with `_`.
+        note: this error originates in the attribute macro: `complex_attribute_macro_v2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_complex_attribute_macro_v2.cairo
@@ -53,7 +55,9 @@ mapped_diagnostics:
           line: 1
           character: 28
       severity: 1
-      message: 'Unexpected argument type. Expected: "core::integer::u8", found: "core::integer::u32".'
+      message: |-
+        Unexpected argument type. Expected: "core::integer::u8", found: "core::integer::u32".
+        note: this error originates in the attribute macro: `complex_attribute_macro_v2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_complex_attribute_macro_v2.cairo

@@ -32,7 +32,9 @@ mapped_diagnostics:
           line: 0
           character: 28
       severity: 1
-      message: Missing tokens. Expected an expression.
+      message: |-
+        Missing tokens. Expected an expression.
+        note: this error originates in the derive macro: `improper_derive_macro`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -54,7 +56,9 @@ mapped_diagnostics:
           line: 0
           character: 28
       severity: 1
-      message: 'Consecutive comparison operators are not allowed: ''<'' followed by ''>'''
+      message: |-
+        Consecutive comparison operators are not allowed: '<' followed by '>'
+        note: this error originates in the derive macro: `improper_derive_macro`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -76,7 +80,9 @@ mapped_diagnostics:
           line: 0
           character: 28
       severity: 1
-      message: 'Consecutive comparison operators are not allowed: ''>'' followed by ''<'''
+      message: |-
+        Consecutive comparison operators are not allowed: '>' followed by '<'
+        note: this error originates in the derive macro: `improper_derive_macro`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -98,7 +104,9 @@ mapped_diagnostics:
           line: 0
           character: 28
       severity: 1
-      message: Missing tokens. Expected a path segment.
+      message: |-
+        Missing tokens. Expected a path segment.
+        note: this error originates in the derive macro: `improper_derive_macro`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -120,7 +128,9 @@ mapped_diagnostics:
           line: 0
           character: 28
       severity: 1
-      message: 'Consecutive comparison operators are not allowed: ''<'' followed by ''>'''
+      message: |-
+        Consecutive comparison operators are not allowed: '<' followed by '>'
+        note: this error originates in the derive macro: `improper_derive_macro`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -143,7 +153,9 @@ mapped_diagnostics:
           character: 28
       severity: 1
       code: E0006
-      message: Identifier not found.
+      message: |-
+        Identifier not found.
+        note: this error originates in the derive macro: `improper_derive_macro`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -165,7 +177,9 @@ mapped_diagnostics:
           line: 0
           character: 28
       severity: 1
-      message: Are you missing a `::`?.
+      message: |-
+        Are you missing a `::`?.
+        note: this error originates in the derive macro: `improper_derive_macro`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -188,7 +202,9 @@ mapped_diagnostics:
           character: 28
       severity: 1
       code: E0006
-      message: Identifier not found.
+      message: |-
+        Identifier not found.
+        note: this error originates in the derive macro: `improper_derive_macro`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -210,7 +226,9 @@ mapped_diagnostics:
           line: 0
           character: 28
       severity: 1
-      message: Are you missing a `::`?.
+      message: |-
+        Are you missing a `::`?.
+        note: this error originates in the derive macro: `improper_derive_macro`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -233,7 +251,9 @@ mapped_diagnostics:
           character: 28
       severity: 1
       code: E0006
-      message: Identifier not found.
+      message: |-
+        Identifier not found.
+        note: this error originates in the derive macro: `improper_derive_macro`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
