@@ -1,5 +1,6 @@
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateLongId;
+use scarb_metadata::CompilationUnitMetadata;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
@@ -33,6 +34,7 @@ pub struct ProjectModel {
     /// It is done to ensure diagnostics are not randomly cleared after a project manifest change/
     /// db swap/reload workspace command.
     remove_crates_from_db_on_next_update: bool,
+    compilation_units: Vec<CompilationUnitMetadata>,
 }
 
 impl ProjectModel {
@@ -43,12 +45,17 @@ impl ProjectModel {
             loaded_crates: Default::default(),
             manifests_of_members_from_loaded_workspaces: Default::default(),
             configs_registry: Default::default(),
+            compilation_units: Default::default(),
             remove_crates_from_db_on_next_update: false,
         }
     }
 
     pub fn configs_registry(&self) -> Snapshot<ConfigsRegistry> {
         self.configs_registry.snapshot()
+    }
+
+    pub fn compilation_units(&self) -> Vec<CompilationUnitMetadata> {
+        self.compilation_units.clone()
     }
 
     pub fn loaded_manifests(&self) -> Snapshot<HashSet<ManifestPath>> {
@@ -70,7 +77,7 @@ impl ProjectModel {
         workspace_crates: Vec<CrateInfo>,
         workspace_dir: PathBuf,
         proc_macro_controller: &ProcMacroClientController,
-        enable_linter: bool,
+        // enable_linter: bool,
     ) {
         if self.remove_crates_from_db_on_next_update {
             self.remove_crates_from_db_on_next_update = false;
@@ -102,14 +109,18 @@ impl ProjectModel {
 
         self.add_crates(workspace_crates, &workspace_dir);
 
-        self.apply_changes_to_db(db, proc_macro_controller, enable_linter);
+        self.apply_changes_to_db(db, proc_macro_controller);
     }
+
+    // pub fn load_compilation_units(&mut self, cus: Vec<CompilationUnitMetadata>) {
+    //     self.compilation_units = cus;
+    // }
 
     pub fn apply_changes_to_db(
         &self,
         db: &mut AnalysisDatabase,
         proc_macro_controller: &ProcMacroClientController,
-        enable_linter: bool,
+        // enable_linter: bool,
     ) {
         for (cr, workspaces) in &self.loaded_crates {
             let same_crates: Vec<_> = workspaces
@@ -152,13 +163,13 @@ impl ProjectModel {
 
             let proc_macro_plugin_suite =
                 proc_macro_controller.proc_macro_plugin_suite_for_crate(&cr_long_id);
-            let lint_config = self
-                .configs_registry
-                .config_for_file(&cr.root)
-                .filter(|_| enable_linter && !self.is_from_scarb_cache(&cr.root))
-                .map(|member_config| member_config.lint);
+            // let lint_config = self
+            //     .configs_registry
+            //     .config_for_file(&cr.root)
+            //     .filter(|_| enable_linter && !self.is_from_scarb_cache(&cr.root))
+            //     .map(|member_config| member_config.lint);
 
-            cr.apply(db, lint_config, proc_macro_plugin_suite.cloned());
+            cr.apply(db, proc_macro_plugin_suite.cloned());
         }
     }
 

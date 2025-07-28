@@ -56,7 +56,7 @@ impl AnalysisDatabaseSwapper {
         open_files: &HashSet<Url>,
         project_controller: &mut ProjectController,
         proc_macro_client_controller: &ProcMacroClientController,
-        config: &Config,
+        // config: &Config,
     ) {
         let Ok(elapsed) = self.last_replace.elapsed() else {
             warn!("system time went backwards, skipping db swap");
@@ -72,7 +72,7 @@ impl AnalysisDatabaseSwapper {
             return;
         }
 
-        self.swap(db, open_files, project_controller, proc_macro_client_controller, config)
+        self.swap(db, open_files, project_controller, proc_macro_client_controller)
     }
 
     /// Swaps the database.
@@ -83,7 +83,7 @@ impl AnalysisDatabaseSwapper {
         open_files: &HashSet<Url>,
         project_controller: &mut ProjectController,
         proc_macro_client_controller: &ProcMacroClientController,
-        config: &Config,
+        // config: &Config,
     ) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
             let mut new_db = AnalysisDatabase::new();
@@ -95,7 +95,7 @@ impl AnalysisDatabaseSwapper {
             project_controller.migrate_crates_to_new_db(
                 &mut new_db,
                 proc_macro_client_controller,
-                config.enable_linter,
+                // config.enable_linter,
             );
 
             new_db

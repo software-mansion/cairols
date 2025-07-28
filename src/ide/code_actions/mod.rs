@@ -1,3 +1,4 @@
+use ::cairo_lint::CorelibContext;
 use cairo_lang_syntax::node::SyntaxNode;
 use lsp_types::{
     CodeAction, CodeActionKind, CodeActionOrCommand, CodeActionParams, CodeActionResponse,
@@ -5,9 +6,12 @@ use lsp_types::{
 };
 use tracing::{debug, warn};
 
+use crate::config::Config;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::project::ConfigsRegistry;
+use crate::state::Snapshot;
 use itertools::Itertools;
 use std::collections::HashMap;
 
@@ -22,11 +26,18 @@ mod rename_unused_variable;
 
 /// Compute commands for a given text document and range. These commands are typically code fixes to
 /// either fix problems or to beautify/refactor code.
-pub fn code_actions(params: CodeActionParams, db: &AnalysisDatabase) -> Option<CodeActionResponse> {
+pub fn code_actions(
+    params: CodeActionParams,
+    config: &Config,
+    config_registry: &ConfigsRegistry,
+    db: &AnalysisDatabase,
+) -> Option<CodeActionResponse> {
     let mut actions = Vec::with_capacity(params.context.diagnostics.len());
 
     actions.extend(
-        get_code_actions_for_diagnostics(db, &params).into_iter().map(CodeActionOrCommand::from),
+        get_code_actions_for_diagnostics(db, config, config_registry, &params)
+            .into_iter()
+            .map(CodeActionOrCommand::from),
     );
 
     let node = node_on_range_start(db, &params.text_document.uri, &params.range)?;
@@ -48,9 +59,12 @@ pub fn code_actions(params: CodeActionParams, db: &AnalysisDatabase) -> Option<C
 /// A vector of [`CodeAction`] objects that can be applied to resolve the diagnostics.
 fn get_code_actions_for_diagnostics(
     db: &AnalysisDatabase,
+    config: &Config,
+    config_registry: &ConfigsRegistry,
     params: &CodeActionParams,
 ) -> Vec<CodeAction> {
     let uri = &params.text_document.uri;
+    let corelib_context = CorelibContext::new(db);
 
     let mut result: Vec<_> = params
         .context
@@ -69,7 +83,14 @@ fn get_code_actions_for_diagnostics(
             Some((code, diagnostic, ctx))
         })
         .flat_map(|(code, diagnostic, ctx)| match code {
-            None => cairo_lint::cairo_lint(db, &ctx).unwrap_or_default(),
+            None => {
+                if config.enable_linter {
+                    cairo_lint::cairo_lint(db, &ctx, &corelib_context, config_registry)
+                        .unwrap_or_default()
+                } else {
+                    vec![]
+                }
+            }
             Some("E0001") => rename_unused_variable::rename_unused_variable(
                 db,
                 &ctx.node,

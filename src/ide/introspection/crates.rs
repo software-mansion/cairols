@@ -1,5 +1,4 @@
 use std::any::TypeId;
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use cairo_lang_defs::db::DefsGroup;
@@ -9,12 +8,11 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::ids::AnalyzerPluginLongId;
 use cairo_lang_utils::{LookupIntern, smol_str::SmolStr};
-use cairo_lint::plugin::CairoLint;
 use itertools::{Itertools, chain};
 use serde::Serialize;
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::plugins::{AnalyzerPluginType, DowncastRefUnchecked};
+use crate::lang::plugins::DowncastRefUnchecked;
 use crate::lang::proc_macros::plugins::{InlineProcMacroPlugin, ProcMacroPlugin};
 use crate::project::builtin_plugins::BuiltinPlugin;
 use crate::project::extract_custom_file_stems;
@@ -39,7 +37,7 @@ struct CrateView {
     name: SmolStr,
     source_paths: Vec<PathBuf>,
     settings: CrateSettings,
-    linter_configuration: LinterConfiguration,
+    // linter_configuration: LinterConfiguration,
     plugins: Plugins,
 }
 
@@ -71,43 +69,43 @@ impl CrateView {
             .map(|stems| stems.iter().map(|stem| root.join(format!("{stem}.cairo"))).collect_vec())
             .unwrap_or_else(|| vec![root.join("lib.cairo")]);
 
-        let linter_configuration = LinterConfiguration::for_crate(db, crate_id);
+        // let linter_configuration = LinterConfiguration::for_crate(db, crate_id);
         let plugins = Plugins::for_crate(db, crate_id);
 
-        Some(Self { name, source_paths, settings, linter_configuration, plugins })
+        Some(Self { name, source_paths, settings, plugins })
     }
 }
 
-#[derive(Debug, Serialize, PartialEq, Eq)]
-enum LinterConfiguration {
-    Off,
-    #[serde(untagged)]
-    On(HashMap<String, bool>),
-}
+// #[derive(Debug, Serialize, PartialEq, Eq)]
+// enum LinterConfiguration {
+//     Off,
+//     #[serde(untagged)]
+//     On(HashMap<String, bool>),
+// }
 
-impl LinterConfiguration {
-    fn for_crate(db: &AnalysisDatabase, crate_id: CrateId) -> Self {
-        let Some(id) = db
-            .crate_analyzer_plugins(crate_id)
-            .iter()
-            .map(|id| id.lookup_intern(db))
-            .find(|id| id.is_cairo_lint_plugin())
-        else {
-            return Self::Off;
-        };
+// impl LinterConfiguration {
+//     fn for_crate(db: &AnalysisDatabase, crate_id: CrateId) -> Self {
+//         let Some(id) = db
+//             .crate_analyzer_plugins(crate_id)
+//             .iter()
+//             .map(|id| id.lookup_intern(db))
+//             .find(|id| id.is_cairo_lint_plugin())
+//         else {
+//             return Self::Off;
+//         };
 
-        // Safety: we check if `id` points to the `CairoLint` plugin.
-        let plugin = unsafe { CairoLint::downcast_ref_unchecked(&*id.0) };
+//         // Safety: we check if `id` points to the `CairoLint` plugin.
+//         let plugin = unsafe { CairoLint::downcast_ref_unchecked(&*id.0) };
 
-        let mut config = plugin.tool_metadata().clone();
-        config.insert(
-            "include_compiler_generated_files".to_owned(),
-            plugin.include_compiler_generated_files(),
-        );
+//         let mut config = plugin.tool_metadata().clone();
+//         config.insert(
+//             "include_compiler_generated_files".to_owned(),
+//             plugin.include_compiler_generated_files(),
+//         );
 
-        Self::On(config)
-    }
-}
+//         Self::On(config)
+//     }
+// }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
 struct Plugins {

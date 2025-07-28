@@ -13,9 +13,7 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lint::CairoLintToolMetadata;
-use cairo_lint::plugin::{
-    cairo_lint_allow_plugin_suite, cairo_lint_plugin_suite_without_metadata_validation,
-};
+use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
 
 use super::builtin_plugins::BuiltinPlugin;
 use crate::TRICKS;
@@ -70,12 +68,7 @@ pub struct Crate {
 
 impl Crate {
     /// Applies this crate to the [`AnalysisDatabase`].
-    pub fn apply(
-        &self,
-        db: &mut AnalysisDatabase,
-        lint_config: Option<CairoLintToolMetadata>,
-        proc_macro_plugin_suite: Option<PluginSuite>,
-    ) {
+    pub fn apply(&self, db: &mut AnalysisDatabase, proc_macro_plugin_suite: Option<PluginSuite>) {
         assert!(
             (self.name == CORELIB_CRATE_NAME) ^ self.discriminator.is_some(),
             "invariant violation: only the `core` crate should have no discriminator"
@@ -106,7 +99,6 @@ impl Crate {
             .chain(tricks())
             // All crates should receive CairoLintAllow.
             .chain(Some(cairo_lint_allow_plugin_suite()))
-            .chain(lint_config.map(cairo_lint_plugin_suite_without_metadata_validation))
             .chain(proc_macro_plugin_suite)
             .fold(get_default_plugin_suite(), |mut acc, suite| {
                 acc.add(suite);

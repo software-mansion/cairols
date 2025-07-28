@@ -10,11 +10,9 @@ use tracing::{debug, error, warn};
 
 use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::linter::LinterController;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::result::{LSPResult, LSPResultEx};
-use crate::project::ConfigsRegistry;
 use crate::server::client::Requester;
 use crate::server::schedule::Task;
 use std::str::FromStr;
@@ -102,7 +100,6 @@ impl Config {
         db: &mut AnalysisDatabase,
         proc_macro_controller: &mut ProcMacroClientController,
         analysis_progress_controller: &mut AnalysisProgressController,
-        configs_registry: &ConfigsRegistry,
         client_capabilities: &ClientCapabilities,
     ) -> LSPResult<()> {
         if !client_capabilities.workspace_configuration_support() {
@@ -111,12 +108,7 @@ impl Config {
                  reloaded"
             );
 
-            self.apply_changes(
-                db,
-                proc_macro_controller,
-                analysis_progress_controller,
-                configs_registry,
-            );
+            self.apply_changes(db, proc_macro_controller, analysis_progress_controller);
 
             return Ok(());
         }
@@ -224,7 +216,6 @@ impl Config {
                     &mut state.db,
                     &mut state.proc_macro_controller,
                     &mut state.analysis_progress_controller,
-                    &state.project_controller.configs_registry(),
                 );
             })
         };
@@ -241,12 +232,11 @@ impl Config {
         db: &mut AnalysisDatabase,
         proc_macro_controller: &mut ProcMacroClientController,
         analysis_progress_controller: &mut AnalysisProgressController,
-        configs_registry: &ConfigsRegistry,
     ) {
         proc_macro_controller.on_config_change(db, self);
         analysis_progress_controller.on_config_change(self);
 
-        LinterController::on_config_change(db, self, configs_registry);
+        // LinterController::on_config_change(db, self, configs_registry);
     }
 }
 

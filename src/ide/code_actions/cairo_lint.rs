@@ -1,19 +1,51 @@
-use crate::lang::{
-    analysis_context::AnalysisContext,
-    db::AnalysisDatabase,
-    lsp::{LsProtoGroup, ToLsp},
+use std::path::Path;
+
+use crate::{
+    lang::{
+        analysis_context::AnalysisContext,
+        db::AnalysisDatabase,
+        lsp::{LsProtoGroup, ToLsp},
+    },
+    project::ConfigsRegistry,
 };
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_filesystem::ids::{FileKind, FileLongId};
+use cairo_lang_semantic::{
+    SemanticDiagnostic, db::SemanticGroup, diagnostic::SemanticDiagnosticKind,
+};
+use cairo_lang_utils::LookupIntern;
+use cairo_lint::{CairoLintToolMetadata, CorelibContext, LinterDiagnosticParams, LinterGroup};
 use lsp_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
 
-pub fn cairo_lint(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Option<Vec<CodeAction>> {
-    let diags = db.module_semantic_diagnostics(ctx.module_file_id.0).ok()?;
+pub fn cairo_lint(
+    db: &AnalysisDatabase,
+    ctx: &AnalysisContext<'_>,
+    corelib_context: &CorelibContext,
+    config_registry: &ConfigsRegistry,
+) -> Option<Vec<CodeAction>> {
+    let linter_params = LinterDiagnosticParams {
+        only_generated_files: false,
+        tool_metadata: get_linter_tool_metadata(db, ctx, config_registry),
+    };
+
+    let module_id = ctx.module_file_id.0;
+    let semantic_diags = db.module_semantic_diagnostics(module_id).ok()?;
+    let linter_diags = db
+        .linter_diagnostics(corelib_context.clone(), linter_params, module_id)
+        .into_iter()
+        .map(|diag| {
+            SemanticDiagnostic::new(
+                StableLocation::new(diag.stable_ptr),
+                SemanticDiagnosticKind::PluginDiagnostic(diag),
+            )
+        });
 
     let node_span = ctx.node.span(db);
 
-    let diagnostics = diags
+    let diagnostics = semantic_diags
         .get_diagnostics_without_duplicates(db)
         .into_iter()
+        .chain(linter_diags)
         .filter(|diagnostic| {
             diagnostic.stable_location.syntax_node(db).span(db).contains(node_span)
         })
@@ -53,4 +85,24 @@ pub fn cairo_lint(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Option<Ve
         .collect();
 
     Some(result)
+}
+
+fn get_linter_tool_metadata(
+    db: &AnalysisDatabase,
+    ctx: &AnalysisContext<'_>,
+    config_registry: &ConfigsRegistry,
+) -> CairoLintToolMetadata {
+    let Ok(module_file_id) = ctx.module_file_id.file_id(db) else {
+        return Default::default();
+    };
+
+    if let FileLongId::OnDisk(file_id) = module_file_id.lookup_intern(db) {
+        let Some(file_config) = config_registry.config_for_file(&file_id) else {
+            return Default::default();
+        };
+
+        return file_config.lint.clone();
+    }
+
+    Default::default()
 }

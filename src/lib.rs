@@ -311,7 +311,6 @@ impl Backend {
                 &mut state.db,
                 &mut state.proc_macro_controller,
                 &mut state.analysis_progress_controller,
-                &state.project_controller.configs_registry(),
                 &state.client_capabilities,
             );
         });
@@ -462,7 +461,7 @@ impl Backend {
             &state.open_files,
             &mut state.project_controller,
             &state.proc_macro_controller,
-            &state.config,
+            // &state.config,
         );
     }
 

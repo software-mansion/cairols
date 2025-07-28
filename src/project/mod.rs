@@ -120,7 +120,7 @@ impl ProjectController {
                     crates,
                     workspace_dir,
                     &state.proc_macro_controller,
-                    state.config.enable_linter,
+                    // state.config.enable_linter,
                 );
             }
             ProjectUpdate::ScarbMetadataFailed => {
@@ -200,9 +200,9 @@ impl ProjectController {
         &self,
         new_db: &mut AnalysisDatabase,
         proc_macro_controller: &ProcMacroClientController,
-        enable_linter: bool,
+        // enable_linter: bool,
     ) {
-        self.model.apply_changes_to_db(new_db, proc_macro_controller, enable_linter);
+        self.model.apply_changes_to_db(new_db, proc_macro_controller);
     }
 
     /// Sends an action request to the background thread.
