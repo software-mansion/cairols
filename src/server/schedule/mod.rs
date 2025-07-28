@@ -39,7 +39,7 @@ pub fn event_loop_thread(
         .spawn(func)?)
 }
 
-type SyncTaskHook = Box<dyn Fn(&mut State, Notifier)>;
+type SyncTaskHook = Box<dyn Fn(&mut State, Arc<MetaState>, Notifier)>;
 
 pub struct Scheduler<'s> {
     state: &'s mut State,
@@ -89,7 +89,7 @@ impl<'s> Scheduler<'s> {
                 func(self.state, notifier.clone(), &mut self.client.requester, responder);
 
                 for hook in &self.sync_mut_task_hooks {
-                    hook(self.state, notifier.clone());
+                    hook(self.state, self.meta_state.clone(), notifier.clone());
                 }
             }
             Task::Sync(SyncTask { func }) => {
@@ -110,7 +110,7 @@ impl<'s> Scheduler<'s> {
                     mut_func(self.state, notifier.clone(), &mut self.client.requester, responder);
 
                     for hook in &self.sync_mut_task_hooks {
-                        hook(self.state, notifier.clone());
+                        hook(self.state, self.meta_state.clone(), notifier.clone());
                     }
                 };
             }
@@ -172,7 +172,10 @@ impl<'s> Scheduler<'s> {
     /// such as scheduling diagnostics computation, starting manual GC, etc.
     /// This includes reacting to state changes, though note that this hook will be called even
     /// after tasks that might, but did not mutate the state.
-    pub fn on_sync_mut_task(&mut self, hook: impl Fn(&mut State, Notifier) + 'static) {
+    pub fn on_sync_mut_task(
+        &mut self,
+        hook: impl Fn(&mut State, Arc<MetaState>, Notifier) + 'static,
+    ) {
         self.sync_mut_task_hooks.push(Box::new(hook));
     }
 }

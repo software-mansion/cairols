@@ -16,6 +16,8 @@
 
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::Arc;
+use std::sync::OnceLock;
 use std::time::SystemTime;
 use std::{io, panic};
 
@@ -47,7 +49,7 @@ use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
 use crate::server::schedule::{Scheduler, Task, event_loop_thread};
-use crate::state::State;
+use crate::state::{MetaState, State};
 
 mod config;
 mod env_config;
@@ -226,7 +228,7 @@ impl Backend {
             scheduler.on_sync_mut_task(Self::refresh_diagnostics);
 
             // Keep it last, marks that db mutation might happened.
-            scheduler.on_sync_mut_task(|state, _| {
+            scheduler.on_sync_mut_task(|state, _, _| {
                 state.analysis_progress_controller.mutation();
             });
 
@@ -403,12 +405,16 @@ impl Backend {
         }
     }
 
-    fn register_mutation_in_swapper(state: &mut State, _notifier: Notifier) {
+    fn register_mutation_in_swapper(
+        state: &mut State,
+        _meta_state: Arc<MetaState>,
+        _notifier: Notifier,
+    ) {
         state.db_swapper.register_mutation();
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, _notifier: Notifier) {
+    fn maybe_swap_database(state: &mut State, _meta_state: Arc<MetaState>, _notifier: Notifier) {
         state.db_swapper.maybe_swap(
             &mut state.db,
             &state.open_files,
@@ -419,7 +425,7 @@ impl Backend {
     }
 
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
-    fn refresh_diagnostics(state: &mut State, _notifier: Notifier) {
+    fn refresh_diagnostics(state: &mut State, _meta_state: Arc<MetaState>, _notifier: Notifier) {
         state.diagnostics_controller.refresh(state);
     }
 
