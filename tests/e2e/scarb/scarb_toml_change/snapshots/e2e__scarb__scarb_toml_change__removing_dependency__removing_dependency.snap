@@ -126,7 +126,7 @@ analyzed_crates = '''
 }
 ```'''
 analyzed_crates_diff = '''
-@@ -23,51 +23,10 @@
+@@ -23,50 +23,10 @@
      ],
      "dependencies": {
        "a": {
