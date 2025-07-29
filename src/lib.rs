@@ -408,16 +408,20 @@ impl Backend {
     }
 
     fn register_mutation_in_swapper(
-        state: &mut State,
-        _meta_state: MetaState,
+        _state: &mut State,
+        meta_state: MetaState,
         _notifier: Notifier,
     ) {
-        state.db_swapper.register_mutation();
+        meta_state
+            .lock()
+            .expect("should be able to acquire the MetaState")
+            .db_swapper
+            .register_mutation();
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, _meta_state: MetaState, _notifier: Notifier) {
-        state.db_swapper.maybe_swap(
+    fn maybe_swap_database(state: &mut State, meta_state: MetaState, _notifier: Notifier) {
+        meta_state.lock().expect("should be able to acquire the MetaState").db_swapper.maybe_swap(
             &mut state.db,
             &state.open_files,
             &mut state.project_controller,

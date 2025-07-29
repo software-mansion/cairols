@@ -64,17 +64,18 @@ pub struct AnalysisDatabaseSwapper {
     db_replace_min_mutations: u64,
 }
 
-impl AnalysisDatabaseSwapper {
-    /// Creates a new `AnalysisDatabaseSwapper`.
-    pub fn new() -> Self {
+impl Default for AnalysisDatabaseSwapper {
+    fn default() -> Self {
         Self {
             last_replace_time: SystemTime::now(),
-            db_replace_min_interval: env_config::db_replace_interval(),
             mutations_since_last_replace: 0,
+            db_replace_min_interval: env_config::db_replace_interval(),
             db_replace_min_mutations: env_config::db_replace_mutations(),
         }
     }
+}
 
+impl AnalysisDatabaseSwapper {
     pub fn register_mutation(&mut self) {
         self.mutations_since_last_replace += 1;
     }
@@ -89,14 +90,18 @@ impl AnalysisDatabaseSwapper {
         config: &Config,
     ) -> Option<SwapReason> {
         let reason = self.check_for_swap()?;
+
         self.swap(db, open_files, project_controller, proc_macro_client_controller, config);
+        self.mutations_since_last_replace = 0;
+
         trace!("Database swapped - {reason}");
+
         Some(reason)
     }
 
     /// Checks whether any swap condition has been met. Returns the reason if swap is possible, `None` otherwise.
     fn check_for_swap(&mut self) -> Option<SwapReason> {
-        let Ok(elapsed) = self.last_replace_time.elapsed() else {
+        let Ok(elapsed_time) = self.last_replace_time.elapsed() else {
             warn!("system time went backwards, skipping db swap");
 
             // Reset last replace time because in this place the old value will never make sense.
@@ -105,10 +110,12 @@ impl AnalysisDatabaseSwapper {
             return None;
         };
 
-        if self.mutations_since_last_replace >= self.db_replace_min_mutations {
-            Some(SwapReason::Mutations(self.mutations_since_last_replace))
-        } else if elapsed >= self.db_replace_min_interval {
-            Some(SwapReason::Time(elapsed))
+        let mutations = self.mutations_since_last_replace;
+
+        if mutations >= self.db_replace_min_mutations {
+            Some(SwapReason::Mutations(mutations))
+        } else if elapsed_time >= self.db_replace_min_interval {
+            Some(SwapReason::Time(elapsed_time))
         } else {
             None
         }
@@ -117,7 +124,7 @@ impl AnalysisDatabaseSwapper {
     /// Swaps the database.
     #[tracing::instrument(skip_all)]
     fn swap(
-        &mut self,
+        &self,
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
         project_controller: &mut ProjectController,
@@ -144,9 +151,6 @@ impl AnalysisDatabaseSwapper {
         };
 
         *db = new_db;
-
-        self.mutations_since_last_replace = 0;
-        self.last_replace_time = SystemTime::now();
     }
 
     /// Copies current default macro plugins into new db.
