@@ -25,7 +25,6 @@ pub struct State {
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
     pub scarb_toolchain: ScarbToolchain,
-    pub db_swapper: AnalysisDatabaseSwapper,
     pub diagnostics_controller: DiagnosticsController,
     pub proc_macro_controller: ProcMacroClientController,
     pub project_controller: ProjectController,
@@ -64,7 +63,6 @@ impl State {
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
             scarb_toolchain: scarb_toolchain.clone(),
-            db_swapper: AnalysisDatabaseSwapper::new(),
             diagnostics_controller,
             analysis_progress_controller,
             proc_macro_controller,
@@ -87,7 +85,13 @@ impl State {
 }
 
 #[derive(Default)]
-pub struct MetaStateInner {}
+pub struct MetaStateInner {
+    /// Database swapper.
+    /// # Safety
+    /// Swapper does not communicate with other critical modules and do not access the state.
+    /// Using it also does not affect the analysis. Thus, it's safe to place it here and access via interior mutability.
+    pub db_swapper: AnalysisDatabaseSwapper,
+}
 
 /// State keeps information about LS state (swapper, analysis state or other internal info)
 /// Mutations of this struct are allowed in background tasks and do not trigger hooks.
