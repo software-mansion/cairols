@@ -29,7 +29,7 @@ use lsp_types::request::SemanticTokensRefresh;
 use salsa::ParallelDatabase;
 use tracing::{debug, error, info};
 
-use crate::ide::analysis_progress::AnalysisFinished;
+use crate::ide::analysis_progress::AnalysisStatus;
 use crate::ide::code_lens::CodeLensController;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros;
@@ -299,7 +299,7 @@ impl Backend {
         connection: &Connection,
         proc_macro_channels: ProcMacroChannels,
         project_updates_receiver: Receiver<ProjectUpdate>,
-        analysis_progress_status_receiver: Receiver<AnalysisFinished>,
+        analysis_progress_status_receiver: Receiver<AnalysisStatus>,
         code_lens_request_refresh_receiver: Receiver<()>,
         mut scheduler: Scheduler<'_>,
     ) -> Result<()> {
@@ -339,11 +339,28 @@ impl Backend {
                     scheduler.local_mut(Self::on_proc_macro_error);
                 }
                 recv(analysis_progress_status_receiver) -> analysis_progress_status => {
-                    let Ok(AnalysisFinished) = analysis_progress_status else { break };
+                    let Ok(analysis_status) = analysis_progress_status else { break };
 
-                    scheduler.local(|state, _, _notifier, requester, _responder|
-                        Self::on_stopped_analysis(state, requester)
-                    );
+                    match analysis_status {
+                        AnalysisStatus::Started => {
+                            scheduler.meta_state
+                                .lock()
+                                .expect("should be able to acquire the MetaState")
+                                .db_swapper
+                                .start_stopwatch();
+                        }
+                        AnalysisStatus::Finished => {
+                            scheduler.meta_state
+                                .lock()
+                                .expect("should be able to acquire the MetaState")
+                                .db_swapper
+                                .stop_stopwatch();
+
+                            scheduler.local(|state, _, _notifier, requester, _responder|
+                                Self::on_stopped_analysis(state, requester)
+                            );
+                        }
+                    };
                 }
                 recv(code_lens_request_refresh_receiver) -> error => {
                     let Ok(()) = error else { break };
@@ -404,16 +421,20 @@ impl Backend {
     }
 
     fn register_mutation_in_swapper(
-        state: &mut State,
-        _meta_state: MetaState,
+        _state: &mut State,
+        meta_state: MetaState,
         _notifier: Notifier,
     ) {
-        state.db_swapper.register_mutation();
+        meta_state
+            .lock()
+            .expect("should be able to acquire the MetaState")
+            .db_swapper
+            .register_mutation();
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, _meta_state: MetaState, _notifier: Notifier) {
-        state.db_swapper.maybe_swap(
+    fn maybe_swap_database(state: &mut State, meta_state: MetaState, _notifier: Notifier) {
+        meta_state.lock().expect("should be able to acquire the MetaState").db_swapper.maybe_swap(
             &mut state.db,
             &state.open_files,
             &mut state.project_controller,
