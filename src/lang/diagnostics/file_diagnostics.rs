@@ -41,7 +41,6 @@ pub struct FilesDiagnostics {
     pub parser: Diagnostics<ParserDiagnostic>,
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
-    pub linter: Diagnostics<SemanticDiagnostic>,
 }
 
 impl FilesDiagnostics {
@@ -63,7 +62,7 @@ impl FilesDiagnostics {
 
         let root_path_string = root_on_disk_file.full_path(db);
         let root_path = Path::new(root_path_string.as_str());
-        let corelib_context = CorelibContext::new(db);
+        let linter_corelib_context = CorelibContext::new(db);
         let linter_params = LinterDiagnosticParams {
             only_generated_files: false,
             tool_metadata: config_registry
@@ -88,11 +87,15 @@ impl FilesDiagnostics {
                     db.module_lowering_diagnostics(module_id).unwrap_or_default().get_all()
                 }),
             );
+
+            // Here we check for 2 things:
+            // 1. If the linter is enabled in the extension config.
+            // 2. If the file comes from the scarb cache. (A heuristic to avoid linting deps)
             if config.enable_linter && !scarb_toolchain.is_from_scarb_cache(root_path) {
                 linter_file_diagnostics.extend(info_span!("db.linter_diagnostics").in_scope(
                     || {
                         db.linter_diagnostics(
-                            corelib_context.clone(),
+                            linter_corelib_context.clone(),
                             linter_params.clone(),
                             module_id,
                         )
@@ -115,9 +118,10 @@ impl FilesDiagnostics {
         Some(FilesDiagnostics {
             root_on_disk_file: (root_on_disk_file_url, root_on_disk_file),
             parser: Diagnostics::from_iter(parser_file_diagnostics),
-            semantic: Diagnostics::from_iter(semantic_file_diagnostics),
+            semantic: Diagnostics::from_iter(
+                semantic_file_diagnostics.into_iter().chain(linter_file_diagnostics),
+            ),
             lowering: Diagnostics::from_iter(lowering_file_diagnostics),
-            linter: Diagnostics::from_iter(linter_file_diagnostics),
         })
     }
 
@@ -148,12 +152,6 @@ impl FilesDiagnostics {
             db as &dyn SemanticGroup,
             &mut diagnostics,
             &self.lowering,
-            trace_macro_diagnostics,
-        );
-        map_cairo_diagnostics_to_lsp(
-            db as &dyn SemanticGroup,
-            &mut diagnostics,
-            &self.linter,
             trace_macro_diagnostics,
         );
 

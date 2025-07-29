@@ -18,7 +18,7 @@ use lsp_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
 pub fn cairo_lint(
     db: &AnalysisDatabase,
     ctx: &AnalysisContext<'_>,
-    corelib_context: &CorelibContext,
+    linter_corelib_context: CorelibContext,
     config_registry: &ConfigsRegistry,
 ) -> Option<Vec<CodeAction>> {
     let linter_params = LinterDiagnosticParams {
@@ -27,9 +27,12 @@ pub fn cairo_lint(
     };
 
     let module_id = ctx.module_file_id.0;
+
+    // We collect the semantic diagnostics, as the unused imports diagnostics (which come from the semantic diags),
+    // can be fixed with the linter.
     let semantic_diags = db.module_semantic_diagnostics(module_id).ok()?;
     let linter_diags = db
-        .linter_diagnostics(corelib_context.clone(), linter_params, module_id)
+        .linter_diagnostics(linter_corelib_context, linter_params, module_id)
         .into_iter()
         .map(|diag| {
             SemanticDiagnostic::new(
@@ -94,8 +97,8 @@ fn get_linter_tool_metadata(
         && let FileLongId::OnDisk(file_id) = module_file_id.lookup_intern(db)
         && let Some(file_config) = config_registry.config_for_file(&file_id)
     {
-        return file_config.lint.clone();
+        file_config.lint.clone()
+    } else {
+        Default::default()
     }
-
-    Default::default()
 }

@@ -60,7 +60,7 @@ fn get_code_actions_for_diagnostics(
     params: &CodeActionParams,
 ) -> Vec<CodeAction> {
     let uri = &params.text_document.uri;
-    let corelib_context = CorelibContext::new(db);
+    let linter_corelib_context = CorelibContext::new(db);
 
     let mut result: Vec<_> = params
         .context
@@ -79,8 +79,10 @@ fn get_code_actions_for_diagnostics(
             Some((code, diagnostic, ctx))
         })
         .flat_map(|(code, diagnostic, ctx)| match code {
-            None => cairo_lint::cairo_lint(db, &ctx, &corelib_context, config_registry)
-                .unwrap_or_default(),
+            None => {
+                cairo_lint::cairo_lint(db, &ctx, linter_corelib_context.clone(), config_registry)
+                    .unwrap_or_default()
+            }
 
             Some("E0001") => rename_unused_variable::rename_unused_variable(
                 db,
