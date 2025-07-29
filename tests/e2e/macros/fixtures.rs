@@ -156,8 +156,8 @@ impl MacroTest for ProjectWithSnforgeUnitTest {
 
                 [dev-dependencies]
                 assert_macros = "2.10.0"
-                snforge_std = "0.37.0"
-                snforge_scarb_plugin = "0.37.0"
+                snforge_std = { version = "0.46.0+nightly-2025-07-29", registry = "https://scarbs.dev/" }
+                snforge_scarb_plugin = { version = "0.46.0+nightly-2025-07-29", registry = "https://scarbs.dev/" }
             "#),
         }
     }
@@ -175,8 +175,8 @@ impl MacroTest for ProjectWithSnforgeIntegrationTest {
                 edition = "2024_07"
 
                 [dev-dependencies]
-                snforge_std = "0.37.0"
-                snforge_scarb_plugin = "0.37.0"
+                snforge_std = { version = "0.46.0+nightly-2025-07-29", registry = "https://scarbs.dev/" }
+                snforge_scarb_plugin = { version = "0.46.0+nightly-2025-07-29", registry = "https://scarbs.dev/" }
 
                 [tool.scarb]
                 allow-prebuilt-plugins = ["snforge_scarb_plugin"]

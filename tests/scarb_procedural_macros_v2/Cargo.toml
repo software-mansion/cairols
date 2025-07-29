@@ -7,7 +7,7 @@ edition = "2024"
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-cairo-lang-macro = { git = "https://github.com/software-mansion/scarb.git", rev = "5f11cee9f8c9420917835d7cd2fe428b33fb6aea" }
+cairo-lang-macro = "0.2.0-rc.1"
 cairo-lang-primitive-token = "1"
 
 [package.metadata.cargo-machete]
