@@ -11,15 +11,15 @@ use tracing::error;
 
 use crate::lsp::result::LSPError;
 use crate::server::client::{Notifier, Requester, Responder};
-use crate::state::State;
+use crate::state::{MetaState, State};
 
 type LocalMutFn<'s> = Box<dyn FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's>;
-type LocalFn<'s> = Box<dyn FnOnce(&State, Notifier, &mut Requester<'_>, Responder) + 's>;
+type LocalFn<'s> = Box<dyn FnOnce(&State, MetaState, Notifier, &mut Requester<'_>, Responder) + 's>;
 type LocalConditionFn<'s> = Box<dyn FnOnce(&State) -> bool + 's>;
 
 type BackgroundFn = Box<dyn FnOnce(Notifier, Responder) + Send + 'static>;
 
-pub type BackgroundFnBuilder<'s> = Box<dyn FnOnce(&State) -> BackgroundFn + 's>;
+pub type BackgroundFnBuilder<'s> = Box<dyn FnOnce(&State, MetaState) -> BackgroundFn + 's>;
 
 /// Describes how the task should be run.
 #[derive(Clone, Copy, Debug, Default)]
@@ -77,7 +77,8 @@ pub struct SyncConditionTask<'s> {
 impl<'s> Task<'s> {
     /// Creates a new fmt task.
     pub fn fmt(
-        func: impl FnOnce(&State) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> + 's,
+        func: impl FnOnce(&State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static>
+        + 's,
     ) -> Self {
         Self::Fmt(Box::new(func))
     }
@@ -85,7 +86,8 @@ impl<'s> Task<'s> {
     /// Creates a new background task.
     pub fn background(
         schedule: BackgroundSchedule,
-        func: impl FnOnce(&State) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> + 's,
+        func: impl FnOnce(&State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static>
+        + 's,
     ) -> Self {
         Self::Background(BackgroundTaskBuilder { schedule, builder: Box::new(func) })
     }
@@ -98,7 +100,9 @@ impl<'s> Task<'s> {
     }
 
     /// Creates a new local task without access to the mutable state.
-    pub fn local(func: impl FnOnce(&State, Notifier, &mut Requester<'_>, Responder) + 's) -> Self {
+    pub fn local(
+        func: impl FnOnce(&State, MetaState, Notifier, &mut Requester<'_>, Responder) + 's,
+    ) -> Self {
         Self::Sync(SyncTask { func: Box::new(func) })
     }
 
@@ -120,7 +124,7 @@ impl<'s> Task<'s> {
     where
         R: Serialize + Send + 'static,
     {
-        Self::local(move |_, _, _, responder| {
+        Self::local(move |_, _, _, _, responder| {
             if let Err(err) = responder.respond(id, result) {
                 error!("unable to send immediate response: {err:?}");
             }
@@ -129,6 +133,6 @@ impl<'s> Task<'s> {
 
     /// Creates a local task that does nothing.
     pub fn nothing() -> Self {
-        Self::local(move |_, _, _, _| {})
+        Self::local(move |_, _, _, _, _| {})
     }
 }
