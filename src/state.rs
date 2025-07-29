@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::default::Default;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use lsp_types::{ClientCapabilities, Url};
 use salsa::ParallelDatabase;
@@ -86,10 +86,12 @@ impl State {
     }
 }
 
+#[derive(Default)]
+pub struct MetaStateInner {}
+
 /// State keeps information about LS state (swapper, analysis state or other internal info)
-/// Mutations don't influence refreshing of diagnostics and hooks etc.
-#[derive(Default, Clone)]
-pub struct MetaState {}
+/// Mutations of this struct are allowed in background tasks and do not trigger hooks.
+pub type MetaState = Arc<Mutex<MetaStateInner>>;
 
 /// Readonly snapshot of Language server state.
 pub struct StateSnapshot {

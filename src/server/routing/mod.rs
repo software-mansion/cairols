@@ -6,7 +6,6 @@
 // +------------------------------------------------------------+
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::sync::Arc;
 
 use anyhow::anyhow;
 pub use handlers::is_cairo_file_path;
@@ -173,8 +172,8 @@ fn background_fmt_task<'a, R: handlers::BackgroundDocumentRequestHandler + 'a>(
 fn create_background_fn_builder<R: handlers::BackgroundDocumentRequestHandler>(
     id: RequestId,
     params: <R as RequestTrait>::Params,
-) -> impl FnOnce(&State, Arc<MetaState>) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> {
-    move |state: &State, meta_state: Arc<MetaState>| {
+) -> impl FnOnce(&State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> {
+    move |state: &State, meta_state: MetaState| {
         let state_snapshot = state.snapshot();
         Box::new(move |notifier, responder| {
             let result = catch_unwind(AssertUnwindSafe(|| {

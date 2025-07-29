@@ -16,8 +16,6 @@
 
 use std::path::PathBuf;
 use std::process::ExitCode;
-use std::sync::Arc;
-use std::sync::OnceLock;
 use std::time::SystemTime;
 use std::{io, panic};
 
@@ -407,14 +405,14 @@ impl Backend {
 
     fn register_mutation_in_swapper(
         state: &mut State,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
     ) {
         state.db_swapper.register_mutation();
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, _meta_state: Arc<MetaState>, _notifier: Notifier) {
+    fn maybe_swap_database(state: &mut State, _meta_state: MetaState, _notifier: Notifier) {
         state.db_swapper.maybe_swap(
             &mut state.db,
             &state.open_files,
@@ -425,7 +423,7 @@ impl Backend {
     }
 
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
-    fn refresh_diagnostics(state: &mut State, _meta_state: Arc<MetaState>, _notifier: Notifier) {
+    fn refresh_diagnostics(state: &mut State, _meta_state: MetaState, _notifier: Notifier) {
         state.diagnostics_controller.refresh(state);
     }
 

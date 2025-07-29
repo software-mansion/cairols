@@ -5,8 +5,6 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69       |
 // +--------------------------------------------------------+
 
-use std::sync::Arc;
-
 use lsp_server::RequestId;
 use serde::Serialize;
 use tracing::error;
@@ -16,13 +14,12 @@ use crate::server::client::{Notifier, Requester, Responder};
 use crate::state::{MetaState, State};
 
 type LocalMutFn<'s> = Box<dyn FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's>;
-type LocalFn<'s> =
-    Box<dyn FnOnce(&State, Arc<MetaState>, Notifier, &mut Requester<'_>, Responder) + 's>;
+type LocalFn<'s> = Box<dyn FnOnce(&State, MetaState, Notifier, &mut Requester<'_>, Responder) + 's>;
 type LocalConditionFn<'s> = Box<dyn FnOnce(&State) -> bool + 's>;
 
 type BackgroundFn = Box<dyn FnOnce(Notifier, Responder) + Send + 'static>;
 
-pub type BackgroundFnBuilder<'s> = Box<dyn FnOnce(&State, Arc<MetaState>) -> BackgroundFn + 's>;
+pub type BackgroundFnBuilder<'s> = Box<dyn FnOnce(&State, MetaState) -> BackgroundFn + 's>;
 
 /// Describes how the task should be run.
 #[derive(Clone, Copy, Debug, Default)]
@@ -80,10 +77,7 @@ pub struct SyncConditionTask<'s> {
 impl<'s> Task<'s> {
     /// Creates a new fmt task.
     pub fn fmt(
-        func: impl FnOnce(
-            &State,
-            Arc<MetaState>,
-        ) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static>
+        func: impl FnOnce(&State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static>
         + 's,
     ) -> Self {
         Self::Fmt(Box::new(func))
@@ -92,10 +86,7 @@ impl<'s> Task<'s> {
     /// Creates a new background task.
     pub fn background(
         schedule: BackgroundSchedule,
-        func: impl FnOnce(
-            &State,
-            Arc<MetaState>,
-        ) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static>
+        func: impl FnOnce(&State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static>
         + 's,
     ) -> Self {
         Self::Background(BackgroundTaskBuilder { schedule, builder: Box::new(func) })
@@ -110,7 +101,7 @@ impl<'s> Task<'s> {
 
     /// Creates a new local task without access to the mutable state.
     pub fn local(
-        func: impl FnOnce(&State, Arc<MetaState>, Notifier, &mut Requester<'_>, Responder) + 's,
+        func: impl FnOnce(&State, MetaState, Notifier, &mut Requester<'_>, Responder) + 's,
     ) -> Self {
         Self::Sync(SyncTask { func: Box::new(func) })
     }

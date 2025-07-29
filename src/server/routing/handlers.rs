@@ -5,8 +5,6 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69    |
 // +-----------------------------------------------------+
 
-use std::sync::Arc;
-
 use cairo_lang_filesystem::db::{FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use lsp_types::notification::{
     DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
@@ -61,7 +59,7 @@ pub trait SyncRequestHandler: Request {
 pub trait BackgroundDocumentRequestHandler: Request {
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         notifier: Notifier,
         params: <Self as Request>::Params,
     ) -> LSPResult<<Self as Request>::Result>;
@@ -84,7 +82,7 @@ impl BackgroundDocumentRequestHandler for CodeActionRequest {
     #[tracing::instrument(name = "textDocument/codeAction", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: CodeActionParams,
     ) -> Result<Option<CodeActionResponse>, LSPError> {
@@ -125,7 +123,7 @@ impl BackgroundDocumentRequestHandler for HoverRequest {
     #[tracing::instrument(name = "textDocument/hover", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: HoverParams,
     ) -> LSPResult<Option<Hover>> {
@@ -137,7 +135,7 @@ impl BackgroundDocumentRequestHandler for Formatting {
     #[tracing::instrument(name = "textDocument/formatting", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: DocumentFormattingParams,
     ) -> LSPResult<Option<Vec<TextEdit>>> {
@@ -337,7 +335,7 @@ impl BackgroundDocumentRequestHandler for GotoDefinition {
     #[tracing::instrument(name = "textDocument/definition", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
@@ -349,7 +347,7 @@ impl BackgroundDocumentRequestHandler for Completion {
     #[tracing::instrument(name = "textDocument/completion", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: CompletionParams,
     ) -> LSPResult<Option<CompletionResponse>> {
@@ -361,7 +359,7 @@ impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
     #[tracing::instrument(name = "textDocument/semanticTokens/full", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        meta_state: Arc<MetaState>,
+        meta_state: MetaState,
         _notifier: Notifier,
         params: SemanticTokensParams,
     ) -> LSPResult<Option<SemanticTokensResult>> {
@@ -373,7 +371,7 @@ impl BackgroundDocumentRequestHandler for ProvideVirtualFile {
     #[tracing::instrument(name = "vfs/provide", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: ProvideVirtualFileRequest,
     ) -> LSPResult<ProvideVirtualFileResponse> {
@@ -391,7 +389,7 @@ impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
     #[tracing::instrument(name = "cairo/viewAnalyzedCrates", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         _params: (),
     ) -> LSPResult<String> {
@@ -403,7 +401,7 @@ impl BackgroundDocumentRequestHandler for ExpandMacro {
     #[tracing::instrument(name = "cairo/expandMacro", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: TextDocumentPositionParams,
     ) -> LSPResult<Option<String>> {
@@ -415,7 +413,7 @@ impl BackgroundDocumentRequestHandler for ToolchainInfo {
     #[tracing::instrument(name = "cairo/toolchainInfo", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         _params: (),
     ) -> LSPResult<ToolchainInfoResponse> {
@@ -427,7 +425,7 @@ impl BackgroundDocumentRequestHandler for References {
     #[tracing::instrument(name = "textDocument/references", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: ReferenceParams,
     ) -> LSPResult<Option<Vec<lsp_types::Location>>> {
@@ -439,7 +437,7 @@ impl BackgroundDocumentRequestHandler for DocumentHighlightRequest {
     #[tracing::instrument(name = "textDocument/documentHighlight", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: DocumentHighlightParams,
     ) -> LSPResult<Option<Vec<DocumentHighlight>>> {
@@ -451,7 +449,7 @@ impl BackgroundDocumentRequestHandler for Rename {
     #[tracing::instrument(name = "textDocument/rename", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: RenameParams,
     ) -> LSPResult<Option<WorkspaceEdit>> {
@@ -463,7 +461,7 @@ impl BackgroundDocumentRequestHandler for ViewSyntaxTree {
     #[tracing::instrument(name = "cairo/viewSyntaxTree", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: TextDocumentPositionParams,
     ) -> LSPResult<Option<String>> {
@@ -479,7 +477,7 @@ impl BackgroundDocumentRequestHandler for CodeLensRequest {
     #[tracing::instrument(name = "textDocument/codeLens", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: CodeLensParams,
     ) -> LSPResult<Option<Vec<CodeLens>>> {
@@ -495,7 +493,7 @@ impl BackgroundDocumentRequestHandler for WillRenameFiles {
     #[tracing::instrument(name = "workspace/willRenameFiles", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: RenameFilesParams,
     ) -> LSPResult<Option<WorkspaceEdit>> {
@@ -507,7 +505,7 @@ impl BackgroundDocumentRequestHandler for InlayHintRequest {
     #[tracing::instrument(name = "textDocument/inlayHint", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
-        _meta_state: Arc<MetaState>,
+        _meta_state: MetaState,
         _notifier: Notifier,
         params: InlayHintParams,
     ) -> LSPResult<Option<Vec<InlayHint>>> {

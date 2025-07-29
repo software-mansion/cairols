@@ -5,8 +5,6 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69  |
 // +---------------------------------------------------+
 
-use std::sync::Arc;
-
 use anyhow::Result;
 
 use self::task::BackgroundTaskBuilder;
@@ -39,7 +37,7 @@ pub fn event_loop_thread(
         .spawn(func)?)
 }
 
-type SyncTaskHook = Box<dyn Fn(&mut State, Arc<MetaState>, Notifier)>;
+type SyncTaskHook = Box<dyn Fn(&mut State, MetaState, Notifier)>;
 
 pub struct Scheduler<'s> {
     state: &'s mut State,
@@ -51,7 +49,7 @@ pub struct Scheduler<'s> {
     /// fmt request, it will still be processed fast.
     fmt_pool: thread::Pool,
     sync_mut_task_hooks: Vec<SyncTaskHook>,
-    pub meta_state: Arc<MetaState>,
+    pub meta_state: MetaState,
 }
 
 impl<'s> Scheduler<'s> {
@@ -148,7 +146,7 @@ impl<'s> Scheduler<'s> {
     /// This is a shortcut for `dispatch(Task::local(func))`.
     pub fn local(
         &mut self,
-        func: impl FnOnce(&State, Arc<MetaState>, Notifier, &mut Requester<'_>, Responder) + 's,
+        func: impl FnOnce(&State, MetaState, Notifier, &mut Requester<'_>, Responder) + 's,
     ) {
         self.dispatch(Task::local(func));
     }
@@ -172,10 +170,7 @@ impl<'s> Scheduler<'s> {
     /// such as scheduling diagnostics computation, starting manual GC, etc.
     /// This includes reacting to state changes, though note that this hook will be called even
     /// after tasks that might, but did not mutate the state.
-    pub fn on_sync_mut_task(
-        &mut self,
-        hook: impl Fn(&mut State, Arc<MetaState>, Notifier) + 'static,
-    ) {
+    pub fn on_sync_mut_task(&mut self, hook: impl Fn(&mut State, MetaState, Notifier) + 'static) {
         self.sync_mut_task_hooks.push(Box::new(hook));
     }
 }
