@@ -66,7 +66,6 @@ impl ProjectModel {
         workspace_crates: Vec<CrateInfo>,
         workspace_dir: PathBuf,
         proc_macro_controller: &ProcMacroClientController,
-        // enable_linter: bool,
     ) {
         if self.remove_crates_from_db_on_next_update {
             self.remove_crates_from_db_on_next_update = false;
@@ -101,15 +100,10 @@ impl ProjectModel {
         self.apply_changes_to_db(db, proc_macro_controller);
     }
 
-    // pub fn load_compilation_units(&mut self, cus: Vec<CompilationUnitMetadata>) {
-    //     self.compilation_units = cus;
-    // }
-
     pub fn apply_changes_to_db(
         &self,
         db: &mut AnalysisDatabase,
         proc_macro_controller: &ProcMacroClientController,
-        // enable_linter: bool,
     ) {
         for (cr, workspaces) in &self.loaded_crates {
             let same_crates: Vec<_> = workspaces
@@ -152,11 +146,6 @@ impl ProjectModel {
 
             let proc_macro_plugin_suite =
                 proc_macro_controller.proc_macro_plugin_suite_for_crate(&cr_long_id);
-            // let lint_config = self
-            //     .configs_registry
-            //     .config_for_file(&cr.root)
-            //     .filter(|_| enable_linter && !self.is_from_scarb_cache(&cr.root))
-            //     .map(|member_config| member_config.lint);
 
             cr.apply(db, proc_macro_plugin_suite.cloned());
         }

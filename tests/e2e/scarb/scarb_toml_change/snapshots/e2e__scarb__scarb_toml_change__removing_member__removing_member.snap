@@ -127,7 +127,7 @@ analyzed_crates = '''
 }
 ```'''
 analyzed_crates_diff = '''
-@@ -47,32 +48,31 @@
+@@ -47,32 +47,31 @@
    "source_paths": [
      "[ROOT]/b/src/lib.cairo"
    ],

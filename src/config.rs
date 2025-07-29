@@ -235,8 +235,6 @@ impl Config {
     ) {
         proc_macro_controller.on_config_change(db, self);
         analysis_progress_controller.on_config_change(self);
-
-        // LinterController::on_config_change(db, self, configs_registry);
     }
 }
 

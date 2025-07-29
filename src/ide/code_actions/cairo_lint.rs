@@ -90,15 +90,10 @@ fn get_linter_tool_metadata(
     ctx: &AnalysisContext<'_>,
     config_registry: &ConfigsRegistry,
 ) -> CairoLintToolMetadata {
-    let Ok(module_file_id) = ctx.module_file_id.file_id(db) else {
-        return Default::default();
-    };
-
-    if let FileLongId::OnDisk(file_id) = module_file_id.lookup_intern(db) {
-        let Some(file_config) = config_registry.config_for_file(&file_id) else {
-            return Default::default();
-        };
-
+    if let Ok(module_file_id) = ctx.module_file_id.file_id(db)
+        && let FileLongId::OnDisk(file_id) = module_file_id.lookup_intern(db)
+        && let Some(file_config) = config_registry.config_for_file(&file_id)
+    {
         return file_config.lint.clone();
     }
 

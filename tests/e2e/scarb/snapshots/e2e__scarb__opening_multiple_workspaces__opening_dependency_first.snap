@@ -162,7 +162,7 @@ analyzed_crates_diff = '''
        "user_defined_inline_macros": false
      }
    },
-@@ -45,30 +50,34 @@
+@@ -45,30 +49,34 @@
    "name": "dep",
    "source_paths": [
      "[ROOT]/dep/src/lib.cairo"
@@ -197,7 +197,7 @@ analyzed_crates_diff = '''
          "discriminator": "dev_dep 0.1.0 (path+[ROOT_URL]dev_dep/Scarb.toml)"
        }
      },
-@@ -107,16 +118,58 @@
+@@ -107,16 +115,57 @@
        },
        "dev_dep": {
          "discriminator": "dev_dep 0.1.0 (path+[ROOT_URL]dev_dep/Scarb.toml)"
