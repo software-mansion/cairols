@@ -198,6 +198,7 @@ analyzed_crates_diff = '''
        }
      },
 @@ -107,16 +115,57 @@
+         "discriminator": null
        },
        "dev_dep": {
          "discriminator": "dev_dep 0.1.0 (path+[ROOT_URL]dev_dep/Scarb.toml)"

@@ -61,7 +61,7 @@ fn refresh_file_diagnostics(
     scarb_toolchain: &ScarbToolchain,
 ) {
     let Some(new_files_diagnostics) =
-        FilesDiagnostics::collect(db, config, config_registry, root_on_disk_file)
+        FilesDiagnostics::collect(db, config, config_registry, scarb_toolchain, root_on_disk_file)
     else {
         return;
     };

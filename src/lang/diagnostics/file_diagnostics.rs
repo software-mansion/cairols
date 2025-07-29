@@ -21,6 +21,7 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::project::ConfigsRegistry;
+use crate::toolchain::scarb::ScarbToolchain;
 
 /// Result of processing a single on disk file `root_on_disk_file` and virtual files that are its
 /// descendants in search for diagnostics.
@@ -50,6 +51,7 @@ impl FilesDiagnostics {
         db: &AnalysisDatabase,
         config: &Config,
         config_registry: &ConfigsRegistry,
+        scarb_toolchain: &ScarbToolchain,
         root_on_disk_file: FileId,
     ) -> Option<Self> {
         let root_on_disk_file_url = db.url_for_file(root_on_disk_file)?;
@@ -59,11 +61,13 @@ impl FilesDiagnostics {
         let mut parser_file_diagnostics: Vec<ParserDiagnostic> = vec![];
         let mut linter_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
 
+        let root_path_string = root_on_disk_file.full_path(db);
+        let root_path = Path::new(root_path_string.as_str());
         let corelib_context = CorelibContext::new(db);
         let linter_params = LinterDiagnosticParams {
             only_generated_files: false,
             tool_metadata: config_registry
-                .config_for_file(Path::new(&root_on_disk_file.full_path(db)))
+                .config_for_file(root_path)
                 .map_or_else(CairoLintToolMetadata::default, |config| config.lint.clone()),
         };
 
@@ -84,7 +88,7 @@ impl FilesDiagnostics {
                     db.module_lowering_diagnostics(module_id).unwrap_or_default().get_all()
                 }),
             );
-            if config.enable_linter {
+            if config.enable_linter && !scarb_toolchain.is_from_scarb_cache(root_path) {
                 linter_file_diagnostics.extend(info_span!("db.linter_diagnostics").in_scope(
                     || {
                         db.linter_diagnostics(
