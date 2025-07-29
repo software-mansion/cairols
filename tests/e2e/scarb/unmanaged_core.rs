@@ -42,6 +42,7 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
           "user_defined_inline_macros": true
         }
       },
+      "linter_configuration": "Off",
       "plugins": {
         "builtin_plugins": [
           "AssertMacros",

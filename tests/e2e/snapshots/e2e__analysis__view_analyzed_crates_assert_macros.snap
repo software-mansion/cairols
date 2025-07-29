@@ -41,6 +41,7 @@ expression: "normalize(&ls, output)"
       "user_defined_inline_macros": false
     }
   },
+  "linter_configuration": "Off",
   "plugins": {
     "builtin_plugins": [
       "AssertMacros"
@@ -79,6 +80,7 @@ expression: "normalize(&ls, output)"
       "user_defined_inline_macros": false
     }
   },
+  "linter_configuration": "Off",
   "plugins": {
     "builtin_plugins": [
       "AssertMacros",

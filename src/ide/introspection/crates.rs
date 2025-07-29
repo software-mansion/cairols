@@ -1,5 +1,6 @@
 use std::any::TypeId;
-use std::path::PathBuf;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{InlineMacroExprPluginLongId, MacroPluginLongId};
@@ -11,18 +12,25 @@ use cairo_lang_utils::{LookupIntern, smol_str::SmolStr};
 use itertools::{Itertools, chain};
 use serde::Serialize;
 
+use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::plugins::DowncastRefUnchecked;
 use crate::lang::proc_macros::plugins::{InlineProcMacroPlugin, ProcMacroPlugin};
 use crate::project::builtin_plugins::BuiltinPlugin;
-use crate::project::extract_custom_file_stems;
+use crate::project::{ConfigsRegistry, extract_custom_file_stems};
+use crate::toolchain::scarb::ScarbToolchain;
 
 /// Generates a Markdown text describing all crates in the database.
-pub fn inspect_analyzed_crates(db: &AnalysisDatabase) -> String {
+pub fn inspect_analyzed_crates(
+    db: &AnalysisDatabase,
+    config: &Config,
+    configs_registry: &ConfigsRegistry,
+    scarb_toolchain: &ScarbToolchain,
+) -> String {
     let crates = db
         .crates()
         .into_iter()
-        .filter_map(|id| CrateView::for_crate(db, id))
+        .filter_map(|id| CrateView::for_crate(db, config, configs_registry, scarb_toolchain, id))
         .sorted()
         .map(|cr| serde_json::to_string_pretty(&cr))
         .collect::<Result<Vec<_>, _>>()
@@ -37,6 +45,7 @@ struct CrateView {
     name: SmolStr,
     source_paths: Vec<PathBuf>,
     settings: CrateSettings,
+    linter_configuration: LinterConfiguration,
     plugins: Plugins,
 }
 
@@ -53,7 +62,13 @@ impl Ord for CrateView {
 }
 
 impl CrateView {
-    fn for_crate(db: &AnalysisDatabase, crate_id: CrateId) -> Option<Self> {
+    fn for_crate(
+        db: &AnalysisDatabase,
+        config: &Config,
+        configs_registry: &ConfigsRegistry,
+        scarb_toolchain: &ScarbToolchain,
+        crate_id: CrateId,
+    ) -> Option<Self> {
         let CrateLongId::Real { name, .. } = crate_id.lookup_intern(db) else {
             return None;
         };
@@ -68,9 +83,37 @@ impl CrateView {
             .map(|stems| stems.iter().map(|stem| root.join(format!("{stem}.cairo"))).collect_vec())
             .unwrap_or_else(|| vec![root.join("lib.cairo")]);
 
+        let linter_configuration =
+            LinterConfiguration::for_crate(config, configs_registry, scarb_toolchain, &root);
         let plugins = Plugins::for_crate(db, crate_id);
 
-        Some(Self { name, source_paths, settings, plugins })
+        Some(Self { name, source_paths, settings, linter_configuration, plugins })
+    }
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+enum LinterConfiguration {
+    Off,
+    #[serde(untagged)]
+    On(HashMap<String, bool>),
+}
+
+impl LinterConfiguration {
+    fn for_crate(
+        config: &Config,
+        configs_registry: &ConfigsRegistry,
+        scarb_toolchain: &ScarbToolchain,
+        root_path: &Path,
+    ) -> Self {
+        if !config.enable_linter || scarb_toolchain.is_from_scarb_cache(root_path) {
+            return Self::Off;
+        }
+
+        Self::On(
+            configs_registry.config_for_file(root_path).map_or_else(Default::default, |config| {
+                config.lint.clone().into_iter().collect::<HashMap<_, _>>()
+            }),
+        )
     }
 }
 

@@ -393,7 +393,12 @@ impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
         _notifier: Notifier,
         _params: (),
     ) -> LSPResult<String> {
-        Ok(ide::introspection::crates::inspect_analyzed_crates(&snapshot.db))
+        Ok(ide::introspection::crates::inspect_analyzed_crates(
+            &snapshot.db,
+            &snapshot.config,
+            &snapshot.configs_registry,
+            &snapshot.scarb_toolchain,
+        ))
     }
 }
 

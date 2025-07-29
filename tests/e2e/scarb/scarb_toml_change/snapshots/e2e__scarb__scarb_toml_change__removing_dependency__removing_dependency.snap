@@ -45,6 +45,7 @@ analyzed_crates = '''
       "user_defined_inline_macros": false
     }
   },
+  "linter_configuration": "Off",
   "plugins": {}
 }
 
@@ -82,6 +83,7 @@ analyzed_crates = '''
       "user_defined_inline_macros": false
     }
   },
+  "linter_configuration": "Off",
   "plugins": {}
 }
 
@@ -116,6 +118,7 @@ analyzed_crates = '''
       "user_defined_inline_macros": false
     }
   },
+  "linter_configuration": "Off",
   "plugins": {
     "builtin_plugins": [
       "AssertMacros",
@@ -126,7 +129,7 @@ analyzed_crates = '''
 }
 ```'''
 analyzed_crates_diff = '''
-@@ -23,50 +23,10 @@
+@@ -23,51 +23,10 @@
      ],
      "dependencies": {
        "a": {
@@ -146,6 +149,7 @@ analyzed_crates_diff = '''
 -      "user_defined_inline_macros": false
 -    }
 -  },
+-  "linter_configuration": "Off",
 -  "plugins": {}
 -}
 -
