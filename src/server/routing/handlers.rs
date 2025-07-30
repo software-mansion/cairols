@@ -5,6 +5,8 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69    |
 // +-----------------------------------------------------+
 
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
 use cairo_lang_filesystem::db::{FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use lsp_types::notification::{
     DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
@@ -38,6 +40,7 @@ use crate::lsp::ext::{
 use crate::lsp::result::{LSPError, LSPResult};
 use crate::server::client::{Notifier, Requester};
 use crate::server::commands::ServerCommands;
+use crate::server::panic::is_cancelled;
 use crate::state::{MetaState, State, StateSnapshot};
 use crate::toolchain::info::toolchain_info;
 use crate::{Backend, ide, lang};
@@ -86,7 +89,14 @@ impl BackgroundDocumentRequestHandler for CodeActionRequest {
         _notifier: Notifier,
         params: CodeActionParams,
     ) -> Result<Option<CodeActionResponse>, LSPError> {
-        Ok(ide::code_actions::code_actions(params, &snapshot.configs_registry, &snapshot.db))
+        Ok(catch_unwind(AssertUnwindSafe(|| ide::code_actions::code_actions(params, &snapshot.configs_registry, &snapshot.db)))
+            .unwrap_or_else(|err| {
+                if is_cancelled(err.as_ref()) {
+                    resume_unwind(err);
+                }
+                error!("CodeActionRequest handler panicked");
+                None
+            }))
     }
 }
 
@@ -127,7 +137,14 @@ impl BackgroundDocumentRequestHandler for HoverRequest {
         _notifier: Notifier,
         params: HoverParams,
     ) -> LSPResult<Option<Hover>> {
-        Ok(ide::hover::hover(params, &snapshot.db))
+        Ok(catch_unwind(AssertUnwindSafe(|| ide::hover::hover(params, &snapshot.db)))
+            .unwrap_or_else(|err| {
+                if is_cancelled(err.as_ref()) {
+                    resume_unwind(err);
+                }
+                error!("HoverRequest handler panicked");
+                None
+            }))
     }
 }
 
@@ -339,7 +356,16 @@ impl BackgroundDocumentRequestHandler for GotoDefinition {
         _notifier: Notifier,
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
-        Ok(ide::navigation::goto_definition::goto_definition(params, &snapshot.db))
+        Ok(catch_unwind(AssertUnwindSafe(|| {
+            ide::navigation::goto_definition::goto_definition(params, &snapshot.db)
+        }))
+        .unwrap_or_else(|err| {
+            if is_cancelled(err.as_ref()) {
+                resume_unwind(err);
+            }
+            error!("GotoDefinition handler panicked");
+            None
+        }))
     }
 }
 
@@ -351,7 +377,14 @@ impl BackgroundDocumentRequestHandler for Completion {
         _notifier: Notifier,
         params: CompletionParams,
     ) -> LSPResult<Option<CompletionResponse>> {
-        Ok(ide::completion::complete(params, &snapshot.db))
+        Ok(catch_unwind(AssertUnwindSafe(|| ide::completion::complete(params, &snapshot.db)))
+            .unwrap_or_else(|err| {
+                if is_cancelled(err.as_ref()) {
+                    resume_unwind(err);
+                }
+                error!("Completion handler panicked");
+                None
+            }))
     }
 }
 
@@ -363,7 +396,16 @@ impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
         _notifier: Notifier,
         params: SemanticTokensParams,
     ) -> LSPResult<Option<SemanticTokensResult>> {
-        Ok(ide::semantic_highlighting::semantic_highlight_full(params, &snapshot.db, meta_state))
+        Ok(catch_unwind(AssertUnwindSafe(|| {
+            ide::semantic_highlighting::semantic_highlight_full(params, &snapshot.db, meta_state)
+        }))
+        .unwrap_or_else(|err| {
+            if is_cancelled(err.as_ref()) {
+                resume_unwind(err);
+            }
+            error!("SemanticTokensFullRequest handler panicked");
+            None
+        }))
     }
 }
 
@@ -434,7 +476,16 @@ impl BackgroundDocumentRequestHandler for References {
         _notifier: Notifier,
         params: ReferenceParams,
     ) -> LSPResult<Option<Vec<lsp_types::Location>>> {
-        Ok(ide::navigation::references::references(params, &snapshot.db))
+        Ok(catch_unwind(AssertUnwindSafe(|| {
+            ide::navigation::references::references(params, &snapshot.db)
+        }))
+        .unwrap_or_else(|err| {
+            if is_cancelled(err.as_ref()) {
+                resume_unwind(err);
+            }
+            error!("References handler panicked");
+            None
+        }))
     }
 }
 
@@ -446,7 +497,16 @@ impl BackgroundDocumentRequestHandler for DocumentHighlightRequest {
         _notifier: Notifier,
         params: DocumentHighlightParams,
     ) -> LSPResult<Option<Vec<DocumentHighlight>>> {
-        Ok(ide::navigation::highlight::highlight(params, &snapshot.db))
+        Ok(catch_unwind(AssertUnwindSafe(|| {
+            ide::navigation::highlight::highlight(params, &snapshot.db)
+        }))
+        .unwrap_or_else(|err| {
+            if is_cancelled(err.as_ref()) {
+                resume_unwind(err);
+            }
+            error!("DocumentHighlightRequest handler panicked");
+            None
+        }))
     }
 }
 
@@ -458,7 +518,16 @@ impl BackgroundDocumentRequestHandler for Rename {
         _notifier: Notifier,
         params: RenameParams,
     ) -> LSPResult<Option<WorkspaceEdit>> {
-        ide::navigation::rename::rename(params, &snapshot.db, &snapshot.client_capabilities)
+        catch_unwind(AssertUnwindSafe(|| {
+            ide::navigation::rename::rename(params, &snapshot.db, &snapshot.client_capabilities)
+        }))
+        .unwrap_or_else(|err| {
+            if is_cancelled(err.as_ref()) {
+                resume_unwind(err);
+            }
+            error!("Rename handler panicked");
+            Ok(None)
+        })
     }
 }
 
@@ -486,11 +555,20 @@ impl BackgroundDocumentRequestHandler for CodeLensRequest {
         _notifier: Notifier,
         params: CodeLensParams,
     ) -> LSPResult<Option<Vec<CodeLens>>> {
-        Ok(snapshot.code_lens_controller.code_lens(
-            params.text_document.uri,
-            &snapshot.db,
-            &snapshot.config,
-        ))
+        Ok(catch_unwind(AssertUnwindSafe(|| {
+            snapshot.code_lens_controller.code_lens(
+                params.text_document.uri,
+                &snapshot.db,
+                &snapshot.config,
+            )
+        }))
+        .unwrap_or_else(|err| {
+            if is_cancelled(err.as_ref()) {
+                resume_unwind(err);
+            }
+            error!("CodeLensRequest handler panicked");
+            None
+        }))
     }
 }
 
@@ -514,7 +592,14 @@ impl BackgroundDocumentRequestHandler for InlayHintRequest {
         _notifier: Notifier,
         params: InlayHintParams,
     ) -> LSPResult<Option<Vec<InlayHint>>> {
-        Ok(ide::inlay_hints::inlay_hints(&snapshot.db, params))
+        Ok(catch_unwind(AssertUnwindSafe(|| ide::inlay_hints::inlay_hints(&snapshot.db, params)))
+            .unwrap_or_else(|err| {
+                if is_cancelled(err.as_ref()) {
+                    resume_unwind(err);
+                }
+                error!("InlayHintRequest handler panicked");
+                None
+            }))
     }
 }
 
