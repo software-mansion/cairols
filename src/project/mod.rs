@@ -69,7 +69,7 @@ impl ProjectController {
         );
 
         ProjectController {
-            model: ProjectModel::new(scarb_toolchain.clone()),
+            model: ProjectModel::new(),
             scarb_toolchain,
             requests_sender,
             response_receiver,
@@ -121,7 +121,6 @@ impl ProjectController {
                     crates,
                     workspace_dir,
                     &state.proc_macro_controller,
-                    state.config.enable_linter,
                 );
             }
             ProjectUpdate::ScarbMetadataFailed => {
@@ -201,9 +200,8 @@ impl ProjectController {
         &self,
         new_db: &mut AnalysisDatabase,
         proc_macro_controller: &ProcMacroClientController,
-        enable_linter: bool,
     ) {
-        self.model.apply_changes_to_db(new_db, proc_macro_controller, enable_linter);
+        self.model.apply_changes_to_db(new_db, proc_macro_controller);
     }
 
     /// Sends an action request to the background thread.

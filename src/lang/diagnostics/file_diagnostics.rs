@@ -1,5 +1,7 @@
 use std::collections::HashMap;
+use std::path::Path;
 
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
@@ -9,12 +11,17 @@ use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::diagnostic::SemanticDiagnosticKind;
+use cairo_lint::{CairoLintToolMetadata, CorelibContext, LinterDiagnosticParams, LinterGroup};
 use lsp_types::{Diagnostic, Url};
 use tracing::info_span;
 
+use crate::config::Config;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
+use crate::project::ConfigsRegistry;
+use crate::toolchain::scarb::ScarbToolchain;
 
 /// Result of processing a single on disk file `root_on_disk_file` and virtual files that are its
 /// descendants in search for diagnostics.
@@ -39,15 +46,34 @@ pub struct FilesDiagnostics {
 impl FilesDiagnostics {
     /// Collects all diagnostics kinds by processing an on disk `root_on_disk_file` together with
     /// virtual files that are its descendants.
-    pub fn collect(db: &AnalysisDatabase, root_on_disk_file: FileId) -> Option<Self> {
+    pub fn collect(
+        db: &AnalysisDatabase,
+        config: &Config,
+        config_registry: &ConfigsRegistry,
+        scarb_toolchain: &ScarbToolchain,
+        root_on_disk_file: FileId,
+    ) -> Option<Self> {
         let root_on_disk_file_url = db.url_for_file(root_on_disk_file)?;
 
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
         let mut parser_file_diagnostics: Vec<ParserDiagnostic> = vec![];
 
+        let root_path_string = root_on_disk_file.full_path(db);
+        let root_path = Path::new(root_path_string.as_str());
+        let linter_corelib_context = CorelibContext::new(db);
+        let linter_params = LinterDiagnosticParams {
+            only_generated_files: false,
+            tool_metadata: config_registry
+                .config_for_file(root_path)
+                .map_or_else(CairoLintToolMetadata::default, |config| config.lint.clone()),
+        };
+
         let (files_to_process, modules_to_process) =
-            db.file_and_subfiles_with_corresponding_modules(root_on_disk_file)?;
+            <AnalysisDatabase as LsSemanticGroup>::file_and_subfiles_with_corresponding_modules(
+                db,
+                root_on_disk_file,
+            )?;
 
         for module_id in modules_to_process.into_iter() {
             semantic_file_diagnostics.extend(
@@ -60,6 +86,28 @@ impl FilesDiagnostics {
                     db.module_lowering_diagnostics(module_id).unwrap_or_default().get_all()
                 }),
             );
+
+            // Here we check for 2 things:
+            // 1. If the linter is enabled in the extension config.
+            // 2. If the file comes from the scarb cache. (A heuristic to avoid linting deps)
+            if config.enable_linter && !scarb_toolchain.is_from_scarb_cache(root_path) {
+                semantic_file_diagnostics.extend(info_span!("db.linter_diagnostics").in_scope(
+                    || {
+                        db.linter_diagnostics(
+                            linter_corelib_context.clone(),
+                            linter_params.clone(),
+                            module_id,
+                        )
+                        .into_iter()
+                        .map(|diag| {
+                            SemanticDiagnostic::new(
+                                StableLocation::new(diag.stable_ptr),
+                                SemanticDiagnosticKind::PluginDiagnostic(diag),
+                            )
+                        })
+                    },
+                ));
+            }
         }
 
         for file_id in files_to_process.into_iter() {

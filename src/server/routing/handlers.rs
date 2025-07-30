@@ -89,14 +89,16 @@ impl BackgroundDocumentRequestHandler for CodeActionRequest {
         _notifier: Notifier,
         params: CodeActionParams,
     ) -> Result<Option<CodeActionResponse>, LSPError> {
-        Ok(catch_unwind(AssertUnwindSafe(|| ide::code_actions::code_actions(params, &snapshot.db)))
-            .unwrap_or_else(|err| {
-                if is_cancelled(err.as_ref()) {
-                    resume_unwind(err);
-                }
-                error!("CodeActionRequest handler panicked");
-                None
-            }))
+        Ok(catch_unwind(AssertUnwindSafe(|| {
+            ide::code_actions::code_actions(params, &snapshot.configs_registry, &snapshot.db)
+        }))
+        .unwrap_or_else(|err| {
+            if is_cancelled(err.as_ref()) {
+                resume_unwind(err);
+            }
+            error!("CodeActionRequest handler panicked");
+            None
+        }))
     }
 }
 
@@ -435,7 +437,12 @@ impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
         _notifier: Notifier,
         _params: (),
     ) -> LSPResult<String> {
-        Ok(ide::introspection::crates::inspect_analyzed_crates(&snapshot.db))
+        Ok(ide::introspection::crates::inspect_analyzed_crates(
+            &snapshot.db,
+            &snapshot.config,
+            &snapshot.configs_registry,
+            &snapshot.scarb_toolchain,
+        ))
     }
 }
 
