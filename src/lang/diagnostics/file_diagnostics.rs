@@ -58,7 +58,6 @@ impl FilesDiagnostics {
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
         let mut parser_file_diagnostics: Vec<ParserDiagnostic> = vec![];
-        let mut linter_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
 
         let root_path_string = root_on_disk_file.full_path(db);
         let root_path = Path::new(root_path_string.as_str());
@@ -92,7 +91,7 @@ impl FilesDiagnostics {
             // 1. If the linter is enabled in the extension config.
             // 2. If the file comes from the scarb cache. (A heuristic to avoid linting deps)
             if config.enable_linter && !scarb_toolchain.is_from_scarb_cache(root_path) {
-                linter_file_diagnostics.extend(info_span!("db.linter_diagnostics").in_scope(
+                semantic_file_diagnostics.extend(info_span!("db.linter_diagnostics").in_scope(
                     || {
                         db.linter_diagnostics(
                             linter_corelib_context.clone(),
@@ -118,9 +117,7 @@ impl FilesDiagnostics {
         Some(FilesDiagnostics {
             root_on_disk_file: (root_on_disk_file_url, root_on_disk_file),
             parser: Diagnostics::from_iter(parser_file_diagnostics),
-            semantic: Diagnostics::from_iter(
-                semantic_file_diagnostics.into_iter().chain(linter_file_diagnostics),
-            ),
+            semantic: Diagnostics::from_iter(semantic_file_diagnostics),
             lowering: Diagnostics::from_iter(lowering_file_diagnostics),
         })
     }
