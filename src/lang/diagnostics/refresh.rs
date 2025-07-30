@@ -1,7 +1,9 @@
+use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FilesDiagnostics;
 use crate::lang::diagnostics::project_diagnostics::ProjectDiagnostics;
 use crate::lang::lsp::LsProtoGroup;
+use crate::project::ConfigsRegistry;
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 use cairo_lang_filesystem::db::FilesGroup;
@@ -16,8 +18,9 @@ use std::path::PathBuf;
 #[tracing::instrument(skip_all)]
 pub fn refresh_diagnostics(
     db: &AnalysisDatabase,
+    config: &Config,
+    config_registry: &ConfigsRegistry,
     batch: Vec<FileId>,
-    trace_macro_diagnostics: bool,
     project_diagnostics: ProjectDiagnostics,
     notifier: Notifier,
     scarb_toolchain: ScarbToolchain,
@@ -25,8 +28,9 @@ pub fn refresh_diagnostics(
     for file in batch {
         refresh_file_diagnostics(
             db,
+            config,
+            config_registry,
             file,
-            trace_macro_diagnostics,
             &project_diagnostics,
             &notifier,
             &scarb_toolchain,
@@ -42,20 +46,23 @@ pub fn refresh_diagnostics(
 #[tracing::instrument(skip_all, fields(url = tracing_file_url(db, root_on_disk_file)))]
 fn refresh_file_diagnostics(
     db: &AnalysisDatabase,
+    config: &Config,
+    config_registry: &ConfigsRegistry,
     root_on_disk_file: FileId,
-    trace_macro_diagnostics: bool,
     project_diagnostics: &ProjectDiagnostics,
     notifier: &Notifier,
     scarb_toolchain: &ScarbToolchain,
 ) {
-    let Some(new_files_diagnostics) = FilesDiagnostics::collect(db, root_on_disk_file) else {
+    let Some(new_files_diagnostics) =
+        FilesDiagnostics::collect(db, config, config_registry, scarb_toolchain, root_on_disk_file)
+    else {
         return;
     };
 
     // IMPORTANT: DO NOT change the order of operations here. `to_lsp` may panic, so it has to come
     // before `update`. It is to make sure that if `update` succeeds, `notify` executes as well.
     let (root_on_disk_file_url, new_diags) =
-        new_files_diagnostics.to_lsp(db, trace_macro_diagnostics);
+        new_files_diagnostics.to_lsp(db, config.trace_macro_diagnostics);
 
     let new_diags = new_diags
         .into_iter()
