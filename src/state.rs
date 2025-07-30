@@ -93,6 +93,13 @@ pub struct MetaStateInner {
     pub db_swapper: AnalysisDatabaseSwapper,
 }
 
+impl MetaStateInner {
+    // Next PR: add arguments and implement
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
 /// State keeps information about LS state (swapper, analysis state or other internal info)
 /// Mutations of this struct are allowed in background tasks and do not trigger hooks.
 pub type MetaState = Arc<Mutex<MetaStateInner>>;

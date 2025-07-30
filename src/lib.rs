@@ -16,6 +16,7 @@
 
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 use std::{io, panic};
 
@@ -47,7 +48,7 @@ use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
 use crate::server::schedule::{Scheduler, Task, event_loop_thread};
-use crate::state::{MetaState, State};
+use crate::state::{MetaState, MetaStateInner, State};
 
 mod config;
 mod env_config;
@@ -173,6 +174,7 @@ fn set_panic_hook() {
 struct Backend {
     connection: Connection,
     state: State,
+    meta_state: MetaState,
 }
 
 impl Backend {
@@ -194,13 +196,15 @@ impl Backend {
         let connection = connection_initializer.initialize_finish(id, server_capabilities)?;
         let state = State::new(connection.make_sender(), client_capabilities, cwd);
 
-        Ok(Self { connection, state })
+        let meta_state = Arc::new(Mutex::new(MetaStateInner::new()));
+
+        Ok(Self { connection, state, meta_state })
     }
 
     /// Runs the main event loop thread and wait for its completion.
     fn run(self) -> Result<JoinHandle<Result<()>>> {
         event_loop_thread(move || {
-            let Self { mut state, connection } = self;
+            let Self { mut state, meta_state, connection } = self;
             let proc_macro_channels = state.proc_macro_controller.channels();
             let project_updates_receiver = state.project_controller.response_receiver();
             let analysis_progress_receiver =
@@ -208,7 +212,7 @@ impl Backend {
             let code_lens_request_refresh_receiver =
                 state.code_lens_controller.request_refresh_receiver();
 
-            let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
+            let mut scheduler = Scheduler::new(&mut state, meta_state, connection.make_sender());
 
             Self::dispatch_setup_tasks(&mut scheduler);
 

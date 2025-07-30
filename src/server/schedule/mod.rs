@@ -53,14 +53,14 @@ pub struct Scheduler<'s> {
 }
 
 impl<'s> Scheduler<'s> {
-    pub fn new(state: &'s mut State, sender: ClientSender) -> Self {
+    pub fn new(state: &'s mut State, meta_state: MetaState, sender: ClientSender) -> Self {
         Self {
             state,
             client: Client::new(sender),
             background_pool: thread::Pool::new(usize::MAX, "worker"),
             fmt_pool: thread::Pool::new(1, "fmt"),
             sync_mut_task_hooks: Default::default(),
-            meta_state: Default::default(),
+            meta_state,
         }
     }
 
