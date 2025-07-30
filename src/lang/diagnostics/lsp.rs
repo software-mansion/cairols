@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-
-use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity};
+use cairo_lang_diagnostics::{
+    DiagnosticEntry, DiagnosticLocation, Diagnostics, PluginFileDiagnosticNotes, Severity,
+};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_utils::{LookupIntern, Upcast};
@@ -8,6 +8,7 @@ use lsp_types::{
     Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Range,
     Url,
 };
+use std::collections::HashMap;
 use tracing::{error, trace};
 
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
@@ -18,6 +19,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
     diags: &mut HashMap<(Url, FileId), Vec<Diagnostic>>,
     diagnostics: &Diagnostics<T>,
     trace_macro_diagnostics: bool,
+    plugin_file_notes: &PluginFileDiagnosticNotes,
 ) {
     for diagnostic in if trace_macro_diagnostics {
         diagnostics.get_all()
@@ -25,8 +27,10 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
         diagnostics.get_diagnostics_without_duplicates(db)
     } {
         let mut message = diagnostic.format(db);
+        let (_, parent_file_notes) =
+            diagnostic.location(db).user_location_with_plugin_notes(db.upcast(), plugin_file_notes);
         let mut related_information = vec![];
-        for note in diagnostic.notes(db) {
+        for note in diagnostic.notes(db).iter().chain(&parent_file_notes) {
             if let Some(location) = &note.location {
                 let Some((range, file_id)) = get_mapped_range_and_add_mapping_note(
                     db,
@@ -48,6 +52,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
                 message += &format!("\nnote: {}", note.text);
             }
         }
+
         let Some((range, mapped_file_id)) = get_mapped_range_and_add_mapping_note(
             db,
             &diagnostic.location(db),

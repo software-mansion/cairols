@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::Arc;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_diagnostics::Diagnostics;
+use cairo_lang_diagnostics::{Diagnostics, PluginFileDiagnosticNotes};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_lowering::db::LoweringGroup;
@@ -12,6 +14,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::SemanticDiagnosticKind;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lint::{CairoLintToolMetadata, CorelibContext, LinterDiagnosticParams, LinterGroup};
 use lsp_types::{Diagnostic, Url};
 use tracing::info_span;
@@ -41,6 +44,7 @@ pub struct FilesDiagnostics {
     pub parser: Diagnostics<ParserDiagnostic>,
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
+    pub files_notes: PluginFileDiagnosticNotes,
 }
 
 impl FilesDiagnostics {
@@ -53,6 +57,7 @@ impl FilesDiagnostics {
         scarb_toolchain: &ScarbToolchain,
         root_on_disk_file: FileId,
     ) -> Option<Self> {
+        let mut files_notes = OrderedHashMap::default();
         let root_on_disk_file_url = db.url_for_file(root_on_disk_file)?;
 
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
@@ -76,6 +81,12 @@ impl FilesDiagnostics {
             )?;
 
         for module_id in modules_to_process.into_iter() {
+            if let Ok(notes) =
+                db.module_plugin_diagnostics_notes(module_id).map(Arc::unwrap_or_clone)
+            {
+                files_notes.extend(notes);
+            }
+
             semantic_file_diagnostics.extend(
                 info_span!("db.module_semantic_diagnostics").in_scope(|| {
                     db.module_semantic_diagnostics(module_id).unwrap_or_default().get_all()
@@ -119,6 +130,7 @@ impl FilesDiagnostics {
             parser: Diagnostics::from_iter(parser_file_diagnostics),
             semantic: Diagnostics::from_iter(semantic_file_diagnostics),
             lowering: Diagnostics::from_iter(lowering_file_diagnostics),
+            files_notes,
         })
     }
 
@@ -138,18 +150,21 @@ impl FilesDiagnostics {
             &mut diagnostics,
             &self.parser,
             trace_macro_diagnostics,
+            &self.files_notes,
         );
         map_cairo_diagnostics_to_lsp(
             db as &dyn SemanticGroup,
             &mut diagnostics,
             &self.semantic,
             trace_macro_diagnostics,
+            &self.files_notes,
         );
         map_cairo_diagnostics_to_lsp(
             db as &dyn SemanticGroup,
             &mut diagnostics,
             &self.lowering,
             trace_macro_diagnostics,
+            &self.files_notes,
         );
 
         // In our tests, we often await diagnostics for an on disk file,
