@@ -18,13 +18,11 @@ use crate::toolchain::scarb::ScarbToolchain;
 
 /// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(skip_all)]
-#[allow(clippy::too_many_arguments)]
 pub fn refresh_diagnostics(
     db: &AnalysisDatabase,
     config: &Config,
     config_registry: &ConfigsRegistry,
     batch: Vec<FileId>,
-    trace_macro_diagnostics: bool,
     project_diagnostics: ProjectDiagnostics,
     notifier: Notifier,
     scarb_toolchain: ScarbToolchain,
@@ -35,7 +33,6 @@ pub fn refresh_diagnostics(
             config,
             config_registry,
             file,
-            trace_macro_diagnostics,
             &project_diagnostics,
             &notifier,
             &scarb_toolchain,
@@ -49,13 +46,11 @@ pub fn refresh_diagnostics(
 /// I.e, if diagnostics are updated on the server side they MUST be sent successfully to the
 /// client (and vice-versa).
 #[tracing::instrument(skip_all, fields(url = tracing_file_url(db, root_on_disk_file)))]
-#[allow(clippy::too_many_arguments)]
 fn refresh_file_diagnostics(
     db: &AnalysisDatabase,
     config: &Config,
     config_registry: &ConfigsRegistry,
     root_on_disk_file: FileId,
-    trace_macro_diagnostics: bool,
     project_diagnostics: &ProjectDiagnostics,
     notifier: &Notifier,
     scarb_toolchain: &ScarbToolchain,
@@ -69,7 +64,7 @@ fn refresh_file_diagnostics(
     // IMPORTANT: DO NOT change the order of operations here. `to_lsp` may panic, so it has to come
     // before `update`. It is to make sure that if `update` succeeds, `notify` executes as well.
     let (root_on_disk_file_url, new_diags) =
-        new_files_diagnostics.to_lsp(db, trace_macro_diagnostics);
+        new_files_diagnostics.to_lsp(db, config.trace_macro_diagnostics);
 
     let new_diags = new_diags
         .into_iter()

@@ -215,7 +215,6 @@ impl DiagnosticsControllerThread {
                     &state.config,
                     &state.configs_registry,
                     batch,
-                    state.config.trace_macro_diagnostics,
                     project_diagnostics,
                     notifier,
                     scarb_toolchain,
