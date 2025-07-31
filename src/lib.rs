@@ -340,20 +340,23 @@ impl Backend {
                 recv(analysis_progress_status_receiver) -> analysis_progress_status => {
                     let Ok(analysis_status) = analysis_progress_status else { break };
 
+                    let mut meta_state = scheduler.meta_state
+                                .lock()
+                                .expect("should be able to acquire the MetaState");
+                    meta_state.analysis_status = Some(analysis_status.clone());
+
                     match analysis_status {
                         AnalysisStatus::Started => {
-                            scheduler.meta_state
-                                .lock()
-                                .expect("should be able to acquire the MetaState")
+                            meta_state
                                 .db_swapper
                                 .start_stopwatch();
+
                         }
                         AnalysisStatus::Finished => {
-                            scheduler.meta_state
-                                .lock()
-                                .expect("should be able to acquire the MetaState")
-                                .db_swapper
+                            meta_state.db_swapper
                                 .stop_stopwatch();
+
+                            drop(meta_state);
 
                             scheduler.local(|state, _, _notifier, requester, _responder|
                                 Self::on_stopped_analysis(state, requester)
