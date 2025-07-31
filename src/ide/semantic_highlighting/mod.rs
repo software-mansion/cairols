@@ -1,3 +1,9 @@
+use self::encoder::{EncodedToken, TokenEncoder};
+pub use self::token_kind::SemanticTokenKind;
+use crate::ide::analysis_progress::AnalysisStatus;
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::lsp::LsProtoGroup;
+use crate::state::MetaState;
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax as syntax;
@@ -5,13 +11,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use lsp_types::{SemanticToken, SemanticTokens, SemanticTokensParams, SemanticTokensResult};
-use tracing::error;
-
-use self::encoder::{EncodedToken, TokenEncoder};
-pub use self::token_kind::SemanticTokenKind;
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::LsProtoGroup;
-use crate::state::MetaState;
+use tracing::{error, trace};
 
 mod encoder;
 pub mod token_kind;
@@ -20,8 +20,20 @@ pub mod token_kind;
 pub fn semantic_highlight_full(
     params: SemanticTokensParams,
     db: &AnalysisDatabase,
-    _ls_meta_state: MetaState,
+    meta_state: MetaState,
 ) -> Option<SemanticTokensResult> {
+    let locked_state = meta_state.lock().expect("Not able to acquire meta state");
+    let analysis_finished = locked_state
+        .analysis_status
+        .clone()
+        .is_some_and(|status| status == AnalysisStatus::Finished);
+
+    drop(locked_state);
+
+    if !analysis_finished {
+        trace!("semantic highlighting not able to run because analysis is still in progress");
+        return None;
+    }
     let file_uri = params.text_document.uri;
     let file = db.file_for_url(&file_uri)?;
     let Ok(node) = db.file_syntax(file) else {
