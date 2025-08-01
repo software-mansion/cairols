@@ -8,7 +8,7 @@ use lsp_types::{ClientCapabilities, Url};
 use salsa::ParallelDatabase;
 
 use crate::config::Config;
-use crate::ide::analysis_progress::AnalysisProgressController;
+use crate::ide::analysis_progress::{AnalysisProgressController, AnalysisStatus};
 use crate::ide::code_lens::CodeLensController;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
@@ -91,6 +91,8 @@ pub struct MetaStateInner {
     /// Swapper does not communicate with other critical modules and do not access the state.
     /// Using it also does not affect the analysis. Thus, it's safe to place it here and access via interior mutability.
     pub db_swapper: AnalysisDatabaseSwapper,
+
+    pub analysis_status: Option<AnalysisStatus>,
 }
 
 /// State keeps information about LS state (swapper, analysis state or other internal info)
