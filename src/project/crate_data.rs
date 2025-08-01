@@ -6,12 +6,11 @@ use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     CORELIB_CRATE_NAME, CrateConfiguration, CrateSettings, FilesGroup, FilesGroupEx,
 };
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
-use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_filesystem::ids::{CrateId, CrateInput, Directory};
+use cairo_lang_filesystem::override_file_content;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::Intern;
-use cairo_lang_utils::smol_str::SmolStr;
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
 
 use super::builtin_plugins::BuiltinPlugin;
@@ -39,12 +38,12 @@ impl CrateInfo {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Crate {
     /// Crate name.
-    pub name: SmolStr,
+    pub name: String,
 
     /// Globally unique crate ID used for differentiating between crates with the same name.
     ///
     /// `None` is reserved for the core crate.
-    pub discriminator: Option<SmolStr>,
+    pub discriminator: Option<String>,
 
     /// The root directory of the crate.
     ///
@@ -55,7 +54,7 @@ pub struct Crate {
     /// Custom stems of crate main files, if it is not `lib.cairo`.
     ///
     /// This is used to generate a virtual lib file for crates without a root `lib.cairo`.
-    pub custom_main_file_stems: Option<Vec<SmolStr>>,
+    pub custom_main_file_stems: Option<Vec<String>>,
 
     /// Crate settings.
     pub settings: CrateSettings,
@@ -72,21 +71,22 @@ impl Crate {
             "invariant violation: only the `core` crate should have no discriminator"
         );
 
-        let crate_id = CrateLongId::Real {
-            name: self.name.clone(),
-            discriminator: self.discriminator.clone(),
-        }
-        .intern(db);
+        let crate_input =
+            CrateInput::Real { name: self.name.clone(), discriminator: self.discriminator.clone() };
 
         let crate_configuration = CrateConfiguration {
             root: Directory::Real(self.root.clone()),
             settings: self.settings.clone(),
             cache_file: None,
         };
-        db.set_crate_config(crate_id, Some(crate_configuration));
+
+        let mut crate_configs = db.crate_configs_input().as_ref().clone();
+        crate_configs
+            .insert(crate_input.clone(), db.crate_configuration_input(crate_configuration));
+        db.set_crate_configs_input(crate_configs.into());
 
         if let Some(file_stems) = &self.custom_main_file_stems {
-            inject_virtual_wrapper_lib(db, crate_id, file_stems);
+            inject_virtual_wrapper_lib(db, crate_input.clone(), file_stems);
         }
 
         let plugins = self
@@ -101,12 +101,11 @@ impl Crate {
                 acc
             });
 
-        let interned_plugins = db.intern_plugin_suite(plugins);
-        db.set_override_crate_plugins_from_suite(crate_id, interned_plugins);
+        db.set_override_crate_plugins_from_suite(crate_input, plugins);
     }
 
-    pub fn long_id(&self) -> CrateLongId {
-        CrateLongId::Real { name: self.name.clone(), discriminator: self.discriminator.clone() }
+    pub fn input(&self) -> CrateInput {
+        CrateInput::Real { name: self.name.clone(), discriminator: self.discriminator.clone() }
     }
 }
 
@@ -117,22 +116,25 @@ impl Crate {
 /// created lib file.
 fn inject_virtual_wrapper_lib(
     db: &mut AnalysisDatabase,
-    crate_id: CrateId,
-    file_stems: &[SmolStr],
+    crate_input: CrateInput,
+    file_stems: &[String],
 ) {
-    let module_id = ModuleId::CrateRoot(crate_id);
+    let module_id = ModuleId::CrateRoot(crate_input.into_crate_long_id(db).intern(db));
     let file_id = db.module_main_file(module_id).unwrap();
 
     let file_content =
         file_stems.iter().map(|stem| format!("mod {stem};")).collect::<Vec<_>>().join("\n");
 
     // Inject virtual lib file wrapper.
-    db.override_file_content(file_id, Some(file_content.into()));
+    override_file_content!(db, file_id, Some(file_content.into()));
 }
 
 /// The inverse of [`inject_virtual_wrapper_lib`],
 /// tries to infer root module name from crate if it does not have real `lib.cairo`.
-pub fn extract_custom_file_stems(db: &AnalysisDatabase, crate_id: CrateId) -> Option<Vec<SmolStr>> {
+pub fn extract_custom_file_stems<'db>(
+    db: &'db AnalysisDatabase,
+    crate_id: CrateId<'db>,
+) -> Option<Vec<String>> {
     let CrateConfiguration { root: Directory::Real(root), .. } = db.crate_config(crate_id)? else {
         return None;
     };
@@ -146,6 +148,7 @@ pub fn extract_custom_file_stems(db: &AnalysisDatabase, crate_id: CrateId) -> Op
     let content = db.file_content(file_id)?;
 
     content
+        .long(db)
         .lines()
         .filter(|line| !line.is_empty())
         .map(|line| Some(line.strip_prefix("mod ")?.strip_suffix(';')?.into()))

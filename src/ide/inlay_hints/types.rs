@@ -3,16 +3,15 @@ use cairo_lang_syntax::node::{
     ast::{Expr, GenericArg, GenericArgValue, TerminalUnderscore, UnaryOperator},
     helpers::PathSegmentEx,
 };
-use cairo_lang_utils::LookupIntern;
 
 use crate::{ide::ty::InferredValue, lang::db::AnalysisDatabase};
 
 // Find all `_` in provided type caluse.
-pub fn find_underscores(
-    db: &AnalysisDatabase,
-    type_clause: Expr,
-    ty: TypeId,
-) -> Vec<(TerminalUnderscore, InferredValue)> {
+pub fn find_underscores<'db>(
+    db: &'db AnalysisDatabase,
+    type_clause: Expr<'db>,
+    ty: TypeId<'db>,
+) -> Vec<(TerminalUnderscore<'db>, InferredValue<'db>)> {
     let mut result = vec![];
 
     find_underscores_ex(db, type_clause, ty, &mut result);
@@ -20,13 +19,13 @@ pub fn find_underscores(
     result
 }
 
-fn find_underscores_ex(
-    db: &AnalysisDatabase,
-    type_clause: Expr,
-    ty: TypeId,
-    result: &mut Vec<(TerminalUnderscore, InferredValue)>,
+fn find_underscores_ex<'db>(
+    db: &'db AnalysisDatabase,
+    type_clause: Expr<'db>,
+    ty: TypeId<'db>,
+    result: &mut Vec<(TerminalUnderscore<'db>, InferredValue<'db>)>,
 ) {
-    match (type_clause, ty.lookup_intern(db)) {
+    match (type_clause, ty.long(db)) {
         (Expr::Path(path), TypeLongId::Concrete(ty)) => {
             let ty_generics = ty.generic_args(db);
 
@@ -58,17 +57,17 @@ fn find_underscores_ex(
         }
         (Expr::FixedSizeArray(fixed_size_array), TypeLongId::FixedSizeArray { type_id, .. }) => {
             for expr in fixed_size_array.exprs(db).elements(db) {
-                find_underscores_ex(db, expr, type_id, result);
+                find_underscores_ex(db, expr, *type_id, result);
             }
         }
         (Expr::Unary(unary_syntax), TypeLongId::Snapshot(ty))
             if matches!(unary_syntax.op(db), UnaryOperator::At(_)) =>
         {
-            find_underscores_ex(db, unary_syntax.expr(db), ty, result);
+            find_underscores_ex(db, unary_syntax.expr(db), *ty, result);
         }
         (Expr::Tuple(tuple_syntax), TypeLongId::Tuple(types)) => {
             for (expr, ty) in tuple_syntax.expressions(db).elements(db).zip(types) {
-                find_underscores_ex(db, expr, ty, result);
+                find_underscores_ex(db, expr, *ty, result);
             }
         }
         _ => {}

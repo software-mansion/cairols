@@ -1,5 +1,4 @@
 use cairo_lang_macro::ExpansionKind as ExpansionKindV2;
-use cairo_lang_utils::smol_str::SmolStr;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExpansionKind {
@@ -21,6 +20,6 @@ impl From<ExpansionKindV2> for ExpansionKind {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Expansion {
-    pub name: SmolStr,
+    pub name: String,
     pub kind: ExpansionKind,
 }

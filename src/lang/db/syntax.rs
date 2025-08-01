@@ -8,20 +8,28 @@ use cairo_lang_utils::Upcast;
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// LS-specific extensions to the syntax group of the Cairo compiler.
-#[salsa::query_group(LsSyntaxDatabase)]
-pub trait LsSyntaxGroup: ParserGroup + Upcast<dyn ParserGroup> {
+#[cairo_lang_proc_macros::query_group(LsSyntaxDatabase)]
+pub trait LsSyntaxGroup: ParserGroup + for<'db> Upcast<'db, dyn ParserGroup> {
     /// Finds the most specific [`SyntaxNode`] at the given [`TextOffset`] in the file.
-    fn find_syntax_node_at_offset(&self, file: FileId, offset: TextOffset) -> Option<SyntaxNode>;
+    fn find_syntax_node_at_offset<'db>(
+        &'db self,
+        file: FileId<'db>,
+        offset: TextOffset,
+    ) -> Option<SyntaxNode<'db>>;
 
     /// Finds the widest [`SyntaxNode`] within the given [`TextSpan`] in the file.
-    fn widest_node_within_span(&self, file: FileId, span: TextSpan) -> Option<SyntaxNode>;
+    fn widest_node_within_span<'db>(
+        &'db self,
+        file: FileId<'db>,
+        span: TextSpan,
+    ) -> Option<SyntaxNode<'db>>;
 
     /// Finds the most specific [`SyntaxNode`] at the given [`TextPosition`] in the file.
-    fn find_syntax_node_at_position(
-        &self,
-        file: FileId,
+    fn find_syntax_node_at_position<'db>(
+        &'db self,
+        file: FileId<'db>,
         position: TextPosition,
-    ) -> Option<SyntaxNode>;
+    ) -> Option<SyntaxNode<'db>>;
 
     /// Finds a [`TerminalIdentifier`] at the given [`TextPosition`] in the file.
     ///
@@ -31,28 +39,28 @@ pub trait LsSyntaxGroup: ParserGroup + Upcast<dyn ParserGroup> {
     /// return the left paren, a much better UX would be to correct the lookup to the identifier.
     /// Such corrections are always valid and deterministic, because grammar-wise it is not possible
     /// to have two identifiers/keywords being glued to each other.
-    fn find_identifier_at_position(
-        &self,
-        file: FileId,
+    fn find_identifier_at_position<'db>(
+        &'db self,
+        file: FileId<'db>,
         position: TextPosition,
-    ) -> Option<TerminalIdentifier>;
+    ) -> Option<TerminalIdentifier<'db>>;
 }
 
 /// Finds the most specific [`SyntaxNode`] at the given [`TextOffset`] in the file.
-fn find_syntax_node_at_offset(
-    db: &dyn LsSyntaxGroup,
-    file: FileId,
+fn find_syntax_node_at_offset<'db>(
+    db: &'db dyn LsSyntaxGroup,
+    file: FileId<'db>,
     offset: TextOffset,
-) -> Option<SyntaxNode> {
+) -> Option<SyntaxNode<'db>> {
     Some(db.file_syntax(file).to_option()?.lookup_offset(db, offset))
 }
 
 /// Finds the widest [`SyntaxNode`] within the given [`TextSpan`] in the file.
-fn widest_node_within_span(
-    db: &dyn LsSyntaxGroup,
-    file: FileId,
+fn widest_node_within_span<'db>(
+    db: &'db dyn LsSyntaxGroup,
+    file: FileId<'db>,
     span: TextSpan,
-) -> Option<SyntaxNode> {
+) -> Option<SyntaxNode<'db>> {
     let precise_node = db.find_syntax_node_at_offset(file, span.start)?;
 
     precise_node
@@ -62,11 +70,11 @@ fn widest_node_within_span(
 }
 
 /// Finds the most specific [`SyntaxNode`] at the given [`TextPosition`] in the file.
-fn find_syntax_node_at_position(
-    db: &dyn LsSyntaxGroup,
-    file: FileId,
+fn find_syntax_node_at_position<'db>(
+    db: &'db dyn LsSyntaxGroup,
+    file: FileId<'db>,
     position: TextPosition,
-) -> Option<SyntaxNode> {
+) -> Option<SyntaxNode<'db>> {
     Some(db.file_syntax(file).to_option()?.lookup_position(db, position))
 }
 
@@ -78,11 +86,11 @@ fn find_syntax_node_at_position(
 /// return the left paren, a much better UX would be to correct the lookup to the identifier.
 /// Such corrections are always valid and deterministic, because grammar-wise it is not possible
 /// to have two identifiers/keywords being glued to each other.
-fn find_identifier_at_position(
-    db: &dyn LsSyntaxGroup,
-    file: FileId,
+fn find_identifier_at_position<'db>(
+    db: &'db dyn LsSyntaxGroup,
+    file: FileId<'db>,
     position: TextPosition,
-) -> Option<TerminalIdentifier> {
+) -> Option<TerminalIdentifier<'db>> {
     let find = |position: TextPosition| {
         let node = db.find_syntax_node_at_position(file, position)?;
         TerminalIdentifier::cast_token(db, node)

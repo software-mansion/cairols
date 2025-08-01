@@ -16,7 +16,6 @@ use cairo_lang_syntax::node::{
 };
 use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::Intern;
-use cairo_lang_utils::LookupIntern;
 use lsp_types::Range;
 use lsp_types::notification::ShowMessage;
 use lsp_types::{CodeLens, Url};
@@ -178,9 +177,9 @@ struct AvailableTestRunners {
 }
 
 impl AvailableTestRunners {
-    pub fn new(db: &AnalysisDatabase, crate_id: CrateId) -> Option<Self> {
+    pub fn new<'db>(db: &'db AnalysisDatabase, crate_id: CrateId<'db>) -> Option<Self> {
         let cairo_test = db.crate_macro_plugins(crate_id).iter().any(|plugin_id| {
-            plugin_id.lookup_intern(db).plugin_type_id() == TestPlugin::default().plugin_type_id()
+            plugin_id.long(db).plugin_type_id() == TestPlugin::default().plugin_type_id()
         });
 
         // This will not work with crate renames in `Scarb.toml`, but there is no better way to do this now.
@@ -211,9 +210,9 @@ impl TestRunner {
     }
 }
 
-fn collect_tests(
-    db: &AnalysisDatabase,
-    module: ModuleId,
+fn collect_tests<'db>(
+    db: &'db AnalysisDatabase,
+    module: ModuleId<'db>,
     file_url: Url,
     file_state: &mut Vec<CodeLens>,
 ) {
@@ -255,7 +254,7 @@ fn collect_tests(
     }
 }
 
-fn has_any_test(db: &AnalysisDatabase, module: ModuleId) -> bool {
+fn has_any_test<'db>(db: &'db AnalysisDatabase, module: ModuleId<'db>) -> bool {
     if collect_functions(db, module).is_empty().not() {
         return true;
     }
@@ -267,7 +266,7 @@ fn has_any_test(db: &AnalysisDatabase, module: ModuleId) -> bool {
     })
 }
 
-fn get_position(db: &AnalysisDatabase, ptr: SyntaxStablePtrId) -> Option<Position> {
+fn get_position<'db>(db: &'db AnalysisDatabase, ptr: SyntaxStablePtrId<'db>) -> Option<Position> {
     let (file, span) =
         get_originating_location(db, ptr.file_id(db), ptr.lookup(db).span_without_trivia(db), None);
 
@@ -287,7 +286,10 @@ fn get_position(db: &AnalysisDatabase, ptr: SyntaxStablePtrId) -> Option<Positio
         .map(|position| position.to_lsp())
 }
 
-fn collect_functions(db: &AnalysisDatabase, module: ModuleId) -> Vec<SyntaxStablePtrId> {
+fn collect_functions<'db>(
+    db: &'db AnalysisDatabase,
+    module: ModuleId<'db>,
+) -> Vec<SyntaxStablePtrId<'db>> {
     let mut result = vec![];
 
     if let Ok(functions) = db.module_free_functions(module) {

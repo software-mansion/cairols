@@ -102,10 +102,10 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     Some(CompletionResponse::Array(result))
 }
 
-fn complete_ex(
-    node: SyntaxNode,
+fn complete_ex<'db>(
+    node: SyntaxNode<'db>,
     trigger_kind: CompletionTriggerKind,
-    db: &AnalysisDatabase,
+    db: &'db AnalysisDatabase,
 ) -> Option<Vec<CompletionItem>> {
     let ctx = AnalysisContext::from_node(db, node)?;
     let crate_id = ctx.module_file_id.0.owning_crate(db);
@@ -160,7 +160,7 @@ fn complete_ex(
         && let Some(node) = path_node.parent_of_kind(db, SyntaxKind::ArgClauseUnnamed)
         && let Some(attr) = node.ancestor_of_type::<Attribute>(db)
         && let Some(derive_completions) =
-            derive_completions(db, &path_node.get_text(db), attr, crate_id)
+            derive_completions(db, path_node.get_text(db), attr, crate_id)
     {
         completions.extend(derive_completions);
     }
@@ -179,7 +179,7 @@ fn complete_ex(
         // We are in nested mod, we should not show completions for file modules.
         && module_item.as_syntax_node().ancestor_of_kind(db, SyntaxKind::ItemModule).is_none()
         && let Some(mod_names_completions) =
-            mod_completions(db, module_item, file_id, &ident.text(db))
+            mod_completions(db, module_item, file_id, ident.text(db))
     {
         completions.extend(mod_names_completions);
     }
@@ -211,7 +211,10 @@ fn complete_ex(
     Some(completions)
 }
 
-fn find_last_meaning_node(db: &AnalysisDatabase, node: SyntaxNode) -> SyntaxNode {
+fn find_last_meaning_node<'db>(
+    db: &'db AnalysisDatabase,
+    node: SyntaxNode<'db>,
+) -> SyntaxNode<'db> {
     for child in node.get_children(db).iter().rev() {
         if child.kind(db) == SyntaxKind::Trivia {
             continue;

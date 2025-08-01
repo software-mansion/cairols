@@ -18,8 +18,9 @@ use crate::lang::proc_macros::client::plain_request_response::{
 
 /// A set of queries that enable access to proc macro client from compiler plugins
 /// `.generate_code()` methods.
-#[salsa::query_group(ProcMacroDatabase)]
-pub trait ProcMacroGroup {
+#[cairo_lang_proc_macros::query_group]
+#[allow(dead_code)]
+pub trait ProcMacroGroup: salsa::Database {
     #[salsa::input]
     fn attribute_macro_resolution(
         &self,
@@ -237,7 +238,10 @@ impl SpansStabilizer {
 }
 
 /// Retrieves the widest matching original node in user code, which corresponds to passed node.
-pub fn get_og_node(db: &AnalysisDatabase, node: SyntaxNode) -> Option<SyntaxNode> {
+pub fn get_og_node<'db>(
+    db: &'db AnalysisDatabase,
+    node: SyntaxNode<'db>,
+) -> Option<SyntaxNode<'db>> {
     let (og_file, og_span) =
         get_originating_location(db, node.stable_ptr(db).file_id(db), node.span(db), None);
 

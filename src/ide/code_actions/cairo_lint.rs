@@ -1,3 +1,11 @@
+use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_semantic::{
+    SemanticDiagnostic, db::SemanticGroup, diagnostic::SemanticDiagnosticKind,
+};
+use cairo_lint::{CairoLintToolMetadata, CorelibContext, LinterDiagnosticParams, LinterGroup};
+use lsp_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
+
 use crate::{
     lang::{
         analysis_context::AnalysisContext,
@@ -6,19 +14,11 @@ use crate::{
     },
     project::ConfigsRegistry,
 };
-use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_filesystem::ids::FileLongId;
-use cairo_lang_semantic::{
-    SemanticDiagnostic, db::SemanticGroup, diagnostic::SemanticDiagnosticKind,
-};
-use cairo_lang_utils::LookupIntern;
-use cairo_lint::{CairoLintToolMetadata, CorelibContext, LinterDiagnosticParams, LinterGroup};
-use lsp_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
 
-pub fn cairo_lint(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
-    linter_corelib_context: CorelibContext,
+pub fn cairo_lint<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    linter_corelib_context: CorelibContext<'db>,
     config_registry: &ConfigsRegistry,
 ) -> Option<Vec<CodeAction>> {
     let linter_params = LinterDiagnosticParams {
@@ -88,14 +88,14 @@ pub fn cairo_lint(
     Some(result)
 }
 
-fn get_linter_tool_metadata(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
+fn get_linter_tool_metadata<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
     config_registry: &ConfigsRegistry,
 ) -> CairoLintToolMetadata {
     if let Ok(module_file_id) = ctx.module_file_id.file_id(db)
-        && let FileLongId::OnDisk(file_id) = module_file_id.lookup_intern(db)
-        && let Some(file_config) = config_registry.config_for_file(&file_id)
+        && let FileLongId::OnDisk(file_id) = module_file_id.long(db)
+        && let Some(file_config) = config_registry.config_for_file(file_id)
     {
         file_config.lint.clone()
     } else {

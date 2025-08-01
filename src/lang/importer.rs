@@ -12,9 +12,9 @@ use lsp_types::{Position, Range, TextEdit};
 use super::{analysis_context::AnalysisContext, db::AnalysisDatabase};
 use crate::lang::{db::LsSemanticGroup, lsp::ToLsp};
 
-pub fn new_import_edit(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext,
+pub fn new_import_edit<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
     import_path: impl Display,
 ) -> Option<TextEdit> {
     let use_position = use_position(db, ctx)?;
@@ -28,7 +28,7 @@ pub fn new_import_edit(
     Some(TextEdit { range: use_position.range(), new_text })
 }
 
-fn use_position(db: &AnalysisDatabase, ctx: &AnalysisContext) -> Option<UsePosition> {
+fn use_position<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>) -> Option<UsePosition> {
     db.module_uses_ids(ctx.module_file_id.0)
         .ok()
         .and_then(|uses| {
@@ -74,7 +74,11 @@ struct UsePosition {
 }
 
 impl UsePosition {
-    pub fn new(db: &AnalysisDatabase, ptr: SyntaxStablePtrId, is_sticking: bool) -> Option<Self> {
+    pub fn new<'db>(
+        db: &'db AnalysisDatabase,
+        ptr: SyntaxStablePtrId<'db>,
+        is_sticking: bool,
+    ) -> Option<Self> {
         let node = ptr.lookup(db);
 
         Some(Self {

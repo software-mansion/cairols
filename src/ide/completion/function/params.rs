@@ -11,7 +11,10 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
 
-pub fn params_completions(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Vec<CompletionItem> {
+pub fn params_completions<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+) -> Vec<CompletionItem> {
     let (params, typed_text) = if let Some(path) = expr_selector(db, &ctx.node)
         && dot_expr_rhs(db, &ctx.node).is_none()
         && let [PathSegment::Simple(segment)] =
@@ -27,9 +30,9 @@ pub fn params_completions(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> V
 
     params
         .into_iter()
-        .filter(|param| text_matches(&param.name, &typed_text))
+        .filter(|param| text_matches(&*param.name, typed_text))
         .map(|param| CompletionItem {
-            label: param.name.clone().into(),
+            label: param.name.to_string(),
             kind: Some(CompletionItemKind::VARIABLE),
             ..CompletionItem::default()
         })

@@ -8,6 +8,7 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::ast::{ExprStructCtorCall, StructArg};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_lang_utils::Upcast;
 use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, WorkspaceEdit};
 use tracing::error;
 
@@ -17,9 +18,9 @@ use crate::lang::visibility::peek_visible_in_with_edition;
 
 /// Generates a completion adding all visible struct members that have not yet been specified
 /// to the constructor call, filling their values with a placeholder unit type.
-pub fn fill_struct_fields(
-    db: &AnalysisDatabase,
-    node: SyntaxNode,
+pub fn fill_struct_fields<'db>(
+    db: &'db AnalysisDatabase,
+    node: SyntaxNode<'db>,
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
     let module_file_id = db.find_module_file_containing_node(node)?;
@@ -69,7 +70,8 @@ pub fn fill_struct_fields(
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr(db).into()).ok()?;
 
-    let constructor_semantic = match db.expr_semantic(function_id, constructor_expr_id) {
+    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let constructor_semantic = match semantic_db.expr_semantic(function_id, constructor_expr_id) {
         Expr::StructCtor(semantic) => semantic,
         _ => {
             error!(
@@ -87,9 +89,7 @@ pub fn fill_struct_fields(
         .ok()?
         .iter()
         .filter_map(|(name, member)| {
-            let name = name.to_string();
-
-            if already_present_arguments.contains(&name) {
+            if already_present_arguments.contains(&&**name) {
                 None
             } else if peek_visible_in_with_edition(
                 db,

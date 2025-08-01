@@ -8,8 +8,7 @@ use cairo_lang_syntax::node::green::GreenNodeDetails;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax_codegen::cairo_spec::get_spec;
 use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
-use cairo_lang_utils::smol_str::SmolStr;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::Intern;
 use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
 
@@ -40,7 +39,7 @@ pub fn syntax_tree_branch_above_leaf(
             GreenNodeDetails::Token(_) => unreachable!("Only the last node can be the token"),
         }
 
-        let child_green = child.green_node(db).intern(db);
+        let child_green = child.green_node(db).clone().intern(db);
         let mut child_num = None;
         match &green_node.details {
             GreenNodeDetails::Node { children, .. } => {
@@ -77,17 +76,16 @@ pub fn syntax_tree_branch_above_leaf(
     let green_node = last.green_node(db);
     match &green_node.details {
         GreenNodeDetails::Token(text) => {
-            printer.print_token_node(&field_description, "", "", text.clone(), green_node.kind)
+            printer.print_token_node(&field_description, "", "", text, green_node.kind)
         }
         GreenNodeDetails::Node { children, .. } => {
             assert_eq!(green_node.kind, SyntaxKind::SyntaxFile);
             printer.print_only_internal_node(last, &field_description, green_node.kind);
 
-            let eof_green =
-                children[SyntaxFile::INDEX_EOF].lookup_intern(db).children()[1].lookup_intern(db);
+            let eof_green = children[SyntaxFile::INDEX_EOF].long(db).children()[1].long(db);
             match &eof_green.details {
                 GreenNodeDetails::Token(text) => {
-                    printer.print_token_node("eof", "", "", text.clone(), eof_green.kind)
+                    printer.print_token_node("eof", "", "", text, eof_green.kind)
                 }
                 GreenNodeDetails::Node { .. } => unreachable!(),
             }
@@ -124,7 +122,7 @@ impl<'a> Printer<'a> {
                 field_description,
                 indent,
                 extra_head_indent,
-                text.clone(),
+                text,
                 green_node.kind,
             ),
             GreenNodeDetails::Node { .. } => {
@@ -145,7 +143,7 @@ impl<'a> Printer<'a> {
         field_description: &str,
         indent: &str,
         extra_head_indent: &str,
-        text: SmolStr,
+        text: &str,
         kind: SyntaxKind,
     ) {
         let text = if kind == SyntaxKind::TokenMissing {
@@ -155,7 +153,7 @@ impl<'a> Printer<'a> {
                 SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
                 | SyntaxKind::TokenEndOfFile => ".".to_string(),
-                _ => format!(": '{}'", self.green(self.bold(text.as_str().into()))),
+                _ => format!(": '{}'", self.green(self.bold(text.into()))),
             };
             format!("{} (kind: {:?}){token_text}", self.blue(field_description.into()), kind)
         };
@@ -238,7 +236,7 @@ impl<'a> Printer<'a> {
         match node_kind {
             NodeKind::Struct { members: expected_children }
             | NodeKind::Terminal { members: expected_children, .. } => {
-                self.print_internal_struct(&children, &expected_children, indent.as_str());
+                self.print_internal_struct(children, &expected_children, indent.as_str());
             }
             NodeKind::List { .. } => {
                 for (i, child) in children.iter().enumerate() {

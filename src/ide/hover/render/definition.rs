@@ -20,11 +20,11 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch};
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.
-pub fn definition(
-    db: &AnalysisDatabase,
-    identifier: &TerminalIdentifier,
-    file_id: FileId,
-    importables: &OrderedHashMap<ImportableId, String>,
+pub fn definition<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &TerminalIdentifier<'db>,
+    file_id: FileId<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     let search = SymbolSearch::find_definition(db, identifier)?;
 
@@ -63,7 +63,7 @@ pub fn definition(
 
             if let Some(doc) = db
                 .crate_inline_macro_plugins(crate_id)
-                .get(macro_name.as_str())
+                .get(*macro_name)
                 .map(|&id| db.lookup_intern_inline_macro_plugin(id))?
                 .documentation()
             {
@@ -105,11 +105,11 @@ pub fn definition(
     Some(md)
 }
 
-fn concrete_signature(
-    db: &AnalysisDatabase,
-    resolved_item: ResolvedItem,
-    resolver_data: Option<ResolverData>,
-    importables: &OrderedHashMap<ImportableId, String>,
+fn concrete_signature<'db>(
+    db: &'db AnalysisDatabase,
+    resolved_item: ResolvedItem<'db>,
+    resolver_data: Option<ResolverData<'db>>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     let resolver_data = resolver_data?;
 
@@ -158,7 +158,7 @@ fn concrete_signature(
                         .map(|value| value.format(db, importables))
                         .unwrap_or_else(|| concrete.format(db));
 
-                    acc.push_str(&left);
+                    acc.push_str(left);
                     acc.push_str(" = ");
                     acc.push_str(&right);
                     acc.push('\n');
@@ -173,7 +173,10 @@ fn concrete_signature(
     }
 }
 
-fn get_generics(declaration: FunctionDeclaration, db: &AnalysisDatabase) -> Vec<GenericParam> {
+fn get_generics<'db>(
+    declaration: FunctionDeclaration<'db>,
+    db: &'db AnalysisDatabase,
+) -> Vec<GenericParam<'db>> {
     match declaration.generic_params(db) {
         OptionWrappedGenericParamList::Empty(_) => vec![],
         OptionWrappedGenericParamList::WrappedGenericParamList(list) => {

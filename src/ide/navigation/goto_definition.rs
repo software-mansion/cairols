@@ -7,7 +7,6 @@ use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location};
 
@@ -38,7 +37,7 @@ pub fn goto_definition(
     }
 }
 
-fn goto(db: &AnalysisDatabase, syntax_node: SyntaxNode) -> Option<Location> {
+fn goto<'db>(db: &'db AnalysisDatabase, syntax_node: SyntaxNode<'db>) -> Option<Location> {
     let identifier =
         syntax_node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
     let symbol = SymbolSearch::find_definition(db, &identifier)?.def;
@@ -65,21 +64,21 @@ fn goto(db: &AnalysisDatabase, syntax_node: SyntaxNode) -> Option<Location> {
 }
 
 // In the case of a non-inline module redirect to a module file instead of a definition node.
-fn try_special_case_non_inline_module(
-    db: &AnalysisDatabase,
-    symbol: &SymbolDef,
-) -> Option<(FileId, TextSpan)> {
+fn try_special_case_non_inline_module<'db>(
+    db: &'db AnalysisDatabase,
+    symbol: &SymbolDef<'db>,
+) -> Option<(FileId<'db>, TextSpan)> {
     if let SymbolDef::Module(module_def) = symbol {
         let module_id = module_def.module_id();
         match module_id {
-            ModuleId::CrateRoot(_) => None,
+            ModuleId::CrateRoot(_) | ModuleId::MacroCall { id: _, generated_file_id: _ } => None,
             ModuleId::Submodule(submodule_id) => db
                 .is_submodule_inline(submodule_id)
                 .not()
                 .then(|| {
                     let file = db.module_main_file(module_def.module_id()).ok()?;
 
-                    match file.lookup_intern(db) {
+                    match file.long(db) {
                         FileLongId::OnDisk(_) => Some((file, db.file_syntax(file).ok()?.span(db))),
                         FileLongId::Virtual(_) | FileLongId::External(_) => None,
                     }

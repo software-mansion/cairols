@@ -28,14 +28,15 @@ pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<
     Some(locations.into_iter().collect())
 }
 
-fn find_references(
-    db: &AnalysisDatabase,
-    syntax_node: SyntaxNode,
+fn find_references<'db>(
+    db: &'db AnalysisDatabase,
+    syntax_node: SyntaxNode<'db>,
     include_declaration: bool,
 ) -> Option<Vec<Location>> {
     let identifier =
         syntax_node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
     let symbol = SymbolSearch::find_definition(db, &identifier)?;
+    let def = symbol.def.clone();
 
     Some(
         symbol
@@ -47,7 +48,7 @@ fn find_references(
                     // We want to show definition location (if requested),
                     // even if it comes from a derive macro.
                     // Common case - impl declared in the derive macro.
-                    || (include_declaration && Some(loc) == symbol.def.definition_originating_location(db).as_ref())
+                    || (include_declaration && Some(loc) == def.definition_originating_location(db).as_ref())
             })
             .filter_map(|loc| db.lsp_location(loc))
             .collect(),
@@ -57,7 +58,10 @@ fn find_references(
 /// Used to filter out references mapped to derives.
 /// Such references aren't really useful since derives (when implemented properly)
 /// always contain usages of an item they’re on.
-fn is_in_derive_attribute(db: &AnalysisDatabase, (file, span): &(FileId, TextSpan)) -> bool {
+fn is_in_derive_attribute<'db>(
+    db: &'db AnalysisDatabase,
+    (file, span): &(FileId<'db>, TextSpan),
+) -> bool {
     let Some(token) = db
         .find_syntax_node_at_offset(*file, span.start)
         // Sanity check: `span` is a span of a terminal identifier without trivia.
@@ -71,5 +75,5 @@ fn is_in_derive_attribute(db: &AnalysisDatabase, (file, span): &(FileId, TextSpa
         .ancestor_of_type::<Attribute>(db)
         .map(|attr| attr.attr(db).as_syntax_node().get_text(db));
 
-    maybe_attribute_name == Some("derive".to_string())
+    maybe_attribute_name == Some("derive")
 }

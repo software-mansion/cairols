@@ -9,9 +9,9 @@ use crate::lang::importer::new_import_edit;
 use crate::lang::methods::available_traits_for_method;
 
 /// Create a Quick Fix code action to add a missing trait given a `CannotCallMethod` diagnostic.
-pub fn add_missing_trait(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
+pub fn add_missing_trait<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
     uri: Url,
 ) -> Option<Vec<CodeAction>> {
     let trait_paths = available_traits_for_method(db, ctx)?;

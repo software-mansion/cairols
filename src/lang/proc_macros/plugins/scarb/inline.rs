@@ -15,11 +15,11 @@ use crate::lang::proc_macros::plugins::scarb::conversion::{
 use crate::lang::proc_macros::plugins::scarb::types::TokenStreamBuilder;
 
 // <https://github.com/software-mansion/scarb/blob/4e81d1c4498137f80e211c6e2c6a5a6de01c66f2/scarb/src/compiler/plugin/proc_macro/host.rs#L1015-L1059>
-pub fn inline_macro_generate_code(
-    db: &AnalysisDatabase,
+pub fn inline_macro_generate_code<'db>(
+    db: &'db AnalysisDatabase,
     expansion_context: ProcMacroScope,
-    syntax: &ast::ExprInlineMacro,
-) -> InlinePluginResult {
+    syntax: &ast::ExprInlineMacro<'db>,
+) -> InlinePluginResult<'db> {
     let call_site = CallSiteLocation::new(syntax, db);
     let ctx = AllocationContext::default();
     let arguments = syntax.arguments(db);
@@ -32,7 +32,7 @@ pub fn inline_macro_generate_code(
         db,
         ExpandInlineMacroParams {
             context: expansion_context,
-            name: inline_macro_name.clone(),
+            name: inline_macro_name.to_string(),
             args: token_stream,
             call_site: call_site.span,
         },

@@ -97,12 +97,12 @@ const CAIRO_RUN_EXECUTABLE: &str = "main";
 struct CairoRunPlugin {}
 
 impl MacroPlugin for CairoRunPlugin {
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        _db: &dyn SyntaxGroup,
-        _item_ast: ModuleItem,
+        _db: &'db dyn SyntaxGroup,
+        _item_ast: ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
-    ) -> PluginResult {
+    ) -> PluginResult<'db> {
         PluginResult::default()
     }
 

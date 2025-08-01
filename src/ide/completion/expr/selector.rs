@@ -5,7 +5,10 @@ use cairo_lang_syntax::node::{
 
 use crate::lang::db::AnalysisDatabase;
 
-pub fn expr_selector(db: &AnalysisDatabase, node: &SyntaxNode) -> Option<ExprPath> {
+pub fn expr_selector<'db>(
+    db: &'db AnalysisDatabase,
+    node: &SyntaxNode<'db>,
+) -> Option<ExprPath<'db>> {
     for node in node.ancestors_with_self(db) {
         if ast::Statement::is_variant(node.kind(db)) {
             return None;

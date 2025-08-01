@@ -4,40 +4,43 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::smol_str::SmolStr;
 
 use crate::ide::ty::format_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 /// Information about the definition of a variable (local, function parameter).
-#[derive(Eq, PartialEq, Debug)]
-pub struct VariableDef {
-    var_id: VarId,
-    identifier: ast::TerminalIdentifier,
+#[derive(Eq, PartialEq, Debug, Clone)]
+pub struct VariableDef<'db> {
+    var_id: VarId<'db>,
+    identifier: ast::TerminalIdentifier<'db>,
 }
 
-impl VariableDef {
+impl<'db> VariableDef<'db> {
     /// Constructs a new [`VariableDef`] instance.
-    pub(super) fn new(db: &AnalysisDatabase, var_id: VarId, definition_node: SyntaxNode) -> Self {
+    pub(super) fn new(
+        db: &'db AnalysisDatabase,
+        var_id: VarId<'db>,
+        definition_node: SyntaxNode<'db>,
+    ) -> Self {
         let identifier = ast::TerminalIdentifier::from_syntax_node(db, definition_node);
         Self { var_id, identifier }
     }
 
     /// Gets the syntax node which defines this symbol.
-    pub fn definition_node(&self) -> SyntaxNode {
+    pub fn definition_node(&self) -> SyntaxNode<'db> {
         self.identifier.as_syntax_node()
     }
 
     /// Gets the stable pointer to the syntax node which defines this symbol.
-    pub fn definition_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
+    pub fn definition_stable_ptr(&self, db: &'db dyn SyntaxGroup) -> SyntaxStablePtrId<'db> {
         self.identifier.stable_ptr(db).untyped()
     }
 
     /// Gets variable signature, which tries to resemble the way how it is defined in code.
     pub fn signature(
         &self,
-        db: &AnalysisDatabase,
-        importables: &OrderedHashMap<ImportableId, String>,
+        db: &'db AnalysisDatabase,
+        importables: &OrderedHashMap<ImportableId<'db>, String>,
     ) -> Option<String> {
         let name = self.name(db);
         let binding = db.lookup_binding(self.var_id)?;
@@ -72,7 +75,7 @@ impl VariableDef {
     }
 
     /// Gets this variable's name.
-    pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
+    pub fn name(&self, db: &'db AnalysisDatabase) -> &'db str {
         self.identifier.text(db)
     }
 }

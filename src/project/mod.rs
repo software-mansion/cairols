@@ -4,13 +4,14 @@ use std::path::PathBuf;
 use anyhow::Context;
 use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_filesystem::db::{CrateIdentifier, FilesGroup, FilesGroupEx};
+use cairo_lang_filesystem::db::FilesGroupEx;
+use cairo_lang_filesystem::db::{CrateIdentifier, FilesGroup};
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
-use salsa::ParallelDatabase;
 use tracing::{debug, error, warn};
 
 pub use self::crate_data::{Crate, extract_custom_file_stems};
@@ -147,7 +148,7 @@ impl ProjectController {
                                 .unwrap_or_default()
                                 .union(&AnalysisDatabase::initial_cfg_set_for_deps()),
                         );
-                        db.set_crate_config(core_id, Some(core_settings));
+                        set_crate_config!(db, core_id, Some(core_settings));
                     }
                 }
 
@@ -178,7 +179,7 @@ impl ProjectController {
 
         // Manifest may changed, update for open files
         state.code_lens_controller.on_did_change(
-            state.db.snapshot(),
+            state.db.clone(),
             state.config.clone(),
             state
                 .open_files

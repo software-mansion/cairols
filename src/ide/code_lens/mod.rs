@@ -66,11 +66,7 @@ impl CodeLensController {
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn schedule_refreshing_all_lenses(
-        &self,
-        db: salsa::Snapshot<AnalysisDatabase>,
-        config: Config,
-    ) {
+    pub fn schedule_refreshing_all_lenses(&self, db: AnalysisDatabase, config: Config) {
         let lens_guard = self.state.read().unwrap();
 
         // Invalidate all the files in the state
@@ -89,7 +85,7 @@ impl CodeLensController {
     #[tracing::instrument(name = "CodeLensController::on_did_change", skip_all)]
     pub fn on_did_change(
         &self,
-        db: salsa::Snapshot<AnalysisDatabase>,
+        db: AnalysisDatabase,
         config: Config,
         files: impl Iterator<Item = FileChange>,
     ) {
@@ -151,18 +147,13 @@ impl CodeLensController {
     }
 
     #[tracing::instrument(skip_all)]
-    fn schedule_refresh(
-        &self,
-        db: salsa::Snapshot<AnalysisDatabase>,
-        config: Config,
-        files: Vec<FileChange>,
-    ) {
+    fn schedule_refresh(&self, db: AnalysisDatabase, config: Config, files: Vec<FileChange>) {
         let _ = self.refresh_sender.send(RefreshCodeLensRequest { db, config, files });
     }
 }
 
 struct RefreshCodeLensRequest {
-    db: salsa::Snapshot<AnalysisDatabase>,
+    db: AnalysisDatabase,
     config: Config,
     files: Vec<FileChange>,
 }

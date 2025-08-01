@@ -7,14 +7,17 @@ use cairo_lang_syntax::node::SyntaxNode;
 use super::db::{AnalysisDatabase, LsSemanticGroup};
 
 pub struct AnalysisContext<'db> {
-    pub node: SyntaxNode,
-    pub module_file_id: ModuleFileId,
-    pub lookup_item_id: Option<LookupItemId>,
+    pub node: SyntaxNode<'db>,
+    pub module_file_id: ModuleFileId<'db>,
+    pub lookup_item_id: Option<LookupItemId<'db>>,
     resolver: Resolver<'db>,
 }
 
 impl<'db> AnalysisContext<'db> {
-    pub fn from_node(db: &'db AnalysisDatabase, node: SyntaxNode) -> Option<AnalysisContext<'db>> {
+    pub fn from_node(
+        db: &'db AnalysisDatabase,
+        node: SyntaxNode<'db>,
+    ) -> Option<AnalysisContext<'db>> {
         let module_file_id = db.find_module_file_containing_node(node)?;
         let lookup_item_id = db.find_lookup_item(node);
 

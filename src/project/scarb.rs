@@ -8,7 +8,6 @@ use cairo_lang_filesystem::db::{
     CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig,
 };
 use cairo_lang_utils::OptionHelper;
-use cairo_lang_utils::smol_str::ToSmolStr;
 use itertools::Itertools;
 use scarb_metadata::{
     CompilationUnitCairoPluginMetadata, CompilationUnitComponentDependencyMetadata,
@@ -167,24 +166,20 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<CrateInfo> {
                     (
                         c.name.clone(),
                         DependencySettings {
-                            discriminator: c
-                                .discriminator
-                                .as_ref()
-                                .map(ToSmolStr::to_smolstr)
-                                .on_none(|| {
-                                    let pkg = metadata
-                                        .packages
-                                        .iter()
-                                        .find(|package| package.id == c.package);
+                            discriminator: c.discriminator.clone().on_none(|| {
+                                let pkg = metadata
+                                    .packages
+                                    .iter()
+                                    .find(|package| package.id == c.package);
 
-                                    if !is_core(&pkg) {
-                                        error!(
-                                            "discriminator of component {} with id {} was None",
-                                            c.name,
-                                            c.id.as_ref().unwrap()
-                                        );
-                                    }
-                                }),
+                                if !is_core(&pkg) {
+                                    error!(
+                                        "discriminator of component {} with id {} was None",
+                                        c.name,
+                                        c.id.as_ref().unwrap()
+                                    );
+                                }
+                            }),
                         },
                     )
                 })
@@ -222,7 +217,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<CrateInfo> {
 
             let cr = Crate {
                 name: crate_name.into(),
-                discriminator: component.discriminator.as_ref().map(ToSmolStr::to_smolstr),
+                discriminator: component.discriminator.clone(),
                 root: root.into(),
                 custom_main_file_stems,
                 settings,

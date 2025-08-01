@@ -9,9 +9,9 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
 
-pub fn missing_import(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
+pub fn missing_import<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
     uri: Url,
 ) -> Option<Vec<CodeAction>> {
     let typed_path_generic = ctx.node.ancestor_of_type::<ExprPath>(db)?;

@@ -14,7 +14,6 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::smol_str::{SmolStr, ToSmolStr};
 use convert_case::{Case, Casing};
 use itertools::Itertools;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
@@ -41,14 +40,14 @@ const DERIVE_ATTR: &str = "derive";
 /// Copied from: <https://github.com/software-mansion/scarb/blob/4e81d1c4498137f80e211c6e2c6a5a6de01c66f2/scarb/src/compiler/plugin/proc_macro/host.rs#L893>
 /// Modified scarb code with replaced dylib calls in favour of [`ProcMacroGroup`] calls. Also
 /// removed `aux_data`.
-pub fn macro_generate_code(
-    db: &AnalysisDatabase,
+pub fn macro_generate_code<'db>(
+    db: &'db AnalysisDatabase,
     expansion_context: ProcMacroScope,
-    item_ast: ast::ModuleItem,
+    item_ast: ast::ModuleItem<'db>,
     defined_attributes: &[String],
     defined_derives: &[String],
     metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
-) -> PluginResult {
+) -> PluginResult<'db> {
     let stream_metadata = calculate_metadata(db, item_ast.clone(), metadata.edition);
 
     // Handle inner functions.
@@ -109,12 +108,12 @@ pub fn macro_generate_code(
     PluginResult { code: None, diagnostics: Vec::new(), remove_original_item: false }
 }
 
-fn expand_inner_attr(
-    db: &AnalysisDatabase,
+fn expand_inner_attr<'db>(
+    db: &'db AnalysisDatabase,
     expansion_context: ProcMacroScope,
     defined_attributes: &[String],
-    item_ast: ast::ModuleItem,
-) -> InnerAttrExpansionResult {
+    item_ast: ast::ModuleItem<'db>,
+) -> InnerAttrExpansionResult<'db> {
     let mut context = InnerAttrExpansionContext::new(db, &item_ast);
     let mut used_attr_names: HashSet<String> = Default::default();
     let mut all_none = true;
@@ -256,12 +255,12 @@ fn expand_inner_attr(
     }
 }
 
-fn do_expand_inner_attr(
-    db: &AnalysisDatabase,
-    context: &mut InnerAttrExpansionContext,
+fn do_expand_inner_attr<'db>(
+    db: &'db AnalysisDatabase,
+    context: &mut InnerAttrExpansionContext<'db>,
     expansion_context: ProcMacroScope,
-    found: AttrExpansionFound,
-    func: &impl TypedSyntaxNode,
+    found: AttrExpansionFound<'db>,
+    func: &impl TypedSyntaxNode<'db>,
     token_stream: AdaptedTokenStream,
 ) -> bool {
     let mut all_none = true;
@@ -305,15 +304,15 @@ fn do_expand_inner_attr(
     all_none
 }
 
-struct InnerAttrExpansionContext<'a> {
+struct InnerAttrExpansionContext<'db> {
     // Metadata returned for expansions.
-    diagnostics: Vec<PluginDiagnostic>,
+    diagnostics: Vec<PluginDiagnostic<'db>>,
     any_changed: bool,
-    item_builder: PatchBuilder<'a>,
+    item_builder: PatchBuilder<'db>,
 }
 
-impl<'a> InnerAttrExpansionContext<'a> {
-    pub fn new(db: &'a dyn SyntaxGroup, item_ast: &'a ast::ModuleItem) -> Self {
+impl<'db> InnerAttrExpansionContext<'db> {
+    pub fn new(db: &'db dyn SyntaxGroup, item_ast: &ast::ModuleItem<'db>) -> Self {
         Self {
             diagnostics: Vec::new(),
             any_changed: false,
@@ -321,15 +320,15 @@ impl<'a> InnerAttrExpansionContext<'a> {
         }
     }
 
-    pub fn add_node(&mut self, node: SyntaxNode) {
+    pub fn add_node(&mut self, node: SyntaxNode<'db>) {
         self.item_builder.add_node(node);
     }
 
     fn register_diagnotics(
         &mut self,
-        db: &dyn SyntaxGroup,
+        db: &'db dyn SyntaxGroup,
         diagnostics: Vec<AdaptedDiagnostic>,
-        stable_ptr: SyntaxStablePtrId,
+        stable_ptr: SyntaxStablePtrId<'db>,
     ) {
         let diagnostics = diagnostics.into_iter().map(Into::into).collect();
         self.diagnostics.extend(into_cairo_diagnostics(db, diagnostics, stable_ptr));
@@ -337,8 +336,8 @@ impl<'a> InnerAttrExpansionContext<'a> {
 
     pub fn register_result_metadata_v2(
         &mut self,
-        db: &dyn SyntaxGroup,
-        input: &AttrExpansionArgs,
+        db: &'db dyn SyntaxGroup,
+        input: &AttrExpansionArgs<'db>,
         original: String,
         result: ProcMacroResult,
     ) {
@@ -367,7 +366,7 @@ impl<'a> InnerAttrExpansionContext<'a> {
         });
     }
 
-    pub fn into_result(self, attr_names: Vec<String>) -> AttributePluginResult {
+    pub fn into_result(self, attr_names: Vec<String>) -> AttributePluginResult<'db> {
         let msg = if attr_names.len() == 1 {
             "the attribute macro"
         } else {
@@ -386,33 +385,33 @@ impl<'a> InnerAttrExpansionContext<'a> {
     }
 }
 
-fn rewrite_node_patch_from_expansion_result(
+fn rewrite_node_patch_from_expansion_result<'db>(
     code_mappings: Vec<AdaptedCodeMapping>,
     expanded: String,
-) -> RewriteNode {
+) -> RewriteNode<'db> {
     let code_mappings = code_mappings.into_iter().map(Into::into).collect_vec();
     RewriteNode::TextAndMapping(expanded, code_mappings)
 }
 
-enum InnerAttrExpansionResult {
+enum InnerAttrExpansionResult<'db> {
     None,
-    Some(AttributePluginResult),
+    Some(AttributePluginResult<'db>),
 }
 
-pub enum AttrExpansionFound {
-    Some(AttrExpansionArgs),
-    Last(AttrExpansionArgs),
+pub enum AttrExpansionFound<'db> {
+    Some(AttrExpansionArgs<'db>),
+    Last(AttrExpansionArgs<'db>),
     None,
 }
 
-pub struct AttrExpansionArgs {
+pub struct AttrExpansionArgs<'db> {
     pub name: String,
     pub args: TokenStream,
-    pub call_site: CallSiteLocation,
+    pub call_site: CallSiteLocation<'db>,
     pub attribute_location: ExpandableAttrLocation,
 }
 
-impl AttrExpansionFound {
+impl<'db> AttrExpansionFound<'db> {
     pub fn as_name(&self) -> Option<String> {
         match self {
             AttrExpansionFound::Some(AttrExpansionArgs { name, .. })
@@ -425,12 +424,12 @@ impl AttrExpansionFound {
 /// Find first attribute procedural macros that should be expanded.
 ///
 /// Remove the attribute from the code.
-pub(crate) fn parse_attribute(
-    db: &dyn SyntaxGroup,
+pub(crate) fn parse_attribute<'db>(
+    db: &'db dyn SyntaxGroup,
     defined_attributes: Vec<String>,
-    item_ast: ast::ModuleItem,
+    item_ast: ast::ModuleItem<'db>,
     ctx: &AllocationContext,
-) -> (AttrExpansionFound, AdaptedTokenStream) {
+) -> (AttrExpansionFound<'db>, AdaptedTokenStream) {
     let mut token_stream_builder = TokenStreamBuilder::new(db);
     let input = match item_ast.clone() {
         ast::ModuleItem::Trait(ast) => {
@@ -479,13 +478,13 @@ pub(crate) fn parse_attribute(
     (input, token_stream)
 }
 
-fn parse_item<T: ItemWithAttributes + ChildNodesWithoutAttributes>(
+fn parse_item<'db, T: ItemWithAttributes<'db> + ChildNodesWithoutAttributes<'db>>(
     ast: &T,
-    db: &dyn SyntaxGroup,
-    token_stream_builder: &mut TokenStreamBuilder<'_>,
+    db: &'db dyn SyntaxGroup,
+    token_stream_builder: &mut TokenStreamBuilder<'db>,
     ctx: &AllocationContext,
     defined_attributes: Vec<String>,
-) -> AttrExpansionFound {
+) -> AttrExpansionFound<'db> {
     let span = ast.span_with_trivia(db);
     let attrs = ast.item_attributes(db);
     let expansion =
@@ -494,14 +493,14 @@ fn parse_item<T: ItemWithAttributes + ChildNodesWithoutAttributes>(
     expansion
 }
 
-fn parse_attrs(
-    db: &dyn SyntaxGroup,
+fn parse_attrs<'db>(
+    db: &'db dyn SyntaxGroup,
     defined_attributes: &[String],
-    builder: &mut TokenStreamBuilder<'_>,
-    item_attrs: Vec<ast::Attribute>,
+    builder: &mut TokenStreamBuilder<'db>,
+    item_attrs: Vec<ast::Attribute<'db>>,
     item_start_offset: TextOffset,
     ctx: &AllocationContext,
-) -> AttrExpansionFound {
+) -> AttrExpansionFound<'db> {
     // This function parses attributes of the item,
     // checking if those attributes correspond to a procedural macro that should be fired.
     // The proc macro attribute found is removed from attributes list,
@@ -517,14 +516,18 @@ fn parse_attrs(
         // We ensure that this flag is changed *after* the expansion is found.
         if last {
             let structured_attr = attr.clone().structurize(db);
-            let found = defined_attributes.contains(&structured_attr.id.into());
+            let found = defined_attributes.contains(&structured_attr.id.to_string());
             if found {
                 if expansion.is_none() {
                     let mut args_builder = TokenStreamBuilder::new(db);
                     args_builder.add_node(attr.arguments(db).as_syntax_node());
                     let args = args_builder.build(ctx);
                     expansion = Some(AttrExpansionArgs {
-                        name: attr.attr(db).as_syntax_node().get_text_without_trivia(db),
+                        name: attr
+                            .attr(db)
+                            .as_syntax_node()
+                            .get_text_without_trivia(db)
+                            .to_string(),
                         args,
                         call_site: CallSiteLocation::new(&attr, db),
                         attribute_location: ExpandableAttrLocation::new(
@@ -552,11 +555,11 @@ fn parse_attrs(
 /// Handle `#[derive(...)]` attribute.
 ///
 /// Returns a list of expansions that this plugin should apply.
-fn parse_derive(
-    db: &dyn SyntaxGroup,
+fn parse_derive<'db>(
+    db: &'db dyn SyntaxGroup,
     defined_derives: &[String],
-    item_ast: ast::ModuleItem,
-) -> Vec<(String, CallSiteLocation)> {
+    item_ast: ast::ModuleItem<'db>,
+) -> Vec<(String, CallSiteLocation<'db>)> {
     let attrs = match item_ast {
         ast::ModuleItem::Struct(struct_ast) => {
             Some(struct_ast.query_attr(db, DERIVE_ATTR).collect_vec())
@@ -595,13 +598,13 @@ fn parse_derive(
         .collect()
 }
 
-fn expand_derives(
-    db: &AnalysisDatabase,
+fn expand_derives<'db>(
+    db: &'db AnalysisDatabase,
     expansion_context: ProcMacroScope,
     defined_derives: &[String],
-    item_ast: ast::ModuleItem,
+    item_ast: ast::ModuleItem<'db>,
     stream_metadata: TokenStreamMetadata,
-) -> Option<PluginResult> {
+) -> Option<PluginResult<'db>> {
     let mut token_stream_builder = TokenStreamBuilder::new(db);
     token_stream_builder.add_node(item_ast.as_syntax_node());
     token_stream_builder.with_metadata(stream_metadata.clone());
@@ -668,14 +671,14 @@ fn expand_derives(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn expand_attribute(
-    db: &AnalysisDatabase,
+fn expand_attribute<'db>(
+    db: &'db AnalysisDatabase,
     expansion_context: ProcMacroScope,
     last: bool,
     token_stream: AdaptedTokenStream,
-    original_node: SyntaxNode,
-    input: AttrExpansionArgs,
-) -> AttributePluginResult {
+    original_node: SyntaxNode<'db>,
+    input: AttrExpansionArgs<'db>,
+) -> AttributePluginResult<'db> {
     // region: Modified scarb code
     let result = get_attribute_expansion(
         db,
@@ -773,21 +776,21 @@ fn calculate_metadata(
 }
 
 #[derive(Default)]
-pub struct AttributePluginResult {
-    diagnostics: Vec<PluginDiagnostic>,
+pub struct AttributePluginResult<'db> {
+    diagnostics: Vec<PluginDiagnostic<'db>>,
     remove_original_item: bool,
     code: Option<PluginGeneratedFile>,
 }
 
-impl AttributePluginResult {
+impl<'db> AttributePluginResult<'db> {
     pub fn new() -> Self {
         Self::default()
     }
 
     pub fn with_diagnostics(
         mut self,
-        db: &dyn SyntaxGroup,
-        call_site_stable_ptr: SyntaxStablePtrId,
+        db: &'db dyn SyntaxGroup,
+        call_site_stable_ptr: SyntaxStablePtrId<'db>,
         diagnostics: Vec<AdaptedDiagnostic>,
     ) -> Self {
         let diagnostics = diagnostics.into_iter().map(Into::into).collect();
@@ -795,7 +798,7 @@ impl AttributePluginResult {
         self
     }
 
-    pub fn with_plugin_diagnostics(mut self, diagnostics: Vec<PluginDiagnostic>) -> Self {
+    pub fn with_plugin_diagnostics(mut self, diagnostics: Vec<PluginDiagnostic<'db>>) -> Self {
         self.diagnostics = diagnostics;
         self
     }
@@ -811,8 +814,8 @@ impl AttributePluginResult {
     }
 }
 
-impl From<AttributePluginResult> for PluginResult {
-    fn from(value: AttributePluginResult) -> Self {
+impl<'db> From<AttributePluginResult<'db>> for PluginResult<'db> {
+    fn from(value: AttributePluginResult<'db>) -> Self {
         PluginResult {
             diagnostics: value.diagnostics,
             remove_original_item: value.remove_original_item,
@@ -822,30 +825,30 @@ impl From<AttributePluginResult> for PluginResult {
 }
 
 pub struct AttributeGeneratedFile {
-    name: SmolStr,
+    name: String,
     content: String,
     code_mappings: Vec<CodeMapping>,
     diagnostics_note: Option<String>,
 }
 
 impl AttributeGeneratedFile {
-    pub fn new(name: impl ToSmolStr) -> Self {
+    pub fn new(name: impl ToString) -> Self {
         Self {
-            name: name.to_smolstr(),
+            name: name.to_string(),
             content: Default::default(),
             code_mappings: Default::default(),
             diagnostics_note: Default::default(),
         }
     }
 
-    pub fn from_patch_builder(name: impl ToSmolStr, item_builder: PatchBuilder<'_>) -> Self {
+    pub fn from_patch_builder(name: impl ToString, item_builder: PatchBuilder<'_>) -> Self {
         let (expanded, mut code_mappings) = item_builder.build();
         // PatchBuilder::build() adds additional mapping at the end,
         // which wraps the whole outputted code.
         // We remove it, so we can properly translate locations spanning multiple token spans.
         code_mappings.pop();
         Self {
-            name: name.to_smolstr(),
+            name: name.to_string(),
             content: expanded,
             code_mappings,
             diagnostics_note: Default::default(),

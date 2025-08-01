@@ -7,10 +7,8 @@ use std::time::{Duration, SystemTime};
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
 use crossbeam::channel::Sender;
 use lsp_types::Url;
 use serde::Serialize;
@@ -162,34 +160,19 @@ impl AnalysisDatabaseSwapper {
 
     /// Copies current default macro plugins into new db.
     fn migrate_default_plugins(&self, new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
-        new_db.set_default_macro_plugins(
-            old_db
-                .default_macro_plugins()
-                .iter()
-                .map(|&id| new_db.intern_macro_plugin(old_db.lookup_intern_macro_plugin(id)))
-                .collect(),
+        new_db.set_default_macro_plugins_input(
+            old_db.default_macro_plugins().iter().map(|&id| id.long(old_db).clone()).collect(),
         );
 
-        new_db.set_default_analyzer_plugins(
-            old_db
-                .default_analyzer_plugins()
-                .iter()
-                .map(|&id| new_db.intern_analyzer_plugin(old_db.lookup_intern_analyzer_plugin(id)))
-                .collect(),
+        new_db.set_default_analyzer_plugins_input(
+            old_db.default_analyzer_plugins().iter().map(|&id| id.long(old_db).clone()).collect(),
         );
 
-        new_db.set_default_inline_macro_plugins(Arc::new(
+        new_db.set_default_inline_macro_plugins_input(Arc::new(
             old_db
                 .default_inline_macro_plugins()
                 .iter()
-                .map(|(name, &id)| {
-                    (
-                        name.clone(),
-                        new_db.intern_inline_macro_plugin(
-                            old_db.lookup_intern_inline_macro_plugin(id),
-                        ),
-                    )
-                })
+                .map(|(name, &id)| (name.clone(), id.long(old_db).clone()))
                 .collect(),
         ));
     }
@@ -213,7 +196,7 @@ impl AnalysisDatabaseSwapper {
         open_files: &HashSet<Url>,
     ) {
         let overrides = old_db.file_overrides();
-        let mut new_overrides: OrderedHashMap<FileId, Arc<str>> = Default::default();
+        let mut new_overrides: OrderedHashMap<_, _> = Default::default();
         for uri in open_files {
             let Some(file_id) = old_db.file_for_url(uri) else {
                 // This branch is hit for open files that have never been seen by the old db.
@@ -221,12 +204,12 @@ impl AnalysisDatabaseSwapper {
                 // here.
                 continue;
             };
-            let new_file_id = file_id.lookup_intern(old_db).intern(new_db);
+            let file_input = file_id.long(old_db).into_file_input(old_db);
             if let Some(content) = overrides.get(&file_id) {
-                new_overrides.insert(new_file_id, content.clone());
+                new_overrides.insert(file_input, content.long(old_db).clone());
             }
         }
-        new_db.set_file_overrides(Arc::new(new_overrides));
+        new_db.set_file_overrides_input(Arc::new(new_overrides));
     }
 }
 

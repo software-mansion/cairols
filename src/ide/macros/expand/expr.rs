@@ -16,13 +16,13 @@ use super::inlining::{FileWithOrigin, inline_files, span_after_inlining};
 use crate::lang::db::AnalysisDatabase;
 
 /// Expands inline macros for this file.
-pub fn expand_inline_macros_to_file(
-    db: &AnalysisDatabase,
-    crate_id: CrateId,
-    file_to_process: FileId,
+pub fn expand_inline_macros_to_file<'db>(
+    db: &'db AnalysisDatabase,
+    crate_id: CrateId<'db>,
+    file_to_process: FileId<'db>,
     expand_in: TextSpan,
     metadata: &MacroPluginMetadata<'_>,
-) -> Option<FileId> {
+) -> Option<FileId<'db>> {
     let mut files = vec![];
     let plugins = db.crate_inline_macro_plugins(crate_id);
 
@@ -49,7 +49,7 @@ pub fn expand_inline_macros_to_file(
 
     for inline_macro in inline_macros {
         let macro_name = inline_macro.path(db).as_syntax_node().get_text_without_trivia(db);
-        let &plugin_id = plugins.get(&macro_name)?;
+        let &plugin_id = plugins.get(&macro_name.to_string())?;
 
         let plugin = db.lookup_intern_inline_macro_plugin(plugin_id);
         let generated = plugin.generate_code(db, &inline_macro, metadata).code?; // None here means macro failed.

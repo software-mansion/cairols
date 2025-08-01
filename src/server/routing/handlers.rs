@@ -7,7 +7,8 @@
 
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
-use cairo_lang_filesystem::db::{FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
+use cairo_lang_filesystem::db::{FilesGroup, FilesGroupEx};
+use cairo_lang_filesystem::override_file_content;
 use lsp_types::notification::{
     DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
     DidOpenTextDocument, DidSaveTextDocument, Notification,
@@ -27,7 +28,6 @@ use lsp_types::{
     RenameFilesParams, RenameParams, SemanticTokensParams, SemanticTokensResult,
     TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
-use salsa::ParallelDatabase;
 use serde_json::Value;
 use tracing::error;
 
@@ -184,11 +184,11 @@ impl SyncNotificationHandler for DidChangeTextDocument {
         };
 
         if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
-            state.db.override_file_content(file, Some(text.into()));
+            override_file_content!(state.db, file, Some(text.into()));
         };
 
         state.code_lens_controller.on_did_change(
-            state.db.snapshot(),
+            state.db.clone(),
             state.config.clone(),
             is_cairo_file_path(&params.text_document.uri)
                 .then(|| FileChange { url: params.text_document.uri.clone(), was_deleted: false })
@@ -222,7 +222,7 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
         // Invalidate changed cairo files.
         for change in &params.changes {
             if is_cairo_file_path(&change.uri) {
-                let Some(file) = state.db.file_for_url(&change.uri) else { continue };
+                let Some(_file) = state.db.file_for_url(&change.uri) else { continue };
                 // Invalidating the `priv_raw_file_content` query to be
                 // recomputed, works similar to manually triggering a low-durability synthetic
                 // write (this is what
@@ -231,7 +231,9 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
                 // We opt for this approach instead of using
                 // [`crate::lang::db::AnalysisDatabase::cancel_all`] because it is
                 // more descriptive and precise in targeting what we aim to achieve here.
-                PrivRawFileContentQuery.in_db_mut(&mut state.db).invalidate(&file);
+
+                // TODO(#869)
+                // PrivRawFileContentQuery.in_db_mut(&mut state.db).invalidate(&file);
             }
         }
 
@@ -250,7 +252,7 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
         }
 
         state.code_lens_controller.on_did_change(
-            state.db.snapshot(),
+            state.db.clone(),
             state.config.clone(),
             params.changes.iter().filter(|event| is_cairo_file_path(&event.uri)).map(|event| {
                 FileChange {
@@ -279,7 +281,7 @@ impl SyncNotificationHandler for DidCloseTextDocument {
         state.open_files.remove(&params.text_document.uri);
         if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
             if state.db.file_overrides().contains_key(&file) {
-                state.db.override_file_content(file, None);
+                override_file_content!(state.db, file, None);
             }
         }
 
@@ -311,13 +313,13 @@ impl SyncNotificationHandler for DidOpenTextDocument {
         if let Some(file_id) = state.db.file_for_url(&uri) {
             state.open_files.insert(uri.clone());
             if let Some(content) = state.db.file_content(file_id)
-                && *content != *params.text_document.text.as_str()
+                && content.long(&state.db).as_ref() != params.text_document.text.as_str()
             {
-                state.db.override_file_content(file_id, Some(params.text_document.text.into()));
+                override_file_content!(state.db, file_id, Some(params.text_document.text.into()));
             }
 
             state.code_lens_controller.on_did_change(
-                state.db.snapshot(),
+                state.db.clone(),
                 state.config.clone(),
                 is_cairo_file_path(&uri)
                     .then_some(FileChange { url: uri, was_deleted: false })
@@ -342,8 +344,9 @@ impl SyncNotificationHandler for DidSaveTextDocument {
         params: DidSaveTextDocumentParams,
     ) -> LSPResult<()> {
         if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
-            PrivRawFileContentQuery.in_db_mut(&mut state.db).invalidate(&file);
-            state.db.override_file_content(file, None);
+            // TODO(#869)
+            // PrivRawFileContentQuery.in_db_mut(&mut state.db).invalidate(&file);
+            override_file_content!(state.db, file, None);
         }
 
         Ok(())
@@ -423,7 +426,7 @@ impl BackgroundDocumentRequestHandler for ProvideVirtualFile {
             .db
             .file_for_url(&params.uri)
             .and_then(|file_id| snapshot.db.file_content(file_id))
-            .map(|content| content.to_string());
+            .map(|content| content.long(&snapshot.db).to_string());
 
         Ok(ProvideVirtualFileResponse { content })
     }

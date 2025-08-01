@@ -39,23 +39,23 @@ use crate::toolchain::scarb::ScarbToolchain;
 /// When collecting diagnostics using [`FilesDiagnostics::collect`], all virtual files related
 /// to the given `file` will also be visited and their diagnostics collected.
 #[derive(Clone, PartialEq, Eq)]
-pub struct FilesDiagnostics {
-    pub root_on_disk_file: (Url, FileId),
-    pub parser: Diagnostics<ParserDiagnostic>,
-    pub semantic: Diagnostics<SemanticDiagnostic>,
-    pub lowering: Diagnostics<LoweringDiagnostic>,
-    pub files_notes: PluginFileDiagnosticNotes,
+pub struct FilesDiagnostics<'db> {
+    pub root_on_disk_file: (Url, FileId<'db>),
+    pub parser: Diagnostics<'db, ParserDiagnostic<'db>>,
+    pub semantic: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    pub lowering: Diagnostics<'db, LoweringDiagnostic<'db>>,
+    pub files_notes: PluginFileDiagnosticNotes<'db>,
 }
 
-impl FilesDiagnostics {
+impl<'db> FilesDiagnostics<'db> {
     /// Collects all diagnostics kinds by processing an on disk `root_on_disk_file` together with
     /// virtual files that are its descendants.
     pub fn collect(
-        db: &AnalysisDatabase,
+        db: &'db AnalysisDatabase,
         config: &Config,
         config_registry: &ConfigsRegistry,
         scarb_toolchain: &ScarbToolchain,
-        root_on_disk_file: FileId,
+        root_on_disk_file: FileId<'db>,
     ) -> Option<Self> {
         let mut files_notes = OrderedHashMap::default();
         let root_on_disk_file_url = db.url_for_file(root_on_disk_file)?;
@@ -141,9 +141,9 @@ impl FilesDiagnostics {
     /// any of the virtual files originating from the processed file.
     pub fn to_lsp(
         &self,
-        db: &AnalysisDatabase,
+        db: &'db AnalysisDatabase,
         trace_macro_diagnostics: bool,
-    ) -> (Url, HashMap<(Url, FileId), Vec<Diagnostic>>) {
+    ) -> (Url, HashMap<(Url, FileId<'db>), Vec<Diagnostic>>) {
         let mut diagnostics = HashMap::new();
         map_cairo_diagnostics_to_lsp(
             db as &dyn FilesGroup,

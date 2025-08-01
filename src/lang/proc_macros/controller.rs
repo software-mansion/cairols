@@ -6,12 +6,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow};
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::CrateLongId;
-use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::smol_str::ToSmolStr;
 use crossbeam::channel::{Receiver, Sender};
 use governor::clock::QuantaClock;
 use governor::state::{InMemoryState, NotKeyed};
@@ -65,7 +62,7 @@ const RESTART_RATE_LIMITER_RETRIES: u32 = 5;
 pub struct ProcMacroClientController {
     scarb: ScarbToolchain,
     notifier: Notifier,
-    crate_plugin_suites: OrderedHashMap<CrateLongId, PluginSuite>,
+    crate_plugin_suites: OrderedHashMap<CrateInput, PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     channels: ProcMacroChannels,
     proc_macro_server_tracker: ProcMacroServerTracker,
@@ -160,9 +157,8 @@ impl ProcMacroClientController {
     /// This ensures that a fresh proc-macro-server is used.
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn force_restart(&mut self, db: &mut AnalysisDatabase, config: &Config) {
-        for (crate_id, plugins) in mem::take(&mut self.crate_plugin_suites) {
-            let interned_plugins = db.intern_plugin_suite(plugins);
-            db.remove_crate_plugin_suite(db.intern_crate(crate_id), &interned_plugins);
+        for (crate_input, plugins) in mem::take(&mut self.crate_plugin_suites) {
+            db.remove_crate_plugin_suite(crate_input, plugins);
         }
 
         self.try_initialize(db, config);
@@ -203,20 +199,17 @@ impl ProcMacroClientController {
                         // `CompilationUnitComponent` are identical to those from `scarb-metadata`,
                         // so the `CrateLondId`s constructed here are identical to those built in
                         // `project::crate_data::Crate::apply`.
-                        let crate_name = component.name.to_smolstr();
-                        let crate_long_id = CrateLongId::Real {
-                            name: crate_name,
-                            discriminator: component.discriminator.map(Into::into),
+                        let crate_input = CrateInput::Real {
+                            name: component.name,
+                            discriminator: component.discriminator,
                         };
 
-                        (crate_long_id, suite)
+                        (crate_input, suite)
                     })
                     .collect();
 
-                for (crate_long_id, plugin_suite) in self.crate_plugin_suites.iter() {
-                    let crate_id = db.intern_crate(crate_long_id.clone());
-                    let interned_plugin_suite = db.intern_plugin_suite(plugin_suite.clone());
-                    db.add_crate_plugin_suite(crate_id, interned_plugin_suite);
+                for (crate_input, plugin_suite) in self.crate_plugin_suites.iter() {
+                    db.add_crate_plugin_suite(crate_input.clone(), plugin_suite.clone());
                 }
 
                 self.set_proc_macro_server_status(db, ServerStatus::Ready(client));
@@ -235,14 +228,13 @@ impl ProcMacroClientController {
         }
     }
 
-    pub fn proc_macro_plugin_suite_for_crate(&self, id: &CrateLongId) -> Option<&PluginSuite> {
+    pub fn proc_macro_plugin_suite_for_crate(&self, id: &CrateInput) -> Option<&PluginSuite> {
         self.crate_plugin_suites.get(id)
     }
 
     fn remove_current_plugins_from_db(&self, db: &mut AnalysisDatabase) {
-        for (crate_id, suite) in self.crate_plugin_suites.iter() {
-            let interned_suite = db.intern_plugin_suite(suite.clone());
-            db.remove_crate_plugin_suite(db.intern_crate(crate_id.clone()), &interned_suite);
+        for (crate_input, suite) in self.crate_plugin_suites.iter() {
+            db.remove_crate_plugin_suite(crate_input.clone(), suite.clone());
         }
     }
 
