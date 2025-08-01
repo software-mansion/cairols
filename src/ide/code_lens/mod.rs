@@ -1,11 +1,10 @@
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
-use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::sync::{Arc, RwLock};
-
 use crate::config::Config;
-use crate::ide::code_lens::executables::{ExecutableCodeLens, push_executable_code_lenses};
-use crate::ide::code_lens::tests::{TestCodeLens, push_test_code_lenses};
+use crate::ide::code_lens::executables::{
+    ExecutableCodeLens, ExecutableCodeLensConstructionParams, ExecutableCodeLensProvider,
+};
+use crate::ide::code_lens::tests::{
+    TestCodeLens, TestCodeLensConstructionParams, TestCodeLensProvider,
+};
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::server::client::{Notifier, Requester};
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
@@ -25,11 +24,26 @@ use lsp_types::request::CodeLensRefresh;
 use lsp_types::{CodeLens, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::{Number, Value};
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::sync::{Arc, RwLock};
+use std::vec;
 
 mod executables;
 mod tests;
 
-trait LSCodeLensInterface {
+trait CodeLensBuilder {
+    fn build_lens(self, index: usize) -> LSCodeLens;
+}
+
+trait CodeLensProvider {
+    type ConstructionParams<'a>;
+    type LensBuilder: CodeLensBuilder;
+    fn create_lens(params: Self::ConstructionParams<'_>) -> Vec<Self::LensBuilder>;
+}
+
+trait CodeLensInterface {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()>;
     fn get_lens(&self) -> CodeLens;
 }
@@ -40,8 +54,8 @@ pub enum LSCodeLens {
     Executable(ExecutableCodeLens),
 }
 
-impl LSCodeLens {
-    pub fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
+impl CodeLensInterface for LSCodeLens {
+    fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
         match self {
             LSCodeLens::Test(test_code_lens) => test_code_lens.execute(file_url, state, notifier),
             LSCodeLens::Executable(executable_code_lens) => {
@@ -49,7 +63,7 @@ impl LSCodeLens {
             }
         }
     }
-    pub fn get_lens(&self) -> CodeLens {
+    fn get_lens(&self) -> CodeLens {
         match self {
             LSCodeLens::Test(test) => test.get_lens(),
             LSCodeLens::Executable(executable) => executable.get_lens(),
@@ -297,12 +311,25 @@ pub enum CodeLensKind {
 }
 
 fn calculate_code_lens(url: Url, db: &AnalysisDatabase, config: &Config) -> Option<FileCodeLens> {
-    let mut result = vec![];
+    let mut result: FileCodeLens = vec![];
+    let test_lens_builders = TestCodeLensProvider::create_lens(TestCodeLensConstructionParams {
+        db,
+        url: url.clone(),
+        config: config.clone(),
+    });
+    let executable_lens_builders =
+        ExecutableCodeLensProvider::create_lens(ExecutableCodeLensConstructionParams { url, db });
 
-    push_test_code_lenses(&mut result, url.clone(), db, config);
-    push_executable_code_lenses(&mut result, url, db);
+    push_lens_builders(&mut result, test_lens_builders);
+    push_lens_builders(&mut result, executable_lens_builders);
 
     Some(result)
+}
+
+fn push_lens_builders<T: CodeLensBuilder>(lens: &mut FileCodeLens, lens_builders: Vec<T>) {
+    for lens_builder in lens_builders {
+        lens.push(lens_builder.build_lens(lens.len()));
+    }
 }
 
 fn make_lens_args(file_url: Url, lens_index: usize) -> Vec<Value> {
@@ -324,7 +351,7 @@ struct AnnotatedNode {
     pub attribute_ptr: SyntaxStablePtrId,
 }
 /// Collects functions with given attributes on them
-/// Returns tuples of (full path, pointer to found attribute)
+/// Returns struct with full path and a pointer to found attribute
 fn collect_functions_with_attrs(
     db: &AnalysisDatabase,
     module: ModuleId,

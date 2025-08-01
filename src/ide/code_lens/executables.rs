@@ -1,6 +1,6 @@
 use crate::ide::code_lens::{
-    AnnotatedNode, FileCodeLens, LSCodeLens, LSCodeLensInterface, collect_functions_with_attrs,
-    get_original_node_and_file, make_lens_args,
+    AnnotatedNode, CodeLensBuilder, CodeLensInterface, CodeLensProvider, LSCodeLens,
+    collect_functions_with_attrs, get_original_node_and_file, make_lens_args,
 };
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
@@ -20,11 +20,50 @@ use lsp_types::{CodeLens, Command, Position, Range, Url};
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct ExecutableCodeLens {
-    pub lens: CodeLens,
+    lens: CodeLens,
     command: String,
 }
 
-impl LSCodeLensInterface for ExecutableCodeLens {
+pub struct ExecutableCodeLensConstructionParams<'a> {
+    pub db: &'a AnalysisDatabase,
+    pub url: Url,
+}
+
+pub struct ExecutableCodeLensProvider;
+impl CodeLensProvider for ExecutableCodeLensProvider {
+    type ConstructionParams<'a> = ExecutableCodeLensConstructionParams<'a>;
+    type LensBuilder = ExecutableLensBuilder;
+
+    fn create_lens(params: Self::ConstructionParams<'_>) -> Vec<Self::LensBuilder> {
+        get_executable_code_lenses_builders(params.url, params.db).unwrap_or_default()
+    }
+}
+
+pub struct ExecutableLensBuilder {
+    position: Position,
+    file_url: Url,
+    command: String,
+}
+
+impl CodeLensBuilder for ExecutableLensBuilder {
+    fn build_lens(self, index: usize) -> LSCodeLens {
+        let range = Range::new(self.position, self.position);
+        LSCodeLens::Executable(ExecutableCodeLens {
+            lens: CodeLens {
+                range,
+                command: Some(Command {
+                    title: String::from("▶ Execute function"),
+                    command: "cairo.executeCodeLens".to_string(),
+                    arguments: Some(make_lens_args(self.file_url.clone(), index)),
+                }),
+                data: None,
+            },
+            command: self.command,
+        })
+    }
+}
+
+impl CodeLensInterface for ExecutableCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
         let file_path = file_url.to_file_path().ok()?;
         notifier.notify::<ExecuteInTerminal>(ExecuteInTerminalParams {
@@ -39,11 +78,11 @@ impl LSCodeLensInterface for ExecutableCodeLens {
     }
 }
 
-pub fn push_executable_code_lenses(
-    file_code_lens: &mut FileCodeLens,
+pub fn get_executable_code_lenses_builders(
     url: Url,
     db: &AnalysisDatabase,
-) -> Option<()> {
+) -> Option<Vec<ExecutableLensBuilder>> {
+    let mut file_code_lenses_builders = vec![];
     let file = db.file_for_url(&url)?;
     let main_module = *db.file_modules(file).ok()?.first()?;
 
@@ -62,55 +101,37 @@ pub fn push_executable_code_lenses(
         return None;
     }
 
-    push_executable_lenses(file_code_lens, db, main_module, url);
-    Some(())
+    get_executable_lenses_builders_in_mod(&mut file_code_lenses_builders, db, main_module, url);
+    Some(file_code_lenses_builders)
 }
 
-fn push_executable_lenses(
-    file_code_lens: &mut FileCodeLens,
+fn get_executable_lenses_builders_in_mod(
+    file_code_lenses_builders: &mut Vec<ExecutableLensBuilder>,
     db: &AnalysisDatabase,
     module: ModuleId,
     file_url: Url,
 ) {
     for AnnotatedNode { full_path, attribute_ptr } in collect_executable_functions(db, module) {
         if let Some(position) = get_executable_lens_position(db, attribute_ptr) {
-            insert_executable_code_lens_pair(file_code_lens, &file_url, &full_path, position);
+            file_code_lenses_builders.push(ExecutableLensBuilder {
+                position,
+                file_url: file_url.clone(),
+                command: format!("scarb execute --executable-function {full_path}"),
+            });
         }
     }
 
     let Ok(modules) = db.module_submodules_ids(module) else { return };
     for submodule in modules.iter().copied() {
         if db.is_submodule_inline(submodule) {
-            push_executable_lenses(
-                file_code_lens,
+            get_executable_lenses_builders_in_mod(
+                file_code_lenses_builders,
                 db,
                 ModuleId::Submodule(submodule),
                 file_url.clone(),
             );
         }
     }
-}
-
-fn insert_executable_code_lens_pair(
-    file_state: &mut FileCodeLens,
-    file_url: &Url,
-    function_full_path: &String,
-    position: Position,
-) {
-    let range = Range::new(position, position);
-    let exec_fn = LSCodeLens::Executable(ExecutableCodeLens {
-        lens: CodeLens {
-            range,
-            command: Some(Command {
-                title: String::from("▶ Execute function"),
-                command: "cairo.executeCodeLens".to_string(),
-                arguments: Some(make_lens_args(file_url.clone(), file_state.len())),
-            }),
-            data: None,
-        },
-        command: format!("scarb execute --executable-function {function_full_path}"),
-    });
-    file_state.push(exec_fn);
 }
 
 fn collect_executable_functions(db: &AnalysisDatabase, module: ModuleId) -> Vec<AnnotatedNode> {
