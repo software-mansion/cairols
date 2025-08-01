@@ -176,7 +176,7 @@ impl ProjectController {
         // Drop mut ref so we can obtain snapshot.
         let _ = db;
 
-        // Manifest may changed, update for open files
+        // Manifest may have changed, update for open files
         state.code_lens_controller.on_did_change(
             state.db.snapshot(),
             state.config.clone(),

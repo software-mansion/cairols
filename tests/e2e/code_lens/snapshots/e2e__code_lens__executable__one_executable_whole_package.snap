@@ -1,0 +1,13 @@
+---
+source: tests/e2e/code_lens/executable.rs
+expression: "test_code_lens_scarb_execute((r#\"\n        #[executable]<caret>\n        fn main(){\n            // Do stuff\n        }\n        \"#,\nindoc!(r#\"\n            [package]\n            name = \"indor\"\n            version = \"0.1.0\"\n            edition = \"2024_07\"\n\n            [dependencies]\n            cairo_execute = \"2.9.0\"\n\n            [executable]\n            \"#)))"
+---
+[[lenses]]
+line = 0
+command = "▶ Execute function"
+file_path = "src/lib.cairo"
+index = 0
+
+[execute_in_terminal]
+command = "scarb execute --executable-function indor::main"
+cwd = "./"
