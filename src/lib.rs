@@ -342,8 +342,8 @@ impl Backend {
 
                     let mut meta_state = scheduler.meta_state
                                 .lock()
-                                .expect("should be able to acquire the MetaState");
-                    meta_state.analysis_status = Some(analysis_status.clone());
+                                .expect(META_STATE_NOT_ACQUIRED_MSG);
+                    meta_state.analysis_status = Some(analysis_status);
 
                     match analysis_status {
                         AnalysisStatus::Started => {
@@ -427,16 +427,12 @@ impl Backend {
         meta_state: MetaState,
         _notifier: Notifier,
     ) {
-        meta_state
-            .lock()
-            .expect("should be able to acquire the MetaState")
-            .db_swapper
-            .register_mutation();
+        meta_state.lock().expect(META_STATE_NOT_ACQUIRED_MSG).db_swapper.register_mutation();
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
     fn maybe_swap_database(state: &mut State, meta_state: MetaState, _notifier: Notifier) {
-        meta_state.lock().expect("should be able to acquire the MetaState").db_swapper.maybe_swap(
+        meta_state.lock().expect(META_STATE_NOT_ACQUIRED_MSG).db_swapper.maybe_swap(
             &mut state.db,
             &state.open_files,
             &mut state.project_controller,
@@ -464,3 +460,4 @@ impl Backend {
         Ok(())
     }
 }
+const META_STATE_NOT_ACQUIRED_MSG: &str = "should be able to acquire the MetaState";

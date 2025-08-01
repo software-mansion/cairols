@@ -1,5 +1,6 @@
 use self::encoder::{EncodedToken, TokenEncoder};
 pub use self::token_kind::SemanticTokenKind;
+use crate::META_STATE_NOT_ACQUIRED_MSG;
 use crate::ide::analysis_progress::AnalysisStatus;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
@@ -22,12 +23,11 @@ pub fn semantic_highlight_full(
     db: &AnalysisDatabase,
     meta_state: MetaState,
 ) -> Option<SemanticTokensResult> {
-    let locked_state = meta_state.lock().expect("Not able to acquire meta state");
-    let analysis_finished = locked_state
-        .analysis_status
-        .clone()
-        .is_some_and(|status| status == AnalysisStatus::Finished);
+    let locked_state = meta_state.lock().expect(META_STATE_NOT_ACQUIRED_MSG);
+    let analysis_finished =
+        locked_state.analysis_status.is_some_and(|status| status == AnalysisStatus::Finished);
 
+    // Release, so no panickable action is performed while keeping the state locked.
     drop(locked_state);
 
     if !analysis_finished {
