@@ -17,10 +17,11 @@ use cairo_lang_syntax::node::{
 use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::LookupIntern;
-use lsp_types::Command;
-use lsp_types::Position;
 use lsp_types::Range;
+use lsp_types::notification::ShowMessage;
 use lsp_types::{CodeLens, Url};
+use lsp_types::{Command, ShowMessageParams};
+use lsp_types::{MessageType, Position};
 use serde_json::Number;
 use serde_json::Value;
 
@@ -33,6 +34,7 @@ use crate::lang::db::LsSyntaxGroup;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::lsp::ToCairo;
 use crate::lang::lsp::ToLsp;
+use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::ext::ExecuteInTerminal;
 use crate::lsp::ext::ExecuteInTerminalParams;
 use crate::server::client::Notifier;
@@ -94,10 +96,18 @@ impl CodeLensProvider for TestCodeLensProvider {
             &state.config.run_test_command,
         )?;
 
-        notifier.notify::<ExecuteInTerminal>(ExecuteInTerminalParams {
-            cwd: state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?,
-            command,
-        });
+        let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
+        if state.client_capabilities.execute_in_terminal_support() {
+            notifier.notify::<ExecuteInTerminal>(ExecuteInTerminalParams { cwd, command });
+        } else {
+            notifier.notify::<ShowMessage>(ShowMessageParams {
+                typ: MessageType::INFO,
+                message: format!(
+                    "To execute the code lens, run command: `{command}` in directory {}",
+                    cwd.display()
+                ),
+            });
+        }
 
         Some(())
     }

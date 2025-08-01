@@ -1,4 +1,5 @@
 use lsp_types::{ClientCapabilities, ResourceOperationKind};
+use serde::Deserialize;
 
 macro_rules! try_or_default {
     ($expr:expr) => {
@@ -62,6 +63,9 @@ pub trait ClientCapabilitiesExt {
 
     /// The client supports dynamic registration for inlay hint provider capabilities.
     fn text_document_inlay_hints_dynamic_registration(&self) -> bool;
+
+    /// The client supports [`crate::lsp::ext::ExecuteInTerminal`] requests.
+    fn execute_in_terminal_support(&self) -> bool;
 }
 
 impl ClientCapabilitiesExt for ClientCapabilities {
@@ -149,4 +153,31 @@ impl ClientCapabilitiesExt for ClientCapabilities {
     fn text_document_inlay_hints_dynamic_registration(&self) -> bool {
         try_or_default!(self.text_document.as_ref()?.inlay_hint.as_ref()?.dynamic_registration?)
     }
+
+    fn execute_in_terminal_support(&self) -> bool {
+        try_or_default!(
+            serde_json::from_value::<ExperimentalCapabilities>(self.experimental.clone()?)
+                .ok()?
+                .cairo?
+                .execute_in_terminal
+                .is_some()
+        )
+    }
 }
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExperimentalCapabilities {
+    #[serde(default)]
+    cairo: Option<CairoMethods>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CairoMethods {
+    #[serde(default)]
+    execute_in_terminal: Option<ExecuteInTerminalCapabilities>,
+}
+
+#[derive(Deserialize)]
+struct ExecuteInTerminalCapabilities {}
