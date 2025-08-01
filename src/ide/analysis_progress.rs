@@ -29,6 +29,10 @@ impl ProcMacroServerTracker {
         Self { procmacro_request_counter: Arc::new(AtomicU64::new(0)), events_sender }
     }
 
+    pub fn events_sender(&self) -> Sender<AnalysisEvent> {
+        self.events_sender.clone()
+    }
+
     /// Signals that a request to proc macro server was made.
     pub fn register_procmacro_request(&self) {
         self.procmacro_request_counter.fetch_add(1, Ordering::SeqCst);
@@ -103,7 +107,7 @@ pub enum AnalysisStatus {
     Finished,
 }
 
-enum AnalysisEvent {
+pub enum AnalysisEvent {
     ConfigLoad {
         /// Loaded asynchronously from config
         enable_proc_macros: bool,
@@ -119,6 +123,7 @@ enum AnalysisEvent {
         all_request_count: u64,
     },
     PMSStatusChange(ProcMacroServerStatus),
+    DatabaseSwap,
 }
 
 struct AnalysisProgressThread {
@@ -189,7 +194,7 @@ impl AnalysisProgressThread {
 
                     all_prev_requests_count = request_count;
                 }
-                AnalysisEvent::Mutation => {
+                AnalysisEvent::Mutation | AnalysisEvent::DatabaseSwap => {
                     if !analysis_in_progress {
                         self.notifier.notify::<ServerStatus>(ServerStatusParams {
                             event: ServerStatusEvent::AnalysisStarted,
