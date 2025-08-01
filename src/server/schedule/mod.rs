@@ -5,6 +5,8 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69  |
 // +---------------------------------------------------+
 
+use std::sync::{Arc, Mutex};
+
 use anyhow::Result;
 
 use self::task::BackgroundTaskBuilder;
@@ -12,7 +14,7 @@ use self::thread::{JoinHandle, ThreadPriority};
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::ClientSender;
 use crate::server::schedule::task::BackgroundFnBuilder;
-use crate::state::{MetaState, State};
+use crate::state::{MetaState, MetaStateInner, State};
 
 mod task;
 pub mod thread;
@@ -54,13 +56,18 @@ pub struct Scheduler<'s> {
 
 impl<'s> Scheduler<'s> {
     pub fn new(state: &'s mut State, sender: ClientSender) -> Self {
+        let analysis_event_sender =
+            state.analysis_progress_controller.server_tracker().events_sender();
+
+        let meta_state = Arc::new(Mutex::new(MetaStateInner::new(analysis_event_sender)));
+
         Self {
             state,
             client: Client::new(sender),
             background_pool: thread::Pool::new(usize::MAX, "worker"),
             fmt_pool: thread::Pool::new(1, "fmt"),
             sync_mut_task_hooks: Default::default(),
-            meta_state: Default::default(),
+            meta_state,
         }
     }
 

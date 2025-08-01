@@ -11,11 +11,13 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
+use crossbeam::channel::Sender;
 use lsp_types::Url;
 use serde::Serialize;
 use tracing::{error, trace, warn};
 
 use crate::env_config;
+use crate::ide::analysis_progress::AnalysisEvent;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
@@ -62,20 +64,20 @@ pub struct AnalysisDatabaseSwapper {
     mutations_since_last_replace: u64,
     db_replace_min_interval: Duration,
     db_replace_min_mutations: u64,
+    analysis_event_sender: Sender<AnalysisEvent>,
 }
 
-impl Default for AnalysisDatabaseSwapper {
-    fn default() -> Self {
+impl AnalysisDatabaseSwapper {
+    pub fn new(analysis_event_sender: Sender<AnalysisEvent>) -> Self {
         Self {
             stopwatch: Stopwatch::default(),
             mutations_since_last_replace: 0,
             db_replace_min_interval: env_config::db_replace_interval(),
             db_replace_min_mutations: env_config::db_replace_mutations(),
+            analysis_event_sender,
         }
     }
-}
 
-impl AnalysisDatabaseSwapper {
     pub fn register_mutation(&mut self) {
         self.mutations_since_last_replace += 1;
     }
@@ -103,7 +105,12 @@ impl AnalysisDatabaseSwapper {
     ) -> Option<SwapReason> {
         let reason = self.check_for_swap()?;
 
+        if let Err(err) = self.analysis_event_sender.send(AnalysisEvent::DatabaseSwap) {
+            error!("Could not send swap status: {err:?}");
+        };
+
         self.swap(db, open_files, project_controller, proc_macro_client_controller);
+
         self.mutations_since_last_replace = 0;
         self.stopwatch.reset();
 

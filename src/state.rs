@@ -4,11 +4,12 @@ use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use crossbeam::channel::Sender;
 use lsp_types::{ClientCapabilities, Url};
 use salsa::ParallelDatabase;
 
 use crate::config::Config;
-use crate::ide::analysis_progress::AnalysisProgressController;
+use crate::ide::analysis_progress::{AnalysisEvent, AnalysisProgressController};
 use crate::ide::code_lens::CodeLensController;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
@@ -84,13 +85,19 @@ impl State {
     }
 }
 
-#[derive(Default)]
 pub struct MetaStateInner {
     /// Database swapper.
     /// # Safety
     /// Swapper does not communicate with other critical modules and do not access the state.
     /// Using it also does not affect the analysis. Thus, it's safe to place it here and access via interior mutability.
     pub db_swapper: AnalysisDatabaseSwapper,
+}
+
+impl MetaStateInner {
+    pub fn new(analysis_event_sender: Sender<AnalysisEvent>) -> Self {
+        let db_swapper = AnalysisDatabaseSwapper::new(analysis_event_sender);
+        Self { db_swapper }
+    }
 }
 
 /// State keeps information about LS state (swapper, analysis state or other internal info)
