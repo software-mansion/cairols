@@ -1,8 +1,6 @@
-use std::ops::Not;
-
 use super::{
-    AnnotatedNode, FileCodeLens, LSCodeLens, LSCodeLensInterface, collect_functions_with_attrs,
-    get_original_node_and_file, make_lens_args,
+    AnnotatedNode, CodeLensBuilder, CodeLensInterface, CodeLensProvider, LSCodeLens,
+    collect_functions_with_attrs, get_original_node_and_file, make_lens_args,
 };
 use crate::config::{Config, TestRunner};
 use crate::lang::db::AnalysisDatabase;
@@ -10,6 +8,7 @@ use crate::lang::db::LsSemanticGroup;
 use crate::lang::db::LsSyntaxGroup;
 use crate::lang::lsp::ToCairo;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
+use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::ext::ExecuteInTerminal;
 use crate::lsp::ext::ExecuteInTerminalParams;
 use crate::server::client::Notifier;
@@ -33,31 +32,16 @@ use lsp_types::Range;
 use lsp_types::notification::ShowMessage;
 use lsp_types::{CodeLens, Url};
 use lsp_types::{Command, ShowMessageParams};
-use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use lsp_types::{MessageType, Position};
-use serde_json::Number;
-use serde_json::Value;
-use super::CodeLensProvider;
-use crate::config::Config;
-use crate::config::TestRunner;
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::db::LsSemanticGroup;
-use crate::lang::db::LsSyntaxGroup;
-use crate::lang::lsp::LsProtoGroup;
-use crate::lang::lsp::ToCairo;
-use crate::lang::lsp::ToLsp;
-use crate::lsp::ext::ExecuteInTerminal;
-use crate::lsp::ext::ExecuteInTerminalParams;
-use crate::server::client::Notifier;
-use crate::state::State;
 
+use std::ops::Not;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct TestCodeLens {
-    pub lens: CodeLens,
+    lens: CodeLens,
 }
 
-impl LSCodeLensInterface for TestCodeLens {
+impl CodeLensInterface for TestCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
         let db = &state.db;
 
@@ -98,12 +82,60 @@ impl LSCodeLensInterface for TestCodeLens {
     }
 }
 
-pub fn push_test_code_lenses(
-    file_code_lens: &mut FileCodeLens,
+pub struct TestCodeLensBuilder {
+    title: String,
+    range: Range,
+    file_url: Url,
+}
+
+impl TestCodeLensBuilder {
+    fn new(position: Position, file_url: Url, is_plural: bool) -> Self {
+        let mut title = "▶ Run test".to_string();
+
+        if is_plural {
+            title.push('s');
+        }
+
+        Self { title, file_url, range: Range::new(position, position) }
+    }
+}
+
+impl CodeLensBuilder for TestCodeLensBuilder {
+    fn build_lens(self, index: usize) -> LSCodeLens {
+        let command = Command {
+            title: self.title,
+            command: "cairo.executeCodeLens".to_string(),
+            arguments: Some(make_lens_args(self.file_url.clone(), index)),
+        };
+
+        LSCodeLens::Test(TestCodeLens {
+            lens: CodeLens { range: self.range, command: Some(command), data: None },
+        })
+    }
+}
+
+pub struct TestCodeLensProvider;
+impl CodeLensProvider for TestCodeLensProvider {
+    type ConstructionParams<'a> = TestCodeLensConstructionParams<'a>;
+    type LensBuilder = TestCodeLensBuilder;
+
+    fn create_lens(params: Self::ConstructionParams<'_>) -> Vec<Self::LensBuilder> {
+        get_test_code_lenses_builders(params.url, params.db, &params.config).unwrap_or_default()
+    }
+}
+
+pub struct TestCodeLensConstructionParams<'a> {
+    pub url: Url,
+    pub db: &'a AnalysisDatabase,
+    pub config: Config,
+}
+
+pub fn get_test_code_lenses_builders(
     url: Url,
     db: &AnalysisDatabase,
     config: &Config,
-) -> Option<()> {
+) -> Option<Vec<TestCodeLensBuilder>> {
+    let mut file_code_lens = vec![];
     let file = db.file_for_url(&url)?;
 
     let main_module = *db.file_modules(file).ok()?.first()?;
@@ -118,10 +150,10 @@ pub fn push_test_code_lenses(
         .is_some();
 
     if is_runner_available {
-        collect_test_lenses(db, main_module, url, file_code_lens);
+        collect_test_lenses(&mut file_code_lens, db, main_module, url);
     }
 
-    Some(())
+    Some(file_code_lens)
 }
 
 enum TestFullQualifiedPath {
@@ -228,17 +260,16 @@ fn collect_test_functions(db: &AnalysisDatabase, module: ModuleId) -> Vec<Annota
 }
 
 fn collect_tests<'db>(
+    file_code_lens: &mut Vec<TestCodeLensBuilder>,
     db: &'db AnalysisDatabase,
     module: ModuleId<'db>,
     file_url: Url,
-    file_state: &mut FileCodeLens,
 ) {
     for node in collect_test_functions(db, module) {
-        let index = file_state.len();
         maybe_push_code_lens(
             db,
-            file_state,
-            |position| make_test_code_lens(&file_url, position, false, index),
+            file_code_lens,
+            |position| TestCodeLensBuilder::new(position, file_url.clone(), false),
             node,
         );
     }
@@ -249,12 +280,17 @@ fn collect_tests<'db>(
         let is_inline = db.is_submodule_inline(submodule);
 
         let has_tests = if is_inline {
-            let tests_count = file_state.len();
+            let tests_count = file_code_lens.len();
 
-            collect_test_lenses(db, ModuleId::Submodule(submodule), file_url.clone(), file_state);
+            collect_test_lenses(
+                file_code_lens,
+                db,
+                ModuleId::Submodule(submodule),
+                file_url.clone(),
+            );
 
             // Append mod only if it contains tests.
-            tests_count != file_state.len()
+            tests_count != file_code_lens.len()
         } else {
             has_any_test(db, ModuleId::Submodule(submodule))
         };
@@ -264,11 +300,10 @@ fn collect_tests<'db>(
 
             let full_path = submodule.full_path(db);
             let module_node = AnnotatedNode { full_path: full_path.clone(), attribute_ptr: ptr };
-            let index = file_state.len();
             maybe_push_code_lens(
                 db,
-                file_state,
-                |position| make_test_code_lens(&file_url, position, true, index),
+                file_code_lens,
+                |position| TestCodeLensBuilder::new(position, file_url.clone(), true),
                 module_node,
             );
         }
@@ -301,36 +336,14 @@ fn get_test_lens_position<'db>(db: &'db AnalysisDatabase, ptr: SyntaxStablePtrId
 
 fn maybe_push_code_lens(
     db: &AnalysisDatabase,
-    file_state: &mut FileCodeLens,
-    make_code_lens: impl FnOnce(Position) -> CodeLens,
+    file_state: &mut Vec<TestCodeLensBuilder>,
+    make_code_lens: impl FnOnce(Position) -> TestCodeLensBuilder,
     annotated_function: AnnotatedNode,
 ) {
     let AnnotatedNode { attribute_ptr, full_path: _ } = annotated_function;
     if let Some(position) = get_test_lens_position(db, attribute_ptr) {
-        let lens = make_code_lens(position);
+        let lens_builder = make_code_lens(position);
 
-        file_state.push(LSCodeLens::Test(TestCodeLens { lens }))
+        file_state.push(lens_builder)
     }
-}
-
-fn make_test_code_lens(
-    file_url: &Url,
-    position: Position,
-    is_plural: bool,
-    index: usize,
-) -> CodeLens {
-    let mut title = "▶ Run test".to_string();
-
-    if is_plural {
-        title.push('s');
-    }
-
-    let command = Command {
-        title,
-        command: "cairo.executeCodeLens".to_string(),
-        arguments: Some(make_lens_args(file_url.clone(), index)),
-    };
-    let range = Range::new(position, position);
-
-    CodeLens { range, command: Some(command), data: None }
 }
