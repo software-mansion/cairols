@@ -63,7 +63,7 @@ lsp-server = "0.7.8"
 lsp-types = "=0.95.1"
 memchr = "2.7.5"
 salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
-scarb-metadata = "1.15.0"
+scarb-metadata = "1.15.1"
 scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb.git", rev = "a7b5dce2aea8ee404c51057c0180de721950f961" }
 scarb-stable-hash = "1"
 semver = "1"
