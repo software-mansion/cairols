@@ -1,5 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_defs::ids::{NamedLanguageElementId, TraitId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::LookupIntern;
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use lsp_types::{CompletionItem, CompletionItemKind};
 
 use super::helpers::completion_kind::{
@@ -141,29 +141,12 @@ pub fn path_prefix_completions(
                 })
             })
             .collect(),
-        ResolvedConcreteItem::Trait(item) | ResolvedConcreteItem::SelfTrait(item) => db
-            .trait_functions(item.trait_id(db))
-            .unwrap_or_default()
-            .iter()
-            .map(|(name, _)| CompletionItem {
-                label: name.to_string(),
-                kind: Some(CompletionItemKind::FUNCTION),
-                ..CompletionItem::default()
-            })
-            .collect(),
+        ResolvedConcreteItem::Trait(item) | ResolvedConcreteItem::SelfTrait(item) => {
+            trait_items_completions(db, item.trait_id(db))
+        }
         ResolvedConcreteItem::Impl(item) => item
             .concrete_trait(db)
-            .map(|trait_id| {
-                db.trait_functions(trait_id.trait_id(db))
-                    .unwrap_or_default()
-                    .iter()
-                    .map(|(name, _)| CompletionItem {
-                        label: name.to_string(),
-                        kind: Some(CompletionItemKind::FUNCTION),
-                        ..CompletionItem::default()
-                    })
-                    .collect()
-            })
+            .map(|trait_id| trait_items_completions(db, trait_id.trait_id(db)))
             .unwrap_or_default(),
         ResolvedConcreteItem::Type(ty) => match ty.lookup_intern(db) {
             TypeLongId::Concrete(ConcreteTypeId::Enum(enum_id)) => db
@@ -180,4 +163,38 @@ pub fn path_prefix_completions(
         },
         _ => vec![],
     })
+}
+
+fn trait_items_completions(db: &AnalysisDatabase, trait_id: TraitId) -> Vec<CompletionItem> {
+    chain!(
+        db.trait_types(trait_id).unwrap_or_default().into_iter().map(|(name, _)| {
+            CompletionItem {
+                label: name.to_string(),
+                kind: Some(CompletionItemKind::TYPE_PARAMETER),
+                ..CompletionItem::default()
+            }
+        }),
+        db.trait_functions(trait_id).unwrap_or_default().into_iter().map(|(name, _)| {
+            CompletionItem {
+                label: name.to_string(),
+                kind: Some(CompletionItemKind::FUNCTION),
+                ..CompletionItem::default()
+            }
+        },),
+        db.trait_constants(trait_id).unwrap_or_default().into_iter().map(|(name, _)| {
+            CompletionItem {
+                label: name.to_string(),
+                kind: Some(CompletionItemKind::CONSTANT),
+                ..CompletionItem::default()
+            }
+        },),
+        db.trait_impls(trait_id).unwrap_or_default().into_iter().map(|(name, _)| {
+            CompletionItem {
+                label: name.to_string(),
+                kind: Some(CompletionItemKind::CLASS),
+                ..CompletionItem::default()
+            }
+        }),
+    )
+    .collect()
 }
