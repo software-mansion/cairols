@@ -260,6 +260,7 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
                 ..it
             }
         }),
+        experimental: Some(json!({ "cairo": { "executeInTerminal": {} } })),
         ..base
     }
 }
