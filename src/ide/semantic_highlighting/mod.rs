@@ -4,13 +4,16 @@ use crate::META_STATE_NOT_ACQUIRED_MSG;
 use crate::ide::analysis_progress::AnalysisStatus;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
+use crate::lsp::result::{LSPError, LSPResult};
 use crate::state::MetaState;
+use anyhow::anyhow;
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use lsp_server::ErrorCode;
 use lsp_types::{SemanticToken, SemanticTokens, SemanticTokensParams, SemanticTokensResult};
 use tracing::{error, trace};
 
@@ -22,7 +25,7 @@ pub fn semantic_highlight_full(
     params: SemanticTokensParams,
     db: &AnalysisDatabase,
     meta_state: MetaState,
-) -> Option<SemanticTokensResult> {
+) -> LSPResult<Option<SemanticTokensResult>> {
     let locked_state = meta_state.lock().expect(META_STATE_NOT_ACQUIRED_MSG);
     let analysis_finished =
         locked_state.analysis_status.is_some_and(|status| status == AnalysisStatus::Finished);
@@ -32,18 +35,21 @@ pub fn semantic_highlight_full(
 
     if !analysis_finished {
         trace!("semantic highlighting not able to run because analysis is still in progress");
-        return None;
+        return Err(LSPError {
+            code: ErrorCode::ServerCancelled,
+            error: anyhow!("Analysis still in progress"),
+        });
     }
     let file_uri = params.text_document.uri;
-    let file = db.file_for_url(&file_uri)?;
+    let Some(file) = db.file_for_url(&file_uri) else { return Ok(None) };
     let Ok(node) = db.file_syntax(file) else {
         error!("semantic analysis failed: file '{file_uri}' does not exist");
-        return None;
+        return Ok(None);
     };
 
     let mut data: Vec<SemanticToken> = Vec::new();
     SemanticTokensTraverser::default().find_semantic_tokens(db, &mut data, node);
-    Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data }))
+    Ok(Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data })))
 }
 
 #[derive(Default)]

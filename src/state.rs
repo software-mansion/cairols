@@ -9,7 +9,7 @@ use lsp_types::{ClientCapabilities, Url};
 use salsa::ParallelDatabase;
 
 use crate::config::Config;
-use crate::ide::analysis_progress::{AnalysisProgressController, AnalysisStatus, AnalysisEvent};
+use crate::ide::analysis_progress::{AnalysisEvent, AnalysisProgressController, AnalysisStatus};
 use crate::ide::code_lens::CodeLensController;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
@@ -98,7 +98,7 @@ pub struct MetaStateInner {
 impl MetaStateInner {
     pub fn new(analysis_event_sender: Sender<AnalysisEvent>) -> Self {
         let db_swapper = AnalysisDatabaseSwapper::new(analysis_event_sender);
-        Self { db_swapper }
+        Self { db_swapper, analysis_status: None }
     }
 }
 
