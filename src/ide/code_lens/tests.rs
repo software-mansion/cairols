@@ -1,16 +1,3 @@
-use super::CodeLensProvider;
-use crate::config::Config;
-use crate::config::TestRunner;
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::db::LsSemanticGroup;
-use crate::lang::db::LsSyntaxGroup;
-use crate::lang::lsp::LsProtoGroup;
-use crate::lang::lsp::ToCairo;
-use crate::lang::lsp::ToLsp;
-use crate::lsp::ext::ExecuteInTerminal;
-use crate::lsp::ext::ExecuteInTerminalParams;
-use crate::server::client::Notifier;
-use crate::state::State;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::FreeFunctionLongId;
 use cairo_lang_defs::ids::ModuleFileId;
@@ -28,13 +15,29 @@ use cairo_lang_syntax::node::{
 use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::LookupIntern;
-use lsp_types::Command;
-use lsp_types::Position;
 use lsp_types::Range;
+use lsp_types::notification::ShowMessage;
 use lsp_types::{CodeLens, Url};
+use lsp_types::{Command, ShowMessageParams};
+use lsp_types::{MessageType, Position};
 use serde_json::Number;
 use serde_json::Value;
 use std::ops::Not;
+
+use super::CodeLensProvider;
+use crate::config::Config;
+use crate::config::TestRunner;
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::db::LsSemanticGroup;
+use crate::lang::db::LsSyntaxGroup;
+use crate::lang::lsp::LsProtoGroup;
+use crate::lang::lsp::ToCairo;
+use crate::lang::lsp::ToLsp;
+use crate::lsp::capabilities::client::ClientCapabilitiesExt;
+use crate::lsp::ext::ExecuteInTerminal;
+use crate::lsp::ext::ExecuteInTerminalParams;
+use crate::server::client::Notifier;
+use crate::state::State;
 
 pub struct TestCodeLensProvider;
 
@@ -92,10 +95,18 @@ impl CodeLensProvider for TestCodeLensProvider {
             &state.config.run_test_command,
         )?;
 
-        notifier.notify::<ExecuteInTerminal>(ExecuteInTerminalParams {
-            cwd: state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?,
-            command,
-        });
+        let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
+        if state.client_capabilities.execute_in_terminal_support() {
+            notifier.notify::<ExecuteInTerminal>(ExecuteInTerminalParams { cwd, command });
+        } else {
+            notifier.notify::<ShowMessage>(ShowMessageParams {
+                typ: MessageType::INFO,
+                message: format!(
+                    "To execute the code lens, run command: `{command}` in directory {}",
+                    cwd.display()
+                ),
+            });
+        }
 
         Some(())
     }
