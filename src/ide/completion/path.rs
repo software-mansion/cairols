@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -9,7 +11,7 @@ use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
-use lsp_types::{CompletionItem, CompletionItemKind};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use super::helpers::completion_kind::{
     importable_completion_kind, resolved_generic_item_completion_kind,
@@ -57,7 +59,7 @@ pub fn path_suffix_completions(
         typed_text.pop().expect("typed path should not be empty")
     };
 
-    importables
+    let mut completions: Vec<CompletionItem> = importables
         .iter()
         .filter_map(|(importable, path_str)| {
             let mut path_segments: Vec<_> = path_str.split("::").collect();
@@ -98,12 +100,33 @@ pub fn path_suffix_completions(
             Some(CompletionItem {
                 label: last_segment.to_string(),
                 kind: Some(importable_completion_kind(*importable)),
+                label_details: Some(CompletionItemLabelDetails {
+                    detail: None,
+                    description: Some(path_str.to_string()),
+                }),
                 additional_text_edits,
                 ..CompletionItem::default()
             })
         })
         .unique_by(|completion| CompletionItemHashable(completion.clone()))
-        .collect()
+        .collect();
+
+    // Remove path label_details from all completions, that are NOT duplicated.
+    let completions_vec: Vec<_> = completions.clone();
+    let duplicate_labels: HashSet<_> = completions_vec
+        .iter()
+        .map(|item| &item.label)
+        .filter(|label| completions_vec.iter().filter(|item| &item.label == *label).count() > 1)
+        .cloned()
+        .collect();
+
+    for completion in &mut completions {
+        if !duplicate_labels.contains(&completion.label) {
+            completion.label_details = None;
+        }
+    }
+
+    completions
 }
 
 /// Treats provided path as prefix, proposing elements that should go next.
