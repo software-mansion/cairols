@@ -67,19 +67,20 @@ pub fn fill_trait_members(
     let specified_generics = concrete_trait_id.generic_args(db);
     let substitution = GenericSubstitution::new(&trait_generics, &specified_generics);
 
-    // Iterators borrowing SubstitutionRewriter mutably need an intermediate collection.
     let code = chain!(
         trait_types.values().map(|id| format!("type {} = ();", id.name(db))),
-        trait_constants
-            .values()
-            .filter_map(|&id| constant_code(db, id, &substitution, &importables))
-            .collect_vec()
-            .into_iter(),
-        trait_functions
-            .values()
-            .filter_map(|&id| function_code(db, id, &substitution, &importables))
-            .collect_vec()
-            .into_iter()
+        trait_constants.values().filter_map(|&id| constant_code(
+            db,
+            id,
+            &substitution,
+            &importables
+        )),
+        trait_functions.values().filter_map(|&id| function_code(
+            db,
+            id,
+            &substitution,
+            &importables
+        ))
     )
     .join("\n\n");
 
