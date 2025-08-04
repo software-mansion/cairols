@@ -9,7 +9,6 @@ use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
-use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
 mod child_nodes;
@@ -20,11 +19,11 @@ pub mod regular;
 mod types;
 
 // <https://github.com/software-mansion/scarb/blob/741336e8abdcc2e13f852b65c5ce37ae2dd83a5a/scarb/src/compiler/plugin/proc_macro/v2/host/conversion.rs#L37-L123>
-pub fn into_cairo_diagnostics(
-    db: &dyn SyntaxGroup,
+pub fn into_cairo_diagnostics<'db>(
+    db: &'db dyn SyntaxGroup,
     diagnostics: Vec<DiagnosticV2>,
-    call_site_stable_ptr: SyntaxStablePtrId,
-) -> Vec<PluginDiagnostic> {
+    call_site_stable_ptr: SyntaxStablePtrId<'db>,
+) -> Vec<PluginDiagnostic<'db>> {
     let root_stable_ptr = get_root_ptr(db, call_site_stable_ptr);
     let root_syntax_node = root_stable_ptr.lookup(db);
     diagnostics
@@ -57,24 +56,27 @@ pub fn into_cairo_diagnostics(
         .collect_vec()
 }
 
-fn get_root_ptr(db: &dyn SyntaxGroup, stable_ptr: SyntaxStablePtrId) -> SyntaxStablePtrId {
+fn get_root_ptr<'db>(
+    db: &'db dyn SyntaxGroup,
+    stable_ptr: SyntaxStablePtrId<'db>,
+) -> SyntaxStablePtrId<'db> {
     let mut current_ptr = stable_ptr;
 
     while let SyntaxStablePtr::Child { parent: parent_ptr, kind: _, key_fields: _, index: _ } =
-        current_ptr.lookup_intern(db)
+        current_ptr.long(db)
     {
-        current_ptr = parent_ptr;
+        current_ptr = *parent_ptr;
     }
     current_ptr
 }
 
 /// Finds the most specific node that fully encompasses the given text span.
 /// Returns `None` if unable to find such node.
-pub fn find_encompassing_node(
-    root_syntax_node: &SyntaxNode,
-    db: &dyn SyntaxGroup,
+pub fn find_encompassing_node<'db>(
+    root_syntax_node: &SyntaxNode<'db>,
+    db: &'db dyn SyntaxGroup,
     span: &TextSpanV2,
-) -> Option<SyntaxNode> {
+) -> Option<SyntaxNode<'db>> {
     let start_offset =
         CairoTextOffset::default().add_width(CairoTextWidth::new_for_testing(span.start));
     let end_offset =

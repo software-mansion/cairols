@@ -130,10 +130,10 @@ pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec
     )
 }
 
-fn var_type_inlay_hint(
-    db: &AnalysisDatabase,
-    file: FileId,
-    node: SyntaxNode,
+fn var_type_inlay_hint<'db>(
+    db: &'db AnalysisDatabase,
+    file: FileId<'db>,
+    node: SyntaxNode<'db>,
     type_string: String,
     tooltip: String,
 ) -> Option<InlayHint> {

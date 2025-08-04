@@ -9,7 +9,7 @@ use crate::state::StateSnapshot;
 
 /// Format a whole document.
 pub fn format(params: DocumentFormattingParams, state: StateSnapshot) -> Option<Vec<TextEdit>> {
-    let db = &*state.db;
+    let db = &state.db;
     let file_uri = params.text_document.uri;
     let file = db.file_for_url(&file_uri)?;
 

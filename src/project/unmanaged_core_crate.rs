@@ -1,12 +1,12 @@
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 use std::{fs, path};
 
 use anyhow::Context;
 use cairo_lang_filesystem::db::{
-    CORELIB_CRATE_NAME, CORELIB_VERSION, FilesGroup, FilesGroupEx, init_dev_corelib,
+    CORELIB_CRATE_NAME, CORELIB_VERSION, FilesGroup, init_dev_corelib,
 };
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use indoc::indoc;
 use semver::Version;
 use tempfile::tempdir;
@@ -31,12 +31,12 @@ pub fn try_to_init_unmanaged_core_if_not_present(
         // Initialize with default config.
         init_dev_corelib(db, path);
 
-        let core_id = CrateId::core(db);
+        let core_id = CrateLongId::core().into_crate_input(db);
 
         // Override the config with the correct version.
-        let mut core_settings = db.crate_config(core_id).unwrap();
-        core_settings.settings.version = Some(version);
-        db.set_crate_config(core_id, Some(core_settings));
+        let mut crate_configs = Arc::unwrap_or_clone(db.crate_configs_input());
+
+        crate_configs.get_mut(&core_id).unwrap().settings.version = Some(version);
     } else {
         warn!("failed to find unmanaged core crate")
     }

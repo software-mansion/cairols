@@ -6,17 +6,17 @@ use cairo_lang_semantic::{
         imp::{ImplId, ImplLongId},
     },
 };
-use cairo_lang_utils::{LookupIntern, ordered_hash_map::OrderedHashMap};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
 use crate::lang::db::AnalysisDatabase;
 
-pub fn format_type(
-    db: &AnalysisDatabase,
-    ty: TypeId,
-    importables: &OrderedHashMap<ImportableId, String>,
+pub fn format_type<'db>(
+    db: &'db AnalysisDatabase,
+    ty: TypeId<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> String {
-    match ty.lookup_intern(db) {
+    match ty.long(db) {
         TypeLongId::Concrete(concrete_type) => {
             let importable = match concrete_type.generic_type(db) {
                 GenericTypeId::Enum(enum_id) => ImportableId::Enum(enum_id),
@@ -45,18 +45,18 @@ pub fn format_type(
             }
         }
         TypeLongId::Tuple(types) => {
-            format!("({})", types.into_iter().map(|ty| format_type(db, ty, importables)).join(", "))
+            format!("({})", types.iter().map(|ty| format_type(db, *ty, importables)).join(", "))
         }
         TypeLongId::Snapshot(ty) => {
-            format!("@{}", format_type(db, ty, importables))
+            format!("@{}", format_type(db, *ty, importables))
         }
         TypeLongId::FixedSizeArray { type_id, size } => {
-            format!("[{}; {}]", format_type(db, type_id, importables), size.format(db))
+            format!("[{}; {}]", format_type(db, *type_id, importables), size.format(db))
         }
         TypeLongId::Closure(closure) => {
             format!(
                 "fn ({}) -> {}",
-                closure.param_tys.into_iter().map(|ty| format_type(db, ty, importables)).join(", "),
+                closure.param_tys.iter().map(|ty| format_type(db, *ty, importables)).join(", "),
                 format_type(db, closure.ret_ty, importables)
             )
         }
@@ -65,17 +65,17 @@ pub fn format_type(
     }
 }
 
-pub enum InferredValue {
-    Type(TypeId),
-    Constant(ConstValueId),
-    Impl(ImplId),
+pub enum InferredValue<'db> {
+    Type(TypeId<'db>),
+    Constant(ConstValueId<'db>),
+    Impl(ImplId<'db>),
 }
 
-impl InferredValue {
+impl<'db> InferredValue<'db> {
     pub fn format(
         &self,
-        db: &AnalysisDatabase,
-        importables: &OrderedHashMap<ImportableId, String>,
+        db: &'db AnalysisDatabase,
+        importables: &OrderedHashMap<ImportableId<'db>, String>,
     ) -> String {
         match *self {
             InferredValue::Type(ty) => format_type(db, ty, importables),
@@ -84,7 +84,7 @@ impl InferredValue {
         }
     }
 
-    pub fn try_from_generic_arg_id(generic: GenericArgumentId) -> Option<Self> {
+    pub fn try_from_generic_arg_id(generic: GenericArgumentId<'db>) -> Option<Self> {
         match generic {
             GenericArgumentId::Type(ty) => Some(InferredValue::Type(ty)),
             GenericArgumentId::Constant(const_id) => Some(InferredValue::Constant(const_id)),
@@ -94,9 +94,9 @@ impl InferredValue {
     }
 }
 
-fn format_impl(db: &AnalysisDatabase, impl_id: ImplId) -> String {
+fn format_impl<'db>(db: &'db AnalysisDatabase, impl_id: ImplId<'db>) -> String {
     // Translate unresolved impl to `<?>` instead of printing its salsa ID.
-    if matches!(impl_id.lookup_intern(db), ImplLongId::ImplVar(_)) {
+    if matches!(impl_id.long(db), ImplLongId::ImplVar(_)) {
         "<?>".to_string()
     } else {
         impl_id.format(db)

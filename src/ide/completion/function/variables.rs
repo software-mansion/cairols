@@ -7,7 +7,6 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::ast::{PathSegment, StatementLet};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
-use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
@@ -17,9 +16,9 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
 
-pub fn variables_completions(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
+pub fn variables_completions<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
 ) -> Vec<CompletionItem> {
     if let Some(path) = expr_selector(db, &ctx.node)
         && dot_expr_rhs(db, &ctx.node).is_none()
@@ -29,16 +28,16 @@ pub fn variables_completions(
         && let Some(function_id) = lookup_item_id.function_with_body()
         && let Ok(body) = db.function_body(function_id)
     {
-        patterns(&body, db, ctx, &segment.ident(db).token(db).text(db))
+        patterns(&body, db, ctx, segment.ident(db).token(db).text(db))
     } else {
         Default::default()
     }
 }
 
-fn patterns(
-    body: &FunctionBody,
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
+fn patterns<'db>(
+    body: &FunctionBody<'db>,
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
     typed_text: &str,
 ) -> Vec<CompletionItem> {
     let cursor = ctx.node.offset(db);
@@ -50,7 +49,7 @@ fn patterns(
             let pattern_node = var.stable_ptr.0.lookup(db);
 
             // Skip vars from macros.
-            if !matches!(var.stable_ptr.0.file_id(db).lookup_intern(db), FileLongId::OnDisk(_)) {
+            if !matches!(var.stable_ptr.0.file_id(db).long(db), FileLongId::OnDisk(_)) {
                 continue;
             }
 
@@ -99,12 +98,12 @@ fn patterns(
                 _ => continue,
             }
 
-            if !text_matches(&var.name, typed_text) {
+            if !text_matches(&*var.name, typed_text) {
                 continue;
             }
 
             completions.push(CompletionItem {
-                label: var.name.clone().into(),
+                label: var.name.to_string(),
                 kind: Some(CompletionItemKind::VARIABLE),
                 ..CompletionItem::default()
             });

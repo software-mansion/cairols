@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::CrateLongId;
+use cairo_lang_filesystem::ids::CrateInput;
 
 pub use self::configs_registry::{ConfigsRegistry, PackageConfig};
 use crate::lang::db::AnalysisDatabase;
@@ -21,9 +21,9 @@ pub struct ProjectModel {
     // therefore, their contents should be kept synchronised.
     // We keep both of them for efficiency and ease of use.
     /// Mapping from a workspace root to crates contained in the dependency graph of that workspace.
-    loaded_workspaces: HashMap<WorkspaceRoot, HashMap<CrateLongId, Crate>>,
+    loaded_workspaces: HashMap<WorkspaceRoot, HashMap<CrateInput, Crate>>,
     /// Mapping from a crate to roots of workspaces that contained this crate in their dependency graphs.
-    loaded_crates: HashMap<CrateLongId, HashSet<WorkspaceRoot>>,
+    loaded_crates: HashMap<CrateInput, HashSet<WorkspaceRoot>>,
     /// Used to determine when we can skip calling `scarb metadata` to update a project model.
     manifests_of_members_from_loaded_workspaces: Owned<HashSet<ManifestPath>>,
     configs_registry: Owned<ConfigsRegistry>,
@@ -70,7 +70,7 @@ impl ProjectModel {
     ) {
         if self.remove_crates_from_db_on_next_update {
             self.remove_crates_from_db_on_next_update = false;
-            db.set_crate_configs(Default::default());
+            db.set_crate_configs_input(Default::default());
         }
 
         let workspace_crates = workspace_crates
@@ -83,7 +83,7 @@ impl ProjectModel {
 
                 self.configs_registry.insert(cr_info.manifest_path, cr_info.package_config);
 
-                (cr_info.cr.long_id(), cr_info.cr)
+                (cr_info.cr.input(), cr_info.cr)
             })
             .collect();
 
@@ -143,19 +143,19 @@ impl ProjectModel {
                 ..same_crates.into_iter().next().expect("same_crates cannot be empty").clone()
             };
 
-            let cr_long_id = cr.long_id();
+            let cr_input = cr.input();
 
             let proc_macro_plugin_suite =
-                proc_macro_controller.proc_macro_plugin_suite_for_crate(&cr_long_id);
+                proc_macro_controller.proc_macro_plugin_suite_for_crate(&cr_input);
 
             cr.apply(db, proc_macro_plugin_suite.cloned());
         }
     }
 
     fn remove_crates(
-        loaded_crates: &mut HashMap<CrateLongId, HashSet<PathBuf>>,
+        loaded_crates: &mut HashMap<CrateInput, HashSet<PathBuf>>,
         workspace_dir: &Path,
-        old_crates: &HashMap<CrateLongId, Crate>,
+        old_crates: &HashMap<CrateInput, Crate>,
     ) {
         for old_cr in old_crates.keys() {
             loaded_crates.entry(old_cr.clone()).and_modify(|paths| {
@@ -166,7 +166,7 @@ impl ProjectModel {
         loaded_crates.retain(|_, paths| !paths.is_empty());
     }
 
-    fn add_crates(&mut self, workspace_crates: HashMap<CrateLongId, Crate>, workspace_dir: &Path) {
+    fn add_crates(&mut self, workspace_crates: HashMap<CrateInput, Crate>, workspace_dir: &Path) {
         for cr in workspace_crates.keys() {
             self.loaded_crates.entry(cr.clone()).or_default().insert(workspace_dir.to_path_buf());
         }

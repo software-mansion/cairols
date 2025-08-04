@@ -1,21 +1,20 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_filesystem::{db::FilesGroup, ids::StrId};
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 #[derive(Clone, Default)]
-pub struct SearchScope {
+pub struct SearchScope<'db> {
     /// A collection of all files constituting this search scope, with optional text spans to
     /// narrow down searching ranges.
-    entries: HashMap<FileId, Option<TextSpan>>,
+    entries: HashMap<FileId<'db>, Option<TextSpan>>,
 }
 
-impl SearchScope {
+impl<'db> SearchScope<'db> {
     /// Builds a new empty search scope.
     pub fn empty() -> Self {
         Self::default()
@@ -23,7 +22,7 @@ impl SearchScope {
 
     /// Builds a search scope spanning an entire set of analysed crates.
     #[tracing::instrument(skip_all)]
-    pub fn everything(db: &AnalysisDatabase) -> Self {
+    pub fn everything(db: &'db AnalysisDatabase) -> Self {
         let mut this = Self::empty();
         for crate_id in db.crates() {
             for &module_id in db.crate_modules(crate_id).iter() {
@@ -40,17 +39,17 @@ impl SearchScope {
     }
 
     /// Builds a search scope spanning an entire single file.
-    pub fn file(file: FileId) -> Self {
+    pub fn file(file: FileId<'db>) -> Self {
         Self { entries: [(file, None)].into() }
     }
 
     /// Builds a search scope spanning a slice of a single file.
-    pub fn file_span(file: FileId, span: TextSpan) -> Self {
+    pub fn file_span(file: FileId<'db>, span: TextSpan) -> Self {
         Self { entries: [(file, Some(span))].into() }
     }
 
     /// Builds a search scope spanning an entire single file and files generated from it.
-    pub fn file_with_subfiles(db: &AnalysisDatabase, file: FileId) -> Self {
+    pub fn file_with_subfiles(db: &'db AnalysisDatabase, file: FileId<'db>) -> Self {
         let mut this = Self { entries: [(file, None)].into() };
 
         if let Some((files, _)) = db.file_and_subfiles_with_corresponding_modules(file) {
@@ -61,15 +60,15 @@ impl SearchScope {
     }
 
     /// Builds a search scope spanning slices of files.
-    pub fn files_spans(files: HashMap<FileId, Option<TextSpan>>) -> Self {
+    pub fn files_spans(files: HashMap<FileId<'db>, Option<TextSpan>>) -> Self {
         Self { entries: files }
     }
 
     /// Creates an iterator over all files, their contents and the optional search scope text spans.
-    pub fn files_contents_and_spans<'a, 'b>(
+    pub fn files_contents_and_spans<'a>(
         &'a self,
-        db: &'b AnalysisDatabase,
-    ) -> impl Iterator<Item = (FileId, Arc<str>, Option<TextSpan>)> + use<'a, 'b> {
+        db: &'db AnalysisDatabase,
+    ) -> impl Iterator<Item = (FileId<'db>, StrId<'db>, Option<TextSpan>)> + use<'a, 'db> {
         self.entries.iter().map(|(&file, &span)| (file, span)).filter_map(move |(file, span)| {
             let text = db.file_content(file)?;
             Some((file, text, span))

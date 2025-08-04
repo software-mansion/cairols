@@ -92,12 +92,12 @@ impl<'t> DowncastRefUnchecked<'t> for ProcMacroPlugin {
 
 impl MacroPlugin for ProcMacroPlugin {
     #[tracing::instrument(level = "trace", skip_all)]
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn cairo_lang_syntax::node::db::SyntaxGroup,
-        item_ast: cairo_lang_syntax::node::ast::ModuleItem,
+        db: &'db dyn cairo_lang_syntax::node::db::SyntaxGroup,
+        item_ast: cairo_lang_syntax::node::ast::ModuleItem<'db>,
         metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
-    ) -> cairo_lang_defs::plugin::PluginResult {
+    ) -> cairo_lang_defs::plugin::PluginResult<'db> {
         // Check on inner attributes too.
         let inner_attrs: HashSet<_> = match &item_ast {
             ModuleItem::Impl(imp) => {
@@ -126,7 +126,7 @@ impl MacroPlugin for ProcMacroPlugin {
         };
 
         if !self.declared_attributes().into_iter().any(|declared_attr|
-            item_ast.has_attr(db, &declared_attr) || inner_attrs.contains(&declared_attr)
+            item_ast.has_attr(db, &declared_attr) || inner_attrs.contains(declared_attr.as_str())
         )
             // Plugins can implement own derives.
             && !item_ast.has_attr(db, "derive")
@@ -181,12 +181,12 @@ impl<'t> DowncastRefUnchecked<'t> for InlineProcMacroPlugin {
 
 impl InlineMacroExprPlugin for InlineProcMacroPlugin {
     #[tracing::instrument(level = "trace", skip_all)]
-    fn generate_code(
+    fn generate_code<'db>(
         &self,
-        db: &dyn cairo_lang_syntax::node::db::SyntaxGroup,
-        item_ast: &cairo_lang_syntax::node::ast::ExprInlineMacro,
+        db: &'db dyn cairo_lang_syntax::node::db::SyntaxGroup,
+        item_ast: &cairo_lang_syntax::node::ast::ExprInlineMacro<'db>,
         _metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
-    ) -> cairo_lang_defs::plugin::InlinePluginResult {
+    ) -> cairo_lang_defs::plugin::InlinePluginResult<'db> {
         // Safety: We use this plugin only in AnalysisDatabase.
         let analysis_db = unsafe { unsafe_downcast_ref(db) };
 

@@ -3,6 +3,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_utils::Upcast;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
 use crate::ide::ty::format_type;
@@ -12,10 +13,10 @@ use crate::lang::visibility::peek_visible_in_with_edition;
 
 /// Discovers struct members missing in the constructor call and returns completions containing
 /// their names with type hints.
-pub fn struct_constructor_completions(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
-    constructor: ast::ExprStructCtorCall,
+pub fn struct_constructor_completions<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    constructor: ast::ExprStructCtorCall<'db>,
 ) -> Option<Vec<CompletionItem>> {
     let module_id = ctx.module_file_id;
     let lookup_item_id = ctx.lookup_item_id?;
@@ -39,7 +40,8 @@ pub fn struct_constructor_completions(
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor.stable_ptr(db).into()).ok()?;
 
-    let semantic_expr = db.expr_semantic(function_id, constructor_expr_id);
+    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_expr = semantic_db.expr_semantic(function_id, constructor_expr_id);
 
     let cairo_lang_semantic::Expr::StructCtor(constructor_semantic_expr) = semantic_expr else {
         return None;
@@ -61,13 +63,11 @@ pub fn struct_constructor_completions(
     let completions = struct_members
         .iter()
         .filter_map(|(name, data)| {
-            let name = name.to_string();
-
-            if already_present_members.contains(&name) {
+            if already_present_members.contains(&&**name) {
                 None
             } else {
                 Some(CompletionItem {
-                    label: name,
+                    label: name.to_string(),
                     detail: Some(format_type(db, data.ty, &importables)),
                     kind: Some(CompletionItemKind::VALUE),
                     ..Default::default()

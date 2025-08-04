@@ -40,7 +40,7 @@ pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
     Some(hover)
 }
 
-fn render_hover(db: &AnalysisDatabase, node: SyntaxNode) -> Option<String> {
+fn render_hover<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> Option<String> {
     let file_id = node.stable_ptr(db).file_id(db);
 
     let importables =

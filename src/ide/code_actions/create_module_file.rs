@@ -9,9 +9,9 @@ use lsp_types::{
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 /// Code actions for missing module file.
-pub fn create_module_file(
-    db: &AnalysisDatabase,
-    node: SyntaxNode,
+pub fn create_module_file<'db>(
+    db: &'db AnalysisDatabase,
+    node: SyntaxNode<'db>,
     mut url: Url,
 ) -> Option<CodeAction> {
     let item_module = node.ancestor_of_type::<ItemModule>(db)?;

@@ -7,16 +7,15 @@ use cairo_lang_defs::ids::{
 use cairo_lang_doc::db::DocGroup;
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::smol_str::SmolStr;
 use itertools::Itertools;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 /// Information about the definition of an item (function, trait, impl, module, etc.).
-#[derive(Eq, PartialEq, Debug)]
-pub struct ItemDef {
+#[derive(Eq, PartialEq, Debug, Clone)]
+pub struct ItemDef<'db> {
     /// The [`LookupItemId`] associated with the item.
-    lookup_item_id: LookupItemId,
+    lookup_item_id: LookupItemId<'db>,
 
     /// Parent item to use as context when building signatures, etc.
     ///
@@ -25,14 +24,14 @@ pub struct ItemDef {
     /// signature may refer to generic params defined in the defining trait/impl.
     /// This reference allows including simplified signatures of such contexts alongside
     /// the signature of this item.
-    context_items: Vec<LookupItemId>,
+    context_items: Vec<LookupItemId<'db>>,
 
-    definition_stable_ptr: SyntaxStablePtrId,
+    definition_stable_ptr: SyntaxStablePtrId<'db>,
 }
 
-impl ItemDef {
+impl<'db> ItemDef<'db> {
     /// Constructs new [`ItemDef`] instance.
-    pub(super) fn new(db: &AnalysisDatabase, definition_node: SyntaxNode) -> Option<Self> {
+    pub(super) fn new(db: &'db AnalysisDatabase, definition_node: SyntaxNode<'db>) -> Option<Self> {
         let mut lookup_item_ids =
             db.collect_lookup_items_with_parent_files(definition_node)?.into_iter();
 
@@ -61,19 +60,19 @@ impl ItemDef {
     }
 
     /// Gets the stable pointer to the syntax node which defines this symbol.
-    pub fn definition_stable_ptr(&self) -> SyntaxStablePtrId {
+    pub fn definition_stable_ptr(&self) -> SyntaxStablePtrId<'db> {
         self.definition_stable_ptr
     }
 
     /// Get item signature without its body including signatures of its contexts.
-    pub fn signature(&self, db: &AnalysisDatabase) -> String {
+    pub fn signature(&self, db: &'db AnalysisDatabase) -> String {
         let contexts = self.context_items.iter().copied().rev();
         let this = iter::once(self.lookup_item_id);
         contexts.chain(this).filter_map(|item| db.get_item_signature(item.into())).join("\n")
     }
 
     /// Get item signature without its body including signatures of its contexts. Also adds text for this item only.
-    pub fn signature_with_text(&self, db: &AnalysisDatabase, text: &str) -> String {
+    pub fn signature_with_text(&self, db: &'db AnalysisDatabase, text: &str) -> String {
         let this = db.get_item_signature(self.lookup_item_id.into()).unwrap_or_else(|| "".into());
 
         let contexts = self.context_items.iter().copied().rev();
@@ -83,13 +82,13 @@ impl ItemDef {
     }
 
     /// Gets item documentation in a final form usable for display.
-    pub fn documentation(&self, db: &AnalysisDatabase) -> Option<String> {
+    pub fn documentation(&self, db: &'db AnalysisDatabase) -> Option<String> {
         db.get_item_documentation(self.lookup_item_id.into())
     }
 
     /// Gets the full path (including crate name and defining trait/impl if applicable)
     /// to the module containing the item.
-    pub fn definition_path(&self, db: &AnalysisDatabase) -> String {
+    pub fn definition_path(&self, db: &'db AnalysisDatabase) -> String {
         match self.lookup_item_id {
             LookupItemId::ModuleItem(item) => item.parent_module(db).full_path(db),
             LookupItemId::TraitItem(item) => item.trait_id(db).full_path(db),
@@ -98,7 +97,7 @@ impl ItemDef {
     }
 
     /// Gets the name of the item.
-    pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
+    pub fn name(&self, db: &'db AnalysisDatabase) -> &'db str {
         match self.lookup_item_id {
             LookupItemId::ModuleItem(item) => item.name(db),
             LookupItemId::TraitItem(item) => item.name(db),

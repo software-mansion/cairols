@@ -8,7 +8,6 @@ use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_semantic::keyword::SELF_TYPE_KW;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 use lsp_server::ErrorCode;
 use lsp_types::{
@@ -97,6 +96,7 @@ pub fn rename(
                         resource_ops.extend(res_op);
                     }
                 }
+                ModuleId::MacroCall { id: _, generated_file_id: _ } => {}
             }
         }
     }
@@ -126,10 +126,10 @@ pub fn rename(
     Ok(Some(workspace_edit))
 }
 
-fn declaration_from_resultant(
-    db: &AnalysisDatabase,
-    resultant: SyntaxNode,
-) -> Option<SymbolSearch> {
+fn declaration_from_resultant<'db>(
+    db: &'db AnalysisDatabase,
+    resultant: SyntaxNode<'db>,
+) -> Option<SymbolSearch<'db>> {
     let identifier =
         resultant.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
     // Declaration is used here because rename without changing the declaration would break the compilation,
@@ -137,7 +137,10 @@ fn declaration_from_resultant(
     SymbolSearch::find_declaration(db, &identifier)
 }
 
-fn find_usages(db: &AnalysisDatabase, symbol: SymbolSearch) -> Vec<(FileId, TextSpan)> {
+fn find_usages<'db>(
+    db: &'db AnalysisDatabase,
+    symbol: SymbolSearch<'db>,
+) -> Vec<(FileId<'db>, TextSpan)> {
     let symbol_name = Some(symbol.def.name(db));
 
     symbol
@@ -158,9 +161,9 @@ fn find_usages(db: &AnalysisDatabase, symbol: SymbolSearch) -> Vec<(FileId, Text
         .collect()
 }
 
-fn resource_op_for_non_inline_submodule(
-    db: &AnalysisDatabase,
-    module_id: ModuleId,
+fn resource_op_for_non_inline_submodule<'db>(
+    db: &'db AnalysisDatabase,
+    module_id: ModuleId<'db>,
     client_capabilities: &ClientCapabilities,
     new_name: &str,
 ) -> LSPResult<Option<ResourceOp>> {
@@ -178,7 +181,7 @@ fn resource_op_for_non_inline_submodule(
         LSPError::new(anyhow!("Module main file not found"), ErrorCode::RequestFailed)
     })?;
 
-    let path = match file_id.lookup_intern(db) {
+    let path = match file_id.long(db) {
         FileLongId::OnDisk(path) => path,
         FileLongId::Virtual(_) | FileLongId::External(_) => {
             return Err(LSPError::new(
@@ -189,7 +192,7 @@ fn resource_op_for_non_inline_submodule(
     };
 
     let ops = if path.exists() {
-        let old_uri = Url::from_file_path(&path).unwrap();
+        let old_uri = Url::from_file_path(path).unwrap();
         let new_uri =
             Url::from_file_path(path.with_file_name(format!("{new_name}.cairo"))).unwrap();
 

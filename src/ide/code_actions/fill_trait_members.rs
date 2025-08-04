@@ -21,9 +21,9 @@ use crate::lang::lsp::ToLsp;
 
 /// Generates a completion adding all trait members that have not yet been specified.
 /// Functions are added with empty bodies, consts with placeholder values.
-pub fn fill_trait_members(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
+pub fn fill_trait_members<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
     let file = db.find_module_file_containing_node(ctx.node)?.file_id(db).ok()?;
@@ -55,9 +55,9 @@ pub fn fill_trait_members(
     let mut trait_types = db.trait_types(trait_id).ok()?;
     let mut trait_functions = db.trait_functions(trait_id).ok()?;
 
-    trait_constants.retain(|key, _| !already_implemented_item_names.contains(key));
-    trait_types.retain(|key, _| !already_implemented_item_names.contains(key));
-    trait_functions.retain(|key, _| !already_implemented_item_names.contains(key));
+    trait_constants.retain(|key, _| !already_implemented_item_names.contains(&&**key));
+    trait_types.retain(|key, _| !already_implemented_item_names.contains(&&**key));
+    trait_functions.retain(|key, _| !already_implemented_item_names.contains(&&**key));
 
     if trait_constants.is_empty() && trait_types.is_empty() && trait_functions.is_empty() {
         return None;
@@ -110,11 +110,11 @@ pub fn fill_trait_members(
 }
 
 /// Obtains semantic model of [`ItemImpl`] and returns a [`ConcreteTraitId`] it refers to.
-fn find_concrete_trait_id(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
-    item_impl: &ItemImpl,
-) -> Option<ConcreteTraitId> {
+fn find_concrete_trait_id<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    item_impl: &ItemImpl<'db>,
+) -> Option<ConcreteTraitId<'db>> {
     let mut resolver = ctx.resolver(db);
 
     let mut diagnostics = SemanticDiagnostics::default();
@@ -132,11 +132,11 @@ fn find_concrete_trait_id(
 /// Generates a declaration of a [`TraitConstantId`] containing its name, type,
 /// and a placeholder value.
 /// Generics are substituted with concrete types according to a given [`SubstitutionRewriter`]
-fn constant_code(
-    db: &AnalysisDatabase,
-    id: TraitConstantId,
-    substitution: &GenericSubstitution,
-    importables: &OrderedHashMap<ImportableId, String>,
+fn constant_code<'db>(
+    db: &'db AnalysisDatabase,
+    id: TraitConstantId<'db>,
+    substitution: &GenericSubstitution<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     let name = id.name(db);
     let ty = format_type(
@@ -152,11 +152,11 @@ fn constant_code(
 /// panic indicator, implicits, and default implementation if such exists.
 /// Generics are substituted with concrete types according to a given [`SubstitutionRewriter`].
 /// Returns None if the function has a default implementation.
-fn function_code(
-    db: &AnalysisDatabase,
-    id: TraitFunctionId,
-    substitution: &GenericSubstitution,
-    importables: &OrderedHashMap<ImportableId, String>,
+fn function_code<'db>(
+    db: &'db AnalysisDatabase,
+    id: TraitFunctionId<'db>,
+    substitution: &GenericSubstitution<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     // Do not complete functions that have default implementations.
     if db.trait_function_body(id).ok()?.is_some() {
@@ -213,11 +213,11 @@ fn function_code(
 /// Formats [`GenericParam`] to be used in function's declaration.
 /// Substitutes generic parameters with proper concrete types given in impl,
 /// keeps freestanding (not belonging to the trait) generics unchanged.
-fn generic_parameter_code(
-    db: &AnalysisDatabase,
-    parameter: GenericParam,
-    substitution: &GenericSubstitution,
-    importables: &OrderedHashMap<ImportableId, String>,
+fn generic_parameter_code<'db>(
+    db: &'db AnalysisDatabase,
+    parameter: GenericParam<'db>,
+    substitution: &GenericSubstitution<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     match parameter {
         GenericParam::Const(param) => Some(format!(
@@ -259,11 +259,11 @@ fn generic_parameter_code(
 
 /// Formats [`GenericArgumentId`] as it was used as a generic argument
 /// nested in a generic parameter (e.g. `T` in `+Drop<T>`).
-fn generic_argument_code(
-    db: &AnalysisDatabase,
-    argument: GenericArgumentId,
-    substitution: &GenericSubstitution,
-    importables: &OrderedHashMap<ImportableId, String>,
+fn generic_argument_code<'db>(
+    db: &'db AnalysisDatabase,
+    argument: GenericArgumentId<'db>,
+    substitution: &GenericSubstitution<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     match argument {
         GenericArgumentId::Type(type_id) => {
@@ -282,11 +282,11 @@ fn generic_argument_code(
 /// Generates [`Parameter`] declaration containing its name,
 /// type and optionally a `ref` or `mut` indicator.
 /// Generics are substituted with concrete types according to a given [`SubstitutionRewriter`]
-fn function_parameter(
-    db: &AnalysisDatabase,
-    parameter: &Parameter,
-    substitution: &GenericSubstitution,
-    importables: &OrderedHashMap<ImportableId, String>,
+fn function_parameter<'db>(
+    db: &'db AnalysisDatabase,
+    parameter: &Parameter<'db>,
+    substitution: &GenericSubstitution<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     let prefix = match parameter.mutability {
         cairo_lang_semantic::Mutability::Immutable => "",

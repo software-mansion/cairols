@@ -45,11 +45,11 @@ struct SemanticTokensTraverser {
     offset_to_kind_lookahead: UnorderedHashMap<TextOffset, SemanticTokenKind>,
 }
 impl SemanticTokensTraverser {
-    pub fn find_semantic_tokens(
+    pub fn find_semantic_tokens<'db>(
         &mut self,
-        db: &AnalysisDatabase,
+        db: &'db AnalysisDatabase,
         data: &mut Vec<SemanticToken>,
-        node: SyntaxNode,
+        node: SyntaxNode<'db>,
     ) {
         let green_node = node.green_node(db);
         match &green_node.details {

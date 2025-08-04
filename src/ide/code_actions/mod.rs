@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ::cairo_lint::CorelibContext;
 use cairo_lang_syntax::node::SyntaxNode;
 use itertools::Itertools;
@@ -11,7 +13,6 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::project::ConfigsRegistry;
-use std::collections::HashMap;
 
 mod add_missing_trait;
 mod cairo_lint;
@@ -158,7 +159,11 @@ fn extract_code(diagnostic: &Diagnostic) -> Option<&str> {
     }
 }
 
-fn node_on_range_start(db: &AnalysisDatabase, uri: &Url, range: &Range) -> Option<SyntaxNode> {
+fn node_on_range_start<'db>(
+    db: &'db AnalysisDatabase,
+    uri: &Url,
+    range: &Range,
+) -> Option<SyntaxNode<'db>> {
     let file_id = db.file_for_url(uri)?;
 
     db.find_syntax_node_at_position(file_id, range.start.to_cairo())

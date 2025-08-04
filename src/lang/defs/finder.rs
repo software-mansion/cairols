@@ -3,6 +3,7 @@ use cairo_lang_defs::ids::{
     EnumLongId, GenericTypeId, ImplDefLongId, ImplItemId, LanguageElementId, LookupItemId,
     MemberId, ModuleId, NamedLanguageElementId, StructLongId, SubmoduleLongId, TraitItemId, VarId,
 };
+use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{SemanticGroup, get_resolver_data_options};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
@@ -26,8 +27,7 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::smol_str::SmolStr;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::{Intern, Upcast};
 use itertools::Itertools;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
@@ -40,23 +40,23 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 /// As an example, the compiler never resolves to generic associated trait items
 /// because it is coded in such a way, 🤷.
 #[derive(Debug)]
-pub enum ResolvedItem {
+pub enum ResolvedItem<'db> {
     // Compiler-handled cases.
-    Generic(ResolvedGenericItem),
-    Concrete(ResolvedConcreteItem),
+    Generic(ResolvedGenericItem<'db>),
+    Concrete(ResolvedConcreteItem<'db>),
 
     // CairoLS-specific additions.
-    Member(MemberId),
-    ImplItem(ImplItemId),
-    ExprInlineMacro(SmolStr),
+    Member(MemberId<'db>),
+    ImplItem(ImplItemId<'db>),
+    ExprInlineMacro(&'db str),
 }
 
-pub fn find_definition(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-    resolver_data: &mut Option<ResolverData>,
-) -> Option<ResolvedItem> {
+pub fn find_definition<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+    resolver_data: &mut Option<ResolverData<'db>>,
+) -> Option<ResolvedItem<'db>> {
     try_inline_macro(db, identifier)
         .or_else(|| try_submodule_name(db, identifier))
         .or_else(|| try_member(db, identifier, lookup_items))
@@ -72,28 +72,31 @@ pub fn find_definition(
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
 }
 
-pub fn find_declaration(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-    resolver_data: &mut Option<ResolverData>,
-) -> Option<ResolvedItem> {
+pub fn find_declaration<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+    resolver_data: &mut Option<ResolverData<'db>>,
+) -> Option<ResolvedItem<'db>> {
     let def = find_definition(db, identifier, lookup_items, resolver_data)?;
 
     get_declaration_of(db, &def).or(Some(def))
 }
 
-fn get_declaration_of(db: &AnalysisDatabase, def: &ResolvedItem) -> Option<ResolvedItem> {
+fn get_declaration_of<'db>(
+    db: &'db AnalysisDatabase,
+    def: &ResolvedItem<'db>,
+) -> Option<ResolvedItem<'db>> {
     let definition_node = def.definition_node(db)?;
     let terminal_identifier = TerminalIdentifier::cast(db, definition_node)?;
     try_impl_items(db, &terminal_identifier)
 }
 
-fn try_trait_or_impl_item_with_self_reference(
-    db: &AnalysisDatabase,
-    identifier: &TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-) -> Option<ResolvedItem> {
+fn try_trait_or_impl_item_with_self_reference<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+) -> Option<ResolvedItem<'db>> {
     // Find if we're on ExprPath
     let path_item_segments_origin =
         identifier.as_syntax_node().ancestor_of_type::<ast::ExprPath>(db)?.to_segments(db);
@@ -152,20 +155,20 @@ fn try_trait_or_impl_item_with_self_reference(
 
         match resolved_self {
             ResolvedConcreteItem::SelfTrait(concrete_trait_id) => {
-                let trait_item =
-                    db.trait_item_by_name(concrete_trait_id.trait_id(db), item_name).ok()??;
+                let trait_item = db
+                    .trait_item_by_name(concrete_trait_id.trait_id(db), item_name.into())
+                    .ok()??;
 
                 Some(ResolvedItem::Generic(TraitItem(trait_item)))
             }
             ResolvedConcreteItem::Impl(impl_id) => {
-                let impl_long_id = impl_id.lookup_intern(db);
+                let impl_long_id = impl_id.long(db);
                 let ImplLongId::Concrete(concrete_impl_id) = impl_long_id else {
                     return None;
                 };
 
                 let impl_def_id = concrete_impl_id.impl_def_id(db);
-                let impl_item_id =
-                    db.impl_item_by_name(impl_def_id, item_name.parse().unwrap()).ok()??;
+                let impl_item_id = db.impl_item_by_name(impl_def_id, item_name.into()).ok()??;
                 Some(ResolvedItem::ImplItem(impl_item_id))
             }
             _ => None,
@@ -176,11 +179,11 @@ fn try_trait_or_impl_item_with_self_reference(
 /// Tries to find a trait's impl item via trait's item usage, if we're on using its' path (ExprPath) in code.
 /// This needs to be done because resolver skips a step where a associated type/impl is bound to a specific impl,
 /// and resolves the aforementioned path to the bound type/impl directly.
-fn try_impl_item_usages(
-    db: &AnalysisDatabase,
-    identifier: &TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-) -> Option<ResolvedItem> {
+fn try_impl_item_usages<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+) -> Option<ResolvedItem<'db>> {
     // Find if we're on ExprPath
     let path_item_segments =
         identifier.as_syntax_node().ancestor_of_type::<ast::ExprPath>(db)?.to_segments(db);
@@ -227,31 +230,27 @@ fn try_impl_item_usages(
         return None;
     };
 
-    let concrete_impl_long_id = concrete_impl_id.lookup_intern(db);
+    let concrete_impl_long_id = concrete_impl_id.long(db);
     let item = db
         .impl_item_by_name(
             concrete_impl_long_id.impl_def_id,
-            associated_item_name_candidate
-                .as_syntax_node()
-                .get_text_without_trivia(db)
-                .parse()
-                .unwrap(),
+            associated_item_name_candidate.as_syntax_node().get_text_without_trivia(db).into(),
         )
         .ok()??;
     Some(ResolvedItem::ImplItem(item))
 }
 
-fn try_inline_macro(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-) -> Option<ResolvedItem> {
+fn try_inline_macro<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+) -> Option<ResolvedItem<'db>> {
     if let Some(macro_call) =
         identifier.as_syntax_node().ancestor_of_type::<ast::ExprInlineMacro>(db)
         && let Some(macro_name) = macro_call.path(db).segments(db).elements(db).last()
         && macro_name.identifier(db) == identifier.text(db)
     {
         Some(ResolvedItem::ExprInlineMacro(
-            macro_call.path(db).as_syntax_node().get_text_without_trivia(db).into(),
+            macro_call.path(db).as_syntax_node().get_text_without_trivia(db),
         ))
     } else {
         None
@@ -259,10 +258,10 @@ fn try_inline_macro(
 }
 
 /// Resolve elements of `impl`s to trait definitions.
-fn try_impl_items(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-) -> Option<ResolvedItem> {
+fn try_impl_items<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+) -> Option<ResolvedItem<'db>> {
     let Some(item_impl) = &identifier.as_syntax_node().ancestor_of_type::<ast::ItemImpl>(db) else {
         return None;
     };
@@ -279,7 +278,7 @@ fn try_impl_items(
         let function_name = function.name(db);
         if &function_name == identifier {
             let function_name = function_name.text(db);
-            let function = db.trait_function_by_name(trait_id, function_name).ok()??;
+            let function = db.trait_function_by_name(trait_id, function_name.into()).ok()??;
             return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Function(function))));
         }
     }
@@ -287,7 +286,7 @@ fn try_impl_items(
     if let Some(constant) = identifier.as_syntax_node().ancestor_of_type::<ast::ItemConstant>(db) {
         let constant_name = constant.name(db);
         if &constant_name == identifier {
-            let constant_name = constant_name.text(db);
+            let constant_name = constant_name.text(db).into();
             let constant = db.trait_constant_by_name(trait_id, constant_name).ok()??;
             return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Constant(constant))));
         }
@@ -299,7 +298,8 @@ fn try_impl_items(
         let associated_type_name = associated_type.name(db);
         if &associated_type_name == identifier {
             let associated_type_name = associated_type_name.text(db);
-            let associated_type = db.trait_type_by_name(trait_id, associated_type_name).ok()??;
+            let associated_type =
+                db.trait_type_by_name(trait_id, associated_type_name.into()).ok()??;
             return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Type(associated_type))));
         }
     }
@@ -309,7 +309,7 @@ fn try_impl_items(
     {
         let associated_impl_name = associated_impl.name(db);
         if &associated_impl_name == identifier {
-            let associated_impl_name = associated_impl_name.text(db);
+            let associated_impl_name = associated_impl_name.text(db).into();
             let associated_impl = db.trait_impl_by_name(trait_id, associated_impl_name).ok()??;
             return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Impl(associated_impl))));
         }
@@ -319,10 +319,10 @@ fn try_impl_items(
 }
 
 /// Resolve `mod <ident>` syntax.
-fn try_submodule_name(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-) -> Option<ResolvedItem> {
+fn try_submodule_name<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+) -> Option<ResolvedItem<'db>> {
     let item_module = identifier
         .as_syntax_node()
         .parent_of_type::<ast::ItemModule>(db)
@@ -335,11 +335,11 @@ fn try_submodule_name(
 }
 
 /// Resolve `let _ = Struct = { <ident>: ... }` syntax.
-fn try_member_from_constructor(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-) -> Option<ResolvedItem> {
+fn try_member_from_constructor<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+) -> Option<ResolvedItem<'db>> {
     let function_id = lookup_items.first()?.function_with_body()?;
 
     let identifier_node = identifier.as_syntax_node();
@@ -347,9 +347,10 @@ fn try_member_from_constructor(
     let constructor_expr = identifier_node.ancestor_of_type::<ast::ExprStructCtorCall>(db)?;
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr(db).into()).ok()?;
+    let semantic_db: &dyn SemanticGroup = db.upcast();
 
     let Expr::StructCtor(constructor_expr_semantic) =
-        db.expr_semantic(function_id, constructor_expr_id)
+        semantic_db.expr_semantic(function_id, constructor_expr_id)
     else {
         return None;
     };
@@ -362,17 +363,17 @@ fn try_member_from_constructor(
     let member_id = constructor_expr_semantic
         .members
         .iter()
-        .find_map(|(id, _)| struct_member_name.eq(id.name(db).as_str()).then_some(*id))?;
+        .find_map(|(_, id)| struct_member_name.eq(id.name(db)).then_some(*id))?;
 
     Some(ResolvedItem::Member(member_id))
 }
 
 /// Resolve the right-hand side of access member expression e.g. `self.<ident>`.
-fn try_member(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-) -> Option<ResolvedItem> {
+fn try_member<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+) -> Option<ResolvedItem<'db>> {
     let syntax_node = identifier.as_syntax_node();
     let binary_expr = syntax_node.ancestor_of_type::<ast::ExprBinary>(db)?;
 
@@ -380,7 +381,8 @@ fn try_member(
 
     let expr_id =
         db.lookup_expr_by_ptr(function_with_body, binary_expr.stable_ptr(db).into()).ok()?;
-    let semantic_expr = db.expr_semantic(function_with_body, expr_id);
+    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_expr = semantic_db.expr_semantic(function_with_body, expr_id);
 
     let Expr::MemberAccess(expr_member_access) = semantic_expr else { return None };
 
@@ -402,10 +404,10 @@ fn try_member(
 }
 
 /// Resolve `struct Foo { <ident>: ... }` syntax.
-fn try_member_declaration(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-) -> Option<ResolvedItem> {
+fn try_member_declaration<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+) -> Option<ResolvedItem<'db>> {
     let member = identifier
         .as_syntax_node()
         .parent_of_type::<ast::Member>(db)
@@ -417,15 +419,16 @@ fn try_member_declaration(
     )
     .intern(db);
     let struct_members = db.struct_members(struct_id).ok()?;
-    let member_id = struct_members.get(&member.name(db).text(db))?.id;
+    let name: StrRef<'db> = member.name(db).text(db).into();
+    let member_id = struct_members.get(&name)?.id;
     Some(ResolvedItem::Member(member_id))
 }
 
 /// Resolve `enum Foo { <ident> }` syntax.
-fn try_variant_declaration(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-) -> Option<ResolvedItem> {
+fn try_variant_declaration<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+) -> Option<ResolvedItem<'db>> {
     let variant = identifier
         .as_syntax_node()
         .ancestor_of_type::<ast::Variant>(db)
@@ -437,7 +440,8 @@ fn try_variant_declaration(
     )
     .intern(db);
     let enum_variants = db.enum_variants(enum_id).ok()?;
-    let variant_id = *enum_variants.get(&variant.name(db).text(db))?;
+    let name: StrRef<'db> = variant.name(db).text(db).into();
+    let variant_id = *enum_variants.get(&name)?;
     let variant = db.variant_semantic(enum_id, variant_id).ok()?;
     Some(ResolvedItem::Generic(ResolvedGenericItem::Variant(variant)))
 }
@@ -447,11 +451,11 @@ fn try_variant_declaration(
 /// Declaration identifiers aren't kept in `ResolvedData`, which is searched for by
 /// `lookup_resolved_generic_item_by_ptr` and `lookup_resolved_concrete_item_by_ptr`.
 /// Therefore, we have to look for these ourselves.
-fn try_variable_declaration(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-) -> Option<ResolvedItem> {
+fn try_variable_declaration<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+) -> Option<ResolvedItem<'db>> {
     let function_id = lookup_items.first()?.function_with_body()?;
 
     // Look at function parameters.
@@ -466,7 +470,10 @@ fn try_variable_declaration(
         {
             let expr_id =
                 db.lookup_expr_by_ptr(function_id, expr_closure_ast.stable_ptr(db).into()).ok()?;
-            let Expr::ExprClosure(expr_closure_semantic) = db.expr_semantic(function_id, expr_id)
+            let semantic_db: &dyn SemanticGroup = db.upcast();
+
+            let Expr::ExprClosure(expr_closure_semantic) =
+                semantic_db.expr_semantic(function_id, expr_id)
             else {
                 // Break in case Expr::Missing was here.
                 return None;
@@ -488,7 +495,8 @@ fn try_variable_declaration(
     // Look at identifier patterns in the function body.
     if let Some(pattern_ast) = identifier.as_syntax_node().ancestor_of_type::<ast::Pattern>(db) {
         let pattern_id = db.lookup_pattern_by_ptr(function_id, pattern_ast.stable_ptr(db)).ok()?;
-        let pattern = db.pattern_semantic(function_id, pattern_id);
+        let semantic_db: &dyn SemanticGroup = db.upcast();
+        let pattern = semantic_db.pattern_semantic(function_id, pattern_id);
         let pattern_variable = pattern
             .variables(&QueryPatternVariablesFromDb(db, function_id))
             .into_iter()
@@ -502,11 +510,11 @@ fn try_variable_declaration(
 
 /// Resolves concrete type identifiers and impl identifiers in type-level expressions and type annotations.
 /// In particular, handles **type and impl aliases** which require special care.
-fn try_concrete_type_or_impl(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-) -> Option<ResolvedItem> {
+fn try_concrete_type_or_impl<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+) -> Option<ResolvedItem<'db>> {
     let ptr = identifier.stable_ptr(db);
     let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
 
@@ -572,11 +580,11 @@ fn try_concrete_type_or_impl(
 /// Resolves traits used as bounds for generic type parameters in functions, structs, enums, traits or impls,
 /// either as (positive or negative) type constraints like `fn foo<T, +Drop<T>>`
 /// or impl constraints like `fn foo<T, impl Impl: Drop<T>>`.
-fn try_trait_as_generic_parameter_bound(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-) -> Option<ResolvedItem> {
+fn try_trait_as_generic_parameter_bound<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+) -> Option<ResolvedItem<'db>> {
     identifier.as_syntax_node().ancestor_of_kind(db, SyntaxKind::GenericParamList)?;
 
     let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
@@ -615,12 +623,12 @@ fn try_trait_as_generic_parameter_bound(
 }
 
 /// Lookups for the identifier in compiler's `lookup_resolved_*_item_by_ptr` queries.
-fn lookup_resolved_items(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-    resolver_data: &mut Option<ResolverData>,
-) -> Option<ResolvedItem> {
+fn lookup_resolved_items<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+    resolver_data: &mut Option<ResolverData<'db>>,
+) -> Option<ResolvedItem<'db>> {
     let ptr = identifier.stable_ptr(db);
 
     for &lookup_item_id in lookup_items {
@@ -648,16 +656,16 @@ fn lookup_resolved_items(
 }
 
 /// Tries to redirect from the usage of the trait function to a concrete impl in user code
-fn try_infer_impl_function(
-    db: &AnalysisDatabase,
-    resolver_data: &mut Option<ResolverData>,
-    item: ResolvedConcreteItem,
-) -> Option<ResolvedItem> {
+fn try_infer_impl_function<'db>(
+    db: &'db AnalysisDatabase,
+    resolver_data: &mut Option<ResolverData<'db>>,
+    item: ResolvedConcreteItem<'db>,
+) -> Option<ResolvedItem<'db>> {
     if let ResolvedConcreteItem::Function(function_id) = item {
         let concrete_fn = function_id.get_concrete(db);
         if let GenericFunctionId::Impl(impl_generic_function_id) = concrete_fn.generic_function {
-            let impl_long_id = impl_generic_function_id.impl_id.lookup_intern(db);
-            let concrete_impl_id = rewrite_impl(db, impl_long_id, resolver_data)?;
+            let impl_long_id = impl_generic_function_id.impl_id.long(db);
+            let concrete_impl_id = rewrite_impl(db, impl_long_id.clone(), resolver_data)?;
             let impl_func_id = concrete_impl_id
                 .get_impl_function(db, impl_generic_function_id.function)
                 .ok()??;
@@ -669,11 +677,11 @@ fn try_infer_impl_function(
 }
 
 /// Tries to rewrite trait function usage to a concrete function of an impl
-fn rewrite_impl(
-    db: &AnalysisDatabase,
-    impl_long_id: ImplLongId,
-    resolver_data: &mut Option<ResolverData>,
-) -> Option<ConcreteImplId> {
+fn rewrite_impl<'db>(
+    db: &'db AnalysisDatabase,
+    impl_long_id: ImplLongId<'db>,
+    resolver_data: &mut Option<ResolverData<'db>>,
+) -> Option<ConcreteImplId<'db>> {
     if let Some(resolver_data) = resolver_data {
         let mut inference = resolver_data.inference_data.inference(db);
         let rewritten = inference.rewrite(impl_long_id).ok()?;
@@ -684,11 +692,11 @@ fn rewrite_impl(
     None
 }
 
-fn lookup_item_name(
-    db: &AnalysisDatabase,
-    identifier: &ast::TerminalIdentifier,
-    lookup_items: &[LookupItemId],
-) -> Option<ResolvedItem> {
+fn lookup_item_name<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+) -> Option<ResolvedItem<'db>> {
     let lookup_item = lookup_items.first().copied()?;
 
     if lookup_item.name_identifier(db).stable_ptr(db) != identifier.stable_ptr(db) {
@@ -698,14 +706,17 @@ fn lookup_item_name(
     ResolvedItem::from_lookup_item(db, lookup_item)
 }
 
-impl ResolvedItem {
+impl<'db> ResolvedItem<'db> {
     /// Finds a stable pointer to the syntax node which defines this resolved item.
-    pub fn definition_stable_ptr(&self, db: &AnalysisDatabase) -> Option<SyntaxStablePtrId> {
+    pub fn definition_stable_ptr(
+        &self,
+        db: &'db AnalysisDatabase,
+    ) -> Option<SyntaxStablePtrId<'db>> {
         // TIP: This is a var so that highlighting exit points in IDEs of this function is usable.
         let stable_ptr = match self {
             // Concrete items.
             ResolvedItem::Concrete(concrete_item @ ResolvedConcreteItem::Type(ty)) => {
-                if let TypeLongId::GenericParameter(param) = ty.lookup_intern(db) {
+                if let TypeLongId::GenericParameter(param) = ty.long(db) {
                     param.untyped_stable_ptr(db)
                 } else {
                     // Try convert into generic and call definition_stable_ptr recursively.
@@ -714,7 +725,7 @@ impl ResolvedItem {
             }
 
             ResolvedItem::Concrete(concrete_item @ ResolvedConcreteItem::Impl(imp)) => {
-                if let ImplLongId::GenericParameter(param) = imp.lookup_intern(db) {
+                if let ImplLongId::GenericParameter(param) = imp.long(db) {
                     param.untyped_stable_ptr(db)
                 } else {
                     // Try convert into generic and call definition_stable_ptr recursively.
@@ -745,6 +756,9 @@ impl ResolvedItem {
                         // For submodules, the definition node is the identifier in `mod <ident>
                         // .*`.
                         submodule_id.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
+                    }
+                    ModuleId::MacroCall { id: _, generated_file_id: _ } => {
+                        return None;
                     }
                 }
             }
@@ -848,12 +862,15 @@ impl ResolvedItem {
     }
 
     /// Finds and returns the syntax node corresponding to the definition of the resolved item.
-    pub fn definition_node(&self, db: &AnalysisDatabase) -> Option<SyntaxNode> {
+    pub fn definition_node(&self, db: &'db AnalysisDatabase) -> Option<SyntaxNode<'db>> {
         self.definition_stable_ptr(db).map(|stable_ptr| stable_ptr.lookup(db))
     }
 
     /// Re-wraps a [`LookupItemId`] into the corresponding [`ResolvedItem`].
-    fn from_lookup_item(db: &dyn SemanticGroup, lookup_item: LookupItemId) -> Option<Self> {
+    fn from_lookup_item(
+        db: &'db dyn SemanticGroup,
+        lookup_item: LookupItemId<'db>,
+    ) -> Option<Self> {
         match lookup_item {
             LookupItemId::ModuleItem(module_item) => {
                 ResolvedGenericItem::from_module_item(db, module_item).ok().map(Self::Generic)

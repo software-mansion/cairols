@@ -5,7 +5,7 @@ use lsp_types::{CodeAction, Command};
 use crate::lang::db::AnalysisDatabase;
 
 /// Code actions for macro expansion.
-pub fn expand_macro(db: &AnalysisDatabase, node: SyntaxNode) -> Vec<CodeAction> {
+pub fn expand_macro<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> Vec<CodeAction> {
     let mut result = vec![];
     let command = "cairo.expandMacro".to_owned();
 

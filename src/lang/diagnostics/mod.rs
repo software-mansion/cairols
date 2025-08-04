@@ -1,6 +1,4 @@
 use std::collections::HashSet;
-use std::iter;
-use std::iter::zip;
 use std::num::NonZero;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
@@ -39,10 +37,9 @@ pub struct DiagnosticsController {
     //   The trigger MUST be dropped before worker's join handle.
     //   Otherwise, the controller thread will never be requested to stop, and the controller's
     //   JoinHandle will never terminate.
-    trigger: trigger::Sender<StateSnapshots>,
+    trigger: trigger::Sender<StateSnapshot>,
     generate_code_complete_receiver: Receiver<()>,
     _thread: JoinHandle,
-    state_snapshots_props: StateSnapshotsProps,
 }
 
 impl DiagnosticsController {
@@ -55,19 +52,14 @@ impl DiagnosticsController {
         let (generate_code_complete_sender, generate_code_complete_receiver) =
             crossbeam::channel::bounded(1);
         let (trigger, receiver) = trigger::trigger();
-        let (thread, parallelism) = DiagnosticsControllerThread::spawn(
+        let (thread, _) = DiagnosticsControllerThread::spawn(
             receiver,
             generate_code_complete_sender,
             notifier,
             analysis_progress_tracker,
             scarb_toolchain,
         );
-        Self {
-            trigger,
-            generate_code_complete_receiver,
-            _thread: thread,
-            state_snapshots_props: StateSnapshotsProps { parallelism },
-        }
+        Self { trigger, generate_code_complete_receiver, _thread: thread }
     }
 
     pub fn generate_code_complete_receiver(&self) -> Receiver<()> {
@@ -76,13 +68,13 @@ impl DiagnosticsController {
 
     /// Schedules diagnostics refreshing on snapshot(s) of the current state.
     pub fn refresh(&self, state: &State) {
-        self.trigger.activate(StateSnapshots::new(state, &self.state_snapshots_props));
+        self.trigger.activate(state.snapshot());
     }
 }
 
 /// Stores entire state of diagnostics controller's worker thread.
 struct DiagnosticsControllerThread {
-    receiver: trigger::Receiver<StateSnapshots>,
+    receiver: trigger::Receiver<StateSnapshot>,
     generate_code_complete_sender: Sender<()>,
     notifier: Notifier,
     pool: thread::Pool,
@@ -96,7 +88,7 @@ impl DiagnosticsControllerThread {
     /// Spawns a new diagnostics controller worker thread
     /// and returns a handle to it and the amount of parallelism it provides.
     fn spawn(
-        receiver: trigger::Receiver<StateSnapshots>,
+        receiver: trigger::Receiver<StateSnapshot>,
         generate_code_complete_sender: Sender<()>,
         notifier: Notifier,
         analysis_progress_controller: AnalysisProgressController,
@@ -127,13 +119,13 @@ impl DiagnosticsControllerThread {
 
     /// Runs diagnostics controller's event loop.
     fn event_loop(&mut self) {
-        while let Some(state_snapshots) = self.receiver.wait() {
+        while let Some(state) = self.receiver.wait() {
             assert!(self.worker_handles.is_empty());
             self.analysis_progress_controller.diagnostic_start();
 
             let mut controller_cancelled = false;
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
-                self.diagnostics_controller_tick(state_snapshots);
+                self.diagnostics_controller_tick(&state);
             })) {
                 if let Ok(err) = cancelled_anyhow(err, "diagnostics refreshing has been cancelled")
                 {
@@ -154,9 +146,7 @@ impl DiagnosticsControllerThread {
 
     /// Runs a single tick of the diagnostics controller's event loop.
     #[tracing::instrument(skip_all)]
-    fn diagnostics_controller_tick(&mut self, state_snapshots: StateSnapshots) {
-        let (state, primary_snapshots, secondary_snapshots) = state_snapshots.split();
-
+    fn diagnostics_controller_tick(&mut self, state: &StateSnapshot) {
         let primary_set = find_primary_files(&state.db, &state.open_files);
         let secondary = find_secondary_files(&state.db, &primary_set);
         // Event meaning that all generate_code() calls from this tick were called.
@@ -164,8 +154,8 @@ impl DiagnosticsControllerThread {
         let _ = self.generate_code_complete_sender.send(());
 
         let primary: Vec<_> = primary_set.iter().copied().collect();
-        self.spawn_refresh_workers(&primary, primary_snapshots);
-        self.spawn_refresh_workers(&secondary, secondary_snapshots);
+        self.spawn_refresh_workers(&primary, state);
+        self.spawn_refresh_workers(&secondary, state);
 
         let files_to_preserve: HashSet<Url> = primary
             .into_iter()
@@ -203,12 +193,15 @@ impl DiagnosticsControllerThread {
     }
 
     /// Makes batches out of `files` and spawns workers to run [`refresh_diagnostics`] on them.
-    fn spawn_refresh_workers(&mut self, files: &[FileId], state_snapshots: Vec<StateSnapshot>) {
+    fn spawn_refresh_workers<'db>(&mut self, files: &[FileId<'db>], state: &StateSnapshot) {
+        // TODO(#869)
+        let files: &[FileId<'static>] = unsafe { std::mem::transmute(files) };
         let files_batches =
             batches(files, self.pool.parallelism()).into_iter().filter(|v| !v.is_empty());
 
-        for (batch, state) in zip(files_batches, state_snapshots) {
+        for batch in files_batches {
             let scarb_toolchain = self.scarb_toolchain.clone();
+            let state = state.clone();
             self.spawn_worker(move |project_diagnostics, notifier| {
                 refresh_diagnostics(
                     &state.db,
@@ -226,38 +219,4 @@ impl DiagnosticsControllerThread {
     fn join_and_clear_workers(&mut self) -> Vec<TaskResult> {
         self.worker_handles.drain(..).map(|handle| handle.join()).collect()
     }
-}
-
-/// Holds multiple snapshots of the state.
-///
-/// It is not possible to clone Salsa snapshots nor share one between threads,
-/// thus we explicitly create separate snapshots for all threads involved in advance.
-struct StateSnapshots(Vec<StateSnapshot>);
-
-impl StateSnapshots {
-    /// Takes as many snapshots of `state` as specified in `props` and creates new
-    /// [`StateSnapshots`].
-    fn new(state: &State, props: &StateSnapshotsProps) -> StateSnapshots {
-        StateSnapshots(
-            iter::from_fn(|| Some(state.snapshot()))
-                .take(props.parallelism.get() * 2 + 1)
-                .collect(),
-        )
-    }
-
-    /// Splits this collection into a tuple of control snapshot and primary and secondary snapshots
-    /// sets.
-    fn split(self) -> (StateSnapshot, Vec<StateSnapshot>, Vec<StateSnapshot>) {
-        let Self(mut snapshots) = self;
-        let control = snapshots.pop().unwrap();
-        assert_eq!(snapshots.len() % 2, 0);
-        let secondary = snapshots.split_off(snapshots.len() / 2);
-        (control, snapshots, secondary)
-    }
-}
-
-/// Stores necessary properties for creating [`StateSnapshots`].
-struct StateSnapshotsProps {
-    /// Parallelism of the diagnostics worker pool.
-    parallelism: NonZero<usize>,
 }

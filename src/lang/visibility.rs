@@ -7,11 +7,11 @@ use cairo_lang_semantic::{
 
 use super::db::AnalysisDatabase;
 
-pub fn peek_visible_in_with_edition(
-    db: &AnalysisDatabase,
+pub fn peek_visible_in_with_edition<'db>(
+    db: &'db AnalysisDatabase,
     visibility_in_module: Visibility,
-    containing_module_id: ModuleId,
-    user_module_id: ModuleFileId,
+    containing_module_id: ModuleId<'db>,
+    user_module_id: ModuleFileId<'db>,
 ) -> bool {
     Resolver::new(db, user_module_id, InferenceId::NoContext)
         .ignore_visibility_checks(containing_module_id)

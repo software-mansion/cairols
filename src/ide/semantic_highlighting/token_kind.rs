@@ -36,7 +36,7 @@ pub enum SemanticTokenKind {
     GenericParamImpl,
 }
 impl SemanticTokenKind {
-    pub fn from_syntax_node(db: &AnalysisDatabase, node: SyntaxNode) -> Option<Self> {
+    pub fn from_syntax_node<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> Option<Self> {
         let node_kind = node.kind(db);
         // Simple tokens.
         match node_kind {
@@ -87,7 +87,7 @@ impl SemanticTokenKind {
         let identifier = node.ancestor_of_type::<ast::TerminalIdentifier>(db)?;
 
         // Non-keyword keywords.
-        if [SUPER_KW, SELF_TYPE_KW, CRATE_KW].contains(&identifier.text(db).as_str()) {
+        if [SUPER_KW, SELF_TYPE_KW, CRATE_KW].contains(&identifier.text(db)) {
             return Some(SemanticTokenKind::Keyword);
         }
 
@@ -251,10 +251,10 @@ impl SemanticTokenKind {
 }
 
 // Retrieves the most-likely-usable resultant, and the terminal ptr we can use for semantic lookup
-fn get_resultants_and_closest_terminals(
-    db: &AnalysisDatabase,
-    node: SyntaxNode,
-) -> Vec<(SyntaxNode, TerminalIdentifierPtr)> {
+fn get_resultants_and_closest_terminals<'db>(
+    db: &'db AnalysisDatabase,
+    node: SyntaxNode<'db>,
+) -> Vec<(SyntaxNode<'db>, TerminalIdentifierPtr<'db>)> {
     let Some(resultants) = db.get_node_resultants(node) else {
         return vec![];
     };
@@ -276,7 +276,7 @@ fn get_resultants_and_closest_terminals(
 }
 
 /// Checks whether the given node is an inline macro invocation and not just the simple path segment.
-fn is_inline_macro(db: &AnalysisDatabase, node: SyntaxNode) -> bool {
+fn is_inline_macro<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> bool {
     if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
         && let Some(maybe_macro) = path_node.parent(db)
     {

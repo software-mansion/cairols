@@ -31,10 +31,10 @@ pub fn highlight(
     Some(highlights)
 }
 
-fn highlights(
-    db: &AnalysisDatabase,
-    syntax_node: &SyntaxNode,
-    file: FileId,
+fn highlights<'db>(
+    db: &'db AnalysisDatabase,
+    syntax_node: &SyntaxNode<'db>,
+    file: FileId<'db>,
 ) -> Option<Vec<lsp_types::Range>> {
     let identifier =
         syntax_node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;

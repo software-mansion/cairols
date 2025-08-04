@@ -8,6 +8,7 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
 use tracing::debug;
@@ -18,10 +19,10 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
 use crate::lang::methods::find_methods_for_type;
 
-pub fn dot_completions(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
-    expr: ast::ExprBinary,
+pub fn dot_completions<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    expr: ast::ExprBinary<'db>,
 ) -> Option<Vec<CompletionItem>> {
     // Get a resolver in the current context.
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
@@ -34,7 +35,8 @@ pub fn dot_completions(
     let stable_ptr = node.stable_ptr(db).untyped();
     // Get its semantic model.
     let expr_id = db.lookup_expr_by_ptr(function_with_body, node.stable_ptr(db)).ok()?;
-    let semantic_expr = db.expr_semantic(function_with_body, expr_id);
+    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_expr = semantic_db.expr_semantic(function_with_body, expr_id);
     // Get the type.
     let ty = semantic_expr.ty();
     if ty.is_missing(db) {
@@ -71,11 +73,11 @@ pub fn dot_completions(
 }
 
 /// Returns a completion item for a method.
-fn completion_for_method(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext,
-    module_file_id: ModuleFileId,
-    trait_function: TraitFunctionId,
+fn completion_for_method<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    module_file_id: ModuleFileId<'db>,
+    trait_function: TraitFunctionId<'db>,
 ) -> Option<CompletionItem> {
     let trait_id = trait_function.trait_id(db);
     let name = trait_function.name(db);

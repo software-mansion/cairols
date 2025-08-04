@@ -10,7 +10,7 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::TypeFilter;
 use cairo_lang_semantic::resolve::Resolver;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::Intern;
+use cairo_lang_utils::{Intern, Upcast};
 use itertools::chain;
 use tracing::debug;
 
@@ -18,12 +18,12 @@ use super::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 
 /// Finds all methods that can be called on a type.
-pub fn find_methods_for_type(
-    db: &AnalysisDatabase,
-    mut resolver: Resolver<'_>,
-    ty: cairo_lang_semantic::TypeId,
-    stable_ptr: cairo_lang_syntax::node::ids::SyntaxStablePtrId,
-) -> Vec<TraitFunctionId> {
+pub fn find_methods_for_type<'db>(
+    db: &'db AnalysisDatabase,
+    mut resolver: Resolver<'db>,
+    ty: cairo_lang_semantic::TypeId<'db>,
+    stable_ptr: cairo_lang_syntax::node::ids::SyntaxStablePtrId<'db>,
+) -> Vec<TraitFunctionId<'db>> {
     let type_filter = match ty.head(db) {
         Some(head) => TypeFilter::TypeHead(head),
         None => TypeFilter::NoFilter,
@@ -40,11 +40,8 @@ pub fn find_methods_for_type(
         [resolver.owning_crate_id],
         (!dependencies.contains_key(CORELIB_CRATE_NAME)).then(|| CrateId::core(db)),
         dependencies.iter().map(|(name, setting)| {
-            CrateLongId::Real {
-                name: name.clone().into(),
-                discriminator: setting.discriminator.clone(),
-            }
-            .intern(db)
+            CrateLongId::Real { name: name.clone(), discriminator: setting.discriminator.clone() }
+                .intern(db)
         })
     ) {
         let methods = db.methods_in_crate(crate_id, type_filter.clone());
@@ -59,7 +56,7 @@ pub fn find_methods_for_type(
                 ty,
                 &lookup_context,
                 Some(stable_ptr),
-                |_| {},
+                &mut vec![],
             ) else {
                 debug!("can't fit");
                 continue;
@@ -87,9 +84,9 @@ pub fn find_methods_for_type(
 
 /// Finds all available traits with method.
 /// Returns list of full qualified paths as strings.
-pub fn available_traits_for_method(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
+pub fn available_traits_for_method<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
 ) -> Option<Vec<String>> {
     let stable_ptr = ctx.node.ancestor_of_type::<ast::ExprBinary>(db)?.lhs(db).stable_ptr(db);
 
@@ -97,7 +94,8 @@ pub fn available_traits_for_method(
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let expr_id = db.lookup_expr_by_ptr(function_with_body, stable_ptr).ok()?;
 
-    let ty = db.expr_semantic(function_with_body, expr_id).ty();
+    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let ty = semantic_db.expr_semantic(function_with_body, expr_id).ty();
 
     if ty.is_missing(db) {
         return None;
