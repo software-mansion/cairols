@@ -26,7 +26,6 @@ use crossbeam::channel::{Receiver, select_biased};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use lsp_types::request::SemanticTokensRefresh;
-use salsa::ParallelDatabase;
 use tracing::{debug, error, info};
 
 use crate::ide::analysis_progress::AnalysisStatus;
@@ -410,7 +409,7 @@ impl Backend {
         proc_macros::cache::save_proc_macro_cache(&state.db, &state.config);
         state
             .code_lens_controller
-            .schedule_refreshing_all_lenses(state.db.snapshot(), state.config.clone());
+            .schedule_refreshing_all_lenses(state.db.clone(), state.config.clone());
 
         if state.client_capabilities.workspace_semantic_tokens_refresh_support() {
             if let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing()) {

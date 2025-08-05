@@ -3,25 +3,25 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 
-pub trait SpanSource {
-    fn text_span(&self, db: &dyn SyntaxGroup) -> TextSpan;
+pub trait SpanSource<'db> {
+    fn text_span(&self, db: &'db dyn SyntaxGroup) -> TextSpan;
 }
 
-impl<T: TypedSyntaxNode> SpanSource for T {
-    fn text_span(&self, db: &dyn SyntaxGroup) -> TextSpan {
+impl<'db, T: TypedSyntaxNode<'db>> SpanSource<'db> for T {
+    fn text_span(&self, db: &'db dyn SyntaxGroup) -> TextSpan {
         let node = self.as_syntax_node();
         let span = node.span_without_trivia(db);
         TextSpan::new(span.start.as_u32(), span.end.as_u32())
     }
 }
 
-pub struct CallSiteLocation {
-    pub stable_ptr: SyntaxStablePtrId,
+pub struct CallSiteLocation<'db> {
+    pub stable_ptr: SyntaxStablePtrId<'db>,
     pub span: TextSpan,
 }
 
-impl CallSiteLocation {
-    pub fn new<T: TypedSyntaxNode>(node: &T, db: &dyn SyntaxGroup) -> Self {
+impl<'db> CallSiteLocation<'db> {
+    pub fn new<T: TypedSyntaxNode<'db>>(node: &T, db: &'db dyn SyntaxGroup) -> Self {
         Self { stable_ptr: node.stable_ptr(db).untyped(), span: node.text_span(db) }
     }
 }

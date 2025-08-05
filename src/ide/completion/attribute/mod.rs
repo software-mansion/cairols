@@ -9,10 +9,10 @@ use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 
 pub mod derive;
 
-pub fn attribute_completions(
-    db: &AnalysisDatabase,
-    attribute: Attribute,
-    crate_id: CrateId,
+pub fn attribute_completions<'db>(
+    db: &'db AnalysisDatabase,
+    attribute: Attribute<'db>,
+    crate_id: CrateId<'db>,
 ) -> Option<Vec<CompletionItem>> {
     let plugins = db.crate_macro_plugins(crate_id);
 
@@ -22,7 +22,7 @@ pub fn attribute_completions(
         plugins
             .iter()
             .flat_map(|plugin_id| db.lookup_intern_macro_plugin(*plugin_id).declared_attributes())
-            .filter(|name| text_matches(name, &attr_name))
+            .filter(|name| text_matches(name, attr_name))
             .map(|name| CompletionItem {
                 label: name,
                 kind: Some(CompletionItemKind::FUNCTION),

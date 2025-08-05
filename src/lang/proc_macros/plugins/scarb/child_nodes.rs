@@ -7,25 +7,25 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use itertools::Itertools;
 
-pub trait ItemWithAttributes {
-    fn item_attributes(&self, db: &dyn SyntaxGroup) -> Vec<Attribute>;
-    fn span_with_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan;
+pub trait ItemWithAttributes<'db> {
+    fn item_attributes(&self, db: &'db dyn SyntaxGroup) -> Vec<Attribute<'db>>;
+    fn span_with_trivia(&self, db: &'db dyn SyntaxGroup) -> TextSpan;
 }
 
-pub trait ChildNodesWithoutAttributes {
+pub trait ChildNodesWithoutAttributes<'db> {
     fn child_nodes_without_attributes(
         &self,
-        db: &dyn SyntaxGroup,
-    ) -> impl Iterator<Item = SyntaxNode>;
+        db: &'db dyn SyntaxGroup,
+    ) -> impl Iterator<Item = SyntaxNode<'db>>;
 }
 
 macro_rules! impl_child_nodes_without_attributes {
     ($t:ty, [$($child:ident),* $(,)?]) => {
-        impl ChildNodesWithoutAttributes for $t {
+        impl<'db> ChildNodesWithoutAttributes<'db> for $t {
             fn child_nodes_without_attributes(
                 &self,
-                db: &dyn SyntaxGroup,
-            ) -> impl Iterator<Item = SyntaxNode> {
+                db: &'db dyn SyntaxGroup,
+            ) -> impl Iterator<Item = SyntaxNode<'db>> {
                 [
                     $(self.$child(db).as_syntax_node()),*
                 ].into_iter()
@@ -36,73 +36,76 @@ macro_rules! impl_child_nodes_without_attributes {
 
 macro_rules! impl_item_with_attributes {
     ($t:ty) => {
-        impl ItemWithAttributes for $t {
-            fn item_attributes(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        impl<'db> ItemWithAttributes<'db> for $t {
+            fn item_attributes(&self, db: &'db dyn SyntaxGroup) -> Vec<Attribute<'db>> {
                 self.attributes(db).elements(db).collect_vec()
             }
-            fn span_with_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
+            fn span_with_trivia(&self, db: &'db dyn SyntaxGroup) -> TextSpan {
                 self.as_syntax_node().span(db)
             }
         }
     };
 }
 
-impl_item_with_attributes!(ItemTrait);
-impl_child_nodes_without_attributes!(ItemTrait, [visibility, trait_kw, name, generic_params, body]);
-
-impl_item_with_attributes!(ItemImpl);
+impl_item_with_attributes!(ItemTrait<'db>);
 impl_child_nodes_without_attributes!(
-    ItemImpl,
+    ItemTrait<'db>,
+    [visibility, trait_kw, name, generic_params, body]
+);
+
+impl_item_with_attributes!(ItemImpl<'db>);
+impl_child_nodes_without_attributes!(
+    ItemImpl<'db>,
     [visibility, impl_kw, name, generic_params, of_kw, trait_path, body]
 );
 
-impl_item_with_attributes!(ItemModule);
-impl_child_nodes_without_attributes!(ItemModule, [visibility, module_kw, name, body]);
+impl_item_with_attributes!(ItemModule<'db>);
+impl_child_nodes_without_attributes!(ItemModule<'db>, [visibility, module_kw, name, body]);
 
-impl_item_with_attributes!(FunctionWithBody);
-impl_child_nodes_without_attributes!(FunctionWithBody, [visibility, declaration, body]);
+impl_item_with_attributes!(FunctionWithBody<'db>);
+impl_child_nodes_without_attributes!(FunctionWithBody<'db>, [visibility, declaration, body]);
 
-impl_item_with_attributes!(ItemExternFunction);
+impl_item_with_attributes!(ItemExternFunction<'db>);
 impl_child_nodes_without_attributes!(
-    ItemExternFunction,
+    ItemExternFunction<'db>,
     [visibility, extern_kw, declaration, semicolon]
 );
 
-impl_item_with_attributes!(ItemExternType);
+impl_item_with_attributes!(ItemExternType<'db>);
 impl_child_nodes_without_attributes!(
-    ItemExternType,
+    ItemExternType<'db>,
     [visibility, extern_kw, type_kw, name, generic_params, semicolon]
 );
 
-impl_item_with_attributes!(ItemStruct);
+impl_item_with_attributes!(ItemStruct<'db>);
 impl_child_nodes_without_attributes!(
-    ItemStruct,
+    ItemStruct<'db>,
     [visibility, struct_kw, name, generic_params, lbrace, members, rbrace]
 );
 
-impl_item_with_attributes!(ItemEnum);
+impl_item_with_attributes!(ItemEnum<'db>);
 impl_child_nodes_without_attributes!(
-    ItemEnum,
+    ItemEnum<'db>,
     [visibility, enum_kw, name, generic_params, lbrace, variants, rbrace]
 );
 
-impl_item_with_attributes!(ItemConstant);
+impl_item_with_attributes!(ItemConstant<'db>);
 impl_child_nodes_without_attributes!(
-    ItemConstant,
+    ItemConstant<'db>,
     [visibility, const_kw, name, type_clause, eq, value, semicolon]
 );
 
-impl_item_with_attributes!(ItemUse);
-impl_child_nodes_without_attributes!(ItemUse, [visibility, use_kw, use_path, semicolon]);
+impl_item_with_attributes!(ItemUse<'db>);
+impl_child_nodes_without_attributes!(ItemUse<'db>, [visibility, use_kw, use_path, semicolon]);
 
-impl_item_with_attributes!(ItemImplAlias);
+impl_item_with_attributes!(ItemImplAlias<'db>);
 impl_child_nodes_without_attributes!(
-    ItemImplAlias,
+    ItemImplAlias<'db>,
     [visibility, impl_kw, name, generic_params, eq, impl_path, semicolon]
 );
 
-impl_item_with_attributes!(ItemTypeAlias);
+impl_item_with_attributes!(ItemTypeAlias<'db>);
 impl_child_nodes_without_attributes!(
-    ItemTypeAlias,
+    ItemTypeAlias<'db>,
     [visibility, type_kw, name, generic_params, eq, ty, semicolon]
 );

@@ -7,7 +7,6 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
-use cairo_lang_utils::smol_str::SmolStr;
 
 pub use self::finder::ResolvedItem;
 pub use self::finder::{find_declaration, find_definition};
@@ -31,34 +30,34 @@ mod variant;
 ///
 /// This is an ephemeral data structure.
 /// Do not store it in any kind of state.
-#[derive(Eq, PartialEq, Debug)]
-pub enum SymbolDef {
-    Item(ItemDef),
-    Variable(VariableDef),
-    ExprInlineMacro(SmolStr),
-    Member(MemberDef),
-    Variant(VariantDef),
-    Module(ModuleDef),
+#[derive(Eq, PartialEq, Debug, Clone)]
+pub enum SymbolDef<'db> {
+    Item(ItemDef<'db>),
+    Variable(VariableDef<'db>),
+    ExprInlineMacro(&'db str),
+    Member(MemberDef<'db>),
+    Variant(VariantDef<'db>),
+    Module(ModuleDef<'db>),
 }
 
 /// An instance of Search (for definition or declaration).
 /// Keeps result (def) and context information about the conducted search.
-pub struct SymbolSearch {
+pub struct SymbolSearch<'db> {
     /// Result of the search
-    pub def: SymbolDef,
+    pub def: SymbolDef<'db>,
     /// Intermediate result, used to construct `def`
-    pub resolved_item: ResolvedItem,
+    pub resolved_item: ResolvedItem<'db>,
     /// State of the resolver after this search
-    pub resolver_data: Option<ResolverData>,
+    pub resolver_data: Option<ResolverData<'db>>,
 }
 
-impl SymbolSearch {
+impl<'db> SymbolSearch<'db> {
     /// Finds definition of the symbol referred to by the given identifier.
     /// Gets you to the "nearest" point upwards in terms of top-down code breakdown
     /// (most likely you would use it to get this: usage -> impl)
     pub fn find_definition(
-        db: &AnalysisDatabase,
-        identifier: &ast::TerminalIdentifier,
+        db: &'db AnalysisDatabase,
+        identifier: &ast::TerminalIdentifier<'db>,
     ) -> Option<Self> {
         // Get the resolved item info and the syntax node of the definition.
         let lookup_items =
@@ -73,8 +72,8 @@ impl SymbolSearch {
     /// This is always the same as definition except for any identifier referring to an impl item
     /// - for which it will return a corresponding item in the definition of a trait.
     pub fn find_declaration(
-        db: &AnalysisDatabase,
-        identifier: &ast::TerminalIdentifier,
+        db: &'db AnalysisDatabase,
+        identifier: &ast::TerminalIdentifier<'db>,
     ) -> Option<Self> {
         // Get the resolved item info and the syntax node of the definition.
         let lookup_items =
@@ -86,9 +85,9 @@ impl SymbolSearch {
     }
 
     fn from_resolved_item(
-        db: &AnalysisDatabase,
-        resolved_item: ResolvedItem,
-        resolver_data: Option<ResolverData>,
+        db: &'db AnalysisDatabase,
+        resolved_item: ResolvedItem<'db>,
+        resolver_data: Option<ResolverData<'db>>,
     ) -> Option<Self> {
         match resolved_item {
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(_))
@@ -137,8 +136,8 @@ impl SymbolSearch {
                     .map(SymbolDef::Variant)
             }
 
-            ResolvedItem::ExprInlineMacro(ref inline_macro) => {
-                Some(SymbolDef::ExprInlineMacro(inline_macro.clone()))
+            ResolvedItem::ExprInlineMacro(inline_macro) => {
+                Some(SymbolDef::ExprInlineMacro(inline_macro))
             }
 
             ResolvedItem::Concrete(ResolvedConcreteItem::Macro(ref inline_macro)) => {
@@ -153,16 +152,19 @@ impl SymbolSearch {
     }
 
     /// Starts a find-usages search for this symbol.
-    pub fn usages<'a>(&'a self, db: &'a AnalysisDatabase) -> FindUsages<'a> {
-        FindUsages::new(&self.def, &self.resolved_item, db)
+    pub fn usages<'a>(self, db: &'a AnalysisDatabase) -> FindUsages<'a>
+    where
+        'db: 'a,
+    {
+        FindUsages::new(self.def, self.resolved_item, db)
     }
 }
 
-impl SymbolDef {
+impl<'db> SymbolDef<'db> {
     /// Gets the [`FileId`] and [`TextSpan`] of symbol's definition node's originating location.
     pub fn definition_originating_location(
         &self,
-        db: &AnalysisDatabase,
+        db: &'db AnalysisDatabase,
     ) -> Option<(FileId, TextSpan)> {
         let stable_ptr = self.definition_stable_ptr(db)?;
         let node = stable_ptr.lookup(db);
@@ -172,7 +174,10 @@ impl SymbolDef {
     }
 
     /// Gets the [`FileId`] and [`TextSpan`] of symbol's definition node's non-translated location.
-    pub fn definition_location(&self, db: &AnalysisDatabase) -> Option<(FileId, TextSpan)> {
+    pub fn definition_location(
+        &self,
+        db: &'db AnalysisDatabase,
+    ) -> Option<(FileId<'db>, TextSpan)> {
         let stable_ptr = self.definition_stable_ptr(db)?;
         let node = stable_ptr.lookup(db);
         let found_file = stable_ptr.file_id(db);
@@ -181,11 +186,11 @@ impl SymbolDef {
     }
 
     /// Gets the name of the symbol.
-    pub fn name(&self, db: &AnalysisDatabase) -> SmolStr {
+    pub fn name(&self, db: &'db AnalysisDatabase) -> &'db str {
         match self {
             Self::Item(it) => it.name(db),
             Self::Variable(it) => it.name(db),
-            Self::ExprInlineMacro(name) => name.clone(),
+            Self::ExprInlineMacro(name) => name,
             Self::Member(it) => it.name(db),
             Self::Variant(it) => it.name(db),
             Self::Module(it) => it.name(db),
@@ -194,7 +199,7 @@ impl SymbolDef {
 
     /// Builds a search scope for finding usages of this symbol.
     #[tracing::instrument(skip_all)]
-    pub fn search_scope(&self, db: &AnalysisDatabase) -> SearchScope {
+    pub fn search_scope(&self, db: &'db AnalysisDatabase) -> SearchScope<'db> {
         match &self {
             Self::Variable(var) => {
                 if let Some(owning_function) = var.definition_node().ancestor_of_kinds(
@@ -247,7 +252,10 @@ impl SymbolDef {
     /// Gets a stable pointer to the "most interesting" syntax node of the symbol.
     ///
     /// Typically, this is this symbol's name node.
-    pub fn definition_stable_ptr(&self, db: &dyn SyntaxGroup) -> Option<SyntaxStablePtrId> {
+    pub fn definition_stable_ptr(
+        &self,
+        db: &'db dyn SyntaxGroup,
+    ) -> Option<SyntaxStablePtrId<'db>> {
         match self {
             Self::Item(d) => Some(d.definition_stable_ptr()),
             Self::Variable(d) => Some(d.definition_stable_ptr(db)),

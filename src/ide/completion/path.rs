@@ -7,7 +7,6 @@ use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
@@ -22,9 +21,9 @@ use crate::lang::text_matching::text_matches;
 use crate::lang::visibility::peek_visible_in_with_edition;
 
 /// Treats provided path as suffix, proposing elements that can prefix this path.
-pub fn path_suffix_completions(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
+pub fn path_suffix_completions<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
 ) -> Vec<CompletionItem> {
     let (importables, typed_text) = if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
         // Enum patterns are handled in a separate function.
@@ -51,7 +50,7 @@ pub fn path_suffix_completions(
 
     // After `::`, we want to propose all importables available at the preceding path.
     let last_typed_segment = if ctx.node.kind(db) == SyntaxKind::TerminalColonColon {
-        "".to_string()
+        ""
     } else {
         // Otherwise, the last segment is a partial identifier we want to complete using fuzzy search.
         typed_text.pop().expect("typed path should not be empty")
@@ -71,7 +70,7 @@ pub fn path_suffix_completions(
             let previous_segment_matches = typed_text.iter().rev().all(|typed_segment| {
                 last_poped = path_segments.pop();
 
-                Some(typed_segment.as_str()) == last_poped
+                Some(*typed_segment) == last_poped
             });
 
             // Import path and typed path must have single overlapping element.
@@ -82,7 +81,7 @@ pub fn path_suffix_completions(
                 path_segments.push(last_poped.unwrap_or(last_segment));
             }
 
-            if !previous_segment_matches || !text_matches(last_segment, &last_typed_segment) {
+            if !previous_segment_matches || !text_matches(last_segment, last_typed_segment) {
                 return None;
             }
 
@@ -121,10 +120,10 @@ pub fn path_suffix_completions(
 }
 
 /// Treats provided path as prefix, proposing elements that should go next.
-pub fn path_prefix_completions(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
-    segments: Vec<PathSegment>,
+pub fn path_prefix_completions<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    segments: Vec<PathSegment<'db>>,
 ) -> Option<Vec<CompletionItem>> {
     let mut resolver = ctx.resolver(db);
 
@@ -140,7 +139,8 @@ pub fn path_prefix_completions(
             .iter()
             .filter_map(|item| {
                 let resolved_item = ResolvedGenericItem::from_module_item(db, *item).ok()?;
-                let item_info = db.module_item_info_by_name(module_id, item.name(db)).ok()??;
+                let item_info =
+                    db.module_item_info_by_name(module_id, item.name(db).into()).ok()??;
 
                 peek_visible_in_with_edition(
                     db,
@@ -179,7 +179,7 @@ pub fn path_prefix_completions(
                     .collect()
             })
             .unwrap_or_default(),
-        ResolvedConcreteItem::Type(ty) => match ty.lookup_intern(db) {
+        ResolvedConcreteItem::Type(ty) => match ty.long(db) {
             TypeLongId::Concrete(ConcreteTypeId::Enum(enum_id)) => db
                 .enum_variants(enum_id.enum_id(db))
                 .unwrap_or_default()

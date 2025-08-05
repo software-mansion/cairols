@@ -3,7 +3,6 @@ use std::path::PathBuf;
 
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
-use cairo_lang_utils::LookupIntern;
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
 
@@ -18,11 +17,11 @@ use crate::toolchain::scarb::ScarbToolchain;
 
 /// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(skip_all)]
-pub fn refresh_diagnostics(
-    db: &AnalysisDatabase,
+pub fn refresh_diagnostics<'db>(
+    db: &'db AnalysisDatabase,
     config: &Config,
     config_registry: &ConfigsRegistry,
-    batch: Vec<FileId>,
+    batch: Vec<FileId<'db>>,
     project_diagnostics: ProjectDiagnostics,
     notifier: Notifier,
     scarb_toolchain: ScarbToolchain,
@@ -46,11 +45,11 @@ pub fn refresh_diagnostics(
 /// I.e, if diagnostics are updated on the server side they MUST be sent successfully to the
 /// client (and vice-versa).
 #[tracing::instrument(skip_all, fields(url = tracing_file_url(db, root_on_disk_file)))]
-fn refresh_file_diagnostics(
-    db: &AnalysisDatabase,
+fn refresh_file_diagnostics<'db>(
+    db: &'db AnalysisDatabase,
     config: &Config,
     config_registry: &ConfigsRegistry,
-    root_on_disk_file: FileId,
+    root_on_disk_file: FileId<'db>,
     project_diagnostics: &ProjectDiagnostics,
     notifier: &Notifier,
     scarb_toolchain: &ScarbToolchain,
@@ -102,11 +101,11 @@ fn refresh_file_diagnostics(
 
 /// For an on disk file - returns a path to it.
 /// For a virtual file - returns a path to its first on disk ancestor.
-fn originating_file_path(db: &dyn FilesGroup, file_id: FileId) -> Option<PathBuf> {
-    match file_id.lookup_intern(db) {
-        FileLongId::OnDisk(path) => Some(path),
+fn originating_file_path<'db>(db: &'db dyn FilesGroup, file_id: FileId<'db>) -> Option<PathBuf> {
+    match file_id.long(db) {
+        FileLongId::OnDisk(path) => Some(path.clone()),
         FileLongId::Virtual(vf) => originating_file_path(db, vf.parent?),
-        FileLongId::External(id) => originating_file_path(db, db.try_ext_as_virtual(id)?.parent?),
+        FileLongId::External(id) => originating_file_path(db, db.try_ext_as_virtual(*id)?.parent?),
     }
 }
 
@@ -128,6 +127,6 @@ pub fn clear_old_diagnostics(
     }
 }
 
-fn tracing_file_url(db: &AnalysisDatabase, file: FileId) -> String {
+fn tracing_file_url<'db>(db: &'db AnalysisDatabase, file: FileId<'db>) -> String {
     db.url_for_file(file).map(|u| u.to_string()).unwrap_or_default()
 }

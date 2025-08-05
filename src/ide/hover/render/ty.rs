@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::{
     TypedSyntaxNode,
     ast::{ExprPath, PathSegment, Pattern, TerminalUnderscore},
 };
-use cairo_lang_utils::{LookupIntern, ordered_hash_map::OrderedHashMap};
+use cairo_lang_utils::{Upcast, ordered_hash_map::OrderedHashMap};
 use itertools::Itertools;
 
 use super::super::super::markdown::fenced_code_block;
@@ -23,10 +23,10 @@ use crate::{
     },
 };
 
-pub fn ty(
-    db: &AnalysisDatabase,
-    underscore: TerminalUnderscore,
-    importables: &OrderedHashMap<ImportableId, String>,
+pub fn ty<'db>(
+    db: &'db AnalysisDatabase,
+    underscore: TerminalUnderscore<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     let lookup_items = db.collect_lookup_items_with_parent_files(underscore.as_syntax_node())?;
 
@@ -36,25 +36,26 @@ pub fn ty(
     Some(fenced_code_block(&result))
 }
 
-fn pattern(
-    db: &AnalysisDatabase,
-    underscore: TerminalUnderscore,
-    lookup_items: &[LookupItemId],
-    importables: &OrderedHashMap<ImportableId, String>,
+fn pattern<'db>(
+    db: &'db AnalysisDatabase,
+    underscore: TerminalUnderscore<'db>,
+    lookup_items: &[LookupItemId<'db>],
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     let function_id = lookup_items.first()?.function_with_body()?;
     let pattern_id = db
         .lookup_pattern_by_ptr(function_id, Pattern::Underscore(underscore).stable_ptr(db))
         .ok()?;
 
-    Some(format_type(db, db.pattern_semantic(function_id, pattern_id).ty(), importables))
+    let semantic_db: &dyn SemanticGroup = db.upcast();
+    Some(format_type(db, semantic_db.pattern_semantic(function_id, pattern_id).ty(), importables))
 }
 
-fn path(
-    db: &AnalysisDatabase,
-    underscore: TerminalUnderscore,
-    lookup_items: &[LookupItemId],
-    importables: &OrderedHashMap<ImportableId, String>,
+fn path<'db>(
+    db: &'db AnalysisDatabase,
+    underscore: TerminalUnderscore<'db>,
+    lookup_items: &[LookupItemId<'db>],
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     let path = underscore.as_syntax_node().ancestor_of_type::<ExprPath>(db)?;
 
@@ -96,9 +97,9 @@ fn path(
         ResolvedConcreteItem::Function(func) => func.get_concrete(db).generic_args[i],
         ResolvedConcreteItem::Trait(trt) => trt.generic_args(db)[i],
         ResolvedConcreteItem::Impl(imp) => {
-            let ImplLongId::Concrete(imp) = imp.lookup_intern(db) else { return None };
+            let ImplLongId::Concrete(imp) = imp.long(db) else { return None };
 
-            imp.lookup_intern(db).generic_args[i]
+            imp.long(db).generic_args[i]
         }
         _ => return None,
     };

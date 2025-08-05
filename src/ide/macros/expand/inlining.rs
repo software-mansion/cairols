@@ -16,14 +16,14 @@ use crate::lang::db::AnalysisDatabase;
 /// # Note
 /// This function assumes that the modification does not alter the text before or after the original span.
 /// It is always true if we perform inlining of lower vfs into this one.
-pub fn span_after_inlining(
-    db: &AnalysisDatabase,
-    old_file: FileId,
-    new_file: FileId,
+pub fn span_after_inlining<'db>(
+    db: &'db AnalysisDatabase,
+    old_file: FileId<'db>,
+    new_file: FileId<'db>,
     old_file_span: TextSpan,
 ) -> Option<TextSpan> {
-    let old_len = TextOffset::from_str(&db.file_content(old_file)?);
-    let new_len = TextOffset::from_str(&db.file_content(new_file)?);
+    let old_len = TextOffset::from_str(db.file_content(old_file)?.long(db));
+    let new_len = TextOffset::from_str(db.file_content(new_file)?.long(db));
 
     Some(TextSpan {
         start: old_file_span.start,
@@ -32,18 +32,18 @@ pub fn span_after_inlining(
 }
 
 #[derive(Clone)]
-pub struct FileWithOrigin {
-    pub file: FileId,
-    pub generated_from: SyntaxNode,
+pub struct FileWithOrigin<'db> {
+    pub file: FileId<'db>,
+    pub generated_from: SyntaxNode<'db>,
 }
 
 // Inline `files`, starting from `file`.
-pub fn inline_files(
-    db: &AnalysisDatabase,
-    file: FileId,
-    files: &[FileWithOrigin],
+pub fn inline_files<'db>(
+    db: &'db AnalysisDatabase,
+    file: FileId<'db>,
+    files: &[FileWithOrigin<'db>],
 ) -> Option<String> {
-    let mut result_content = db.file_content(file)?.to_string();
+    let mut result_content = db.file_content(file)?.long(db).to_string();
 
     let mut replacements = Vec::new();
 

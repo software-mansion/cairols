@@ -6,7 +6,6 @@ use std::sync::{Arc, Mutex};
 
 use crossbeam::channel::Sender;
 use lsp_types::{ClientCapabilities, Url};
-use salsa::ParallelDatabase;
 
 use crate::config::Config;
 use crate::ide::analysis_progress::{AnalysisEvent, AnalysisProgressController};
@@ -74,7 +73,7 @@ impl State {
 
     pub fn snapshot(&self) -> StateSnapshot {
         StateSnapshot {
-            db: self.db.snapshot(),
+            db: self.db.clone(),
             scarb_toolchain: self.scarb_toolchain.clone(),
             open_files: self.open_files.snapshot(),
             config: self.config.snapshot(),
@@ -105,8 +104,9 @@ impl MetaStateInner {
 pub type MetaState = Arc<Mutex<MetaStateInner>>;
 
 /// Readonly snapshot of Language server state.
+#[derive(Clone)]
 pub struct StateSnapshot {
-    pub db: salsa::Snapshot<AnalysisDatabase>,
+    pub db: AnalysisDatabase,
     pub scarb_toolchain: ScarbToolchain,
     pub open_files: Snapshot<HashSet<Url>>,
     pub config: Snapshot<Config>,

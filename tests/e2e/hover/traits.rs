@@ -353,6 +353,7 @@ fn type_bound() {
     ```
     ---
     A trait for types that can be safely dropped.
+
     Types implementing `Drop` can be automatically discarded when they go out of scope.
     The drop operation is a no-op - it simply indicates to the compiler that this type
     can be safely discarded.
@@ -406,6 +407,7 @@ fn negative_type_bound() {
     ```
     ---
     A trait that allows for custom destruction behavior of a type.
+
     In Cairo, values must be explicitly handled - they cannot be silently dropped.
     Types can only go out of scope in two ways:
     1. Implement `Drop` - for types that can be discarded trivially

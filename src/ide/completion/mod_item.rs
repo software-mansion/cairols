@@ -14,10 +14,10 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::text_matching::text_matches;
 
-pub fn mod_completions(
-    db: &AnalysisDatabase,
-    module: ItemModule,
-    file: FileId,
+pub fn mod_completions<'db>(
+    db: &'db AnalysisDatabase,
+    module: ItemModule<'db>,
+    file: FileId<'db>,
     typed_module_name: &str,
 ) -> Option<Vec<CompletionItem>> {
     let semicolon_missing = match module.body(db) {
@@ -83,9 +83,9 @@ fn pop_path(url: &mut Url) -> Option<String> {
     Some(file_name)
 }
 
-fn collect_existing_modules(
-    db: &AnalysisDatabase,
-    module_files: &[ModuleId],
+fn collect_existing_modules<'db>(
+    db: &'db AnalysisDatabase,
+    module_files: &[ModuleId<'db>],
 ) -> Option<HashSet<String>> {
     let mut existing_modules_files = HashSet::<_>::default();
 

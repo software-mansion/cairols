@@ -17,9 +17,9 @@ use crate::{
     ide::completion::path::path_prefix_completions, lang::analysis_context::AnalysisContext,
 };
 
-pub fn struct_pattern_completions(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
+pub fn struct_pattern_completions<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
 ) -> Vec<CompletionItem> {
     let (all_members, existing_members, typed) = if let Some(pattern) =
         ctx.node.ancestor_of_type::<PatternStruct>(db)
@@ -54,8 +54,8 @@ pub fn struct_pattern_completions(
 
     all_members
         .keys()
-        .filter(|member| !existing_members.contains(member.as_str()))
-        .filter(|member| text_matches(member, &typed))
+        .filter(|member| !existing_members.contains(&***member))
+        .filter(|member| text_matches(&***member, typed))
         .map(|member| CompletionItem {
             label: member.to_string(),
             kind: Some(CompletionItemKind::VARIABLE),
@@ -64,9 +64,9 @@ pub fn struct_pattern_completions(
         .collect()
 }
 
-pub fn enum_pattern_completions(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
+pub fn enum_pattern_completions<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
 ) -> Vec<CompletionItem> {
     if let Some(pattern) = ctx.node.ancestor_of_type::<PatternEnum>(db)
         && let path = pattern.path(db)

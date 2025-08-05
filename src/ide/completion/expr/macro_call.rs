@@ -11,9 +11,9 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
 
-pub fn macro_call_completions(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
+pub fn macro_call_completions<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
 ) -> Vec<CompletionItem> {
     if let Some(lookup_item_id) = ctx.lookup_item_id
         && let Some(function_id) = lookup_item_id.function_with_body()

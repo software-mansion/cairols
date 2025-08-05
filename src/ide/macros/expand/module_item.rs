@@ -11,13 +11,13 @@ use super::inlining::FileWithOrigin;
 use crate::lang::db::AnalysisDatabase;
 
 // Resursively expand module item.
-pub fn expand_module_item_macros(
-    db: &AnalysisDatabase,
-    item: ModuleItem,
-    crate_id: CrateId,
+pub fn expand_module_item_macros<'db>(
+    db: &'db AnalysisDatabase,
+    item: ModuleItem<'db>,
+    crate_id: CrateId<'db>,
     metadata: &MacroPluginMetadata<'_>,
-    files: &mut Vec<FileWithOrigin>,
-    extra_files: &mut Vec<FileWithOrigin>,
+    files: &mut Vec<FileWithOrigin<'db>>,
+    extra_files: &mut Vec<FileWithOrigin<'db>>,
 ) -> Option<()> {
     let (new_files, new_extra_files) = expand_module_item(db, item, crate_id, metadata)?;
 
@@ -36,12 +36,12 @@ pub fn expand_module_item_macros(
 }
 
 // Generate files for single module item expansion.
-fn expand_module_item(
-    db: &AnalysisDatabase,
-    item: ModuleItem,
-    crate_id: CrateId,
+fn expand_module_item<'db>(
+    db: &'db AnalysisDatabase,
+    item: ModuleItem<'db>,
+    crate_id: CrateId<'db>,
     metadata: &MacroPluginMetadata<'_>,
-) -> Option<(Vec<FileWithOrigin>, Vec<FileWithOrigin>)> {
+) -> Option<(Vec<FileWithOrigin<'db>>, Vec<FileWithOrigin<'db>>)> {
     let mut files = vec![];
     let mut extra_files = vec![];
 

@@ -8,7 +8,6 @@ use cairo_lang_filesystem::db::{CrateConfiguration, CrateSettings, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::ids::AnalyzerPluginLongId;
-use cairo_lang_utils::{LookupIntern, smol_str::SmolStr};
 use itertools::{Itertools, chain};
 use serde::Serialize;
 
@@ -42,7 +41,7 @@ pub fn inspect_analyzed_crates(
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
 struct CrateView {
-    name: SmolStr,
+    name: String,
     source_paths: Vec<PathBuf>,
     settings: CrateSettings,
     linter_configuration: LinterConfiguration,
@@ -62,14 +61,14 @@ impl Ord for CrateView {
 }
 
 impl CrateView {
-    fn for_crate(
-        db: &AnalysisDatabase,
+    fn for_crate<'db>(
+        db: &'db AnalysisDatabase,
         config: &Config,
         configs_registry: &ConfigsRegistry,
         scarb_toolchain: &ScarbToolchain,
-        crate_id: CrateId,
+        crate_id: CrateId<'db>,
     ) -> Option<Self> {
-        let CrateLongId::Real { name, .. } = crate_id.lookup_intern(db) else {
+        let CrateLongId::Real { name, .. } = crate_id.long(db) else {
             return None;
         };
 
@@ -87,7 +86,7 @@ impl CrateView {
             LinterConfiguration::for_crate(config, configs_registry, scarb_toolchain, &root);
         let plugins = Plugins::for_crate(db, crate_id);
 
-        Some(Self { name, source_paths, settings, linter_configuration, plugins })
+        Some(Self { name: name.clone(), source_paths, settings, linter_configuration, plugins })
     }
 }
 
@@ -126,7 +125,7 @@ struct Plugins {
 }
 
 impl Plugins {
-    fn for_crate(db: &AnalysisDatabase, crate_id: CrateId) -> Self {
+    fn for_crate<'db>(db: &'db AnalysisDatabase, crate_id: CrateId<'db>) -> Self {
         let analyzer_plugins = db.crate_analyzer_plugins(crate_id);
         let macro_plugins = db.crate_macro_plugins(crate_id);
         let inline_macros = db.crate_inline_macro_plugins(crate_id);
@@ -137,9 +136,9 @@ impl Plugins {
             .collect();
 
         let plugins = chain!(
-            analyzer_plugins.iter().filter_map(|id| Plugin::try_from(id.lookup_intern(db)).ok()),
-            macro_plugins.iter().filter_map(|id| Plugin::try_from(id.lookup_intern(db)).ok()),
-            inline_plugins.iter().filter_map(|(_, id)| Plugin::try_from(id.lookup_intern(db)).ok())
+            analyzer_plugins.iter().filter_map(|id| Plugin::try_from(id.long(db).clone()).ok()),
+            macro_plugins.iter().filter_map(|id| Plugin::try_from(id.long(db).clone()).ok()),
+            inline_plugins.iter().filter_map(|(_, id)| Plugin::try_from(id.long(db).clone()).ok())
         );
 
         let mut builtin_plugins = vec![];

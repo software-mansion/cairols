@@ -664,10 +664,10 @@ fn test_builtin_generic_impl_in_impl_associated_impl() {
     ```
     ---
     A trait for filling inputs in a circuit instance's data.
+
     This trait provides methods to add input values to a circuit instance and
     finalize the input process.
     # Examples
-
     ```cairo
     let a = CircuitElement::<CircuitInput<0>> {};
     let b = CircuitElement::<CircuitInput<1>> {};
@@ -754,10 +754,10 @@ fn test_builtin_impl_in_impl_generic_bound() {
     ```
     ---
     A trait for filling inputs in a circuit instance's data.
+
     This trait provides methods to add input values to a circuit instance and
     finalize the input process.
     # Examples
-
     ```cairo
     let a = CircuitElement::<CircuitInput<0>> {};
     let b = CircuitElement::<CircuitInput<1>> {};

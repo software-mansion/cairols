@@ -9,7 +9,6 @@ use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::smol_str::format_smolstr;
 use memchr::memmem::Finder;
 use search_scope::SearchScope;
 
@@ -33,33 +32,33 @@ macro_rules! flow {
 /// This algorithm is based on the standard IDE trick:
 /// first, a fast text search to get a superset of matches is performed,
 /// and then each match is checked using a precise goto-definition algorithm.
-pub struct FindUsages<'a> {
-    symbol: &'a SymbolDef,
-    symbol_item: &'a ResolvedItem,
-    db: &'a AnalysisDatabase,
+pub struct FindUsages<'db> {
+    symbol: SymbolDef<'db>,
+    symbol_item: ResolvedItem<'db>,
+    db: &'db AnalysisDatabase,
     include_declaration: bool,
-    in_scope: Option<SearchScope>,
+    in_scope: Option<SearchScope<'db>>,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct FoundUsage {
-    pub file: FileId,
+pub struct FoundUsage<'db> {
+    pub file: FileId<'db>,
     pub span: TextSpan,
 }
 
-impl FoundUsage {
-    fn originating_location(&self, db: &AnalysisDatabase) -> Self {
+impl<'db> FoundUsage<'db> {
+    fn originating_location(&self, db: &'db AnalysisDatabase) -> Self {
         let (file, span) = get_originating_location(db, self.file, self.span, None);
 
         Self { file, span }
     }
 }
 
-impl<'a> FindUsages<'a> {
+impl<'db> FindUsages<'db> {
     pub(super) fn new(
-        symbol: &'a SymbolDef,
-        symbol_item: &'a ResolvedItem,
-        db: &'a AnalysisDatabase,
+        symbol: SymbolDef<'db>,
+        symbol_item: ResolvedItem<'db>,
+        db: &'db AnalysisDatabase,
     ) -> Self {
         Self { symbol, symbol_item, db, include_declaration: false, in_scope: None }
     }
@@ -76,13 +75,13 @@ impl<'a> FindUsages<'a> {
     /// Will search only in provided scope.
     ///
     /// Useful mostly in `textDocument/documentHighlight` to narrow search scope.
-    pub fn in_scope(mut self, scope: SearchScope) -> Self {
+    pub fn in_scope(mut self, scope: SearchScope<'db>) -> Self {
         self.in_scope = Some(scope);
         self
     }
 
     /// Collects all found usages.
-    pub fn collect(self) -> Vec<FoundUsage> {
+    pub fn collect(self) -> Vec<FoundUsage<'db>> {
         let mut result = vec![];
         self.search(&mut |usage| {
             result.push(usage);
@@ -94,14 +93,14 @@ impl<'a> FindUsages<'a> {
     /// Collects just the originating locations of all found usages.
     pub fn originating_locations(
         self,
-        db: &AnalysisDatabase,
-    ) -> impl Iterator<Item = (FileId, TextSpan)> {
+        db: &'db AnalysisDatabase,
+    ) -> impl Iterator<Item = (FileId<'db>, TextSpan)> {
         self.collect().into_iter().map(|usage| usage.originating_location(db).location())
     }
 
     /// Executes this search and calls the given sink for each found usage.
     #[tracing::instrument(skip_all)]
-    pub fn search(self, sink: &mut dyn FnMut(FoundUsage) -> ControlFlow<(), ()>) {
+    pub fn search(self, sink: &mut dyn FnMut(FoundUsage<'db>) -> ControlFlow<(), ()>) {
         let db = self.db;
 
         #[allow(unused_doc_comments)]
@@ -125,22 +124,23 @@ impl<'a> FindUsages<'a> {
 
         let search_scope = self.in_scope.clone().unwrap_or_else(|| self.symbol.search_scope(db));
 
-        let needle = match self.symbol {
+        let needle = match &self.symbol {
             // Small optimisation for inline macros: we can be sure that any usages will have a `!`
             // at the end, so we do not need to search for occurrences without it.
-            SymbolDef::ExprInlineMacro(macro_name) => format_smolstr!("{macro_name}!"),
-            symbol => symbol.name(db),
+            SymbolDef::ExprInlineMacro(macro_name) => format!("{macro_name}!"),
+            symbol => symbol.name(db).to_string(),
         };
 
         let finder = Finder::new(needle.as_bytes());
         let self_finder = Finder::new(SELF_TYPE_KW.as_bytes());
 
         for (file, text, search_span) in search_scope.files_contents_and_spans(db) {
+            let text = text.long(db);
             let mut found_offsets: Vec<TextOffset> =
-                Self::match_offsets(&finder, &text, search_span).collect();
+                Self::match_offsets(&finder, text, search_span).collect();
             if search_for_self_usages {
                 let mut self_usages_offsets =
-                    Self::match_offsets(&self_finder, &text, search_span).collect();
+                    Self::match_offsets(&self_finder, text, search_span).collect();
                 found_offsets.append(&mut self_usages_offsets);
             }
             // Search occurrences of the symbol's name.
@@ -182,9 +182,9 @@ impl<'a> FindUsages<'a> {
 
     fn found_identifier(
         &self,
-        db: &dyn SyntaxGroup,
-        identifier: TerminalIdentifier,
-        sink: &mut dyn FnMut(FoundUsage) -> ControlFlow<(), ()>,
+        db: &'db dyn SyntaxGroup,
+        identifier: TerminalIdentifier<'db>,
+        sink: &mut dyn FnMut(FoundUsage<'db>) -> ControlFlow<(), ()>,
     ) -> ControlFlow<(), ()> {
         // Declaration is not a usage, so filter it out.
         if Some(identifier.stable_ptr(self.db).untyped()) == self.symbol.definition_stable_ptr(db) {
@@ -199,8 +199,8 @@ impl<'a> FindUsages<'a> {
             SymbolSearch::find_declaration(self.db, &identifier).map(|ss| ss.def);
 
         // Check if declaration or definition matches
-        if found_symbol_definition.as_ref() == Some(self.symbol)
-            || found_symbol_declaration.as_ref() == Some(self.symbol)
+        if found_symbol_definition.as_ref() == Some(&self.symbol)
+            || found_symbol_declaration.as_ref() == Some(&self.symbol)
         {
             let usage = FoundUsage::from_syntax_node(self.db, identifier.as_syntax_node());
             sink(usage)
@@ -210,20 +210,20 @@ impl<'a> FindUsages<'a> {
     }
 }
 
-impl FoundUsage {
-    fn from_syntax_node(db: &AnalysisDatabase, syntax_node: SyntaxNode) -> Self {
+impl<'db> FoundUsage<'db> {
+    fn from_syntax_node(db: &'db AnalysisDatabase, syntax_node: SyntaxNode<'db>) -> Self {
         Self {
             file: syntax_node.stable_ptr(db).file_id(db),
             span: syntax_node.span_without_trivia(db),
         }
     }
 
-    fn from_stable_ptr(db: &AnalysisDatabase, stable_ptr: SyntaxStablePtrId) -> Self {
+    fn from_stable_ptr(db: &'db AnalysisDatabase, stable_ptr: SyntaxStablePtrId<'db>) -> Self {
         Self::from_syntax_node(db, stable_ptr.lookup(db))
     }
 
     /// Converts this object to a file-span tuple, losing any extra carried information.
-    pub fn location(self) -> (FileId, TextSpan) {
+    pub fn location(self) -> (FileId<'db>, TextSpan) {
         (self.file, self.span)
     }
 }

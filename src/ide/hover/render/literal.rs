@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern};
+use cairo_lang_utils::{Intern, Upcast};
 use indoc::formatdoc;
 
 use crate::ide::ty::format_type;
@@ -18,10 +18,10 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 /// [`TerminalShortString`] if it represents some literal
 /// and renders a hover containing its value and type, returns None otherwise.
 #[tracing::instrument(level = "trace", skip_all)]
-pub fn literal(
-    db: &AnalysisDatabase,
-    node: SyntaxNode,
-    importables: &OrderedHashMap<ImportableId, String>,
+pub fn literal<'db>(
+    db: &'db AnalysisDatabase,
+    node: SyntaxNode<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     node.ancestors_with_self(db)
         .filter_map(|node| TerminalLiteralNumber::cast(db, node))
@@ -54,7 +54,7 @@ pub fn literal(
 }
 
 /// Gets the type of an expression associated with [`SyntaxNode`].
-fn find_type(db: &AnalysisDatabase, node: SyntaxNode) -> Option<TypeId> {
+fn find_type<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> Option<TypeId<'db>> {
     if let Some(function_id) = db.find_lookup_item(node)?.function_with_body() {
         find_type_in_function_context(db, node, function_id)
     } else {
@@ -64,20 +64,24 @@ fn find_type(db: &AnalysisDatabase, node: SyntaxNode) -> Option<TypeId> {
 
 /// Gets the type of an expression associated with [`SyntaxNode`] assuming it's defined in the
 /// context of function.
-fn find_type_in_function_context(
-    db: &AnalysisDatabase,
-    node: SyntaxNode,
-    function_id: FunctionWithBodyId,
-) -> Option<TypeId> {
+fn find_type_in_function_context<'db>(
+    db: &'db AnalysisDatabase,
+    node: SyntaxNode<'db>,
+    function_id: FunctionWithBodyId<'db>,
+) -> Option<TypeId<'db>> {
     let expr = Expr::from_syntax_node(db, node);
     let expr_id = db.lookup_expr_by_ptr(function_id, expr.stable_ptr(db)).ok()?;
-    let type_id = db.expr_semantic(function_id, expr_id).ty();
+    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let type_id = semantic_db.expr_semantic(function_id, expr_id).ty();
 
     Some(type_id)
 }
 
 /// Gets the type of an expression associated with [`SyntaxNode`] assuming it's a const item.
-fn find_type_in_const_declaration(db: &AnalysisDatabase, node: SyntaxNode) -> Option<TypeId> {
+fn find_type_in_const_declaration<'db>(
+    db: &'db AnalysisDatabase,
+    node: SyntaxNode<'db>,
+) -> Option<TypeId<'db>> {
     let module_file_id = db.find_module_file_containing_node(node)?;
     let const_item = node.ancestor_of_type::<ItemConstant>(db)?;
     let const_item_id = ConstantLongId(module_file_id, const_item.stable_ptr(db)).intern(db);
@@ -87,15 +91,15 @@ fn find_type_in_const_declaration(db: &AnalysisDatabase, node: SyntaxNode) -> Op
 }
 
 fn is_type_missing(type_id: &TypeId, db: &AnalysisDatabase) -> bool {
-    matches!(type_id.lookup_intern(db), TypeLongId::Missing(_))
+    matches!(type_id.long(db), TypeLongId::Missing(_))
 }
 
 /// Formats the number literal writing its decimal, hexadecimal and binary value and type.
-fn number_hover(
-    db: &AnalysisDatabase,
-    literal: &TerminalLiteralNumber,
-    type_id: &TypeId,
-    importables: &OrderedHashMap<ImportableId, String>,
+fn number_hover<'db>(
+    db: &'db AnalysisDatabase,
+    literal: &TerminalLiteralNumber<'db>,
+    type_id: &TypeId<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     let value = literal.numeric_value(db)?;
 
@@ -118,10 +122,10 @@ fn number_hover(
 }
 
 /// Formats the number literal writing it along with the `core::byte_array::ByteArray` type.
-fn string_hover(
-    db: &AnalysisDatabase,
-    type_id: &TypeId,
-    importables: &OrderedHashMap<ImportableId, String>,
+fn string_hover<'db>(
+    db: &'db AnalysisDatabase,
+    type_id: &TypeId<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     if is_type_missing(type_id, db) {
         None
@@ -139,11 +143,11 @@ fn string_hover(
 
 /// Formats the short string literal writing its textual and numeric value along with the
 /// `core::felt252` type.
-fn short_string_hover(
-    db: &AnalysisDatabase,
-    literal: &TerminalShortString,
-    type_id: TypeId,
-    importables: &OrderedHashMap<ImportableId, String>,
+fn short_string_hover<'db>(
+    db: &'db AnalysisDatabase,
+    literal: &TerminalShortString<'db>,
+    type_id: TypeId<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
     let mut representation = match (literal.numeric_value(db), literal.string_value(db)) {
         (None, _) => None,

@@ -2,15 +2,15 @@ use std::collections::HashMap;
 
 use cairo_lang_syntax::node::ast::PatternIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use lsp_types::{CodeAction, CodeActionKind, Diagnostic, Range, TextEdit, Url, WorkspaceEdit};
 
 use crate::lang::db::AnalysisDatabase;
 
 /// Create a code action that prefixes an unused variable with an `_`.
-pub fn rename_unused_variable(
-    db: &AnalysisDatabase,
-    node: &SyntaxNode,
+pub fn rename_unused_variable<'db>(
+    db: &'db AnalysisDatabase,
+    node: &SyntaxNode<'db>,
     diagnostic: Diagnostic,
     uri: Url,
 ) -> Option<CodeAction> {
@@ -22,7 +22,7 @@ pub fn rename_unused_variable(
     } else if let Some(ident) = node.ancestor_of_type::<PatternIdentifier>(db)
         && let Some(_) = ident.as_syntax_node().parent_of_kind(db, SyntaxKind::StatementLet)
     {
-        ident.name(db).token(db).text(db).to_string()
+        ident.name(db).token(db).as_syntax_node().get_text(db)
     } else {
         return None;
     };

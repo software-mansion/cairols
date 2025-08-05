@@ -47,7 +47,7 @@ fn handle_rename(
     let first = *db.file_modules(file).ok()?.first()?;
 
     let submodule = match first {
-        ModuleId::CrateRoot(_) => {
+        ModuleId::CrateRoot(_) | ModuleId::MacroCall { id: _, generated_file_id: _ } => {
             // If renamed file was src/lib.cairo there is nothing we can do.
             return None;
         }

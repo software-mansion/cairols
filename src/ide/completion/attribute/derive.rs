@@ -7,11 +7,11 @@ use lsp_types::{CompletionItem, CompletionItemKind};
 
 use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 
-pub fn derive_completions(
-    db: &AnalysisDatabase,
+pub fn derive_completions<'db>(
+    db: &'db AnalysisDatabase,
     derive_name: &str,
-    attribute: Attribute,
-    crate_id: CrateId,
+    attribute: Attribute<'db>,
+    crate_id: CrateId<'db>,
 ) -> Option<Vec<CompletionItem>> {
     let plugins = db.crate_macro_plugins(crate_id);
 

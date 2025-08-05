@@ -15,18 +15,18 @@ use crate::lang::proc_macros::plugins::scarb::regular::AttrExpansionFound;
 
 /// Helps creating TokenStream based on multiple SyntaxNodes,
 /// which aren't descendants or ascendants of each other inside the SyntaxTree.
-pub struct TokenStreamBuilder<'a> {
-    db: &'a dyn SyntaxGroup,
-    nodes: Vec<SyntaxNode>,
+pub struct TokenStreamBuilder<'db> {
+    db: &'db dyn SyntaxGroup,
+    nodes: Vec<SyntaxNode<'db>>,
     metadata: Option<TokenStreamMetadata>,
 }
 
-impl<'a> TokenStreamBuilder<'a> {
-    pub fn new(db: &'a dyn SyntaxGroup) -> Self {
+impl<'db> TokenStreamBuilder<'db> {
+    pub fn new(db: &'db dyn SyntaxGroup) -> Self {
         Self { db, nodes: Vec::default(), metadata: None }
     }
 
-    pub fn add_node(&mut self, node: SyntaxNode) {
+    pub fn add_node(&mut self, node: SyntaxNode<'db>) {
         self.nodes.push(node);
     }
 
@@ -93,8 +93,8 @@ impl<'a> TokenStreamBuilder<'a> {
     }
 }
 
-impl Extend<SyntaxNode> for TokenStreamBuilder<'_> {
-    fn extend<T: IntoIterator<Item = SyntaxNode>>(&mut self, iter: T) {
+impl<'db> Extend<SyntaxNode<'db>> for TokenStreamBuilder<'db> {
+    fn extend<T: IntoIterator<Item = SyntaxNode<'db>>>(&mut self, iter: T) {
         for node in iter {
             self.add_node(node);
         }
@@ -161,10 +161,10 @@ pub struct ExpandableAttrLocation {
 }
 
 impl ExpandableAttrLocation {
-    pub fn new<T: TypedSyntaxNode>(
+    pub fn new<'db, T: TypedSyntaxNode<'db>>(
         node: &T,
         item_start_offset: CairoTextOffset,
-        db: &dyn SyntaxGroup,
+        db: &'db dyn SyntaxGroup,
     ) -> Self {
         let span_without_trivia = node.text_span(db);
         let span_with_trivia = node.as_syntax_node().span(db);
@@ -288,7 +288,7 @@ impl ExpandableAttrLocation {
     }
 }
 
-impl AttrExpansionFound {
+impl<'db> AttrExpansionFound<'db> {
     /// Move spans in the `TokenStream` for macro expansion input.
     pub fn adapt_token_stream(&self, token_stream: TokenStream) -> AdaptedTokenStream {
         match self {

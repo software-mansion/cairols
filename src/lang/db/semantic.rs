@@ -18,48 +18,63 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast};
 
 use super::LsSyntaxGroup;
 
-#[salsa::query_group(LsSemanticDatabase)]
-pub trait LsSemanticGroup: SemanticGroup + Upcast<dyn SemanticGroup> + LsSyntaxGroup {
+#[cairo_lang_proc_macros::query_group(LsSemanticDatabase)]
+pub trait LsSemanticGroup:
+    SemanticGroup + for<'db> Upcast<'db, dyn SemanticGroup> + LsSyntaxGroup
+{
     /// Returns a [`LookupItemId`] corresponding to the node or its first parent all the way up to
     /// syntax root in the file.
     ///
     /// This method is a shortcut for getting the first item out of `collect_lookup_items_leaf`.
     /// Returns `None` if there is missing data in the compiler database.
-    fn find_lookup_item(&self, node: SyntaxNode) -> Option<LookupItemId>;
+    fn find_lookup_item<'db>(&'db self, node: SyntaxNode<'db>) -> Option<LookupItemId<'db>>;
 
     /// Returns [`LookupItemId`]s corresponding to the node or its first parent all the way up to
     /// syntax root in the file.
     ///
     /// Returns `None` if there is missing data in the compiler database.
     /// It is not expected for this function to return `Some([])`, but do not assume this.
-    fn collect_lookup_items_leaf(&self, node: SyntaxNode) -> Option<Vec<LookupItemId>>;
+    fn collect_lookup_items_leaf<'db>(
+        &'db self,
+        node: SyntaxNode<'db>,
+    ) -> Option<Vec<LookupItemId<'db>>>;
 
     /// Calls [`LsSemanticGroup::collect_lookup_items`] on provided node and all parent files that this node is mapping to.
-    fn collect_lookup_items_with_parent_files(&self, node: SyntaxNode)
-    -> Option<Vec<LookupItemId>>;
+    fn collect_lookup_items_with_parent_files<'db>(
+        &'db self,
+        node: SyntaxNode<'db>,
+    ) -> Option<Vec<LookupItemId<'db>>>;
 
     /// Finds the corresponding node in the parent file for a given node using code mappings.
     /// The method aims to locate the most expansive node in the parent file that maps to the provided node.
-    fn corresponding_node_in_parent_file(&self, node: SyntaxNode) -> Option<SyntaxNode>;
+    fn corresponding_node_in_parent_file<'db>(
+        &'db self,
+        node: SyntaxNode<'db>,
+    ) -> Option<SyntaxNode<'db>>;
 
     /// Returns [`LookupItemId`]s corresponding to the node and its parents all the way up to syntax
     /// root in the file.
     ///
     /// Returns `None` if there is missing data in the compiler database.
     /// It is not expected for this function to return `Some([])`, but do not assume this.
-    fn collect_lookup_items(&self, node: SyntaxNode) -> Option<Vec<LookupItemId>>;
+    fn collect_lookup_items<'db>(
+        &'db self,
+        node: SyntaxNode<'db>,
+    ) -> Option<Vec<LookupItemId<'db>>>;
 
     /// Returns a [`ModuleFileId`] containing the node.
-    fn find_module_file_containing_node(&self, node: SyntaxNode) -> Option<ModuleFileId>;
+    fn find_module_file_containing_node<'db>(
+        &'db self,
+        node: SyntaxNode<'db>,
+    ) -> Option<ModuleFileId<'db>>;
 
     /// Finds a [`ModuleId`] containing the node.
-    fn find_module_containing_node(&self, node: SyntaxNode) -> Option<ModuleId>;
+    fn find_module_containing_node<'db>(&'db self, node: SyntaxNode<'db>) -> Option<ModuleId<'db>>;
 
     /// Reverse lookups [`VarId`] to get a [`Binding`] associated with it.
     ///
@@ -67,16 +82,16 @@ pub trait LsSemanticGroup: SemanticGroup + Upcast<dyn SemanticGroup> + LsSyntaxG
     /// no mapping from the former to the latter is being maintained in [`SemanticGroup`].
     /// This forces us to perform elaborate reverse lookups,
     /// which makes life here much harder than needed.
-    fn lookup_binding(&self, var_id: VarId) -> Option<Binding>;
+    fn lookup_binding<'db>(&'db self, var_id: VarId<'db>) -> Option<Binding<'db>>;
 
     /// Collects `file` and all its descendants together with modules from all these files.
     ///
     /// **CAVEAT**: it does not collect descendant files that come from inline macros - it will when
     /// the compiler moves inline macros resolving to [`DefsGroup`].
-    fn file_and_subfiles_with_corresponding_modules(
-        &self,
-        file: FileId,
-    ) -> Option<(HashSet<FileId>, HashSet<ModuleId>)>;
+    fn file_and_subfiles_with_corresponding_modules<'db>(
+        &'db self,
+        file: FileId<'db>,
+    ) -> Option<(HashSet<FileId<'db>>, HashSet<ModuleId<'db>>)>;
 
     /// We use the term `resultants` to refer to generated nodes that are mapped to the original node and are not deleted.
     /// Efectively (user nodes + generated nodes - removed nodes) set always contains resultants for any user defined node.
@@ -136,26 +151,29 @@ pub trait LsSemanticGroup: SemanticGroup + Upcast<dyn SemanticGroup> + LsSyntaxG
     /// Additionally `FooTrait` from file 2 is mapped to `FooTrait` from file 1.
     ///
     /// Therefore for `FooTrait` from file 1, `FooTrait` from file 1 and `FooTrait` from file 2 are returned.
-    fn get_node_resultants(&self, node: SyntaxNode) -> Option<Vec<SyntaxNode>>;
+    fn get_node_resultants<'db>(&'db self, node: SyntaxNode<'db>) -> Option<Vec<SyntaxNode<'db>>>;
 }
 
-fn find_lookup_item(db: &dyn LsSemanticGroup, node: SyntaxNode) -> Option<LookupItemId> {
+fn find_lookup_item<'db>(
+    db: &'db dyn LsSemanticGroup,
+    node: SyntaxNode<'db>,
+) -> Option<LookupItemId<'db>> {
     db.collect_lookup_items_leaf(node)?.into_iter().next()
 }
 
-fn collect_lookup_items_leaf(
-    db: &dyn LsSemanticGroup,
-    node: SyntaxNode,
-) -> Option<Vec<LookupItemId>> {
+fn collect_lookup_items_leaf<'db>(
+    db: &'db dyn LsSemanticGroup,
+    node: SyntaxNode<'db>,
+) -> Option<Vec<LookupItemId<'db>>> {
     let module_file_id = db.find_module_file_containing_node(node)?;
 
     node.ancestors_with_self(db).find_map(|node| lookup_item_from_ast(db, module_file_id, node))
 }
 
-fn collect_lookup_items_with_parent_files(
-    db: &dyn LsSemanticGroup,
-    node: SyntaxNode,
-) -> Option<Vec<LookupItemId>> {
+fn collect_lookup_items_with_parent_files<'db>(
+    db: &'db dyn LsSemanticGroup,
+    node: SyntaxNode<'db>,
+) -> Option<Vec<LookupItemId<'db>>> {
     let mut node = Some(node);
     let mut result = vec![];
 
@@ -168,10 +186,10 @@ fn collect_lookup_items_with_parent_files(
     Some(result)
 }
 
-fn corresponding_node_in_parent_file(
-    db: &dyn LsSemanticGroup,
-    node: SyntaxNode,
-) -> Option<SyntaxNode> {
+fn corresponding_node_in_parent_file<'db>(
+    db: &'db dyn LsSemanticGroup,
+    node: SyntaxNode<'db>,
+) -> Option<SyntaxNode<'db>> {
     let (parent, mappings) = get_parent_and_mapping(db, node.stable_ptr(db).file_id(db))?;
 
     let span_in_parent = translate_location(&mappings, node.span(db))?;
@@ -179,7 +197,10 @@ fn corresponding_node_in_parent_file(
     db.widest_node_within_span(parent, span_in_parent)
 }
 
-fn collect_lookup_items(db: &dyn LsSemanticGroup, node: SyntaxNode) -> Option<Vec<LookupItemId>> {
+fn collect_lookup_items<'db>(
+    db: &'db dyn LsSemanticGroup,
+    node: SyntaxNode<'db>,
+) -> Option<Vec<LookupItemId<'db>>> {
     let module_file_id = db.find_module_file_containing_node(node)?;
 
     Some(
@@ -189,10 +210,10 @@ fn collect_lookup_items(db: &dyn LsSemanticGroup, node: SyntaxNode) -> Option<Ve
     )
 }
 
-fn find_module_file_containing_node(
-    db: &dyn LsSemanticGroup,
-    node: SyntaxNode,
-) -> Option<ModuleFileId> {
+fn find_module_file_containing_node<'db>(
+    db: &'db dyn LsSemanticGroup,
+    node: SyntaxNode<'db>,
+) -> Option<ModuleFileId<'db>> {
     let module_id = db.find_module_containing_node(node)?;
     let file = node.stable_ptr(db).file_id(db);
 
@@ -207,7 +228,10 @@ fn find_module_file_containing_node(
     Some(ModuleFileId(module_id, file_index))
 }
 
-fn find_module_containing_node(db: &dyn LsSemanticGroup, node: SyntaxNode) -> Option<ModuleId> {
+fn find_module_containing_node<'db>(
+    db: &'db dyn LsSemanticGroup,
+    node: SyntaxNode<'db>,
+) -> Option<ModuleId<'db>> {
     // Get the main module of the main file containing the node.
     // The node may be located in a virtual file of a submodule.
     let main_module = {
@@ -232,7 +256,7 @@ fn find_module_containing_node(db: &dyn LsSemanticGroup, node: SyntaxNode) -> Op
         // And get id of the (sub)module containing the node by traversing this stack top-down.
         .try_rfold(main_module, |module, name| {
             let ModuleItemId::Submodule(submodule) =
-                db.module_item_by_name(module, name).ok()??
+                db.module_item_by_name(module, name.into()).ok()??
             else {
                 return None;
             };
@@ -240,7 +264,7 @@ fn find_module_containing_node(db: &dyn LsSemanticGroup, node: SyntaxNode) -> Op
         })
 }
 
-fn lookup_binding(db: &dyn LsSemanticGroup, var_id: VarId) -> Option<Binding> {
+fn lookup_binding<'db>(db: &'db dyn LsSemanticGroup, var_id: VarId<'db>) -> Option<Binding<'db>> {
     match var_id {
         VarId::Param(param_id) => {
             // Get param's syntax node.
@@ -266,7 +290,8 @@ fn lookup_binding(db: &dyn LsSemanticGroup, var_id: VarId) -> Option<Binding> {
                 db.find_lookup_item(pattern.as_syntax_node())?.function_with_body()?;
 
             // Get the semantic model for the pattern.
-            let pattern = db.pattern_semantic(
+            let semantic_db: &dyn SemanticGroup = db.upcast();
+            let pattern = semantic_db.pattern_semantic(
                 function_id,
                 db.lookup_pattern_by_ptr(function_id, pattern.stable_ptr(db)).ok()?,
             );
@@ -289,10 +314,10 @@ fn lookup_binding(db: &dyn LsSemanticGroup, var_id: VarId) -> Option<Binding> {
     }
 }
 
-fn file_and_subfiles_with_corresponding_modules(
-    db: &dyn LsSemanticGroup,
-    file: FileId,
-) -> Option<(HashSet<FileId>, HashSet<ModuleId>)> {
+fn file_and_subfiles_with_corresponding_modules<'db>(
+    db: &'db dyn LsSemanticGroup,
+    file: FileId<'db>,
+) -> Option<(HashSet<FileId<'db>>, HashSet<ModuleId<'db>>)> {
     let mut modules: HashSet<_> = db.file_modules(file).ok()?.iter().copied().collect();
     let mut files = HashSet::from([file]);
     // Collect descendants of `file`
@@ -325,7 +350,10 @@ fn file_and_subfiles_with_corresponding_modules(
     Some((files, modules))
 }
 
-fn get_node_resultants(db: &dyn LsSemanticGroup, node: SyntaxNode) -> Option<Vec<SyntaxNode>> {
+fn get_node_resultants<'db>(
+    db: &'db dyn LsSemanticGroup,
+    node: SyntaxNode<'db>,
+) -> Option<Vec<SyntaxNode<'db>>> {
     let main_file = node.stable_ptr(db).file_id(db);
 
     let (mut files, _) = db.file_and_subfiles_with_corresponding_modules(main_file)?;
@@ -339,12 +367,12 @@ fn get_node_resultants(db: &dyn LsSemanticGroup, node: SyntaxNode) -> Option<Vec
 }
 
 /// If the ast node is a lookup item, return corresponding ids. Otherwise, returns `None`.
-/// See [LookupItemId].
-fn lookup_item_from_ast(
-    db: &dyn SemanticGroup,
-    module_file_id: ModuleFileId,
-    node: SyntaxNode,
-) -> Option<Vec<LookupItemId>> {
+/// See [LookupItemId<'db>].
+fn lookup_item_from_ast<'db>(
+    db: &'db dyn SemanticGroup,
+    module_file_id: ModuleFileId<'db>,
+    node: SyntaxNode<'db>,
+) -> Option<Vec<LookupItemId<'db>>> {
     let syntax_db = db;
 
     let is_in_impl = node.ancestor_of_kind(syntax_db, SyntaxKind::ItemImpl).is_some();
@@ -507,11 +535,11 @@ fn lookup_item_from_ast(
 }
 
 /// See [`LsSemanticGroup::get_node_resultants`].
-fn find_generated_nodes(
-    db: &dyn SemanticGroup,
-    node_descendant_files: &[FileId],
-    node: SyntaxNode,
-) -> OrderedHashSet<SyntaxNode> {
+fn find_generated_nodes<'db>(
+    db: &'db dyn SemanticGroup,
+    node_descendant_files: &[FileId<'db>],
+    node: SyntaxNode<'db>,
+) -> OrderedHashSet<SyntaxNode<'db>> {
     let start_file = node.stable_ptr(db).file_id(db);
 
     let mut result = OrderedHashSet::default();
@@ -531,9 +559,9 @@ fn find_generated_nodes(
             continue;
         };
 
-        let is_replacing_og_item = match file.lookup_intern(db) {
+        let is_replacing_og_item = match file.long(db) {
             FileLongId::Virtual(vfs) => vfs.original_item_removed,
-            FileLongId::External(id) => db.ext_as_virtual(id).original_item_removed,
+            FileLongId::External(id) => db.ext_as_virtual(*id).original_item_removed,
             _ => unreachable!(),
         };
 
