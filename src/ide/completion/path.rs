@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -112,16 +110,9 @@ pub fn path_suffix_completions(
         .collect();
 
     // Remove path label_details from all completions, that are NOT duplicated.
-    let completions_vec: Vec<_> = completions.clone();
-    let duplicate_labels: HashSet<_> = completions_vec
-        .iter()
-        .map(|item| &item.label)
-        .filter(|label| completions_vec.iter().filter(|item| &item.label == *label).count() > 1)
-        .cloned()
-        .collect();
-
+    let label_counts = completions.iter().map(|item| item.label.clone()).counts();
     for completion in &mut completions {
-        if !duplicate_labels.contains(&completion.label) {
+        if label_counts[&completion.label] == 1 {
             completion.label_details = None;
         }
     }
