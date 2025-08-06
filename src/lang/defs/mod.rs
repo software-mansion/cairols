@@ -10,6 +10,7 @@ use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 
 pub use self::finder::ResolvedItem;
 pub use self::finder::{find_declaration, find_definition};
+pub use self::generic_param::GenericParamDef;
 pub use self::item::ItemDef;
 pub use self::member::MemberDef;
 pub use self::module::ModuleDef;
@@ -20,6 +21,7 @@ use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
 
 mod finder;
+mod generic_param;
 mod item;
 mod member;
 mod module;
@@ -38,6 +40,7 @@ pub enum SymbolDef<'db> {
     Member(MemberDef<'db>),
     Variant(VariantDef<'db>),
     Module(ModuleDef<'db>),
+    GenericParam(GenericParamDef<'db>),
 }
 
 /// An instance of Search (for definition or declaration).
@@ -147,6 +150,10 @@ impl<'db> SymbolSearch<'db> {
             ResolvedItem::Generic(ResolvedGenericItem::Macro(ref inline_macro)) => {
                 Some(SymbolDef::ExprInlineMacro(inline_macro.name(db)))
             }
+
+            ResolvedItem::GenericParam(ref generic_param) => {
+                Some(SymbolDef::GenericParam(GenericParamDef::new(db, generic_param)?))
+            }
         }
         .map(|def| Self { def, resolved_item, resolver_data })
     }
@@ -194,6 +201,7 @@ impl<'db> SymbolDef<'db> {
             Self::Member(it) => it.name(db),
             Self::Variant(it) => it.name(db),
             Self::Module(it) => it.name(db),
+            Self::GenericParam(it) => it.name(db),
         }
     }
 
@@ -263,6 +271,7 @@ impl<'db> SymbolDef<'db> {
             Self::Member(d) => Some(d.definition_stable_ptr()),
             Self::Variant(d) => Some(d.definition_stable_ptr()),
             Self::Module(d) => Some(d.definition_stable_ptr()),
+            Self::GenericParam(d) => Some(d.definition_stable_ptr()),
         }
     }
 }
