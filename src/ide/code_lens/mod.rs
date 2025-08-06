@@ -6,6 +6,8 @@ use crate::ide::code_lens::tests::{
     TestCodeLens, TestCodeLensConstructionParams, TestCodeLensProvider,
 };
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
+use crate::lsp::capabilities::client::ClientCapabilitiesExt;
+use crate::lsp::ext::{ExecuteInTerminal, ExecuteInTerminalParams};
 use crate::server::client::{Notifier, Requester};
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
 use crate::server::schedule::{Task, thread};
@@ -17,16 +19,17 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::ModuleItem;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use crossbeam::channel::{self, Receiver, Sender};
 use itertools::Itertools;
+use lsp_types::notification::ShowMessage;
 use lsp_types::request::CodeLensRefresh;
-use lsp_types::{CodeLens, Url};
-use serde::{Deserialize, Serialize};
+use lsp_types::{CodeLens, MessageType, ShowMessageParams, Url};
 use serde_json::{Number, Value};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use std::vec;
 
@@ -45,7 +48,7 @@ trait CodeLensProvider {
 
 trait CodeLensInterface {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()>;
-    fn get_lens(&self) -> CodeLens;
+    fn lens(&self) -> CodeLens;
 }
 
 #[derive(Clone, PartialEq)]
@@ -63,10 +66,10 @@ impl CodeLensInterface for LSCodeLens {
             }
         }
     }
-    fn get_lens(&self) -> CodeLens {
+    fn lens(&self) -> CodeLens {
         match self {
-            LSCodeLens::Test(test) => test.get_lens(),
-            LSCodeLens::Executable(executable) => executable.get_lens(),
+            LSCodeLens::Test(test) => test.lens(),
+            LSCodeLens::Executable(executable) => executable.lens(),
         }
     }
 }
@@ -180,7 +183,7 @@ impl CodeLensController {
 
         let code_lens = file_code_lens
             .into_iter()
-            .map(|lens| lens.get_lens())
+            .map(|lens| lens.lens())
             .sorted_by_key(|lens| lens.command.clone().unwrap_or_default().title)
             .collect();
 
@@ -190,6 +193,7 @@ impl CodeLensController {
     pub fn execute_code_lens(state: &State, notifier: Notifier, args: &[Value]) -> Option<()> {
         let (file_url, index) = parse_args(args)?;
 
+        // Drop state guard before doing any panickable actions.
         let ls_code_lens = {
             let code_lens_state = state.code_lens_controller.state.read().ok()?;
             let file_lens_state = code_lens_state.lens.get(&file_url)?;
@@ -235,13 +239,14 @@ impl CodeLensRefreshThread {
 
     fn event_loop(self) {
         while let Ok(message) = self.refresh_receiver.recv() {
-            let message = self.refresh_receiver.try_iter().fold(message, |mut acc, next_messge| {
-                acc.db = next_messge.db; // Leave only single snapshot, drop others.
-                acc.config = next_messge.config; // Use last sent config.
+            let message =
+                self.refresh_receiver.try_iter().fold(message, |mut acc, next_message| {
+                    acc.db = next_message.db; // Leave only single snapshot, drop others.
+                    acc.config = next_message.config; // Use last sent config.
 
-                acc.files.extend(next_messge.files);
-                acc
-            });
+                    acc.files.extend(next_message.files);
+                    acc
+                });
 
             let _ = catch_unwind(AssertUnwindSafe(|| {
                 self.refresh_lenses_for(
@@ -302,12 +307,6 @@ impl CodeLensRefreshThread {
 pub struct FileChange {
     pub url: Url,
     pub was_deleted: bool,
-}
-
-#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub enum CodeLensKind {
-    Test,
-    Executable,
 }
 
 fn calculate_code_lens(url: Url, db: &AnalysisDatabase, config: &Config) -> Option<FileCodeLens> {
@@ -379,15 +378,29 @@ fn collect_functions_with_attrs(
     result
 }
 
-fn get_original_node_and_file(
+fn get_original_module_item_and_file(
     db: &AnalysisDatabase,
     ptr: SyntaxStablePtrId,
-) -> Option<(SyntaxNode, FileId)> {
+) -> Option<(ModuleItem, FileId)> {
     let (file, span) =
         get_originating_location(db, ptr.file_id(db), ptr.lookup(db).span_without_trivia(db), None);
 
-    db.find_syntax_node_at_offset(file, span.start)?
-        .ancestors_with_self(db)
-        .find(|n| ModuleItem::cast(db, *n).is_some())
-        .map(|syntax_node| (syntax_node, file))
+    db.find_syntax_node_at_offset(file, span.start)?.ancestors_with_self(db).find_map(|n| {
+        let module_item = ModuleItem::cast(db, n);
+        module_item.map(|module_item| (module_item, file))
+    })
+}
+
+fn send_execute_in_terminal(state: &State, notifier: &Notifier, command: String, cwd: PathBuf) {
+    if state.client_capabilities.execute_in_terminal_support() {
+        notifier.notify::<ExecuteInTerminal>(ExecuteInTerminalParams { cwd, command });
+    } else {
+        notifier.notify::<ShowMessage>(ShowMessageParams {
+            typ: MessageType::INFO,
+            message: format!(
+                "To execute the code lens, run command: `{command}` in directory {}",
+                cwd.display()
+            ),
+        });
+    }
 }
