@@ -35,16 +35,8 @@ pub fn format_type<'db>(
             if generics.is_empty() {
                 path
             } else {
-                let generics_list = generics
-                    .into_iter()
-                    .map(|generic| {
-                        InferredValue::try_from_generic_arg_id(generic)
-                            .map(|value| value.format(db, importables))
-                            .unwrap_or_else(|| generic.format(db))
-                    })
-                    .join(", ");
-
-                format!("{path}<{generics_list}>",)
+                let formatted_generics_list = format_generic_args(db, &generics, importables);
+                format!("{path}{formatted_generics_list}",)
             }
         }
         TypeLongId::Tuple(types) => {
@@ -66,6 +58,24 @@ pub fn format_type<'db>(
         TypeLongId::Missing(_) => "?".to_string(),
         _ => ty.format(db),
     }
+}
+
+/// Formats the provided generic arguments as a list wrapped with angle brackets.
+pub fn format_generic_args<'db>(
+    db: &'db AnalysisDatabase,
+    args: &[GenericArgumentId<'db>],
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
+) -> String {
+    let arg_list = args
+        .iter()
+        .map(|&arg| {
+            InferredValue::try_from_generic_arg_id(arg)
+                .map(|value| value.format(db, importables))
+                .unwrap_or_else(|| arg.format(db))
+        })
+        .join(", ");
+
+    format!("<{arg_list}>")
 }
 
 pub enum InferredValue<'db> {
