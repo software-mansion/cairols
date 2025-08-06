@@ -1,6 +1,7 @@
 use super::{
     AnnotatedNode, CodeLensBuilder, CodeLensInterface, CodeLensProvider, LSCodeLens,
-    collect_functions_with_attrs, get_original_node_and_file, make_lens_args,
+    collect_functions_with_attrs, get_original_module_item_and_file, make_lens_args,
+    send_execute_in_terminal,
 };
 use crate::config::{Config, TestRunner};
 use crate::lang::db::AnalysisDatabase;
@@ -8,9 +9,6 @@ use crate::lang::db::LsSemanticGroup;
 use crate::lang::db::LsSyntaxGroup;
 use crate::lang::lsp::ToCairo;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
-use crate::lsp::capabilities::client::ClientCapabilitiesExt;
-use crate::lsp::ext::ExecuteInTerminal;
-use crate::lsp::ext::ExecuteInTerminalParams;
 use crate::server::client::Notifier;
 use crate::state::State;
 use cairo_lang_defs::db::DefsGroup;
@@ -28,11 +26,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast::ModuleItem};
 use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::Intern;
-use lsp_types::Range;
-use lsp_types::notification::ShowMessage;
-use lsp_types::{CodeLens, Url};
-use lsp_types::{Command, ShowMessageParams};
-use lsp_types::{MessageType, Position};
+use lsp_types::{CodeLens, Command, Position, Range, Url};
 
 use std::ops::Not;
 
@@ -60,24 +54,12 @@ impl CodeLensInterface for TestCodeLens {
             AvailableTestRunners::new(db, module_file_id.0.owning_crate(db))?,
             &state.config.run_test_command,
         )?;
-
         let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
-        if state.client_capabilities.execute_in_terminal_support() {
-            notifier.notify::<ExecuteInTerminal>(ExecuteInTerminalParams { cwd, command });
-        } else {
-            notifier.notify::<ShowMessage>(ShowMessageParams {
-                typ: MessageType::INFO,
-                message: format!(
-                    "To execute the code lens, run command: `{command}` in directory {}",
-                    cwd.display()
-                ),
-            });
-        }
-
+        send_execute_in_terminal(state, notifier, command, cwd);
         Some(())
     }
 
-    fn get_lens(&self) -> CodeLens {
+    fn lens(&self) -> CodeLens {
         self.lens.clone()
     }
 }
@@ -323,12 +305,12 @@ fn has_any_test<'db>(db: &'db AnalysisDatabase, module: ModuleId<'db>) -> bool {
 }
 
 fn get_test_lens_position<'db>(db: &'db AnalysisDatabase, ptr: SyntaxStablePtrId<'db>) -> Option<Position> {
-    let (original_node, original_file) = get_original_node_and_file(db, ptr)?;
+    let (original_node, original_file) = get_original_module_item_and_file(db, ptr)?;
     original_node
         .find_attr(db, "test")
-        .map(|attr| attr.as_syntax_node())
         // If attr is not found we are probably on mod.
-        .unwrap_or(original_node)
+        .map(|attr| attr.as_syntax_node())
+        .unwrap_or_else(|| original_node.as_syntax_node())
         .span_start_without_trivia(db)
         .position_in_file(db, original_file)
         .map(|position| position.to_lsp())

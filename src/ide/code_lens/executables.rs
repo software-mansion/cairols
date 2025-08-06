@@ -1,11 +1,11 @@
 use crate::ide::code_lens::{
     AnnotatedNode, CodeLensBuilder, CodeLensInterface, CodeLensProvider, LSCodeLens,
-    collect_functions_with_attrs, get_original_node_and_file, make_lens_args,
+    collect_functions_with_attrs, get_original_module_item_and_file, make_lens_args,
+    send_execute_in_terminal,
 };
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::lsp::ToLsp;
-use crate::lsp::ext::{ExecuteInTerminal, ExecuteInTerminalParams};
 use crate::project::builtin_plugins::BuiltinPlugin;
 use crate::server::client::Notifier;
 use crate::state::State;
@@ -66,14 +66,12 @@ impl CodeLensBuilder for ExecutableLensBuilder {
 impl CodeLensInterface for ExecutableCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
         let file_path = file_url.to_file_path().ok()?;
-        notifier.notify::<ExecuteInTerminal>(ExecuteInTerminalParams {
-            cwd: state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?,
-            command: self.command.clone(),
-        });
+        let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
+        send_execute_in_terminal(state, notifier, self.command.clone(), cwd);
         None
     }
 
-    fn get_lens(&self) -> CodeLens {
+    fn lens(&self) -> CodeLens {
         self.lens.clone()
     }
 }
@@ -92,10 +90,8 @@ pub fn get_executable_code_lenses_builders(
         .iter()
         .filter_map(|plugin_id| {
             BuiltinPlugin::try_from_compiler_macro_plugin(&*plugin_id.lookup_intern(db).0)
-                .map(|builtin_plugin: BuiltinPlugin| builtin_plugin == BuiltinPlugin::Executable)
         })
-        .next()
-        .is_some();
+        .any(|builtin_plugin: BuiltinPlugin| builtin_plugin == BuiltinPlugin::Executable);
 
     if !has_executable_plugin {
         return None;
@@ -142,7 +138,7 @@ fn get_executable_lens_position(
     db: &AnalysisDatabase,
     attribute_ptr: SyntaxStablePtrId,
 ) -> Option<Position> {
-    let (original_node, original_file) = get_original_node_and_file(db, attribute_ptr)?;
+    let (original_node, original_file) = get_original_module_item_and_file(db, attribute_ptr)?;
     original_node.find_attr(db, EXECUTABLE_ATTR).map(|attribute| {
         attribute
             .as_syntax_node()
