@@ -21,8 +21,10 @@ use cairo_lang_semantic::resolve::{
     ResolverData,
 };
 use cairo_lang_semantic::substitution::SemanticRewriter;
-use cairo_lang_semantic::{ConcreteImplId, Expr, TypeLongId};
-use cairo_lang_syntax::node::ast::{PathSegment, TerminalIdentifier};
+use cairo_lang_semantic::{ConcreteImplId, Expr, GenericParam, TypeLongId};
+use cairo_lang_syntax::node::ast::{
+    ExprPathInner, GenericArgUnnamed, PathSegment, TerminalIdentifier, TypeClause,
+};
 use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -49,6 +51,7 @@ pub enum ResolvedItem<'db> {
     Member(MemberId<'db>),
     ImplItem(ImplItemId<'db>),
     ExprInlineMacro(&'db str),
+    GenericParam(GenericParam<'db>),
 }
 
 pub fn find_definition<'db>(
@@ -68,6 +71,7 @@ pub fn find_definition<'db>(
         .or_else(|| try_trait_or_impl_item_with_self_reference(db, identifier, lookup_items))
         .or_else(|| try_concrete_type_or_impl(db, identifier, lookup_items))
         .or_else(|| try_trait_as_generic_parameter_bound(db, identifier, lookup_items))
+        .or_else(|| try_generic_arg(db, identifier, lookup_items))
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
 }
@@ -577,6 +581,95 @@ fn try_concrete_type_or_impl<'db>(
     None
 }
 
+/// Resolves generic **arguments** to declarations of their corresponding generic **parameters**.
+///
+/// Structs, enums, functions, type aliases, extern items, traits and impls can declare generic parameters (consts, types and impls).
+/// Every ocurrence of a generic identifier is an **argument**, while only the first one defines the underlying **parameter**.
+///
+/// # Example
+/// The following function:
+/// ```
+/// trait Trait<T> {}
+/// ```
+/// contains the declaration of **type parameter** `T`.
+///
+/// If we refer to it in the trait function body:
+/// ```
+/// trait Trait<T> {  // declaration - parameter
+///     fn foo(x: T) -> T { x }  // usage - argument
+/// }
+/// ```
+/// we are using a **type argument**.
+fn try_generic_arg<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+) -> Option<ResolvedItem<'db>> {
+    // If function has a generic const/impl param and a variable which shadows that param:
+    //
+    // fn foo<const C: u8>() -> felt252 {
+    //     let C: felt252 = 0;
+    //     C<caret>
+    // }
+    //
+    // Such declaration is legal in Cairo. The parameter `C` is shadowed by the variable `C`.
+    // In such case, we don't want to resolve the generic.
+    if lookup_items.iter().any(|lookup_item| {
+        db.lookup_resolved_generic_item_by_ptr(*lookup_item, identifier.stable_ptr(db)).is_some()
+    }) {
+        return None;
+    }
+
+    // Parameter declaration inside item declaration, in angle brackets (`fn foo<T>()`):
+    let is_param = identifier.as_syntax_node().ancestor_of_type::<ast::GenericParam>(db).is_some();
+
+    // Argument of a type constraint (`+Drop<T>`) or a turbofish (`Zero::<T>::zero()`):
+    let is_arg = identifier.as_syntax_node().ancestor_of_type::<GenericArgUnnamed>(db).is_some();
+
+    // Type of a function argument, struct member, enum variant, trait associated const, etc.
+    let is_type_clause = identifier.as_syntax_node().ancestor_of_type::<TypeClause>(db).is_some();
+
+    // Const/impl generic param referenced inside expression, e.g.:
+    //
+    // fn foo<const C: u8>() -> felt252 {
+    //     C<caret>.into()
+    // }
+    //
+    // or
+    //
+    // fn foo<T, impl Impl: Zero<T>>() -> T {
+    //     Impl<caret>::zero()
+    // }
+    let is_expr = identifier.as_syntax_node().ancestor_of_type::<ExprPathInner>(db).is_some();
+
+    if !(is_param || is_arg || is_type_clause || is_expr) {
+        return None;
+    }
+
+    let name = identifier.text(db);
+
+    for &lookup_item in lookup_items {
+        let item_generic_params = db.item_generic_params(lookup_item);
+
+        let maybe_resolved_param = item_generic_params.into_iter().find(|param| {
+            let param_syntax = param.stable_ptr(db).lookup(db);
+            let param_name = match param_syntax {
+                ast::GenericParam::Type(p) => p.name(db).text(db),
+                ast::GenericParam::Const(p) => p.name(db).text(db),
+                ast::GenericParam::ImplNamed(p) => p.name(db).text(db),
+                _ => return false,
+            };
+            param_name == name
+        });
+
+        if let Some(resolved_param) = maybe_resolved_param {
+            return Some(ResolvedItem::GenericParam(resolved_param));
+        }
+    }
+
+    None
+}
+
 /// Resolves traits used as bounds for generic type parameters in functions, structs, enums, traits or impls,
 /// either as (positive or negative) type constraints like `fn foo<T, +Drop<T>>`
 /// or impl constraints like `fn foo<T, impl Impl: Drop<T>>`.
@@ -857,6 +950,8 @@ impl<'db> ResolvedItem<'db> {
                     impl_impl.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                 }
             },
+
+            ResolvedItem::GenericParam(generic_param) => generic_param.stable_ptr(db).untyped(),
         };
         Some(stable_ptr)
     }
