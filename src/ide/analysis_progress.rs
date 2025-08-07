@@ -101,7 +101,7 @@ impl AnalysisProgressController {
     }
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq)]
 pub enum AnalysisStatus {
     Started,
     Finished,
