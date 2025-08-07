@@ -5,7 +5,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use crate::ide::ty::format_type;
+use crate::ide::format::types::format_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 /// Information about the definition of a variable (local, function parameter).

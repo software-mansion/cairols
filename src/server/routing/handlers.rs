@@ -158,7 +158,7 @@ impl BackgroundDocumentRequestHandler for Formatting {
         _notifier: Notifier,
         params: DocumentFormattingParams,
     ) -> LSPResult<Option<Vec<TextEdit>>> {
-        Ok(ide::formatter::format(params, snapshot))
+        Ok(ide::format::documents::format_document(params, snapshot))
     }
 }
 

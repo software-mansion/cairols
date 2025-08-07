@@ -11,7 +11,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast};
 use indoc::formatdoc;
 
-use crate::ide::ty::format_type;
+use crate::ide::format::types::format_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 /// Narrows down [`SyntaxNode`] to [`TerminalLiteralNumber`], [`TerminalString`] or

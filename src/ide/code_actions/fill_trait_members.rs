@@ -14,7 +14,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{Itertools, chain};
 use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, WorkspaceEdit};
 
-use crate::ide::ty::{InferredValue, format_type};
+use crate::ide::format::types::{InferredValue, format_type};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
