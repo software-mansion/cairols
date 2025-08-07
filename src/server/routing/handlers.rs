@@ -279,10 +279,10 @@ impl SyncNotificationHandler for DidCloseTextDocument {
         params: DidCloseTextDocumentParams,
     ) -> LSPResult<()> {
         state.open_files.remove(&params.text_document.uri);
-        if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
-            if state.db.file_overrides().contains_key(&file) {
-                override_file_content!(state.db, file, None);
-            }
+        if let Some(file) = state.db.file_for_url(&params.text_document.uri)
+            && state.db.file_overrides().contains_key(&file)
+        {
+            override_file_content!(state.db, file, None);
         }
 
         Ok(())
@@ -401,7 +401,7 @@ impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
         _notifier: Notifier,
         params: SemanticTokensParams,
     ) -> LSPResult<Option<SemanticTokensResult>> {
-        Ok(catch_unwind(AssertUnwindSafe(|| {
+        catch_unwind(AssertUnwindSafe(|| {
             ide::semantic_highlighting::semantic_highlight_full(params, &snapshot.db, meta_state)
         }))
         .unwrap_or_else(|err| {
@@ -409,8 +409,8 @@ impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
                 resume_unwind(err);
             }
             error!("SemanticTokensFullRequest handler panicked");
-            None
-        }))
+            Ok(None)
+        })
     }
 }
 

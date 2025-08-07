@@ -26,12 +26,11 @@ impl<'db> SearchScope<'db> {
         let mut this = Self::empty();
         for crate_id in db.crates() {
             for &module_id in db.crate_modules(crate_id).iter() {
-                if let Ok(file_id) = db.module_main_file(module_id) {
-                    if let Some((files, _)) =
+                if let Ok(file_id) = db.module_main_file(module_id)
+                    && let Some((files, _)) =
                         db.file_and_subfiles_with_corresponding_modules(file_id)
-                    {
-                        this.entries.extend(files.into_iter().map(|f| (f, None)));
-                    }
+                {
+                    this.entries.extend(files.into_iter().map(|f| (f, None)));
                 }
             }
         }

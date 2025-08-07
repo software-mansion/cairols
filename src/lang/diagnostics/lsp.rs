@@ -96,15 +96,14 @@ fn get_mapped_range_and_add_mapping_note<'db>(
 ) -> Option<(Range, FileId<'db>)> {
     let mapped = orig.user_location(db.upcast());
     let mapped_range = get_lsp_range(db.upcast(), &mapped)?;
-    if let Some(related_info) = related_info {
-        if *orig != mapped {
-            if let Some(range) = get_lsp_range(db.upcast(), orig) {
-                related_info.push(DiagnosticRelatedInformation {
-                    location: Location { uri: db.url_for_file(orig.file_id)?, range },
-                    message: message.to_string(),
-                });
-            }
-        }
+    if let Some(related_info) = related_info
+        && *orig != mapped
+        && let Some(range) = get_lsp_range(db.upcast(), orig)
+    {
+        related_info.push(DiagnosticRelatedInformation {
+            location: Location { uri: db.url_for_file(orig.file_id)?, range },
+            message: message.to_string(),
+        });
     }
     Some((mapped_range, mapped.file_id))
 }

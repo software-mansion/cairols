@@ -87,10 +87,10 @@ pub fn get_attribute_expansion(
     let result = db.get_stored_attribute_expansion(params.clone().into()).unwrap_or_else(|| {
         let token_stream = params.item.clone();
 
-        if let Some(client) = db.proc_macro_server_status().ready() {
-            if !client.was_requested(RequestParams::Attribute(params.clone().into())) {
-                client.request_attribute(params);
-            }
+        if let Some(client) = db.proc_macro_server_status().ready()
+            && !client.was_requested(RequestParams::Attribute(params.clone().into()))
+        {
+            client.request_attribute(params);
         }
 
         ProcMacroResult {
@@ -110,10 +110,10 @@ pub fn get_derive_expansion(
     let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.item);
 
     let result = db.get_stored_derive_expansion(params.clone().into()).unwrap_or_else(|| {
-        if let Some(client) = db.proc_macro_server_status().ready() {
-            if !client.was_requested(RequestParams::Derive(params.clone().into())) {
-                client.request_derives(params);
-            }
+        if let Some(client) = db.proc_macro_server_status().ready()
+            && !client.was_requested(RequestParams::Derive(params.clone().into()))
+        {
+            client.request_derives(params);
         }
 
         ProcMacroResult {
@@ -138,10 +138,10 @@ pub fn get_inline_macros_expansion(
             // We can't return the original node because it will make us fall into infinite recursion.
             let unit = "()".to_string();
 
-            if let Some(client) = db.proc_macro_server_status().ready() {
-                if !client.was_requested(RequestParams::Inline(params.clone().into())) {
-                    client.request_inline_macros(params);
-                }
+            if let Some(client) = db.proc_macro_server_status().ready()
+                && !client.was_requested(RequestParams::Inline(params.clone().into()))
+            {
+                client.request_inline_macros(params);
             }
 
             ProcMacroResult {

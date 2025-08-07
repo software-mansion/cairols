@@ -1,15 +1,19 @@
+pub use self::token_kind::SemanticTokenKind;
+use crate::META_STATE_NOT_ACQUIRED_MSG;
+use crate::ide::analysis_progress::AnalysisStatus;
+use crate::ide::semantic_highlighting::token_traverser::SemanticTokensTraverser;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::lsp::LsProtoGroup;
+use crate::lsp::result::{LSPError, LSPResult};
+use crate::state::MetaState;
+use anyhow::anyhow;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::{TerminalIdentifier, TerminalIdentifierPtr};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use lsp_server::ErrorCode;
 use lsp_types::{SemanticTokens, SemanticTokensParams, SemanticTokensResult};
-use tracing::error;
-
-pub use self::token_kind::SemanticTokenKind;
-use crate::ide::semantic_highlighting::token_traverser::SemanticTokensTraverser;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::lang::lsp::LsProtoGroup;
-use crate::state::MetaState;
+use tracing::{error, trace};
 
 mod encoder;
 pub mod token_kind;
@@ -19,19 +23,33 @@ mod token_traverser;
 pub fn semantic_highlight_full(
     params: SemanticTokensParams,
     db: &AnalysisDatabase,
-    _ls_meta_state: MetaState,
-) -> Option<SemanticTokensResult> {
+    meta_state: MetaState,
+) -> LSPResult<Option<SemanticTokensResult>> {
+    let locked_state = meta_state.lock().expect(META_STATE_NOT_ACQUIRED_MSG);
+    let analysis_finished =
+        locked_state.analysis_status.is_some_and(|status| status == AnalysisStatus::Finished);
+
+    // Release, so no panickable action is performed while keeping the state locked.
+    drop(locked_state);
+
+    if !analysis_finished {
+        trace!("semantic highlighting not able to run because analysis is still in progress");
+        return Err(LSPError {
+            code: ErrorCode::ServerCancelled,
+            error: anyhow!("Analysis still in progress"),
+        });
+    }
     let file_uri = params.text_document.uri;
-    let file = db.file_for_url(&file_uri)?;
+    let Some(file) = db.file_for_url(&file_uri) else { return Ok(None) };
     let Ok(node) = db.file_syntax(file) else {
         error!("semantic analysis failed: file '{file_uri}' does not exist");
-        return None;
+        return Ok(None);
     };
 
-    Some(SemanticTokensResult::Tokens(SemanticTokens {
+    Ok(Some(SemanticTokensResult::Tokens(SemanticTokens {
         result_id: None,
         data: SemanticTokensTraverser::default().get_semantic_tokens(db, node),
-    }))
+    })))
 }
 
 // Retrieves the most-likely-usable resultant, and the terminal ptr we can use for semantic lookup

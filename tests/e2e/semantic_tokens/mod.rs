@@ -16,7 +16,7 @@ fn semantic_tokens(code: &str) -> String {
         client_capabilities = caps;
     };
 
-    ls.open_all_cairo_files_and_wait_for_project_update();
+    ls.open_all_and_wait_for_diagnostics_generation();
 
     let res = ls
         .send_request::<lsp_request!("textDocument/semanticTokens/full")>(

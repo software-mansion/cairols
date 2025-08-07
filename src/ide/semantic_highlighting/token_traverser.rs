@@ -152,7 +152,7 @@ impl SemanticTokensTraverser {
             token_modifiers_bitset: 0,
         }
     }
-    
+
     fn mark_future_token(&mut self, offset: TextOffset, semantic_kind: SemanticTokenKind) {
         self.offset_to_kind_lookahead.insert(offset, semantic_kind);
     }
