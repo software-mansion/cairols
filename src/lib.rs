@@ -404,10 +404,10 @@ impl Backend {
             .code_lens_controller
             .schedule_refreshing_all_lenses(state.db.clone(), state.config.clone());
 
-        if state.client_capabilities.workspace_semantic_tokens_refresh_support() {
-            if let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing()) {
-                error!("semantic tokens refresh failed: {err:#?}");
-            }
+        if state.client_capabilities.workspace_semantic_tokens_refresh_support()
+            && let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing())
+        {
+            error!("semantic tokens refresh failed: {err:#?}");
         }
     }
 

@@ -230,29 +230,26 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<CrateInfo> {
                 is_member: is_workspace_member(&component.package),
             };
 
-            if compilation_unit.package == component.package {
-                if let Some(group_id) = compilation_unit.target.params.get("group-id") {
-                    if let Some(group_id) = group_id.as_str() {
-                        if cr_info.cr.custom_main_file_stems.is_none() {
-                            error!(
-                                "compilation unit component with name {} has `lib.cairo` root \
-                                 file while being part of target grouped by group_id {group_id}",
-                                crate_name
-                            )
-                        } else {
-                            let crates = crates_grouped_by_group_id
-                                .entry(group_id.to_string())
-                                .or_insert(vec![]);
-                            crates.push(cr_info);
-
-                            continue;
-                        }
-                    } else {
+            if compilation_unit.package == component.package
+                && let Some(group_id) = compilation_unit.target.params.get("group-id")
+            {
+                if let Some(group_id) = group_id.as_str() {
+                    if cr_info.cr.custom_main_file_stems.is_none() {
                         error!(
-                            "group-id for target {} was not a string",
-                            compilation_unit.target.name
+                            "compilation unit component with name {} has `lib.cairo` root \
+                                 file while being part of target grouped by group_id {group_id}",
+                            crate_name
                         )
+                    } else {
+                        let crates = crates_grouped_by_group_id
+                            .entry(group_id.to_string())
+                            .or_insert(vec![]);
+                        crates.push(cr_info);
+
+                        continue;
                     }
+                } else {
+                    error!("group-id for target {} was not a string", compilation_unit.target.name)
                 }
             }
 

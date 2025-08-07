@@ -48,6 +48,7 @@ struct CrateView {
     plugins: Plugins,
 }
 
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for CrateView {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some((&self.name, &self.source_paths).cmp(&(&other.name, &other.source_paths)))

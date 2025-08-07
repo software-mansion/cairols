@@ -13,7 +13,6 @@ use itertools::Itertools;
 
 mod child_nodes;
 mod conversion;
-mod expansion;
 pub mod inline;
 pub mod regular;
 mod types;
