@@ -237,11 +237,14 @@ impl TestRunner {
 }
 
 const TEST_EXECUTABLES: [&str; 2] = ["test", "snforge_internal_test_executable"];
-fn collect_test_functions(db: &AnalysisDatabase, module: ModuleId) -> Vec<AnnotatedNode> {
+fn collect_test_functions<'db>(
+    db: &'db AnalysisDatabase,
+    module: ModuleId<'db>,
+) -> Vec<AnnotatedNode<'db>> {
     collect_functions_with_attrs(db, module, &TEST_EXECUTABLES)
 }
 
-fn collect_tests<'db>(
+fn collect_test_lenses<'db>(
     file_code_lens: &mut Vec<TestCodeLensBuilder>,
     db: &'db AnalysisDatabase,
     module: ModuleId<'db>,
@@ -304,7 +307,10 @@ fn has_any_test<'db>(db: &'db AnalysisDatabase, module: ModuleId<'db>) -> bool {
     })
 }
 
-fn get_test_lens_position<'db>(db: &'db AnalysisDatabase, ptr: SyntaxStablePtrId<'db>) -> Option<Position> {
+fn get_test_lens_position<'db>(
+    db: &'db AnalysisDatabase,
+    ptr: SyntaxStablePtrId<'db>,
+) -> Option<Position> {
     let (original_node, original_file) = get_original_module_item_and_file(db, ptr)?;
     original_node
         .find_attr(db, "test")
