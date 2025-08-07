@@ -20,7 +20,7 @@ use crate::lang::db::AnalysisDatabase;
 /// Finds all methods that can be called on a type.
 pub fn find_methods_for_type<'db>(
     db: &'db AnalysisDatabase,
-    mut resolver: Resolver<'db>,
+    resolver: &mut Resolver<'db>,
     ty: cairo_lang_semantic::TypeId<'db>,
     stable_ptr: cairo_lang_syntax::node::ids::SyntaxStablePtrId<'db>,
 ) -> Vec<TraitFunctionId<'db>> {
@@ -105,7 +105,7 @@ pub fn available_traits_for_method<'db>(
     let unknown_method_name = ctx.node.get_text(db);
 
     Some(
-        find_methods_for_type(db, ctx.resolver(db), ty, stable_ptr.untyped())
+        find_methods_for_type(db, &mut ctx.resolver(db), ty, stable_ptr.untyped())
             .into_iter()
             .filter(|method| method.name(db) == unknown_method_name)
             .filter_map(|method| module_visible_traits.get(&method.trait_id(db)).cloned())
