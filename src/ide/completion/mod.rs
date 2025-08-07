@@ -43,9 +43,11 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     let text_document_position = params.text_document_position;
     let file_id = db.file_for_url(&text_document_position.text_document.uri)?;
     let mut position = text_document_position.position;
-    position.character = position.character.saturating_sub(1);
+    let base_position_node = db.find_syntax_node_at_position(file_id, position.to_cairo())?;
 
+    position.character = position.character.saturating_sub(1);
     let mut node = db.find_syntax_node_at_position(file_id, position.to_cairo())?;
+    let has_node_switched = base_position_node == node;
 
     // There is no completions for these.
     if matches!(
@@ -90,7 +92,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     let result: Vec<_> = db
         .get_node_resultants(node)?
         .into_iter()
-        .filter_map(|resultant| complete_ex(resultant, trigger_kind, db))
+        .filter_map(|resultant| complete_ex(resultant, trigger_kind, has_node_switched, db))
         .flatten()
         .map(CompletionItemHashable)
         .collect::<OrderedHashSet<_>>()
@@ -104,6 +106,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 fn complete_ex(
     node: SyntaxNode,
     trigger_kind: CompletionTriggerKind,
+    has_node_switched: bool,
     db: &AnalysisDatabase,
 ) -> Option<Vec<CompletionItem>> {
     let ctx = AnalysisContext::from_node(db, node)?;
@@ -112,7 +115,7 @@ fn complete_ex(
 
     let mut completions = vec![];
 
-    let dot_binary_expression = dot_expr_rhs(db, &node);
+    let dot_binary_expression = dot_expr_rhs(db, &node, has_node_switched);
     let is_dot_expression = dot_binary_expression.is_some();
 
     if let Some(binary_expression) = dot_binary_expression
@@ -194,8 +197,8 @@ fn complete_ex(
         completions.extend(mod_names_completions);
     }
 
-    completions.extend(params_completions(db, &ctx));
-    completions.extend(variables_completions(db, &ctx));
+    completions.extend(params_completions(db, &ctx, has_node_switched));
+    completions.extend(variables_completions(db, &ctx, has_node_switched));
     completions.extend(struct_pattern_completions(db, &ctx));
     completions.extend(enum_pattern_completions(db, &ctx));
 

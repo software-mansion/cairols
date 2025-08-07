@@ -11,9 +11,13 @@ use crate::lang::text_matching::text_matches;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::PathSegment;
 
-pub fn params_completions(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Vec<CompletionItem> {
+pub fn params_completions(
+    db: &AnalysisDatabase,
+    ctx: &AnalysisContext<'_>,
+    has_node_switched: bool,
+) -> Vec<CompletionItem> {
     let (params, typed_text) = if let Some(path) = expr_selector(db, &ctx.node)
-        && dot_expr_rhs(db, &ctx.node).is_none()
+        && dot_expr_rhs(db, &ctx.node, has_node_switched).is_none()
         && let [PathSegment::Simple(segment)] =
             path.segments(db).elements(db).take(2).collect_vec().as_slice()
         && let Some(lookup_item_id) = ctx.lookup_item_id
