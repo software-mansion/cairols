@@ -15,7 +15,6 @@ use cairo_lang_executable::plugin::EXECUTABLE_ATTR;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::LookupIntern;
 use lsp_types::{CodeLens, Command, Position, Range, Url};
 
 #[derive(PartialEq, Clone, Debug)]
@@ -89,7 +88,7 @@ pub fn get_executable_code_lenses_builders(
         .crate_macro_plugins(crate_id)
         .iter()
         .filter_map(|plugin_id| {
-            BuiltinPlugin::try_from_compiler_macro_plugin(&*plugin_id.lookup_intern(db).0)
+            BuiltinPlugin::try_from_compiler_macro_plugin(&*plugin_id.long(db).0)
         })
         .any(|builtin_plugin: BuiltinPlugin| builtin_plugin == BuiltinPlugin::Executable);
 
@@ -130,7 +129,10 @@ fn get_executable_lenses_builders_in_mod(
     }
 }
 
-fn collect_executable_functions(db: &AnalysisDatabase, module: ModuleId) -> Vec<AnnotatedNode> {
+fn collect_executable_functions<'db>(
+    db: &'db AnalysisDatabase,
+    module: ModuleId<'db>,
+) -> Vec<AnnotatedNode<'db>> {
     collect_functions_with_attrs(db, module, &[EXECUTABLE_ATTR])
 }
 

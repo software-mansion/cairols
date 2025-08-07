@@ -345,17 +345,17 @@ fn parse_args(args: &[Value]) -> Option<(Url, usize)> {
     Some((url, lens_index))
 }
 
-struct AnnotatedNode {
+struct AnnotatedNode<'db> {
     pub full_path: String,
-    pub attribute_ptr: SyntaxStablePtrId,
+    pub attribute_ptr: SyntaxStablePtrId<'db>,
 }
 /// Collects functions with given attributes on them
 /// Returns struct with full path and a pointer to found attribute
-fn collect_functions_with_attrs(
-    db: &AnalysisDatabase,
-    module: ModuleId,
-    attributes: &[&str],
-) -> Vec<AnnotatedNode> {
+fn collect_functions_with_attrs<'db>(
+    db: &'db AnalysisDatabase,
+    module: ModuleId<'db>,
+    attributes: &'db [&'db str],
+) -> Vec<AnnotatedNode<'db>> {
     let mut result = vec![];
 
     if let Ok(functions) = db.module_free_functions(module) {
@@ -378,10 +378,10 @@ fn collect_functions_with_attrs(
     result
 }
 
-fn get_original_module_item_and_file(
-    db: &AnalysisDatabase,
-    ptr: SyntaxStablePtrId,
-) -> Option<(ModuleItem, FileId)> {
+fn get_original_module_item_and_file<'db>(
+    db: &'db AnalysisDatabase,
+    ptr: SyntaxStablePtrId<'db>,
+) -> Option<(ModuleItem<'db>, FileId<'db>)> {
     let (file, span) =
         get_originating_location(db, ptr.file_id(db), ptr.lookup(db).span_without_trivia(db), None);
 
