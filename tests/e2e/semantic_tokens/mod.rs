@@ -19,6 +19,8 @@ fn semantic_tokens(code: &str) -> String {
 
     ls.open_all_and_wait_for_diagnostics_generation();
 
+    // TODO(#875): Once condvar logic is in place, this retry logic will become obsolete
+    // region: Retries logic
     let mut retries = 0;
     let res = loop {
         let response = ls.send_request::<lsp_request!("textDocument/semanticTokens/full")>(
@@ -38,6 +40,7 @@ fn semantic_tokens(code: &str) -> String {
         thread::sleep(time::Duration::from_millis(1000));
         retries += 1;
     };
+    // endregion
 
     let lsp_types::SemanticTokensResult::Tokens(tokens) = res else {
         panic!("expected full tokens")
