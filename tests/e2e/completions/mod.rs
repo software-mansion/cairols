@@ -11,6 +11,7 @@ use indoc::indoc;
 use lsp_types::request::Completion;
 
 mod attribute;
+mod dot;
 mod methods_text_edits;
 mod mod_file;
 mod path;
