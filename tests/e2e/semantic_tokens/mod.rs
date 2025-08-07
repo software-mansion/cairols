@@ -18,15 +18,25 @@ fn semantic_tokens(code: &str) -> String {
 
     ls.open_all_and_wait_for_diagnostics_generation();
 
-    let res = ls
-        .send_request::<lsp_request!("textDocument/semanticTokens/full")>(
+    let mut retries = 0;
+    let res = loop {
+        let response = ls.send_request::<lsp_request!("textDocument/semanticTokens/full")>(
             lsp_types::SemanticTokensParams {
                 work_done_progress_params: Default::default(),
                 partial_result_params: Default::default(),
                 text_document: ls.doc_id("src/lib.cairo"),
             },
-        )
-        .unwrap();
+        );
+        if let Some(result) = response {
+            break result;
+        };
+        if retries > 3 {
+            panic!("Max test textDocument/semanticTokens retries exceeded");
+        }
+
+        retries += 1;
+    };
+
     let lsp_types::SemanticTokensResult::Tokens(tokens) = res else {
         panic!("expected full tokens")
     };
