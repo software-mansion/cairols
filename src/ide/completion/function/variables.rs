@@ -19,9 +19,10 @@ use crate::lang::text_matching::text_matches;
 pub fn variables_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
+    was_node_corrected: bool,
 ) -> Vec<CompletionItem> {
     if let Some(path) = expr_selector(db, &ctx.node)
-        && dot_expr_rhs(db, &ctx.node).is_none()
+        && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
         && let [PathSegment::Simple(segment)] =
             path.segments(db).elements(db).take(2).collect_vec().as_slice()
         && let Some(lookup_item_id) = ctx.lookup_item_id
