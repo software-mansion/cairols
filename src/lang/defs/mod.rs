@@ -165,7 +165,7 @@ impl<'db> SymbolDef<'db> {
     pub fn definition_originating_location(
         &self,
         db: &'db AnalysisDatabase,
-    ) -> Option<(FileId, TextSpan)> {
+    ) -> Option<(FileId<'db>, TextSpan)> {
         let stable_ptr = self.definition_stable_ptr(db)?;
         let node = stable_ptr.lookup(db);
         let found_file = stable_ptr.file_id(db);

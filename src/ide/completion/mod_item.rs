@@ -122,10 +122,10 @@ fn read_dir(dir: &Path) -> Option<Vec<PathBuf>> {
 
         let file_type = dir.file_type().ok()?;
 
-        if file_type.is_file() {
-            if let Some(path) = handle_file(&dir)? {
-                result.push(path);
-            }
+        if file_type.is_file()
+            && let Some(path) = handle_file(&dir)?
+        {
+            result.push(path);
         }
     }
 

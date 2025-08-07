@@ -107,12 +107,12 @@ impl<'db> FindUsages<'db> {
         /// We include definition instead of declaration here.
         /// It is done to ensure better UX when finding references of impl items.
         /// For details, refer to [`SymbolSearch::find_definition`] and [`SymbolSearch::find_declaration`].
-        if self.include_declaration {
-            if let Some(stable_ptr) = self.symbol.definition_stable_ptr(db) {
-                // Definition can be in vfs, common for `#[generate_trait]`, map it back to user code.
-                let usage = FoundUsage::from_stable_ptr(db, stable_ptr);
-                flow!(sink(usage));
-            }
+        if self.include_declaration
+            && let Some(stable_ptr) = self.symbol.definition_stable_ptr(db)
+        {
+            // Definition can be in vfs, common for `#[generate_trait]`, map it back to user code.
+            let usage = FoundUsage::from_stable_ptr(db, stable_ptr);
+            flow!(sink(usage));
         }
 
         let search_for_self_usages = matches!(
@@ -145,10 +145,10 @@ impl<'db> FindUsages<'db> {
             }
             // Search occurrences of the symbol's name.
             for offset in found_offsets {
-                if let Some(node) = db.find_syntax_node_at_offset(file, offset) {
-                    if let Some(identifier) = TerminalIdentifier::cast_token(db, node) {
-                        flow!(self.found_identifier(db, identifier, sink));
-                    }
+                if let Some(node) = db.find_syntax_node_at_offset(file, offset)
+                    && let Some(identifier) = TerminalIdentifier::cast_token(db, node)
+                {
+                    flow!(self.found_identifier(db, identifier, sink));
                 }
             }
         }

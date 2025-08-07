@@ -199,12 +199,12 @@ impl MockClient {
                     panic!("unhandled request {request:?}");
                 }
             }
-            if let Message::Notification(Notification { method, params }) = &message {
-                if method.as_str() == "textDocument/publishDiagnostics" {
-                    let params: PublishDiagnosticsParams = serde_json::from_value(params.clone())
-                        .expect("failed to parse `textDocument/publishDiagnostics` params");
-                    self.diagnostics.insert(params.uri, params.diagnostics);
-                }
+            if let Message::Notification(Notification { method, params }) = &message
+                && method.as_str() == "textDocument/publishDiagnostics"
+            {
+                let params: PublishDiagnosticsParams = serde_json::from_value(params.clone())
+                    .expect("failed to parse `textDocument/publishDiagnostics` params");
+                self.diagnostics.insert(params.uri, params.diagnostics);
             }
         }
 
@@ -269,13 +269,12 @@ impl MockClient {
         // Block which checks if the notification matches the next expected one in the sequence
         let try_advance_sequence = |message: &Message, current_seq: &mut usize| {
             let mut advanced = false;
-            if *current_seq < notification_matchers.len() {
-                if let Message::Notification(notification) = message {
-                    if notification_matchers[*current_seq](notification) {
-                        *current_seq += 1;
-                        advanced = true;
-                    }
-                }
+            if *current_seq < notification_matchers.len()
+                && let Message::Notification(notification) = message
+                && notification_matchers[*current_seq](notification)
+            {
+                *current_seq += 1;
+                advanced = true;
             }
             advanced
         };

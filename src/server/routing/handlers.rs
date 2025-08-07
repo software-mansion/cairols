@@ -279,10 +279,10 @@ impl SyncNotificationHandler for DidCloseTextDocument {
         params: DidCloseTextDocumentParams,
     ) -> LSPResult<()> {
         state.open_files.remove(&params.text_document.uri);
-        if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
-            if state.db.file_overrides().contains_key(&file) {
-                override_file_content!(state.db, file, None);
-            }
+        if let Some(file) = state.db.file_for_url(&params.text_document.uri)
+            && state.db.file_overrides().contains_key(&file)
+        {
+            override_file_content!(state.db, file, None);
         }
 
         Ok(())

@@ -220,14 +220,13 @@ fn find_last_meaning_node<'db>(
             continue;
         }
 
-        if let Some(grand_child) = child
+        if child
             .get_children(db)
             .iter()
             .find(|grand_child| grand_child.kind(db) != SyntaxKind::Trivia)
+            .is_some_and(|grand_child| grand_child.kind(db) == SyntaxKind::TokenMissing)
         {
-            if grand_child.kind(db) == SyntaxKind::TokenMissing {
-                continue;
-            }
+            continue;
         }
 
         return find_last_meaning_node(db, *child);
