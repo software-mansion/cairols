@@ -1,11 +1,3 @@
-use self::encoder::{EncodedToken, TokenEncoder};
-pub use self::token_kind::SemanticTokenKind;
-use crate::META_STATE_NOT_ACQUIRED_MSG;
-use crate::ide::analysis_progress::AnalysisStatus;
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::LsProtoGroup;
-use crate::lsp::result::{LSPError, LSPResult};
-use crate::state::MetaState;
 use anyhow::anyhow;
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_parser::db::ParserGroup;
@@ -16,6 +8,15 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use lsp_server::ErrorCode;
 use lsp_types::{SemanticToken, SemanticTokens, SemanticTokensParams, SemanticTokensResult};
 use tracing::{error, trace};
+
+use self::encoder::{EncodedToken, TokenEncoder};
+pub use self::token_kind::SemanticTokenKind;
+use crate::META_STATE_NOT_ACQUIRED_MSG;
+use crate::ide::analysis_progress::AnalysisStatus;
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::lsp::LsProtoGroup;
+use crate::lsp::result::{LSPError, LSPResult};
+use crate::state::MetaState;
 
 mod encoder;
 pub mod token_kind;
