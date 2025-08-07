@@ -11,6 +11,9 @@ use itertools::Itertools;
 
 use crate::lang::db::AnalysisDatabase;
 
+/// Returns a textual representation of a type with the given [`TypeId`],
+/// consisting of name, path and generic parameters.
+/// Precedes the type name with a shortest path allowed by `importables`.
 pub fn format_type<'db>(
     db: &'db AnalysisDatabase,
     ty: TypeId<'db>,

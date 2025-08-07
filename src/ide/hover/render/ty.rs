@@ -16,7 +16,7 @@ use itertools::Itertools;
 
 use super::super::super::markdown::fenced_code_block;
 use crate::{
-    ide::ty::{InferredValue, format_type},
+    ide::format::types::{InferredValue, format_type},
     lang::{
         db::{AnalysisDatabase, LsSemanticGroup},
         defs::{ResolvedItem, find_definition},
