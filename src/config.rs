@@ -201,10 +201,10 @@ impl Config {
                     state.config.run_test_command = value.to_string();
                 }
 
-                if let Some(value) = response.pop_front().as_ref().and_then(Value::as_str) {
-                    if let Ok(value) = value.parse() {
-                        state.config.test_runner = value;
-                    }
+                if let Some(value) = response.pop_front().as_ref().and_then(Value::as_str)
+                    && let Ok(value) = value.parse()
+                {
+                    state.config.test_runner = value;
                 }
                 if let Some(value) = response.pop_front().as_ref().and_then(Value::as_bool) {
                     state.config.enable_experimental_proc_macro_cache = value;

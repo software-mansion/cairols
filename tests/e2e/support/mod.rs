@@ -83,11 +83,11 @@ pub(crate) fn merge_json(a: &mut Value, b: &Value) {
     if let (Value::Object(a_map), Value::Object(b_map)) = (a, b) {
         for (k, v) in b_map {
             let v_in_a = a_map.get_mut(k);
-            if let Some(value) = v_in_a {
-                if value.is_object() {
-                    merge_json(value, b_map.get(k).unwrap_or(&Value::Object(Default::default())));
-                    continue;
-                }
+            if let Some(value) = v_in_a
+                && value.is_object()
+            {
+                merge_json(value, b_map.get(k).unwrap_or(&Value::Object(Default::default())));
+                continue;
             }
             a_map.insert(k.clone(), v.clone());
         }

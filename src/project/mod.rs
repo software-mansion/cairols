@@ -88,10 +88,10 @@ impl ProjectController {
         // Skip updating the project model for dependencies from Scarb cache.
         // It is extremely likely that this is not the project that a user wants to work on and
         // opening it was a result of `goto` to dependency.
-        if let Some(path) = self.scarb_toolchain.cache_path() {
-            if file_path.starts_with(path) {
-                return;
-            }
+        if let Some(path) = self.scarb_toolchain.cache_path()
+            && file_path.starts_with(path)
+        {
+            return;
         }
 
         self.send_request(ProjectUpdateRequest {
