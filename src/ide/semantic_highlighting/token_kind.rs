@@ -4,11 +4,12 @@ use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::keyword::{CRATE_KW, SELF_TYPE_KW, SUPER_KW};
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_syntax::node::ast::{TerminalIdentifier, TerminalIdentifierPtr};
+use cairo_lang_syntax::node::ast::{ExprPathPtr, TerminalIdentifierPtr};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use lsp_types::SemanticTokenType;
 
+use crate::ide::semantic_highlighting::{get_resultants_and_closest_terminals, is_inline_macro};
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 pub enum SemanticTokenKind {
@@ -38,51 +39,11 @@ pub enum SemanticTokenKind {
 impl SemanticTokenKind {
     pub fn from_syntax_node<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> Option<Self> {
         let node_kind = node.kind(db);
-        // Simple tokens.
-        match node_kind {
-            SyntaxKind::TokenIdentifier => {}
-            kind if kind.is_keyword_token() => return Some(SemanticTokenKind::Keyword),
-            SyntaxKind::TokenLiteralNumber => return Some(SemanticTokenKind::Number),
-            SyntaxKind::TokenNot
-                if matches!(
-                    node.grandparent_kind(db),
-                    Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
-                ) =>
-            {
-                return Some(SemanticTokenKind::InlineMacro);
-            }
-            SyntaxKind::TokenPlus
-                if matches!(
-                    node.grandparent_kind(db),
-                    Some(SyntaxKind::GenericParamImplAnonymous)
-                ) =>
-            {
-                return Some(SemanticTokenKind::GenericParamImpl);
-            }
-            SyntaxKind::TokenAnd
-            | SyntaxKind::TokenAndAnd
-            | SyntaxKind::TokenOr
-            | SyntaxKind::TokenOrOr
-            | SyntaxKind::TokenEqEq
-            | SyntaxKind::TokenNeq
-            | SyntaxKind::TokenGE
-            | SyntaxKind::TokenGT
-            | SyntaxKind::TokenLE
-            | SyntaxKind::TokenLT
-            | SyntaxKind::TokenNot
-            | SyntaxKind::TokenPlus
-            | SyntaxKind::TokenMinus
-            | SyntaxKind::TokenMul
-            | SyntaxKind::TokenDiv
-            | SyntaxKind::TokenMod => return Some(SemanticTokenKind::Operator),
-            SyntaxKind::TokenSingleLineComment => return Some(SemanticTokenKind::Comment),
-            SyntaxKind::TokenShortString | SyntaxKind::TokenString => {
-                return Some(SemanticTokenKind::String);
-            }
-            _ => return None,
-        };
 
-        assert_eq!(node_kind, SyntaxKind::TokenIdentifier);
+        // Simple tokens.
+        if !matches!(node_kind, SyntaxKind::TokenIdentifier) {
+            return Self::from_simple_token_kind(node_kind, node.grandparent_kind(db));
+        }
 
         let identifier = node.ancestor_of_type::<ast::TerminalIdentifier>(db)?;
 
@@ -92,41 +53,20 @@ impl SemanticTokenKind {
         }
 
         let identifier_parent = identifier.as_syntax_node().parent(db)?;
-        match identifier_parent.kind(db) {
-            SyntaxKind::ItemInlineMacro => return Some(SemanticTokenKind::InlineMacro),
-            SyntaxKind::AliasClause => return Some(SemanticTokenKind::Class),
-            SyntaxKind::ItemConstant | SyntaxKind::TraitItemConstant => {
-                return Some(SemanticTokenKind::EnumMember);
-            }
-            kind if ast::ModuleItem::is_variant(kind) => return Some(SemanticTokenKind::Class),
-            SyntaxKind::StructArgSingle => return Some(SemanticTokenKind::Field),
-            SyntaxKind::FunctionDeclaration => return Some(SemanticTokenKind::Function),
-            SyntaxKind::GenericParamType => return Some(SemanticTokenKind::TypeParameter),
-            SyntaxKind::PathSegmentSimple | SyntaxKind::PathSegmentWithGenericArgs => {
-                match identifier_parent.grandparent_kind(db) {
-                    Some(SyntaxKind::GenericParamImplAnonymous) => {
-                        return Some(SemanticTokenKind::GenericParamImpl);
-                    }
-                    Some(
-                        SyntaxKind::GenericArgNamed
-                        | SyntaxKind::GenericArgUnnamed
-                        | SyntaxKind::GenericArgValueExpr,
-                    ) => {
-                        return Some(SemanticTokenKind::TypeParameter);
-                    }
-                    _ => {}
-                }
-            }
-            _ => {}
+        if let Some(kind) = Self::from_identifier_parent_kind(
+            identifier_parent.kind(db),
+            identifier_parent.grandparent_kind(db),
+        ) {
+            return Some(kind);
         }
 
-        // Identifier.
         let mut expr_path_ptr = None;
 
         for node in identifier_parent.ancestors_with_self(db) {
             if is_inline_macro(db, node) {
                 return Some(SemanticTokenKind::InlineMacro);
             }
+
             match node.kind(db) {
                 SyntaxKind::ExprInlineMacro => return Some(SemanticTokenKind::InlineMacro),
                 SyntaxKind::ExprPath => {
@@ -139,65 +79,18 @@ impl SemanticTokenKind {
                 _ => {}
             };
 
-            // We use resultants here to get semantics of the actual node that is generated
             for (resultant, terminal_ptr) in
                 get_resultants_and_closest_terminals(db, identifier.as_syntax_node())
             {
-                if let Some(lookup_item_id) = db.find_lookup_item(resultant) {
-                    if let Some(item) =
-                        db.lookup_resolved_generic_item_by_ptr(lookup_item_id, terminal_ptr)
-                    {
-                        return Some(match item {
-                            ResolvedGenericItem::GenericConstant(_) => {
-                                SemanticTokenKind::EnumMember
-                            }
-                            ResolvedGenericItem::Module(_) => SemanticTokenKind::Namespace,
-                            ResolvedGenericItem::GenericFunction(_) => SemanticTokenKind::Function,
-                            ResolvedGenericItem::GenericType(_)
-                            | ResolvedGenericItem::GenericTypeAlias(_) => SemanticTokenKind::Type,
-                            ResolvedGenericItem::Variant(_) => SemanticTokenKind::EnumMember,
-                            ResolvedGenericItem::Trait(_) => SemanticTokenKind::Interface,
-                            ResolvedGenericItem::Impl(_)
-                            | ResolvedGenericItem::GenericImplAlias(_) => SemanticTokenKind::Class,
-                            ResolvedGenericItem::Variable(_) => SemanticTokenKind::Variable,
-                            ResolvedGenericItem::TraitItem(trait_item) => match trait_item {
-                                TraitItemId::Function(_) => SemanticTokenKind::Function,
-                                TraitItemId::Type(_) => SemanticTokenKind::Interface,
-                                TraitItemId::Constant(_) => SemanticTokenKind::EnumMember,
-                                TraitItemId::Impl(_) => SemanticTokenKind::Class,
-                            },
-                            ResolvedGenericItem::Macro(_) => SemanticTokenKind::InlineMacro,
-                        });
-                    }
-                    if let Some(item) =
-                        db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, terminal_ptr)
-                    {
-                        return Some(match item {
-                            ResolvedConcreteItem::Constant(_) => SemanticTokenKind::EnumMember,
-                            ResolvedConcreteItem::Module(_) => SemanticTokenKind::Namespace,
-                            ResolvedConcreteItem::Function(_) => SemanticTokenKind::Function,
-                            ResolvedConcreteItem::Type(_) => SemanticTokenKind::Type,
-                            ResolvedConcreteItem::Variant(_) => SemanticTokenKind::EnumMember,
-                            ResolvedConcreteItem::Trait(_) | ResolvedConcreteItem::SelfTrait(_) => {
-                                SemanticTokenKind::Interface
-                            }
-                            ResolvedConcreteItem::Impl(_) => SemanticTokenKind::Class,
-                            ResolvedConcreteItem::Macro(_) => SemanticTokenKind::InlineMacro,
-                        });
-                    }
-                    // Exprs and patterns.
-                    if let Some(function_id) = lookup_item_id.function_with_body() {
-                        if let Some(expr_path_ptr) = expr_path_ptr {
-                            if db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok() {
-                                return Some(SemanticTokenKind::Variable);
-                            }
-                        }
-                    }
+                if let Some(kind) = Self::from_resultant(db, resultant, terminal_ptr, expr_path_ptr)
+                {
+                    return Some(kind);
                 }
             }
         }
         None
     }
+
     pub fn as_u32(&self) -> u32 {
         match self {
             SemanticTokenKind::Namespace => 0,
@@ -248,40 +141,144 @@ impl SemanticTokenKind {
             SemanticTokenType::INTERFACE,
         ]
     }
-}
 
-// Retrieves the most-likely-usable resultant, and the terminal ptr we can use for semantic lookup
-fn get_resultants_and_closest_terminals<'db>(
-    db: &'db AnalysisDatabase,
-    node: SyntaxNode<'db>,
-) -> Vec<(SyntaxNode<'db>, TerminalIdentifierPtr<'db>)> {
-    let Some(resultants) = db.get_node_resultants(node) else {
-        return vec![];
-    };
-
-    resultants
-        .into_iter()
-        .filter_map(|resultant| {
-            let terminal = if resultant.kind(db).is_terminal() {
-                Some(resultant)
-            } else if resultant.kind(db).is_token() {
-                resultant.ancestors(db).find(|ancestor| ancestor.kind(db).is_terminal())
-            } else {
-                None
-            }?;
-
-            Some((resultant, TerminalIdentifier::cast(db, terminal)?.stable_ptr(db)))
-        })
-        .collect()
-}
-
-/// Checks whether the given node is an inline macro invocation and not just the simple path segment.
-fn is_inline_macro<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> bool {
-    if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
-        && let Some(maybe_macro) = path_node.parent(db)
-    {
-        let kind = maybe_macro.kind(db);
-        return kind == SyntaxKind::ExprInlineMacro || kind == SyntaxKind::ItemInlineMacro;
+    /// Returns a semantic token kind for a simple token kind.
+    /// Returns `None` if the token kind has no corresponding semantic token kind.
+    fn from_simple_token_kind(
+        node_kind: SyntaxKind,
+        grandparent_kind: Option<SyntaxKind>,
+    ) -> Option<Self> {
+        match node_kind {
+            kind if kind.is_keyword_token() => Some(SemanticTokenKind::Keyword),
+            SyntaxKind::TokenLiteralNumber => Some(SemanticTokenKind::Number),
+            SyntaxKind::TokenNot
+                if matches!(
+                    grandparent_kind,
+                    Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
+                ) =>
+            {
+                Some(SemanticTokenKind::InlineMacro)
+            }
+            SyntaxKind::TokenPlus
+                if matches!(grandparent_kind, Some(SyntaxKind::GenericParamImplAnonymous)) =>
+            {
+                Some(SemanticTokenKind::GenericParamImpl)
+            }
+            SyntaxKind::TokenAnd
+            | SyntaxKind::TokenAndAnd
+            | SyntaxKind::TokenOr
+            | SyntaxKind::TokenOrOr
+            | SyntaxKind::TokenEqEq
+            | SyntaxKind::TokenNeq
+            | SyntaxKind::TokenGE
+            | SyntaxKind::TokenGT
+            | SyntaxKind::TokenLE
+            | SyntaxKind::TokenLT
+            | SyntaxKind::TokenNot
+            | SyntaxKind::TokenPlus
+            | SyntaxKind::TokenMinus
+            | SyntaxKind::TokenMul
+            | SyntaxKind::TokenDiv
+            | SyntaxKind::TokenMod => Some(SemanticTokenKind::Operator),
+            SyntaxKind::TokenSingleLineComment => Some(SemanticTokenKind::Comment),
+            SyntaxKind::TokenShortString | SyntaxKind::TokenString => {
+                Some(SemanticTokenKind::String)
+            }
+            _ => None,
+        }
     }
-    false
+
+    /// Returns a semantic token kind based on identifier parent kind.
+    /// Returns `None` if the token kind has no corresponding semantic token kind.
+    fn from_identifier_parent_kind(
+        node_kind: SyntaxKind,
+        grandparent_kind: Option<SyntaxKind>,
+    ) -> Option<Self> {
+        match node_kind {
+            SyntaxKind::ItemInlineMacro => Some(SemanticTokenKind::InlineMacro),
+            SyntaxKind::AliasClause => Some(SemanticTokenKind::Class),
+            SyntaxKind::ItemConstant | SyntaxKind::TraitItemConstant => {
+                Some(SemanticTokenKind::EnumMember)
+            }
+            kind if ast::ModuleItem::is_variant(kind) => Some(SemanticTokenKind::Class),
+            SyntaxKind::StructArgSingle => Some(SemanticTokenKind::Field),
+            SyntaxKind::FunctionDeclaration => Some(SemanticTokenKind::Function),
+            SyntaxKind::GenericParamType => Some(SemanticTokenKind::TypeParameter),
+            SyntaxKind::PathSegmentSimple | SyntaxKind::PathSegmentWithGenericArgs => {
+                match grandparent_kind {
+                    Some(SyntaxKind::GenericParamImplAnonymous) => {
+                        Some(SemanticTokenKind::GenericParamImpl)
+                    }
+                    Some(
+                        SyntaxKind::GenericArgNamed
+                        | SyntaxKind::GenericArgUnnamed
+                        | SyntaxKind::GenericArgValueExpr,
+                    ) => Some(SemanticTokenKind::TypeParameter),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Returns a semantic token kind based on the resultant and terminal pointer.
+    /// Returns `None` if the resultant has no corresponding semantic token kind.
+    fn from_resultant(
+        db: &AnalysisDatabase,
+        resultant: SyntaxNode,
+        terminal_ptr: TerminalIdentifierPtr,
+        expr_path_ptr: Option<ExprPathPtr>,
+    ) -> Option<SemanticTokenKind> {
+        let lookup_item_id = db.find_lookup_item(resultant)?;
+
+        if let Some(item) = db.lookup_resolved_generic_item_by_ptr(lookup_item_id, terminal_ptr) {
+            return Some(match item {
+                ResolvedGenericItem::GenericConstant(_) => SemanticTokenKind::EnumMember,
+                ResolvedGenericItem::Module(_) => SemanticTokenKind::Namespace,
+                ResolvedGenericItem::GenericFunction(_) => SemanticTokenKind::Function,
+                ResolvedGenericItem::GenericType(_) | ResolvedGenericItem::GenericTypeAlias(_) => {
+                    SemanticTokenKind::Type
+                }
+                ResolvedGenericItem::Variant(_) => SemanticTokenKind::EnumMember,
+                ResolvedGenericItem::Trait(_) => SemanticTokenKind::Interface,
+                ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_) => {
+                    SemanticTokenKind::Class
+                }
+                ResolvedGenericItem::Variable(_) => SemanticTokenKind::Variable,
+                ResolvedGenericItem::TraitItem(trait_item) => match trait_item {
+                    TraitItemId::Function(_) => SemanticTokenKind::Function,
+                    TraitItemId::Type(_) => SemanticTokenKind::Interface,
+                    TraitItemId::Constant(_) => SemanticTokenKind::EnumMember,
+                    TraitItemId::Impl(_) => SemanticTokenKind::Class,
+                },
+                ResolvedGenericItem::Macro(_) => SemanticTokenKind::InlineMacro,
+            });
+        }
+
+        if let Some(item) = db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, terminal_ptr) {
+            return Some(match item {
+                ResolvedConcreteItem::Constant(_) => SemanticTokenKind::EnumMember,
+                ResolvedConcreteItem::Module(_) => SemanticTokenKind::Namespace,
+                ResolvedConcreteItem::Function(_) => SemanticTokenKind::Function,
+                ResolvedConcreteItem::Type(_) => SemanticTokenKind::Type,
+                ResolvedConcreteItem::Variant(_) => SemanticTokenKind::EnumMember,
+                ResolvedConcreteItem::Trait(_) | ResolvedConcreteItem::SelfTrait(_) => {
+                    SemanticTokenKind::Interface
+                }
+                ResolvedConcreteItem::Impl(_) => SemanticTokenKind::Class,
+                ResolvedConcreteItem::Macro(_) => SemanticTokenKind::InlineMacro,
+            });
+        }
+
+        // Exprs and patterns.
+        if let Some(function_id) = lookup_item_id.function_with_body() {
+            if let Some(expr_path_ptr) = expr_path_ptr {
+                if db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok() {
+                    return Some(SemanticTokenKind::Variable);
+                }
+            }
+        }
+
+        None
+    }
 }
