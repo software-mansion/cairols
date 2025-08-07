@@ -342,14 +342,13 @@ impl Backend {
                     let mut meta_state = scheduler.meta_state
                                 .lock()
                                 .expect(META_STATE_NOT_ACQUIRED_MSG);
-                    meta_state.analysis_status = Some(analysis_status);
+                    meta_state.set_analysis_status(analysis_status);
 
                     match analysis_status {
                         AnalysisStatus::Started => {
                             meta_state
                                 .db_swapper
                                 .start_stopwatch();
-
                         }
                         AnalysisStatus::Finished => {
                             meta_state.db_swapper
