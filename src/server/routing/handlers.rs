@@ -401,16 +401,20 @@ impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
         _notifier: Notifier,
         params: SemanticTokensParams,
     ) -> LSPResult<Option<SemanticTokensResult>> {
-        Ok(catch_unwind(AssertUnwindSafe(|| {
-            ide::semantic_highlighting::semantic_highlight_full(params, &snapshot.db, meta_state)
+        catch_unwind(AssertUnwindSafe(|| {
+            Ok(ide::semantic_highlighting::semantic_highlight_full(
+                params,
+                &snapshot.db,
+                meta_state,
+            ))
         }))
         .unwrap_or_else(|err| {
             if is_cancelled(err.as_ref()) {
                 resume_unwind(err);
             }
             error!("SemanticTokensFullRequest handler panicked");
-            None
-        }))
+            Ok(None)
+        })
     }
 }
 
