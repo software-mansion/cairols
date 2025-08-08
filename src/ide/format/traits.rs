@@ -7,7 +7,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use super::types::format_generic_args;
 use crate::lang::db::AnalysisDatabase;
 
-#[allow(dead_code)] // Used later in the stack
 /// Returns a textual representation of a trait with the given [`TraitId`],
 /// consisting of name, path and generic parameters.
 /// Precedes the name with a shortest path allowed by `importables`.
