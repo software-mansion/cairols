@@ -8,7 +8,6 @@ use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::project::Crate;
 use crate::project::crate_data::CrateInfo;
 use crate::state::{Owned, Snapshot};
-use crate::toolchain::scarb::ScarbToolchain;
 
 pub use self::configs_registry::{ConfigsRegistry, PackageConfig};
 
@@ -18,7 +17,6 @@ type WorkspaceRoot = PathBuf;
 type ManifestPath = PathBuf;
 
 pub struct ProjectModel {
-    scarb_toolchain: ScarbToolchain,
     // The two fields below keep exactly the same information;
     // therefore, their contents should be kept synchronised.
     // We keep both of them for efficiency and ease of use.
@@ -36,9 +34,8 @@ pub struct ProjectModel {
 }
 
 impl ProjectModel {
-    pub fn new(scarb_toolchain: ScarbToolchain) -> Self {
+    pub fn new() -> Self {
         Self {
-            scarb_toolchain,
             loaded_workspaces: Default::default(),
             loaded_crates: Default::default(),
             manifests_of_members_from_loaded_workspaces: Default::default(),
@@ -70,7 +67,6 @@ impl ProjectModel {
         workspace_crates: Vec<CrateInfo>,
         workspace_dir: PathBuf,
         proc_macro_controller: &ProcMacroClientController,
-        enable_linter: bool,
     ) {
         if self.remove_crates_from_db_on_next_update {
             self.remove_crates_from_db_on_next_update = false;
@@ -102,14 +98,13 @@ impl ProjectModel {
 
         self.add_crates(workspace_crates, &workspace_dir);
 
-        self.apply_changes_to_db(db, proc_macro_controller, enable_linter);
+        self.apply_changes_to_db(db, proc_macro_controller);
     }
 
     pub fn apply_changes_to_db(
         &self,
         db: &mut AnalysisDatabase,
         proc_macro_controller: &ProcMacroClientController,
-        enable_linter: bool,
     ) {
         for (cr, workspaces) in &self.loaded_crates {
             let same_crates: Vec<_> = workspaces
@@ -152,13 +147,8 @@ impl ProjectModel {
 
             let proc_macro_plugin_suite =
                 proc_macro_controller.proc_macro_plugin_suite_for_crate(&cr_long_id);
-            let lint_config = self
-                .configs_registry
-                .config_for_file(&cr.root)
-                .filter(|_| enable_linter && !self.is_from_scarb_cache(&cr.root))
-                .map(|member_config| member_config.lint);
 
-            cr.apply(db, lint_config, proc_macro_plugin_suite.cloned());
+            cr.apply(db, proc_macro_plugin_suite.cloned());
         }
     }
 
@@ -182,11 +172,5 @@ impl ProjectModel {
         }
 
         self.loaded_workspaces.insert(workspace_dir.to_path_buf(), workspace_crates);
-    }
-
-    fn is_from_scarb_cache(&self, crate_root_path: &Path) -> bool {
-        self.scarb_toolchain
-            .cache_path()
-            .is_some_and(|cache_path| crate_root_path.starts_with(cache_path))
     }
 }

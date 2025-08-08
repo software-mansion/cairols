@@ -257,10 +257,10 @@ impl ProcMacroClientController {
         config: &Config,
         requester: &mut Requester,
     ) {
-        if client_capabilities.workspace_semantic_tokens_refresh_support() {
-            if let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing()) {
-                error!("semantic tokens refresh failed: {err:#?}");
-            }
+        if client_capabilities.workspace_semantic_tokens_refresh_support()
+            && let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing())
+        {
+            error!("semantic tokens refresh failed: {err:#?}");
         }
 
         // Try loading proc macro cache if availale.

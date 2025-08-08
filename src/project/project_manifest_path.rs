@@ -49,8 +49,10 @@ impl ProjectManifestPath {
         let project_config_path = find_in_parent_dirs(path.to_path_buf(), PROJECT_FILE_NAME);
         let scarb_manifest_path = find_in_parent_dirs(path.to_path_buf(), SCARB_TOML);
 
-        if project_config_path.is_some() && scarb_manifest_path.is_some() {
-            let is_core = match fs::read_to_string(scarb_manifest_path.as_ref().unwrap()) {
+        if project_config_path.is_some()
+            && let Some(scarb_manifest_path) = &scarb_manifest_path
+        {
+            let is_core = match fs::read_to_string(scarb_manifest_path) {
                 Ok(content) => {
                     toml::from_str::<ScarbManifest>(&content).unwrap_or_default().package.name
                         == CORELIB_CRATE_NAME
@@ -68,7 +70,7 @@ impl ProjectManifestPath {
                         "Found conflicting manifest files: {} and {}. `cairo_project.toml` \
                          manifest will be used.",
                         project_config_path.as_ref().unwrap().to_string_lossy(),
-                        scarb_manifest_path.as_ref().unwrap().to_string_lossy(),
+                        scarb_manifest_path.to_string_lossy(),
                     ),
                 });
             }

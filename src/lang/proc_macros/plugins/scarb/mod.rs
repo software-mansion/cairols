@@ -15,7 +15,6 @@ use cairo_lang_utils::LookupIntern;
 
 mod child_nodes;
 mod conversion;
-mod expansion;
 pub mod inline;
 pub mod regular;
 mod types;

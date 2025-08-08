@@ -198,11 +198,11 @@ impl<'a> Printer<'a> {
         syntax_node: &SyntaxNode,
         kind: SyntaxKind,
     ) {
-        if !self.print_trivia {
-            if let Some(token_node) = syntax_node.get_terminal_token(self.db) {
-                self.print_tree(field_description, &token_node, indent, is_last);
-                return;
-            }
+        if !self.print_trivia
+            && let Some(token_node) = syntax_node.get_terminal_token(self.db)
+        {
+            self.print_tree(field_description, &token_node, indent, is_last);
+            return;
         }
 
         let extra_info = if is_missing_kind(kind) {

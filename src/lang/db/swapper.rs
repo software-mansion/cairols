@@ -12,7 +12,6 @@ use cairo_lang_utils::{Intern, LookupIntern};
 use lsp_types::Url;
 use tracing::{error, warn};
 
-use crate::config::Config;
 use crate::env_config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
@@ -56,7 +55,6 @@ impl AnalysisDatabaseSwapper {
         open_files: &HashSet<Url>,
         project_controller: &mut ProjectController,
         proc_macro_client_controller: &ProcMacroClientController,
-        config: &Config,
     ) {
         let Ok(elapsed) = self.last_replace.elapsed() else {
             warn!("system time went backwards, skipping db swap");
@@ -72,7 +70,7 @@ impl AnalysisDatabaseSwapper {
             return;
         }
 
-        self.swap(db, open_files, project_controller, proc_macro_client_controller, config)
+        self.swap(db, open_files, project_controller, proc_macro_client_controller)
     }
 
     /// Swaps the database.
@@ -83,7 +81,6 @@ impl AnalysisDatabaseSwapper {
         open_files: &HashSet<Url>,
         project_controller: &mut ProjectController,
         proc_macro_client_controller: &ProcMacroClientController,
-        config: &Config,
     ) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
             let mut new_db = AnalysisDatabase::new();
@@ -92,11 +89,7 @@ impl AnalysisDatabaseSwapper {
             self.migrate_proc_macro_state(&mut new_db, db);
             self.migrate_file_overrides(&mut new_db, db, open_files);
 
-            project_controller.migrate_crates_to_new_db(
-                &mut new_db,
-                proc_macro_client_controller,
-                config.enable_linter,
-            );
+            project_controller.migrate_crates_to_new_db(&mut new_db, proc_macro_client_controller);
 
             new_db
         })) else {

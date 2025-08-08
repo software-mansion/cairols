@@ -186,12 +186,11 @@ impl SemanticTokenKind {
                         });
                     }
                     // Exprs and patterns.
-                    if let Some(function_id) = lookup_item_id.function_with_body() {
-                        if let Some(expr_path_ptr) = expr_path_ptr {
-                            if db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok() {
-                                return Some(SemanticTokenKind::Variable);
-                            }
-                        }
+                    if let Some(function_id) = lookup_item_id.function_with_body()
+                        && let Some(expr_path_ptr) = expr_path_ptr
+                        && db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok()
+                    {
+                        return Some(SemanticTokenKind::Variable);
                     }
                 }
             }

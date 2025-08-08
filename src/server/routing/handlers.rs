@@ -84,7 +84,7 @@ impl BackgroundDocumentRequestHandler for CodeActionRequest {
         _notifier: Notifier,
         params: CodeActionParams,
     ) -> Result<Option<CodeActionResponse>, LSPError> {
-        Ok(ide::code_actions::code_actions(params, &snapshot.db))
+        Ok(ide::code_actions::code_actions(params, &snapshot.configs_registry, &snapshot.db))
     }
 }
 
@@ -254,10 +254,10 @@ impl SyncNotificationHandler for DidCloseTextDocument {
         params: DidCloseTextDocumentParams,
     ) -> LSPResult<()> {
         state.open_files.remove(&params.text_document.uri);
-        if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
-            if state.db.file_overrides().contains_key(&file) {
-                state.db.override_file_content(file, None);
-            }
+        if let Some(file) = state.db.file_for_url(&params.text_document.uri)
+            && state.db.file_overrides().contains_key(&file)
+        {
+            state.db.override_file_content(file, None);
         }
 
         Ok(())
@@ -384,7 +384,12 @@ impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
         _notifier: Notifier,
         _params: (),
     ) -> LSPResult<String> {
-        Ok(ide::introspection::crates::inspect_analyzed_crates(&snapshot.db))
+        Ok(ide::introspection::crates::inspect_analyzed_crates(
+            &snapshot.db,
+            &snapshot.config,
+            &snapshot.configs_registry,
+            &snapshot.scarb_toolchain,
+        ))
     }
 }
 

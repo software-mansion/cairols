@@ -35,12 +35,11 @@ pub fn find_secondary_files(db: &AnalysisDatabase, primary_files: &HashSet<FileI
         for module_id in db.crate_modules(crate_id).iter() {
             // Schedule only on disk module main files for refreshing.
             // All other related files will be refreshed along with it in a single job.
-            if let Ok(file) = db.module_main_file(*module_id) {
-                if matches!(file.lookup_intern(db), FileLongId::OnDisk(_))
-                    && !primary_files.contains(&file)
-                {
-                    result.insert(file);
-                }
+            if let Ok(file) = db.module_main_file(*module_id)
+                && matches!(file.lookup_intern(db), FileLongId::OnDisk(_))
+                && !primary_files.contains(&file)
+            {
+                result.insert(file);
             }
         }
     }

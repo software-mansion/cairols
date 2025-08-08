@@ -34,6 +34,7 @@ pub use self::swapper::*;
 pub use self::syntax::*;
 use super::proc_macros::db::{ProcMacroDatabase, init_proc_macro_group};
 use crate::TRICKS;
+use cairo_lint::{LinterDatabase, LinterGroup};
 
 mod semantic;
 mod swapper;
@@ -50,7 +51,8 @@ mod syntax;
     DocDatabase,
     ProcMacroDatabase,
     LsSyntaxDatabase,
-    LsSemanticDatabase
+    LsSemanticDatabase,
+    LinterDatabase
 )]
 pub struct AnalysisDatabase {
     storage: salsa::Storage<Self>,
@@ -248,6 +250,12 @@ impl Upcast<dyn LoweringGroup> for AnalysisDatabase {
 
 impl Upcast<dyn ParserGroup> for AnalysisDatabase {
     fn upcast(&self) -> &(dyn ParserGroup + 'static) {
+        self
+    }
+}
+
+impl Upcast<dyn LinterGroup> for AnalysisDatabase {
+    fn upcast(&self) -> &(dyn LinterGroup + 'static) {
         self
     }
 }
