@@ -3933,3 +3933,8 @@ dependencies = [
  "crossbeam-utils",
  "flate2",
 ]
+
+[[patch.unused]]
+name = "cairo-lint"
+version = "2.12.1-rc.0"
+source = "git+https://github.com/software-mansion/cairo-lint?rev=159f7085f199f5ad3d4b0c8146b94b6c4f7d235f#159f7085f199f5ad3d4b0c8146b94b6c4f7d235f"

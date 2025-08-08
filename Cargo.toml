@@ -50,7 +50,7 @@ cairo-lang-syntax = "2.12.0"
 cairo-lang-syntax-codegen = "2.12.0"
 cairo-lang-test-plugin = "2.12.0"
 cairo-lang-utils = "2.12.0"
-cairo-lint = "2.12.0"
+cairo-lint = "*"
 colored = "3.0.0"
 convert_case = "0.8.0"
 crossbeam = "0.8.4"
@@ -94,6 +94,7 @@ similar = "2.7"
 # on some of them directly.
 # This ensures no duplicate instances of Cairo crates are pulled in by mistake.
 [patch.crates-io]
+cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "159f7085f199f5ad3d4b0c8146b94b6c4f7d235f" }
 
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,
