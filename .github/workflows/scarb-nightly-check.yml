@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-with-nightly-scarb:
+  build-test:
+    name: build tests
     runs-on: ubuntu-latest
-    name: Check with scarb nightly release from tag (${{ github.event.client_payload.tag_name }})
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -15,12 +15,45 @@ jobs:
         with:
           scarb-version: ${{ github.event.client_payload.tag_name }}
           cache: false
-      - run: cargo test --profile=ci --no-fail-fast
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest@0.9.98
+      - name: nextest archive
+        run: cargo nextest archive --workspace --all-features --cargo-profile ci --archive-file 'nextest-archive.tar.zst'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nextest-archive
+          path: nextest-archive.tar.zst
+
+  test:
+    name: test ${{ matrix.partition }}/4
+    runs-on: ubuntu-latest
+    needs:
+      - build-test
+    strategy:
+      fail-fast: false
+      matrix:
+        partition: [ 1, 2, 3, 4 ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: ${{ github.event.client_payload.tag_name }}
+          cache: false
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest@0.9.98
+      - uses: actions/download-artifact@v4
+        with:
+          name: nextest-archive
+      - name: nextest partition ${{ matrix.partition }}/4
+        run: cargo nextest run --partition 'count:${{ matrix.partition }}/4' --archive-file 'nextest-archive.tar.zst'
 
   notify_failed:
     runs-on: ubuntu-latest
-    if: always() && needs.test-with-nightly-scarb.result == 'failure' && github.event_name == 'repository_dispatch'
-    needs: test-with-nightly-scarb
+    if: always() && needs.test.result == 'failure' && github.event_name == 'repository_dispatch'
+    needs: test
     steps:
       - name: Notify the team about workflow failure
         uses: slackapi/slack-github-action@v2.1.1
