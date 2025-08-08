@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[derive(Default)]
-pub(crate) struct SemanticTokensTraverser {
+pub struct SemanticTokensTraverser {
     encoder: TokenEncoder,
     /// A map from an offset in the file to semantic token kind.
     /// This map is used to override future tokens based on the context.
@@ -148,7 +148,7 @@ impl SemanticTokensTraverser {
             delta_line,
             delta_start,
             length: width,
-            token_type: assumed_semantic_kind.as_u32(),
+            token_type: *assumed_semantic_kind as u32,
             token_modifiers_bitset: 0,
         }
     }

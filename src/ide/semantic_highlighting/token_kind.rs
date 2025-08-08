@@ -4,37 +4,38 @@ use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::keyword::{CRATE_KW, SELF_TYPE_KW, SUPER_KW};
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_syntax::node::ast::{ExprPathPtr, TerminalIdentifierPtr};
+use cairo_lang_syntax::node::ast::{ExprPathPtr, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use lsp_types::SemanticTokenType;
 
-use crate::ide::semantic_highlighting::{get_resultants_and_closest_terminals, is_inline_macro};
+use crate::ide::semantic_highlighting::is_inline_macro;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
+#[derive(Clone, Copy)]
 pub enum SemanticTokenKind {
-    Namespace,
-    Class,
-    Enum,
-    Interface,
-    Struct,
-    TypeParameter,
-    Type,
-    Parameter,
-    Variable,
+    Namespace = 0,
+    Class = 1,
+    Enum = 2,
+    Interface = 3,
+    Struct = 4,
+    TypeParameter = 5,
+    Type = 6,
+    Parameter = 7,
+    Variable = 8,
     #[allow(dead_code)]
-    Property,
-    EnumMember,
-    Function,
-    Comment,
-    Keyword,
-    Operator,
-    Number,
-    String,
-    Field,
-    Annotation,
-    InlineMacro,
-    GenericParamImpl,
+    Property = 9,
+    EnumMember = 10,
+    Function = 11,
+    Comment = 12,
+    Keyword = 13,
+    Operator = 14,
+    Number = 15,
+    String = 16,
+    Field = 17,
+    Annotation = 18,
+    InlineMacro = 19,
+    GenericParamImpl = 20,
 }
 impl SemanticTokenKind {
     pub fn from_syntax_node<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> Option<Self> {
@@ -42,7 +43,7 @@ impl SemanticTokenKind {
 
         // Simple tokens.
         if !matches!(node_kind, SyntaxKind::TokenIdentifier) {
-            return Self::from_simple_token_kind(node_kind, node.grandparent_kind(db));
+            return Self::from_simple_token_kind(db, &node);
         }
 
         let identifier = node.ancestor_of_type::<ast::TerminalIdentifier>(db)?;
@@ -53,10 +54,7 @@ impl SemanticTokenKind {
         }
 
         let identifier_parent = identifier.as_syntax_node().parent(db)?;
-        if let Some(kind) = Self::from_identifier_parent_kind(
-            identifier_parent.kind(db),
-            identifier_parent.grandparent_kind(db),
-        ) {
+        if let Some(kind) = Self::from_identifier(db, &identifier) {
             return Some(kind);
         }
 
@@ -68,7 +66,6 @@ impl SemanticTokenKind {
             }
 
             match node.kind(db) {
-                SyntaxKind::ExprInlineMacro => return Some(SemanticTokenKind::InlineMacro),
                 SyntaxKind::ExprPath => {
                     expr_path_ptr = Some(ast::ExprPath::from_syntax_node(db, node).stable_ptr(db));
                 }
@@ -79,11 +76,9 @@ impl SemanticTokenKind {
                 _ => {}
             };
 
-            for (resultant, terminal_ptr) in
-                get_resultants_and_closest_terminals(db, identifier.as_syntax_node())
+            for resultant in db.get_node_resultants(identifier.as_syntax_node()).unwrap_or_default()
             {
-                if let Some(kind) = Self::from_resultant(db, resultant, terminal_ptr, expr_path_ptr)
-                {
+                if let Some(kind) = Self::from_resultant(db, resultant, expr_path_ptr) {
                     return Some(kind);
                 }
             }
@@ -91,31 +86,6 @@ impl SemanticTokenKind {
         None
     }
 
-    pub fn as_u32(&self) -> u32 {
-        match self {
-            SemanticTokenKind::Namespace => 0,
-            SemanticTokenKind::Class => 1,
-            SemanticTokenKind::Enum => 2,
-            SemanticTokenKind::Interface => 3,
-            SemanticTokenKind::Struct => 4,
-            SemanticTokenKind::TypeParameter => 5,
-            SemanticTokenKind::Type => 6,
-            SemanticTokenKind::Parameter => 7,
-            SemanticTokenKind::Variable => 8,
-            SemanticTokenKind::Property => 9,
-            SemanticTokenKind::EnumMember => 10,
-            SemanticTokenKind::Function => 11,
-            SemanticTokenKind::Comment => 12,
-            SemanticTokenKind::Keyword => 13,
-            SemanticTokenKind::Operator => 14,
-            SemanticTokenKind::Number => 15,
-            SemanticTokenKind::String => 16,
-            SemanticTokenKind::Field => 17,
-            SemanticTokenKind::Annotation => 18,
-            SemanticTokenKind::InlineMacro => 19,
-            SemanticTokenKind::GenericParamImpl => 20,
-        }
-    }
     pub fn legend() -> Vec<SemanticTokenType> {
         vec![
             SemanticTokenType::NAMESPACE,
@@ -144,10 +114,9 @@ impl SemanticTokenKind {
 
     /// Returns a semantic token kind for a simple token kind.
     /// Returns `None` if the token kind has no corresponding semantic token kind.
-    fn from_simple_token_kind(
-        node_kind: SyntaxKind,
-        grandparent_kind: Option<SyntaxKind>,
-    ) -> Option<Self> {
+    fn from_simple_token_kind(db: &AnalysisDatabase, node: &SyntaxNode) -> Option<Self> {
+        let node_kind = node.kind(db);
+        let grandparent_kind = node.grandparent_kind(db);
         match node_kind {
             kind if kind.is_keyword_token() => Some(SemanticTokenKind::Keyword),
             SyntaxKind::TokenLiteralNumber => Some(SemanticTokenKind::Number),
@@ -188,13 +157,14 @@ impl SemanticTokenKind {
         }
     }
 
-    /// Returns a semantic token kind based on identifier parent kind.
+    /// Returns a semantic token kind based on identifier.
     /// Returns `None` if the token kind has no corresponding semantic token kind.
-    fn from_identifier_parent_kind(
-        node_kind: SyntaxKind,
-        grandparent_kind: Option<SyntaxKind>,
-    ) -> Option<Self> {
-        match node_kind {
+    fn from_identifier(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
+        let identifier_node = identifier.as_syntax_node();
+        let parent_node = identifier_node.parent(db)?;
+        let parent_kind = parent_node.kind(db);
+        let grandparent_kind = parent_node.grandparent_kind(db);
+        match parent_kind {
             SyntaxKind::ItemInlineMacro => Some(SemanticTokenKind::InlineMacro),
             SyntaxKind::AliasClause => Some(SemanticTokenKind::Class),
             SyntaxKind::ItemConstant | SyntaxKind::TraitItemConstant => {
@@ -221,14 +191,18 @@ impl SemanticTokenKind {
         }
     }
 
-    /// Returns a semantic token kind based on the resultant and terminal pointer.
-    /// Returns `None` if the resultant has no corresponding semantic token kind.
+    ///   Arguments:
+    /// - `db`: The database to use for lookup.
+    /// - `resultant`: The resultant syntax node.
+    /// - `expr_path_ptr`: Optional expression path pointer.
+    ///   Returns
+    /// - `Some(SemanticTokenKind)` if a corresponding semantic token kind is found, otherwise returns `None`.
     fn from_resultant(
         db: &AnalysisDatabase,
         resultant: SyntaxNode,
-        terminal_ptr: TerminalIdentifierPtr,
         expr_path_ptr: Option<ExprPathPtr>,
     ) -> Option<SemanticTokenKind> {
+        let terminal_ptr = db.find_closest_terminal(resultant)?;
         let lookup_item_id = db.find_lookup_item(resultant)?;
 
         if let Some(item) = db.lookup_resolved_generic_item_by_ptr(lookup_item_id, terminal_ptr) {

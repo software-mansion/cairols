@@ -2,15 +2,14 @@ pub use self::token_kind::SemanticTokenKind;
 use crate::META_STATE_NOT_ACQUIRED_MSG;
 use crate::ide::analysis_progress::AnalysisStatus;
 use crate::ide::semantic_highlighting::token_traverser::SemanticTokensTraverser;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::result::{LSPError, LSPResult};
 use crate::state::MetaState;
 use anyhow::anyhow;
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::ast::{TerminalIdentifier, TerminalIdentifierPtr};
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use lsp_server::ErrorCode;
 use lsp_types::{SemanticTokens, SemanticTokensParams, SemanticTokensResult};
 use tracing::{error, trace};
@@ -19,7 +18,7 @@ mod encoder;
 pub mod token_kind;
 mod token_traverser;
 
-/// Resolve the semantic tokens of a given file.
+/// Resolves the semantic tokens of a given file.
 pub fn semantic_highlight_full(
     params: SemanticTokensParams,
     db: &AnalysisDatabase,
@@ -52,33 +51,11 @@ pub fn semantic_highlight_full(
     })))
 }
 
-// Retrieves the most-likely-usable resultant, and the terminal ptr we can use for semantic lookup
-fn get_resultants_and_closest_terminals<'db>(
-    db: &'db AnalysisDatabase,
-    node: SyntaxNode<'db>,
-) -> Vec<(SyntaxNode<'db>, TerminalIdentifierPtr<'db>)> {
-    let Some(resultants) = db.get_node_resultants(node) else {
-        return vec![];
-    };
-
-    resultants
-        .into_iter()
-        .filter_map(|resultant| {
-            let terminal = if resultant.kind(db).is_terminal() {
-                Some(resultant)
-            } else if resultant.kind(db).is_token() {
-                resultant.ancestors(db).find(|ancestor| ancestor.kind(db).is_terminal())
-            } else {
-                None
-            }?;
-
-            Some((resultant, TerminalIdentifier::cast(db, terminal)?.stable_ptr(db)))
-        })
-        .collect()
-}
-
 /// Checks whether the given node is an inline macro invocation and not just the simple path segment.
 fn is_inline_macro<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> bool {
+    if matches!(node.kind(db), SyntaxKind::ExprInlineMacro) {
+        return true;
+    }
     if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
         && let Some(maybe_macro) = path_node.parent(db)
     {
