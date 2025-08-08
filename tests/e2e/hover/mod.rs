@@ -13,6 +13,7 @@ use crate::support::transform::Transformer;
 mod basic;
 mod consts;
 mod function_call;
+mod generic_params;
 mod literals;
 mod missing_module;
 mod partial;
