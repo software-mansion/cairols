@@ -4,7 +4,10 @@ use cairo_lang_syntax::node::{
     ast::{BinaryOperator, ExprBinary},
 };
 
-pub fn dot_expr_rhs(db: &AnalysisDatabase, node: &SyntaxNode    has_node_switched: bool,
+pub fn dot_expr_rhs(
+    db: &AnalysisDatabase,
+    node: &SyntaxNode,
+    has_node_switched: bool,
 ) -> Option<ExprBinary> {
     if let Some(binary_expression) = node.ancestor_of_type::<ExprBinary>(db)
         && let BinaryOperator::Dot(_) = binary_expression.op(db)
