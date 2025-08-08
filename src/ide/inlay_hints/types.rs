@@ -4,7 +4,7 @@ use cairo_lang_syntax::node::{
     helpers::PathSegmentEx,
 };
 
-use crate::{ide::ty::InferredValue, lang::db::AnalysisDatabase};
+use crate::{ide::format::types::InferredValue, lang::db::AnalysisDatabase};
 
 // Find all `_` in provided type caluse.
 pub fn find_underscores<'db>(
