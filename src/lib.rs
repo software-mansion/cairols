@@ -339,20 +339,23 @@ impl Backend {
                 recv(analysis_progress_status_receiver) -> analysis_progress_status => {
                     let Ok(analysis_status) = analysis_progress_status else { break };
 
+                    let mut meta_state = scheduler.meta_state
+                                .lock()
+                                .expect(META_STATE_NOT_ACQUIRED_MSG);
+                    meta_state.analysis_status = Some(analysis_status);
+
                     match analysis_status {
                         AnalysisStatus::Started => {
-                            scheduler.meta_state
-                                .lock()
-                                .expect("should be able to acquire the MetaState")
+                            meta_state
                                 .db_swapper
                                 .start_stopwatch();
+
                         }
                         AnalysisStatus::Finished => {
-                            scheduler.meta_state
-                                .lock()
-                                .expect("should be able to acquire the MetaState")
-                                .db_swapper
+                            meta_state.db_swapper
                                 .stop_stopwatch();
+
+                            drop(meta_state);
 
                             scheduler.local(|state, _, _notifier, requester, _responder|
                                 Self::on_stopped_analysis(state, requester)
@@ -391,18 +394,8 @@ impl Backend {
 
     /// Calls [`lang::proc_macros::controller::ProcMacroClientController::on_response`] to do its
     /// work.
-    fn on_proc_macro_response(
-        state: &mut State,
-        _: Notifier,
-        requester: &mut Requester<'_>,
-        _: Responder,
-    ) {
-        state.proc_macro_controller.on_response(
-            &mut state.db,
-            &state.config,
-            &state.client_capabilities,
-            requester,
-        );
+    fn on_proc_macro_response(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
+        state.proc_macro_controller.on_response(&mut state.db, &state.config);
     }
 
     fn on_stopped_analysis(state: &State, requester: &mut Requester<'_>) {
@@ -423,16 +416,12 @@ impl Backend {
         meta_state: MetaState,
         _notifier: Notifier,
     ) {
-        meta_state
-            .lock()
-            .expect("should be able to acquire the MetaState")
-            .db_swapper
-            .register_mutation();
+        meta_state.lock().expect(META_STATE_NOT_ACQUIRED_MSG).db_swapper.register_mutation();
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
     fn maybe_swap_database(state: &mut State, meta_state: MetaState, _notifier: Notifier) {
-        meta_state.lock().expect("should be able to acquire the MetaState").db_swapper.maybe_swap(
+        meta_state.lock().expect(META_STATE_NOT_ACQUIRED_MSG).db_swapper.maybe_swap(
             &mut state.db,
             &state.open_files,
             &mut state.project_controller,
@@ -460,3 +449,4 @@ impl Backend {
         Ok(())
     }
 }
+const META_STATE_NOT_ACQUIRED_MSG: &str = "should be able to acquire the MetaState";

@@ -8,7 +8,7 @@ use crossbeam::channel::Sender;
 use lsp_types::{ClientCapabilities, Url};
 
 use crate::config::Config;
-use crate::ide::analysis_progress::{AnalysisEvent, AnalysisProgressController};
+use crate::ide::analysis_progress::{AnalysisEvent, AnalysisProgressController, AnalysisStatus};
 use crate::ide::code_lens::CodeLensController;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
@@ -90,12 +90,14 @@ pub struct MetaStateInner {
     /// Swapper does not communicate with other critical modules and do not access the state.
     /// Using it also does not affect the analysis. Thus, it's safe to place it here and access via interior mutability.
     pub db_swapper: AnalysisDatabaseSwapper,
+
+    pub analysis_status: Option<AnalysisStatus>,
 }
 
 impl MetaStateInner {
     pub fn new(analysis_event_sender: Sender<AnalysisEvent>) -> Self {
         let db_swapper = AnalysisDatabaseSwapper::new(analysis_event_sender);
-        Self { db_swapper }
+        Self { db_swapper, analysis_status: None }
     }
 }
 
