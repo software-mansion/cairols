@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use ::cairo_lint::CorelibContext;
 use cairo_lang_syntax::node::SyntaxNode;
 use itertools::Itertools;
 use lsp_types::{
@@ -61,7 +60,6 @@ fn get_code_actions_for_diagnostics(
     params: &CodeActionParams,
 ) -> Vec<CodeAction> {
     let uri = &params.text_document.uri;
-    let linter_corelib_context = CorelibContext::new(db);
 
     let mut result: Vec<_> = params
         .context
@@ -80,10 +78,7 @@ fn get_code_actions_for_diagnostics(
             Some((code, diagnostic, ctx))
         })
         .flat_map(|(code, diagnostic, ctx)| match code {
-            None => {
-                cairo_lint::cairo_lint(db, &ctx, linter_corelib_context.clone(), config_registry)
-                    .unwrap_or_default()
-            }
+            None => cairo_lint::cairo_lint(db, &ctx, config_registry).unwrap_or_default(),
 
             Some("E0001") => rename_unused_variable::rename_unused_variable(
                 db,
