@@ -135,9 +135,11 @@ fn type_bound() {
 
     [[completions]]
     completion_label = "DivRem"
+    completion_label_path = "DivRem"
 
     [[completions]]
     completion_label = "DivRem"
+    completion_label_path = "core::num::traits::DivRem"
     text_edits = ["""
     use core::num::traits::DivRem;
 
@@ -263,9 +265,11 @@ fn negative_type_bound() {
 
     [[completions]]
     completion_label = "DivRem"
+    completion_label_path = "DivRem"
 
     [[completions]]
     completion_label = "DivRem"
+    completion_label_path = "core::num::traits::DivRem"
     text_edits = ["""
     use core::num::traits::DivRem;
 
@@ -390,9 +394,11 @@ fn impl_bound() {
 
     [[completions]]
     completion_label = "DivRem"
+    completion_label_path = "DivRem"
 
     [[completions]]
     completion_label = "DivRem"
+    completion_label_path = "core::num::traits::DivRem"
     text_edits = ["""
     use core::num::traits::DivRem;
 
@@ -477,6 +483,7 @@ fn type_bound_user_trait() {
 
     [[completions]]
     completion_label = "traits"
+    completion_label_path = "core::traits"
     text_edits = ["""
     use core::traits;
 
@@ -484,6 +491,7 @@ fn type_bound_user_trait() {
 
     [[completions]]
     completion_label = "traits"
+    completion_label_path = "core::num::traits"
     text_edits = ["""
     use core::num::traits;
 

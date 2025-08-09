@@ -311,3 +311,64 @@ fn function_implicit_parameter() {
     completion_label = "RangeCheck"
     "#);
 }
+
+#[test]
+fn simple_completion_without_explicit_path() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod a {
+        pub fn xyz() {}
+    }
+
+    fn foo() {
+        xy<caret>
+    }
+    ",@r#"
+    caret = """
+        xy<caret>
+    """
+
+    [[completions]]
+    completion_label = "xyz"
+    text_edits = ["""
+    use a::xyz;
+
+    """]
+    "#);
+}
+
+#[test]
+fn duplicated_completion_without_explicit_path() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod a {
+        pub fn xyz() {}
+    }
+
+    mod b {
+        pub fn xyz() {}
+    }
+
+    fn foo() {
+        xy<caret>
+    }
+    ",@r#"
+    caret = """
+        xy<caret>
+    """
+
+    [[completions]]
+    completion_label = "xyz"
+    completion_label_path = "a::xyz"
+    text_edits = ["""
+    use a::xyz;
+
+    """]
+
+    [[completions]]
+    completion_label = "xyz"
+    completion_label_path = "b::xyz"
+    text_edits = ["""
+    use b::xyz;
+
+    """]
+    "#);
+}

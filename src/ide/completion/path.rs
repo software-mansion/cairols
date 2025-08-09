@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use itertools::Itertools;
-use lsp_types::{CompletionItem, CompletionItemKind};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use super::helpers::completion_kind::{
     importable_completion_kind, resolved_generic_item_completion_kind,
@@ -56,7 +56,7 @@ pub fn path_suffix_completions<'db>(
         typed_text.pop().expect("typed path should not be empty")
     };
 
-    importables
+    let mut completions: Vec<CompletionItem> = importables
         .iter()
         .filter_map(|(importable, path_str)| {
             let mut path_segments: Vec<_> = path_str.split("::").collect();
@@ -97,12 +97,26 @@ pub fn path_suffix_completions<'db>(
             Some(CompletionItem {
                 label: last_segment.to_string(),
                 kind: Some(importable_completion_kind(*importable)),
+                label_details: Some(CompletionItemLabelDetails {
+                    detail: None,
+                    description: Some(path_str.to_string()),
+                }),
                 additional_text_edits,
                 ..CompletionItem::default()
             })
         })
         .unique_by(|completion| CompletionItemHashable(completion.clone()))
-        .collect()
+        .collect();
+
+    // Remove path label_details from all completions, that are NOT duplicated.
+    let label_counts = completions.iter().map(|item| item.label.clone()).counts();
+    for completion in &mut completions {
+        if label_counts[&completion.label] == 1 {
+            completion.label_details = None;
+        }
+    }
+
+    completions
 }
 
 /// Treats provided path as prefix, proposing elements that should go next.
