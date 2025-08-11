@@ -21,6 +21,7 @@ use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lint::LinterGroup;
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
+use salsa::{Database, Durability};
 
 pub use self::semantic::*;
 pub use self::swapper::*;
@@ -119,8 +120,7 @@ impl AnalysisDatabase {
     /// Trigger cancellation in any background tasks that might still be running.
     /// This method will block until all db snapshots are dropped.
     pub fn cancel_all(&mut self) {
-        // TODO(#869) find how to do this in new salsa
-        // self.salsa_runtime_mut().synthetic_write(Durability::LOW);
+        self.synthetic_write(Durability::LOW);
     }
 
     /// Removes the plugins from [`InternedPluginSuite`] for a crate with [`CrateId`].
