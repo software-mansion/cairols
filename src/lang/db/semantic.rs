@@ -22,6 +22,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast};
 
 use super::LsSyntaxGroup;
+use crate::lang::db::SyntaxNodeExt;
 
 #[cairo_lang_proc_macros::query_group(LsSemanticDatabase)]
 pub trait LsSemanticGroup:
@@ -567,15 +568,15 @@ fn find_generated_nodes<'db>(
 
         let mut new_nodes: OrderedHashSet<_> = Default::default();
 
-        for token in file_syntax.tokens(db) {
+        file_syntax.for_each_terminal(db, |terminal| {
             // Skip end of the file terminal, which is also a syntax tree leaf.
             // As `ModuleItemList` and `TerminalEndOfFile` have the same parent,
             // which is the `SyntaxFile`, so we don't want to take the `SyntaxFile`
             // as an additional resultant.
-            if token.kind(db) == SyntaxKind::TerminalEndOfFile {
-                continue;
+            if terminal.kind(db) == SyntaxKind::TerminalEndOfFile {
+                return;
             }
-            let nodes: Vec<_> = token
+            let nodes: Vec<_> = terminal
                 .ancestors_with_self(db)
                 .map_while(|new_node| {
                     translate_location(&mappings, new_node.span(db))
@@ -594,7 +595,7 @@ fn find_generated_nodes<'db>(
 
                 new_nodes.insert(new_node);
             }
-        }
+        });
 
         // If there is no node found, don't mark it as potentially replaced.
         if !new_nodes.is_empty() {
