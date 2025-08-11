@@ -6,14 +6,45 @@ use crate::lang::{
 use cairo_lang_semantic::db::SemanticGroup;
 use lsp_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
 
-pub fn cairo_lint(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Option<Vec<CodeAction>> {
-    let diags = db.module_semantic_diagnostics(ctx.module_file_id.0).ok()?;
+use crate::project::ConfigsRegistry;
+use ::cairo_lint::{CairoLintToolMetadata, CorelibContext, LinterDiagnosticParams, LinterGroup};
+use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_semantic::{SemanticDiagnostic, diagnostic::SemanticDiagnosticKind};
+use cairo_lang_utils::LookupIntern;
+
+pub fn cairo_lint(
+    db: &AnalysisDatabase,
+    ctx: &AnalysisContext<'_>,
+    linter_corelib_context: CorelibContext,
+    config_registry: &ConfigsRegistry,
+) -> Option<Vec<CodeAction>> {
+    let linter_params = LinterDiagnosticParams {
+        only_generated_files: false,
+        tool_metadata: get_linter_tool_metadata(db, ctx, config_registry),
+    };
+
+    let module_id = ctx.module_file_id.0;
+
+    // We collect the semantic diagnostics, as the unused imports diagnostics (which come from the semantic diags),
+    // can be fixed with the linter.
+    let semantic_diags = db.module_semantic_diagnostics(module_id).ok()?;
+    let linter_diags = db
+        .linter_diagnostics(linter_corelib_context, linter_params, module_id)
+        .into_iter()
+        .map(|diag| {
+            SemanticDiagnostic::new(
+                StableLocation::new(diag.stable_ptr),
+                SemanticDiagnosticKind::PluginDiagnostic(diag),
+            )
+        });
 
     let node_span = ctx.node.span(db);
 
-    let diagnostics = diags
+    let diagnostics = semantic_diags
         .get_diagnostics_without_duplicates(db)
         .into_iter()
+        .chain(linter_diags)
         .filter(|diagnostic| {
             diagnostic.stable_location.syntax_node(db).span(db).contains(node_span)
         })
@@ -53,4 +84,19 @@ pub fn cairo_lint(db: &AnalysisDatabase, ctx: &AnalysisContext<'_>) -> Option<Ve
         .collect();
 
     Some(result)
+}
+
+fn get_linter_tool_metadata(
+    db: &AnalysisDatabase,
+    ctx: &AnalysisContext<'_>,
+    config_registry: &ConfigsRegistry,
+) -> CairoLintToolMetadata {
+    if let Ok(module_file_id) = ctx.module_file_id.file_id(db)
+        && let FileLongId::OnDisk(file_id) = module_file_id.lookup_intern(db)
+        && let Some(file_config) = config_registry.config_for_file(&file_id)
+    {
+        file_config.lint.clone()
+    } else {
+        Default::default()
+    }
 }

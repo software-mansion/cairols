@@ -1,6 +1,6 @@
 use std::any::TypeId;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{InlineMacroExprPluginLongId, MacroPluginLongId};
@@ -9,22 +9,28 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::ids::AnalyzerPluginLongId;
 use cairo_lang_utils::{LookupIntern, smol_str::SmolStr};
-use cairo_lint::plugin::CairoLint;
 use itertools::{Itertools, chain};
 use serde::Serialize;
 
+use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::plugins::{AnalyzerPluginType, DowncastRefUnchecked};
+use crate::lang::plugins::DowncastRefUnchecked;
 use crate::lang::proc_macros::plugins::{InlineProcMacroPlugin, ProcMacroPlugin};
 use crate::project::builtin_plugins::BuiltinPlugin;
-use crate::project::extract_custom_file_stems;
+use crate::project::{ConfigsRegistry, extract_custom_file_stems};
+use crate::toolchain::scarb::ScarbToolchain;
 
 /// Generates a Markdown text describing all crates in the database.
-pub fn inspect_analyzed_crates(db: &AnalysisDatabase) -> String {
+pub fn inspect_analyzed_crates(
+    db: &AnalysisDatabase,
+    config: &Config,
+    configs_registry: &ConfigsRegistry,
+    scarb_toolchain: &ScarbToolchain,
+) -> String {
     let crates = db
         .crates()
         .into_iter()
-        .filter_map(|id| CrateView::for_crate(db, id))
+        .filter_map(|id| CrateView::for_crate(db, config, configs_registry, scarb_toolchain, id))
         .sorted()
         .map(|cr| serde_json::to_string_pretty(&cr))
         .collect::<Result<Vec<_>, _>>()
@@ -43,6 +49,7 @@ struct CrateView {
     plugins: Plugins,
 }
 
+#[allow(clippy::non_canonical_partial_ord_impl)]
 impl PartialOrd for CrateView {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some((&self.name, &self.source_paths).cmp(&(&other.name, &other.source_paths)))
@@ -56,7 +63,13 @@ impl Ord for CrateView {
 }
 
 impl CrateView {
-    fn for_crate(db: &AnalysisDatabase, crate_id: CrateId) -> Option<Self> {
+    fn for_crate(
+        db: &AnalysisDatabase,
+        config: &Config,
+        configs_registry: &ConfigsRegistry,
+        scarb_toolchain: &ScarbToolchain,
+        crate_id: CrateId,
+    ) -> Option<Self> {
         let CrateLongId::Real { name, .. } = crate_id.lookup_intern(db) else {
             return None;
         };
@@ -71,7 +84,8 @@ impl CrateView {
             .map(|stems| stems.iter().map(|stem| root.join(format!("{stem}.cairo"))).collect_vec())
             .unwrap_or_else(|| vec![root.join("lib.cairo")]);
 
-        let linter_configuration = LinterConfiguration::for_crate(db, crate_id);
+        let linter_configuration =
+            LinterConfiguration::for_crate(config, configs_registry, scarb_toolchain, &root);
         let plugins = Plugins::for_crate(db, crate_id);
 
         Some(Self { name, source_paths, settings, linter_configuration, plugins })
@@ -86,26 +100,21 @@ enum LinterConfiguration {
 }
 
 impl LinterConfiguration {
-    fn for_crate(db: &AnalysisDatabase, crate_id: CrateId) -> Self {
-        let Some(id) = db
-            .crate_analyzer_plugins(crate_id)
-            .iter()
-            .map(|id| id.lookup_intern(db))
-            .find(|id| id.is_cairo_lint_plugin())
-        else {
+    fn for_crate(
+        config: &Config,
+        configs_registry: &ConfigsRegistry,
+        scarb_toolchain: &ScarbToolchain,
+        root_path: &Path,
+    ) -> Self {
+        if !config.enable_linter || scarb_toolchain.is_from_scarb_cache(root_path) {
             return Self::Off;
-        };
+        }
 
-        // Safety: we check if `id` points to the `CairoLint` plugin.
-        let plugin = unsafe { CairoLint::downcast_ref_unchecked(&*id.0) };
-
-        let mut config = plugin.tool_metadata().clone();
-        config.insert(
-            "include_compiler_generated_files".to_owned(),
-            plugin.include_compiler_generated_files(),
-        );
-
-        Self::On(config)
+        Self::On(
+            configs_registry.config_for_file(root_path).map_or_else(Default::default, |config| {
+                config.lint.clone().into_iter().collect::<HashMap<_, _>>()
+            }),
+        )
     }
 }
 
