@@ -212,8 +212,9 @@ impl DiagnosticsControllerThread {
             self.spawn_worker(move |project_diagnostics, notifier| {
                 refresh_diagnostics(
                     &state.db,
+                    &state.config,
+                    &state.configs_registry,
                     batch,
-                    state.config.trace_macro_diagnostics,
                     project_diagnostics,
                     notifier,
                     scarb_toolchain,

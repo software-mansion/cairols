@@ -311,7 +311,6 @@ impl Backend {
                 &mut state.db,
                 &mut state.proc_macro_controller,
                 &mut state.analysis_progress_controller,
-                &state.project_controller.configs_registry(),
                 &state.client_capabilities,
             );
         });
@@ -448,10 +447,10 @@ impl Backend {
             .code_lens_controller
             .schedule_refreshing_all_lenses(state.db.snapshot(), state.config.clone());
 
-        if state.client_capabilities.workspace_semantic_tokens_refresh_support() {
-            if let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing()) {
-                error!("semantic tokens refresh failed: {err:#?}");
-            }
+        if state.client_capabilities.workspace_semantic_tokens_refresh_support()
+            && let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing())
+        {
+            error!("semantic tokens refresh failed: {err:#?}");
         }
     }
 
@@ -462,7 +461,6 @@ impl Backend {
             &state.open_files,
             &mut state.project_controller,
             &state.proc_macro_controller,
-            &state.config,
         );
     }
 

@@ -185,6 +185,10 @@ impl ScarbToolchain {
         self.cache_path.get_or_init(|| self.fetch_cache_path().ok()).clone()
     }
 
+    pub fn is_from_scarb_cache(&self, file_path: &Path) -> bool {
+        self.cache_path().is_some_and(|cache_path| file_path.starts_with(cache_path))
+    }
+
     fn fetch_version(&self) -> Result<String> {
         let Some(scarb_path) = self.discover() else { bail!("failed to get scarb path") };
 
