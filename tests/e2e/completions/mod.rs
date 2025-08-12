@@ -11,6 +11,7 @@ use crate::support::transform::Transformer;
 use crate::support::{MockClient, fixture};
 
 mod attribute;
+mod dot;
 mod methods_text_edits;
 mod mod_file;
 mod path;
