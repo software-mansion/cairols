@@ -1,15 +1,14 @@
-use cairo_lang_defs::ids::TraitItemId;
+use cairo_lang_defs::ids::{LookupItemId, TraitItemId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::keyword::{CRATE_KW, SELF_TYPE_KW, SUPER_KW};
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_syntax::node::ast::{ExprPathPtr, TerminalIdentifier};
+use cairo_lang_syntax::node::ast::{ExprPathPtr, TerminalIdentifier, TerminalIdentifierPtr};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use lsp_types::SemanticTokenType;
 
-use crate::ide::semantic_highlighting::is_inline_macro;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 #[derive(Clone, Copy)]
@@ -23,8 +22,7 @@ pub enum SemanticTokenKind {
     Type = 6,
     Parameter = 7,
     Variable = 8,
-    #[allow(dead_code)]
-    Property = 9,
+
     EnumMember = 10,
     Function = 11,
     Comment = 12,
@@ -76,10 +74,17 @@ impl SemanticTokenKind {
                 _ => {}
             };
 
+            // We use resultants here to get semantics of the actual node that is generated.
             for resultant in db.get_node_resultants(identifier.as_syntax_node()).unwrap_or_default()
             {
-                if let Some(kind) = Self::from_resultant(db, resultant, expr_path_ptr) {
-                    return Some(kind);
+                if let Some(lookup_item_id) = db.find_lookup_item(resultant) {
+                    if let Some(kind) = Self::from_resultant(db, resultant, lookup_item_id) {
+                        return Some(kind);
+                    }
+
+                    if let Some(kind) = Self::from_expr_path(db, expr_path_ptr, lookup_item_id) {
+                        return Some(kind);
+                    }
                 }
             }
         }
@@ -194,16 +199,15 @@ impl SemanticTokenKind {
     ///   Arguments:
     /// - `db`: The database to use for lookup.
     /// - `resultant`: The resultant syntax node.
-    /// - `expr_path_ptr`: Optional expression path pointer.
+    /// - `lookup_item_id`: The lookup item ID to use for the semantic lookup.
     ///   Returns
     /// - `Some(SemanticTokenKind)` if a corresponding semantic token kind is found, otherwise returns `None`.
     fn from_resultant(
         db: &AnalysisDatabase,
         resultant: SyntaxNode,
-        expr_path_ptr: Option<ExprPathPtr>,
+        lookup_item_id: LookupItemId,
     ) -> Option<SemanticTokenKind> {
-        let terminal_ptr = db.find_closest_terminal(resultant)?;
-        let lookup_item_id = db.find_lookup_item(resultant)?;
+        let terminal_ptr = find_closest_terminal_ancestor_or_self(db, resultant)?;
 
         if let Some(item) = db.lookup_resolved_generic_item_by_ptr(lookup_item_id, terminal_ptr) {
             return Some(match item {
@@ -244,7 +248,20 @@ impl SemanticTokenKind {
             });
         }
 
-        // Exprs and patterns.
+        None
+    }
+
+    ///   Arguments:
+    /// - `db`: The database to use for lookup.
+    /// - `expr_path_ptr`: The expression path pointer to use for the semantic lookup.
+    /// - `lookup_item_id`: The lookup item ID to use for the semantic lookup.
+    ///   Returns
+    /// - `Some(SemanticTokenKind)` if a corresponding semantic token kind is found, otherwise returns `None`.
+    fn from_expr_path(
+        db: &AnalysisDatabase,
+        expr_path_ptr: Option<ExprPathPtr>,
+        lookup_item_id: LookupItemId,
+    ) -> Option<SemanticTokenKind> {
         if let Some(function_id) = lookup_item_id.function_with_body()
             && let Some(expr_path_ptr) = expr_path_ptr
             && db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).is_ok()
@@ -254,4 +271,34 @@ impl SemanticTokenKind {
 
         None
     }
+}
+
+/// Finds the closest ancestor [`TerminalIdentifierPtr`] to the node (self if terminal), that we can use for the semantic lookup.
+/// Returns `None` if no such ancestor exists.
+fn find_closest_terminal_ancestor_or_self<'db>(
+    db: &'db dyn LsSemanticGroup,
+    node: SyntaxNode<'db>,
+) -> Option<TerminalIdentifierPtr<'db>> {
+    let terminal = if node.kind(db).is_terminal() {
+        Some(node)
+    } else if node.kind(db).is_token() {
+        node.ancestors(db).find(|ancestor| ancestor.kind(db).is_terminal())
+    } else {
+        None
+    }?;
+    Some(TerminalIdentifier::cast(db, terminal)?.stable_ptr(db))
+}
+
+/// Checks whether the given node is an inline macro invocation and not just the simple path segment.
+fn is_inline_macro<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> bool {
+    if matches!(node.kind(db), SyntaxKind::ExprInlineMacro) {
+        return true;
+    }
+    if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
+        && let Some(maybe_macro) = path_node.parent(db)
+    {
+        let kind = maybe_macro.kind(db);
+        return kind == SyntaxKind::ExprInlineMacro || kind == SyntaxKind::ItemInlineMacro;
+    }
+    false
 }

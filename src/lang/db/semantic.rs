@@ -15,7 +15,6 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use cairo_lang_syntax::node::ast::{TerminalIdentifier, TerminalIdentifierPtr};
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
@@ -153,12 +152,6 @@ pub trait LsSemanticGroup:
     ///
     /// Therefore for `FooTrait` from file 1, `FooTrait` from file 1 and `FooTrait` from file 2 are returned.
     fn get_node_resultants<'db>(&'db self, node: SyntaxNode<'db>) -> Option<Vec<SyntaxNode<'db>>>;
-
-    /// Finds the closest [`TerminalIdentifierPtr`] to the node, that we can use for the semantic lookup.
-    fn find_closest_terminal<'db>(
-        &'db self,
-        node: SyntaxNode<'db>,
-    ) -> Option<TerminalIdentifierPtr<'db>>;
 }
 
 fn find_lookup_item<'db>(
@@ -371,20 +364,6 @@ fn get_node_resultants<'db>(
     let resultants = find_generated_nodes(db, &files, node);
 
     Some(resultants.into_iter().collect())
-}
-
-fn find_closest_terminal<'db>(
-    db: &'db dyn LsSemanticGroup,
-    node: SyntaxNode<'db>,
-) -> Option<TerminalIdentifierPtr<'db>> {
-    let terminal = if node.kind(db).is_terminal() {
-        Some(node)
-    } else if node.kind(db).is_token() {
-        node.ancestors(db).find(|ancestor| ancestor.kind(db).is_terminal())
-    } else {
-        None
-    }?;
-    Some(TerminalIdentifier::cast(db, terminal)?.stable_ptr(db))
 }
 
 /// If the ast node is a lookup item, return corresponding ids. Otherwise, returns `None`.

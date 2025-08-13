@@ -4,8 +4,6 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::state::MetaState;
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use lsp_types::{SemanticTokens, SemanticTokensParams, SemanticTokensResult};
 use tracing::error;
 
@@ -30,18 +28,4 @@ pub fn semantic_highlight_full(
         result_id: None,
         data: SemanticTokensTraverser::default().get_semantic_tokens(db, node),
     }))
-}
-
-/// Checks whether the given node is an inline macro invocation and not just the simple path segment.
-fn is_inline_macro<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> bool {
-    if matches!(node.kind(db), SyntaxKind::ExprInlineMacro) {
-        return true;
-    }
-    if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
-        && let Some(maybe_macro) = path_node.parent(db)
-    {
-        let kind = maybe_macro.kind(db);
-        return kind == SyntaxKind::ExprInlineMacro || kind == SyntaxKind::ItemInlineMacro;
-    }
-    false
 }
