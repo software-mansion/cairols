@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::default::Default;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Mutex};
 
 use crossbeam::channel::Sender;
 use lsp_types::{ClientCapabilities, Url};
@@ -92,19 +92,16 @@ pub struct MetaStateInner {
     pub db_swapper: AnalysisDatabaseSwapper,
 
     pub analysis_status: Option<AnalysisStatus>,
-
-    pub status_condvar: Arc<Condvar>,
 }
 
 impl MetaStateInner {
     pub fn new(analysis_event_sender: Sender<AnalysisEvent>) -> Self {
         let db_swapper = AnalysisDatabaseSwapper::new(analysis_event_sender);
-        Self { db_swapper, analysis_status: None, status_condvar: Arc::new(Condvar::new()) }
+        Self { db_swapper, analysis_status: None }
     }
 
     pub fn set_analysis_status(&mut self, analysis_status: AnalysisStatus) {
         self.analysis_status = Some(analysis_status);
-        self.status_condvar.notify_all();
     }
 }
 

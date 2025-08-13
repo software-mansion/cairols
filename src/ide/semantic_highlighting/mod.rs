@@ -23,20 +23,12 @@ pub fn semantic_highlight_full(
     db: &AnalysisDatabase,
     meta_state: MetaState,
 ) -> Option<SemanticTokensResult> {
-    let mut locked_state = meta_state.lock().expect(META_STATE_NOT_ACQUIRED_MSG);
-
-    let mut analysis_finished =
+    let locked_state = meta_state.lock().expect(META_STATE_NOT_ACQUIRED_MSG);
+    let analysis_finished =
         locked_state.analysis_status.is_some_and(|status| status == AnalysisStatus::Finished);
-    let status_condvar = locked_state.status_condvar.clone();
-    while !analysis_finished {
-        locked_state = status_condvar.wait(locked_state).unwrap();
-
-        analysis_finished =
-            locked_state.analysis_status.is_some_and(|status| status == AnalysisStatus::Finished);
+    if !analysis_finished {
+        return None;
     }
-
-    // Release, so no panickable action is performed while keeping the state locked.
-    drop(locked_state);
 
     let file_uri = params.text_document.uri;
     let file = db.file_for_url(&file_uri)?;
