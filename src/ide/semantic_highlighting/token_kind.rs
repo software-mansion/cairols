@@ -22,7 +22,8 @@ pub enum SemanticTokenKind {
     Type = 6,
     Parameter = 7,
     Variable = 8,
-    #[allow(dead_code)] /// Keeping this for proper representation of the [`SemanticTokenType`] enum.
+    /// Keeping this for proper representation of the [`SemanticTokenType`] enum.
+    #[allow(dead_code)]
     Property = 9,
     EnumMember = 10,
     Function = 11,
