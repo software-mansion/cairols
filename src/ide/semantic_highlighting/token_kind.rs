@@ -22,7 +22,8 @@ pub enum SemanticTokenKind {
     Type = 6,
     Parameter = 7,
     Variable = 8,
-
+    #[allow(dead_code)] /// Keeping this for proper representation of the [`SemanticTokenType`] enum.
+    Property = 9,
     EnumMember = 10,
     Function = 11,
     Comment = 12,
@@ -251,7 +252,7 @@ impl SemanticTokenKind {
         None
     }
 
-    ///   Arguments:
+    /// Arguments:
     /// - `db`: The database to use for lookup.
     /// - `expr_path_ptr`: The expression path pointer to use for the semantic lookup.
     /// - `lookup_item_id`: The lookup item ID to use for the semantic lookup.
