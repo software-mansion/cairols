@@ -1,8 +1,7 @@
-use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
-
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateInput;
+use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
 
 pub use self::configs_registry::{ConfigsRegistry, PackageConfig};
 use crate::lang::db::AnalysisDatabase;

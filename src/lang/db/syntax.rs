@@ -3,6 +3,7 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal};
 use cairo_lang_utils::Upcast;
 
@@ -101,4 +102,41 @@ fn find_identifier_at_position<'db>(
         let col = position.col.checked_sub(1)?;
         find(TextPosition { col, ..position })
     })
+}
+
+pub trait SyntaxNodeExt {
+    /// Faster than [`SyntaxNode::tokens`] because we don't travel each leaf, and does not allocate.
+    fn for_each_terminal<'db>(
+        &self,
+        db: &'db dyn SyntaxGroup,
+        callback: impl FnMut(&SyntaxNode<'db>),
+    ) where
+        Self: 'db;
+}
+
+impl<'a> SyntaxNodeExt for SyntaxNode<'a> {
+    fn for_each_terminal<'db>(
+        &self,
+        db: &'db dyn SyntaxGroup,
+        mut callback: impl FnMut(&SyntaxNode<'db>),
+    ) where
+        Self: 'db,
+    {
+        for_each_terminals_ex(self, db, &mut callback)
+    }
+}
+
+fn for_each_terminals_ex<'db>(
+    node: &SyntaxNode<'db>,
+    db: &'db dyn SyntaxGroup,
+    callback: &mut impl FnMut(&SyntaxNode<'db>),
+) {
+    if node.green_node(db).kind.is_terminal() {
+        callback(node);
+        return;
+    }
+
+    for child in node.get_children(db) {
+        for_each_terminals_ex(child, db, callback);
+    }
 }

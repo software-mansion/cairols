@@ -19,7 +19,7 @@ use crate::lang::proc_macros::client::plain_request_response::{
 /// A set of queries that enable access to proc macro client from compiler plugins
 /// `.generate_code()` methods.
 #[cairo_lang_proc_macros::query_group]
-#[allow(dead_code)]
+#[expect(dead_code)] // Linter complains about non-usage of `*_with_durability` methods.
 pub trait ProcMacroGroup: salsa::Database {
     #[salsa::input]
     fn attribute_macro_resolution(

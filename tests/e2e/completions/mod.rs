@@ -11,6 +11,7 @@ use crate::support::transform::Transformer;
 use crate::support::{MockClient, fixture};
 
 mod attribute;
+mod dot;
 mod methods_text_edits;
 mod mod_file;
 mod path;
@@ -88,6 +89,7 @@ fn transform(mut ls: MockClient, cursors: Cursors, main_file: &str) -> String {
             .into_iter()
             .map(|completion| Completions {
                 completion_label: completion.label,
+                completion_label_path: completion.label_details.unwrap_or_default().description,
                 detail: completion.detail,
                 insert_text: completion.insert_text,
                 text_edits: completion
@@ -119,6 +121,8 @@ impl Display for Report {
 #[derive(Serialize)]
 struct Completions {
     completion_label: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    completion_label_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     detail: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
