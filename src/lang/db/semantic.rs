@@ -10,11 +10,11 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_filesystem::db::{get_parent_and_mapping, translate_location};
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
-use cairo_lang_semantic::Binding;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_semantic::{Binding, GenericParam};
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
@@ -24,6 +24,7 @@ use cairo_lang_utils::{Intern, Upcast};
 use super::LsSyntaxGroup;
 use crate::lang::db::SyntaxNodeExt;
 
+#[allow(dead_code)] // Used later in the stack
 #[cairo_lang_proc_macros::query_group(LsSemanticDatabase)]
 pub trait LsSemanticGroup:
     SemanticGroup + for<'db> Upcast<'db, dyn SemanticGroup> + LsSyntaxGroup
@@ -153,6 +154,13 @@ pub trait LsSemanticGroup:
     ///
     /// Therefore for `FooTrait` from file 1, `FooTrait` from file 1 and `FooTrait` from file 2 are returned.
     fn get_node_resultants<'db>(&'db self, node: SyntaxNode<'db>) -> Option<Vec<SyntaxNode<'db>>>;
+
+    /// Returns generic parameters defined by the item.
+    /// Items that do not introduce any generics (use statements, modules etc.) yield an empty vector.
+    fn item_generic_params<'db>(
+        &'db self,
+        lookup_item: LookupItemId<'db>,
+    ) -> Vec<GenericParam<'db>>;
 }
 
 fn find_lookup_item<'db>(
@@ -612,4 +620,49 @@ fn find_generated_nodes<'db>(
     }
 
     result
+}
+
+fn item_generic_params<'db>(
+    db: &'db dyn SemanticGroup,
+    lookup_item: LookupItemId<'db>,
+) -> Vec<GenericParam<'db>> {
+    match lookup_item {
+        LookupItemId::ModuleItem(module_item_id) => match module_item_id {
+            ModuleItemId::FreeFunction(free_function_id) => {
+                db.free_function_generic_params(free_function_id)
+            }
+            ModuleItemId::Struct(struct_id) => db.struct_generic_params(struct_id),
+            ModuleItemId::Enum(enum_id) => db.enum_generic_params(enum_id),
+            ModuleItemId::TypeAlias(module_type_alias_id) => {
+                db.module_type_alias_generic_params(module_type_alias_id)
+            }
+            ModuleItemId::ImplAlias(impl_alias_id) => db.impl_alias_generic_params(impl_alias_id),
+            ModuleItemId::Trait(trait_id) => db.trait_generic_params(trait_id),
+            ModuleItemId::Impl(impl_def_id) => db.impl_def_generic_params(impl_def_id),
+            ModuleItemId::ExternType(extern_type_id) => {
+                db.extern_type_declaration_generic_params(extern_type_id)
+            }
+            ModuleItemId::ExternFunction(extern_function_id) => {
+                db.extern_function_declaration_generic_params(extern_function_id)
+            }
+            _ => return vec![],
+        },
+        LookupItemId::TraitItem(trait_item_id) => match trait_item_id {
+            TraitItemId::Function(trait_function_id) => {
+                db.trait_function_generic_params(trait_function_id)
+            }
+            TraitItemId::Type(trait_type_id) => db.trait_type_generic_params(trait_type_id),
+            _ => return vec![],
+        },
+        LookupItemId::ImplItem(impl_item_id) => match impl_item_id {
+            ImplItemId::Function(impl_function_id) => {
+                db.impl_function_generic_params(impl_function_id)
+            }
+            ImplItemId::Type(impl_type_def_id) => db.impl_type_def_generic_params(impl_type_def_id),
+            _ => return vec![],
+        },
+    }
+    .into_iter()
+    .flatten()
+    .collect()
 }
