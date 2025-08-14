@@ -115,12 +115,35 @@ impl AnalysisDatabase {
         })
     }
 
-    /// Adds plugin suit to database.
-    pub fn add_crate_plugin_suite(&mut self, crate_id: CrateId, plugins: InternedPluginSuite) {
+    /// Adds proc macro plugin suite to the database.
+    ///
+    /// It *prepends* the plugins from the proc macro plugin suite to appropriate
+    /// salsa inputs. It is done to make sure proc macros are resolved first, just like in
+    /// [`crate::project::Crate::apply`].
+    pub fn add_proc_macro_plugin_suite(&mut self, crate_id: CrateId, plugins: InternedPluginSuite) {
         self.with_plugins_mut(
             crate_id,
             move |macro_plugins, analyzer_plugins, inline_macro_plugins| {
-                add_plugin_suite(plugins, macro_plugins, analyzer_plugins, inline_macro_plugins)
+                *macro_plugins = plugins
+                    .macro_plugins
+                    .iter()
+                    .cloned()
+                    .chain(macro_plugins.iter().cloned())
+                    .collect();
+
+                *analyzer_plugins = plugins
+                    .analyzer_plugins
+                    .iter()
+                    .cloned()
+                    .chain(analyzer_plugins.iter().cloned())
+                    .collect();
+
+                *inline_macro_plugins = plugins
+                    .inline_macro_plugins
+                    .iter()
+                    .map(|(key, id)| (key.clone(), *id))
+                    .chain(inline_macro_plugins.iter().map(|(s, id)| (s.clone(), *id)))
+                    .collect();
             },
         )
     }
@@ -192,17 +215,6 @@ fn remove_plugin_suite(
     analyzer_plugins.retain(|plugin| !plugins.analyzer_plugins.contains(plugin));
     inline_macro_plugins
         .retain(|_, plugin| !plugins.inline_macro_plugins.values().contains(plugin));
-}
-
-fn add_plugin_suite(
-    plugins: InternedPluginSuite,
-    macro_plugins: &mut Vec<MacroPluginId>,
-    analyzer_plugins: &mut Vec<AnalyzerPluginId>,
-    inline_macro_plugins: &mut OrderedHashMap<String, InlineMacroExprPluginId>,
-) {
-    macro_plugins.extend_from_slice(&plugins.macro_plugins);
-    analyzer_plugins.extend_from_slice(&plugins.analyzer_plugins);
-    inline_macro_plugins.extend(Arc::unwrap_or_clone(plugins.inline_macro_plugins));
 }
 
 impl salsa::Database for AnalysisDatabase {}
