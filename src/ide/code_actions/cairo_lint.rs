@@ -7,7 +7,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use lsp_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
 
 use crate::project::ConfigsRegistry;
-use ::cairo_lint::{CairoLintToolMetadata, CorelibContext, LinterDiagnosticParams, LinterGroup};
+use ::cairo_lint::{CairoLintToolMetadata, LinterDiagnosticParams, LinterGroup};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::{SemanticDiagnostic, diagnostic::SemanticDiagnosticKind};
@@ -16,7 +16,6 @@ use cairo_lang_utils::LookupIntern;
 pub fn cairo_lint(
     db: &AnalysisDatabase,
     ctx: &AnalysisContext<'_>,
-    linter_corelib_context: CorelibContext,
     config_registry: &ConfigsRegistry,
 ) -> Option<Vec<CodeAction>> {
     let linter_params = LinterDiagnosticParams {
@@ -29,15 +28,12 @@ pub fn cairo_lint(
     // We collect the semantic diagnostics, as the unused imports diagnostics (which come from the semantic diags),
     // can be fixed with the linter.
     let semantic_diags = db.module_semantic_diagnostics(module_id).ok()?;
-    let linter_diags = db
-        .linter_diagnostics(linter_corelib_context, linter_params, module_id)
-        .into_iter()
-        .map(|diag| {
-            SemanticDiagnostic::new(
-                StableLocation::new(diag.stable_ptr),
-                SemanticDiagnosticKind::PluginDiagnostic(diag),
-            )
-        });
+    let linter_diags = db.linter_diagnostics(linter_params, module_id).into_iter().map(|diag| {
+        SemanticDiagnostic::new(
+            StableLocation::new(diag.stable_ptr),
+            SemanticDiagnosticKind::PluginDiagnostic(diag),
+        )
+    });
 
     let node_span = ctx.node.span(db);
 
