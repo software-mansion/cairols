@@ -18,7 +18,7 @@ use lsp_types::{
 };
 use types::find_underscores;
 
-use super::{markdown::fenced_code_block, ty::format_type};
+use super::{format::types::format_type, markdown::fenced_code_block};
 use crate::lang::proc_macros::db::get_og_node;
 use crate::lang::{
     db::{AnalysisDatabase, LsSemanticGroup},

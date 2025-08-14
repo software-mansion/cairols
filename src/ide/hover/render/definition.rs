@@ -14,8 +14,8 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
+use crate::ide::format::types::InferredValue;
 use crate::ide::markdown::{RULE, fenced_code_block};
-use crate::ide::ty::InferredValue;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch};
 
