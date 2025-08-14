@@ -12,7 +12,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::SemanticDiagnosticKind;
-use cairo_lint::{CairoLintToolMetadata, CorelibContext, LinterDiagnosticParams, LinterGroup};
+use cairo_lint::{CairoLintToolMetadata, LinterDiagnosticParams, LinterGroup};
 use lsp_types::{Diagnostic, Url};
 use tracing::info_span;
 
@@ -61,7 +61,6 @@ impl FilesDiagnostics {
 
         let root_path_string = root_on_disk_file.full_path(db);
         let root_path = Path::new(root_path_string.as_str());
-        let linter_corelib_context = CorelibContext::new(db);
         let linter_params = LinterDiagnosticParams {
             only_generated_files: false,
             tool_metadata: config_registry
@@ -93,18 +92,14 @@ impl FilesDiagnostics {
             if config.enable_linter && !scarb_toolchain.is_from_scarb_cache(root_path) {
                 semantic_file_diagnostics.extend(info_span!("db.linter_diagnostics").in_scope(
                     || {
-                        db.linter_diagnostics(
-                            linter_corelib_context.clone(),
-                            linter_params.clone(),
-                            module_id,
+                        db.linter_diagnostics(linter_params.clone(), module_id).into_iter().map(
+                            |diag| {
+                                SemanticDiagnostic::new(
+                                    StableLocation::new(diag.stable_ptr),
+                                    SemanticDiagnosticKind::PluginDiagnostic(diag),
+                                )
+                            },
                         )
-                        .into_iter()
-                        .map(|diag| {
-                            SemanticDiagnostic::new(
-                                StableLocation::new(diag.stable_ptr),
-                                SemanticDiagnosticKind::PluginDiagnostic(diag),
-                            )
-                        })
                     },
                 ));
             }
