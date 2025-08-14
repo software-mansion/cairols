@@ -209,7 +209,7 @@ impl ProcMacroClientController {
                     .collect();
 
                 for (crate_input, plugin_suite) in self.crate_plugin_suites.iter() {
-                    db.add_crate_plugin_suite(crate_input.clone(), plugin_suite.clone());
+                    db.add_proc_macro_plugin_suite(crate_input.clone(), plugin_suite.clone());
                 }
 
                 self.set_proc_macro_server_status(db, ServerStatus::Ready(client));
