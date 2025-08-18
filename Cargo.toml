@@ -94,7 +94,7 @@ similar = "2.7"
 # on some of them directly.
 # This ensures no duplicate instances of Cairo crates are pulled in by mistake.
 [patch.crates-io]
-cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "a96fba1705e7df567b775157f7d7975d7bdff6c8" }
+cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "117d8f3b3903f2f28c35691d23fe775dcea0ef28" }
 
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,
