@@ -123,6 +123,8 @@ impl ProjectController {
                     workspace_dir,
                     &state.proc_macro_controller,
                 );
+
+                state.analysis_progress_controller.project_model_loaded();
             }
             ProjectUpdate::ScarbMetadataFailed => {
                 // Try to set up a corelib at least if it is not in the db already.
@@ -150,6 +152,8 @@ impl ProjectController {
                         );
                         set_crate_config!(db, core_id, Some(core_settings));
                     }
+
+                    state.analysis_progress_controller.project_model_loaded();
                 }
 
                 try_to_init_unmanaged_core_if_not_present(
@@ -170,6 +174,8 @@ impl ProjectController {
                         "error loading file {} as a single crate: {err}",
                         file_path.to_string_lossy()
                     );
+                } else {
+                    state.analysis_progress_controller.project_model_loaded();
                 }
             }
         }
