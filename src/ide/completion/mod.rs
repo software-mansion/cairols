@@ -4,25 +4,23 @@ use attribute::attribute_completions;
 use attribute::derive::derive_completions;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::ast::{
-    self, Attribute, ExprStructCtorCall, ItemModule, TerminalIdentifier, UsePathLeaf, UsePathSingle,
-};
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use expr::macro_call::macro_call_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
 use helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use lsp_types::{CompletionItem, CompletionParams, CompletionResponse, CompletionTriggerKind};
-use mod_item::mod_completions;
 use path::path_suffix_completions;
 use pattern::{enum_pattern_completions, struct_pattern_completions};
 use self_completions::self_completions;
 use struct_constructor::struct_constructor_completions;
 
 use self::dot_completions::dot_completions;
-use crate::ide::completion::use_statement::{use_statement, use_statement_first_segment};
+use crate::ide::completion::mod_item::mod_completions;
+use crate::ide::completion::use_statement::use_completions;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
@@ -118,94 +116,19 @@ fn complete_ex<'db>(
 
     let mut completions = vec![];
 
-    let dot_binary_expression = dot_expr_rhs(db, &node, was_node_corrected);
-    let is_dot_expression = dot_binary_expression.is_some();
-
-    if let Some(binary_expression) = dot_binary_expression
-        && let Some(dot_completions) = dot_completions(db, &ctx, binary_expression)
-    {
-        completions.extend(dot_completions);
-    }
-
-    if let Some(constructor) = node.ancestor_of_type::<ExprStructCtorCall>(db)
-        && let Some(struct_completions) = struct_constructor_completions(db, &ctx, constructor)
-    {
-        completions.extend(struct_completions);
-    }
-
-    if let Some(single) = node.ancestor_of_type::<UsePathSingle>(db)
-        && let Some(use_completions) = use_statement(db, single, &ctx)
-    {
-        completions.extend(use_completions);
-    }
-
-    // If we are on the first segment of use e.g. `use co<caret>`.
-
-    if node.ancestor_of_type::<UsePathSingle>(db).is_none()
-        && let Some(leaf) = node.ancestor_of_type::<UsePathLeaf>(db)
-        && let Some(use_completions) = use_statement_first_segment(db, leaf, &ctx)
-    {
-        completions.extend(use_completions);
-    }
-
+    completions.extend(dot_completions(db, &ctx, node, was_node_corrected));
+    completions.extend(struct_constructor_completions(db, &ctx, node));
+    completions.extend(use_completions(db, node, &ctx));
     completions.extend(self_completions(db, &ctx));
-
-    // Check if cursor is on attribute name. `#[my_a<cursor>ttr(arg1, args2: 1234)]`
-
-    if let Some(node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
-        && let Some(attr) = node.parent_of_type::<Attribute>(db)
-        && let Some(attr_completions) = attribute_completions(db, attr, crate_id)
-    {
-        completions.extend(attr_completions);
-    }
-
-    // Check if cursor is on `#[derive(Arg1, Ar<cursor>)]` arguments list.
-
-    if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
-        && let Some(node) = path_node.parent_of_kind(db, SyntaxKind::ArgClauseUnnamed)
-        && let Some(attr) = node.ancestor_of_type::<Attribute>(db)
-        && let Some(derive_completions) =
-            derive_completions(db, path_node.get_text(db), attr, crate_id)
-    {
-        completions.extend(derive_completions);
-    }
-
-    // Check if cursor is on `#[derive(Arg1, <cursor>)]` arguments list.
-
-    if node.ancestor_of_kind(db, SyntaxKind::Arg).is_none()
-        && let Some(attr) = node.ancestor_of_type::<Attribute>(db)
-        && let Some(derive_completions) = derive_completions(db, "", attr, crate_id)
-    {
-        completions.extend(derive_completions);
-    }
-
-    if let Some(ident) = TerminalIdentifier::cast(db, node)
-        && let Some(module_item) = node.parent_of_type::<ItemModule>(db)
-        // We are in nested mod, we should not show completions for file modules.
-        && module_item.as_syntax_node().ancestor_of_kind(db, SyntaxKind::ItemModule).is_none()
-        && let Some(mod_names_completions) =
-            mod_completions(db, module_item, file_id, ident.text(db))
-    {
-        completions.extend(mod_names_completions);
-    }
-
-    // if there is no name `mod <cursor>` we will be on `mod`.
-    if node.kind(db) == SyntaxKind::TerminalModule
-        && let Some(module_item) = node.parent_of_type::<ItemModule>(db)
-        // We are in nested mod, we should not show completions for file modules.
-        && module_item.as_syntax_node().ancestor_of_kind(db, SyntaxKind::ItemModule).is_none()
-        // use "" as typed text in this case.
-        && let Some(mod_names_completions) = mod_completions(db, module_item, file_id, "")
-    {
-        completions.extend(mod_names_completions);
-    }
-
+    completions.extend(attribute_completions(db, node, crate_id));
+    completions.extend(derive_completions(db, node, crate_id));
+    completions.extend(mod_completions(db, node, file_id));
     completions.extend(params_completions(db, &ctx, was_node_corrected));
     completions.extend(variables_completions(db, &ctx, was_node_corrected));
     completions.extend(struct_pattern_completions(db, &ctx));
     completions.extend(enum_pattern_completions(db, &ctx));
 
-    if !is_dot_expression {
+    if dot_expr_rhs(db, &node, was_node_corrected).is_none() {
         completions.extend(macro_call_completions(db, &ctx));
 
         if trigger_kind == CompletionTriggerKind::INVOKED {
