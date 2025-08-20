@@ -1,6 +1,7 @@
 use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::us::get_use_path_segments;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::ast::{UsePathLeaf, UsePathSingle};
 use cairo_lang_syntax::node::{
     Token,
@@ -11,6 +12,28 @@ use lsp_types::CompletionItem;
 use super::{helpers::completion_kind::importable_completion_kind, path::path_prefix_completions};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::{analysis_context::AnalysisContext, text_matching::text_matches};
+
+pub fn use_completions<'db>(
+    db: &'db AnalysisDatabase,
+    node: SyntaxNode<'db>,
+    ctx: &AnalysisContext<'db>,
+) -> Vec<CompletionItem> {
+    if let Some(single) = node.ancestor_of_type::<UsePathSingle>(db)
+        && let Some(use_completions) = use_statement(db, single, ctx)
+    {
+        return use_completions;
+    }
+
+    // If we are on the first segment of use e.g. `use co<caret>`.
+    if node.ancestor_of_type::<UsePathSingle>(db).is_none()
+        && let Some(leaf) = node.ancestor_of_type::<UsePathLeaf>(db)
+        && let Some(use_completions) = use_statement_first_segment(db, leaf, ctx)
+    {
+        return use_completions;
+    }
+
+    vec![]
+}
 
 pub fn use_statement<'db>(
     db: &'db AnalysisDatabase,

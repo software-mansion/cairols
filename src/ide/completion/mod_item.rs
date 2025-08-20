@@ -5,9 +5,9 @@ use std::path::{Path, PathBuf};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::{ItemModule, MaybeModuleBody};
+use cairo_lang_syntax::node::ast::{ItemModule, MaybeModuleBody, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind, Url};
 
 use crate::lang::db::AnalysisDatabase;
@@ -15,6 +15,34 @@ use crate::lang::lsp::LsProtoGroup;
 use crate::lang::text_matching::text_matches;
 
 pub fn mod_completions<'db>(
+    db: &'db AnalysisDatabase,
+    node: SyntaxNode<'db>,
+    file_id: FileId<'db>,
+) -> Vec<CompletionItem> {
+    if let Some(ident) = TerminalIdentifier::cast(db, node)
+        && let Some(module_item) = node.parent_of_type::<ItemModule>(db)
+        // We are in nested mod, we should not show completions for file modules.
+        && module_item.as_syntax_node().ancestor_of_kind(db, SyntaxKind::ItemModule).is_none()
+        && let Some(mod_names_completions) =
+            mod_completions_ex(db, module_item, file_id, ident.text(db))
+    {
+        return mod_names_completions;
+    }
+
+    // if there is no name `mod <cursor>` we will be on `mod`.
+    if node.kind(db) == SyntaxKind::TerminalModule
+        && let Some(module_item) = node.parent_of_type::<ItemModule>(db)
+        // We are in nested mod, we should not show completions for file modules.
+        && module_item.as_syntax_node().ancestor_of_kind(db, SyntaxKind::ItemModule).is_none()
+        // use "" as typed text in this case.
+        && let Some(mod_names_completions) = mod_completions_ex(db, module_item, file_id, "")
+    {
+        return mod_names_completions;
+    }
+
+    vec![]
+}
+pub fn mod_completions_ex<'db>(
     db: &'db AnalysisDatabase,
     module: ItemModule<'db>,
     file: FileId<'db>,
