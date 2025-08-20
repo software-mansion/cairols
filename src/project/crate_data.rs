@@ -1,6 +1,9 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
+use super::builtin_plugins::BuiltinPlugin;
+use crate::lang::db::AnalysisDatabase;
+use crate::project::model::PackageConfig;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
@@ -12,10 +15,7 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::Intern;
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
-
-use super::builtin_plugins::BuiltinPlugin;
-use crate::lang::db::AnalysisDatabase;
-use crate::project::model::PackageConfig;
+use itertools::chain;
 
 #[derive(Debug)]
 pub struct CrateInfo {
@@ -89,17 +89,17 @@ impl Crate {
             inject_virtual_wrapper_lib(db, crate_input.clone(), file_stems);
         }
 
-        let plugins = self
-            .builtin_plugins
-            .iter()
-            .map(BuiltinPlugin::suite)
-            // All crates should receive CairoLintAllow.
-            .chain(Some(cairo_lint_allow_plugin_suite()))
-            .chain(proc_macro_plugin_suite)
-            .fold(get_default_plugin_suite(), |mut acc, suite| {
+        let builtin = self.builtin_plugins.iter().map(BuiltinPlugin::suite);
+        let base = Some(get_default_plugin_suite());
+        let lint_allow = Some(cairo_lint_allow_plugin_suite());
+        // Keep the order the same as in Scarb.
+        let plugins = chain!(proc_macro_plugin_suite, base, builtin, lint_allow).fold(
+            PluginSuite::default(),
+            |mut acc, suite| {
                 acc.add(suite);
                 acc
-            });
+            },
+        );
 
         db.set_override_crate_plugins_from_suite(crate_input, plugins);
     }

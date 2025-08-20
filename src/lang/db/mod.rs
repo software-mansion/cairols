@@ -145,20 +145,35 @@ impl AnalysisDatabase {
         )
     }
 
-    /// Adds plugin suit to database.
-    pub fn add_crate_plugin_suite(&mut self, crate_input: CrateInput, plugins: PluginSuite) {
+    /// Adds proc macro plugin suite to the database.
+    ///
+    /// It *prepends* the plugins from the proc macro plugin suite to appropriate
+    /// salsa inputs. It is done to make sure proc macros are resolved first, just like in
+    /// [`crate::project::Crate::apply`].
+    pub fn add_proc_macro_plugin_suite(&mut self, crate_input: CrateInput, plugins: PluginSuite) {
         self.with_plugins_mut(
             crate_input,
             move |macro_plugins, analyzer_plugins, inline_macro_plugins| {
-                macro_plugins.extend(plugins.plugins.into_iter().map(MacroPluginLongId));
-                analyzer_plugins
-                    .extend(plugins.analyzer_plugins.into_iter().map(AnalyzerPluginLongId));
-                inline_macro_plugins.extend(
-                    plugins
-                        .inline_macro_plugins
-                        .into_iter()
-                        .map(|(key, arc)| (key, InlineMacroExprPluginLongId(arc))),
-                );
+                *macro_plugins = plugins
+                    .plugins
+                    .into_iter()
+                    .map(MacroPluginLongId)
+                    .chain(macro_plugins.iter().cloned())
+                    .collect();
+
+                *analyzer_plugins = plugins
+                    .analyzer_plugins
+                    .into_iter()
+                    .map(AnalyzerPluginLongId)
+                    .chain(analyzer_plugins.iter().cloned())
+                    .collect();
+
+                *inline_macro_plugins = plugins
+                    .inline_macro_plugins
+                    .into_iter()
+                    .map(|(key, arc)| (key, InlineMacroExprPluginLongId(arc)))
+                    .chain(inline_macro_plugins.iter().map(|(s, id)| (s.clone(), id.clone())))
+                    .collect();
             },
         )
     }
