@@ -7,7 +7,6 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal};
 use cairo_lang_utils::Upcast;
 
-// TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// LS-specific extensions to the syntax group of the Cairo compiler.
 #[cairo_lang_proc_macros::query_group(LsSyntaxDatabase)]
 pub trait LsSyntaxGroup: ParserGroup + for<'db> Upcast<'db, dyn ParserGroup> {

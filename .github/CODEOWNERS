@@ -1,1 +1,52 @@
 * @software-mansion/cairo-ls
+
+/src/project @integraledelebesgue @piotmag769
+/tests/e2e/analysis.rs @integraledelebesgue @piotmag769
+
+/src/server @integraledelebesgue @Draggu @arcticae
+/src/server/routing
+
+/src/ide/code_actions @Draggu @integraledelebesgue
+/tests/e2e/code_actions @Draggu @integraledelebesgue
+
+/src/ide/code_lens @Draggu @arcticae
+/tests/e2e/code_lens @Draggu @arcticae
+
+/src/ide/completion @Draggu @wawel37
+/tests/e2e/completions @Draggu @wawel37
+
+/src/ide/hover @integraledelebesgue @wawel37
+/tests/e2e/hover @integraledelebesgue @wawel37
+
+/src/ide/inlay_hints @Draggu @arcticae
+/tests/e2e/inlay_hints @Draggu @arcticae
+
+/src/ide/instrospection @integraledelebesgue @piotmag769
+
+/src/ide/macros @Draggu @wawel37
+/tests/e2e/macros @Draggu @wawel37 @piotmag769
+
+/src/ide/macros/navigation/goto_definition.rs @piotmag769 @wawel37
+/tests/e2e/goto_definition @piotmag769 @wawel37
+
+/src/ide/macros/navigation/highlight.rs @piotmag769 @integraledelebesgue
+/tests/e2e/document_highlight @piotmag769 @integraledelebesgue
+
+/src/ide/macros/navigation/references.rs @piotmag769 @integraledelebesgue
+/tests/e2e/find_references @piotmag769 @integraledelebesgue
+
+/src/ide/macros/navigation/rename.rs @piotmag769 @arcticae
+/tests/e2e/rename @piotmag769 @arcticae
+
+/src/ide/macros/semantic_highlighting @wawel37 @Draggu
+/tests/e2e/semantic_tokens @wawel37 @Draggu
+
+/src/ide/macros/analysis_progress.rs @arcticae @Draggu
+/src/lang/defs @arcticae @wawel37
+/src/lang/diagnostics @piotmag769 @arcticae
+/src/lang/proc_macros @piotmag769 @Draggu
+/src/lang/usages @piotmag769 @wawel37
+/src/lang/rename_file.rs @Draggu @arcticae
+
+/tests/e2e/scarb @piotmag769 @arcticae
+/tests/e2e/linter.rs @integraledelebesgue @wawel37
