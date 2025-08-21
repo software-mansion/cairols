@@ -1,0 +1,15 @@
+name: "Assign Team to review"
+on:
+  pull_request:
+    types: [ opened, ready_for_review, reopened ]
+
+jobs:
+  assign-reviewers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Assign LS Team to review"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} --add-reviewer @software-mansion/cairo-ls
