@@ -216,7 +216,7 @@ impl ProcMacroClientController {
                 for (crate_long_id, plugin_suite) in self.crate_plugin_suites.iter() {
                     let crate_id = db.intern_crate(crate_long_id.clone());
                     let interned_plugin_suite = db.intern_plugin_suite(plugin_suite.clone());
-                    db.add_crate_plugin_suite(crate_id, interned_plugin_suite);
+                    db.add_proc_macro_plugin_suite(crate_id, interned_plugin_suite);
                 }
 
                 self.set_proc_macro_server_status(db, ServerStatus::Ready(client));

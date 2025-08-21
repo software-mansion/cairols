@@ -18,6 +18,7 @@ use super::builtin_plugins::BuiltinPlugin;
 use crate::TRICKS;
 use crate::lang::db::AnalysisDatabase;
 use crate::project::model::PackageConfig;
+use itertools::chain;
 
 #[derive(Debug)]
 pub struct CrateInfo {
@@ -90,19 +91,17 @@ impl Crate {
             inject_virtual_wrapper_lib(db, crate_id, file_stems);
         }
 
-        let plugins = self
-            .builtin_plugins
-            .iter()
-            .map(BuiltinPlugin::suite)
-            // All crates should receive Tricks.
-            .chain(tricks())
-            // All crates should receive CairoLintAllow.
-            .chain(Some(cairo_lint_allow_plugin_suite()))
-            .chain(proc_macro_plugin_suite)
-            .fold(get_default_plugin_suite(), |mut acc, suite| {
+        let builtin = self.builtin_plugins.iter().map(BuiltinPlugin::suite);
+        let base = Some(get_default_plugin_suite());
+        let lint_allow = Some(cairo_lint_allow_plugin_suite());
+        // Keep the order the same as in Scarb.
+        let plugins = chain!(proc_macro_plugin_suite, tricks(), base, builtin, lint_allow).fold(
+            PluginSuite::default(),
+            |mut acc, suite| {
                 acc.add(suite);
                 acc
-            });
+            },
+        );
 
         let interned_plugins = db.intern_plugin_suite(plugins);
         db.set_override_crate_plugins_from_suite(crate_id, interned_plugins);
