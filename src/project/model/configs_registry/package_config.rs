@@ -3,6 +3,10 @@ use cairo_lint::CairoLintToolMetadata;
 use scarb_metadata::PackageMetadata;
 use serde_json::Value;
 
+#[cfg(test)]
+#[path = "package_config_test.rs"]
+mod package_config_test;
+
 #[derive(Debug, Clone, Default)]
 pub struct PackageConfig {
     pub fmt: FormatterConfig,
@@ -42,6 +46,9 @@ fn merge_serde_json_value(a: &mut Value, b: &Value) {
                 } else {
                     *a_val = b_val.clone();
                 }
+            } else {
+                // Needed for `a` and `b` created from hashmaps.
+                a_map.insert(b_key.clone(), b_val.clone());
             }
         }
     }

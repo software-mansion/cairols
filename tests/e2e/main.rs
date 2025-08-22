@@ -3,6 +3,7 @@ mod code_actions;
 mod code_lens;
 mod completions;
 mod document_highlight;
+mod external_tools_config;
 mod find_references;
 mod goto_definition;
 mod hover;
