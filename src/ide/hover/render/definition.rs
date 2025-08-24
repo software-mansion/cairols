@@ -100,6 +100,11 @@ pub fn definition<'db>(
             }
             md
         }
+        SymbolDef::GenericParam(param) => {
+            let mut md = String::new();
+            md += &fenced_code_block(&param.signature(db));
+            md
+        }
     };
 
     Some(md)

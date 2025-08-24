@@ -24,7 +24,6 @@ use cairo_lang_utils::{Intern, Upcast};
 use super::LsSyntaxGroup;
 use crate::lang::db::SyntaxNodeExt;
 
-#[allow(dead_code)] // Used later in the stack
 #[cairo_lang_proc_macros::query_group(LsSemanticDatabase)]
 pub trait LsSemanticGroup:
     SemanticGroup + for<'db> Upcast<'db, dyn SemanticGroup> + LsSyntaxGroup
