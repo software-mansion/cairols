@@ -4,7 +4,7 @@ use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
-use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 use itertools::chain;
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
@@ -21,19 +21,17 @@ use crate::lang::methods::find_methods_for_type;
 pub fn dot_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-    node: SyntaxNode<'db>,
     was_node_corrected: bool,
 ) -> Vec<CompletionItem> {
-    dot_completions_ex(db, ctx, node, was_node_corrected).unwrap_or_default()
+    dot_completions_ex(db, ctx, was_node_corrected).unwrap_or_default()
 }
 
 fn dot_completions_ex<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-    node: SyntaxNode<'db>,
     was_node_corrected: bool,
 ) -> Option<Vec<CompletionItem>> {
-    let expr = dot_expr_rhs(db, &node, was_node_corrected)?;
+    let expr = dot_expr_rhs(db, &ctx.node, was_node_corrected)?;
     // Get a resolver in the current context.
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let mut resolver = ctx.resolver(db);
