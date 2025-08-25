@@ -17,8 +17,9 @@ use crate::lang::text_matching::text_matches;
 pub fn mod_completions<'db>(
     db: &'db AnalysisDatabase,
     node: SyntaxNode<'db>,
-    file_id: FileId<'db>,
 ) -> Vec<CompletionItem> {
+    let file_id = node.stable_ptr(db).file_id(db);
+
     if let Some(ident) = TerminalIdentifier::cast(db, node)
         && let Some(module_item) = node.parent_of_type::<ItemModule>(db)
         // We are in nested mod, we should not show completions for file modules.
