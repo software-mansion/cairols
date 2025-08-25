@@ -112,17 +112,16 @@ fn complete_ex<'db>(
 ) -> Option<Vec<CompletionItem>> {
     let ctx = AnalysisContext::from_node(db, node)?;
     let crate_id = ctx.module_file_id.0.owning_crate(db);
-    let file_id = node.stable_ptr(db).file_id(db);
 
     let mut completions = vec![];
 
-    completions.extend(dot_completions(db, &ctx, node, was_node_corrected));
-    completions.extend(struct_constructor_completions(db, &ctx, node));
-    completions.extend(use_completions(db, node, &ctx));
+    completions.extend(dot_completions(db, &ctx, was_node_corrected));
+    completions.extend(struct_constructor_completions(db, &ctx));
+    completions.extend(use_completions(db, &ctx));
     completions.extend(self_completions(db, &ctx));
     completions.extend(attribute_completions(db, node, crate_id));
     completions.extend(derive_completions(db, node, crate_id));
-    completions.extend(mod_completions(db, node, file_id));
+    completions.extend(mod_completions(db, node));
     completions.extend(params_completions(db, &ctx, was_node_corrected));
     completions.extend(variables_completions(db, &ctx, was_node_corrected));
     completions.extend(struct_pattern_completions(db, &ctx));
