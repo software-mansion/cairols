@@ -1,9 +1,11 @@
+use std::ops::Not;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{
     DefsDatabase, DefsGroup, DefsGroupEx, init_defs_group, try_ext_as_virtual_impl,
 };
 use cairo_lang_defs::ids::{InlineMacroExprPluginId, MacroPluginId};
+use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -14,6 +16,7 @@ use cairo_lang_lowering::db::{
 };
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
+use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::db::{
     PluginSuiteInput, SemanticDatabase, SemanticGroup, SemanticGroupEx, init_semantic_group,
 };
@@ -23,8 +26,8 @@ use cairo_lang_semantic::plugin::{InternedPluginSuite, PluginSuite};
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_test_plugin::test_plugin_suite;
-use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
 use itertools::Itertools;
 use salsa::{Database, Durability};
@@ -115,19 +118,22 @@ impl AnalysisDatabase {
         })
     }
 
-    /// Adds proc macro plugin suite to the database.
+    /// Adds proc macro plugin suite to the database for a crate with [`CrateInput`] if this
+    /// crate exists in the crate configs.
     ///
-    /// It *prepends* the plugins from the proc macro plugin suite to appropriate
-    /// salsa inputs. It is done to make sure proc macros are resolved first, just like in
+    /// It *prepends* (with the exception of macro plugins, see the code below) the plugins from
+    /// the proc macro plugin suite to appropriate salsa inputs.
+    /// It is done to make sure proc macros are resolved first, just like in
     /// [`crate::project::Crate::apply`].
     pub fn add_proc_macro_plugin_suite(&mut self, crate_id: CrateId, plugins: InternedPluginSuite) {
         self.with_plugins_mut(
             crate_id,
             move |macro_plugins, analyzer_plugins, inline_macro_plugins| {
-                *macro_plugins = plugins
-                    .macro_plugins
-                    .iter()
-                    .cloned()
+                let maybe_cfg_plugin =
+                    macro_plugins.is_empty().not().then(|| macro_plugins.remove(0));
+                *macro_plugins = maybe_cfg_plugin
+                    .into_iter()
+                    .chain(plugins.macro_plugins.iter().cloned())
                     .chain(macro_plugins.iter().cloned())
                     .collect();
 
@@ -157,12 +163,21 @@ impl AnalysisDatabase {
             &mut OrderedHashMap<String, InlineMacroExprPluginId>,
         ),
     ) {
+        if !self.crate_configs().keys().contains(&crate_id) {
+            return;
+        }
         let mut macro_plugins = self.crate_macro_plugins(crate_id).to_vec();
         let mut analyzer_plugins = self.crate_analyzer_plugins(crate_id).to_vec();
         let mut inline_macro_plugins =
             Arc::unwrap_or_clone(self.crate_inline_macro_plugins(crate_id));
 
         action(&mut macro_plugins, &mut analyzer_plugins, &mut inline_macro_plugins);
+
+        assert!(
+            macro_plugins.first().is_none_or(|id| id.lookup_intern(self).plugin_type_id()
+                == ConfigPlugin::default().plugin_type_id()),
+            "cfg plugin must be the first macro plugin"
+        );
 
         self.set_override_crate_macro_plugins(crate_id, macro_plugins.into_iter().collect());
         self.set_override_crate_analyzer_plugins(crate_id, analyzer_plugins.into_iter().collect());
