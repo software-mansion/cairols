@@ -17,10 +17,6 @@ pub fn format_trait_path<'db>(
     importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> String {
     let importable = ImportableId::Trait(trait_id);
-
-    // Don't unwrap the option here.
-    // Some traits from corelib (Clone, Copy, etc.) are available implicitly without import
-    // and will not appear among the importables.
     let path = importables.get(&importable).map(String::as_str).unwrap_or(trait_id.name(db));
 
     let generics = db

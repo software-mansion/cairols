@@ -1,7 +1,6 @@
 use cairo_lang_defs::ids::{GenericParamId, LanguageElementId};
 use cairo_lang_semantic::{ConcreteTraitId, GenericParam, TypeId, db::SemanticGroup};
 use cairo_lang_syntax::node::{TypedStablePtr, ids::SyntaxStablePtrId};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::{
     ide::format::{traits::format_trait_path, types::format_type},
@@ -67,11 +66,7 @@ impl<'db> GenericParamDef<'db> {
     pub fn signature(&self, db: &AnalysisDatabase) -> String {
         let importables = || {
             let module_file_id = self.id.module_file_id(db);
-
-            db.visible_importables_in_module(module_file_id.0, module_file_id, false)
-                .iter()
-                .cloned()
-                .collect::<OrderedHashMap<_, _>>()
+            db.visible_importables_from_module(module_file_id).unwrap_or_default()
         };
 
         match self.semantic {

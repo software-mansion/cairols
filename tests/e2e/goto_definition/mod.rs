@@ -14,6 +14,7 @@ mod consts;
 mod enums;
 mod fns;
 mod generated;
+mod generic_params;
 mod macros;
 mod mods;
 mod paths;
