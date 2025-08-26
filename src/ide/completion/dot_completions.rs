@@ -14,6 +14,7 @@ use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
 use tracing::debug;
 
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use crate::ide::completion::helpers::snippets::snippet_for_function_call;
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
@@ -106,7 +107,7 @@ fn completion_for_method<'db>(
 ) -> Option<CompletionItem> {
     let trait_id = trait_function.trait_id(db);
     let name = trait_function.name(db);
-    db.trait_function_signature(trait_function).ok()?;
+    let signature = db.trait_function_signature(trait_function).ok()?;
 
     // TODO(spapini): Add signature.
     let detail = trait_id.full_path(db);
@@ -125,7 +126,7 @@ fn completion_for_method<'db>(
 
     let completion = CompletionItem {
         label: format!("{name}()"),
-        insert_text: Some(format!("{name}($1)")),
+        insert_text: Some(snippet_for_function_call(name, signature)),
         insert_text_format: Some(InsertTextFormat::SNIPPET),
         detail: Some(detail),
         kind: Some(CompletionItemKind::METHOD),
