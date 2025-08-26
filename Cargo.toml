@@ -43,6 +43,7 @@ cairo-lang-lowering = "2.12.0"
 cairo-lang-macro = "0.2.0"
 cairo-lang-macro-v1 = { version = "0.1", package = "cairo-lang-macro", features = ["serde"] }
 cairo-lang-parser = "2.12.0"
+cairo-lang-plugins = "2.12.0"
 cairo-lang-project = "2.12.0"
 cairo-lang-semantic = "2.12.0"
 cairo-lang-starknet = "2.12.0"
