@@ -230,10 +230,7 @@ fn trait_name_generic_name_generated() {
     """
     popover = """
     ```cairo
-    hello
-    ```
-    ```cairo
-    impl MyTraitImpl<SelfType> of MyTrait<SelfType>;
+    SelfType
     ```
     """
     "#)

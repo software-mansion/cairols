@@ -1,12 +1,10 @@
-use anyhow::Context;
-use cairo_lang_defs::ids::{ImportableId, TraitId};
+use cairo_lang_defs::ids::{ImportableId, NamedLanguageElementId, TraitId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::types::format_generic_args;
 use crate::lang::db::AnalysisDatabase;
 
-#[allow(dead_code)] // Used later in the stack
 /// Returns a textual representation of a trait with the given [`TraitId`],
 /// consisting of name, path and generic parameters.
 /// Precedes the name with a shortest path allowed by `importables`.
@@ -20,12 +18,10 @@ pub fn format_trait_path<'db>(
 ) -> String {
     let importable = ImportableId::Trait(trait_id);
 
-    let path = importables
-        .get(&importable)
-        .with_context(|| {
-            format!("should be able to retrieve the trait {trait_id:?} from importables")
-        })
-        .unwrap();
+    // Don't unwrap the option here.
+    // Some traits from corelib (Clone, Copy, etc.) are available implicitly without import
+    // and will not appear among the importables.
+    let path = importables.get(&importable).map(String::as_str).unwrap_or(trait_id.name(db));
 
     let generics = db
         .trait_generic_params(trait_id)
