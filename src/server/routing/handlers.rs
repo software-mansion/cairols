@@ -393,6 +393,7 @@ impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
         _notifier: Notifier,
         params: SemanticTokensParams,
     ) -> LSPResult<Option<SemanticTokensResult>> {
+        eprintln!("semantic highlighting {:?}", params);
         Ok(catch_unwind(AssertUnwindSafe(|| {
             ide::semantic_highlighting::semantic_highlight_full(params, &snapshot.db, meta_state)
         }))
