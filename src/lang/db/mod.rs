@@ -1,8 +1,10 @@
 use std::collections::HashSet;
+use std::ops::Not;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use cairo_lang_defs::ids::{InlineMacroExprPluginLongId, MacroPluginLongId};
+use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_executable::plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, init_files_group};
@@ -10,6 +12,7 @@ use cairo_lang_filesystem::ids::{CrateInput, CrateLongId, VirtualFile};
 use cairo_lang_lowering::db::{ExternalCodeSizeEstimator, LoweringGroup, init_lowering_group};
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::ids::AnalyzerPluginLongId;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
@@ -21,6 +24,7 @@ use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lint::LinterGroup;
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
+use itertools::Itertools;
 use salsa::{Database, Durability};
 
 pub use self::semantic::*;
@@ -123,7 +127,8 @@ impl AnalysisDatabase {
         self.synthetic_write(Durability::LOW);
     }
 
-    /// Removes the plugins from [`InternedPluginSuite`] for a crate with [`CrateId`].
+    /// Removes the plugins from [`PluginSuite`] for a crate with [`CrateInput`] if this
+    /// crate exists in the crate configs.
     pub fn remove_crate_plugin_suite(&mut self, crate_input: CrateInput, plugins: PluginSuite) {
         self.with_plugins_mut(
             crate_input,
@@ -145,19 +150,22 @@ impl AnalysisDatabase {
         )
     }
 
-    /// Adds proc macro plugin suite to the database.
+    /// Adds proc macro plugin suite to the database for a crate with [`CrateInput`] if this
+    /// crate exists in the crate configs.
     ///
-    /// It *prepends* the plugins from the proc macro plugin suite to appropriate
-    /// salsa inputs. It is done to make sure proc macros are resolved first, just like in
+    /// It *prepends* (with the exception of macro plugins, see the code below) the plugins from
+    /// the proc macro plugin suite to appropriate salsa inputs.
+    /// It is done to make sure proc macros are resolved first, just like in
     /// [`crate::project::Crate::apply`].
     pub fn add_proc_macro_plugin_suite(&mut self, crate_input: CrateInput, plugins: PluginSuite) {
         self.with_plugins_mut(
             crate_input,
             move |macro_plugins, analyzer_plugins, inline_macro_plugins| {
-                *macro_plugins = plugins
-                    .plugins
+                let maybe_cfg_plugin =
+                    macro_plugins.is_empty().not().then(|| macro_plugins.remove(0));
+                *macro_plugins = maybe_cfg_plugin
                     .into_iter()
-                    .map(MacroPluginLongId)
+                    .chain(plugins.plugins.into_iter().map(MacroPluginLongId))
                     .chain(macro_plugins.iter().cloned())
                     .collect();
 
@@ -187,6 +195,10 @@ impl AnalysisDatabase {
             &mut OrderedHashMap<String, InlineMacroExprPluginLongId>,
         ),
     ) {
+        if !self.crate_configs_input().keys().contains(&crate_input) {
+            return;
+        }
+
         let mut macro_plugin_overrides_input =
             Arc::unwrap_or_clone(self.macro_plugin_overrides_input());
         let mut macro_plugins =
@@ -209,6 +221,13 @@ impl AnalysisDatabase {
             .unwrap_or_default();
 
         action(&mut macro_plugins, &mut analyzer_plugins, &mut inline_macro_plugins);
+
+        assert!(
+            macro_plugins
+                .first()
+                .is_none_or(|id| id.plugin_type_id() == ConfigPlugin::default().plugin_type_id()),
+            "cfg plugin must be the first macro plugin"
+        );
 
         macro_plugin_overrides_input.insert(crate_input.clone(), macro_plugins.into());
         analyzer_plugin_overrides_input.insert(crate_input.clone(), analyzer_plugins.into());

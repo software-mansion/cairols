@@ -43,6 +43,7 @@ cairo-lang-lowering = "*"
 cairo-lang-macro = { git = "https://github.com/software-mansion/scarb.git", rev = "a7b5dce2aea8ee404c51057c0180de721950f961" }
 cairo-lang-macro-v1 = { version = "0.1", package = "cairo-lang-macro", features = ["serde"] }
 cairo-lang-parser = "*"
+cairo-lang-plugins = "*"
 cairo-lang-proc-macros = "*"
 cairo-lang-project = "*"
 cairo-lang-semantic = "*"

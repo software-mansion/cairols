@@ -904,6 +904,7 @@ dependencies = [
  "cairo-lang-macro 0.1.1",
  "cairo-lang-macro 0.2.0-rc.0 (git+https://github.com/software-mansion/scarb.git?rev=a7b5dce2aea8ee404c51057c0180de721950f961)",
  "cairo-lang-parser",
+ "cairo-lang-plugins",
  "cairo-lang-proc-macros",
  "cairo-lang-project",
  "cairo-lang-semantic",
