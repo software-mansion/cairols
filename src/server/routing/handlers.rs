@@ -29,7 +29,7 @@ use lsp_types::{
     TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
 use serde_json::Value;
-use tracing::{Level, error, span};
+use tracing::error;
 
 use crate::ide::code_lens::{CodeLensController, FileChange};
 use crate::lang::lsp::LsProtoGroup;
@@ -393,10 +393,6 @@ impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
         _notifier: Notifier,
         params: SemanticTokensParams,
     ) -> LSPResult<Option<SemanticTokensResult>> {
-        eprintln!("semantic highlighting {}", params.text_document.uri.path());
-        let my_span =
-            span!(Level::INFO, "inner_semantic_tokens", path = params.text_document.uri.path());
-        let _guard = my_span.enter();
         Ok(catch_unwind(AssertUnwindSafe(|| {
             ide::semantic_highlighting::semantic_highlight_full(params, &snapshot.db, meta_state)
         }))

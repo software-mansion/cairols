@@ -27,7 +27,6 @@ impl TokenEncoder {
         self.col = 0;
     }
 
-    #[tracing::instrument(skip_all)]
     /// Creates an [`EncodedToken`] token based on the current position and the width of the token.
     /// This updates the state of the encoder text positions.
     pub fn encode(&mut self, width: u32) -> EncodedToken {

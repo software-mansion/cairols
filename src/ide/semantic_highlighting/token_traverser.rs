@@ -22,7 +22,6 @@ pub struct SemanticTokensTraverser {
     offset_to_kind_lookahead: UnorderedHashMap<TextOffset, SemanticTokenKind>,
 }
 impl SemanticTokensTraverser {
-    #[tracing::instrument(skip_all)]
     /// Gets all the SemanticTokens for the given node.
     /// Traverses the syntax tree and encodes the tokens based on their semantic kind.
     pub fn get_semantic_tokens<'db>(
@@ -47,7 +46,6 @@ impl SemanticTokensTraverser {
         }
     }
 
-    #[tracing::instrument(skip_all)]
     /// Finds the corresponding semantic tokens for a syntax token.
     fn find_semantic_tokens_for_syntax_token<'db>(
         &mut self,
@@ -82,7 +80,6 @@ impl SemanticTokensTraverser {
         }
     }
 
-    #[tracing::instrument(skip_all)]
     /// In case of a multiline token, we need to split it into multiple tokens,
     /// each representing a single line.
     fn get_tokens_from_multiline_syntax_node(
@@ -102,7 +99,6 @@ impl SemanticTokensTraverser {
         tokens
     }
 
-    #[tracing::instrument(skip_all)]
     /// Marks future tokens for the given node based on its kind.
     /// This is used to ensure that the next tokens are correctly classified based on the context.
     fn mark_future_tokens_for_node<'db>(
@@ -140,7 +136,6 @@ impl SemanticTokensTraverser {
         }
     }
 
-    #[tracing::instrument(skip_all)]
     /// Retrieves the semantic token for the current node based on its width and assumed SemanticTokenKind.
     fn get_semantic_token(
         &mut self,
