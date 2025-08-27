@@ -606,27 +606,26 @@ fn find_generated_nodes<'db>(
                 // As `ModuleItemList` and `TerminalEndOfFile` have the same parent,
                 // which is the `SyntaxFile`, so we don't want to take the `SyntaxFile`
                 // as an additional resultant.
-                if terminal.kind(db) == SyntaxKind::TerminalEndOfFile {
-                    return;
-                }
-                let nodes: Vec<_> = terminal
-                    .ancestors_with_self(db)
-                    .map_while(|new_node| {
-                        translate_location(&mappings, new_node.span(db))
-                            .map(|span_in_parent| (new_node, span_in_parent))
-                    })
-                    .take_while(|(_, span_in_parent)| node.span(db).contains(*span_in_parent))
-                    .collect();
+                if terminal.kind(db) != SyntaxKind::TerminalEndOfFile {
+                    let nodes: Vec<_> = terminal
+                        .ancestors_with_self(db)
+                        .map_while(|new_node| {
+                            translate_location(&mappings, new_node.span(db))
+                                .map(|span_in_parent| (new_node, span_in_parent))
+                        })
+                        .take_while(|(_, span_in_parent)| node.span(db).contains(*span_in_parent))
+                        .collect();
 
-                if let Some((last_node, _)) = nodes.last().cloned() {
-                    let (new_node, _) = nodes
-                        .into_iter()
-                        .rev()
-                        .take_while(|(node, _)| node.span(db) == last_node.span(db))
-                        .last()
-                        .unwrap();
+                    if let Some((last_node, _)) = nodes.last().cloned() {
+                        let (new_node, _) = nodes
+                            .into_iter()
+                            .rev()
+                            .take_while(|(node, _)| node.span(db) == last_node.span(db))
+                            .last()
+                            .unwrap();
 
-                    new_nodes.insert(new_node);
+                        new_nodes.insert(new_node);
+                    }
                 }
             });
         }
