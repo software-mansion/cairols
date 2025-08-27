@@ -38,6 +38,7 @@ pub enum SemanticTokenKind {
     GenericParamImpl = 20,
 }
 impl SemanticTokenKind {
+    #[tracing::instrument(skip_all)]
     pub fn from_syntax_node<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> Option<Self> {
         let node_kind = node.kind(db);
 
@@ -93,6 +94,7 @@ impl SemanticTokenKind {
         None
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn legend() -> Vec<SemanticTokenType> {
         vec![
             SemanticTokenType::NAMESPACE,
@@ -119,6 +121,7 @@ impl SemanticTokenKind {
         ]
     }
 
+    #[tracing::instrument(skip_all)]
     /// Returns a semantic token kind for a simple token kind.
     /// Returns `None` if the token kind has no corresponding semantic token kind.
     fn from_simple_token_kind(db: &AnalysisDatabase, node: &SyntaxNode) -> Option<Self> {
@@ -164,6 +167,7 @@ impl SemanticTokenKind {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     /// Returns a semantic token kind based on identifier.
     /// Returns `None` if the token kind has no corresponding semantic token kind.
     fn from_identifier(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
@@ -198,6 +202,7 @@ impl SemanticTokenKind {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     ///   Arguments:
     /// - `db`: The database to use for lookup.
     /// - `resultant`: The resultant syntax node.
@@ -253,6 +258,7 @@ impl SemanticTokenKind {
         None
     }
 
+    #[tracing::instrument(skip_all)]
     /// Arguments:
     /// - `db`: The database to use for lookup.
     /// - `expr_path_ptr`: The expression path pointer to use for the semantic lookup.
@@ -275,6 +281,7 @@ impl SemanticTokenKind {
     }
 }
 
+#[tracing::instrument(skip_all)]
 /// Finds the closest ancestor [`TerminalIdentifierPtr`] to the node (self if terminal), that we can use for the semantic lookup.
 /// Returns `None` if no such ancestor exists.
 fn find_closest_terminal_ancestor_or_self<'db>(
@@ -291,6 +298,7 @@ fn find_closest_terminal_ancestor_or_self<'db>(
     Some(TerminalIdentifier::cast(db, terminal)?.stable_ptr(db))
 }
 
+#[tracing::instrument(skip_all)]
 /// Checks whether the given node is an inline macro invocation and not just the simple path segment.
 fn is_inline_macro<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> bool {
     if matches!(node.kind(db), SyntaxKind::ExprInlineMacro) {

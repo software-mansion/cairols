@@ -1,4 +1,5 @@
 use std::collections::{HashSet, VecDeque};
+use std::sync::Arc;
 
 use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::ids::{
@@ -8,8 +9,10 @@ use cairo_lang_defs::ids::{
     ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
     TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
 };
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::{get_parent_and_mapping, translate_location};
-use cairo_lang_filesystem::ids::{FileId, FileLongId};
+use cairo_lang_filesystem::ids::{CodeOrigin, FileId, FileKind, FileLongId};
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -21,8 +24,9 @@ use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast};
 
-use super::LsSyntaxGroup;
 use crate::lang::db::SyntaxNodeExt;
+
+use super::LsSyntaxGroup;
 
 #[cairo_lang_proc_macros::query_group(LsSemanticDatabase)]
 pub trait LsSemanticGroup:
@@ -153,6 +157,12 @@ pub trait LsSemanticGroup:
     ///
     /// Therefore for `FooTrait` from file 1, `FooTrait` from file 1 and `FooTrait` from file 2 are returned.
     fn get_node_resultants<'db>(&'db self, node: SyntaxNode<'db>) -> Option<Vec<SyntaxNode<'db>>>;
+
+    fn find_generated_nodes<'db>(
+        &'db self,
+        node_descendant_files: Arc<[FileId<'db>]>,
+        node: SyntaxNode<'db>,
+    ) -> OrderedHashSet<SyntaxNode<'db>>;
 
     /// Returns generic parameters defined by the item.
     /// Items that do not introduce any generics (use statements, modules etc.) yield an empty vector.
@@ -358,6 +368,7 @@ fn file_and_subfiles_with_corresponding_modules<'db>(
     Some((files, modules))
 }
 
+#[tracing::instrument(skip_all)]
 fn get_node_resultants<'db>(
     db: &'db dyn LsSemanticGroup,
     node: SyntaxNode<'db>,
@@ -368,8 +379,8 @@ fn get_node_resultants<'db>(
 
     files.remove(&main_file);
 
-    let files: Vec<_> = files.into_iter().collect();
-    let resultants = find_generated_nodes(db, &files, node);
+    let files: Arc<[FileId]> = files.into_iter().collect();
+    let resultants = db.find_generated_nodes(files, node);
 
     Some(resultants.into_iter().collect())
 }
@@ -542,10 +553,11 @@ fn lookup_item_from_ast<'db>(
     })
 }
 
+#[tracing::instrument(skip_all)]
 /// See [`LsSemanticGroup::get_node_resultants`].
 fn find_generated_nodes<'db>(
-    db: &'db dyn SemanticGroup,
-    node_descendant_files: &[FileId<'db>],
+    db: &'db dyn LsSemanticGroup,
+    node_descendant_files: Arc<[FileId<'db>]>,
     node: SyntaxNode<'db>,
 ) -> OrderedHashSet<SyntaxNode<'db>> {
     let start_file = node.stable_ptr(db).file_id(db);
@@ -554,7 +566,7 @@ fn find_generated_nodes<'db>(
 
     let mut is_replaced = false;
 
-    for &file in node_descendant_files {
+    for file in node_descendant_files.iter().cloned() {
         let Some((parent, mappings)) = get_parent_and_mapping(db, file) else {
             continue;
         };
@@ -563,9 +575,22 @@ fn find_generated_nodes<'db>(
             continue;
         }
 
-        let Ok(file_syntax) = db.file_syntax(file) else {
+        let Ok(file_syntax) = file_syntax(db, file) else {
             continue;
         };
+
+        let mappings: Vec<_> = mappings
+            .iter()
+            .filter(|mapping| match mapping.origin {
+                CodeOrigin::CallSite(_) => true,
+                CodeOrigin::Start(start) => start == node.span(db).start,
+                CodeOrigin::Span(span) => node.span(db).contains(span),
+            })
+            .cloned()
+            .collect();
+        if mappings.is_empty() {
+            continue;
+        }
 
         let is_replacing_og_item = match file.long(db) {
             FileLongId::Virtual(vfs) => vfs.original_item_removed,
@@ -575,34 +600,36 @@ fn find_generated_nodes<'db>(
 
         let mut new_nodes: OrderedHashSet<_> = Default::default();
 
-        file_syntax.for_each_terminal(db, |terminal| {
-            // Skip end of the file terminal, which is also a syntax tree leaf.
-            // As `ModuleItemList` and `TerminalEndOfFile` have the same parent,
-            // which is the `SyntaxFile`, so we don't want to take the `SyntaxFile`
-            // as an additional resultant.
-            if terminal.kind(db) == SyntaxKind::TerminalEndOfFile {
-                return;
-            }
-            let nodes: Vec<_> = terminal
-                .ancestors_with_self(db)
-                .map_while(|new_node| {
-                    translate_location(&mappings, new_node.span(db))
-                        .map(|span_in_parent| (new_node, span_in_parent))
-                })
-                .take_while(|(_, span_in_parent)| node.span(db).contains(*span_in_parent))
-                .collect();
+        for mapping in &mappings {
+            file_syntax.lookup_offset(db, mapping.span.start).for_each_terminal(db, |terminal| {
+                // Skip end of the file terminal, which is also a syntax tree leaf.
+                // As `ModuleItemList` and `TerminalEndOfFile` have the same parent,
+                // which is the `SyntaxFile`, so we don't want to take the `SyntaxFile`
+                // as an additional resultant.
+                if terminal.kind(db) == SyntaxKind::TerminalEndOfFile {
+                    return;
+                }
+                let nodes: Vec<_> = terminal
+                    .ancestors_with_self(db)
+                    .map_while(|new_node| {
+                        translate_location(&mappings, new_node.span(db))
+                            .map(|span_in_parent| (new_node, span_in_parent))
+                    })
+                    .take_while(|(_, span_in_parent)| node.span(db).contains(*span_in_parent))
+                    .collect();
 
-            if let Some((last_node, _)) = nodes.last().cloned() {
-                let (new_node, _) = nodes
-                    .into_iter()
-                    .rev()
-                    .take_while(|(node, _)| node.span(db) == last_node.span(db))
-                    .last()
-                    .unwrap();
+                if let Some((last_node, _)) = nodes.last().cloned() {
+                    let (new_node, _) = nodes
+                        .into_iter()
+                        .rev()
+                        .take_while(|(node, _)| node.span(db) == last_node.span(db))
+                        .last()
+                        .unwrap();
 
-                new_nodes.insert(new_node);
-            }
-        });
+                    new_nodes.insert(new_node);
+                }
+            });
+        }
 
         // If there is no node found, don't mark it as potentially replaced.
         if !new_nodes.is_empty() {
@@ -610,7 +637,7 @@ fn find_generated_nodes<'db>(
         }
 
         for new_node in new_nodes {
-            result.extend(find_generated_nodes(db, node_descendant_files, new_node));
+            result.extend(find_generated_nodes(db, Arc::clone(&node_descendant_files), new_node));
         }
     }
 
@@ -619,6 +646,14 @@ fn find_generated_nodes<'db>(
     }
 
     result
+}
+
+pub fn file_syntax<'db>(db: &'db dyn ParserGroup, file: FileId<'db>) -> Maybe<SyntaxNode<'db>> {
+    match file.kind(db) {
+        FileKind::Expr => db.file_expr_syntax(file).map(|a| a.as_syntax_node()),
+        FileKind::Module => db.file_module_syntax(file).map(|a| a.as_syntax_node()),
+        FileKind::StatementList => db.file_statement_list_syntax(file).map(|a| a.as_syntax_node()),
+    }
 }
 
 fn item_generic_params<'db>(
