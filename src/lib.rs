@@ -329,7 +329,7 @@ impl Backend {
                 recv(proc_macro_channels.poll_responses_receiver) -> response => {
                     let Ok(()) = response else { break };
 
-                    scheduler.local_with_precondition(Self::proc_macro_response_check, Self::on_proc_macro_response);
+                    scheduler.local_mut(Self::on_proc_macro_response);
                 }
                 recv(proc_macro_channels.error_receiver) -> error => {
                     let Ok(()) = error else { break };
@@ -379,16 +379,6 @@ impl Backend {
         state.proc_macro_controller.handle_error(&mut state.db, &state.config);
     }
 
-    fn proc_macro_response_check(state: &State) -> bool {
-        if let ServerStatus::Starting(client) | ServerStatus::Ready(client) =
-            state.db.proc_macro_server_status()
-        {
-            client.available_responses().len() != 0
-        } else {
-            false
-        }
-    }
-
     /// Calls [`lang::proc_macros::controller::ProcMacroClientController::on_response`] to do its
     /// work.
     fn on_proc_macro_response(
@@ -397,12 +387,17 @@ impl Backend {
         requester: &mut Requester<'_>,
         _: Responder,
     ) {
-        state.proc_macro_controller.on_response(
-            &mut state.db,
-            &state.config,
-            &state.client_capabilities,
-            requester,
-        );
+        if let ServerStatus::Starting(client) | ServerStatus::Ready(client) =
+            state.db.proc_macro_server_status()
+            && client.available_responses().len() != 0
+        {
+            state.proc_macro_controller.on_response(
+                &mut state.db,
+                &state.config,
+                &state.client_capabilities,
+                requester,
+            );
+        }
     }
 
     fn on_stopped_analysis(state: &State, requester: &mut Requester<'_>) {
