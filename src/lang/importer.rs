@@ -11,6 +11,19 @@ use lsp_types::{Position, Range, TextEdit};
 
 use super::{analysis_context::AnalysisContext, db::AnalysisDatabase};
 use crate::lang::{db::LsSemanticGroup, lsp::ToLsp};
+use cairo_lang_semantic::db::SemanticGroup;
+
+/// Returns a TextEdit to import the given trait if it is not already in scope.
+/// The decision is based on visibility from the current module in `ctx`.
+pub fn import_edit_for_trait_if_needed<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    trait_id: cairo_lang_defs::ids::TraitId<'db>,
+) -> Option<TextEdit> {
+    let trait_path = db.visible_traits_from_module(ctx.module_file_id)?.get(&trait_id)?.clone();
+    // If the path contains '::', it means it is not currently in scope and needs an import.
+    if trait_path.contains("::") { new_import_edit(db, ctx, trait_path) } else { None }
+}
 
 pub fn new_import_edit<'db>(
     db: &'db AnalysisDatabase,
