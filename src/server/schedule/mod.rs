@@ -8,6 +8,7 @@
 use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
+use salsa::plumbing::current_revision;
 
 use self::task::BackgroundTaskBuilder;
 use self::thread::{JoinHandle, ThreadPriority};
@@ -21,7 +22,7 @@ pub mod thread;
 
 pub(super) use self::task::BackgroundSchedule;
 pub use self::task::{SyncMutTask, Task};
-use crate::server::schedule::task::{SyncConditionTask, SyncTask};
+use crate::server::schedule::task::SyncTask;
 
 /// The event loop thread is actually a secondary thread that we spawn from the
 /// _actual_ main thread. This secondary thread has a larger stack size
@@ -91,10 +92,14 @@ impl<'s> Scheduler<'s> {
             Task::SyncMut(SyncMutTask { func }) => {
                 let notifier = self.client.notifier();
                 let responder = self.client.responder();
+                let old_revision = current_revision(&self.state.db);
                 func(self.state, notifier.clone(), &mut self.client.requester, responder);
+                let new_revision = current_revision(&self.state.db);
 
-                for hook in &self.sync_mut_task_hooks {
-                    hook(self.state, self.meta_state.clone(), notifier.clone());
+                if old_revision != new_revision {
+                    for hook in &self.sync_mut_task_hooks {
+                        hook(self.state, self.meta_state.clone(), notifier.clone());
+                    }
                 }
             }
             Task::Sync(SyncTask { func }) => {
@@ -107,17 +112,6 @@ impl<'s> Scheduler<'s> {
                     &mut self.client.requester,
                     responder,
                 );
-            }
-            Task::SyncConditional(SyncConditionTask { precondition_func, mut_func }) => {
-                if precondition_func(self.state) {
-                    let notifier = self.client.notifier();
-                    let responder = self.client.responder();
-                    mut_func(self.state, notifier.clone(), &mut self.client.requester, responder);
-
-                    for hook in &self.sync_mut_task_hooks {
-                        hook(self.state, self.meta_state.clone(), notifier.clone());
-                    }
-                };
             }
             Task::Background(BackgroundTaskBuilder { schedule, builder: func }) => {
                 let task = build_task_fn(func);
@@ -156,17 +150,6 @@ impl<'s> Scheduler<'s> {
         func: impl FnOnce(&State, MetaState, Notifier, &mut Requester<'_>, Responder) + 's,
     ) {
         self.dispatch(Task::local(func));
-    }
-
-    /// Dispatches a local conditional `task`.
-    ///
-    /// This is a shortcut for `dispatch(Task::local_with_precondition(precondition_func, mut_func))`.
-    pub fn local_with_precondition(
-        &mut self,
-        precondition_func: impl FnOnce(&State) -> bool + 's,
-        mut_func: impl FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's,
-    ) {
-        self.dispatch(Task::local_with_precondition(precondition_func, mut_func));
     }
 
     /// Registers a hook to be called each time a synchronous task with access to mutable state is executed.

@@ -12,6 +12,7 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::project::ConfigsRegistry;
+use std::ops::Not;
 
 mod add_missing_trait;
 mod cairo_lint;
@@ -21,6 +22,7 @@ mod fill_struct_fields;
 mod fill_trait_members;
 mod missing_import;
 mod rename_unused_variable;
+mod suggest_similar_method;
 
 /// Compute commands for a given text document and range. These commands are typically code fixes to
 /// either fix problems or to beautify/refactor code.
@@ -88,7 +90,15 @@ fn get_code_actions_for_diagnostics(
             )
             .to_vec(),
             Some("E0002") => {
-                add_missing_trait::add_missing_trait(db, &ctx, uri.clone()).unwrap_or_default()
+                let fixes = add_missing_trait::add_missing_trait(db, &ctx, uri.clone());
+                if let Some(fixes) = fixes
+                    && fixes.is_empty().not()
+                {
+                    fixes
+                } else {
+                    suggest_similar_method::suggest_similar_method(db, &ctx, uri.clone())
+                        .unwrap_or_default()
+                }
             }
             Some("E0003") => fill_struct_fields::fill_struct_fields(db, ctx.node, params).to_vec(),
             Some("E0004") => fill_trait_members::fill_trait_members(db, &ctx, params).to_vec(),

@@ -1,6 +1,3 @@
-use std::collections::HashSet;
-use std::path::PathBuf;
-
 use super::builtin_plugins::BuiltinPlugin;
 use crate::lang::db::AnalysisDatabase;
 use crate::project::model::PackageConfig;
@@ -11,11 +8,15 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, Directory};
 use cairo_lang_filesystem::override_file_content;
+use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::Intern;
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
 use itertools::chain;
+use std::collections::HashSet;
+use std::path::PathBuf;
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct CrateInfo {
@@ -89,17 +90,22 @@ impl Crate {
             inject_virtual_wrapper_lib(db, crate_input.clone(), file_stems);
         }
 
+        let config_plugin_suite = Some(PluginSuite {
+            plugins: vec![Arc::new(ConfigPlugin::default())],
+            ..Default::default()
+        });
         let builtin = self.builtin_plugins.iter().map(BuiltinPlugin::suite);
         let base = Some(get_default_plugin_suite());
         let lint_allow = Some(cairo_lint_allow_plugin_suite());
         // Keep the order the same as in Scarb.
-        let plugins = chain!(proc_macro_plugin_suite, base, builtin, lint_allow).fold(
-            PluginSuite::default(),
-            |mut acc, suite| {
-                acc.add(suite);
-                acc
-            },
-        );
+        let plugins =
+            chain!(config_plugin_suite, proc_macro_plugin_suite, base, builtin, lint_allow).fold(
+                PluginSuite::default(),
+                |mut acc, suite| {
+                    acc.add(suite);
+                    acc
+                },
+            );
 
         db.set_override_crate_plugins_from_suite(crate_input, plugins);
     }

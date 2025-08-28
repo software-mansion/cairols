@@ -30,17 +30,17 @@ fn simple_struct() {
     [[completions]]
     completion_label = "get_descriptor()"
     detail = "core::circuit::GetCircuitDescriptor"
-    insert_text = "get_descriptor($1)"
+    insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "into()"
     detail = "core::traits::Into"
-    insert_text = "into($1)"
+    insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
     detail = "core::circuit::CircuitInputs"
-    insert_text = "new_inputs($1)"
+    insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
 
@@ -49,7 +49,7 @@ fn simple_struct() {
     [[completions]]
     completion_label = "try_into()"
     detail = "core::traits::TryInto"
-    insert_text = "try_into($1)"
+    insert_text = "try_into()"
     "#);
 }
 
@@ -81,17 +81,17 @@ fn simple_struct_semicolon() {
     [[completions]]
     completion_label = "get_descriptor()"
     detail = "core::circuit::GetCircuitDescriptor"
-    insert_text = "get_descriptor($1)"
+    insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "into()"
     detail = "core::traits::Into"
-    insert_text = "into($1)"
+    insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
     detail = "core::circuit::CircuitInputs"
-    insert_text = "new_inputs($1)"
+    insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
 
@@ -100,7 +100,7 @@ fn simple_struct_semicolon() {
     [[completions]]
     completion_label = "try_into()"
     detail = "core::traits::TryInto"
-    insert_text = "try_into($1)"
+    insert_text = "try_into()"
     "#);
 }
 
@@ -146,7 +146,7 @@ fn with_deref() {
     [[completions]]
     completion_label = "deref()"
     detail = "core::ops::deref::Deref"
-    insert_text = "deref($1)"
+    insert_text = "deref()"
 
     [[completions]]
     completion_label = "foofoo"
@@ -155,17 +155,17 @@ fn with_deref() {
     [[completions]]
     completion_label = "get_descriptor()"
     detail = "core::circuit::GetCircuitDescriptor"
-    insert_text = "get_descriptor($1)"
+    insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "into()"
     detail = "core::traits::Into"
-    insert_text = "into($1)"
+    insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
     detail = "core::circuit::CircuitInputs"
-    insert_text = "new_inputs($1)"
+    insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
 
@@ -174,7 +174,7 @@ fn with_deref() {
     [[completions]]
     completion_label = "try_into()"
     detail = "core::traits::TryInto"
-    insert_text = "try_into($1)"
+    insert_text = "try_into()"
     "#);
 }
 
@@ -216,17 +216,17 @@ fn with_deref_starknet() {
     [[completions]]
     completion_label = "clone()"
     detail = "core::clone::Clone"
-    insert_text = "clone($1)"
+    insert_text = "clone()"
 
     [[completions]]
     completion_label = "deref()"
     detail = "core::ops::deref::Deref"
-    insert_text = "deref($1)"
+    insert_text = "deref()"
 
     [[completions]]
     completion_label = "deref_mut()"
     detail = "core::ops::deref::DerefMut"
-    insert_text = "deref_mut($1)"
+    insert_text = "deref_mut()"
     text_edits = ["""
     use core::ops::DerefMut;
 
@@ -235,12 +235,12 @@ fn with_deref_starknet() {
     [[completions]]
     completion_label = "destruct()"
     detail = "core::traits::Destruct"
-    insert_text = "destruct($1)"
+    insert_text = "destruct()"
 
     [[completions]]
     completion_label = "emit()"
     detail = "core::starknet::event::EventEmitter"
-    insert_text = "emit($1)"
+    insert_text = "emit(${1:event})"
     text_edits = ["""
     use starknet::event::EventEmitter;
 
@@ -249,22 +249,22 @@ fn with_deref_starknet() {
     [[completions]]
     completion_label = "get_descriptor()"
     detail = "core::circuit::GetCircuitDescriptor"
-    insert_text = "get_descriptor($1)"
+    insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "internal_func()"
     detail = "hello::SpyEventsChecker::InternalTrait"
-    insert_text = "internal_func($1)"
+    insert_text = "internal_func()"
 
     [[completions]]
     completion_label = "into()"
     detail = "core::traits::Into"
-    insert_text = "into($1)"
+    insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
     detail = "core::circuit::CircuitInputs"
-    insert_text = "new_inputs($1)"
+    insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
 
@@ -273,12 +273,12 @@ fn with_deref_starknet() {
     [[completions]]
     completion_label = "panic_destruct()"
     detail = "core::traits::PanicDestruct"
-    insert_text = "panic_destruct($1)"
+    insert_text = "panic_destruct(${1:panic})"
 
     [[completions]]
     completion_label = "storage_mut()"
     detail = "core::starknet::storage::storage_base::StorageTraitMut"
-    insert_text = "storage_mut($1)"
+    insert_text = "storage_mut()"
     text_edits = ["""
     use starknet::storage::StorageTraitMut;
 
@@ -287,7 +287,7 @@ fn with_deref_starknet() {
     [[completions]]
     completion_label = "try_into()"
     detail = "core::traits::TryInto"
-    insert_text = "try_into($1)"
+    insert_text = "try_into()"
 
     [[completions]]
     completion_label = "x"
