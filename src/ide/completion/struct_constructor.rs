@@ -3,7 +3,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::ast::ExprStructCtorCall;
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
@@ -17,17 +17,15 @@ use crate::lang::visibility::peek_visible_in_with_edition;
 pub fn struct_constructor_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-    node: SyntaxNode<'db>,
 ) -> Vec<CompletionItem> {
-    struct_constructor_completions_ex(db, ctx, node).unwrap_or_default()
+    struct_constructor_completions_ex(db, ctx).unwrap_or_default()
 }
 
 fn struct_constructor_completions_ex<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-    node: SyntaxNode<'db>,
 ) -> Option<Vec<CompletionItem>> {
-    let constructor = node.ancestor_of_type::<ExprStructCtorCall>(db)?;
+    let constructor = ctx.node.ancestor_of_type::<ExprStructCtorCall>(db)?;
     let module_id = ctx.module_file_id;
     let lookup_item_id = ctx.lookup_item_id?;
     let function_id = lookup_item_id.function_with_body()?;
