@@ -196,6 +196,46 @@ fn self_reference_in_method_impl() {
 }
 
 #[test]
+fn snapshot_type_as_left_hand_side_of_invocation() {
+    test_transform_plain!(GotoDefinition, r"
+    #[derive(Drop)]
+    struct RadiusCarrier { radius: felt252 }
+
+    #[generate_trait]
+    impl RadiusCarrierImpl of RadiusCarrierFunctions {
+        fn read(self: @RadiusCarrier) -> @felt252 {
+            self.radius
+        }
+    }
+
+    #[derive(Drop)]
+    struct Circle { radius: RadiusCarrier }
+
+    fn foo(ref circle: Circle) {
+        circle.r<caret>adius.read();
+    }
+    ", @r"
+    #[derive(Drop)]
+    struct RadiusCarrier { radius: felt252 }
+
+    #[generate_trait]
+    impl RadiusCarrierImpl of RadiusCarrierFunctions {
+        fn read(self: @RadiusCarrier) -> @felt252 {
+            self.radius
+        }
+    }
+
+    #[derive(Drop)]
+    struct Circle { <sel>radius</sel>: RadiusCarrier }
+
+    fn foo(ref circle: Circle) {
+        circle.radius.read();
+    }
+    "
+    )
+}
+
+#[test]
 fn self_as_outside_impl() {
     test_transform_plain!(GotoDefinition, r"
     fn bar<+MyTrait>() {}

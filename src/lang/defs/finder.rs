@@ -388,7 +388,20 @@ fn try_member<'db>(
     let semantic_db: &dyn SemanticGroup = db.upcast();
     let semantic_expr = semantic_db.expr_semantic(function_with_body, expr_id);
 
-    let Expr::MemberAccess(expr_member_access) = semantic_expr else { return None };
+    // Desnap the binary expression to the member access expression.
+    let expr_member_access = match semantic_expr {
+        Expr::MemberAccess(expr_member_access) => Some(expr_member_access),
+        Expr::Snapshot(expr_snapshot) => {
+            if let Expr::MemberAccess(expr_member_access) =
+                semantic_db.expr_semantic(function_with_body, expr_snapshot.inner)
+            {
+                Some(expr_member_access)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }?;
 
     let pointer_to_rhs = binary_expr.rhs(db).stable_ptr(db).untyped();
 
