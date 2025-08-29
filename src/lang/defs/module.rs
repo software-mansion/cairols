@@ -58,7 +58,7 @@ impl<'db> ModuleDef<'db> {
             ModuleId::Submodule(id) => DocumentableItemId::LookupItem(LookupItemId::ModuleItem(
                 ModuleItemId::Submodule(id),
             )),
-            ModuleId::MacroCall { id: _, generated_file_id: _ } => {
+            ModuleId::MacroCall { .. } => {
                 return None;
             }
         };

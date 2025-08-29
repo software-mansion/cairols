@@ -4,12 +4,12 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location};
 
+use crate::lang::db::upstream::file_syntax;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::defs::{SymbolDef, SymbolSearch};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
@@ -71,7 +71,7 @@ fn try_special_case_non_inline_module<'db>(
     if let SymbolDef::Module(module_def) = symbol {
         let module_id = module_def.module_id();
         match module_id {
-            ModuleId::CrateRoot(_) | ModuleId::MacroCall { id: _, generated_file_id: _ } => None,
+            ModuleId::CrateRoot(_) | ModuleId::MacroCall { .. } => None,
             ModuleId::Submodule(submodule_id) => db
                 .is_submodule_inline(submodule_id)
                 .not()
@@ -79,7 +79,7 @@ fn try_special_case_non_inline_module<'db>(
                     let file = db.module_main_file(module_def.module_id()).ok()?;
 
                     match file.long(db) {
-                        FileLongId::OnDisk(_) => Some((file, db.file_syntax(file).ok()?.span(db))),
+                        FileLongId::OnDisk(_) => Some((file, file_syntax(db, file).ok()?.span(db))),
                         FileLongId::Virtual(_) | FileLongId::External(_) => None,
                     }
                 })

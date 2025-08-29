@@ -230,7 +230,7 @@ fn try_impl_item_usages<'db>(
     };
     let impl_id = try_find_impl_id()?;
 
-    let ImplLongId::Concrete(concrete_impl_id) = db.lookup_intern_impl(impl_id) else {
+    let ImplLongId::Concrete(concrete_impl_id) = impl_id.long(db) else {
         return None;
     };
 
@@ -863,7 +863,7 @@ impl<'db> ResolvedItem<'db> {
                         // .*`.
                         submodule_id.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
                     }
-                    ModuleId::MacroCall { id: _, generated_file_id: _ } => {
+                    ModuleId::MacroCall { .. } => {
                         return None;
                     }
                 }

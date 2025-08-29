@@ -49,7 +49,7 @@ pub fn derive_completions_ex<'db>(
     is_derive.then(|| {
         plugins
             .iter()
-            .flat_map(|id| db.lookup_intern_macro_plugin(*id).declared_derives())
+            .flat_map(|id| id.long(db).declared_derives())
             .filter(|name| text_matches(name, derive_name))
             .map(|name| CompletionItem {
                 label: name,

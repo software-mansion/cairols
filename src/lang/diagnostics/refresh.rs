@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::db::{FilesGroup, ext_as_virtual};
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
@@ -105,7 +105,7 @@ fn originating_file_path<'db>(db: &'db dyn FilesGroup, file_id: FileId<'db>) -> 
     match file_id.long(db) {
         FileLongId::OnDisk(path) => Some(path.clone()),
         FileLongId::Virtual(vf) => originating_file_path(db, vf.parent?),
-        FileLongId::External(id) => originating_file_path(db, db.try_ext_as_virtual(*id)?.parent?),
+        FileLongId::External(id) => originating_file_path(db, ext_as_virtual(db, *id).parent?),
     }
 }
 

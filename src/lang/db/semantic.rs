@@ -1,7 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
 
-use cairo_lang_defs::db::get_all_path_leaves;
+use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId,
@@ -9,10 +9,8 @@ use cairo_lang_defs::ids::{
     ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
     TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
 };
-use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::db::{get_parent_and_mapping, translate_location};
-use cairo_lang_filesystem::ids::{CodeOrigin, FileId, FileKind, FileLongId};
-use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_filesystem::db::{ext_as_virtual, get_parent_and_mapping, translate_location};
+use cairo_lang_filesystem::ids::{CodeOrigin, FileId, FileLongId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -25,10 +23,11 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast};
 
 use crate::lang::db::SyntaxNodeExt;
+use crate::lang::db::upstream::file_syntax;
 
 use super::LsSyntaxGroup;
 
-#[cairo_lang_proc_macros::query_group(LsSemanticDatabase)]
+#[cairo_lang_proc_macros::query_group]
 pub trait LsSemanticGroup:
     SemanticGroup + for<'db> Upcast<'db, dyn SemanticGroup> + LsSyntaxGroup
 {
@@ -210,7 +209,7 @@ fn corresponding_node_in_parent_file<'db>(
 ) -> Option<SyntaxNode<'db>> {
     let (parent, mappings) = get_parent_and_mapping(db, node.stable_ptr(db).file_id(db))?;
 
-    let span_in_parent = translate_location(&mappings, node.span(db))?;
+    let span_in_parent = translate_location(mappings, node.span(db))?;
 
     db.widest_node_within_span(parent, span_in_parent)
 }
@@ -235,10 +234,15 @@ fn find_module_file_containing_node<'db>(
     let module_id = db.find_module_containing_node(node)?;
     let file = node.stable_ptr(db).file_id(db);
 
-    let i = db
-        .module_files(module_id)
-        .map(|files| {
-            files.iter().enumerate().find(|(_, f)| **f == file).map(|(i, _)| i).unwrap_or_default()
+    let i = module_id
+        .module_data(db)
+        .map(|data| {
+            data.files(db)
+                .iter()
+                .enumerate()
+                .find(|(_, f)| **f == file)
+                .map(|(i, _)| i)
+                .unwrap_or_default()
         })
         .unwrap_or_default();
 
@@ -355,7 +359,7 @@ fn file_and_subfiles_with_corresponding_modules<'db>(
     //  We repeat this procedure until there is nothing more to collect.
     let mut modules_queue: VecDeque<_> = modules.iter().copied().collect();
     while let Some(module_id) = modules_queue.pop_front() {
-        for file_id in db.module_files(module_id).ok()?.iter() {
+        for file_id in module_id.module_data(db).ok()?.files(db) {
             if files.insert(*file_id) {
                 for module_id in db.file_modules(*file_id).ok()?.iter() {
                     if modules.insert(*module_id) {
@@ -388,7 +392,7 @@ fn get_node_resultants<'db>(
 /// If the ast node is a lookup item, return corresponding ids. Otherwise, returns `None`.
 /// See [LookupItemId<'db>].
 fn lookup_item_from_ast<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn LsSemanticGroup,
     module_file_id: ModuleFileId<'db>,
     node: SyntaxNode<'db>,
 ) -> Option<Vec<LookupItemId<'db>>> {
@@ -594,7 +598,7 @@ fn find_generated_nodes<'db>(
 
         let is_replacing_og_item = match file.long(db) {
             FileLongId::Virtual(vfs) => vfs.original_item_removed,
-            FileLongId::External(id) => db.ext_as_virtual(*id).original_item_removed,
+            FileLongId::External(id) => ext_as_virtual(db, *id).original_item_removed,
             _ => unreachable!(),
         };
 
@@ -650,16 +654,8 @@ fn find_generated_nodes<'db>(
     result
 }
 
-pub fn file_syntax<'db>(db: &'db dyn ParserGroup, file: FileId<'db>) -> Maybe<SyntaxNode<'db>> {
-    match file.kind(db) {
-        FileKind::Expr => db.file_expr_syntax(file).map(|a| a.as_syntax_node()),
-        FileKind::Module => db.file_module_syntax(file).map(|a| a.as_syntax_node()),
-        FileKind::StatementList => db.file_statement_list_syntax(file).map(|a| a.as_syntax_node()),
-    }
-}
-
 fn item_generic_params<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn LsSemanticGroup,
     lookup_item: LookupItemId<'db>,
 ) -> Vec<GenericParam<'db>> {
     match lookup_item {

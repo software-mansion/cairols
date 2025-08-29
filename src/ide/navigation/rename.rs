@@ -96,7 +96,7 @@ pub fn rename(
                         resource_ops.extend(res_op);
                     }
                 }
-                ModuleId::MacroCall { id: _, generated_file_id: _ } => {}
+                ModuleId::MacroCall { .. } => {}
             }
         }
     }

@@ -1,4 +1,3 @@
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateInput;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -9,6 +8,8 @@ use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::project::Crate;
 use crate::project::crate_data::CrateInfo;
 use crate::state::{Owned, Snapshot};
+use cairo_lang_filesystem::db::files_group_input;
+use salsa::Setter;
 
 mod configs_registry;
 
@@ -69,7 +70,8 @@ impl ProjectModel {
     ) {
         if self.remove_crates_from_db_on_next_update {
             self.remove_crates_from_db_on_next_update = false;
-            db.set_crate_configs_input(Default::default());
+
+            files_group_input(db).set_crate_configs(db).to(Some(Default::default()));
         }
 
         let workspace_crates = workspace_crates

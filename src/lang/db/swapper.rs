@@ -2,12 +2,11 @@ use std::collections::HashSet;
 use std::fmt::Display;
 use std::mem;
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_defs::db::{DefsGroup, defs_group_input};
+use cairo_lang_filesystem::db::{FilesGroup, files_group_input};
+use cairo_lang_semantic::db::{SemanticGroup, semantic_group_input};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use crossbeam::channel::Sender;
 use lsp_types::Url;
@@ -21,6 +20,7 @@ use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::project::ProjectController;
+use salsa::Setter;
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub enum SwapReason {
@@ -160,20 +160,18 @@ impl AnalysisDatabaseSwapper {
 
     /// Copies current default macro plugins into new db.
     fn migrate_default_plugins(&self, new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
-        new_db.set_default_macro_plugins_input(
+        defs_group_input(new_db).set_default_macro_plugins(new_db).to(Some(
             old_db.default_macro_plugins().iter().map(|&id| id.long(old_db).clone()).collect(),
-        );
-
-        new_db.set_default_analyzer_plugins_input(
-            old_db.default_analyzer_plugins().iter().map(|&id| id.long(old_db).clone()).collect(),
-        );
-
-        new_db.set_default_inline_macro_plugins_input(Arc::new(
+        ));
+        defs_group_input(new_db).set_default_inline_macro_plugins(new_db).to(Some(
             old_db
                 .default_inline_macro_plugins()
                 .iter()
                 .map(|(name, &id)| (name.clone(), id.long(old_db).clone()))
                 .collect(),
+        ));
+        semantic_group_input(new_db).set_default_analyzer_plugins(new_db).to(Some(
+            old_db.default_analyzer_plugins().iter().map(|&id| id.long(old_db).clone()).collect(),
         ));
     }
 
@@ -209,7 +207,7 @@ impl AnalysisDatabaseSwapper {
                 new_overrides.insert(file_input, content.long(old_db).clone());
             }
         }
-        new_db.set_file_overrides_input(Arc::new(new_overrides));
+        files_group_input(new_db).set_file_overrides(new_db).to(Some(new_overrides));
     }
 }
 

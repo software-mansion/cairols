@@ -4,6 +4,7 @@ use cairo_lang_parser::db::ParserGroup;
 use lsp_types::{DocumentFormattingParams, Position, Range, TextEdit};
 use tracing::error;
 
+use crate::lang::db::upstream::file_syntax;
 use crate::lang::lsp::LsProtoGroup;
 use crate::state::StateSnapshot;
 
@@ -20,7 +21,7 @@ pub fn format_document(
 
     let config = state.configs_registry.config_for_file(&path).unwrap_or_default();
 
-    let Ok(node) = db.file_syntax(file) else {
+    let Ok(node) = file_syntax(db, file) else {
         error!("formatting failed: file '{file_uri}' does not exist");
         return None;
     };

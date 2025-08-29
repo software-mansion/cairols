@@ -4,10 +4,10 @@ use crate::project::model::PackageConfig;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    CORELIB_CRATE_NAME, CrateConfiguration, CrateSettings, FilesGroup, FilesGroupEx,
+    CORELIB_CRATE_NAME, CrateConfiguration, CrateSettings, FilesGroup,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, Directory};
-use cairo_lang_filesystem::override_file_content;
+use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
@@ -81,10 +81,11 @@ impl Crate {
             cache_file: None,
         };
 
-        let mut crate_configs = db.crate_configs_input().as_ref().clone();
-        crate_configs
-            .insert(crate_input.clone(), db.crate_configuration_input(crate_configuration));
-        db.set_crate_configs_input(crate_configs.into());
+        set_crate_config!(
+            db,
+            crate_input.clone().into_crate_long_id(db).intern(db),
+            Some(crate_configuration)
+        );
 
         if let Some(file_stems) = &self.custom_main_file_stems {
             inject_virtual_wrapper_lib(db, crate_input.clone(), file_stems);
