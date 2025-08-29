@@ -10,7 +10,7 @@ use tracing::{debug, warn};
 
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lang::lsp::{ToCairo, file_for_url};
 use crate::project::ConfigsRegistry;
 use std::ops::Not;
 
@@ -169,7 +169,7 @@ fn node_on_range_start<'db>(
     uri: &Url,
     range: &Range,
 ) -> Option<SyntaxNode<'db>> {
-    let file_id = db.file_for_url(uri)?;
+    let file_id = file_for_url(db, uri)?;
 
     db.find_syntax_node_at_position(file_id, range.start.to_cairo())
 }

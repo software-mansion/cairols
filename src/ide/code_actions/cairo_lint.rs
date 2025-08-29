@@ -10,7 +10,7 @@ use crate::{
     lang::{
         analysis_context::AnalysisContext,
         db::AnalysisDatabase,
-        lsp::{LsProtoGroup, ToLsp},
+        lsp::{ToLsp, url_for_file},
     },
     project::ConfigsRegistry,
 };
@@ -52,7 +52,7 @@ pub fn cairo_lint<'db>(
 
     let result = fixes
         .into_iter()
-        .filter_map(|(file, fixes)| db.url_for_file(file).map(|url| (file, url, fixes)))
+        .filter_map(|(file, fixes)| url_for_file(db, file).map(|url| (file, url, fixes)))
         .flat_map(|(file, file_url, fixes)| {
             fixes.into_iter().map(move |fix| CodeAction {
                 title: fix.description.clone(),

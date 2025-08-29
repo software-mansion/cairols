@@ -1,9 +1,9 @@
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_utils::Intern;
 use lsp_types::Url;
 
-use super::LsProtoGroup;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::lsp::{file_for_url, url_for_file};
 
 #[test]
 fn file_url() {
@@ -11,19 +11,19 @@ fn file_url() {
 
     let check = |expected_url: &str, expected_file_long: FileLongId| {
         let expected_url = Url::parse(expected_url).unwrap();
-        let expected_file = db.intern_file(expected_file_long);
+        let expected_file = expected_file_long.intern(&db);
 
-        assert_eq!(db.file_for_url(&expected_url), Some(expected_file));
-        assert_eq!(db.url_for_file(expected_file), Some(expected_url));
+        assert_eq!(file_for_url(&db, &expected_url), Some(expected_file));
+        assert_eq!(url_for_file(&db, expected_file), Some(expected_url));
     };
 
     check("file:///foo/bar", FileLongId::OnDisk("/foo/bar".into()));
     check("file:///", FileLongId::OnDisk("/".into()));
 
     // NOTE: We expect that Salsa is assigning sequential numeric ids to files,
-    //   hence numbers 10242 and 10243 appear further down.
+    //   hence numbers 12290 and 12291 appear further down.
     check(
-        "vfs://10242/foo.cairo",
+        "vfs://12290/foo.cairo",
         FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "foo".into(),
@@ -34,7 +34,7 @@ fn file_url() {
         }),
     );
     check(
-        "vfs://10243/foo%2Fbar.cairo",
+        "vfs://12291/foo%2Fbar.cairo",
         FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "foo/bar".into(),

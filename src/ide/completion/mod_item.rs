@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind, Url};
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::LsProtoGroup;
+use crate::lang::lsp::url_for_file;
 use crate::lang::text_matching::text_matches;
 
 pub fn mod_completions<'db>(
@@ -57,7 +57,7 @@ pub fn mod_completions_ex<'db>(
         MaybeModuleBody::Some(_) => return None,
     };
 
-    let mut url = db.url_for_file(file)?;
+    let mut url = url_for_file(db, file)?;
 
     let current_file = url.path().to_string();
 
@@ -65,12 +65,12 @@ pub fn mod_completions_ex<'db>(
 
     let module_files = db.file_modules(file).ok()?;
 
-    let mut existing_modules_files = collect_existing_modules(db, &module_files)?;
+    let mut existing_modules_files = collect_existing_modules(db, module_files)?;
     existing_modules_files.insert(current_file);
 
     let current_dir = url.to_file_path().ok()?;
 
-    let search_dir = if is_crate_root(&module_files) {
+    let search_dir = if is_crate_root(module_files) {
         current_dir.clone()
     } else {
         current_dir.join(file_name.strip_suffix(".cairo").unwrap_or(&file_name))

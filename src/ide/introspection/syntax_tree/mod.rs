@@ -1,20 +1,20 @@
 mod printer;
 
-use cairo_lang_parser::db::ParserGroup;
 use lsp_types::TextDocumentPositionParams;
 
 use crate::ide::introspection::syntax_tree::printer::{
     file_syntax_tree, syntax_tree_branch_above_leaf,
 };
+use crate::lang::db::upstream::file_syntax;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lang::lsp::{ToCairo, file_for_url};
 
 pub fn get_syntax_tree_for_file(
     db: &AnalysisDatabase,
     params: TextDocumentPositionParams,
 ) -> Option<String> {
-    let file_id = db.file_for_url(&params.text_document.uri)?;
-    let file_syntax = db.file_syntax(file_id).ok()?;
+    let file_id = file_for_url(db, &params.text_document.uri)?;
+    let file_syntax = file_syntax(db, file_id).ok()?;
 
     let full_tree = file_syntax_tree(db, &file_syntax);
 

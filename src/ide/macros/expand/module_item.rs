@@ -46,8 +46,7 @@ fn expand_module_item<'db>(
     let mut extra_files = vec![];
 
     for &plugin_id in db.crate_macro_plugins(crate_id).iter() {
-        let result =
-            db.lookup_intern_macro_plugin(plugin_id).generate_code(db, item.clone(), metadata);
+        let result = plugin_id.long(db).generate_code(db, item.clone(), metadata);
 
         if let Some(generated) = result.code {
             let new_file = FileLongId::Virtual(VirtualFile {

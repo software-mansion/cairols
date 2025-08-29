@@ -7,12 +7,12 @@ use lsp_types::{Location, ReferenceParams};
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::defs::SymbolSearch;
-use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lang::lsp::{ToCairo, file_for_url, lsp_location};
 
 pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<Location>> {
     let include_declaration = params.context.include_declaration;
 
-    let file = db.file_for_url(&params.text_document_position.text_document.uri)?;
+    let file = file_for_url(db, &params.text_document_position.text_document.uri)?;
     let position = params.text_document_position.position.to_cairo();
 
     // Try to apply identifier correction before resultants.
@@ -50,7 +50,7 @@ fn find_references<'db>(
                     // Common case - impl declared in the derive macro.
                     || (include_declaration && Some(loc) == def.definition_originating_location(db).as_ref())
             })
-            .filter_map(|loc| db.lsp_location(loc))
+            .filter_map(|loc| lsp_location(db, loc))
             .collect(),
     )
 }

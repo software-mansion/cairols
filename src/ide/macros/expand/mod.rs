@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_filesystem::db::FilesGroup;
@@ -17,7 +15,7 @@ use lsp_types::TextDocumentPositionParams;
 use module_item::expand_module_item_macros;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
-use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lang::lsp::{ToCairo, file_for_url};
 
 mod expr;
 mod format;
@@ -26,19 +24,19 @@ mod module_item;
 
 /// Tries to expand macro, returns it as string.
 pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) -> Option<String> {
-    let file_id = db.file_for_url(&params.text_document.uri)?;
+    let file_id = file_for_url(db, &params.text_document.uri)?;
     let node = db.find_syntax_node_at_position(file_id, params.position.to_cairo())?;
 
     let crate_id = db.find_module_file_containing_node(node)?.0.owning_crate(db);
     let cfg_set = db
         .crate_config(crate_id)
-        .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
+        .and_then(|cfg| cfg.settings.cfg_set.as_ref())
         .unwrap_or(db.cfg_set());
     let edition = db.crate_config(crate_id).map(|cfg| cfg.settings.edition).unwrap_or_default();
 
     let metadata = MacroPluginMetadata {
-        cfg_set: &cfg_set,
-        declared_derives: &db.declared_derives(crate_id),
+        cfg_set,
+        declared_derives: db.declared_derives(crate_id),
         allowed_features: &Default::default(),
         edition,
     };

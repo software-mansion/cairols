@@ -4,7 +4,8 @@ use cairo_lang_parser::db::ParserGroup;
 use lsp_types::{DocumentFormattingParams, Position, Range, TextEdit};
 use tracing::error;
 
-use crate::lang::lsp::LsProtoGroup;
+use crate::lang::db::upstream::file_syntax;
+use crate::lang::lsp::file_for_url;
 use crate::state::StateSnapshot;
 
 /// Format a whole document.
@@ -14,13 +15,13 @@ pub fn format_document(
 ) -> Option<Vec<TextEdit>> {
     let db = &state.db;
     let file_uri = params.text_document.uri;
-    let file = db.file_for_url(&file_uri)?;
+    let file = file_for_url(db, &file_uri)?;
 
     let path = file_uri.to_file_path().ok()?;
 
     let config = state.configs_registry.config_for_file(&path).unwrap_or_default();
 
-    let Ok(node) = db.file_syntax(file) else {
+    let Ok(node) = file_syntax(db, file) else {
         error!("formatting failed: file '{file_uri}' does not exist");
         return None;
     };

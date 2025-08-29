@@ -14,9 +14,12 @@ use cairo_lang_filesystem::{
 use lsp_types::{FileRename, RenameFilesParams, TextEdit, Url, WorkspaceEdit};
 use tracing::error;
 
-use super::{db::AnalysisDatabase, lsp::LsProtoGroup};
+use super::db::AnalysisDatabase;
 use crate::{
-    lang::{defs::SymbolSearch, lsp::ToLsp},
+    lang::{
+        defs::SymbolSearch,
+        lsp::{ToLsp, file_for_url, url_for_file},
+    },
     server::is_cairo_file_path,
 };
 
@@ -42,7 +45,7 @@ fn handle_rename(
         return None;
     }
 
-    let file = db.file_for_url(&old_uri)?;
+    let file = file_for_url(db, &old_uri)?;
 
     let first = *db.file_modules(file).ok()?.first()?;
 
@@ -64,7 +67,7 @@ fn handle_rename(
     let old_path = old_uri.to_file_path().ok()?;
     let new_path = new_uri.to_file_path().ok()?;
 
-    assert!(old_path.starts_with(&root));
+    assert!(old_path.starts_with(root));
 
     if !new_path.starts_with(root) {
         return None;
@@ -86,7 +89,7 @@ fn handle_rename(
     for usage in
         SymbolSearch::find_definition(db, &mod_name)?.usages(db).include_declaration(true).collect()
     {
-        let file = db.url_for_file(usage.file)?;
+        let file = url_for_file(db, usage.file)?;
         let range = usage.span.position_in_file(db, usage.file)?;
 
         changes

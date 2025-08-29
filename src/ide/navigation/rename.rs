@@ -18,7 +18,7 @@ use lsp_types::{
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::defs::{SymbolDef, SymbolSearch};
-use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lang::lsp::{ToCairo, file_for_url, lsp_location};
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::result::{LSPError, LSPResult};
 
@@ -40,7 +40,7 @@ pub fn rename(
         ));
     }
 
-    let Some(file) = db.file_for_url(&params.text_document_position.text_document.uri) else {
+    let Some(file) = file_for_url(db, &params.text_document_position.text_document.uri) else {
         return Ok(None);
     };
     let position = params.text_document_position.position.to_cairo();
@@ -104,7 +104,7 @@ pub fn rename(
     let locations = symbols
         .into_iter()
         .flat_map(|symbol| find_usages(db, symbol))
-        .filter_map(|loc| db.lsp_location(loc))
+        .filter_map(|loc| lsp_location(db, loc))
         .collect::<Vec<_>>();
 
     let changes: HashMap<_, Vec<TextEdit>> =

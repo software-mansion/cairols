@@ -23,7 +23,7 @@ use crate::ide::completion::mod_item::mod_completions;
 use crate::ide::completion::use_statement::use_completions;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
-use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lang::lsp::{ToCairo, file_for_url};
 
 mod attribute;
 mod dot_completions;
@@ -40,7 +40,7 @@ mod use_statement;
 /// Compute completion items at a given cursor position.
 pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<CompletionResponse> {
     let text_document_position = params.text_document_position;
-    let file_id = db.file_for_url(&text_document_position.text_document.uri)?;
+    let file_id = file_for_url(db, &text_document_position.text_document.uri)?;
     let mut position = text_document_position.position;
     let base_position_node = db.find_syntax_node_at_position(file_id, position.to_cairo())?;
 

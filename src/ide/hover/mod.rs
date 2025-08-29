@@ -6,13 +6,13 @@ use lsp_types::{Hover, HoverContents, HoverParams, MarkupContent, MarkupKind};
 
 use crate::ide::markdown::RULE;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
-use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
+use crate::lang::lsp::{ToCairo, ToLsp, file_for_url};
 
 mod render;
 
 /// Get hover information at a given text document position.
 pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
-    let file_id = db.file_for_url(&params.text_document_position_params.text_document.uri)?;
+    let file_id = file_for_url(db, &params.text_document_position_params.text_document.uri)?;
     let position = params.text_document_position_params.position.to_cairo();
     // Try to apply identifier correction before resultants.
     let node = db

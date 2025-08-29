@@ -31,10 +31,9 @@ pub fn find_methods_for_type<'db>(
 
     let mut relevant_methods = Vec::new();
     // Find methods on type.
-    let dependencies = db
-        .crate_config(resolver.owning_crate_id)
-        .map(|config| config.settings.dependencies)
-        .unwrap_or_default();
+    let crate_config = db.crate_config(resolver.owning_crate_id);
+    let default = &Default::default();
+    let dependencies = crate_config.map(|config| &config.settings.dependencies).unwrap_or(default);
 
     for crate_id in chain!(
         [resolver.owning_crate_id],
@@ -54,7 +53,7 @@ pub fn find_methods_for_type<'db>(
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
                 trait_function,
                 ty,
-                &lookup_context,
+                lookup_context,
                 Some(stable_ptr),
                 &mut vec![],
             ) else {

@@ -6,14 +6,14 @@ use lsp_types::{DocumentHighlight, DocumentHighlightParams};
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::defs::SymbolSearch;
-use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
+use crate::lang::lsp::{ToCairo, ToLsp, file_for_url};
 use crate::lang::usages::search_scope::SearchScope;
 
 pub fn highlight(
     params: DocumentHighlightParams,
     db: &AnalysisDatabase,
 ) -> Option<Vec<DocumentHighlight>> {
-    let file = db.file_for_url(&params.text_document_position_params.text_document.uri)?;
+    let file = file_for_url(db, &params.text_document_position_params.text_document.uri)?;
     let position = params.text_document_position_params.position.to_cairo();
 
     let identifier = db.find_identifier_at_position(file, position)?.as_syntax_node();
