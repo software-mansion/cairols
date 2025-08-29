@@ -64,7 +64,7 @@ pub fn definition<'db>(
             if let Some(doc) = db
                 .crate_inline_macro_plugins(crate_id)
                 .get(*macro_name)
-                .map(|&id| db.lookup_intern_inline_macro_plugin(id))?
+                .map(|&id| id.long(db))?
                 .documentation()
             {
                 md += RULE;

@@ -11,7 +11,7 @@ use self::project_diagnostics::ProjectDiagnostics;
 use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
 use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
-use crate::lang::lsp::LsProtoGroup;
+use crate::lang::lsp::url_for_file;
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::thread::task_progress_monitor::{
@@ -160,7 +160,7 @@ impl DiagnosticsControllerThread {
         let files_to_preserve: HashSet<Url> = primary
             .into_iter()
             .chain(secondary)
-            .flat_map(|file| state.db.url_for_file(file))
+            .flat_map(|file| url_for_file(&state.db, file))
             .collect();
 
         self.spawn_worker(move |project_diagnostics, notifier| {

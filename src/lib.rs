@@ -20,7 +20,6 @@ use std::time::SystemTime;
 use std::{io, panic};
 
 use anyhow::Result;
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
 use crossbeam::channel::{Receiver, select_biased};
 use lsp_server::Message;
@@ -30,7 +29,7 @@ use tracing::{debug, error, info};
 
 use crate::ide::analysis_progress::AnalysisStatus;
 use crate::ide::code_lens::CodeLensController;
-use crate::lang::lsp::LsProtoGroup;
+use crate::lang::lsp::file_for_url;
 use crate::lang::proc_macros;
 use crate::lang::proc_macros::client::ServerStatus;
 use crate::lang::proc_macros::controller::ProcMacroChannels;
@@ -446,9 +445,9 @@ impl Backend {
         state.config.reload(requester, &state.client_capabilities)?;
 
         for uri in state.open_files.iter() {
-            let Some(file_id) = state.db.file_for_url(uri) else { continue };
-            if let FileLongId::OnDisk(file_path) = state.db.lookup_intern_file(file_id) {
-                state.project_controller.request_updating_project_for_file(file_path);
+            let Some(file_id) = file_for_url(&state.db, uri) else { continue };
+            if let FileLongId::OnDisk(file_path) = file_id.long(&state.db) {
+                state.project_controller.request_updating_project_for_file(file_path.clone());
             }
         }
 

@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use cairo_lang_diagnostics::{
     DiagnosticEntry, DiagnosticLocation, Diagnostics, PluginFileDiagnosticNotes, Severity,
 };
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_utils::Upcast;
 use lsp_types::{
@@ -12,7 +11,8 @@ use lsp_types::{
 };
 use tracing::{error, trace};
 
-use crate::lang::lsp::{LsProtoGroup, ToLsp};
+use crate::lang::lsp::{ToLsp, url_for_file};
+use salsa::Database;
 
 /// Converts internal diagnostics to LSP format.
 pub fn map_cairo_diagnostics_to_lsp<'db, T>(
@@ -22,7 +22,7 @@ pub fn map_cairo_diagnostics_to_lsp<'db, T>(
     trace_macro_diagnostics: bool,
     plugin_file_notes: &PluginFileDiagnosticNotes<'db>,
 ) where
-    T::DbType: salsa::Database + for<'a> Upcast<'a, dyn FilesGroup>,
+    T::DbType: Upcast<'db, dyn Database>,
     T: DiagnosticEntry<'db> + salsa::Update,
 {
     for diagnostic in if trace_macro_diagnostics {
@@ -38,14 +38,14 @@ pub fn map_cairo_diagnostics_to_lsp<'db, T>(
         for note in diagnostic.notes(db).iter().chain(&parent_file_notes) {
             if let Some(location) = &note.location {
                 let Some((range, file_id)) = get_mapped_range_and_add_mapping_note(
-                    db,
+                    db.upcast(),
                     location,
                     trace_macro_diagnostics.then_some(&mut related_information),
                     "Next note mapped from here.",
                 ) else {
                     continue;
                 };
-                let Some(uri) = db.url_for_file(file_id) else {
+                let Some(uri) = url_for_file(db.upcast(), file_id) else {
                     trace!("url for file not found: {:?}", file_id.long(db));
                     continue;
                 };
@@ -59,7 +59,7 @@ pub fn map_cairo_diagnostics_to_lsp<'db, T>(
         }
 
         let Some((range, mapped_file_id)) = get_mapped_range_and_add_mapping_note(
-            db,
+            db.upcast(),
             &diagnostic.location(db),
             trace_macro_diagnostics.then_some(&mut related_information),
             "Diagnostic mapped from here.",
@@ -78,7 +78,7 @@ pub fn map_cairo_diagnostics_to_lsp<'db, T>(
             code: diagnostic.error_code().map(|code| NumberOrString::String(code.to_string())),
             ..Diagnostic::default()
         };
-        let Some(mapped_file_url) = db.url_for_file(mapped_file_id) else {
+        let Some(mapped_file_url) = url_for_file(db.upcast(), mapped_file_id) else {
             continue;
         };
 
@@ -89,7 +89,7 @@ pub fn map_cairo_diagnostics_to_lsp<'db, T>(
 /// Returns the mapped range of a location, optionally adds a note about the mapping of the
 /// location.
 fn get_mapped_range_and_add_mapping_note<'db>(
-    db: &'db (impl for<'a> Upcast<'a, dyn FilesGroup> + ?Sized),
+    db: &'db dyn Database,
     orig: &DiagnosticLocation<'db>,
     related_info: Option<&mut Vec<DiagnosticRelatedInformation>>,
     message: &str,
@@ -101,7 +101,7 @@ fn get_mapped_range_and_add_mapping_note<'db>(
         && let Some(range) = get_lsp_range(db.upcast(), orig)
     {
         related_info.push(DiagnosticRelatedInformation {
-            location: Location { uri: db.url_for_file(orig.file_id)?, range },
+            location: Location { uri: url_for_file(db, orig.file_id)?, range },
             message: message.to_string(),
         });
     }
@@ -109,10 +109,7 @@ fn get_mapped_range_and_add_mapping_note<'db>(
 }
 
 /// Converts an internal diagnostic location to an LSP range.
-fn get_lsp_range<'db>(
-    db: &'db dyn FilesGroup,
-    location: &DiagnosticLocation<'db>,
-) -> Option<Range> {
+fn get_lsp_range<'db>(db: &'db dyn Database, location: &DiagnosticLocation<'db>) -> Option<Range> {
     let Some(span) = location.span.position_in_file(db, location.file_id) else {
         error!("failed to get range for diagnostic");
         return None;

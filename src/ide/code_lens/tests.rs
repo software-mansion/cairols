@@ -7,8 +7,8 @@ use crate::config::{Config, TestRunner};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::db::LsSemanticGroup;
 use crate::lang::db::LsSyntaxGroup;
-use crate::lang::lsp::ToCairo;
-use crate::lang::lsp::{LsProtoGroup, ToLsp};
+use crate::lang::lsp::ToLsp;
+use crate::lang::lsp::{ToCairo, file_for_url};
 use crate::server::client::Notifier;
 use crate::state::State;
 use cairo_lang_defs::db::DefsGroup;
@@ -41,7 +41,7 @@ impl CodeLensInterface for TestCodeLens {
 
         let position = self.lens.range.start.to_cairo();
 
-        let file = db.file_for_url(&file_url)?;
+        let file = file_for_url(db, &file_url)?;
         let file_path = file_url.to_file_path().ok()?;
 
         let node = db.find_syntax_node_at_position(file, position)?;
@@ -118,7 +118,7 @@ pub fn get_test_code_lenses_builders(
     config: &Config,
 ) -> Option<Vec<TestCodeLensBuilder>> {
     let mut file_code_lens = vec![];
-    let file = db.file_for_url(&url)?;
+    let file = file_for_url(db, &url)?;
 
     let main_module = *db.file_modules(file).ok()?.first()?;
 

@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use anyhow::Context;
 use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::db::{CrateIdentifier, FilesGroup};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_filesystem::set_crate_config;
@@ -142,7 +141,7 @@ impl ProjectController {
                     if contains_core_from_scarb_cache(&project_config, &state.scarb_toolchain) {
                         let core_id = CrateId::core(db);
 
-                        let mut core_settings = db.crate_config(core_id).unwrap();
+                        let mut core_settings = db.crate_config(core_id).unwrap().clone();
                         core_settings.settings.cfg_set = Some(
                             core_settings
                                 .settings

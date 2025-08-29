@@ -38,7 +38,7 @@ fn attribute_completions_ex<'db>(
     Some(
         plugins
             .iter()
-            .flat_map(|plugin_id| db.lookup_intern_macro_plugin(*plugin_id).declared_attributes())
+            .flat_map(|plugin_id| plugin_id.long(db).declared_attributes())
             .filter(|name| text_matches(name, attr_name))
             .map(|name| CompletionItem {
                 label: name,

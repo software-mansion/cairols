@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::db::{FilesGroup, get_external_files};
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
@@ -10,7 +10,7 @@ use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FilesDiagnostics;
 use crate::lang::diagnostics::project_diagnostics::ProjectDiagnostics;
-use crate::lang::lsp::LsProtoGroup;
+use crate::lang::lsp::url_for_file;
 use crate::project::ConfigsRegistry;
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
@@ -105,7 +105,9 @@ fn originating_file_path<'db>(db: &'db dyn FilesGroup, file_id: FileId<'db>) -> 
     match file_id.long(db) {
         FileLongId::OnDisk(path) => Some(path.clone()),
         FileLongId::Virtual(vf) => originating_file_path(db, vf.parent?),
-        FileLongId::External(id) => originating_file_path(db, db.try_ext_as_virtual(*id)?.parent?),
+        FileLongId::External(id) => {
+            originating_file_path(db, get_external_files(db).try_ext_as_virtual(db, *id)?.parent?)
+        }
     }
 }
 
@@ -128,5 +130,5 @@ pub fn clear_old_diagnostics(
 }
 
 fn tracing_file_url<'db>(db: &'db AnalysisDatabase, file: FileId<'db>) -> String {
-    db.url_for_file(file).map(|u| u.to_string()).unwrap_or_default()
+    url_for_file(db, file).map(|u| u.to_string()).unwrap_or_default()
 }

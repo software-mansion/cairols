@@ -1,5 +1,5 @@
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, OnceLock};
+use std::sync::OnceLock;
 use std::{fs, path};
 
 use anyhow::Context;
@@ -7,6 +7,7 @@ use cairo_lang_filesystem::db::{
     CORELIB_CRATE_NAME, CORELIB_VERSION, FilesGroup, init_dev_corelib,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
+use cairo_lang_utils::Intern;
 use indoc::indoc;
 use semver::Version;
 use tempfile::tempdir;
@@ -15,6 +16,7 @@ use tracing::{error, warn};
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::toolchain::scarb::{SCARB_TOML, ScarbToolchain};
+use cairo_lang_filesystem::set_crate_config;
 
 /// Try to find a Cairo `core` crate (see [`find_unmanaged_core`]) and initialize it in the
 /// provided database.
@@ -31,12 +33,14 @@ pub fn try_to_init_unmanaged_core_if_not_present(
         // Initialize with default config.
         init_dev_corelib(db, path);
 
-        let core_id = CrateLongId::core().into_crate_input(db);
+        let core_id = CrateLongId::core().intern(db);
 
         // Override the config with the correct version.
-        let mut crate_configs = Arc::unwrap_or_clone(db.crate_configs_input());
+        let mut crate_configs = db.crate_config(core_id).unwrap().clone();
 
-        crate_configs.get_mut(&core_id).unwrap().settings.version = Some(version);
+        crate_configs.settings.version = Some(version);
+
+        set_crate_config!(db, core_id, Some(crate_configs));
     } else {
         warn!("failed to find unmanaged core crate")
     }

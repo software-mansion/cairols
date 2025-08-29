@@ -7,7 +7,7 @@ use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use lsp_types::Url;
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::LsProtoGroup;
+use crate::lang::lsp::file_for_url;
 
 /// Finds all analyzable on disk files in `db` that are open and need to be analysed ASAP,
 /// thus _primary_.
@@ -18,7 +18,7 @@ pub fn find_primary_files<'db>(
 ) -> HashSet<FileId<'db>> {
     open_files
         .iter()
-        .filter_map(|uri| db.file_for_url(uri))
+        .filter_map(|uri| file_for_url(db, uri))
         // 1. Filter out files that don't belong to any crate, e.g. removed modules.
         // 2. We only want to process on disk files.
         //    Relevant virtual files will be processed as a result of processing on disk files.
@@ -36,7 +36,7 @@ pub fn find_secondary_files<'db>(
 ) -> Vec<FileId<'db>> {
     let mut result = HashSet::new();
     for crate_id in db.crates() {
-        for module_id in db.crate_modules(crate_id).iter() {
+        for module_id in db.crate_modules(*crate_id).iter() {
             // Schedule only on disk module main files for refreshing.
             // All other related files will be refreshed along with it in a single job.
             if let Ok(file) = db.module_main_file(*module_id)

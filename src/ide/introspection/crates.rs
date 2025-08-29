@@ -28,8 +28,8 @@ pub fn inspect_analyzed_crates(
 ) -> String {
     let crates = db
         .crates()
-        .into_iter()
-        .filter_map(|id| CrateView::for_crate(db, config, configs_registry, scarb_toolchain, id))
+        .iter()
+        .filter_map(|id| CrateView::for_crate(db, config, configs_registry, scarb_toolchain, *id))
         .sorted()
         .map(|cr| serde_json::to_string_pretty(&cr))
         .collect::<Result<Vec<_>, _>>()
@@ -84,10 +84,16 @@ impl CrateView {
             .unwrap_or_else(|| vec![root.join("lib.cairo")]);
 
         let linter_configuration =
-            LinterConfiguration::for_crate(config, configs_registry, scarb_toolchain, &root);
+            LinterConfiguration::for_crate(config, configs_registry, scarb_toolchain, root);
         let plugins = Plugins::for_crate(db, crate_id);
 
-        Some(Self { name: name.clone(), source_paths, settings, linter_configuration, plugins })
+        Some(Self {
+            name: name.clone(),
+            source_paths,
+            settings: settings.clone(),
+            linter_configuration,
+            plugins,
+        })
     }
 }
 
