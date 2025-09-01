@@ -22,6 +22,7 @@ mod fill_struct_fields;
 mod fill_trait_members;
 mod missing_import;
 mod rename_unused_variable;
+mod suggest_similar_member;
 mod suggest_similar_method;
 
 /// Compute commands for a given text document and range. These commands are typically code fixes to
@@ -108,6 +109,8 @@ fn get_code_actions_for_diagnostics(
             Some("E0006") => {
                 missing_import::missing_import(db, &ctx, uri.clone()).unwrap_or_default()
             }
+            Some("E0007") => suggest_similar_member::suggest_similar_member(db, &ctx, uri.clone())
+                .unwrap_or_default(),
             Some(code) => {
                 debug!("no code actions for diagnostic code: {code}");
                 vec![]
