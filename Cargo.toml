@@ -61,7 +61,7 @@ indoc = "2"
 itertools = "0.14.0"
 jaro_winkler = "0.1.0"
 jod-thread = "1.0.0"
-lsp-server = "0.7.8"
+lsp-server = "0.7.9"
 lsp-types = "=0.95.1"
 memchr = "2.7.5"
 salsa = "0.22.0"
@@ -80,14 +80,14 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 which = "8"
 
 [target.'cfg(target_vendor = "apple")'.dependencies]
-libc = "0.2.174"
+libc = "0.2.175"
 
 [dev-dependencies]
 assert_fs = "1.1"
 cairo-language-server = { path = ".", features = ["testing"] }
 insta = { version = "1.43", features = ["toml", "json", "redactions"] }
 pathdiff = "0.2"
-regex = "1.11.1"
+regex = "1.11.2"
 similar = "2.7"
 
 # Here we specify real dependency specifications for Cairo crates *if* currently we want to use
