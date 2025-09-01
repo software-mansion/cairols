@@ -265,7 +265,7 @@ dependencies = [
  "cairo-lang-utils",
  "indoc",
  "rayon",
- "salsa",
+ "salsa 0.22.0",
  "semver",
  "smol_str",
  "thiserror 2.0.12",
@@ -278,7 +278,7 @@ source = "git+https://github.com/starkware-libs/cairo?rev=bd08853b03bfec2fafde04
 dependencies = [
  "cairo-lang-utils",
  "id-arena",
- "salsa",
+ "salsa 0.22.0",
 ]
 
 [[package]]
@@ -295,7 +295,7 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-utils",
  "itertools",
- "salsa",
+ "salsa 0.22.0",
  "serde",
  "smol_str",
  "typetag",
@@ -311,7 +311,7 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-utils",
  "itertools",
- "salsa",
+ "salsa 0.22.0",
 ]
 
 [[package]]
@@ -331,7 +331,7 @@ dependencies = [
  "cairo-lang-utils",
  "itertools",
  "pulldown-cmark",
- "salsa",
+ "salsa 0.22.0",
 ]
 
 [[package]]
@@ -377,7 +377,7 @@ dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
  "path-clean",
- "salsa",
+ "salsa 0.22.0",
  "semver",
  "serde",
  "smol_str",
@@ -425,7 +425,7 @@ dependencies = [
  "num-bigint",
  "num-integer",
  "num-traits",
- "salsa",
+ "salsa 0.22.0",
  "serde",
 ]
 
@@ -476,7 +476,7 @@ checksum = "e32e958decd95ae122ee64daa26721da2f76e83231047f947fd9cdc5d3c90cc6"
 dependencies = [
  "quote",
  "scarb-stable-hash",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -486,7 +486,7 @@ source = "git+https://github.com/software-mansion/scarb.git?rev=5f11cee9f8c94209
 dependencies = [
  "quote",
  "scarb-stable-hash",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -496,7 +496,7 @@ source = "git+https://github.com/software-mansion/scarb.git?rev=a7b5dce2aea8ee40
 dependencies = [
  "quote",
  "scarb-stable-hash",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -531,7 +531,7 @@ dependencies = [
  "itertools",
  "num-bigint",
  "num-traits",
- "salsa",
+ "salsa 0.22.0",
  "unescaper",
 ]
 
@@ -549,7 +549,7 @@ dependencies = [
  "indent",
  "indoc",
  "itertools",
- "salsa",
+ "salsa 0.22.0",
 ]
 
 [[package]]
@@ -567,8 +567,8 @@ dependencies = [
  "cairo-lang-utils",
  "proc-macro2",
  "quote",
- "salsa",
- "syn 2.0.100",
+ "salsa 0.22.0",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -638,7 +638,7 @@ dependencies = [
  "itertools",
  "num-bigint",
  "num-traits",
- "salsa",
+ "salsa 0.22.0",
  "sha3",
  "toml 0.8.23",
 ]
@@ -717,7 +717,7 @@ dependencies = [
  "cairo-lang-utils",
  "itertools",
  "num-traits",
- "salsa",
+ "salsa 0.22.0",
  "serde",
  "serde_json",
  "smol_str",
@@ -817,7 +817,7 @@ dependencies = [
  "cairo-lang-utils",
  "num-bigint",
  "num-traits",
- "salsa",
+ "salsa 0.22.0",
  "serde",
  "unescaper",
 ]
@@ -880,7 +880,7 @@ dependencies = [
  "itertools",
  "num-bigint",
  "num-traits",
- "salsa",
+ "salsa 0.22.0",
  "schemars",
  "serde",
  "smol_str",
@@ -930,7 +930,7 @@ dependencies = [
  "memchr",
  "pathdiff",
  "regex",
- "salsa",
+ "salsa 0.23.0",
  "scarb-metadata",
  "scarb-proc-macro-server-types",
  "scarb-stable-hash",
@@ -970,7 +970,7 @@ dependencies = [
  "itertools",
  "log",
  "num-bigint",
- "salsa",
+ "salsa 0.22.0",
  "scarb-metadata",
  "tempfile",
  "tracing",
@@ -1090,7 +1090,7 @@ dependencies = [
  "heck",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -1327,7 +1327,7 @@ checksum = "97369cbbc041bc366949bc74d34658d6cda5621039731c6310521892a3a20ae0"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -1501,7 +1501,7 @@ checksum = "43eaff6bbc0b3a878361aced5ec6a2818ee7c541c5b33b5880dfa9a86c23e9e7"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -1781,7 +1781,7 @@ checksum = "1ec89e9337638ecdc08744df490b221a7399bf8d164eb52a665454e60e075ad6"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -1841,7 +1841,7 @@ checksum = "a0eb5a3343abf848c0984fe4604b2b105da9539376e24fc0a3b0007411ae4fd9"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -1891,6 +1891,15 @@ dependencies = [
  "serde",
  "similar",
  "toml 0.5.11",
+]
+
+[[package]]
+name = "intrusive-collections"
+version = "0.9.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "189d0897e4cbe8c75efedf3502c18c887b05046e59d28404d4d8e46cbc4d1e86"
+dependencies = [
+ "memoffset",
 ]
 
 [[package]]
@@ -2040,7 +2049,7 @@ checksum = "71a98813fa0073a317ed6a8055dcd4722a49d9b862af828ee68449adb799b6be"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -2130,6 +2139,15 @@ name = "memchr"
 version = "2.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32a282da65faaf38286cf3be983213fcf1d2e2a58700e808f83f4ea9a4804bc0"
+
+[[package]]
+name = "memoffset"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
+dependencies = [
+ "autocfg",
+]
 
 [[package]]
 name = "microlp"
@@ -2281,6 +2299,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
 
 [[package]]
+name = "papaya"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f92dd0b07c53a0a0c764db2ace8c541dc47320dad97c2200c2a637ab9dd2328f"
+dependencies = [
+ "equivalent",
+ "seize",
+]
+
+[[package]]
 name = "parity-scale-codec"
 version = "3.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2305,7 +2333,7 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -2380,7 +2408,7 @@ dependencies = [
  "pest_meta",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -2747,8 +2775,33 @@ dependencies = [
  "portable-atomic",
  "rayon",
  "rustc-hash",
- "salsa-macro-rules",
- "salsa-macros",
+ "salsa-macro-rules 0.22.0",
+ "salsa-macros 0.22.0",
+ "smallvec",
+ "thin-vec",
+ "tracing",
+]
+
+[[package]]
+name = "salsa"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e235afdb8e510f38a07138fbe5a0b64691894358a9c0cbd813b1aade110efc9"
+dependencies = [
+ "boxcar",
+ "crossbeam-queue",
+ "crossbeam-utils",
+ "hashbrown 0.15.2",
+ "hashlink",
+ "indexmap 2.8.0",
+ "intrusive-collections",
+ "papaya",
+ "parking_lot",
+ "portable-atomic",
+ "rayon",
+ "rustc-hash",
+ "salsa-macro-rules 0.23.0",
+ "salsa-macros 0.23.0",
  "smallvec",
  "thin-vec",
  "tracing",
@@ -2761,6 +2814,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ea72b3c06f2ce6350fe3a0eeb7aaaf842d1d8352b706973c19c4f02e298a87c"
 
 [[package]]
+name = "salsa-macro-rules"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2edb86a7e9c91f6d30c9ce054312721dbe773a162db27bbfae834d16177b30ce"
+
+[[package]]
 name = "salsa-macros"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2769,7 +2828,19 @@ dependencies = [
  "heck",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
+ "synstructure",
+]
+
+[[package]]
+name = "salsa-macros"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0778d6e209051bc4e75acfe83bcd7848601ec3dbe9c3dbb982829020e9128af"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.106",
  "synstructure",
 ]
 
@@ -2838,7 +2909,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "serde_derive_internals",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -2846,6 +2917,16 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
+
+[[package]]
+name = "seize"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4b8d813387d566f627f3ea1b914c068aac94c40ae27ec43f5f33bde65abefe7"
+dependencies = [
+ "libc",
+ "windows-sys 0.52.0",
+]
 
 [[package]]
 name = "semver"
@@ -2873,7 +2954,7 @@ checksum = "5b0276cf7f2c73365f7157c8123c21cd9a50fbbd844757af28ca1f5925fc2a00"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -2884,7 +2965,7 @@ checksum = "18d26a20a969b9e3fdf2fc2d9f21eda6c40e2de84c9408bb5d3b05d499aae711"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -2907,7 +2988,7 @@ checksum = "175ee3e80ae9982737ca543e96133087cbd9a485eecc3bc4de9c1a37b47ea59c"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -3129,9 +3210,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.100"
+version = "2.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b09a44accad81e1ba1cd74a32461ba89dee89095ba17b32f5d03683b1b1fc2a0"
+checksum = "ede7c438028d4436d71104916910f5bb611972c5cfd7f89b8300a8186e6fada6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3140,13 +3221,13 @@ dependencies = [
 
 [[package]]
 name = "synstructure"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8af7666ab7b6390ab78131fb5b0fce11d6b7a6951602017c35fa82800708971"
+checksum = "728a70f3dbaf5bab7f0c4b1ac8d7ae5ea60a4b5549c8a5914361c99147a709d2"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -3216,7 +3297,7 @@ checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -3227,7 +3308,7 @@ checksum = "7f7cf42b4507d8ea322120659672cf1b9dbb93f8f2d4ecfd6e51350ff5b17a1d"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -3378,7 +3459,7 @@ checksum = "395ae124c09f9e6918a2310af6038fba074bcf474ac352496d5910dd59a2226d"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -3464,7 +3545,7 @@ checksum = "35f5380909ffc31b4de4f4bdf96b877175a016aa2ca98cee39fcfd8c4d53d952"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -3627,7 +3708,7 @@ dependencies = [
  "log",
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
  "wasm-bindgen-shared",
 ]
 
@@ -3649,7 +3730,7 @@ checksum = "8ae87ea40c9f689fc23f209965b6fb8a99ad69aeeb0231408be24920604395de"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
@@ -3908,7 +3989,7 @@ checksum = "2380878cad4ac9aac1e2435f3eb4020e8374b5f13c296cb75b4620ff8e229154"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
  "synstructure",
 ]
 
@@ -3929,7 +4010,7 @@ checksum = "a996a8f63c5c4448cd959ac1bab0aaa3306ccfd060472f85943ee0750f0169be"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
@@ -3949,7 +4030,7 @@ checksum = "d71e5d6e06ab090c67b5e44993ec16b72dcbaabc526db883a360057678b48502"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
  "synstructure",
 ]
 
@@ -3978,7 +4059,7 @@ checksum = "6eafa6dfb17584ea3e2bd6e76e0cc15ad7af12b09abdd1ca55961bed9b1063c6"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.100",
+ "syn 2.0.106",
 ]
 
 [[package]]
