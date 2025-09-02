@@ -2,6 +2,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_defs::plugin::InlineMacroExprPlugin;
 use cairo_lang_doc::db::DocGroup;
+use cairo_lang_doc::documentable_item::DocumentableItemId;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
@@ -74,11 +75,14 @@ pub fn definition<'db>(
         }
         SymbolDef::Member(member) => {
             let mut md = String::new();
+            let struct_item = member.struct_item();
+            md += &fenced_code_block(
+                format!("{}::{}", struct_item.definition_path(db), struct_item.name(db)).as_str(),
+            );
+            let member_signature =
+                db.get_item_signature(DocumentableItemId::Member(member.member_id()))?;
 
-            // Signature is the signature of the struct, so it makes sense that the definition
-            // path is too.
-            md += &fenced_code_block(&member.struct_item().definition_path(db));
-            md += &fenced_code_block(&member.struct_item().signature(db));
+            md += &fenced_code_block(member_signature.as_str());
 
             if let Some(doc) = db.get_item_documentation(member.member_id().into()) {
                 md += RULE;
@@ -89,10 +93,14 @@ pub fn definition<'db>(
         SymbolDef::Variant(variant) => {
             let mut md = String::new();
 
-            // Signature is the signature of the enum, so it makes sense that the definition
-            // path is too.
-            md += &fenced_code_block(&variant.enum_item().definition_path(db));
-            md += &fenced_code_block(&variant.enum_item().signature(db));
+            let enum_item = variant.enum_item();
+            md += &fenced_code_block(
+                format!("{}::{}", enum_item.definition_path(db), enum_item.name(db)).as_str(),
+            );
+            let variant_signature =
+                db.get_item_signature(DocumentableItemId::Variant(variant.variant_id()))?;
+
+            md += &fenced_code_block(variant_signature.as_str());
 
             if let Some(doc) = db.get_item_documentation(variant.variant_id().into()) {
                 md += RULE;
