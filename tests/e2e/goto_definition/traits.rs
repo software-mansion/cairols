@@ -236,6 +236,44 @@ fn snapshot_type_as_left_hand_side_of_invocation() {
 }
 
 #[test]
+fn member_of_storage_with_starknet_plugin() {
+    test_transform_with_macros!(GotoDefinition, r"
+    #[starknet::contract]
+    mod Contract {
+        use starknet::storage::StoragePointerReadAccess;
+        use starknet::storage::StoragePointerWriteAccess;
+
+        #[storage]
+        struct Storage {
+            field: felt252,
+        }
+
+        fn field_2x(ref self: ContractState) -> felt252 {
+            let v = self.fie<caret>ld.read();
+            123
+        }
+    }
+    #", @r"
+    #[starknet::contract]
+    mod Contract {
+        use starknet::storage::StoragePointerReadAccess;
+        use starknet::storage::StoragePointerWriteAccess;
+
+        #[storage]
+        struct Storage {
+            <sel>field</sel>: felt252,
+        }
+
+        fn field_2x(ref self: ContractState) -> felt252 {
+            let v = self.field.read();
+            123
+        }
+    }
+    #
+    ");
+}
+
+#[test]
 fn self_as_outside_impl() {
     test_transform_plain!(GotoDefinition, r"
     fn bar<+MyTrait>() {}
