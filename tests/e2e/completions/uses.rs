@@ -381,3 +381,26 @@ fn no_text_last_segment_in_use_statement() {
     completion_label = "my_func"
     "#);
 }
+
+#[test]
+fn only_proposing_currently_visible_items() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod foorator_mod {
+        pub fn foorator_func() {}
+    }
+
+    mod wrong_module {
+        // Shouldn't be proposed in use statement since it is not visible yet.
+        pub fn foorator_wrong() {}
+    }
+
+    use foorator_<caret>;
+     ",@r#"
+    caret = """
+    use foorator_<caret>;
+    """
+
+    [[completions]]
+    completion_label = "foorator_mod"
+    "#);
+}
