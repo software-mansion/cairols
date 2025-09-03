@@ -329,6 +329,7 @@ fn simple_completion_without_explicit_path() {
 
     [[completions]]
     completion_label = "xyz"
+    insert_text = "xyz()"
     text_edits = ["""
     use a::xyz;
 
@@ -358,6 +359,7 @@ fn duplicated_completion_without_explicit_path() {
     [[completions]]
     completion_label = "xyz"
     completion_label_path = "a::xyz"
+    insert_text = "xyz()"
     text_edits = ["""
     use a::xyz;
 
@@ -366,6 +368,7 @@ fn duplicated_completion_without_explicit_path() {
     [[completions]]
     completion_label = "xyz"
     completion_label_path = "b::xyz"
+    insert_text = "xyz()"
     text_edits = ["""
     use b::xyz;
 
@@ -411,5 +414,6 @@ fn no_text_last_segment_in_function_context() {
 
     [[completions]]
     completion_label = "my_func"
+    insert_text = "my_func()"
     "#);
 }
