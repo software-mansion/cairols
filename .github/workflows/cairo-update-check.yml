@@ -19,7 +19,7 @@ jobs:
     name: build tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: software-mansion/setup-scarb@v1
       - uses: taiki-e/install-action@v2
@@ -58,7 +58,7 @@ jobs:
       matrix:
         partition: [ 1, 2, 3, 4 ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: software-mansion/setup-scarb@v1
         with:
@@ -67,7 +67,7 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: nextest@0.9.98
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: nextest-archive
       - name: nextest partition ${{ matrix.partition }}/4
