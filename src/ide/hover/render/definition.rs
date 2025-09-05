@@ -105,6 +105,11 @@ pub fn definition<'db>(
             md += &fenced_code_block(&param.signature(db));
             md
         }
+        SymbolDef::DeclarativeMacro(macro_def) => {
+            let mut md = String::new();
+            md += &*fenced_code_block(macro_def.definition_stable_ptr().lookup(db).get_text(db));
+            md
+        }
     };
 
     Some(md)
