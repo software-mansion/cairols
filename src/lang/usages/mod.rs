@@ -127,7 +127,7 @@ impl<'db> FindUsages<'db> {
         let needle = match &self.symbol {
             // Small optimisation for inline macros: we can be sure that any usages will have a `!`
             // at the end, so we do not need to search for occurrences without it.
-            SymbolDef::ExprInlineMacro(macro_name) => format!("{macro_name}!"),
+            SymbolDef::PluginInlineMacro(macro_name) => format!("{macro_name}!"),
             symbol => symbol.name(db).to_string(),
         };
 

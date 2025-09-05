@@ -5,9 +5,9 @@ use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId,
-    ImplItemId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
-    ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
-    TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
+    ImplItemId, LanguageElementId, LookupItemId, MacroDeclarationLongId, ModuleFileId, ModuleId,
+    ModuleItemId, ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId,
+    TraitImplLongId, TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
 };
 use cairo_lang_filesystem::db::{ext_as_virtual, get_parent_and_mapping, translate_location};
 use cairo_lang_filesystem::ids::{CodeOrigin, FileId, FileLongId};
@@ -553,6 +553,15 @@ fn lookup_item_from_ast<'db>(
             )
             .intern(db),
         ))],
+        SyntaxKind::ItemMacroDeclaration => {
+            vec![LookupItemId::ModuleItem(ModuleItemId::MacroDeclaration(
+                MacroDeclarationLongId(
+                    module_file_id,
+                    ast::ItemMacroDeclaration::from_syntax_node(db, node).stable_ptr(db),
+                )
+                .intern(db),
+            ))]
+        }
         _ => return None,
     })
 }

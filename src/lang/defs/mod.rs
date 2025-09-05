@@ -1,13 +1,3 @@
-use cairo_lang_defs::ids::NamedLanguageElementId;
-use cairo_lang_filesystem::db::get_originating_location;
-use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
-use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
-
 pub use self::finder::ResolvedItem;
 pub use self::finder::{find_declaration, find_definition};
 pub use self::generic_param::GenericParamDef;
@@ -19,6 +9,14 @@ pub use self::variant::VariantDef;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
+use cairo_lang_filesystem::db::get_originating_location;
+use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
+use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 
 mod finder;
 mod generic_param;
@@ -36,7 +34,7 @@ mod variant;
 pub enum SymbolDef<'db> {
     Item(ItemDef<'db>),
     Variable(VariableDef<'db>),
-    ExprInlineMacro(&'db str),
+    PluginInlineMacro(&'db str),
     Member(MemberDef<'db>),
     Variant(VariantDef<'db>),
     Module(ModuleDef<'db>),
@@ -101,12 +99,14 @@ impl<'db> SymbolSearch<'db> {
             | ResolvedItem::Generic(ResolvedGenericItem::Trait(_))
             | ResolvedItem::Generic(ResolvedGenericItem::Impl(_))
             | ResolvedItem::Generic(ResolvedGenericItem::TraitItem(_))
+            | ResolvedItem::Generic(ResolvedGenericItem::Macro(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Constant(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Function(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Type(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::SelfTrait(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Macro(_))
             | ResolvedItem::ImplItem(_) => {
                 ItemDef::new(db, resolved_item.definition_node(db)?).map(SymbolDef::Item)
             }
@@ -139,16 +139,8 @@ impl<'db> SymbolSearch<'db> {
                     .map(SymbolDef::Variant)
             }
 
-            ResolvedItem::ExprInlineMacro(inline_macro) => {
-                Some(SymbolDef::ExprInlineMacro(inline_macro))
-            }
-
-            ResolvedItem::Concrete(ResolvedConcreteItem::Macro(ref inline_macro)) => {
-                Some(SymbolDef::ExprInlineMacro(inline_macro.name(db)))
-            }
-
-            ResolvedItem::Generic(ResolvedGenericItem::Macro(ref inline_macro)) => {
-                Some(SymbolDef::ExprInlineMacro(inline_macro.name(db)))
+            ResolvedItem::PluginInlineMacro(inline_macro) => {
+                Some(SymbolDef::PluginInlineMacro(inline_macro))
             }
 
             ResolvedItem::GenericParam(ref generic_param) => {
@@ -197,7 +189,7 @@ impl<'db> SymbolDef<'db> {
         match self {
             Self::Item(it) => it.name(db),
             Self::Variable(it) => it.name(db),
-            Self::ExprInlineMacro(name) => name,
+            Self::PluginInlineMacro(name) => name,
             Self::Member(it) => it.name(db),
             Self::Variant(it) => it.name(db),
             Self::Module(it) => it.name(db),
@@ -267,7 +259,7 @@ impl<'db> SymbolDef<'db> {
         match self {
             Self::Item(d) => Some(d.definition_stable_ptr()),
             Self::Variable(d) => Some(d.definition_stable_ptr(db)),
-            Self::ExprInlineMacro(_) => None,
+            Self::PluginInlineMacro(_) => None,
             Self::Member(d) => Some(d.definition_stable_ptr()),
             Self::Variant(d) => Some(d.definition_stable_ptr()),
             Self::Module(d) => Some(d.definition_stable_ptr()),
