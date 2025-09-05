@@ -78,7 +78,9 @@ pub fn definition<'db>(
             // Signature is the signature of the struct, so it makes sense that the definition
             // path is too.
             md += &fenced_code_block(&member.struct_item().definition_path(db));
-            md += &fenced_code_block(&member.struct_item().signature(db));
+            let member_long_id = member.member_id().long(db);
+            let variant_def = member_long_id.1.0.lookup(db).get_text_without_trivia(db);
+            md += &fenced_code_block(variant_def);
 
             if let Some(doc) = db.get_item_documentation(member.member_id().into()) {
                 md += RULE;
@@ -92,7 +94,12 @@ pub fn definition<'db>(
             // Signature is the signature of the enum, so it makes sense that the definition
             // path is too.
             md += &fenced_code_block(&variant.enum_item().definition_path(db));
-            md += &fenced_code_block(&variant.enum_item().signature(db));
+            let variant_long_id = variant.variant_id().long(db);
+            let variant_def = variant_long_id.1.0.lookup(db).get_text_without_trivia(db);
+
+            md += &fenced_code_block(
+                format!("{}::{}", variant.enum_item().name(db), variant_def).as_str(),
+            );
 
             if let Some(doc) = db.get_item_documentation(variant.variant_id().into()) {
                 md += RULE;
