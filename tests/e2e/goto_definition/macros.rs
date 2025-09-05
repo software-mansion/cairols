@@ -20,3 +20,105 @@ fn inline_macro_with_macros() {
     }
     "#, @"none response")
 }
+
+#[test]
+fn declarative_macro_local_definition() {
+    test_transform_plain!(GotoDefinition, r#"
+    pub macro add_one {
+        ($x:expr) => { $x + 1 };
+    }
+
+    fn main() {
+        let y = add_<caret>one!(41);
+    }
+    "#, @r"
+    <sel>pub macro add_one {
+        ($x:expr) => { $x + 1 };
+    }</sel>
+
+    fn main() {
+        let y = add_one!(41);
+    }
+    ")
+}
+
+#[test]
+fn declarative_macro_in_nested_module() {
+    test_transform_plain!(GotoDefinition, r#"
+    mod math {
+        pub macro add_two {
+            ($x:expr) => { $x + 2 };
+        }
+    }
+
+    fn main() {
+        let z = math::add_<caret>two!(40);
+    }
+    "#, @r"
+    mod math {
+        <sel>pub macro add_two {
+            ($x:expr) => { $x + 2 };
+        }</sel>
+    }
+
+    fn main() {
+        let z = math::add_two!(40);
+    }
+    ")
+}
+
+#[test]
+fn declarative_macro_reexported() {
+    test_transform_plain!(GotoDefinition, r#"
+    mod inner {
+        pub macro inc {
+            ($x:expr) => { $x + 1 };
+        }
+    }
+
+    use inner::in<caret>c;
+    "#, @r"
+    mod inner {
+        <sel>pub macro inc {
+            ($x:expr) => { $x + 1 };
+        }</sel>
+    }
+
+    use inner::inc;
+    ")
+}
+
+#[test]
+fn declarative_macros_with_same_name_in_different_modules() {
+    test_transform_plain!(GotoDefinition, r#"
+    mod a {
+        pub macro make {
+            () => { 1 };
+        }
+    }
+    mod b {
+        pub macro make {
+            () => { 2 };
+        }
+    }
+
+    fn main() {
+        let x = a::ma<caret>ke!();
+    }
+    "#, @r"
+    mod a {
+        <sel>pub macro make {
+            () => { 1 };
+        }</sel>
+    }
+    mod b {
+        pub macro make {
+            () => { 2 };
+        }
+    }
+
+    fn main() {
+        let x = a::make!();
+    }
+    ")
+}
