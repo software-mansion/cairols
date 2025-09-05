@@ -147,11 +147,17 @@ impl<'db> SymbolSearch<'db> {
             }
 
             ResolvedItem::Concrete(ResolvedConcreteItem::Macro(ref inline_macro)) => {
-                Some(SymbolDef::ExprInlineMacro(inline_macro.name(db)))
+                Some(DeclarativeMacro(DeclarativeMacroDef::new(
+                    inline_macro.stable_ptr(db).untyped(),
+                    inline_macro.name(db),
+                )))
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Macro(ref inline_macro)) => {
-                Some(SymbolDef::ExprInlineMacro(inline_macro.name(db)))
+                Some(DeclarativeMacro(DeclarativeMacroDef::new(
+                    inline_macro.stable_ptr(db).untyped(),
+                    inline_macro.name(db),
+                )))
             }
 
             ResolvedItem::GenericParam(ref generic_param) => {
