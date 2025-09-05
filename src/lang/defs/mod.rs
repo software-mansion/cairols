@@ -1,13 +1,3 @@
-use cairo_lang_defs::ids::NamedLanguageElementId;
-use cairo_lang_filesystem::db::get_originating_location;
-use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
-use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
-
 pub use self::finder::ResolvedItem;
 pub use self::finder::{find_declaration, find_definition};
 pub use self::generic_param::GenericParamDef;
@@ -17,9 +7,21 @@ pub use self::module::ModuleDef;
 pub use self::variable::VariableDef;
 pub use self::variant::VariantDef;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::defs::SymbolDef::DeclarativeMacro;
+use crate::lang::defs::declarative_macro::DeclarativeMacroDef;
 use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
+use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_filesystem::db::get_originating_location;
+use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
+use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 
+mod declarative_macro;
 mod finder;
 mod generic_param;
 mod item;
@@ -37,6 +39,7 @@ pub enum SymbolDef<'db> {
     Item(ItemDef<'db>),
     Variable(VariableDef<'db>),
     ExprInlineMacro(&'db str),
+    DeclarativeMacro(DeclarativeMacroDef<'db>),
     Member(MemberDef<'db>),
     Variant(VariantDef<'db>),
     Module(ModuleDef<'db>),
@@ -154,6 +157,12 @@ impl<'db> SymbolSearch<'db> {
             ResolvedItem::GenericParam(ref generic_param) => {
                 Some(SymbolDef::GenericParam(GenericParamDef::new(db, generic_param)?))
             }
+            ResolvedItem::DeclarativeMacro(decl) => {
+                Some(DeclarativeMacro(DeclarativeMacroDef::new(
+                    decl.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped(),
+                    decl.name(db),
+                )))
+            }
         }
         .map(|def| Self { def, resolved_item, resolver_data })
     }
@@ -202,6 +211,7 @@ impl<'db> SymbolDef<'db> {
             Self::Variant(it) => it.name(db),
             Self::Module(it) => it.name(db),
             Self::GenericParam(it) => it.name(db),
+            Self::DeclarativeMacro(it) => it.name(db),
         }
     }
 
@@ -272,6 +282,7 @@ impl<'db> SymbolDef<'db> {
             Self::Variant(d) => Some(d.definition_stable_ptr()),
             Self::Module(d) => Some(d.definition_stable_ptr()),
             Self::GenericParam(d) => Some(d.definition_stable_ptr()),
+            Self::DeclarativeMacro(d) => Some(d.definition_stable_ptr()),
         }
     }
 }

@@ -105,6 +105,10 @@ pub fn definition<'db>(
             md += &fenced_code_block(&param.signature(db));
             md
         }
+        SymbolDef::DeclarativeMacro(_) => {
+            // TODO(902): Implement
+            return None;
+        }
     };
 
     Some(md)

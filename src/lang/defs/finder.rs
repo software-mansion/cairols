@@ -1,7 +1,8 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumLongId, GenericTypeId, ImplDefLongId, ImplItemId, LanguageElementId, LookupItemId,
-    MemberId, ModuleId, NamedLanguageElementId, StructLongId, SubmoduleLongId, TraitItemId, VarId,
+    MacroDeclarationId, MemberId, ModuleId, NamedLanguageElementId, StructLongId, SubmoduleLongId,
+    TraitItemId, VarId,
 };
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_parser::db::ParserGroup;
@@ -51,6 +52,7 @@ pub enum ResolvedItem<'db> {
     Member(MemberId<'db>),
     ImplItem(ImplItemId<'db>),
     ExprInlineMacro(&'db str),
+    DeclarativeMacro(MacroDeclarationId<'db>),
     GenericParam(GenericParam<'db>),
 }
 
@@ -253,9 +255,25 @@ fn try_inline_macro<'db>(
         && let Some(macro_name) = macro_call.path(db).segments(db).elements(db).last()
         && macro_name.identifier(db) == identifier.text(db)
     {
-        Some(ResolvedItem::ExprInlineMacro(
-            macro_call.path(db).as_syntax_node().get_text_without_trivia(db),
-        ))
+        let mut resolver = Resolver::new(
+            db,
+            db.find_module_file_containing_node(macro_call.as_syntax_node())?,
+            InferenceId::NoContext,
+        );
+        let mut diagnostics = SemanticDiagnostics::default();
+        match resolver.resolve_generic_path(
+            &mut diagnostics,
+            &macro_call.path(db),
+            NotFoundItemType::Macro,
+            ResolutionContext::Default,
+        ) {
+            Ok(ResolvedGenericItem::Macro(macro_declaration_id)) => {
+                Some(ResolvedItem::DeclarativeMacro(macro_declaration_id))
+            }
+            _ => Some(ResolvedItem::ExprInlineMacro(
+                macro_call.path(db).as_syntax_node().get_text_without_trivia(db),
+            )),
+        }
     } else {
         None
     }
@@ -965,6 +983,9 @@ impl<'db> ResolvedItem<'db> {
             },
 
             ResolvedItem::GenericParam(generic_param) => generic_param.stable_ptr(db).untyped(),
+            ResolvedItem::DeclarativeMacro(declaration_id) => {
+                declaration_id.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
+            }
         };
         Some(stable_ptr)
     }
