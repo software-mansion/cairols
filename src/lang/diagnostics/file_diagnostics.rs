@@ -1,11 +1,8 @@
 use std::collections::HashMap;
 use std::path::Path;
-use std::sync::Arc;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, PluginFileDiagnosticNotes};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -25,6 +22,7 @@ use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::project::ConfigsRegistry;
 use crate::toolchain::scarb::ScarbToolchain;
+use salsa::Database;
 
 /// Result of processing a single on disk file `root_on_disk_file` and virtual files that are its
 /// descendants in search for diagnostics.
@@ -57,7 +55,7 @@ impl<'db> FilesDiagnostics<'db> {
         scarb_toolchain: &ScarbToolchain,
         root_on_disk_file: FileId<'db>,
     ) -> Option<Self> {
-        let mut files_notes = OrderedHashMap::default();
+        let mut files_notes: PluginFileDiagnosticNotes = OrderedHashMap::default();
         let root_on_disk_file_url = db.url_for_file(root_on_disk_file)?;
 
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
@@ -80,10 +78,8 @@ impl<'db> FilesDiagnostics<'db> {
             )?;
 
         for module_id in modules_to_process.into_iter() {
-            if let Ok(notes) =
-                db.module_plugin_diagnostics_notes(module_id).map(Arc::unwrap_or_clone)
-            {
-                files_notes.extend(notes);
+            if let Ok(notes) = module_id.module_data(db).map(|data| data.diagnostics_notes(db)) {
+                files_notes.extend(notes.clone());
             }
 
             semantic_file_diagnostics.extend(
@@ -141,21 +137,21 @@ impl<'db> FilesDiagnostics<'db> {
     ) -> (Url, HashMap<(Url, FileId<'db>), Vec<Diagnostic>>) {
         let mut diagnostics = HashMap::new();
         map_cairo_diagnostics_to_lsp(
-            db as &dyn FilesGroup,
+            db as &dyn Database,
             &mut diagnostics,
             &self.parser,
             trace_macro_diagnostics,
             &self.files_notes,
         );
         map_cairo_diagnostics_to_lsp(
-            db as &dyn SemanticGroup,
+            db as &dyn Database,
             &mut diagnostics,
             &self.semantic,
             trace_macro_diagnostics,
             &self.files_notes,
         );
         map_cairo_diagnostics_to_lsp(
-            db as &dyn SemanticGroup,
+            db as &dyn Database,
             &mut diagnostics,
             &self.lowering,
             trace_macro_diagnostics,

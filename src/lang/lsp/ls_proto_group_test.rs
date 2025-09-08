@@ -1,20 +1,31 @@
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_utils::Intern;
 use lsp_types::Url;
 
-use super::LsProtoGroup;
-use crate::lang::db::AnalysisDatabase;
+use crate::lang::{db::AnalysisDatabase, lsp::LsProtoGroup};
+use salsa::AsDynDatabase;
 
 #[test]
 fn file_url() {
-    let db = AnalysisDatabase::new();
+    let analysis_database = AnalysisDatabase::new();
+    let db = analysis_database.as_dyn_database();
 
     let check = |expected_url: &str, expected_file_long: FileLongId| {
         let expected_url = Url::parse(expected_url).unwrap();
-        let expected_file = db.intern_file(expected_file_long);
+        let expected_file = expected_file_long.intern(db);
 
-        assert_eq!(db.file_for_url(&expected_url), Some(expected_file));
-        assert_eq!(db.url_for_file(expected_file), Some(expected_url));
+        assert_eq!(
+            db.file_for_url(&expected_url),
+            Some(expected_file),
+            "just use {}",
+            db.url_for_file(expected_file).unwrap()
+        );
+        assert_eq!(
+            db.url_for_file(expected_file),
+            Some(expected_url.clone()),
+            "just use {:?}",
+            db.file_for_url(&expected_url).unwrap()
+        );
     };
 
     check("file:///foo/bar", FileLongId::OnDisk("/foo/bar".into()));

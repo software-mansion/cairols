@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_filesystem::db::FilesGroup;
@@ -32,13 +30,13 @@ pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) 
     let crate_id = db.find_module_file_containing_node(node)?.0.owning_crate(db);
     let cfg_set = db
         .crate_config(crate_id)
-        .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
+        .and_then(|cfg| cfg.settings.cfg_set.as_ref())
         .unwrap_or(db.cfg_set());
     let edition = db.crate_config(crate_id).map(|cfg| cfg.settings.edition).unwrap_or_default();
 
     let metadata = MacroPluginMetadata {
-        cfg_set: &cfg_set,
-        declared_derives: &db.declared_derives(crate_id),
+        cfg_set,
+        declared_derives: db.declared_derives(crate_id),
         allowed_features: &Default::default(),
         edition,
     };

@@ -1,4 +1,3 @@
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
@@ -133,9 +132,10 @@ pub fn path_prefix_completions<'db>(
         .ok()?;
 
     Some(match item {
-        ResolvedConcreteItem::Module(module_id) => db
-            .module_items(module_id)
+        ResolvedConcreteItem::Module(module_id) => module_id
+            .module_data(db)
             .ok()?
+            .items(db)
             .iter()
             .filter_map(|item| {
                 let resolved_item = ResolvedGenericItem::from_module_item(db, *item).ok()?;

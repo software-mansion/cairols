@@ -102,7 +102,7 @@ impl<'db> InferredValue<'db> {
             GenericArgumentId::Type(ty) => Some(InferredValue::Type(ty)),
             GenericArgumentId::Constant(const_id) => Some(InferredValue::Constant(const_id)),
             GenericArgumentId::Impl(impl_id) => Some(InferredValue::Impl(impl_id)),
-            GenericArgumentId::NegImpl => None,
+            GenericArgumentId::NegImpl(_) => None,
         }
     }
 }

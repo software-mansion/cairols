@@ -4,14 +4,13 @@ use crate::ide::code_lens::{
     send_execute_in_terminal,
 };
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::LsProtoGroup;
-use crate::lang::lsp::ToLsp;
+use crate::lang::lsp::{LsProtoGroup, ToLsp};
 use crate::project::builtin_plugins::BuiltinPlugin;
 use crate::server::client::Notifier;
 use crate::state::State;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_executable::plugin::EXECUTABLE_ATTR;
+use cairo_lang_executable_plugin::EXECUTABLE_ATTR;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;

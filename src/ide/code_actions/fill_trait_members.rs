@@ -275,7 +275,7 @@ fn generic_argument_code<'db>(
         // Trait constraint shouldn't appear as a generic argument
         GenericArgumentId::Impl(_) => None,
         // Negative constraints are allowed only in impl statements
-        GenericArgumentId::NegImpl => None,
+        GenericArgumentId::NegImpl(_) => None,
     }
 }
 

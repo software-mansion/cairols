@@ -66,10 +66,12 @@ fn use_position<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>) -> O
                 .map(|stable_ptr| UsePosition::new(db, stable_ptr, true))
                 .map(Some)
                 .unwrap_or_else(|| {
-                    db.module_items(ctx.module_file_id.0)
+                    ctx.module_file_id
+                        .0
+                        .module_data(db)
                         .ok()?
-                        .iter()
-                        .next()
+                        .items(db)
+                        .first()
                         .map(|item| UsePosition::new(db, item.untyped_stable_ptr(db), false))
                 })
         })

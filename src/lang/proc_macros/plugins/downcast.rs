@@ -1,9 +1,8 @@
-use cairo_lang_syntax::node::db::SyntaxGroup;
-
 use crate::lang::db::AnalysisDatabase;
+use salsa::Database;
 
 /// This function is necessary due to trait bounds that cannot be bypassed in any other way.
-/// `generate_code()` takes db: [`&dyn SyntaxGroup`](`SyntaxGroup`),
+/// `generate_code()` takes db: [`&dyn Database`](`Database`),
 /// but we need to use
 /// [`ProcMacroGroup`](`crate::lang::proc_macros::db::ProcMacroGroup`). To do
 /// this, we first convert the `db` reference to its original concrete type that implements both
@@ -13,12 +12,12 @@ use crate::lang::db::AnalysisDatabase;
 ///
 /// Safety: This function MUST only be invoked with an object that is of type
 /// [AnalysisDatabase]. Using it with any other type leads to undefined behavior.
-pub(super) unsafe fn unsafe_downcast_ref(db: &dyn SyntaxGroup) -> &AnalysisDatabase {
+pub(super) unsafe fn unsafe_downcast_ref(db: &dyn Database) -> &AnalysisDatabase {
     unsafe {
         // Replicated logic from `impl dyn Any downcast_ref_unchecked()`.
         // This approach works as long as `impl dyn Any downcast_ref_unchecked()` implementation is
         // unchanged and the caller can ensure that `db` is truly an instance of AnalysisDatabase.
-        &*(db as *const dyn SyntaxGroup as *const AnalysisDatabase)
+        &*(db as *const dyn Database as *const AnalysisDatabase)
     }
 }
 
@@ -28,7 +27,6 @@ mod unsafe_downcast_ref_tests {
     use std::sync::Arc;
 
     use cairo_lang_macro_v1::TokenStream;
-    use cairo_lang_syntax::node::db::SyntaxGroup;
     use scarb_proc_macro_server_types::methods::ProcMacroResult;
     use scarb_proc_macro_server_types::scope::ProcMacroScope;
 
@@ -36,6 +34,7 @@ mod unsafe_downcast_ref_tests {
     use crate::lang::db::AnalysisDatabase;
     use crate::lang::proc_macros::client::plain_request_response::PlainExpandAttributeParams;
     use crate::lang::proc_macros::db::ProcMacroGroup;
+    use salsa::Database;
 
     #[test]
     fn cast_succeed() {
@@ -59,7 +58,7 @@ mod unsafe_downcast_ref_tests {
 
         db.set_attribute_macro_resolution(macro_resolution.clone());
 
-        let syntax: &dyn SyntaxGroup = &db;
+        let syntax: &dyn Database = &db;
         let analysis_db = unsafe { unsafe_downcast_ref(syntax) };
 
         assert_eq!(analysis_db.attribute_macro_resolution(), macro_resolution);

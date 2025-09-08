@@ -14,9 +14,12 @@ use cairo_lang_filesystem::{
 use lsp_types::{FileRename, RenameFilesParams, TextEdit, Url, WorkspaceEdit};
 use tracing::error;
 
-use super::{db::AnalysisDatabase, lsp::LsProtoGroup};
+use super::db::AnalysisDatabase;
 use crate::{
-    lang::{defs::SymbolSearch, lsp::ToLsp},
+    lang::{
+        defs::SymbolSearch,
+        lsp::{LsProtoGroup, ToLsp},
+    },
     server::is_cairo_file_path,
 };
 
@@ -47,7 +50,7 @@ fn handle_rename(
     let first = *db.file_modules(file).ok()?.first()?;
 
     let submodule = match first {
-        ModuleId::CrateRoot(_) | ModuleId::MacroCall { id: _, generated_file_id: _ } => {
+        ModuleId::CrateRoot(_) | ModuleId::MacroCall { .. } => {
             // If renamed file was src/lib.cairo there is nothing we can do.
             return None;
         }
@@ -64,7 +67,7 @@ fn handle_rename(
     let old_path = old_uri.to_file_path().ok()?;
     let new_path = new_uri.to_file_path().ok()?;
 
-    assert!(old_path.starts_with(&root));
+    assert!(old_path.starts_with(root));
 
     if !new_path.starts_with(root) {
         return None;

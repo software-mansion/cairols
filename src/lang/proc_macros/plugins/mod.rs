@@ -18,6 +18,7 @@ use scarb_proc_macro_server_types::methods::defined_macros::{
 use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, ProcMacroScope};
 
 use crate::lang::plugins::DowncastRefUnchecked;
+use salsa::Database;
 
 mod downcast;
 // TODO(#6666) Evict this module when this is possible.
@@ -94,7 +95,7 @@ impl MacroPlugin for ProcMacroPlugin {
     #[tracing::instrument(level = "trace", skip_all)]
     fn generate_code<'db>(
         &self,
-        db: &'db dyn cairo_lang_syntax::node::db::SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: cairo_lang_syntax::node::ast::ModuleItem<'db>,
         metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
     ) -> cairo_lang_defs::plugin::PluginResult<'db> {
@@ -183,7 +184,7 @@ impl InlineMacroExprPlugin for InlineProcMacroPlugin {
     #[tracing::instrument(level = "trace", skip_all)]
     fn generate_code<'db>(
         &self,
-        db: &'db dyn cairo_lang_syntax::node::db::SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: &cairo_lang_syntax::node::ast::ExprInlineMacro<'db>,
         _metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
     ) -> cairo_lang_defs::plugin::InlinePluginResult<'db> {

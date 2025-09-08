@@ -50,7 +50,7 @@ fn find_references<'db>(
                     // Common case - impl declared in the derive macro.
                     || (include_declaration && Some(loc) == def.definition_originating_location(db).as_ref())
             })
-            .filter_map(|loc| db.lsp_location(loc))
+            .filter_map(|loc| db.lsp_location( loc))
             .collect(),
     )
 }
