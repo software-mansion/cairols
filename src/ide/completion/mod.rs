@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::hash::Hash;
 
 use attribute::attribute_completions;
@@ -109,7 +110,7 @@ fn complete_ex<'db>(
     trigger_kind: CompletionTriggerKind,
     was_node_corrected: bool,
     db: &'db AnalysisDatabase,
-) -> Option<Vec<CompletionItem>> {
+) -> Option<Vec<CompletionItemOrderable>> {
     let ctx = AnalysisContext::from_node(db, node)?;
     let crate_id = ctx.module_file_id.0.owning_crate(db);
 
@@ -160,6 +161,46 @@ fn find_last_meaning_node<'db>(
     }
 
     node
+}
+
+// Specifies how relevant a completion is relative to the scope of the current cursor position.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum CompletionRelevance {
+    CurrentScope,
+    CurrentCrate,
+    Common,
+    Core,
+}
+
+#[derive(Debug)]
+struct CompletionItemOrderable {
+    item: CompletionItem,
+    relevance: Option<CompletionRelevance>,
+}
+
+impl PartialEq for CompletionItemOrderable {
+    fn eq(&self, other: &Self) -> bool {
+        self.relevance == other.relevance
+    }
+}
+
+impl Eq for CompletionItemOrderable {}
+
+impl PartialOrd for CompletionItemOrderable {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        // We only compare the `relevance` field.
+        // The `score` field is completely ignored.
+        self.relevance.partial_cmp(&other.relevance)
+    }
+}
+
+// Manually implement `Ord` for `Completion`.
+impl Ord for CompletionItemOrderable {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // We only compare the `relevance` field.
+        // This makes the sorting behavior explicit and independent of other fields.
+        self.relevance.cmp(&other.relevance)
+    }
 }
 
 #[derive(PartialEq)]

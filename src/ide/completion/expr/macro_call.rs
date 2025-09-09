@@ -7,6 +7,7 @@ use itertools::Itertools;
 use lsp_types::{CompletionItem, InsertTextFormat};
 
 use crate::ide::completion::expr::selector::expr_selector;
+use crate::ide::completion::CompletionItemOrderable;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
@@ -14,7 +15,7 @@ use crate::lang::text_matching::text_matches;
 pub fn macro_call_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     if let Some(lookup_item_id) = ctx.lookup_item_id
         && let Some(function_id) = lookup_item_id.function_with_body()
         && db.function_body(function_id).is_ok()

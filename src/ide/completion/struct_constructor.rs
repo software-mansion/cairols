@@ -7,6 +7,7 @@ use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
+use crate::ide::completion::CompletionItemOrderable;
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
@@ -17,14 +18,14 @@ use crate::lang::visibility::peek_visible_in_with_edition;
 pub fn struct_constructor_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     struct_constructor_completions_ex(db, ctx).unwrap_or_default()
 }
 
 fn struct_constructor_completions_ex<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-) -> Option<Vec<CompletionItem>> {
+) -> Option<Vec<CompletionItemOrderable>> {
     let constructor = ctx.node.ancestor_of_type::<ExprStructCtorCall>(db)?;
     let module_id = ctx.module_file_id;
     let lookup_item_id = ctx.lookup_item_id?;

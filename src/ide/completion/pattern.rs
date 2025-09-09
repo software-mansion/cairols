@@ -11,6 +11,7 @@ use cairo_lang_syntax::node::{
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
+use crate::ide::completion::CompletionItemOrderable;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
 use crate::{
@@ -20,7 +21,7 @@ use crate::{
 pub fn struct_pattern_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     let (all_members, existing_members, typed) = if let Some(pattern) =
         ctx.node.ancestor_of_type::<PatternStruct>(db)
         && let typed = ctx.node.ancestor_of_type::<PatternIdentifier>(db).filter(|ident| {
@@ -67,7 +68,7 @@ pub fn struct_pattern_completions<'db>(
 pub fn enum_pattern_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     if let Some(pattern) = ctx.node.ancestor_of_type::<PatternEnum>(db)
         && let path = pattern.path(db)
         && let mut segments = path.segments(db).elements(db).collect_vec()

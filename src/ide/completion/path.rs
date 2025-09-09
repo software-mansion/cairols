@@ -13,7 +13,7 @@ use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 use super::helpers::completion_kind::{
     importable_completion_kind, resolved_generic_item_completion_kind,
 };
-use crate::ide::completion::CompletionItemHashable;
+use crate::ide::completion::{CompletionItemHashable, CompletionItemOrderable};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
@@ -24,7 +24,7 @@ use crate::lang::visibility::peek_visible_in_with_edition;
 pub fn path_suffix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     let (importables, typed_text) = if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
         // Enum patterns are handled in a separate function.
         && ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none()
@@ -124,7 +124,7 @@ pub fn path_prefix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     segments: Vec<PathSegment<'db>>,
-) -> Option<Vec<CompletionItem>> {
+) -> Option<Vec<CompletionItemOrderable>> {
     let mut resolver = ctx.resolver(db);
 
     let mut diagnostics = SemanticDiagnostics::default();

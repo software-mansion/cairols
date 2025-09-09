@@ -9,13 +9,14 @@ use cairo_lang_syntax::node::{
 use lsp_types::CompletionItem;
 
 use super::{helpers::completion_kind::importable_completion_kind, path::path_prefix_completions};
+use crate::ide::completion::CompletionItemOrderable;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::{analysis_context::AnalysisContext, text_matching::text_matches};
 
 pub fn use_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     if let Some(single) = ctx.node.ancestor_of_type::<UsePathSingle>(db)
         && let Some(use_completions) = use_statement(db, single, ctx)
     {
@@ -37,7 +38,7 @@ pub fn use_statement<'db>(
     db: &'db AnalysisDatabase,
     use_path_single: UsePathSingle<'db>,
     ctx: &AnalysisContext<'db>,
-) -> Option<Vec<CompletionItem>> {
+) -> Option<Vec<CompletionItemOrderable>> {
     get_use_path_segments(db, UsePath::Single(use_path_single))
         .ok()
         .and_then(|segments| path_prefix_completions(db, ctx, segments.segments))
@@ -49,7 +50,7 @@ pub fn use_statement_first_segment<'db>(
     db: &'db AnalysisDatabase,
     use_path_leaf: UsePathLeaf<'db>,
     ctx: &AnalysisContext<'db>,
-) -> Option<Vec<CompletionItem>> {
+) -> Option<Vec<CompletionItemOrderable>> {
     get_use_path_segments(db, UsePath::Leaf(use_path_leaf)).ok().and_then(|mut segments| {
         let typed = segments.segments.pop()?;
 
@@ -70,7 +71,7 @@ fn first_segment<'db>(
     db: &'db AnalysisDatabase,
     typed: &str,
     ctx: &AnalysisContext<'db>,
-) -> Option<Vec<CompletionItem>> {
+) -> Option<Vec<CompletionItemOrderable>> {
     let importables = db.visible_importables_from_module(ctx.module_file_id)?;
 
     Some(
