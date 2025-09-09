@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use expr::macro_call::macro_call_completions;
+use expr::macro_call::expr_inline_macro_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
 use helpers::binary_expr::dot_rhs::dot_expr_rhs;
@@ -19,6 +19,7 @@ use self_completions::self_completions;
 use struct_constructor::struct_constructor_completions;
 
 use self::dot_completions::dot_completions;
+use crate::ide::completion::expr::macro_call::top_level_inline_macro_completions;
 use crate::ide::completion::mod_item::mod_completions;
 use crate::ide::completion::use_statement::use_completions;
 use crate::lang::analysis_context::AnalysisContext;
@@ -51,12 +52,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     let was_node_corrected = base_position_node == node;
 
     // There is no completions for these.
-    if matches!(
-        node.kind(db),
-        SyntaxKind::TokenSkipped
-            | SyntaxKind::TriviumSkippedNode
-            | SyntaxKind::TokenSingleLineComment
-    ) {
+    if matches!(node.kind(db), SyntaxKind::TokenSkipped | SyntaxKind::TokenSingleLineComment) {
         return None;
     }
 
@@ -71,6 +67,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     // In case we are on eof go back to last non-trivia non-missing node.
     if node.kind(db) == SyntaxKind::SyntaxFile
         || node.ancestor_of_kind(db, SyntaxKind::TerminalEndOfFile).is_some()
+            && node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
     {
         let syntax = db.file_module_syntax(file_id).to_option()?;
 
@@ -126,9 +123,10 @@ fn complete_ex<'db>(
     completions.extend(variables_completions(db, &ctx, was_node_corrected));
     completions.extend(struct_pattern_completions(db, &ctx));
     completions.extend(enum_pattern_completions(db, &ctx));
+    completions.extend(top_level_inline_macro_completions(db, &ctx));
 
     if dot_expr_rhs(db, &node, was_node_corrected).is_none() {
-        completions.extend(macro_call_completions(db, &ctx));
+        completions.extend(expr_inline_macro_completions(db, &ctx));
 
         if trigger_kind == CompletionTriggerKind::INVOKED {
             completions.extend(path_suffix_completions(db, &ctx))
