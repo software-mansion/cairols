@@ -12,6 +12,7 @@ use crate::support::{MockClient, fixture};
 
 mod attribute;
 mod dot;
+mod macros;
 mod methods_text_edits;
 mod mod_file;
 mod order;
