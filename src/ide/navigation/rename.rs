@@ -70,7 +70,7 @@ pub fn rename(
     let mut resource_ops = vec![];
     // Handle special cases.
     for symbol in &symbols {
-        if let SymbolDef::ExprInlineMacro(_) = &symbol.def {
+        if let SymbolDef::PluginInlineMacro(_) = &symbol.def {
             return Err(LSPError::new(
                 anyhow!("Renaming inline macros is not supported"),
                 ErrorCode::RequestFailed,

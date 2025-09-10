@@ -50,7 +50,7 @@ pub enum ResolvedItem<'db> {
     // CairoLS-specific additions.
     Member(MemberId<'db>),
     ImplItem(ImplItemId<'db>),
-    ExprInlineMacro(&'db str),
+    PluginInlineMacro(&'db str),
     GenericParam(GenericParam<'db>),
 }
 
@@ -60,7 +60,7 @@ pub fn find_definition<'db>(
     lookup_items: &[LookupItemId<'db>],
     resolver_data: &mut Option<ResolverData<'db>>,
 ) -> Option<ResolvedItem<'db>> {
-    try_inline_macro(db, identifier)
+    try_plugin_inline_macro(db, identifier, lookup_items)
         .or_else(|| try_submodule_name(db, identifier))
         .or_else(|| try_member(db, identifier, lookup_items))
         .or_else(|| try_member_from_constructor(db, identifier, lookup_items))
@@ -244,18 +244,28 @@ fn try_impl_item_usages<'db>(
     Some(ResolvedItem::ImplItem(item))
 }
 
-fn try_inline_macro<'db>(
+fn try_plugin_inline_macro<'db>(
     db: &'db AnalysisDatabase,
     identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId],
 ) -> Option<ResolvedItem<'db>> {
     if let Some(macro_call) =
         identifier.as_syntax_node().ancestor_of_type::<ast::ExprInlineMacro>(db)
         && let Some(macro_name) = macro_call.path(db).segments(db).elements(db).last()
         && macro_name.identifier(db) == identifier.text(db)
     {
-        Some(ResolvedItem::ExprInlineMacro(
+        let plugin_inline_macro = Some(ResolvedItem::PluginInlineMacro(
             macro_call.path(db).as_syntax_node().get_text_without_trivia(db),
-        ))
+        ));
+        let Some(lookup_item) = lookup_items.first() else {
+            return plugin_inline_macro;
+        };
+        match db.lookup_resolved_generic_item_by_ptr(*lookup_item, identifier.stable_ptr(db)) {
+            Some(ResolvedGenericItem::Macro(_)) => None,
+            // If it was not resolved to a declarative macro,
+            // it means we are on a plugin inline macro, or it is unrecognized.
+            _ => plugin_inline_macro,
+        }
     } else {
         None
     }
@@ -941,8 +951,9 @@ impl<'db> ResolvedItem<'db> {
                 }
             },
 
-            ResolvedItem::Generic(ResolvedGenericItem::Macro(_))
-            | ResolvedItem::ExprInlineMacro(_) => return None,
+            ResolvedItem::Generic(ResolvedGenericItem::Macro(declaration_id)) => {
+                declaration_id.stable_ptr(db).lookup(db).name(db).stable_ptr(db).untyped()
+            }
 
             // Other variants.
             ResolvedItem::Member(member_id) => {
@@ -965,6 +976,8 @@ impl<'db> ResolvedItem<'db> {
             },
 
             ResolvedItem::GenericParam(generic_param) => generic_param.stable_ptr(db).untyped(),
+
+            ResolvedItem::PluginInlineMacro(_) => return None,
         };
         Some(stable_ptr)
     }
