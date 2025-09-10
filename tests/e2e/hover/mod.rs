@@ -15,6 +15,7 @@ mod consts;
 mod function_call;
 mod generic_params;
 mod literals;
+mod macros;
 mod missing_module;
 mod partial;
 mod paths;
