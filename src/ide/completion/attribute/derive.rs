@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind};
 
-use crate::ide::completion::CompletionItemOrderable;
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 
 pub fn derive_completions<'db>(
@@ -52,10 +52,13 @@ pub fn derive_completions_ex<'db>(
             .iter()
             .flat_map(|id| db.lookup_intern_macro_plugin(*id).declared_derives())
             .filter(|name| text_matches(name, derive_name))
-            .map(|name| CompletionItem {
-                label: name,
-                kind: Some(CompletionItemKind::FUNCTION),
-                ..Default::default()
+            .map(|name| CompletionItemOrderable {
+                item: CompletionItem {
+                    label: name,
+                    kind: Some(CompletionItemKind::FUNCTION),
+                    ..Default::default()
+                },
+                relevance: Some(CompletionRelevance::High),
             })
             .collect()
     })

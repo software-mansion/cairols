@@ -10,9 +10,9 @@ use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
+use crate::ide::completion::CompletionItemOrderable;
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
-use crate::ide::completion::CompletionItemOrderable;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
@@ -104,10 +104,13 @@ fn patterns<'db>(
                 continue;
             }
 
-            completions.push(CompletionItem {
-                label: var.name.to_string(),
-                kind: Some(CompletionItemKind::VARIABLE),
-                ..CompletionItem::default()
+            completions.push(CompletionItemOrderable {
+                item: CompletionItem {
+                    label: var.name.to_string(),
+                    kind: Some(CompletionItemKind::VARIABLE),
+                    ..CompletionItem::default()
+                },
+                relevance: None,
             });
         }
     }

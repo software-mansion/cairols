@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::{
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
-use crate::ide::completion::CompletionItemOrderable;
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
 use crate::{
@@ -57,10 +57,13 @@ pub fn struct_pattern_completions<'db>(
         .keys()
         .filter(|member| !existing_members.contains(&***member))
         .filter(|member| text_matches(&***member, typed))
-        .map(|member| CompletionItem {
-            label: member.to_string(),
-            kind: Some(CompletionItemKind::VARIABLE),
-            ..CompletionItem::default()
+        .map(|member| CompletionItemOrderable {
+            item: CompletionItem {
+                label: member.to_string(),
+                kind: Some(CompletionItemKind::VARIABLE),
+                ..CompletionItem::default()
+            },
+            relevance: Some(CompletionRelevance::High),
         })
         .collect()
 }

@@ -357,17 +357,17 @@ fn duplicated_completion_without_explicit_path() {
 
     [[completions]]
     completion_label = "xyz"
-    completion_label_path = "a::xyz"
+    completion_label_path = "b::xyz"
     text_edits = ["""
-    use a::xyz;
+    use b::xyz;
 
     """]
 
     [[completions]]
     completion_label = "xyz"
-    completion_label_path = "b::xyz"
+    completion_label_path = "a::xyz"
     text_edits = ["""
-    use b::xyz;
+    use a::xyz;
 
     """]
     "#);

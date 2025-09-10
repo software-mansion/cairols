@@ -1,9 +1,11 @@
 use cairo_lang_semantic::resolve::AsSegments;
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use lsp_types::CompletionItem;
 
 use super::{expr::selector::expr_selector, path::path_prefix_completions};
-use crate::{ide::completion::CompletionItemOrderable, lang::{analysis_context::AnalysisContext, db::AnalysisDatabase}};
+use crate::{
+    ide::completion::CompletionItemOrderable,
+    lang::{analysis_context::AnalysisContext, db::AnalysisDatabase},
+};
 
 pub fn self_completions<'db>(
     db: &'db AnalysisDatabase,

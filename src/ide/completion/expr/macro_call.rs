@@ -7,7 +7,7 @@ use itertools::Itertools;
 use lsp_types::{CompletionItem, InsertTextFormat};
 
 use crate::ide::completion::expr::selector::expr_selector;
-use crate::ide::completion::CompletionItemOrderable;
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
@@ -40,7 +40,7 @@ pub fn macro_call_completions<'db>(
     }
 }
 
-fn snippet_completions_for_inline_plugins(inline_macro_name: &str) -> CompletionItem {
+fn snippet_completions_for_inline_plugins(inline_macro_name: &str) -> CompletionItemOrderable {
     let insert_text = match inline_macro_name {
         "array" => "array![$1]".to_string(),
         "assert" => "assert!($1, \"$2\")".to_string(),
@@ -58,10 +58,13 @@ fn snippet_completions_for_inline_plugins(inline_macro_name: &str) -> Completion
         rest => format!("{rest}!($1)"),
     };
 
-    CompletionItem {
-        label: format!("{inline_macro_name}!"),
-        insert_text_format: Some(InsertTextFormat::SNIPPET),
-        insert_text: Some(insert_text),
-        ..CompletionItem::default()
+    CompletionItemOrderable {
+        item: CompletionItem {
+            label: format!("{inline_macro_name}!"),
+            insert_text_format: Some(InsertTextFormat::SNIPPET),
+            insert_text: Some(insert_text),
+            ..CompletionItem::default()
+        },
+        relevance: Some(CompletionRelevance::High),
     }
 }

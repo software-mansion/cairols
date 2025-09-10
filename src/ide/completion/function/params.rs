@@ -7,7 +7,7 @@ use lsp_types::{CompletionItem, CompletionItemKind};
 
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
-use crate::ide::completion::CompletionItemOrderable;
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
@@ -33,10 +33,13 @@ pub fn params_completions<'db>(
     params
         .into_iter()
         .filter(|param| text_matches(&*param.name, typed_text))
-        .map(|param| CompletionItem {
-            label: param.name.to_string(),
-            kind: Some(CompletionItemKind::VARIABLE),
-            ..CompletionItem::default()
+        .map(|param| CompletionItemOrderable {
+            item: CompletionItem {
+                label: param.name.to_string(),
+                kind: Some(CompletionItemKind::VARIABLE),
+                ..CompletionItem::default()
+            },
+            relevance: Some(CompletionRelevance::High),
         })
         .collect()
 }

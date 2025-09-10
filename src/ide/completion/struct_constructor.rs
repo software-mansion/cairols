@@ -7,7 +7,7 @@ use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
-use crate::ide::completion::CompletionItemOrderable;
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
@@ -75,11 +75,14 @@ fn struct_constructor_completions_ex<'db>(
             if already_present_members.contains(&&**name) {
                 None
             } else {
-                Some(CompletionItem {
-                    label: name.to_string(),
-                    detail: Some(format_type(db, data.ty, &importables)),
-                    kind: Some(CompletionItemKind::VALUE),
-                    ..Default::default()
+                Some(CompletionItemOrderable {
+                    item: CompletionItem {
+                        label: name.to_string(),
+                        detail: Some(format_type(db, data.ty, &importables)),
+                        kind: Some(CompletionItemKind::VALUE),
+                        ..Default::default()
+                    },
+                    relevance: Some(CompletionRelevance::High),
                 })
             }
         })

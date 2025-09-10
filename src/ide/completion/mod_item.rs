@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind, Url};
 
-use crate::ide::completion::CompletionItemOrderable;
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::text_matching::text_matches;
@@ -91,10 +91,13 @@ pub fn mod_completions_ex<'db>(
                 let semicolon =
                     if semicolon_missing { ";".to_string() } else { Default::default() };
 
-                result.push(CompletionItem {
-                    label: format!("{label}{semicolon}"),
-                    kind: Some(CompletionItemKind::MODULE),
-                    ..Default::default()
+                result.push(CompletionItemOrderable {
+                    item: CompletionItem {
+                        label: format!("{label}{semicolon}"),
+                        kind: Some(CompletionItemKind::MODULE),
+                        ..Default::default()
+                    },
+                    relevance: Some(CompletionRelevance::High),
                 });
             }
         }
