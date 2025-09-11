@@ -483,17 +483,17 @@ fn type_bound_user_trait() {
 
     [[completions]]
     completion_label = "traits"
-    completion_label_path = "core::num::traits"
+    completion_label_path = "core::traits"
     text_edits = ["""
-    use core::num::traits;
+    use core::traits;
 
     """]
 
     [[completions]]
     completion_label = "traits"
-    completion_label_path = "core::traits"
+    completion_label_path = "core::num::traits"
     text_edits = ["""
-    use core::traits;
+    use core::num::traits;
 
     """]
 

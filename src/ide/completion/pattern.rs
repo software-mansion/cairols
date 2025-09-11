@@ -63,7 +63,7 @@ pub fn struct_pattern_completions<'db>(
                 kind: Some(CompletionItemKind::VARIABLE),
                 ..CompletionItem::default()
             },
-            relevance: Some(CompletionRelevance::High),
+            relevance: Some(CompletionRelevance::Highest),
         })
         .collect()
 }

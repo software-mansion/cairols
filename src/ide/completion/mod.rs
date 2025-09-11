@@ -182,6 +182,7 @@ enum CompletionRelevance {
     Low = 0,
     Medium = 1,
     High = 2,
+    Highest = 3,
 }
 
 /// Internal representation of a [`CompletionItem`].
