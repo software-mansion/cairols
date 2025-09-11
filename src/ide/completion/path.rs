@@ -13,6 +13,7 @@ use super::helpers::completion_kind::{
     importable_completion_kind, resolved_generic_item_completion_kind,
 };
 use crate::ide::completion::CompletionItemHashable;
+use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
@@ -23,8 +24,10 @@ use crate::lang::visibility::peek_visible_in_with_edition;
 pub fn path_suffix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
+    was_node_corrected: bool,
 ) -> Vec<CompletionItem> {
     let (importables, typed_text) = if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
+        && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
         // Enum patterns are handled in a separate function.
         && ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none()
         && let Some(importables) = db.visible_importables_from_module(ctx.module_file_id)

@@ -11,7 +11,6 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use expr::macro_call::macro_call_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
-use helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use lsp_types::{CompletionItem, CompletionParams, CompletionResponse, CompletionTriggerKind};
 use path::path_suffix_completions;
 use pattern::{enum_pattern_completions, struct_pattern_completions};
@@ -126,13 +125,10 @@ fn complete_ex<'db>(
     completions.extend(variables_completions(db, &ctx, was_node_corrected));
     completions.extend(struct_pattern_completions(db, &ctx));
     completions.extend(enum_pattern_completions(db, &ctx));
+    completions.extend(macro_call_completions(db, &ctx, was_node_corrected));
 
-    if dot_expr_rhs(db, &node, was_node_corrected).is_none() {
-        completions.extend(macro_call_completions(db, &ctx));
-
-        if trigger_kind == CompletionTriggerKind::INVOKED {
-            completions.extend(path_suffix_completions(db, &ctx))
-        }
+    if trigger_kind == CompletionTriggerKind::INVOKED {
+        completions.extend(path_suffix_completions(db, &ctx, was_node_corrected))
     }
 
     Some(completions)
