@@ -63,7 +63,7 @@ fn declarative_macro_on_definition() {
     ```cairo
     macro inc {
         ($x:expr) => { ... };
-    } => { ... }
+    }
     ```
     ---
     Increment number by one."""
@@ -95,7 +95,7 @@ fn declarative_macro_on_usage() {
     ```cairo
     macro inc {
         ($x:expr) => { ... };
-    } => { ... }
+    }
     ```
     ---
     Increment number by one."""
@@ -128,7 +128,7 @@ fn declarative_macro_on_usage_with_macros() {
     ```cairo
     macro inc {
         ($x:expr) => { ... };
-    } => { ... }
+    }
     ```
     ---
     Increment number by one."""

@@ -5,7 +5,6 @@ use crate::support::normalize::normalize;
 use crate::support::sandbox;
 
 #[test]
-#[ignore] // wrong corelib version
 fn test_unmanaged_core_on_invalid_scarb_toml() {
     let mut ls = sandbox! {
         files {
@@ -33,7 +32,7 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
       "settings": {
         "name": null,
         "edition": "2024_07",
-        "version": "2.12.0",
+        "version": "2.12.2",
         "cfg_set": null,
         "dependencies": {},
         "experimental_features": {

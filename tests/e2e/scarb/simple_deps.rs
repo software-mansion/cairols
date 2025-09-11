@@ -6,7 +6,7 @@ use crate::support::normalize::normalize;
 use crate::support::sandbox;
 
 #[test]
-#[ignore] // assert!(ls.open_and_wait_for_diagnostics("a/src/lib.cairo").is_empty()); fails
+#[ignore] // missing Drop on () ???
 fn test_simple_deps() {
     let mut ls = sandbox! {
         files {

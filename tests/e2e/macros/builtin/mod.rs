@@ -3,7 +3,6 @@ use indoc::indoc;
 use crate::macros::{fixtures::ProjectWithCairoProjectToml, test_macro_expansion_and_diagnostics};
 
 #[test]
-#[ignore] // probably caused by missing https://github.com/starkware-libs/cairo/pull/8125 $defsite
 fn no_macro() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithCairoProjectToml,
@@ -17,7 +16,6 @@ fn no_macro() {
 }
 
 #[test]
-#[ignore] // probably caused by missing https://github.com/starkware-libs/cairo/pull/8125 $defsite
 fn inline() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithCairoProjectToml,
@@ -42,7 +40,6 @@ fn inline() {
 }
 
 #[test]
-#[ignore] // probably caused by missing https://github.com/starkware-libs/cairo/pull/8125 $defsite
 fn inline_assert_macro() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithCairoProjectToml,
@@ -62,7 +59,6 @@ fn inline_assert_macro() {
 }
 
 #[test]
-#[ignore] // probably caused by missing https://github.com/starkware-libs/cairo/pull/8125 $defsite
 fn attribute_with_inline() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithCairoProjectToml,
@@ -87,7 +83,6 @@ fn attribute_with_inline() {
 }
 
 #[test]
-#[ignore] // probably caused by missing https://github.com/starkware-libs/cairo/pull/8125 $defsite
 fn derive() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithCairoProjectToml,
