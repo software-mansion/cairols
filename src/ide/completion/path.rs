@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_defs::ids::{ImportableId, NamedLanguageElementId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -7,12 +7,13 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use itertools::Itertools;
-use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat};
 
 use super::helpers::completion_kind::{
     importable_completion_kind, resolved_generic_item_completion_kind,
 };
 use crate::ide::completion::CompletionItemHashable;
+use crate::ide::completion::helpers::snippets::snippet_for_function_call;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
@@ -92,6 +93,18 @@ pub fn path_suffix_completions<'db>(
                 None
             };
 
+            let maybe_snippet = match importable {
+                ImportableId::FreeFunction(id) => db
+                    .free_function_signature(*id)
+                    .ok()
+                    .map(|signature| snippet_for_function_call(id.name(db), signature)),
+                ImportableId::ExternFunction(id) => db
+                    .extern_function_signature(*id)
+                    .ok()
+                    .map(|signature| snippet_for_function_call(id.name(db), signature)),
+                _ => None,
+            };
+
             Some(CompletionItem {
                 label: last_segment.to_string(),
                 kind: Some(importable_completion_kind(*importable)),
@@ -100,6 +113,8 @@ pub fn path_suffix_completions<'db>(
                     description: Some(path_str.to_string()),
                 }),
                 additional_text_edits,
+                insert_text_format: maybe_snippet.is_some().then_some(InsertTextFormat::SNIPPET),
+                insert_text: maybe_snippet,
                 ..CompletionItem::default()
             })
         })
