@@ -7,6 +7,7 @@ use itertools::Itertools;
 use lsp_types::{CompletionItem, InsertTextFormat};
 
 use crate::ide::completion::expr::selector::expr_selector;
+use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
@@ -14,8 +15,10 @@ use crate::lang::text_matching::text_matches;
 pub fn macro_call_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
+    was_node_corrected: bool,
 ) -> Vec<CompletionItem> {
-    if let Some(lookup_item_id) = ctx.lookup_item_id
+    if dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
+        && let Some(lookup_item_id) = ctx.lookup_item_id
         && let Some(function_id) = lookup_item_id.function_with_body()
         && db.function_body(function_id).is_ok()
         && let Some(path) = expr_selector(db, &ctx.node)
