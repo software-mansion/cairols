@@ -110,10 +110,10 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     // Need to also deduplicate items with different relevance and leave the one with the highest relevance.
     let mut result = unique_completion_items_with_highest_relevance(deduplicated_items);
     result.sort_by(|a, b| match (&a.relevance, &b.relevance) {
-        (Some(ra), Some(rb)) => rb.cmp(ra),
+        (Some(ra), Some(rb)) => rb.cmp(ra).then_with(|| compare_items_by_label_and_detail(a, b)),
         (Some(_), None) => Ordering::Less,
         (None, Some(_)) => Ordering::Greater,
-        (None, None) => Ordering::Equal,
+        (None, None) => compare_items_by_label_and_detail(a, b),
     });
 
     Some(CompletionResponse::Array(result.into_iter().map(|item| item.item).collect()))
@@ -304,4 +304,23 @@ fn unique_completion_items_with_highest_relevance(
     }
 
     unique_items.into_values().collect()
+}
+
+fn compare_items_by_label_and_detail(
+    a: &CompletionItemOrderable,
+    b: &CompletionItemOrderable,
+) -> Ordering {
+    a.item
+        .label
+        .cmp(&b.item.label)
+        .then_with(|| {
+            let a_description = a.item.label_details.clone().unwrap_or_default().description;
+            let b_description = b.item.label_details.clone().unwrap_or_default().description;
+            a_description.cmp(&b_description)
+        })
+        .then_with(|| {
+            let a_description = a.item.detail.clone();
+            let b_description = b.item.detail.clone();
+            a_description.cmp(&b_description)
+        })
 }
