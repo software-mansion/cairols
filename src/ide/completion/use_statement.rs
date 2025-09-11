@@ -1,5 +1,4 @@
 use cairo_lang_defs::ids::ImportableId;
-use cairo_lang_filesystem::db::CORELIB_CRATE_NAME;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::us::get_use_path_segments;
 use cairo_lang_syntax::node::ast::{UsePathLeaf, UsePathSingle};
@@ -10,7 +9,7 @@ use cairo_lang_syntax::node::{
 use lsp_types::CompletionItem;
 
 use super::{helpers::completion_kind::importable_completion_kind, path::path_prefix_completions};
-use crate::ide::completion::{CompletionItemOrderable, get_item_relevance, importable_crate_id};
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::{analysis_context::AnalysisContext, text_matching::text_matches};
 
@@ -74,7 +73,6 @@ fn first_segment<'db>(
     ctx: &AnalysisContext<'db>,
 ) -> Option<Vec<CompletionItemOrderable>> {
     let importables = db.visible_importables_from_module(ctx.module_file_id)?;
-    let current_crate = ctx.module_file_id.0.owning_crate(db);
 
     Some(
         importables
@@ -87,20 +85,13 @@ fn first_segment<'db>(
                     // Take only if this item can be used wihtout prefix path
                         if is_in_scope && text_matches(path, typed) =>
                     {
-                      let importable_crate = importable_crate_id(db, *importable);
-                      let is_current_crate = importable_crate == current_crate;
-                      let is_core = importable_crate.long(db).name() == CORELIB_CRATE_NAME;
                       Some(CompletionItemOrderable {
                           item: CompletionItem {
                               label: path.clone(),
                               kind: Some(importable_completion_kind(*importable)),
                               ..CompletionItem::default()
                           },
-                          relevance: get_item_relevance(
-                              is_in_scope,
-                              is_current_crate,
-                              is_core,
-                          ),
+                          relevance: Some(CompletionRelevance::High),
                       })
                     }
                     _ => None,

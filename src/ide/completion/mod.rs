@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::hash::Hash;
 
 use attribute::attribute_completions;
@@ -290,14 +291,16 @@ fn unique_completion_items_with_highest_relevance(
     for relevance_item in relevance_items {
         let key =
             serde_json::to_string(&relevance_item.item).expect("serialization should not fail");
-        unique_items
-            .entry(key)
-            .and_modify(|existing_item| {
-                if relevance_item.relevance > existing_item.relevance {
-                    *existing_item = relevance_item.clone();
+        match unique_items.entry(key) {
+            Entry::Occupied(mut occupied) => {
+                if relevance_item.relevance > occupied.get().relevance {
+                    *occupied.get_mut() = relevance_item;
                 }
-            })
-            .or_insert(relevance_item);
+            }
+            Entry::Vacant(vacant_entry) => {
+                vacant_entry.insert(relevance_item);
+            }
+        };
     }
 
     unique_items.into_values().collect()
