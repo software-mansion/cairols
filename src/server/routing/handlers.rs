@@ -7,7 +7,7 @@
 
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
-use cairo_lang_filesystem::db::{FilesGroup, FilesGroupEx};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::override_file_content;
 use lsp_types::notification::{
     DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
@@ -183,8 +183,9 @@ impl SyncNotificationHandler for DidChangeTextDocument {
             return Ok(());
         };
 
-        if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
-            override_file_content!(state.db, file, Some(text.into()));
+        let db = &mut state.db;
+        if let Some(file) = db.file_for_url(&params.text_document.uri) {
+            override_file_content!(db, file, Some(text.into()));
         };
 
         state.code_lens_controller.on_did_change(
@@ -269,11 +270,12 @@ impl SyncNotificationHandler for DidCloseTextDocument {
         _requester: &mut Requester<'_>,
         params: DidCloseTextDocumentParams,
     ) -> LSPResult<()> {
+        let db = &mut state.db;
         state.open_files.remove(&params.text_document.uri);
-        if let Some(file) = state.db.file_for_url(&params.text_document.uri)
-            && state.db.file_overrides().contains_key(&file)
+        if let Some(file) = db.file_for_url(&params.text_document.uri)
+            && db.file_overrides().contains_key(&file)
         {
-            override_file_content!(state.db, file, None);
+            override_file_content!(db, file, None);
         }
 
         Ok(())
@@ -300,13 +302,13 @@ impl SyncNotificationHandler for DidOpenTextDocument {
 
             state.project_controller.request_updating_project_for_file(path);
         }
-
-        if let Some(file_id) = state.db.file_for_url(&uri) {
+        let db = &mut state.db;
+        if let Some(file_id) = db.file_for_url(&uri) {
             state.open_files.insert(uri.clone());
-            if let Some(content) = state.db.file_content(file_id)
-                && content.long(&state.db).as_ref() != params.text_document.text.as_str()
+            if let Some(content) = db.file_content(file_id)
+                && content.long(db).as_ref() != params.text_document.text.as_str()
             {
-                override_file_content!(state.db, file_id, Some(params.text_document.text.into()));
+                override_file_content!(db, file_id, Some(params.text_document.text.into()));
             }
 
             state.code_lens_controller.on_did_change(
@@ -334,8 +336,9 @@ impl SyncNotificationHandler for DidSaveTextDocument {
         _requester: &mut Requester<'_>,
         params: DidSaveTextDocumentParams,
     ) -> LSPResult<()> {
-        if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
-            override_file_content!(state.db, file, None);
+        let db = &mut state.db;
+        if let Some(file) = db.file_for_url(&params.text_document.uri) {
+            override_file_content!(db, file, None);
 
             // In perfect scenario we would do this only for `file` but there is no way to make it more granulary.
             state.db.cancel_all();

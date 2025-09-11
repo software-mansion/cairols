@@ -3,13 +3,13 @@ use std::{any::TypeId, collections::HashMap, sync::LazyLock};
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, MacroPlugin, MacroPluginMetadata, PluginResult,
 };
-use cairo_lang_executable::plugin::executable_plugin_suite;
+use cairo_lang_executable_plugin::executable_plugin_suite;
 use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::ast::ModuleItem;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_test_plugin::{test_assert_suite, test_plugin_suite};
 use itertools::chain;
+use salsa::Database;
 use scarb_metadata::{CompilationUnitCairoPluginMetadata, Metadata};
 use serde::Serialize;
 
@@ -99,7 +99,7 @@ struct CairoRunPlugin {}
 impl MacroPlugin for CairoRunPlugin {
     fn generate_code<'db>(
         &self,
-        _db: &'db dyn SyntaxGroup,
+        _db: &'db dyn Database,
         _item_ast: ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

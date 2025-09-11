@@ -20,7 +20,6 @@ use std::time::SystemTime;
 use std::{io, panic};
 
 use anyhow::Result;
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
 use crossbeam::channel::{Receiver, select_biased};
 use lsp_server::Message;
@@ -447,8 +446,8 @@ impl Backend {
 
         for uri in state.open_files.iter() {
             let Some(file_id) = state.db.file_for_url(uri) else { continue };
-            if let FileLongId::OnDisk(file_path) = state.db.lookup_intern_file(file_id) {
-                state.project_controller.request_updating_project_for_file(file_path);
+            if let FileLongId::OnDisk(file_path) = file_id.long(&state.db) {
+                state.project_controller.request_updating_project_for_file(file_path.clone());
             }
         }
 

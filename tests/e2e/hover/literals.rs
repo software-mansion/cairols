@@ -56,7 +56,13 @@ fn const_initializer_value_wrong_type() {
     highlight = """
     const WRONG_TYPE_CONST: u8 = <sel>123_felt252</sel>;
     """
-    popover = "value of literal: `123 (0x7b | 0b1111011)`"
+    popover = """
+    ```cairo
+    felt252
+    ```
+    ---
+    value of literal: `123 (0x7b | 0b1111011)`
+    """
     "#)
 }
 
@@ -71,7 +77,13 @@ fn const_initializer_value_wrong_type_shortstring() {
     highlight = """
     const WRONG_TYPE_CONST: u8 = <sel>'abcd'</sel>;
     """
-    popover = "value of literal: `'abcd' (0x61626364)`"
+    popover = """
+    ```cairo
+    u8
+    ```
+    ---
+    value of literal: `'abcd' (0x61626364)`
+    """
     "#)
 }
 
@@ -82,6 +94,14 @@ fn const_initializer_value_wrong_type_bytearray() {
     "#,@r#"
     source_context = """
     const WRONG_TYPE_CONST: u8 = "ab<caret>cd";
+    """
+    highlight = """
+    const WRONG_TYPE_CONST: u8 = <sel>"abcd"</sel>;
+    """
+    popover = """
+    ```cairo
+    u8
+    ```
     """
     "#)
 }

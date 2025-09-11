@@ -4,7 +4,7 @@ use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 #[should_panic(expected = "not supported")]
-fn inline_macro() {
+fn plugin_inline_macro() {
     test_transform_plain!(Rename, r#"
     fn main() {
         print!("Hello world!");
@@ -18,7 +18,7 @@ fn inline_macro() {
 
 #[test]
 #[should_panic(expected = "not supported")]
-fn inline_macro_with_macros() {
+fn plugin_inline_macro_with_macros() {
     test_transform_with_macros!(Rename, r#"
     #[complex_attribute_macro_v2]
     fn main() {
@@ -31,4 +31,99 @@ fn inline_macro_with_macros() {
         let forty_two = array![42];
     }
     "#, @"");
+}
+
+#[test]
+fn declarative_inline_macro_on_usage() {
+    test_transform_plain!(Rename, r#"
+    fn main() {
+        let x = i<caret>nc!(0);
+    }
+
+    use modzik::inc;
+
+    mod modzik {
+        /// Increment number by one.
+        pub macro inc {
+            ($x:expr) => { $x + 1 };
+        }
+    }
+    "#, @r"
+    fn main() {
+        let x = RENAMED!(0);
+    }
+
+    use modzik::RENAMED;
+
+    mod modzik {
+        /// Increment number by one.
+        pub macro RENAMED {
+            ($x:expr) => { $x + 1 };
+        }
+    }
+    ");
+}
+
+#[test]
+fn declarative_inline_macro_on_definition() {
+    test_transform_plain!(Rename, r#"
+    fn main() {
+        let x = inc!(0);
+    }
+
+    use modzik::inc;
+
+    mod modzik {
+        /// Increment number by one.
+        pub macro i<caret>nc {
+            ($x:expr) => { $x + 1 };
+        }
+    }
+    "#, @r"
+    fn main() {
+        let x = RENAMED!(0);
+    }
+
+    use modzik::RENAMED;
+
+    mod modzik {
+        /// Increment number by one.
+        pub macro RENAMED {
+            ($x:expr) => { $x + 1 };
+        }
+    }
+    ");
+}
+
+#[test]
+fn declarative_inline_macro_on_definition_with_macros() {
+    test_transform_with_macros!(Rename, r#"
+    fn main() {
+        let x = inc!(0);
+    }
+
+    use modzik::inc;
+
+    #[complex_attribute_macro_v2]
+    mod modzik {
+        /// Increment number by one.
+        pub macro i<caret>nc {
+            ($x:expr) => { $x + 1 };
+        }
+    }
+    "#, @r"
+    fn main() {
+        let x = RENAMED!(0);
+    }
+
+    use modzik::RENAMED;
+
+    #[complex_attribute_macro_v2]
+    mod modzik {
+        /// Increment number by one.
+        pub macro RENAMED {
+            ($x:expr) => { $x + 1 };
+        }
+    }
+    ");
 }

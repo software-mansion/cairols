@@ -8,12 +8,11 @@ use cairo_lang_filesystem::{
     ids::{CrateId, FileId, FileKind, FileLongId, VirtualFile},
     span::TextSpan,
 };
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast::ExprInlineMacro};
 use cairo_lang_utils::Intern;
 
 use super::inlining::{FileWithOrigin, inline_files, span_after_inlining};
-use crate::lang::db::AnalysisDatabase;
+use crate::lang::db::{AnalysisDatabase, upstream::file_syntax};
 
 /// Expands inline macros for this file.
 pub fn expand_inline_macros_to_file<'db>(
@@ -26,8 +25,7 @@ pub fn expand_inline_macros_to_file<'db>(
     let mut files = vec![];
     let plugins = db.crate_inline_macro_plugins(crate_id);
 
-    let inline_macros_in_span: Vec<_> = db
-        .file_syntax(file_to_process)
+    let inline_macros_in_span: Vec<_> = file_syntax(db, file_to_process)
         .ok()?
         .descendants(db)
         .filter(|node| expand_in.contains(node.span(db)))
@@ -51,7 +49,7 @@ pub fn expand_inline_macros_to_file<'db>(
         let macro_name = inline_macro.path(db).as_syntax_node().get_text_without_trivia(db);
         let &plugin_id = plugins.get(&macro_name.to_string())?;
 
-        let plugin = db.lookup_intern_inline_macro_plugin(plugin_id);
+        let plugin = plugin_id.long(db);
         let generated = plugin.generate_code(db, &inline_macro, metadata).code?; // None here means macro failed.
 
         let file = FileLongId::Virtual(VirtualFile {

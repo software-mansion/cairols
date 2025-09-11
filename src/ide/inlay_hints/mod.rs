@@ -1,5 +1,4 @@
-use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_filesystem::{ids::FileId, span::TextPositionSpan};
 use cairo_lang_semantic::{
     db::SemanticGroup,
     expr::inference::InferenceId,
@@ -19,19 +18,19 @@ use lsp_types::{
 use types::find_underscores;
 
 use super::{format::types::format_type, markdown::fenced_code_block};
-use crate::lang::proc_macros::db::get_og_node;
+use crate::lang::{db::upstream::file_syntax, lsp::LsProtoGroup, proc_macros::db::get_og_node};
 use crate::lang::{
     db::{AnalysisDatabase, LsSemanticGroup},
-    lsp::{LsProtoGroup, ToCairo, ToLsp},
+    lsp::{ToCairo, ToLsp},
 };
 
 mod types;
 
 pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec<InlayHint>> {
     let file = db.file_for_url(&params.text_document.uri)?;
-    let range = params.range.to_cairo().offset_in_file(db, file)?;
+    let range = TextPositionSpan::offset_in_file(params.range.to_cairo(), db, file)?;
 
-    let syntax = db.file_syntax(file).ok()?;
+    let syntax = file_syntax(db, file).ok()?;
 
     let mut result = vec![];
 

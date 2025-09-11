@@ -56,7 +56,7 @@ pub fn definition<'db>(
         }
 
         SymbolDef::Variable(var) => fenced_code_block(&var.signature(db, importables)?),
-        SymbolDef::ExprInlineMacro(macro_name) => {
+        SymbolDef::PluginInlineMacro(macro_name) => {
             let crate_id = db.file_modules(file_id).ok()?.first()?.owning_crate(db);
 
             let mut md = fenced_code_block(macro_name);
@@ -64,7 +64,7 @@ pub fn definition<'db>(
             if let Some(doc) = db
                 .crate_inline_macro_plugins(crate_id)
                 .get(*macro_name)
-                .map(|&id| db.lookup_intern_inline_macro_plugin(id))?
+                .map(|&id| id.long(db))?
                 .documentation()
             {
                 md += RULE;

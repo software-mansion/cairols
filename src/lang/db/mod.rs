@@ -2,30 +2,33 @@ use std::collections::HashSet;
 use std::ops::Not;
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsGroup, defs_group_input, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::{InlineMacroExprPluginLongId, MacroPluginLongId};
 use cairo_lang_defs::plugin::MacroPlugin;
-use cairo_lang_executable::plugin::executable_plugin_suite;
+use cairo_lang_executable_plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
-use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, init_files_group};
-use cairo_lang_filesystem::ids::{CrateInput, CrateLongId, VirtualFile};
-use cairo_lang_lowering::db::{ExternalCodeSizeEstimator, LoweringGroup, init_lowering_group};
+use cairo_lang_filesystem::db::{FilesGroup, files_group_input, init_files_group};
+use cairo_lang_filesystem::ids::{CrateInput, CrateLongId};
+use cairo_lang_lowering::db::{LoweringGroup, init_lowering_group};
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_plugins::plugins::ConfigPlugin;
-use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
+use cairo_lang_semantic::db::{
+    PluginSuiteInput, SemanticGroup, init_semantic_group, semantic_group_input,
+};
 use cairo_lang_semantic::ids::AnalyzerPluginLongId;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_test_plugin::test_plugin_suite;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lint::LinterGroup;
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
 use itertools::Itertools;
-use salsa::{Database, Durability};
+use salsa::{Database, Durability, Setter};
 
 pub use self::semantic::*;
 pub use self::swapper::*;
@@ -35,6 +38,7 @@ use super::proc_macros::db::init_proc_macro_group;
 mod semantic;
 mod swapper;
 mod syntax;
+pub mod upstream;
 
 /// The Cairo compiler Salsa database tailored for language server usage.
 #[salsa::db]
@@ -49,15 +53,16 @@ impl AnalysisDatabase {
     pub fn new() -> Self {
         let mut db = Self { storage: Default::default() };
 
+        init_external_files(&mut db);
         init_files_group(&mut db);
         init_defs_group(&mut db);
         init_semantic_group(&mut db);
-        init_lowering_group(&mut db, InliningStrategy::Default);
+        init_lowering_group(&mut db, InliningStrategy::Default, None);
         // proc-macro-server can be restarted many times but we want to keep these data across
         // multiple server starts, so init it once per database, not per server.
         init_proc_macro_group(&mut db);
 
-        db.set_cfg_set(Self::initial_cfg_set().into());
+        files_group_input(&db).set_cfg_set(&mut db).to(Some(Self::initial_cfg_set()));
 
         // Those plugins are relevant for projects with `cairo_project.toml` (e.g. our tests).
         let default_plugin_suite = Self::default_global_plugin_suite();
@@ -78,21 +83,22 @@ impl AnalysisDatabase {
         crate_input: CrateInput,
         plugins: PluginSuite,
     ) {
-        let mut overrides = self.macro_plugin_overrides_input().as_ref().clone();
+        let mut overrides = self.macro_plugin_overrides_input().clone();
         overrides.insert(
             crate_input.clone(),
             plugins.plugins.into_iter().map(MacroPluginLongId).collect(),
         );
-        self.set_macro_plugin_overrides_input(overrides.into());
+        defs_group_input(self).set_macro_plugin_overrides(self).to(Some(overrides));
 
-        let mut overrides = self.analyzer_plugin_overrides_input().as_ref().clone();
+        let mut overrides = self.analyzer_plugin_overrides_input().clone();
         overrides.insert(
             crate_input.clone(),
             plugins.analyzer_plugins.into_iter().map(AnalyzerPluginLongId).collect(),
         );
-        self.set_analyzer_plugin_overrides_input(overrides.into());
 
-        let mut overrides = self.inline_macro_plugin_overrides_input().as_ref().clone();
+        semantic_group_input(self).set_analyzer_plugin_overrides(self).to(Some(overrides));
+
+        let mut overrides = self.inline_macro_plugin_overrides_input().clone();
         overrides.insert(
             crate_input,
             Arc::new(
@@ -103,7 +109,7 @@ impl AnalysisDatabase {
                     .collect(),
             ),
         );
-        self.set_inline_macro_plugin_overrides_input(overrides.into());
+        defs_group_input(self).set_inline_macro_plugin_overrides(self).to(Some(overrides));
     }
 
     /// Returns the [`CfgSet`] that should be assumed in the initial database state
@@ -195,27 +201,27 @@ impl AnalysisDatabase {
             &mut OrderedHashMap<String, InlineMacroExprPluginLongId>,
         ),
     ) {
-        if !self.crate_configs_input().keys().contains(&crate_input) {
+        if !self
+            .crate_configs()
+            .keys()
+            .contains(&crate_input.clone().into_crate_long_id(self).intern(self))
+        {
             return;
         }
 
-        let mut macro_plugin_overrides_input =
-            Arc::unwrap_or_clone(self.macro_plugin_overrides_input());
+        let mut macro_plugin_overrides_input = self.macro_plugin_overrides_input().clone();
         let mut macro_plugins =
             macro_plugin_overrides_input.get(&crate_input).map(|a| a.to_vec()).unwrap_or_default();
 
-        let mut analyzer_plugin_overrides_input =
-            Arc::unwrap_or_clone(self.analyzer_plugin_overrides_input());
-        let mut analyzer_plugins = self
-            .analyzer_plugin_overrides_input()
+        let mut analyzer_plugin_overrides_input = self.analyzer_plugin_overrides_input().clone();
+        let mut analyzer_plugins = analyzer_plugin_overrides_input
             .get(&crate_input)
             .map(|a| a.to_vec())
             .unwrap_or_default();
 
         let mut inline_macro_plugin_overrides_input =
-            Arc::unwrap_or_clone(self.inline_macro_plugin_overrides_input());
-        let mut inline_macro_plugins = self
-            .inline_macro_plugin_overrides_input()
+            self.inline_macro_plugin_overrides_input().clone();
+        let mut inline_macro_plugins = inline_macro_plugin_overrides_input
             .get(&crate_input)
             .map(|a| (**a).clone())
             .unwrap_or_default();
@@ -234,9 +240,15 @@ impl AnalysisDatabase {
         inline_macro_plugin_overrides_input
             .insert(crate_input.clone(), inline_macro_plugins.into());
 
-        self.set_macro_plugin_overrides_input(macro_plugin_overrides_input.into());
-        self.set_analyzer_plugin_overrides_input(analyzer_plugin_overrides_input.into());
-        self.set_inline_macro_plugin_overrides_input(inline_macro_plugin_overrides_input.into());
+        defs_group_input(self)
+            .set_macro_plugin_overrides(self)
+            .to(Some(macro_plugin_overrides_input));
+        defs_group_input(self)
+            .set_inline_macro_plugin_overrides(self)
+            .to(Some(inline_macro_plugin_overrides_input));
+        semantic_group_input(self)
+            .set_analyzer_plugin_overrides(self)
+            .to(Some(analyzer_plugin_overrides_input));
     }
 
     fn default_global_plugin_suite() -> PluginSuite {
@@ -270,14 +282,14 @@ impl AnalysisDatabase {
 }
 
 impl salsa::Database for AnalysisDatabase {}
-impl ExternalFiles for AnalysisDatabase {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self, external_id)
-    }
-}
 
 impl<'db> Upcast<'db, dyn FilesGroup> for AnalysisDatabase {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
+impl<'db> Upcast<'db, dyn salsa::Database> for AnalysisDatabase {
+    fn upcast(&self) -> &(dyn salsa::Database + 'static) {
         self
     }
 }
@@ -315,21 +327,5 @@ impl<'db> Upcast<'db, dyn ParserGroup> for AnalysisDatabase {
 impl<'db> Upcast<'db, dyn LinterGroup> for AnalysisDatabase {
     fn upcast(&self) -> &(dyn LinterGroup + 'static) {
         self
-    }
-}
-
-impl Elongate for AnalysisDatabase {
-    fn elongate(&self) -> &(dyn SemanticGroup + 'static) {
-        self
-    }
-}
-
-// We don't need this implementation at the moment but it's required by `LoweringGroup`.
-impl ExternalCodeSizeEstimator for AnalysisDatabase {
-    fn estimate_size(
-        &self,
-        _function_id: cairo_lang_lowering::ids::ConcreteFunctionWithBodyId,
-    ) -> cairo_lang_diagnostics::Maybe<isize> {
-        cairo_lang_diagnostics::Maybe::Ok(0)
     }
 }

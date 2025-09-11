@@ -15,9 +15,10 @@ use crate::ide::completion::helpers::snippets::snippet_for_function_call;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
-use crate::lang::db::AnalysisDatabase;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::importer::import_edit_for_trait_if_needed;
 use crate::lang::methods::find_methods_for_type;
+use cairo_lang_filesystem::ids::CrateId;
 
 pub fn dot_completions<'db>(
     db: &'db AnalysisDatabase,
@@ -54,7 +55,8 @@ fn dot_completions_ex<'db>(
 
     let mut completions = Vec::new();
 
-    let types = deref_targets(db, ty)?;
+    let crate_id = db.find_module_containing_node(ctx.node)?.owning_crate(db);
+    let types = deref_targets(db, crate_id, ty)?;
 
     for ty in types {
         // Find relevant methods for type.
@@ -90,8 +92,12 @@ fn dot_completions_ex<'db>(
     Some(completions)
 }
 
-fn deref_targets<'db>(db: &'db AnalysisDatabase, ty: TypeId<'db>) -> Option<Vec<TypeId<'db>>> {
-    let deref_chain = db.deref_chain(ty, true).ok()?;
+fn deref_targets<'db>(
+    db: &'db AnalysisDatabase,
+    crate_id: CrateId<'db>,
+    ty: TypeId<'db>,
+) -> Option<Vec<TypeId<'db>>> {
+    let deref_chain = db.deref_chain(ty, crate_id, true).ok()?;
 
     Some(chain!(Some(ty), deref_chain.derefs.iter().map(|info| info.target_ty)).collect())
 }

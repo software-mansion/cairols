@@ -358,8 +358,9 @@ fn collect_functions_with_attrs<'db>(
 ) -> Vec<AnnotatedNode<'db>> {
     let mut result = vec![];
 
-    if let Ok(functions) = db.module_free_functions(module) {
-        for (free_function_id, function) in functions.iter() {
+    if let Ok(functions) = db.module_free_functions_ids(module) {
+        for free_function_id in functions {
+            let function = free_function_id.long(db).1.lookup(db);
             let function_full_path = ModuleItemId::FreeFunction(*free_function_id).full_path(db);
             result.extend(
                 attributes

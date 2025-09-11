@@ -67,12 +67,12 @@ pub fn mod_completions_ex<'db>(
 
     let module_files = db.file_modules(file).ok()?;
 
-    let mut existing_modules_files = collect_existing_modules(db, &module_files)?;
+    let mut existing_modules_files = collect_existing_modules(db, module_files)?;
     existing_modules_files.insert(current_file);
 
     let current_dir = url.to_file_path().ok()?;
 
-    let search_dir = if is_crate_root(&module_files) {
+    let search_dir = if is_crate_root(module_files) {
         current_dir.clone()
     } else {
         current_dir.join(file_name.strip_suffix(".cairo").unwrap_or(&file_name))

@@ -70,9 +70,9 @@ pub fn rename(
     let mut resource_ops = vec![];
     // Handle special cases.
     for symbol in &symbols {
-        if let SymbolDef::ExprInlineMacro(_) = &symbol.def {
+        if let SymbolDef::PluginInlineMacro(_) = &symbol.def {
             return Err(LSPError::new(
-                anyhow!("Renaming inline macros is not supported"),
+                anyhow!("Renaming builtin inline macros is not supported"),
                 ErrorCode::RequestFailed,
             ));
         }
@@ -81,7 +81,7 @@ pub fn rename(
             match module_def.module_id() {
                 ModuleId::CrateRoot(_) => {
                     return Err(LSPError::new(
-                        anyhow!("Rename for crates is not yet supported"),
+                        anyhow!("Renaming crates is not yet supported"),
                         ErrorCode::RequestFailed,
                     ));
                 }
@@ -96,7 +96,7 @@ pub fn rename(
                         resource_ops.extend(res_op);
                     }
                 }
-                ModuleId::MacroCall { id: _, generated_file_id: _ } => {}
+                ModuleId::MacroCall { .. } => {}
             }
         }
     }

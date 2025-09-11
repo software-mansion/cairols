@@ -85,7 +85,7 @@ fn find_type_in_const_declaration<'db>(
     let module_file_id = db.find_module_file_containing_node(node)?;
     let const_item = node.ancestor_of_type::<ItemConstant>(db)?;
     let const_item_id = ConstantLongId(module_file_id, const_item.stable_ptr(db)).intern(db);
-    let type_id = db.constant_const_type(const_item_id).ok()?;
+    let type_id = db.constant_semantic_data(const_item_id).ok()?.ty();
 
     Some(type_id)
 }

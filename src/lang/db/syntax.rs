@@ -1,3 +1,4 @@
+use crate::lang::db::upstream::file_syntax;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan};
@@ -9,7 +10,12 @@ use cairo_lang_utils::Upcast;
 
 /// LS-specific extensions to the syntax group of the Cairo compiler.
 #[cairo_lang_proc_macros::query_group(LsSyntaxDatabase)]
-pub trait LsSyntaxGroup: ParserGroup + for<'db> Upcast<'db, dyn ParserGroup> {
+pub trait LsSyntaxGroup:
+    ParserGroup
+    + for<'db> Upcast<'db, dyn ParserGroup>
+    + SyntaxGroup
+    + for<'db> Upcast<'db, dyn SyntaxGroup>
+{
     /// Finds the most specific [`SyntaxNode`] at the given [`TextOffset`] in the file.
     fn find_syntax_node_at_offset<'db>(
         &'db self,
@@ -52,7 +58,7 @@ fn find_syntax_node_at_offset<'db>(
     file: FileId<'db>,
     offset: TextOffset,
 ) -> Option<SyntaxNode<'db>> {
-    Some(db.file_syntax(file).to_option()?.lookup_offset(db, offset))
+    Some(file_syntax(db, file).to_option()?.lookup_offset(db, offset))
 }
 
 /// Finds the widest [`SyntaxNode`] within the given [`TextSpan`] in the file.
@@ -75,7 +81,7 @@ fn find_syntax_node_at_position<'db>(
     file: FileId<'db>,
     position: TextPosition,
 ) -> Option<SyntaxNode<'db>> {
-    Some(db.file_syntax(file).to_option()?.lookup_position(db, position))
+    Some(file_syntax(db, file).to_option()?.lookup_position(db, position))
 }
 
 /// Finds a [`TerminalIdentifier`] at the given [`TextPosition`] in the file.
