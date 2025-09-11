@@ -23,10 +23,7 @@ fn member_definition_name() {
     hello
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member1: felt252
     ```
     ---
     Docstring of member1."""
@@ -55,10 +52,7 @@ fn member_definition_name_macro() {
     hello
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member1: felt252
     ```
     ---
     Docstring of member1."""
@@ -94,10 +88,7 @@ fn struct_init_first_member_name() {
     hello
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member1: felt252
     ```
     ---
     Docstring of member1."""
@@ -133,10 +124,7 @@ fn struct_init_second_member_name() {
     hello
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member2: u256
     ```
     """
     "#)
@@ -173,10 +161,7 @@ fn struct_init_first_member_shorthand() {
     hello
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member1: felt252
     ```
     ---
     Docstring of member1."""
@@ -213,10 +198,7 @@ fn struct_init_second_member_shorthand_after() {
     hello
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member2: u256
     ```
     """
     "#)
@@ -252,10 +234,7 @@ fn struct_member_access_after_name() {
     hello
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member1: felt252
     ```
     ---
     Docstring of member1."""

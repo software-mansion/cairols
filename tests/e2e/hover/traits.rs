@@ -144,10 +144,7 @@ fn self_type_member() {
     hello
     ```
     ```cairo
-    struct SelfType {
-        aaa: felt252,
-        b: felt252,
-    }
+    aaa: felt252
     ```
     """
     "#)

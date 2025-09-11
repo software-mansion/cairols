@@ -218,9 +218,7 @@ fn enum_member() {
     hello
     ```
     ```cairo
-    enum Coin {
-        Penny,
-    }
+    Coin::Penny
     ```
     """
     "#)
@@ -366,9 +364,7 @@ fn enum_member_in_match() {
     hello
     ```
     ```cairo
-    enum Coin {
-        Penny,
-    }
+    Coin::Penny
     ```
     """
     "#)
