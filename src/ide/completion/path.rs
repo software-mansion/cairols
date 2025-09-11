@@ -1,6 +1,6 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, NamedLanguageElementId};
-use cairo_lang_filesystem::db::CORELIB_CRATE_NAME;
+use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -100,7 +100,7 @@ pub fn path_suffix_completions<'db>(
             };
             let importable_crate = importable_crate_id(db, *importable);
             let is_current_crate = importable_crate == current_crate;
-            let is_core = importable_crate.long(db).name() == CORELIB_CRATE_NAME;
+            let is_core = *importable_crate.long(db) == CrateLongId::core();
 
             Some(CompletionItemOrderable {
                 item: CompletionItem {
@@ -172,7 +172,7 @@ pub fn path_prefix_completions<'db>(
                     relevance: get_item_relevance(
                         is_current_scope,
                         crate_id == current_crate,
-                        crate_id.long(db).name() == CORELIB_CRATE_NAME,
+                        *crate_id.long(db) == CrateLongId::core(),
                     ),
                 })
             })
@@ -192,7 +192,7 @@ pub fn path_prefix_completions<'db>(
                     relevance: get_item_relevance(
                         is_current_scope,
                         crate_id == current_crate,
-                        crate_id.long(db).name() == CORELIB_CRATE_NAME,
+                        *crate_id.long(db) == CrateLongId::core(),
                     ),
                 }
             })
@@ -214,7 +214,7 @@ pub fn path_prefix_completions<'db>(
                             relevance: get_item_relevance(
                                 is_current_scope,
                                 crate_id == current_crate,
-                                crate_id.long(db).name() == CORELIB_CRATE_NAME,
+                                *crate_id.long(db) == CrateLongId::core(),
                             ),
                         }
                     })
@@ -237,7 +237,7 @@ pub fn path_prefix_completions<'db>(
                         relevance: get_item_relevance(
                             is_current_scope,
                             crate_id == current_crate,
-                            crate_id.long(db).name() == CORELIB_CRATE_NAME,
+                            *crate_id.long(db) == CrateLongId::core(),
                         ),
                     }
                 })

@@ -79,6 +79,7 @@ fn dot_completions_ex<'db>(
                             kind: Some(CompletionItemKind::FIELD),
                             ..CompletionItem::default()
                         },
+                        // We set the relevance to medium as we want the members to be shown after the methods.
                         relevance: Some(CompletionRelevance::Medium),
                     };
                     completions.push(completion);

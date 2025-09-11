@@ -81,19 +81,19 @@ fn simple_trait_macro() {
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Debug"
+    detail = "core::fmt::Display"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Debug;
+    use core::fmt::Display;
 
     """]
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Display"
+    detail = "core::fmt::Debug"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Display;
+    use core::fmt::Debug;
 
     """]
 
@@ -127,17 +127,17 @@ fn simple_trait_macro() {
 
     [[completions]]
     completion_label = "is_non_zero()"
+    detail = "core::zeroable::Zeroable"
+    insert_text = "is_non_zero()"
+
+    [[completions]]
+    completion_label = "is_non_zero()"
     detail = "core::num::traits::zero::Zero"
     insert_text = "is_non_zero()"
     text_edits = ["""
     use core::num::traits::Zero;
 
     """]
-
-    [[completions]]
-    completion_label = "is_non_zero()"
-    detail = "core::zeroable::Zeroable"
-    insert_text = "is_non_zero()"
 
     [[completions]]
     completion_label = "is_one()"
@@ -320,19 +320,19 @@ fn simple_trait() {
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Debug"
+    detail = "core::fmt::Display"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Debug;
+    use core::fmt::Display;
 
     """]
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Display"
+    detail = "core::fmt::Debug"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Display;
+    use core::fmt::Debug;
 
     """]
 
@@ -366,17 +366,17 @@ fn simple_trait() {
 
     [[completions]]
     completion_label = "is_non_zero()"
+    detail = "core::zeroable::Zeroable"
+    insert_text = "is_non_zero()"
+
+    [[completions]]
+    completion_label = "is_non_zero()"
     detail = "core::num::traits::zero::Zero"
     insert_text = "is_non_zero()"
     text_edits = ["""
     use core::num::traits::Zero;
 
     """]
-
-    [[completions]]
-    completion_label = "is_non_zero()"
-    detail = "core::zeroable::Zeroable"
-    insert_text = "is_non_zero()"
 
     [[completions]]
     completion_label = "is_one()"
@@ -389,17 +389,17 @@ fn simple_trait() {
 
     [[completions]]
     completion_label = "is_zero()"
+    detail = "core::zeroable::Zeroable"
+    insert_text = "is_zero()"
+
+    [[completions]]
+    completion_label = "is_zero()"
     detail = "core::num::traits::zero::Zero"
     insert_text = "is_zero()"
     text_edits = ["""
     use core::num::traits::Zero;
 
     """]
-
-    [[completions]]
-    completion_label = "is_zero()"
-    detail = "core::zeroable::Zeroable"
-    insert_text = "is_zero()"
 
     [[completions]]
     completion_label = "mul_assign()"
@@ -606,17 +606,17 @@ fn non_directly_visible_trait() {
 
     [[completions]]
     completion_label = "is_non_zero()"
+    detail = "core::zeroable::Zeroable"
+    insert_text = "is_non_zero()"
+
+    [[completions]]
+    completion_label = "is_non_zero()"
     detail = "core::num::traits::zero::Zero"
     insert_text = "is_non_zero()"
     text_edits = ["""
     use core::num::traits::Zero;
 
     """]
-
-    [[completions]]
-    completion_label = "is_non_zero()"
-    detail = "core::zeroable::Zeroable"
-    insert_text = "is_non_zero()"
 
     [[completions]]
     completion_label = "is_one()"
@@ -880,17 +880,17 @@ fn methods_from_deps_included() {
 
     [[completions]]
     completion_label = "is_zero()"
-    detail = "core::zeroable::Zeroable"
-    insert_text = "is_zero()"
-
-    [[completions]]
-    completion_label = "is_zero()"
     detail = "core::num::traits::zero::Zero"
     insert_text = "is_zero()"
     text_edits = ["""
     use core::num::traits::Zero;
 
     """]
+
+    [[completions]]
+    completion_label = "is_zero()"
+    detail = "core::zeroable::Zeroable"
+    insert_text = "is_zero()"
 
     [[completions]]
     completion_label = "mul_assign()"
@@ -1043,19 +1043,19 @@ fn methods_from_non_deps_excluded() {
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Debug"
+    detail = "core::fmt::LowerHex"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Debug;
+    use core::fmt::LowerHex;
 
     """]
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::LowerHex"
+    detail = "core::fmt::Debug"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::LowerHex;
+    use core::fmt::Debug;
 
     """]
 
@@ -1102,17 +1102,17 @@ fn methods_from_non_deps_excluded() {
 
     [[completions]]
     completion_label = "is_non_zero()"
-    detail = "core::zeroable::Zeroable"
-    insert_text = "is_non_zero()"
-
-    [[completions]]
-    completion_label = "is_non_zero()"
     detail = "core::num::traits::zero::Zero"
     insert_text = "is_non_zero()"
     text_edits = ["""
     use core::num::traits::Zero;
 
     """]
+
+    [[completions]]
+    completion_label = "is_non_zero()"
+    detail = "core::zeroable::Zeroable"
+    insert_text = "is_non_zero()"
 
     [[completions]]
     completion_label = "is_one()"
@@ -1125,17 +1125,17 @@ fn methods_from_non_deps_excluded() {
 
     [[completions]]
     completion_label = "is_zero()"
+    detail = "core::zeroable::Zeroable"
+    insert_text = "is_zero()"
+
+    [[completions]]
+    completion_label = "is_zero()"
     detail = "core::num::traits::zero::Zero"
     insert_text = "is_zero()"
     text_edits = ["""
     use core::num::traits::Zero;
 
     """]
-
-    [[completions]]
-    completion_label = "is_zero()"
-    detail = "core::zeroable::Zeroable"
-    insert_text = "is_zero()"
 
     [[completions]]
     completion_label = "mul_assign()"

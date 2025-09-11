@@ -16,7 +16,6 @@ use expr::macro_call::macro_call_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
 use helpers::binary_expr::dot_rhs::dot_expr_rhs;
-use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionParams, CompletionResponse, CompletionTriggerKind};
 use path::path_suffix_completions;
 use pattern::{enum_pattern_completions, struct_pattern_completions};
@@ -108,19 +107,15 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         .collect();
 
     // Need to also deduplicate items with different relevance and leave the one with the highest relevance.
-    let result: Vec<_> = unique_completion_items_with_highest_relevance(deduplicated_items)
-        .into_iter()
-        .sorted_by(|a, b| match (&a.relevance, &b.relevance) {
-            (Some(ra), Some(rb)) => ra.cmp(rb),
-            (Some(_), None) => Ordering::Greater,
-            (None, Some(_)) => Ordering::Less,
-            (None, None) => Ordering::Equal,
-        })
-        .map(|item| item.item)
-        .rev()
-        .collect();
+    let mut result = unique_completion_items_with_highest_relevance(deduplicated_items);
+    result.sort_by(|a, b| match (&a.relevance, &b.relevance) {
+        (Some(ra), Some(rb)) => rb.cmp(ra),
+        (Some(_), None) => Ordering::Less,
+        (None, Some(_)) => Ordering::Greater,
+        (None, None) => Ordering::Equal,
+    });
 
-    Some(CompletionResponse::Array(result))
+    Some(CompletionResponse::Array(result.into_iter().map(|item| item.item).collect()))
 }
 
 fn complete_ex<'db>(
@@ -262,6 +257,7 @@ fn importable_crate_id<'db>(
     }
 }
 
+// TODO: Upstream this function to compiler.
 fn importable_syntax_node<'db>(
     db: &'db AnalysisDatabase,
     importable: ImportableId<'db>,

@@ -8,14 +8,14 @@ use cairo_lang_syntax::node::ast::{PathSegment, StatementLet};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
 use itertools::Itertools;
-use lsp_types::{CompletionItem, CompletionItemKind};
 
-use crate::ide::completion::CompletionItemOrderable;
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
+use lsp_types::{CompletionItem, CompletionItemKind};
 
 pub fn variables_completions<'db>(
     db: &'db AnalysisDatabase,
@@ -110,7 +110,7 @@ fn patterns<'db>(
                     kind: Some(CompletionItemKind::VARIABLE),
                     ..CompletionItem::default()
                 },
-                relevance: None,
+                relevance: Some(CompletionRelevance::High),
             });
         }
     }
