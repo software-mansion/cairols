@@ -72,7 +72,7 @@ pub fn rename(
     for symbol in &symbols {
         if let SymbolDef::PluginInlineMacro(_) = &symbol.def {
             return Err(LSPError::new(
-                anyhow!("Renaming inline macros is not supported"),
+                anyhow!("Renaming builtin inline macros is not supported"),
                 ErrorCode::RequestFailed,
             ));
         }
@@ -81,7 +81,7 @@ pub fn rename(
             match module_def.module_id() {
                 ModuleId::CrateRoot(_) => {
                     return Err(LSPError::new(
-                        anyhow!("Rename for crates is not yet supported"),
+                        anyhow!("Renaming crates is not yet supported"),
                         ErrorCode::RequestFailed,
                     ));
                 }
