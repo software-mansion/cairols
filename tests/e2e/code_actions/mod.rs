@@ -17,6 +17,7 @@ mod macro_expand;
 mod missing_import;
 mod missing_trait;
 mod rename_unused_variable;
+mod similar_member;
 mod similar_method;
 
 fn caps(base: ClientCapabilities) -> ClientCapabilities {
