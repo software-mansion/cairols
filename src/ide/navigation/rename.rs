@@ -17,7 +17,7 @@ use lsp_types::{
 };
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
-use crate::lang::defs::{SymbolDef, SymbolSearch};
+use crate::lang::defs::{NonMacroModuleId, SymbolDef, SymbolSearch};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::result::{LSPError, LSPResult};
@@ -78,14 +78,14 @@ pub fn rename(
         }
 
         if let SymbolDef::Module(module_def) = &symbol.def {
-            match module_def.module_id() {
-                ModuleId::CrateRoot(_) => {
+            match module_def.non_macro_module_id() {
+                NonMacroModuleId::CrateRoot(_) => {
                     return Err(LSPError::new(
                         anyhow!("Renaming crates is not yet supported"),
                         ErrorCode::RequestFailed,
                     ));
                 }
-                ModuleId::Submodule(submodule_id) => {
+                NonMacroModuleId::Submodule(submodule_id) => {
                     if !db.is_submodule_inline(submodule_id) {
                         let res_op = resource_op_for_non_inline_submodule(
                             db,
@@ -96,7 +96,6 @@ pub fn rename(
                         resource_ops.extend(res_op);
                     }
                 }
-                ModuleId::MacroCall { .. } => {}
             }
         }
     }

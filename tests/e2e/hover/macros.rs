@@ -134,3 +134,59 @@ fn declarative_macro_on_usage_with_macros() {
     Increment number by one."""
     "#)
 }
+
+#[test]
+fn top_level_declarative_macro_on_definition() {
+    test_transform_plain!(Hover, r#"
+    pub macro decl<caret>are_mod {
+        ($name:ident) => { mod $name {} };
+    }
+
+    declare_mod!(modzik);
+    "#, @r#"
+    source_context = """
+    pub macro decl<caret>are_mod {
+    """
+    highlight = """
+    pub macro <sel>declare_mod</sel> {
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    macro declare_mod {
+        ($name:ident) => { ... };
+    }
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn top_level_declarative_macro_on_usage() {
+    test_transform_plain!(Hover, r#"
+    pub macro declare_mod {
+        ($name:ident) => { mod $name {} };
+    }
+
+    decla<caret>re_mod!(modzik);
+    "#, @r#"
+    source_context = """
+    decla<caret>re_mod!(modzik);
+    """
+    highlight = """
+    <sel>declare_mod</sel>!(modzik);
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    macro declare_mod {
+        ($name:ident) => { ... };
+    }
+    ```
+    """
+    "#)
+}

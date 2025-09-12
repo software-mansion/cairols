@@ -1,7 +1,6 @@
 use std::ops::Not;
 
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
@@ -11,7 +10,7 @@ use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location};
 
 use crate::lang::db::upstream::file_syntax;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
-use crate::lang::defs::{SymbolDef, SymbolSearch};
+use crate::lang::defs::{NonMacroModuleId, SymbolDef, SymbolSearch};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 /// Get the definition location of a symbol at a given text document position.
@@ -69,10 +68,10 @@ fn try_special_case_non_inline_module<'db>(
     symbol: &SymbolDef<'db>,
 ) -> Option<(FileId<'db>, TextSpan)> {
     if let SymbolDef::Module(module_def) = symbol {
-        let module_id = module_def.module_id();
+        let module_id = module_def.non_macro_module_id();
         match module_id {
-            ModuleId::CrateRoot(_) | ModuleId::MacroCall { .. } => None,
-            ModuleId::Submodule(submodule_id) => db
+            NonMacroModuleId::CrateRoot(_) => None,
+            NonMacroModuleId::Submodule(submodule_id) => db
                 .is_submodule_inline(submodule_id)
                 .not()
                 .then(|| {
