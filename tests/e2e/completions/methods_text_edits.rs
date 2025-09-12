@@ -72,19 +72,19 @@ fn simple_trait_macro() {
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Display"
+    detail = "core::fmt::Debug"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Display;
+    use core::fmt::Debug;
 
     """]
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Debug"
+    detail = "core::fmt::Display"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Debug;
+    use core::fmt::Display;
 
     """]
 
@@ -311,19 +311,19 @@ fn simple_trait() {
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Display"
+    detail = "core::fmt::Debug"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Display;
+    use core::fmt::Debug;
 
     """]
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Debug"
+    detail = "core::fmt::Display"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Debug;
+    use core::fmt::Display;
 
     """]
 
@@ -551,19 +551,19 @@ fn non_directly_visible_trait() {
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Display"
+    detail = "core::fmt::Debug"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Display;
+    use core::fmt::Debug;
 
     """]
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Debug"
+    detail = "core::fmt::Display"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Debug;
+    use core::fmt::Display;
 
     """]
 
@@ -802,19 +802,19 @@ fn methods_from_deps_included() {
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Display"
+    detail = "core::fmt::Debug"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Display;
+    use core::fmt::Debug;
 
     """]
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Debug"
+    detail = "core::fmt::Display"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Debug;
+    use core::fmt::Display;
 
     """]
 
@@ -1043,19 +1043,19 @@ fn methods_from_non_deps_excluded() {
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Display"
+    detail = "core::fmt::Debug"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Display;
+    use core::fmt::Debug;
 
     """]
 
     [[completions]]
     completion_label = "fmt()"
-    detail = "core::fmt::Debug"
+    detail = "core::fmt::Display"
     insert_text = "fmt(${1:f})"
     text_edits = ["""
-    use core::fmt::Debug;
+    use core::fmt::Display;
 
     """]
 

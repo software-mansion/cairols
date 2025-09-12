@@ -14,6 +14,7 @@ mod attribute;
 mod dot;
 mod methods_text_edits;
 mod mod_file;
+mod order;
 mod path;
 mod patterns;
 mod structs;
@@ -47,9 +48,32 @@ fn completion_fixture() -> Fixture {
             dep = { discriminator = "dep" }
         "#),
         "dep/lib.cairo" => indoc!("
-            struct Foo {
+            pub struct Foo {
                 a: felt252
                 pub b: felt252
+            }
+        ")
+    }
+}
+
+fn completion_fixture_with_pub_dep_items() -> Fixture {
+    fixture! {
+        "cairo_project.toml" => indoc!(r#"
+            [crate_roots]
+            hello = "src"
+            dep = "dep"
+
+            [config.override.hello]
+            edition = "2024_07"
+            [config.override.dep]
+            edition = "2023_10" # Edition with visibility ignores
+
+            [config.override.hello.dependencies]
+            dep = { discriminator = "dep" }
+        "#),
+        "dep/lib.cairo" => indoc!("
+            pub trait AddAssign {
+                fn add_assign() -> felt252;
             }
         ")
     }
