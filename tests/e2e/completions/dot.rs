@@ -298,3 +298,58 @@ fn with_deref_starknet() {
     detail = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
     "#);
 }
+
+#[test]
+fn with_mutable_self() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    #[starknet::interface]
+    pub trait IHelloStarknet<TContractState> {
+        fn increase_balance(ref self: TContractState, amount: felt252);
+        fn get_balance(self: @TContractState) -> felt252;
+    }
+
+    #[starknet::contract]
+    mod HelloStarknet {
+        use crate::IHelloStarknet;
+        use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
+        #[storage]
+        struct Storage {
+            balance: felt252,
+        }
+
+        #[abi(embed_v0)]
+        impl HelloStarknetImpl of super::IHelloStarknet<ContractState> {
+            fn increase_balance(ref self: ContractState, amount: felt252) {
+                self.ge<caret>
+                assert(amount != 0, 'Amount cannot be 0');
+                self.balance.write(self.balance.read() + amount);
+            }
+
+            fn get_balance(self: @ContractState) -> felt252 {
+                self.balance.read()
+            }
+        }
+    }
+    ",
+    @r#"
+    caret = """
+                self.ge<caret>
+    """
+
+    [[completions]]
+    completion_label = "balance"
+    detail = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
+
+    [[completions]]
+    completion_label = "get_balance()"
+    detail = "hello::IHelloStarknet"
+    insert_text = "get_balance()"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    detail = "core::circuit::GetCircuitDescriptor"
+    insert_text = "get_descriptor()"
+    "#);
+}
