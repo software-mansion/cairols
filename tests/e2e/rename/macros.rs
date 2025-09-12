@@ -127,3 +127,37 @@ fn declarative_inline_macro_on_definition_with_macros() {
     }
     ");
 }
+
+#[test]
+fn top_level_declarative_macro_on_definition() {
+    test_transform_plain!(Rename, r#"
+    pub macro decl<caret>are_mod {
+        ($name:ident) => { mod $name {} };
+    }
+
+    declare_mod!(modzik);
+    "#, @r"
+    pub macro RENAMED {
+        ($name:ident) => { mod $name {} };
+    }
+
+    RENAMED!(modzik);
+    ")
+}
+
+#[test]
+fn top_level_declarative_macro_on_usage() {
+    test_transform_plain!(Rename, r#"
+    pub macro declare_mod {
+        ($name:ident) => { mod $name {} };
+    }
+
+    decla<caret>re_mod!(modzik);
+    "#, @r"
+    pub macro RENAMED {
+        ($name:ident) => { mod $name {} };
+    }
+
+    RENAMED!(modzik);
+    ")
+}
