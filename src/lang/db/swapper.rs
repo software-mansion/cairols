@@ -177,13 +177,26 @@ impl AnalysisDatabaseSwapper {
 
     /// Copies current proc macro state into new db.
     fn migrate_proc_macro_state(&self, new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
-        new_db.set_proc_macro_server_status(old_db.proc_macro_server_status());
+        let old_db_input = old_db.proc_macro_input();
+        new_db
+            .proc_macro_input()
+            .set_proc_macro_server_status(new_db)
+            .to(old_db_input.proc_macro_server_status(old_db));
 
         // TODO(#6646): Probably this should not be part of migration as it will be ever growing,
         // but diagnostics going crazy every 5 minutes are no better.
-        new_db.set_attribute_macro_resolution(old_db.attribute_macro_resolution());
-        new_db.set_derive_macro_resolution(old_db.derive_macro_resolution());
-        new_db.set_inline_macro_resolution(old_db.inline_macro_resolution());
+        new_db
+            .proc_macro_input()
+            .set_attribute_macro_resolution(new_db)
+            .to(old_db_input.attribute_macro_resolution(old_db).clone());
+        new_db
+            .proc_macro_input()
+            .set_derive_macro_resolution(new_db)
+            .to(old_db_input.derive_macro_resolution(old_db).clone());
+        new_db
+            .proc_macro_input()
+            .set_inline_macro_resolution(new_db)
+            .to(old_db_input.inline_macro_resolution(old_db).clone());
     }
 
     /// Makes sure that all open files exist in the new db, with their current changes.

@@ -76,11 +76,13 @@ impl SemanticTokenKind {
                 _ => {}
             };
 
+            let Some(resultants) = db.get_node_resultants(identifier.as_syntax_node()) else {
+                continue;
+            };
             // We use resultants here to get semantics of the actual node that is generated.
-            for resultant in db.get_node_resultants(identifier.as_syntax_node()).unwrap_or_default()
-            {
-                if let Some(lookup_item_id) = db.find_lookup_item(resultant) {
-                    if let Some(kind) = Self::from_resultant(db, resultant, lookup_item_id) {
+            for resultant in resultants {
+                if let Some(lookup_item_id) = db.find_lookup_item(*resultant) {
+                    if let Some(kind) = Self::from_resultant(db, *resultant, lookup_item_id) {
                         return Some(kind);
                     }
 

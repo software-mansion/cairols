@@ -77,7 +77,7 @@ impl<'db> FilesDiagnostics<'db> {
                 root_on_disk_file,
             )?;
 
-        for module_id in modules_to_process.into_iter() {
+        for module_id in modules_to_process.iter().copied() {
             if let Ok(notes) = module_id.module_data(db).map(|data| data.diagnostics_notes(db)) {
                 files_notes.extend(notes.clone());
             }
@@ -99,21 +99,19 @@ impl<'db> FilesDiagnostics<'db> {
             if config.enable_linter && !scarb_toolchain.is_from_scarb_cache(root_path) {
                 semantic_file_diagnostics.extend(info_span!("db.linter_diagnostics").in_scope(
                     || {
-                        db.linter_diagnostics(linter_params.clone(), module_id).into_iter().map(
-                            |diag| {
-                                SemanticDiagnostic::new(
-                                    StableLocation::new(diag.stable_ptr),
-                                    SemanticDiagnosticKind::PluginDiagnostic(diag),
-                                )
-                            },
-                        )
+                        db.linter_diagnostics(linter_params.clone(), module_id).iter().map(|diag| {
+                            SemanticDiagnostic::new(
+                                StableLocation::new(diag.stable_ptr),
+                                SemanticDiagnosticKind::PluginDiagnostic(diag.clone()),
+                            )
+                        })
                     },
                 ));
             }
         }
 
-        for file_id in files_to_process.into_iter() {
-            parser_file_diagnostics.extend(db.file_syntax_diagnostics(file_id).get_all());
+        for file_id in files_to_process.iter() {
+            parser_file_diagnostics.extend(db.file_syntax_diagnostics(*file_id).get_all());
         }
 
         Some(FilesDiagnostics {

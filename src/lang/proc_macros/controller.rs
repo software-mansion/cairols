@@ -17,13 +17,11 @@ use lsp_types::notification::ShowMessage;
 use lsp_types::request::SemanticTokensRefresh;
 use lsp_types::{ClientCapabilities, MessageType, ShowMessageParams};
 use scarb_proc_macro_server_types::jsonrpc::RpcResponse;
-use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use tracing::error;
 
 use super::client::connection::ProcMacroServerConnection;
 use super::client::status::ServerStatus;
 use super::client::{ProcMacroClient, RequestParams};
-use super::db::init_proc_macro_group;
 use crate::config::Config;
 use crate::ide::analysis_progress::{ProcMacroServerStatus, ProcMacroServerTracker};
 use crate::lang::db::AnalysisDatabase;
@@ -36,6 +34,8 @@ use crate::server::client::{Notifier, Requester};
 use crate::server::schedule::Task;
 use crate::server::schedule::thread::JoinHandle;
 use crate::toolchain::scarb::ScarbToolchain;
+use salsa::Setter;
+use scarb_proc_macro_server_types::methods::ProcMacroResult;
 
 const RESTART_RATE_LIMITER_PERIOD_SEC: u64 = 180;
 const RESTART_RATE_LIMITER_RETRIES: u32 = 5;
@@ -136,18 +136,16 @@ impl ProcMacroClientController {
             self.crate_plugin_suites.clear();
 
             self.clean_up_previous_proc_macro_server(db);
-
-            init_proc_macro_group(db);
         }
 
-        if db.proc_macro_server_status().is_pending() {
+        if db.proc_macro_input().proc_macro_server_status(db).is_pending() {
             self.try_initialize(db, config);
         }
     }
 
     fn set_proc_macro_server_status(&self, db: &mut AnalysisDatabase, server_status: ServerStatus) {
         let tracker_server_status = ProcMacroServerStatus::from(&server_status);
-        db.set_proc_macro_server_status(server_status);
+        db.proc_macro_input().set_proc_macro_server_status(db).to(server_status);
         self.proc_macro_server_tracker.set_server_status(tracker_server_status);
     }
 
@@ -181,7 +179,7 @@ impl ProcMacroClientController {
         client_capabilities: &ClientCapabilities,
         requester: &mut Requester,
     ) {
-        match db.proc_macro_server_status() {
+        match db.proc_macro_input().proc_macro_server_status(db) {
             ServerStatus::Starting(client) => {
                 let Ok(defined_macros) = client.finish_initialize() else {
                     drop(client);
@@ -311,7 +309,7 @@ impl ProcMacroClientController {
         // At this point we are the only thread with access to the db and therefore
         // to the proc macro client.
         if let ServerStatus::Starting(client) | ServerStatus::Ready(client) =
-            db.proc_macro_server_status()
+            db.proc_macro_input().proc_macro_server_status(db)
         {
             // Make the db drop the strong reference to the proc macro client.
             self.set_proc_macro_server_status(db, ServerStatus::Pending);
@@ -352,13 +350,15 @@ impl ProcMacroClientController {
         config: &Config,
         client: Arc<ProcMacroClient>,
     ) {
-        let mut attribute_resolutions = Arc::unwrap_or_clone(db.attribute_macro_resolution());
+        let mut attribute_resolutions =
+            db.proc_macro_input().attribute_macro_resolution(db).clone();
         let mut attribute_resolutions_changed = false;
 
-        let mut derive_resolutions = Arc::unwrap_or_clone(db.derive_macro_resolution());
+        let mut derive_resolutions = db.proc_macro_input().derive_macro_resolution(db).clone();
         let mut derive_resolutions_changed = false;
 
-        let mut inline_macro_resolutions = Arc::unwrap_or_clone(db.inline_macro_resolution());
+        let mut inline_macro_resolutions =
+            db.proc_macro_input().inline_macro_resolution(db).clone();
         let mut inline_macro_resolutions_changed = false;
 
         let mut error_occurred = false;
@@ -404,13 +404,13 @@ impl ProcMacroClientController {
         // Set input only if resolution changed, this way we don't recompute queries if there were
         // no updates.
         if attribute_resolutions_changed {
-            db.set_attribute_macro_resolution(Arc::new(attribute_resolutions));
+            db.proc_macro_input().set_attribute_macro_resolution(db).to(attribute_resolutions);
         }
         if derive_resolutions_changed {
-            db.set_derive_macro_resolution(Arc::new(derive_resolutions));
+            db.proc_macro_input().set_derive_macro_resolution(db).to(derive_resolutions);
         }
         if inline_macro_resolutions_changed {
-            db.set_inline_macro_resolution(Arc::new(inline_macro_resolutions));
+            db.proc_macro_input().set_inline_macro_resolution(db).to(inline_macro_resolutions);
         }
 
         self.proc_macro_server_tracker.mark_requests_as_handled(request_count)

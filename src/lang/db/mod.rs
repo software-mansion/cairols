@@ -33,7 +33,6 @@ use salsa::{Database, Durability, Setter};
 pub use self::semantic::*;
 pub use self::swapper::*;
 pub use self::syntax::*;
-use super::proc_macros::db::init_proc_macro_group;
 
 mod semantic;
 mod swapper;
@@ -58,10 +57,6 @@ impl AnalysisDatabase {
         init_defs_group(&mut db);
         init_semantic_group(&mut db);
         init_lowering_group(&mut db, InliningStrategy::Default, None);
-        // proc-macro-server can be restarted many times but we want to keep these data across
-        // multiple server starts, so init it once per database, not per server.
-        init_proc_macro_group(&mut db);
-
         files_group_input(&db).set_cfg_set(&mut db).to(Some(Self::initial_cfg_set()));
 
         // Those plugins are relevant for projects with `cairo_project.toml` (e.g. our tests).

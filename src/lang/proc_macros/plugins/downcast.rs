@@ -24,7 +24,6 @@ pub(super) unsafe fn unsafe_downcast_ref(db: &dyn Database) -> &AnalysisDatabase
 #[cfg(test)]
 mod unsafe_downcast_ref_tests {
     use std::collections::HashMap;
-    use std::sync::Arc;
 
     use cairo_lang_macro_v1::TokenStream;
     use scarb_proc_macro_server_types::methods::ProcMacroResult;
@@ -34,7 +33,7 @@ mod unsafe_downcast_ref_tests {
     use crate::lang::db::AnalysisDatabase;
     use crate::lang::proc_macros::client::plain_request_response::PlainExpandAttributeParams;
     use crate::lang::proc_macros::db::ProcMacroGroup;
-    use salsa::Database;
+    use salsa::{Database, Setter};
 
     #[test]
     fn cast_succeed() {
@@ -54,13 +53,15 @@ mod unsafe_downcast_ref_tests {
             code_mappings: None,
         };
         let macro_resolution: HashMap<_, _> = [(input, output)].into_iter().collect();
-        let macro_resolution = Arc::new(macro_resolution);
 
-        db.set_attribute_macro_resolution(macro_resolution.clone());
+        db.proc_macro_input().set_attribute_macro_resolution(&mut db).to(macro_resolution.clone());
 
         let syntax: &dyn Database = &db;
         let analysis_db = unsafe { unsafe_downcast_ref(syntax) };
 
-        assert_eq!(analysis_db.attribute_macro_resolution(), macro_resolution);
+        assert_eq!(
+            analysis_db.proc_macro_input().attribute_macro_resolution(analysis_db),
+            &macro_resolution
+        );
     }
 }

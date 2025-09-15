@@ -31,8 +31,8 @@ pub fn ty<'db>(
 ) -> Option<String> {
     let lookup_items = db.collect_lookup_items_with_parent_files(underscore.as_syntax_node())?;
 
-    let result = pattern(db, underscore.clone(), &lookup_items, importables)
-        .or_else(|| path(db, underscore.clone(), &lookup_items, importables))?;
+    let result = pattern(db, underscore.clone(), lookup_items, importables)
+        .or_else(|| path(db, underscore.clone(), lookup_items, importables))?;
 
     Some(fenced_code_block(&result))
 }

@@ -1,25 +1,24 @@
-use std::{collections::HashMap, env::current_dir, fs, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, env::current_dir, fs, path::PathBuf};
 
 use bincode::{
     config::standard,
     serde::{decode_from_slice, encode_to_vec},
 };
-use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use serde::{Deserialize, Serialize};
 use tracing::error;
 
+use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::{
     config::Config,
     env_config::scarb_target_path,
-    lang::proc_macros::{
-        client::plain_request_response::{
-            PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
-        },
-        db::ProcMacroGroup,
+    lang::proc_macros::client::plain_request_response::{
+        PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
     },
 };
+use salsa::{Database, Setter};
+use scarb_proc_macro_server_types::methods::ProcMacroResult;
 
-pub fn save_proc_macro_cache(db: &dyn ProcMacroGroup, config: &Config) {
+pub fn save_proc_macro_cache(db: &dyn Database, config: &Config) {
     if !config.enable_experimental_proc_macro_cache {
         return;
     }
@@ -27,9 +26,9 @@ pub fn save_proc_macro_cache(db: &dyn ProcMacroGroup, config: &Config) {
     let Some(cache_path) = cache_path() else { return };
 
     let resolution = Resolution {
-        attr: db.attribute_macro_resolution(),
-        derive: db.derive_macro_resolution(),
-        inline: db.inline_macro_resolution(),
+        attr: db.proc_macro_input().attribute_macro_resolution(db).clone(),
+        derive: db.proc_macro_input().derive_macro_resolution(db).clone(),
+        inline: db.proc_macro_input().inline_macro_resolution(db).clone(),
     };
 
     let buffer = encode_to_vec(resolution, standard()).expect("serialize should not fail");
@@ -41,8 +40,8 @@ pub fn save_proc_macro_cache(db: &dyn ProcMacroGroup, config: &Config) {
     }
 }
 
-pub fn load_proc_macro_cache(db: &mut dyn ProcMacroGroup, config: &Config) {
-    let mut resolution = if config.enable_experimental_proc_macro_cache
+pub fn load_proc_macro_cache(db: &mut dyn Database, config: &Config) {
+    let resolution = if config.enable_experimental_proc_macro_cache
         && let Some(cache_path) = cache_path()
         && let Ok(buffer) = fs::read(&cache_path)
         && let Ok((resolution, _)) = decode_from_slice::<Resolution, _>(&buffer, standard())
@@ -54,11 +53,11 @@ pub fn load_proc_macro_cache(db: &mut dyn ProcMacroGroup, config: &Config) {
 
     macro_rules! override_with_local {
         ($prop:ident, $query:ident, $set_query:ident) => {
-            let map = Arc::get_mut(&mut resolution.$prop).unwrap();
-            for (key, value) in db.$query().iter() {
+            let mut map = resolution.$prop;
+            for (key, value) in db.proc_macro_input().$query(db).iter() {
                 map.insert(key.clone(), value.clone());
             }
-            db.$set_query(resolution.$prop);
+            db.proc_macro_input().$set_query(db).to(map);
         };
     }
 
@@ -84,7 +83,7 @@ fn current_dir_target() -> Option<PathBuf> {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Resolution {
-    attr: Arc<HashMap<PlainExpandAttributeParams, ProcMacroResult>>,
-    derive: Arc<HashMap<PlainExpandDeriveParams, ProcMacroResult>>,
-    inline: Arc<HashMap<PlainExpandInlineParams, ProcMacroResult>>,
+    attr: HashMap<PlainExpandAttributeParams, ProcMacroResult>,
+    derive: HashMap<PlainExpandDeriveParams, ProcMacroResult>,
+    inline: HashMap<PlainExpandInlineParams, ProcMacroResult>,
 }

@@ -699,7 +699,7 @@ fn try_generic_arg<'db>(
     for &lookup_item in lookup_items {
         let item_generic_params = db.item_generic_params(lookup_item);
 
-        let maybe_resolved_param = item_generic_params.into_iter().find(|param| {
+        let maybe_resolved_param = item_generic_params.iter().find(|param| {
             let param_syntax = param.stable_ptr(db).lookup(db);
             let param_name = match param_syntax {
                 ast::GenericParam::Type(p) => p.name(db).text(db),
@@ -711,7 +711,7 @@ fn try_generic_arg<'db>(
         });
 
         if let Some(resolved_param) = maybe_resolved_param {
-            return Some(ResolvedItem::GenericParam(resolved_param));
+            return Some(ResolvedItem::GenericParam(resolved_param.clone()));
         }
     }
 

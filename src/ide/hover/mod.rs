@@ -23,8 +23,8 @@ pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
     let resultants = db.get_node_resultants(node)?;
 
     let hover_content = resultants
-        .into_iter()
-        .filter_map(|node| render_hover(db, node))
+        .iter()
+        .filter_map(|node| render_hover(db, *node))
         .collect::<OrderedHashSet<_>>() // Deduplicate so we want display doubled hover if we point to same item from few resultants.
         .into_iter()
         .reduce(|value1, value2| format!("{value1}\n{RULE}{value2}"))?;
