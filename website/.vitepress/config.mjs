@@ -1,7 +1,7 @@
 import { defineConfig } from "vitepress";
 import * as syntaxes from "./syntaxes.mjs";
 
-const base = "/cairo-language-server/";
+const base = "/cairols/";
 const absoluteBase = `https://docs.swmansion.com${base}`;
 
 const telegramIcon = `
