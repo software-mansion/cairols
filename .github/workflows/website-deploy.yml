@@ -24,15 +24,11 @@ jobs:
         working-directory: ./website
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
       - uses: actions/setup-node@v4
         with:
           node-version: "22.x"
       - uses: actions/configure-pages@v5
 
-      - name: Update docs
-        working-directory: .
-        run: cargo xtask update-docs
       - run: npm ci
       - run: npm run build
       - name: Upload GitHub Pages artifact
