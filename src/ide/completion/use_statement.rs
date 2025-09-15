@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::ImportableId;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::us::get_use_path_segments;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::{UsePathLeaf, UsePathSingle};
 use cairo_lang_syntax::node::{
     Token,

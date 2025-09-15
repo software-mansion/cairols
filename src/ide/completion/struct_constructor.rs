@@ -1,7 +1,11 @@
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::items::function_with_body::{
+    FunctionWithBodySemantic, SemanticExprLookup,
+};
+use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::ExprStructCtorCall;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;

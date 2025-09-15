@@ -1,4 +1,4 @@
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::PathSegment;

@@ -13,7 +13,19 @@ use cairo_lang_filesystem::db::{ext_as_virtual, get_parent_and_mapping, translat
 use cairo_lang_filesystem::ids::{CodeOrigin, FileId, FileLongId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
-use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::items::enm::EnumSemantic;
+use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
+use cairo_lang_semantic::items::extern_type::ExternTypeSemantic;
+use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
+use cairo_lang_semantic::items::function_with_body::{
+    FunctionWithBodySemantic, SemanticExprLookup,
+};
+use cairo_lang_semantic::items::imp::ImplSemantic;
+use cairo_lang_semantic::items::impl_alias::ImplAliasSemantic;
+use cairo_lang_semantic::items::module::ModuleSemantic;
+use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
+use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::{Binding, GenericParam};
 use cairo_lang_syntax::node::helpers::GetIdentifier;

@@ -1,6 +1,8 @@
 use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId};
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::items::function_with_body::{
+    FunctionWithBodySemantic, SemanticExprLookup,
+};
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
@@ -19,6 +21,10 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::importer::import_edit_for_trait_if_needed;
 use crate::lang::methods::find_methods_for_type;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_semantic::items::imp::ImplSemantic;
+use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::items::trt::TraitSemantic;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 
 pub fn dot_completions<'db>(
     db: &'db AnalysisDatabase,

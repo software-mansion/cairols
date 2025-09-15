@@ -1,6 +1,9 @@
 use cairo_lang_defs::ids::{ConstantLongId, FunctionWithBodyId, ImportableId};
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::items::constant::ConstantSemantic;
+use cairo_lang_semantic::items::function_with_body::{
+    FunctionWithBodySemantic, SemanticExprLookup,
+};
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::{TypeId, TypeLongId};
 use cairo_lang_syntax::node::ast::{

@@ -1,7 +1,10 @@
 use cairo_lang_defs::ids::{LanguageElementId, NamedLanguageElementId};
 use cairo_lang_filesystem::ids::CrateLongId;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use cairo_lang_semantic::items::enm::EnumSemantic;
+use cairo_lang_semantic::items::module::ModuleSemantic;
+use cairo_lang_semantic::items::trt::TraitSemantic;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -227,6 +230,7 @@ pub fn path_prefix_completions<'db>(
         ResolvedConcreteItem::Type(ty) => match ty.long(db) {
             TypeLongId::Concrete(ConcreteTypeId::Enum(enum_id)) => db
                 .enum_variants(enum_id.enum_id(db))
+                .cloned()
                 .unwrap_or_default()
                 .iter()
                 .map(|(name, _)| {
