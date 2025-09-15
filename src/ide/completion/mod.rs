@@ -115,6 +115,11 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         (None, None) => compare_items_by_label_and_detail(a, b),
     });
 
+    // Set the sort text as it's used to sort the items on the client side.
+    for item in &mut result {
+        item.item.sort_text = Some(get_completion_item_sort_text(item));
+    }
+
     Some(CompletionResponse::Array(result.into_iter().map(|item| item.item).collect()))
 }
 
@@ -180,6 +185,16 @@ enum CompletionRelevance {
     Medium = 1,
     High = 2,
     Highest = 3,
+}
+
+impl CompletionRelevance {
+    fn get_highest_relevance_as_u16() -> u16 {
+        CompletionRelevance::Highest as u16
+    }
+
+    fn get_inverted_relevance_as_u16(&self) -> u16 {
+        Self::get_highest_relevance_as_u16() - self.clone() as u16
+    }
 }
 
 /// Internal representation of a [`CompletionItem`].
@@ -319,4 +334,18 @@ fn compare_items_by_label_and_detail(
             let b_description = b.item.detail.clone();
             a_description.cmp(&b_description)
         })
+}
+
+fn get_completion_item_sort_text(item: &CompletionItemOrderable) -> String {
+    match &item.relevance {
+        Some(relevance) => {
+            format!("{}_{}", relevance.get_inverted_relevance_as_u16(), item.item.label)
+        }
+        // If the relevance is None, we always want it to be at the end of the list.
+        None => format!(
+            "{}_{}",
+            CompletionRelevance::get_highest_relevance_as_u16() + 1,
+            item.item.label
+        ),
+    }
 }
