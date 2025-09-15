@@ -1,5 +1,5 @@
 use cairo_lang_defs::ids::{ImportableId, NamedLanguageElementId, TraitId};
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::types::format_generic_args;

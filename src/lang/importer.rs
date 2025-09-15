@@ -11,7 +11,7 @@ use lsp_types::{Position, Range, TextEdit};
 
 use super::{analysis_context::AnalysisContext, db::AnalysisDatabase};
 use crate::lang::{db::LsSemanticGroup, lsp::ToLsp};
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 
 /// Returns a TextEdit to import the given trait if it is not already in scope.
 /// The decision is based on visibility from the current module in `ctx`.

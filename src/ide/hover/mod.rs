@@ -1,4 +1,4 @@
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::{TerminalIdentifier, TerminalUnderscore};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;

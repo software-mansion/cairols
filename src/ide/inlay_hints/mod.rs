@@ -1,6 +1,7 @@
 use cairo_lang_filesystem::{ids::FileId, span::TextPositionSpan};
+use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::{
-    db::SemanticGroup,
     expr::inference::InferenceId,
     lookup_item::{HasResolverData, LookupItemEx},
     substitution::SemanticRewriter,

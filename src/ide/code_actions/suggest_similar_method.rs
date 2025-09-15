@@ -6,7 +6,9 @@ use crate::lang::methods::find_methods_for_type;
 use crate::lang::text_matching::text_matches;
 use cairo_lang_defs::ids::NamedLanguageElementLongId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::items::function_with_body::{
+    FunctionWithBodySemantic, SemanticExprLookup,
+};
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;

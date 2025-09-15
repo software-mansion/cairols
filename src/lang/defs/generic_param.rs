@@ -1,5 +1,6 @@
 use cairo_lang_defs::ids::{GenericParamId, LanguageElementId};
-use cairo_lang_semantic::{ConcreteTraitId, GenericParam, TypeId, db::SemanticGroup};
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
+use cairo_lang_semantic::{ConcreteTraitId, GenericParam, TypeId};
 use cairo_lang_syntax::node::{TypedStablePtr, ids::SyntaxStablePtrId};
 
 use crate::{

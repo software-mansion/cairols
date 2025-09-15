@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use cairo_lang_defs::ids::{
     ImportableId, NamedLanguageElementId, TraitConstantId, TraitFunctionId,
 };
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use cairo_lang_semantic::items::trt::TraitSemantic;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::ResolvedConcreteItem;
 use cairo_lang_semantic::substitution::GenericSubstitution;
 use cairo_lang_semantic::{ConcreteTraitId, GenericArgumentId, GenericParam, Parameter};

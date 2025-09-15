@@ -1,4 +1,5 @@
 use cairo_lang_defs::ids::{ImportableId, LookupItemId};
+use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::{
     db::SemanticGroup,
     expr::inference::InferenceId,

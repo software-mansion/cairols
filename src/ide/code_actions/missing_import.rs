@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::ExprPath;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use lsp_types::{CodeAction, CodeActionKind, Url, WorkspaceEdit};
