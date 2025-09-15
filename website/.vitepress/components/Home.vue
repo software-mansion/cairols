@@ -20,7 +20,7 @@
                 <p style="text-align: center;">
             To get started, click
             <a
-                href="/cairo-language-server/quick_start"
+                href="/cairols/docs"
                 >here</a
             >.
         </p>

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "docs:dev": "vitepress dev",
+    "dev": "vitepress dev",
     "build": "vitepress build",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",
