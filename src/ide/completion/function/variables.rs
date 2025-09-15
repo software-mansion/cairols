@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::FunctionBody;
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::ast::{PathSegment, StatementLet};
 use cairo_lang_syntax::node::kind::SyntaxKind;

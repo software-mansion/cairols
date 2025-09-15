@@ -5,9 +5,11 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
 use cairo_lang_semantic::expr::inference::solver::SolutionSet;
 use cairo_lang_semantic::expr::inference::{ImplVarTraitItemMappings, InferenceId};
-use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::items::function_with_body::{
+    FunctionWithBodySemantic, SemanticExprLookup,
+};
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use cairo_lang_semantic::lsp_helpers::TypeFilter;
+use cairo_lang_semantic::lsp_helpers::{LspHelpers, TypeFilter};
 use cairo_lang_semantic::resolve::Resolver;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, Upcast};

@@ -2,8 +2,9 @@ use std::collections::HashSet;
 
 use cairo_lang_defs::ids::GenericTypeId;
 use cairo_lang_semantic::diagnostic::NotFoundItemType;
+use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::resolve::ResolutionContext;
 use cairo_lang_semantic::resolve::ResolvedGenericItem;
-use cairo_lang_semantic::{db::SemanticGroup, resolve::ResolutionContext};
 use cairo_lang_syntax::node::{
     Token, TypedSyntaxNode,
     ast::{PatternEnum, PatternIdentifier, PatternStruct, PatternStructParam},
