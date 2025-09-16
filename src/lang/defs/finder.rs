@@ -1,7 +1,8 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumLongId, GenericTypeId, ImplDefLongId, ImplItemId, LanguageElementId, LookupItemId,
-    MemberId, ModuleId, NamedLanguageElementId, StructLongId, SubmoduleLongId, TraitItemId, VarId,
+    MacroCallLongId, MemberId, ModuleId, NamedLanguageElementId, StructLongId, SubmoduleLongId,
+    TraitItemId, VarId,
 };
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_parser::db::ParserGroup;
@@ -38,6 +39,7 @@ use cairo_lang_utils::{Intern, Upcast};
 use itertools::Itertools;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::defs::resolve_macro_call_module;
 
 /// A language element that can be a result of name resolution performed by CairoLS.
 ///
@@ -66,6 +68,7 @@ pub fn find_definition<'db>(
     resolver_data: &mut Option<ResolverData<'db>>,
 ) -> Option<ResolvedItem<'db>> {
     try_plugin_inline_macro(db, identifier, lookup_items)
+        .or_else(|| try_top_level_declarative_inline_macro(db, identifier))
         .or_else(|| try_submodule_name(db, identifier))
         .or_else(|| try_member(db, identifier, lookup_items))
         .or_else(|| try_member_from_constructor(db, identifier, lookup_items))
@@ -271,6 +274,23 @@ fn try_plugin_inline_macro<'db>(
             // it means we are on a plugin inline macro, or it is unrecognized.
             _ => plugin_inline_macro,
         }
+    } else {
+        None
+    }
+}
+
+fn try_top_level_declarative_inline_macro<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+) -> Option<ResolvedItem<'db>> {
+    if let Some(item_macro_call) =
+        identifier.as_syntax_node().ancestor_of_type::<ast::ItemInlineMacro>(db)
+    {
+        let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
+        let macro_call_id =
+            MacroCallLongId(module_file_id, item_macro_call.stable_ptr(db)).intern(db);
+
+        resolve_macro_call_module(db, macro_call_id)
     } else {
         None
     }

@@ -9,10 +9,16 @@ pub use self::variant::VariantDef;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
+use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, ModuleId};
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
+use cairo_lang_semantic::diagnostic::NotFoundItemType;
+use cairo_lang_semantic::expr::inference::InferenceId;
+use cairo_lang_semantic::resolve::{
+    ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -25,6 +31,8 @@ mod member;
 mod module;
 mod variable;
 mod variant;
+
+pub use module::NonMacroModuleId;
 
 /// Keeps information about the symbol that is being searched for/inspected.
 ///
@@ -111,10 +119,22 @@ impl<'db> SymbolSearch<'db> {
                 ItemDef::new(db, resolved_item.definition_node(db)?).map(SymbolDef::Item)
             }
 
-            ResolvedItem::Generic(ResolvedGenericItem::Module(id))
-            | ResolvedItem::Concrete(ResolvedConcreteItem::Module(id)) => {
-                Some(SymbolDef::Module(ModuleDef::new(db, id, resolved_item.definition_node(db)?)))
+            // An item should never be resolved to this but better safe than sorry.
+            ResolvedItem::Generic(ResolvedGenericItem::Module(ModuleId::MacroCall {
+                id, ..
+            }))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Module(ModuleId::MacroCall {
+                id,
+                ..
+            })) => {
+                let resolved_item = resolve_macro_call_module(db, id)?;
+                ItemDef::new(db, resolved_item.definition_node(db)?).map(SymbolDef::Item)
             }
+
+            ResolvedItem::Generic(ResolvedGenericItem::Module(id))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Module(id)) => Some(SymbolDef::Module(
+                ModuleDef::new(db, id.try_into().unwrap(), resolved_item.definition_node(db)?),
+            )),
 
             ResolvedItem::Generic(ResolvedGenericItem::Variable(var_id)) => {
                 Some(SymbolDef::Variable(VariableDef::new(
@@ -265,5 +285,28 @@ impl<'db> SymbolDef<'db> {
             Self::Module(d) => Some(d.definition_stable_ptr()),
             Self::GenericParam(d) => Some(d.definition_stable_ptr()),
         }
+    }
+}
+
+fn resolve_macro_call_module<'db>(
+    db: &'db AnalysisDatabase,
+    id: MacroCallId<'db>,
+) -> Option<ResolvedItem<'db>> {
+    let macro_call_path = db.module_macro_call_by_id(id).ok()?.path(db);
+    let inference_id = InferenceId::MacroCall(id);
+    let module_file_id = id.module_file_id(db);
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+
+    match resolver.resolve_generic_path(
+        &mut Default::default(),
+        &macro_call_path,
+        NotFoundItemType::Macro,
+        ResolutionContext::Default,
+    ) {
+        Ok(ResolvedGenericItem::Macro(declaration_id)) => {
+            Some(ResolvedItem::Generic(ResolvedGenericItem::Macro(declaration_id)))
+        }
+
+        Ok(_) | Err(_) => None,
     }
 }

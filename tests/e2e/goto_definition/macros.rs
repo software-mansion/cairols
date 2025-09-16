@@ -160,3 +160,37 @@ fn declarative_macros_with_same_name_in_different_modules() {
     }
     ")
 }
+
+#[test]
+fn top_level_declarative_macro_on_definition() {
+    test_transform_plain!(GotoDefinition, r#"
+    pub macro decl<caret>are_mod {
+        ($name:ident) => { mod $name {} };
+    }
+
+    declare_mod!(modzik);
+    "#, @r"
+    pub macro <sel>declare_mod</sel> {
+        ($name:ident) => { mod $name {} };
+    }
+
+    declare_mod!(modzik);
+    ")
+}
+
+#[test]
+fn top_level_declarative_macro_on_usage() {
+    test_transform_plain!(GotoDefinition, r#"
+    pub macro declare_mod {
+        ($name:ident) => { mod $name {} };
+    }
+
+    decla<caret>re_mod!(modzik);
+    "#, @r"
+    pub macro <sel>declare_mod</sel> {
+        ($name:ident) => { mod $name {} };
+    }
+
+    declare_mod!(modzik);
+    ")
+}
