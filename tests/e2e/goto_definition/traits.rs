@@ -274,6 +274,38 @@ fn member_of_storage_with_starknet_plugin() {
 }
 
 #[test]
+fn member_of_storage_with_non_existent_method() {
+    test_transform_with_macros!(GotoDefinition, r"
+    #[starknet::contract]
+    mod Contract {
+        #[storage]
+        struct Storage {
+            field: felt252,
+        }
+
+        fn field_2x(ref self: ContractState) -> felt252 {
+            let v = self.fie<caret>ld.non_existent_method();
+            123
+        }
+    }
+    #", @r"
+    #[starknet::contract]
+    mod Contract {
+        #[storage]
+        struct Storage {
+            <sel>field</sel>: felt252,
+        }
+
+        fn field_2x(ref self: ContractState) -> felt252 {
+            let v = self.field.non_existent_method();
+            123
+        }
+    }
+    #
+    ");
+}
+
+#[test]
 fn self_as_outside_impl() {
     test_transform_plain!(GotoDefinition, r"
     fn bar<+MyTrait>() {}
