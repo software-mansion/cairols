@@ -19,6 +19,7 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::importer::import_edit_for_trait_if_needed;
 use crate::lang::methods::find_methods_for_type;
+use crate::lang::text_matching::text_matches;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::items::imp::ImplSemantic;
 use cairo_lang_semantic::items::structure::StructSemantic;
@@ -39,6 +40,7 @@ fn dot_completions_ex<'db>(
     was_node_corrected: bool,
 ) -> Option<Vec<CompletionItem>> {
     let expr = dot_expr_rhs(db, &ctx.node, was_node_corrected)?;
+    let typed = expr.rhs(db).as_syntax_node().get_text_without_trivia(db);
     // Get a resolver in the current context.
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let mut resolver = ctx.resolver(db);
@@ -65,7 +67,9 @@ fn dot_completions_ex<'db>(
 
     for ty in types {
         // Find relevant methods for type.
-        let relevant_methods = find_methods_for_type(db, &mut resolver, ty, stable_ptr);
+        let relevant_methods = find_methods_for_type(db, &mut resolver, ty, stable_ptr)
+            .into_iter()
+            .filter(|method| text_matches(method.name(db), typed));
 
         for trait_function in relevant_methods {
             let Some(completion) = completion_for_method(db, ctx, trait_function) else {
