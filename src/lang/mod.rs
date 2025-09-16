@@ -5,6 +5,7 @@ pub mod diagnostics;
 pub mod importable;
 pub mod importer;
 pub mod lsp;
+pub mod members;
 pub mod methods;
 pub mod plugins;
 pub mod proc_macros;

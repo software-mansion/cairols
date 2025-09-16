@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "docs:dev": "vitepress dev",
+    "dev": "vitepress dev",
     "build": "vitepress build",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",
-    "docs:preview": "vitepress preview"
+    "preview": "vitepress preview"
   },
   "dependencies": {
     "cairo-tm-grammar": "github:software-mansion-labs/cairo-tm-grammar",
