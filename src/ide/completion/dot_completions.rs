@@ -87,8 +87,8 @@ fn dot_completions_ex<'db>(
                             kind: Some(CompletionItemKind::FIELD),
                             ..CompletionItem::default()
                         },
-                        // We set the relevance to medium as we want the members to be shown after the methods.
-                        relevance: Some(CompletionRelevance::Medium),
+                        // We set the relevance to High as we want the members to be shown before the methods.
+                        relevance: CompletionRelevance::High,
                     };
                     completions.push(completion);
                 },
@@ -137,8 +137,8 @@ fn completion_for_method<'db>(
             additional_text_edits: Some(additional_text_edits),
             ..CompletionItem::default()
         },
-        // We set the relevance to high as we want methods to be shown before the members of the struct.
-        relevance: Some(CompletionRelevance::High),
+        // We set the relevance to medium as we want methods to be shown after the members of the struct.
+        relevance: CompletionRelevance::Medium,
     };
     Some(completion)
 }

@@ -97,7 +97,7 @@ pub fn mod_completions_ex<'db>(
                         kind: Some(CompletionItemKind::MODULE),
                         ..Default::default()
                     },
-                    relevance: Some(CompletionRelevance::Highest),
+                    relevance: CompletionRelevance::Highest,
                 });
             }
         }

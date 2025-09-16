@@ -17,11 +17,11 @@ use super::helpers::completion_kind::{
     importable_completion_kind, resolved_generic_item_completion_kind,
 };
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
-use crate::ide::completion::{
-    CompletionItemHashable, CompletionItemOrderable, get_item_relevance, importable_crate_id,
-};
+use crate::ide::completion::helpers::item::get_item_relevance;
+use crate::ide::completion::{CompletionItemHashable, CompletionItemOrderable};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::importable::importable_crate_id;
 use crate::lang::importer::new_import_edit;
 use crate::lang::text_matching::text_matches;
 use crate::lang::visibility::peek_visible_in_with_edition;

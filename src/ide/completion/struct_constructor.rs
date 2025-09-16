@@ -86,7 +86,7 @@ fn struct_constructor_completions_ex<'db>(
                         kind: Some(CompletionItemKind::VALUE),
                         ..Default::default()
                     },
-                    relevance: Some(CompletionRelevance::High),
+                    relevance: CompletionRelevance::High,
                 })
             }
         })

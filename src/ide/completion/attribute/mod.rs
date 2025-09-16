@@ -47,7 +47,7 @@ fn attribute_completions_ex<'db>(
                     kind: Some(CompletionItemKind::FUNCTION),
                     ..Default::default()
                 },
-                relevance: Some(CompletionRelevance::High),
+                relevance: CompletionRelevance::High,
             })
             .collect(),
     )

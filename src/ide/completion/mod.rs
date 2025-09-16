@@ -1,29 +1,28 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
-use std::hash::Hash;
 
 use attribute::attribute_completions;
 use attribute::derive::derive_completions;
-use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use expr::macro_call::macro_call_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
-use lsp_types::{CompletionItem, CompletionParams, CompletionResponse, CompletionTriggerKind};
+use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
 use path::path_suffix_completions;
 use pattern::{enum_pattern_completions, struct_pattern_completions};
 use self_completions::self_completions;
-use serde::Serialize;
 use struct_constructor::struct_constructor_completions;
 
 use self::dot_completions::dot_completions;
+use crate::ide::completion::helpers::item::{
+    CompletionItemHashable, CompletionItemOrderable, CompletionRelevance,
+};
 use crate::ide::completion::mod_item::mod_completions;
 use crate::ide::completion::use_statement::use_completions;
 use crate::lang::analysis_context::AnalysisContext;
@@ -108,11 +107,8 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
     // Need to also deduplicate items with different relevance and leave the one with the highest relevance.
     let mut result = unique_completion_items_with_highest_relevance(deduplicated_items);
-    result.sort_by(|a, b| match (&a.relevance, &b.relevance) {
-        (Some(ra), Some(rb)) => rb.cmp(ra).then_with(|| compare_items_by_label_and_detail(a, b)),
-        (Some(_), None) => Ordering::Less,
-        (None, Some(_)) => Ordering::Greater,
-        (None, None) => compare_items_by_label_and_detail(a, b),
+    result.sort_by(|a, b| {
+        b.relevance.cmp(&a.relevance).then_with(|| compare_items_by_label_and_detail(a, b))
     });
 
     // Set the sort text as it's used to sort the items on the client side.
@@ -178,121 +174,6 @@ fn find_last_meaning_node<'db>(
     node
 }
 
-// Specifies how relevant a completion is relative to the scope of the current cursor position.
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Serialize, Debug)]
-enum CompletionRelevance {
-    Low = 0,
-    Medium = 1,
-    High = 2,
-    Highest = 3,
-}
-
-impl CompletionRelevance {
-    fn get_highest_relevance_as_u16() -> u16 {
-        CompletionRelevance::Highest as u16
-    }
-
-    fn get_inverted_relevance_as_u16(&self) -> u16 {
-        Self::get_highest_relevance_as_u16() - self.clone() as u16
-    }
-}
-
-/// Internal representation of a [`CompletionItem`].
-#[derive(Clone, Serialize, Debug)]
-struct CompletionItemOrderable {
-    item: CompletionItem,
-    // Relevance tells us in what order we should be showing completions.
-    // If the relevance is None, it means that the item can be put in any order.
-    relevance: Option<CompletionRelevance>,
-}
-
-impl PartialEq for CompletionItemOrderable {
-    fn eq(&self, other: &Self) -> bool {
-        self.item == other.item
-    }
-}
-
-impl Eq for CompletionItemOrderable {}
-
-impl PartialOrd for CompletionItemOrderable {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-// Manually implement `Ord` for `Completion`.
-impl Ord for CompletionItemOrderable {
-    fn cmp(&self, other: &Self) -> Ordering {
-        // We only compare the `relevance` field.
-        // This makes the sorting behavior explicit and independent of other fields.
-        self.relevance.cmp(&other.relevance)
-    }
-}
-
-#[derive(PartialEq)]
-pub struct CompletionItemHashable(CompletionItemOrderable);
-
-impl Eq for CompletionItemHashable {}
-
-impl Hash for CompletionItemHashable {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        serde_json::to_string(&self.0).expect("serialization should not fail").hash(state);
-    }
-}
-
-fn get_item_relevance(
-    is_in_scope: bool,
-    is_current_crate: bool,
-    is_corelib: bool,
-) -> Option<CompletionRelevance> {
-    match (is_in_scope, is_current_crate, is_corelib) {
-        (true, _, _) => Some(CompletionRelevance::High),
-        (false, true, _) => Some(CompletionRelevance::Medium),
-        (false, false, false) => Some(CompletionRelevance::Low),
-        _ => None,
-    }
-}
-
-fn importable_crate_id<'db>(
-    db: &'db AnalysisDatabase,
-    importable: ImportableId<'db>,
-) -> CrateId<'db> {
-    match importable {
-        ImportableId::Crate(crate_id) => crate_id,
-        _ => {
-            let importable_node = importable_syntax_node(db, importable)
-                .expect("Importable should have a syntax node.");
-            let module = db
-                .find_module_containing_node(importable_node)
-                .expect("A node should be contained in a module");
-            module.owning_crate(db)
-        }
-    }
-}
-
-// TODO: Upstream this function to compiler.
-fn importable_syntax_node<'db>(
-    db: &'db AnalysisDatabase,
-    importable: ImportableId<'db>,
-) -> Option<SyntaxNode<'db>> {
-    match importable {
-        ImportableId::Constant(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::Submodule(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::ExternFunction(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::FreeFunction(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::ExternType(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::TypeAlias(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::Impl(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::ImplAlias(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::Struct(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::Variant(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::Trait(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::Enum(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::MacroDeclaration(id) => Some(id.stable_ptr(db).lookup(db).as_syntax_node()),
-        ImportableId::Crate(_) => None,
-    }
-}
-
 /// Given a list of completion items, returns a list with unique items keeping the one with the highest relevance.
 fn unique_completion_items_with_highest_relevance(
     relevance_items: Vec<CompletionItemOrderable>,
@@ -337,15 +218,5 @@ fn compare_items_by_label_and_detail(
 }
 
 fn get_completion_item_sort_text(item: &CompletionItemOrderable) -> String {
-    match &item.relevance {
-        Some(relevance) => {
-            format!("{}_{}", relevance.get_inverted_relevance_as_u16(), item.item.label)
-        }
-        // If the relevance is None, we always want it to be at the end of the list.
-        None => format!(
-            "{}_{}",
-            CompletionRelevance::get_highest_relevance_as_u16() + 1,
-            item.item.label
-        ),
-    }
+    format!("{}_{}", item.relevance.get_inverted_relevance_as_u16(), item.item.label)
 }

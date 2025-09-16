@@ -110,7 +110,7 @@ fn patterns<'db>(
                     kind: Some(CompletionItemKind::VARIABLE),
                     ..CompletionItem::default()
                 },
-                relevance: Some(CompletionRelevance::Highest),
+                relevance: CompletionRelevance::Highest,
             });
         }
     }

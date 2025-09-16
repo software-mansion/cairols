@@ -68,6 +68,6 @@ fn snippet_completions_for_inline_plugins(inline_macro_name: &str) -> Completion
             insert_text: Some(insert_text),
             ..CompletionItem::default()
         },
-        relevance: Some(CompletionRelevance::High),
+        relevance: CompletionRelevance::High,
     }
 }

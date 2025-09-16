@@ -91,7 +91,7 @@ fn first_segment<'db>(
                               kind: Some(importable_completion_kind(*importable)),
                               ..CompletionItem::default()
                           },
-                          relevance: Some(CompletionRelevance::High),
+                          relevance: CompletionRelevance::High,
                       })
                     }
                     _ => None,

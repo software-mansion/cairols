@@ -39,7 +39,7 @@ pub fn params_completions<'db>(
                 kind: Some(CompletionItemKind::VARIABLE),
                 ..CompletionItem::default()
             },
-            relevance: Some(CompletionRelevance::Highest),
+            relevance: CompletionRelevance::Highest,
         })
         .collect()
 }
