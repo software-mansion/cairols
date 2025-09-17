@@ -8,19 +8,20 @@ use cairo_lang_syntax::node::ast::{PathSegment, StatementLet};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
 use itertools::Itertools;
-use lsp_types::{CompletionItem, CompletionItemKind};
 
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
+use lsp_types::{CompletionItem, CompletionItemKind};
 
 pub fn variables_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     was_node_corrected: bool,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     if let Some(path) = expr_selector(db, &ctx.node)
         && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
         && let [PathSegment::Simple(segment)] =
@@ -40,7 +41,7 @@ fn patterns<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     typed_text: &str,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     let cursor = ctx.node.offset(db);
 
     let mut completions = vec![];
@@ -103,10 +104,13 @@ fn patterns<'db>(
                 continue;
             }
 
-            completions.push(CompletionItem {
-                label: var.name.to_string(),
-                kind: Some(CompletionItemKind::VARIABLE),
-                ..CompletionItem::default()
+            completions.push(CompletionItemOrderable {
+                item: CompletionItem {
+                    label: var.name.to_string(),
+                    kind: Some(CompletionItemKind::VARIABLE),
+                    ..CompletionItem::default()
+                },
+                relevance: CompletionRelevance::Highest,
             });
         }
     }

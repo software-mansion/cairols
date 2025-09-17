@@ -2,6 +2,7 @@ pub mod analysis_context;
 pub mod db;
 pub mod defs;
 pub mod diagnostics;
+pub mod importable;
 pub mod importer;
 pub mod lsp;
 pub mod members;

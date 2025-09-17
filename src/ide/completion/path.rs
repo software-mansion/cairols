@@ -1,4 +1,5 @@
-use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_defs::ids::{LanguageElementId, NamedLanguageElementId};
+use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::items::enm::EnumSemantic;
 use cairo_lang_semantic::items::module::ModuleSemantic;
@@ -15,10 +16,12 @@ use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 use super::helpers::completion_kind::{
     importable_completion_kind, resolved_generic_item_completion_kind,
 };
-use crate::ide::completion::CompletionItemHashable;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use crate::ide::completion::helpers::item::get_item_relevance;
+use crate::ide::completion::{CompletionItemHashable, CompletionItemOrderable};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::importable::importable_crate_id;
 use crate::lang::importer::new_import_edit;
 use crate::lang::text_matching::text_matches;
 use crate::lang::visibility::peek_visible_in_with_edition;
@@ -28,7 +31,7 @@ pub fn path_suffix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     was_node_corrected: bool,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     let (importables, typed_text) = if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
         && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
         // Enum patterns are handled in a separate function.
@@ -61,7 +64,9 @@ pub fn path_suffix_completions<'db>(
         typed_text.pop().expect("typed path should not be empty")
     };
 
-    let mut completions: Vec<CompletionItem> = importables
+    let current_crate = ctx.module_file_id.0.owning_crate(db);
+
+    let mut completions: Vec<CompletionItemOrderable> = importables
         .iter()
         .filter_map(|(importable, path_str)| {
             let mut path_segments: Vec<_> = path_str.split("::").collect();
@@ -98,26 +103,32 @@ pub fn path_suffix_completions<'db>(
             } else {
                 None
             };
+            let importable_crate = importable_crate_id(db, *importable);
+            let is_current_crate = importable_crate == current_crate;
+            let is_core = *importable_crate.long(db) == CrateLongId::core();
 
-            Some(CompletionItem {
-                label: last_segment.to_string(),
-                kind: Some(importable_completion_kind(*importable)),
-                label_details: Some(CompletionItemLabelDetails {
-                    detail: None,
-                    description: Some(path_str.to_string()),
-                }),
-                additional_text_edits,
-                ..CompletionItem::default()
+            Some(CompletionItemOrderable {
+                item: CompletionItem {
+                    label: last_segment.to_string(),
+                    kind: Some(importable_completion_kind(*importable)),
+                    label_details: Some(CompletionItemLabelDetails {
+                        detail: None,
+                        description: Some(path_str.to_string()),
+                    }),
+                    additional_text_edits,
+                    ..CompletionItem::default()
+                },
+                relevance: get_item_relevance(!is_not_in_scope, is_current_crate, is_core),
             })
         })
         .unique_by(|completion| CompletionItemHashable(completion.clone()))
         .collect();
 
     // Remove path label_details from all completions, that are NOT duplicated.
-    let label_counts = completions.iter().map(|item| item.label.clone()).counts();
+    let label_counts = completions.iter().map(|item| item.item.label.clone()).counts();
     for completion in &mut completions {
-        if label_counts[&completion.label] == 1 {
-            completion.label_details = None;
+        if label_counts[&completion.item.label] == 1 {
+            completion.item.label_details = None;
         }
     }
 
@@ -129,13 +140,16 @@ pub fn path_prefix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     segments: Vec<PathSegment<'db>>,
-) -> Option<Vec<CompletionItem>> {
+) -> Option<Vec<CompletionItemOrderable>> {
+    let is_current_scope = segments.len() == 1;
     let mut resolver = ctx.resolver(db);
 
     let mut diagnostics = SemanticDiagnostics::default();
     let item = resolver
         .resolve_concrete_path(&mut diagnostics, segments, NotFoundItemType::Identifier)
         .ok()?;
+
+    let current_crate = ctx.module_file_id.0.owning_crate(db);
 
     Some(match item {
         ResolvedConcreteItem::Module(module_id) => module_id
@@ -147,6 +161,7 @@ pub fn path_prefix_completions<'db>(
                 let resolved_item = ResolvedGenericItem::from_module_item(db, *item).ok()?;
                 let item_info =
                     db.module_item_info_by_name(module_id, item.name(db).into()).ok()??;
+                let crate_id = module_id.owning_crate(db);
 
                 peek_visible_in_with_edition(
                     db,
@@ -154,10 +169,17 @@ pub fn path_prefix_completions<'db>(
                     module_id,
                     ctx.module_file_id,
                 )
-                .then(|| CompletionItem {
-                    label: item.name(db).to_string(),
-                    kind: Some(resolved_generic_item_completion_kind(resolved_item)),
-                    ..CompletionItem::default()
+                .then(|| CompletionItemOrderable {
+                    item: CompletionItem {
+                        label: item.name(db).to_string(),
+                        kind: Some(resolved_generic_item_completion_kind(resolved_item)),
+                        ..CompletionItem::default()
+                    },
+                    relevance: get_item_relevance(
+                        is_current_scope,
+                        crate_id == current_crate,
+                        *crate_id.long(db) == CrateLongId::core(),
+                    ),
                 })
             })
             .collect(),
@@ -165,10 +187,20 @@ pub fn path_prefix_completions<'db>(
             .trait_functions(item.trait_id(db))
             .unwrap_or_default()
             .iter()
-            .map(|(name, _)| CompletionItem {
-                label: name.to_string(),
-                kind: Some(CompletionItemKind::FUNCTION),
-                ..CompletionItem::default()
+            .map(|(name, _)| {
+                let crate_id = item.trait_id(db).parent_module(db).owning_crate(db);
+                CompletionItemOrderable {
+                    item: CompletionItem {
+                        label: name.to_string(),
+                        kind: Some(CompletionItemKind::FUNCTION),
+                        ..CompletionItem::default()
+                    },
+                    relevance: get_item_relevance(
+                        is_current_scope,
+                        crate_id == current_crate,
+                        *crate_id.long(db) == CrateLongId::core(),
+                    ),
+                }
             })
             .collect(),
         ResolvedConcreteItem::Impl(item) => item
@@ -177,10 +209,20 @@ pub fn path_prefix_completions<'db>(
                 db.trait_functions(trait_id.trait_id(db))
                     .unwrap_or_default()
                     .iter()
-                    .map(|(name, _)| CompletionItem {
-                        label: name.to_string(),
-                        kind: Some(CompletionItemKind::FUNCTION),
-                        ..CompletionItem::default()
+                    .map(|(name, _)| {
+                        let crate_id = trait_id.trait_id(db).parent_module(db).owning_crate(db);
+                        CompletionItemOrderable {
+                            item: CompletionItem {
+                                label: name.to_string(),
+                                kind: Some(CompletionItemKind::FUNCTION),
+                                ..CompletionItem::default()
+                            },
+                            relevance: get_item_relevance(
+                                is_current_scope,
+                                crate_id == current_crate,
+                                *crate_id.long(db) == CrateLongId::core(),
+                            ),
+                        }
                     })
                     .collect()
             })
@@ -191,10 +233,20 @@ pub fn path_prefix_completions<'db>(
                 .cloned()
                 .unwrap_or_default()
                 .iter()
-                .map(|(name, _)| CompletionItem {
-                    label: name.to_string(),
-                    kind: Some(CompletionItemKind::ENUM_MEMBER),
-                    ..CompletionItem::default()
+                .map(|(name, _)| {
+                    let crate_id = enum_id.enum_id(db).parent_module(db).owning_crate(db);
+                    CompletionItemOrderable {
+                        item: CompletionItem {
+                            label: name.to_string(),
+                            kind: Some(CompletionItemKind::ENUM_MEMBER),
+                            ..CompletionItem::default()
+                        },
+                        relevance: get_item_relevance(
+                            is_current_scope,
+                            crate_id == current_crate,
+                            *crate_id.long(db) == CrateLongId::core(),
+                        ),
+                    }
                 })
                 .collect(),
             _ => vec![],

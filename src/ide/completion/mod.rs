@@ -1,4 +1,6 @@
-use std::hash::Hash;
+use std::cmp::Ordering;
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 
 use attribute::attribute_completions;
 use attribute::derive::derive_completions;
@@ -11,13 +13,16 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use expr::macro_call::macro_call_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
-use lsp_types::{CompletionItem, CompletionParams, CompletionResponse, CompletionTriggerKind};
+use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
 use path::path_suffix_completions;
 use pattern::{enum_pattern_completions, struct_pattern_completions};
 use self_completions::self_completions;
 use struct_constructor::struct_constructor_completions;
 
 use self::dot_completions::dot_completions;
+use crate::ide::completion::helpers::item::{
+    CompletionItemHashable, CompletionItemOrderable, CompletionRelevance,
+};
 use crate::ide::completion::mod_item::mod_completions;
 use crate::ide::completion::use_statement::use_completions;
 use crate::lang::analysis_context::AnalysisContext;
@@ -89,7 +94,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     let trigger_kind =
         params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED);
 
-    let result: Vec<_> = db
+    let deduplicated_items: Vec<_> = db
         .get_node_resultants(node)?
         .into_iter()
         .filter_map(|resultant| complete_ex(resultant, trigger_kind, was_node_corrected, db))
@@ -100,7 +105,19 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         .map(|item| item.0)
         .collect();
 
-    Some(CompletionResponse::Array(result))
+    // Need to also deduplicate items with different relevance and leave the one with the highest relevance.
+    let mut result = unique_completion_items_with_highest_relevance(deduplicated_items);
+    result.sort_by(|a, b| {
+        b.relevance.cmp(&a.relevance).then_with(|| compare_items_by_label_and_detail(a, b))
+    });
+
+    // Set the sort text as it's used to sort the items on the client side.
+    // We want to keep the order the same way we have it here.
+    for (index, item) in result.iter_mut().enumerate() {
+        item.item.sort_text = Some(index.to_string());
+    }
+
+    Some(CompletionResponse::Array(result.into_iter().map(|item| item.item).collect()))
 }
 
 fn complete_ex<'db>(
@@ -108,7 +125,7 @@ fn complete_ex<'db>(
     trigger_kind: CompletionTriggerKind,
     was_node_corrected: bool,
     db: &'db AnalysisDatabase,
-) -> Option<Vec<CompletionItem>> {
+) -> Option<Vec<CompletionItemOrderable>> {
     let ctx = AnalysisContext::from_node(db, node)?;
     let crate_id = ctx.module_file_id.0.owning_crate(db);
 
@@ -158,13 +175,45 @@ fn find_last_meaning_node<'db>(
     node
 }
 
-#[derive(PartialEq)]
-pub struct CompletionItemHashable(CompletionItem);
+/// Given a list of completion items, returns a list with unique items keeping the one with the highest relevance.
+fn unique_completion_items_with_highest_relevance(
+    relevance_items: Vec<CompletionItemOrderable>,
+) -> Vec<CompletionItemOrderable> {
+    let mut unique_items: HashMap<String, CompletionItemOrderable> = HashMap::new();
 
-impl Eq for CompletionItemHashable {}
-
-impl Hash for CompletionItemHashable {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        serde_json::to_string(&self.0).expect("serialization should not fail").hash(state);
+    for relevance_item in relevance_items {
+        let key =
+            serde_json::to_string(&relevance_item.item).expect("serialization should not fail");
+        match unique_items.entry(key) {
+            Entry::Occupied(mut occupied) => {
+                if relevance_item.relevance > occupied.get().relevance {
+                    *occupied.get_mut() = relevance_item;
+                }
+            }
+            Entry::Vacant(vacant_entry) => {
+                vacant_entry.insert(relevance_item);
+            }
+        };
     }
+
+    unique_items.into_values().collect()
+}
+
+fn compare_items_by_label_and_detail(
+    a: &CompletionItemOrderable,
+    b: &CompletionItemOrderable,
+) -> Ordering {
+    a.item
+        .label
+        .cmp(&b.item.label)
+        .then_with(|| {
+            let a_description = a.item.label_details.clone().unwrap_or_default().description;
+            let b_description = b.item.label_details.clone().unwrap_or_default().description;
+            a_description.cmp(&b_description)
+        })
+        .then_with(|| {
+            let a_description = a.item.detail.clone();
+            let b_description = b.item.detail.clone();
+            a_description.cmp(&b_description)
+        })
 }

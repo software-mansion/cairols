@@ -14,6 +14,7 @@ use tracing::debug;
 
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use crate::ide::completion::helpers::snippets::snippet_for_function_call;
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
@@ -30,7 +31,7 @@ pub fn dot_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     was_node_corrected: bool,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     dot_completions_ex(db, ctx, was_node_corrected).unwrap_or_default()
 }
 
@@ -38,7 +39,7 @@ fn dot_completions_ex<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     was_node_corrected: bool,
-) -> Option<Vec<CompletionItem>> {
+) -> Option<Vec<CompletionItemOrderable>> {
     let expr = dot_expr_rhs(db, &ctx.node, was_node_corrected)?;
     let typed = expr.rhs(db).as_syntax_node().get_text_without_trivia(db);
     // Get a resolver in the current context.
@@ -83,11 +84,17 @@ fn dot_completions_ex<'db>(
         if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
             db.concrete_struct_members(concrete_struct_id).ok()?.iter().for_each(
                 |(name, member)| {
-                    let completion = CompletionItem {
-                        label: name.to_string(),
-                        detail: Some(format_type(db, member.ty, &importables)),
-                        kind: Some(CompletionItemKind::FIELD),
-                        ..CompletionItem::default()
+                    let completion = CompletionItemOrderable {
+                        item: CompletionItem {
+                            label: name.to_string(),
+                            detail: Some(format_type(db, member.ty, &importables)),
+                            kind: Some(CompletionItemKind::FIELD),
+                            ..CompletionItem::default()
+                        },
+                        // We set the relevance to High as we want the members to be shown before the methods.
+                        // The [`find_methods_for_type`] function takes current crate methods first, so they will be shown
+                        // before the methods from other crates.
+                        relevance: CompletionRelevance::High,
                     };
                     completions.push(completion);
                 },
@@ -112,7 +119,7 @@ fn completion_for_method<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     trait_function: TraitFunctionId<'db>,
-) -> Option<CompletionItem> {
+) -> Option<CompletionItemOrderable> {
     let trait_id = trait_function.trait_id(db);
     let name = trait_function.name(db);
     let signature = db.trait_function_signature(trait_function).ok()?;
@@ -126,14 +133,18 @@ fn completion_for_method<'db>(
         additional_text_edits.push(edit);
     }
 
-    let completion = CompletionItem {
-        label: format!("{name}()"),
-        insert_text: Some(snippet_for_function_call(name, signature)),
-        insert_text_format: Some(InsertTextFormat::SNIPPET),
-        detail: Some(detail),
-        kind: Some(CompletionItemKind::METHOD),
-        additional_text_edits: Some(additional_text_edits),
-        ..CompletionItem::default()
+    let completion = CompletionItemOrderable {
+        item: CompletionItem {
+            label: format!("{name}()"),
+            insert_text: Some(snippet_for_function_call(name, signature)),
+            insert_text_format: Some(InsertTextFormat::SNIPPET),
+            detail: Some(detail),
+            kind: Some(CompletionItemKind::METHOD),
+            additional_text_edits: Some(additional_text_edits),
+            ..CompletionItem::default()
+        },
+        // We set the relevance to medium as we want methods to be shown after the members of the struct.
+        relevance: CompletionRelevance::Medium,
     };
     Some(completion)
 }

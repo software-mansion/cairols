@@ -10,6 +10,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind, Url};
 
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::text_matching::text_matches;
@@ -17,7 +18,7 @@ use crate::lang::text_matching::text_matches;
 pub fn mod_completions<'db>(
     db: &'db AnalysisDatabase,
     node: SyntaxNode<'db>,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     let file_id = node.stable_ptr(db).file_id(db);
 
     if let Some(ident) = TerminalIdentifier::cast(db, node)
@@ -48,7 +49,7 @@ pub fn mod_completions_ex<'db>(
     module: ItemModule<'db>,
     file: FileId<'db>,
     typed_module_name: &str,
-) -> Option<Vec<CompletionItem>> {
+) -> Option<Vec<CompletionItemOrderable>> {
     let semicolon_missing = match module.body(db) {
         MaybeModuleBody::None(semicolon) => {
             semicolon.token(db).as_syntax_node().kind(db) == SyntaxKind::TokenMissing
@@ -90,10 +91,13 @@ pub fn mod_completions_ex<'db>(
                 let semicolon =
                     if semicolon_missing { ";".to_string() } else { Default::default() };
 
-                result.push(CompletionItem {
-                    label: format!("{label}{semicolon}"),
-                    kind: Some(CompletionItemKind::MODULE),
-                    ..Default::default()
+                result.push(CompletionItemOrderable {
+                    item: CompletionItem {
+                        label: format!("{label}{semicolon}"),
+                        kind: Some(CompletionItemKind::MODULE),
+                        ..Default::default()
+                    },
+                    relevance: CompletionRelevance::Highest,
                 });
             }
         }

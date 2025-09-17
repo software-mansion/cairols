@@ -6,13 +6,14 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind};
 
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 
 pub fn derive_completions<'db>(
     db: &'db AnalysisDatabase,
     node: SyntaxNode<'db>,
     crate_id: CrateId<'db>,
-) -> Vec<CompletionItem> {
+) -> Vec<CompletionItemOrderable> {
     // Check if cursor is on `#[derive(Arg1, Ar<cursor>)]` arguments list.
 
     if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
@@ -40,7 +41,7 @@ pub fn derive_completions_ex<'db>(
     derive_name: &str,
     attribute: Attribute<'db>,
     crate_id: CrateId<'db>,
-) -> Option<Vec<CompletionItem>> {
+) -> Option<Vec<CompletionItemOrderable>> {
     let plugins = db.crate_macro_plugins(crate_id);
 
     let attr_name = attribute.attr(db).as_syntax_node().get_text(db);
@@ -51,10 +52,13 @@ pub fn derive_completions_ex<'db>(
             .iter()
             .flat_map(|id| id.long(db).declared_derives())
             .filter(|name| text_matches(name, derive_name))
-            .map(|name| CompletionItem {
-                label: name,
-                kind: Some(CompletionItemKind::FUNCTION),
-                ..Default::default()
+            .map(|name| CompletionItemOrderable {
+                item: CompletionItem {
+                    label: name,
+                    kind: Some(CompletionItemKind::FUNCTION),
+                    ..Default::default()
+                },
+                relevance: CompletionRelevance::High,
             })
             .collect()
     })
