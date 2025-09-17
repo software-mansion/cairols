@@ -5,23 +5,13 @@ use serde::Serialize;
 use std::hash::Hash;
 
 // Specifies how relevant a completion is relative to the scope of the current cursor position.
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Serialize, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Serialize, Debug, Copy)]
 pub enum CompletionRelevance {
     Lowest = 0,
     Low = 1,
     Medium = 2,
     High = 3,
     Highest = 4,
-}
-
-impl CompletionRelevance {
-    fn get_highest_relevance_as_u16() -> u16 {
-        CompletionRelevance::Highest as u16
-    }
-
-    pub fn get_inverted_relevance_as_u16(&self) -> u16 {
-        Self::get_highest_relevance_as_u16() - self.clone() as u16
-    }
 }
 
 pub fn get_item_relevance(

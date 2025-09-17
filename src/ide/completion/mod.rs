@@ -112,8 +112,9 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     });
 
     // Set the sort text as it's used to sort the items on the client side.
-    for item in &mut result {
-        item.item.sort_text = Some(get_completion_item_sort_text(item));
+    // We want to keep the order the same way we have it here.
+    for (index, item) in result.iter_mut().enumerate() {
+        item.item.sort_text = Some(format!("{}_{}", index, item.item.label));
     }
 
     Some(CompletionResponse::Array(result.into_iter().map(|item| item.item).collect()))
@@ -215,8 +216,4 @@ fn compare_items_by_label_and_detail(
             let b_description = b.item.detail.clone();
             a_description.cmp(&b_description)
         })
-}
-
-fn get_completion_item_sort_text(item: &CompletionItemOrderable) -> String {
-    format!("{}_{}", item.relevance.get_inverted_relevance_as_u16(), item.item.label)
 }
