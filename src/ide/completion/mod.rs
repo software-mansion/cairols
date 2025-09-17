@@ -114,7 +114,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     // Set the sort text as it's used to sort the items on the client side.
     // We want to keep the order the same way we have it here.
     for (index, item) in result.iter_mut().enumerate() {
-        item.item.sort_text = Some(format!("{}_{}", index, item.item.label));
+        item.item.sort_text = Some(index.to_string());
     }
 
     Some(CompletionResponse::Array(result.into_iter().map(|item| item.item).collect()))
