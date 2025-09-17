@@ -165,7 +165,7 @@ impl MacroTest for ProjectWithSnforgeUnitTest {
 impl MacroTest for ProjectWithSnforgeIntegrationTest {
     fn fixture() -> Fixture {
         fixture! {
-            "test_package/lib.cairo" => "",
+            "test_package/src/lib.cairo" => "",
 
             "test_package/Scarb.toml" => indoc!(r#"
                 [package]
