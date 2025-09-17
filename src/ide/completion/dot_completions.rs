@@ -92,6 +92,8 @@ fn dot_completions_ex<'db>(
                             ..CompletionItem::default()
                         },
                         // We set the relevance to High as we want the members to be shown before the methods.
+                        // The [`find_methods_for_type`] function takes current crate methods first, so they will be shown
+                        // before the methods from other crates.
                         relevance: CompletionRelevance::High,
                     };
                     completions.push(completion);

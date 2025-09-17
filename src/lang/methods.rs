@@ -20,6 +20,10 @@ use super::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 
 /// Finds all methods that can be called on a type.
+/// The order of which the methods are searched is:
+/// 1. Methods in the current crate.
+/// 2. Methods in corelib (if not already included in the dependencies).
+/// 3. Methods in other dependencies.
 pub fn find_methods_for_type<'db>(
     db: &'db AnalysisDatabase,
     resolver: &mut Resolver<'db>,
