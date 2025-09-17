@@ -185,6 +185,7 @@ pub fn path_prefix_completions<'db>(
             .collect(),
         ResolvedConcreteItem::Trait(item) | ResolvedConcreteItem::SelfTrait(item) => db
             .trait_functions(item.trait_id(db))
+            .cloned()
             .unwrap_or_default()
             .iter()
             .map(|(name, _)| {
@@ -207,6 +208,7 @@ pub fn path_prefix_completions<'db>(
             .concrete_trait(db)
             .map(|trait_id| {
                 db.trait_functions(trait_id.trait_id(db))
+                    .cloned()
                     .unwrap_or_default()
                     .iter()
                     .map(|(name, _)| {

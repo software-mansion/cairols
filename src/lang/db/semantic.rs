@@ -351,7 +351,7 @@ fn lookup_binding<'db>(
             let signature = db.function_with_body_signature(function_id).ok()?;
 
             // Find the binding in the function's signature.
-            signature.params.into_iter().find(|p| p.id == param_id).map(Into::into)
+            signature.params.iter().find(|p| p.id == param_id).map(|p| p.clone().into())
         }
 
         VarId::Local(local_var_id) => {
@@ -743,34 +743,42 @@ fn item_generic_params<'db>(
     match lookup_item {
         LookupItemId::ModuleItem(module_item_id) => match module_item_id {
             ModuleItemId::FreeFunction(free_function_id) => {
-                db.free_function_generic_params(free_function_id)
+                db.free_function_generic_params(free_function_id).map(|x| x.to_vec())
             }
-            ModuleItemId::Struct(struct_id) => db.struct_generic_params(struct_id),
-            ModuleItemId::Enum(enum_id) => db.enum_generic_params(enum_id),
+            ModuleItemId::Struct(struct_id) => {
+                db.struct_generic_params(struct_id).map(|x| x.to_vec())
+            }
+            ModuleItemId::Enum(enum_id) => db.enum_generic_params(enum_id).map(|x| x.to_vec()),
             ModuleItemId::TypeAlias(module_type_alias_id) => {
-                db.module_type_alias_generic_params(module_type_alias_id)
+                db.module_type_alias_generic_params(module_type_alias_id).map(|x| x.to_vec())
             }
-            ModuleItemId::ImplAlias(impl_alias_id) => db.impl_alias_generic_params(impl_alias_id),
-            ModuleItemId::Trait(trait_id) => db.trait_generic_params(trait_id),
-            ModuleItemId::Impl(impl_def_id) => db.impl_def_generic_params(impl_def_id),
+            ModuleItemId::ImplAlias(impl_alias_id) => {
+                db.impl_alias_generic_params(impl_alias_id).map(|x| x.to_vec())
+            }
+            ModuleItemId::Trait(trait_id) => db.trait_generic_params(trait_id).map(|x| x.to_vec()),
+            ModuleItemId::Impl(impl_def_id) => {
+                db.impl_def_generic_params(impl_def_id).map(|x| x.to_vec())
+            }
             ModuleItemId::ExternType(extern_type_id) => {
-                db.extern_type_declaration_generic_params(extern_type_id)
+                db.extern_type_declaration_generic_params(extern_type_id).map(|x| x.to_vec())
             }
-            ModuleItemId::ExternFunction(extern_function_id) => {
-                db.extern_function_declaration_generic_params(extern_function_id)
-            }
+            ModuleItemId::ExternFunction(extern_function_id) => db
+                .extern_function_declaration_generic_params(extern_function_id)
+                .map(|x| x.to_vec()),
             _ => return vec![],
         },
         LookupItemId::TraitItem(trait_item_id) => match trait_item_id {
             TraitItemId::Function(trait_function_id) => {
-                db.trait_function_generic_params(trait_function_id)
+                db.trait_function_generic_params(trait_function_id).map(|x| x.to_vec())
             }
-            TraitItemId::Type(trait_type_id) => db.trait_type_generic_params(trait_type_id),
+            TraitItemId::Type(trait_type_id) => {
+                db.trait_type_generic_params(trait_type_id).map(|x| x.to_vec())
+            }
             _ => return vec![],
         },
         LookupItemId::ImplItem(impl_item_id) => match impl_item_id {
             ImplItemId::Function(impl_function_id) => {
-                db.impl_function_generic_params(impl_function_id)
+                db.impl_function_generic_params(impl_function_id).map(|x| x.to_vec())
             }
             ImplItemId::Type(impl_type_def_id) => db.impl_type_def_generic_params(impl_type_def_id),
             _ => return vec![],

@@ -180,7 +180,8 @@ fn try_trait_or_impl_item_with_self_reference<'db>(
                 };
 
                 let impl_def_id = concrete_impl_id.impl_def_id(db);
-                let impl_item_id = db.impl_item_by_name(impl_def_id, item_name.into()).ok()??;
+                let impl_item_id =
+                    db.impl_item_info_by_name(impl_def_id, item_name.into()).ok()??.id;
                 Some(ResolvedItem::ImplItem(impl_item_id))
             }
             _ => None,
@@ -244,11 +245,12 @@ fn try_impl_item_usages<'db>(
 
     let concrete_impl_long_id = concrete_impl_id.long(db);
     let item = db
-        .impl_item_by_name(
+        .impl_item_info_by_name(
             concrete_impl_long_id.impl_def_id,
             associated_item_name_candidate.as_syntax_node().get_text_without_trivia(db).into(),
         )
-        .ok()??;
+        .ok()??
+        .id;
     Some(ResolvedItem::ImplItem(item))
 }
 
@@ -533,7 +535,7 @@ fn try_variable_declaration<'db>(
             expr_closure_semantic.params
         } else {
             let signature = db.function_with_body_signature(function_id).ok()?;
-            signature.params
+            signature.params.clone()
         };
 
         if let Some(param) =

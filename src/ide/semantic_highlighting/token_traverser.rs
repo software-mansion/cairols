@@ -51,7 +51,7 @@ impl SemanticTokensTraverser {
         &mut self,
         db: &'db AnalysisDatabase,
         node: SyntaxNode<'db>,
-        token_text: &&str,
+        token_text: &str,
         green_node_kind: SyntaxKind,
     ) -> Vec<SemanticToken> {
         if green_node_kind == SyntaxKind::TokenNewline {

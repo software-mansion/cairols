@@ -30,7 +30,7 @@ pub fn variables_completions<'db>(
         && let Some(function_id) = lookup_item_id.function_with_body()
         && let Ok(body) = db.function_body(function_id)
     {
-        patterns(&body, db, ctx, segment.ident(db).token(db).text(db))
+        patterns(body, db, ctx, segment.ident(db).token(db).text(db))
     } else {
         Default::default()
     }

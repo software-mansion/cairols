@@ -8,10 +8,10 @@ use itertools::Itertools;
 /// fn xyz(a: u8, b: ByteArray) -> felt252 {}
 /// ```
 /// returns a string "xyz({$1:a}, {$2:b})".
-pub fn snippet_for_function_call(function_name: &str, signature: Signature) -> String {
+pub fn snippet_for_function_call(function_name: &str, signature: &Signature) -> String {
     let params_snippet = signature
         .params
-        .into_iter()
+        .iter()
         .filter(|param| param.name != "self")
         .enumerate()
         .map(|(index, param)| format!("${{{}:{}}}", index + 1, param.name))

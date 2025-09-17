@@ -52,9 +52,9 @@ pub fn fill_trait_members<'db>(
     let concrete_trait_id = find_concrete_trait_id(db, ctx, &item_impl)?;
     let trait_id = concrete_trait_id.trait_id(db);
 
-    let mut trait_constants = db.trait_constants(trait_id).ok()?;
-    let mut trait_types = db.trait_types(trait_id).ok()?;
-    let mut trait_functions = db.trait_functions(trait_id).ok()?;
+    let mut trait_constants = db.trait_constants(trait_id).ok()?.clone();
+    let mut trait_types = db.trait_types(trait_id).ok()?.clone();
+    let mut trait_functions = db.trait_functions(trait_id).ok()?.clone();
 
     trait_constants.retain(|key, _| !already_implemented_item_names.contains(&&**key));
     trait_types.retain(|key, _| !already_implemented_item_names.contains(&&**key));
@@ -66,7 +66,7 @@ pub fn fill_trait_members<'db>(
 
     let trait_generics = db.trait_generic_params(trait_id).ok()?;
     let specified_generics = concrete_trait_id.generic_args(db);
-    let substitution = GenericSubstitution::new(&trait_generics, &specified_generics);
+    let substitution = GenericSubstitution::new(trait_generics, specified_generics);
 
     let code = chain!(
         trait_types.values().map(|id| format!("type {} = ();", id.name(db))),
@@ -171,8 +171,10 @@ fn function_code<'db>(
         String::new()
     } else {
         let formatted_parameters = generic_parameters
-            .into_iter()
-            .map(|parameter| generic_parameter_code(db, parameter, substitution, importables))
+            .iter()
+            .map(|parameter| {
+                generic_parameter_code(db, parameter.clone(), substitution, importables)
+            })
             .collect::<Option<Vec<_>>>()?
             .join(", ");
 
@@ -236,8 +238,8 @@ fn generic_parameter_code<'db>(
                 String::new()
             } else {
                 let formatted_arguments = trait_generic_arguments
-                    .into_iter()
-                    .map(|argument| generic_argument_code(db, argument, substitution, importables))
+                    .iter()
+                    .map(|argument| generic_argument_code(db, *argument, substitution, importables))
                     .collect::<Option<Vec<_>>>()?
                     .join(", ");
 
