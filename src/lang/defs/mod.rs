@@ -72,7 +72,7 @@ impl<'db> SymbolSearch<'db> {
         let lookup_items =
             db.collect_lookup_items_with_parent_files(identifier.as_syntax_node())?;
         let mut resolver_data = None;
-        let resolved_item = find_definition(db, identifier, &lookup_items, &mut resolver_data)?;
+        let resolved_item = find_definition(db, identifier, lookup_items, &mut resolver_data)?;
 
         Self::from_resolved_item(db, resolved_item, resolver_data)
     }
@@ -88,7 +88,7 @@ impl<'db> SymbolSearch<'db> {
         let lookup_items =
             db.collect_lookup_items_with_parent_files(identifier.as_syntax_node())?;
         let mut resolver_data = None;
-        let resolved_item = find_declaration(db, identifier, &lookup_items, &mut resolver_data)?;
+        let resolved_item = find_declaration(db, identifier, lookup_items, &mut resolver_data)?;
 
         Self::from_resolved_item(db, resolved_item, resolver_data)
     }
@@ -238,21 +238,25 @@ impl<'db> SymbolDef<'db> {
                         .is_some()
                     {
                         let file_id = owning_function.stable_ptr(db).file_id(db);
-                        let files_spans = db
-                            .file_and_subfiles_with_corresponding_modules(file_id)
-                            .unwrap_or_default()
-                            .0
-                            .into_iter()
-                            .map(|f| {
-                                if f == file_id {
-                                    (f, Some(owning_function.span(db)))
-                                } else {
-                                    (f, None)
-                                }
-                            })
-                            .collect();
+                        if let Some((subfiles, _)) =
+                            db.file_and_subfiles_with_corresponding_modules(file_id)
+                        {
+                            let files_spans = subfiles
+                                .iter()
+                                .copied()
+                                .map(|f| {
+                                    if f == file_id {
+                                        (f, Some(owning_function.span(db)))
+                                    } else {
+                                        (f, None)
+                                    }
+                                })
+                                .collect();
 
-                        SearchScope::files_spans(files_spans)
+                            SearchScope::files_spans(files_spans)
+                        } else {
+                            SearchScope::empty()
+                        }
                     } else {
                         SearchScope::file_span(
                             owning_function.stable_ptr(db).file_id(db),

@@ -2,40 +2,38 @@ use crate::lang::db::upstream::file_syntax;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan};
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal};
-use cairo_lang_utils::Upcast;
+use salsa::Database;
 
 /// LS-specific extensions to the syntax group of the Cairo compiler.
-#[cairo_lang_proc_macros::query_group(LsSyntaxDatabase)]
-pub trait LsSyntaxGroup:
-    ParserGroup
-    + for<'db> Upcast<'db, dyn ParserGroup>
-    + SyntaxGroup
-    + for<'db> Upcast<'db, dyn SyntaxGroup>
-{
+pub trait LsSyntaxGroup: Database {
     /// Finds the most specific [`SyntaxNode`] at the given [`TextOffset`] in the file.
     fn find_syntax_node_at_offset<'db>(
         &'db self,
         file: FileId<'db>,
         offset: TextOffset,
-    ) -> Option<SyntaxNode<'db>>;
+    ) -> Option<SyntaxNode<'db>> {
+        find_syntax_node_at_offset(self.as_dyn_database(), file, offset)
+    }
 
     /// Finds the widest [`SyntaxNode`] within the given [`TextSpan`] in the file.
     fn widest_node_within_span<'db>(
         &'db self,
         file: FileId<'db>,
         span: TextSpan,
-    ) -> Option<SyntaxNode<'db>>;
+    ) -> Option<SyntaxNode<'db>> {
+        widest_node_within_span(self.as_dyn_database(), file, span)
+    }
 
     /// Finds the most specific [`SyntaxNode`] at the given [`TextPosition`] in the file.
     fn find_syntax_node_at_position<'db>(
         &'db self,
         file: FileId<'db>,
         position: TextPosition,
-    ) -> Option<SyntaxNode<'db>>;
+    ) -> Option<SyntaxNode<'db>> {
+        find_syntax_node_at_position(self.as_dyn_database(), file, position)
+    }
 
     /// Finds a [`TerminalIdentifier`] at the given [`TextPosition`] in the file.
     ///
@@ -49,12 +47,17 @@ pub trait LsSyntaxGroup:
         &'db self,
         file: FileId<'db>,
         position: TextPosition,
-    ) -> Option<TerminalIdentifier<'db>>;
+    ) -> Option<TerminalIdentifier<'db>> {
+        find_identifier_at_position(self.as_dyn_database(), file, position)
+    }
 }
 
+impl<T: Database + ?Sized> LsSyntaxGroup for T {}
+
 /// Finds the most specific [`SyntaxNode`] at the given [`TextOffset`] in the file.
+#[salsa::tracked]
 fn find_syntax_node_at_offset<'db>(
-    db: &'db dyn LsSyntaxGroup,
+    db: &'db dyn Database,
     file: FileId<'db>,
     offset: TextOffset,
 ) -> Option<SyntaxNode<'db>> {
@@ -62,8 +65,9 @@ fn find_syntax_node_at_offset<'db>(
 }
 
 /// Finds the widest [`SyntaxNode`] within the given [`TextSpan`] in the file.
+#[salsa::tracked]
 fn widest_node_within_span<'db>(
-    db: &'db dyn LsSyntaxGroup,
+    db: &'db dyn Database,
     file: FileId<'db>,
     span: TextSpan,
 ) -> Option<SyntaxNode<'db>> {
@@ -76,8 +80,9 @@ fn widest_node_within_span<'db>(
 }
 
 /// Finds the most specific [`SyntaxNode`] at the given [`TextPosition`] in the file.
+#[salsa::tracked]
 fn find_syntax_node_at_position<'db>(
-    db: &'db dyn LsSyntaxGroup,
+    db: &'db dyn Database,
     file: FileId<'db>,
     position: TextPosition,
 ) -> Option<SyntaxNode<'db>> {
@@ -92,8 +97,9 @@ fn find_syntax_node_at_position<'db>(
 /// return the left paren, a much better UX would be to correct the lookup to the identifier.
 /// Such corrections are always valid and deterministic, because grammar-wise it is not possible
 /// to have two identifiers/keywords being glued to each other.
+#[salsa::tracked]
 fn find_identifier_at_position<'db>(
-    db: &'db dyn LsSyntaxGroup,
+    db: &'db dyn Database,
     file: FileId<'db>,
     position: TextPosition,
 ) -> Option<TerminalIdentifier<'db>> {
@@ -111,18 +117,15 @@ fn find_identifier_at_position<'db>(
 
 pub trait SyntaxNodeExt {
     /// Faster than [`SyntaxNode::tokens`] because we don't travel each leaf, and does not allocate.
-    fn for_each_terminal<'db>(
-        &self,
-        db: &'db dyn SyntaxGroup,
-        callback: impl FnMut(&SyntaxNode<'db>),
-    ) where
+    fn for_each_terminal<'db>(&self, db: &'db dyn Database, callback: impl FnMut(&SyntaxNode<'db>))
+    where
         Self: 'db;
 }
 
 impl<'a> SyntaxNodeExt for SyntaxNode<'a> {
     fn for_each_terminal<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         mut callback: impl FnMut(&SyntaxNode<'db>),
     ) where
         Self: 'db,
@@ -133,7 +136,7 @@ impl<'a> SyntaxNodeExt for SyntaxNode<'a> {
 
 fn for_each_terminals_ex<'db>(
     node: &SyntaxNode<'db>,
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     callback: &mut impl FnMut(&SyntaxNode<'db>),
 ) {
     if node.green_node(db).kind.is_terminal() {

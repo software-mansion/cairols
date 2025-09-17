@@ -30,7 +30,7 @@ impl<'db> SearchScope<'db> {
                     && let Some((files, _)) =
                         db.file_and_subfiles_with_corresponding_modules(file_id)
                 {
-                    this.entries.extend(files.into_iter().map(|f| (f, None)));
+                    this.entries.extend(files.iter().copied().map(|f| (f, None)));
                 }
             }
         }
@@ -52,7 +52,7 @@ impl<'db> SearchScope<'db> {
         let mut this = Self { entries: [(file, None)].into() };
 
         if let Some((files, _)) = db.file_and_subfiles_with_corresponding_modules(file) {
-            this.entries.extend(files.into_iter().map(|f| (f, None)));
+            this.entries.extend(files.iter().copied().map(|f| (f, None)));
         }
 
         this

@@ -44,7 +44,6 @@ cairo-lang-macro = { git = "https://github.com/software-mansion/scarb.git", rev 
 cairo-lang-macro-v1 = { version = "0.1", package = "cairo-lang-macro", features = ["serde"] }
 cairo-lang-parser = "*"
 cairo-lang-plugins = "*"
-cairo-lang-proc-macros = "*"
 cairo-lang-project = "*"
 cairo-lang-semantic = "*"
 cairo-lang-starknet = "*"
@@ -109,7 +108,6 @@ cairo-lang-formatter = { git = "https://github.com/starkware-libs/cairo", rev = 
 cairo-lang-lowering = { git = "https://github.com/starkware-libs/cairo", rev = "2c30b613b2dfa36338b9e7e32d65dcf693eedf58" }
 cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo", rev = "2c30b613b2dfa36338b9e7e32d65dcf693eedf58" }
 cairo-lang-plugins = { git = "https://github.com/starkware-libs/cairo", rev = "2c30b613b2dfa36338b9e7e32d65dcf693eedf58" }
-cairo-lang-proc-macros = { git = "https://github.com/starkware-libs/cairo", rev = "2c30b613b2dfa36338b9e7e32d65dcf693eedf58" }
 cairo-lang-project = { git = "https://github.com/starkware-libs/cairo", rev = "2c30b613b2dfa36338b9e7e32d65dcf693eedf58" }
 cairo-lang-runnable-utils = { git = "https://github.com/starkware-libs/cairo", rev = "2c30b613b2dfa36338b9e7e32d65dcf693eedf58" }
 cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo", rev = "2c30b613b2dfa36338b9e7e32d65dcf693eedf58" }
@@ -126,7 +124,7 @@ cairo-lang-syntax-codegen = { git = "https://github.com/starkware-libs/cairo", r
 cairo-lang-test-plugin = { git = "https://github.com/starkware-libs/cairo", rev = "2c30b613b2dfa36338b9e7e32d65dcf693eedf58" }
 cairo-lang-test-utils = { git = "https://github.com/starkware-libs/cairo", rev = "2c30b613b2dfa36338b9e7e32d65dcf693eedf58" }
 cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", rev = "2c30b613b2dfa36338b9e7e32d65dcf693eedf58" }
-cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "1cdaf44824d87f1fe8447de5d7c2432ab78f85de" }
+cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "458cf55715e8c158a8604700024321036fca2fa2" }
 
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,

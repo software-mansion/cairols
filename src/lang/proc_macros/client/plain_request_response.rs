@@ -1,10 +1,11 @@
+use salsa::Update;
 use scarb_proc_macro_server_types::methods::expand::{
     ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
 };
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Update)]
 pub struct PlainExpandAttributeParams {
     pub context: ProcMacroScope,
     pub attr: String,
@@ -12,14 +13,14 @@ pub struct PlainExpandAttributeParams {
     pub item: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Update)]
 pub struct PlainExpandDeriveParams {
     pub context: ProcMacroScope,
     pub derives: Vec<String>,
     pub item: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Update)]
 pub struct PlainExpandInlineParams {
     pub context: ProcMacroScope,
     pub name: String,

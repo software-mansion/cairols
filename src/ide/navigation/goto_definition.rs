@@ -26,7 +26,7 @@ pub fn goto_definition(
 
     let resultants = db.get_node_resultants(node.as_syntax_node())?;
     let locations: OrderedHashSet<_> =
-        resultants.into_iter().filter_map(|node| goto(db, node)).collect();
+        resultants.iter().filter_map(|node| goto(db, *node)).collect();
     let mut locations: Vec<_> = locations.into_iter().collect();
 
     match locations.len() {

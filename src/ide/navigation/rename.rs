@@ -65,7 +65,7 @@ pub fn rename(
     };
 
     let symbols: Vec<_> =
-        resultants.into_iter().filter_map(|node| declaration_from_resultant(db, node)).collect();
+        resultants.iter().filter_map(|node| declaration_from_resultant(db, *node)).collect();
 
     let mut resource_ops = vec![];
     // Handle special cases.

@@ -4,15 +4,15 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
-    FreeFunctionLongId, ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId,
-    ImplItemId, LanguageElementId, LookupItemId, MacroDeclarationLongId, ModuleFileId, ModuleId,
-    ModuleItemId, ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId,
-    TraitImplLongId, TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
+    FreeFunctionLongId, FunctionWithBodyId, ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId,
+    ImplFunctionLongId, ImplItemId, LanguageElementId, LookupItemId, MacroDeclarationLongId,
+    ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasLongId, StructLongId, TraitConstantLongId,
+    TraitFunctionLongId, TraitImplLongId, TraitItemId, TraitLongId, TraitTypeLongId, UseLongId,
+    VarId,
 };
 use cairo_lang_filesystem::db::{ext_as_virtual, get_parent_and_mapping, translate_location};
 use cairo_lang_filesystem::ids::{CodeOrigin, FileId, FileLongId};
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
+use cairo_lang_semantic::expr::pattern::PatternVariablesQueryable;
 use cairo_lang_semantic::items::enm::EnumSemantic;
 use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
 use cairo_lang_semantic::items::extern_type::ExternTypeSemantic;
@@ -27,28 +27,28 @@ use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use cairo_lang_semantic::{Binding, GenericParam};
+use cairo_lang_semantic::{Binding, GenericParam, Pattern, PatternId, PatternVariable};
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{Intern, Upcast};
 
 use crate::lang::db::SyntaxNodeExt;
 use crate::lang::db::upstream::file_syntax;
 
 use super::LsSyntaxGroup;
+use salsa::Database;
 
-#[cairo_lang_proc_macros::query_group]
-pub trait LsSemanticGroup:
-    SemanticGroup + for<'db> Upcast<'db, dyn SemanticGroup> + LsSyntaxGroup
-{
+pub trait LsSemanticGroup: Database {
     /// Returns a [`LookupItemId`] corresponding to the node or its first parent all the way up to
     /// syntax root in the file.
     ///
     /// This method is a shortcut for getting the first item out of `collect_lookup_items_leaf`.
     /// Returns `None` if there is missing data in the compiler database.
-    fn find_lookup_item<'db>(&'db self, node: SyntaxNode<'db>) -> Option<LookupItemId<'db>>;
+    fn find_lookup_item<'db>(&'db self, node: SyntaxNode<'db>) -> Option<LookupItemId<'db>> {
+        find_lookup_item(self.as_dyn_database(), node)
+    }
 
     /// Returns [`LookupItemId`]s corresponding to the node or its first parent all the way up to
     /// syntax root in the file.
@@ -58,20 +58,26 @@ pub trait LsSemanticGroup:
     fn collect_lookup_items_leaf<'db>(
         &'db self,
         node: SyntaxNode<'db>,
-    ) -> Option<Vec<LookupItemId<'db>>>;
+    ) -> Option<&'db Vec<LookupItemId<'db>>> {
+        collect_lookup_items_leaf(self.as_dyn_database(), node).as_ref()
+    }
 
     /// Calls [`LsSemanticGroup::collect_lookup_items`] on provided node and all parent files that this node is mapping to.
     fn collect_lookup_items_with_parent_files<'db>(
         &'db self,
         node: SyntaxNode<'db>,
-    ) -> Option<Vec<LookupItemId<'db>>>;
+    ) -> Option<&'db Vec<LookupItemId<'db>>> {
+        collect_lookup_items_with_parent_files(self.as_dyn_database(), node).as_ref()
+    }
 
     /// Finds the corresponding node in the parent file for a given node using code mappings.
     /// The method aims to locate the most expansive node in the parent file that maps to the provided node.
     fn corresponding_node_in_parent_file<'db>(
         &'db self,
         node: SyntaxNode<'db>,
-    ) -> Option<SyntaxNode<'db>>;
+    ) -> Option<SyntaxNode<'db>> {
+        corresponding_node_in_parent_file(self.as_dyn_database(), node)
+    }
 
     /// Returns [`LookupItemId`]s corresponding to the node and its parents all the way up to syntax
     /// root in the file.
@@ -81,16 +87,22 @@ pub trait LsSemanticGroup:
     fn collect_lookup_items<'db>(
         &'db self,
         node: SyntaxNode<'db>,
-    ) -> Option<Vec<LookupItemId<'db>>>;
+    ) -> Option<&'db Vec<LookupItemId<'db>>> {
+        collect_lookup_items(self.as_dyn_database(), node).as_ref()
+    }
 
     /// Returns a [`ModuleFileId`] containing the node.
     fn find_module_file_containing_node<'db>(
         &'db self,
         node: SyntaxNode<'db>,
-    ) -> Option<ModuleFileId<'db>>;
+    ) -> Option<ModuleFileId<'db>> {
+        find_module_file_containing_node(self.as_dyn_database(), node)
+    }
 
     /// Finds a [`ModuleId`] containing the node.
-    fn find_module_containing_node<'db>(&'db self, node: SyntaxNode<'db>) -> Option<ModuleId<'db>>;
+    fn find_module_containing_node<'db>(&'db self, node: SyntaxNode<'db>) -> Option<ModuleId<'db>> {
+        find_module_containing_node(self.as_dyn_database(), node)
+    }
 
     /// Reverse lookups [`VarId`] to get a [`Binding`] associated with it.
     ///
@@ -98,7 +110,9 @@ pub trait LsSemanticGroup:
     /// no mapping from the former to the latter is being maintained in [`SemanticGroup`].
     /// This forces us to perform elaborate reverse lookups,
     /// which makes life here much harder than needed.
-    fn lookup_binding<'db>(&'db self, var_id: VarId<'db>) -> Option<Binding<'db>>;
+    fn lookup_binding<'db>(&'db self, var_id: VarId<'db>) -> Option<Binding<'db>> {
+        lookup_binding(self.as_dyn_database(), (), var_id)
+    }
 
     /// Collects `file` and all its descendants together with modules from all these files.
     ///
@@ -107,7 +121,9 @@ pub trait LsSemanticGroup:
     fn file_and_subfiles_with_corresponding_modules<'db>(
         &'db self,
         file: FileId<'db>,
-    ) -> Option<(HashSet<FileId<'db>>, HashSet<ModuleId<'db>>)>;
+    ) -> Option<&'db (HashSet<FileId<'db>>, HashSet<ModuleId<'db>>)> {
+        file_and_subfiles_with_corresponding_modules(self.as_dyn_database(), file).as_ref()
+    }
 
     /// We use the term `resultants` to refer to generated nodes that are mapped to the original node and are not deleted.
     /// Efectively (user nodes + generated nodes - removed nodes) set always contains resultants for any user defined node.
@@ -167,40 +183,55 @@ pub trait LsSemanticGroup:
     /// Additionally `FooTrait` from file 2 is mapped to `FooTrait` from file 1.
     ///
     /// Therefore for `FooTrait` from file 1, `FooTrait` from file 1 and `FooTrait` from file 2 are returned.
-    fn get_node_resultants<'db>(&'db self, node: SyntaxNode<'db>) -> Option<Vec<SyntaxNode<'db>>>;
+    fn get_node_resultants<'db>(
+        &'db self,
+        node: SyntaxNode<'db>,
+    ) -> Option<&'db Vec<SyntaxNode<'db>>> {
+        get_node_resultants(self.as_dyn_database(), node).as_ref()
+    }
 
     fn find_generated_nodes<'db>(
         &'db self,
         node_descendant_files: Arc<[FileId<'db>]>,
         node: SyntaxNode<'db>,
-    ) -> OrderedHashSet<SyntaxNode<'db>>;
+    ) -> &'db OrderedHashSet<SyntaxNode<'db>> {
+        find_generated_nodes(self.as_dyn_database(), node_descendant_files, node)
+    }
 
     /// Returns generic parameters defined by the item.
     /// Items that do not introduce any generics (use statements, modules etc.) yield an empty vector.
     fn item_generic_params<'db>(
         &'db self,
         lookup_item: LookupItemId<'db>,
-    ) -> Vec<GenericParam<'db>>;
+    ) -> &'db Vec<GenericParam<'db>> {
+        item_generic_params(self.as_dyn_database(), (), lookup_item)
+    }
 }
 
+impl<T: Database + ?Sized> LsSemanticGroup for T {}
+
+#[salsa::tracked]
 fn find_lookup_item<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Option<LookupItemId<'db>> {
-    db.collect_lookup_items_leaf(node)?.into_iter().next()
+    db.collect_lookup_items_leaf(node)?.iter().next().copied()
 }
 
+#[salsa::tracked(returns(ref))]
 fn collect_lookup_items_leaf<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Option<Vec<LookupItemId<'db>>> {
     let module_file_id = db.find_module_file_containing_node(node)?;
 
-    node.ancestors_with_self(db).find_map(|node| lookup_item_from_ast(db, module_file_id, node))
+    node.ancestors_with_self(db)
+        .find_map(|node| lookup_item_from_ast(db, module_file_id, node).clone())
 }
 
+#[salsa::tracked(returns(ref))]
 fn collect_lookup_items_with_parent_files<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Option<Vec<LookupItemId<'db>>> {
     let mut node = Some(node);
@@ -215,8 +246,9 @@ fn collect_lookup_items_with_parent_files<'db>(
     Some(result)
 }
 
+#[salsa::tracked]
 fn corresponding_node_in_parent_file<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Option<SyntaxNode<'db>> {
     let (parent, mappings) = get_parent_and_mapping(db, node.stable_ptr(db).file_id(db))?;
@@ -226,8 +258,9 @@ fn corresponding_node_in_parent_file<'db>(
     db.widest_node_within_span(parent, span_in_parent)
 }
 
+#[salsa::tracked(returns(ref))]
 fn collect_lookup_items<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Option<Vec<LookupItemId<'db>>> {
     let module_file_id = db.find_module_file_containing_node(node)?;
@@ -239,8 +272,9 @@ fn collect_lookup_items<'db>(
     )
 }
 
+#[salsa::tracked]
 fn find_module_file_containing_node<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Option<ModuleFileId<'db>> {
     let module_id = db.find_module_containing_node(node)?;
@@ -262,8 +296,9 @@ fn find_module_file_containing_node<'db>(
     Some(ModuleFileId(module_id, file_index))
 }
 
+#[salsa::tracked]
 fn find_module_containing_node<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Option<ModuleId<'db>> {
     // Get the main module of the main file containing the node.
@@ -298,7 +333,12 @@ fn find_module_containing_node<'db>(
         })
 }
 
-fn lookup_binding<'db>(db: &'db dyn LsSemanticGroup, var_id: VarId<'db>) -> Option<Binding<'db>> {
+#[salsa::tracked]
+fn lookup_binding<'db>(
+    db: &'db dyn Database,
+    _tracked: (),
+    var_id: VarId<'db>,
+) -> Option<Binding<'db>> {
     match var_id {
         VarId::Param(param_id) => {
             // Get param's syntax node.
@@ -324,15 +364,29 @@ fn lookup_binding<'db>(db: &'db dyn LsSemanticGroup, var_id: VarId<'db>) -> Opti
                 db.find_lookup_item(pattern.as_syntax_node())?.function_with_body()?;
 
             // Get the semantic model for the pattern.
-            let semantic_db: &dyn SemanticGroup = db.upcast();
-            let pattern = semantic_db.pattern_semantic(
+            let pattern = db.pattern_semantic(
                 function_id,
                 db.lookup_pattern_by_ptr(function_id, pattern.stable_ptr(db)).ok()?,
             );
 
+            // REGION: Modified compiler code https://github.com/starkware-libs/cairo/blob/dacfb4568f4d1ba265130d90788802349c31d7b3/crates/cairo-lang-semantic/src/expr/pattern.rs#L121-L135
+            // TODO(#442) remove when db type is changed in compiler.
+            pub struct QueryPatternVariablesFromDb<'a>(
+                pub &'a (dyn Database + 'static),
+                pub FunctionWithBodyId<'a>,
+            );
+
+            impl<'a> PatternVariablesQueryable<'a> for QueryPatternVariablesFromDb<'a> {
+                fn query(&self, id: PatternId) -> Vec<PatternVariable<'a>> {
+                    let pattern: Pattern<'a> = self.0.pattern_semantic(self.1, id);
+                    pattern.variables(self)
+                }
+            }
+            // ENDREGION
+
             // Extract the binding from the found pattern.
             let binding = pattern
-                .variables(&QueryPatternVariablesFromDb(db.upcast(), function_id))
+                .variables(&QueryPatternVariablesFromDb(db, function_id))
                 .into_iter()
                 .find(|pv| pv.var.id == local_var_id)?
                 .var
@@ -348,8 +402,9 @@ fn lookup_binding<'db>(db: &'db dyn LsSemanticGroup, var_id: VarId<'db>) -> Opti
     }
 }
 
+#[salsa::tracked(returns(ref))]
 fn file_and_subfiles_with_corresponding_modules<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
     file: FileId<'db>,
 ) -> Option<(HashSet<FileId<'db>>, HashSet<ModuleId<'db>>)> {
     let mut modules: HashSet<_> = db.file_modules(file).ok()?.iter().copied().collect();
@@ -385,26 +440,25 @@ fn file_and_subfiles_with_corresponding_modules<'db>(
 }
 
 #[tracing::instrument(skip_all)]
+#[salsa::tracked(returns(ref))]
 fn get_node_resultants<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Option<Vec<SyntaxNode<'db>>> {
     let main_file = node.stable_ptr(db).file_id(db);
 
-    let (mut files, _) = db.file_and_subfiles_with_corresponding_modules(main_file)?;
+    let (files, _) = db.file_and_subfiles_with_corresponding_modules(main_file)?;
 
-    files.remove(&main_file);
-
-    let files: Arc<[FileId]> = files.into_iter().collect();
+    let files: Arc<[FileId]> = files.iter().filter(|file| **file != main_file).copied().collect();
     let resultants = db.find_generated_nodes(files, node);
 
-    Some(resultants.into_iter().collect())
+    Some(resultants.into_iter().copied().collect())
 }
 
 /// If the ast node is a lookup item, return corresponding ids. Otherwise, returns `None`.
 /// See [LookupItemId<'db>].
 fn lookup_item_from_ast<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
     node: SyntaxNode<'db>,
 ) -> Option<Vec<LookupItemId<'db>>> {
@@ -579,9 +633,10 @@ fn lookup_item_from_ast<'db>(
 }
 
 #[tracing::instrument(skip_all)]
-/// See [`LsSemanticGroup::get_node_resultants`].
+#[salsa::tracked(returns(ref))]
+/// See [`Database::get_node_resultants`].
 fn find_generated_nodes<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
     node_descendant_files: Arc<[FileId<'db>]>,
     node: SyntaxNode<'db>,
 ) -> OrderedHashSet<SyntaxNode<'db>> {
@@ -664,7 +719,11 @@ fn find_generated_nodes<'db>(
         }
 
         for new_node in new_nodes {
-            result.extend(find_generated_nodes(db, Arc::clone(&node_descendant_files), new_node));
+            result.extend(
+                find_generated_nodes(db, Arc::clone(&node_descendant_files), new_node)
+                    .into_iter()
+                    .copied(),
+            );
         }
     }
 
@@ -675,8 +734,10 @@ fn find_generated_nodes<'db>(
     result
 }
 
+#[salsa::tracked(returns(ref))]
 fn item_generic_params<'db>(
-    db: &'db dyn LsSemanticGroup,
+    db: &'db dyn Database,
+    _tracked: (),
     lookup_item: LookupItemId<'db>,
 ) -> Vec<GenericParam<'db>> {
     match lookup_item {

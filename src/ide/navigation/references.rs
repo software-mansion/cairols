@@ -20,8 +20,8 @@ pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<
 
     let resultants = db.get_node_resultants(node.as_syntax_node())?;
     let locations: OrderedHashSet<_> = resultants
-        .into_iter()
-        .filter_map(|node| find_references(db, node, include_declaration))
+        .iter()
+        .filter_map(|node| find_references(db, *node, include_declaration))
         .flatten()
         .collect();
 

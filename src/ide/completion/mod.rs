@@ -96,8 +96,8 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
     let deduplicated_items: Vec<_> = db
         .get_node_resultants(node)?
-        .into_iter()
-        .filter_map(|resultant| complete_ex(resultant, trigger_kind, was_node_corrected, db))
+        .iter()
+        .filter_map(|resultant| complete_ex(*resultant, trigger_kind, was_node_corrected, db))
         .flatten()
         .map(CompletionItemHashable)
         .collect::<OrderedHashSet<_>>()

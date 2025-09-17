@@ -1,85 +1,98 @@
 use std::collections::HashMap;
-use std::sync::Arc;
-
-use cairo_lang_filesystem::db::get_originating_location;
-use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
-use cairo_lang_syntax::node::SyntaxNode;
-use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
-use scarb_proc_macro_server_types::methods::expand::{
-    ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
-};
-use scarb_proc_macro_server_types::methods::{CodeOrigin, ProcMacroResult};
 
 use super::client::{RequestParams, ServerStatus};
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::proc_macros::client::plain_request_response::{
     PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
 };
+use cairo_lang_filesystem::db::get_originating_location;
+use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
+use cairo_lang_syntax::node::SyntaxNode;
+use salsa::Database;
+use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
+use scarb_proc_macro_server_types::methods::{
+    CodeOrigin, ProcMacroResult,
+    expand::{ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams},
+};
 
 /// A set of queries that enable access to proc macro client from compiler plugins
 /// `.generate_code()` methods.
-#[cairo_lang_proc_macros::query_group]
-#[expect(dead_code)] // Linter complains about non-usage of `*_with_durability` methods.
-pub trait ProcMacroGroup: salsa::Database {
-    #[salsa::input]
-    fn attribute_macro_resolution(
-        &self,
-    ) -> Arc<HashMap<PlainExpandAttributeParams, ProcMacroResult>>;
-    #[salsa::input]
-    fn derive_macro_resolution(&self) -> Arc<HashMap<PlainExpandDeriveParams, ProcMacroResult>>;
-    #[salsa::input]
-    fn inline_macro_resolution(&self) -> Arc<HashMap<PlainExpandInlineParams, ProcMacroResult>>;
-
-    #[salsa::input]
-    fn proc_macro_server_status(&self) -> ServerStatus;
-
+pub trait ProcMacroGroup: Database {
     /// Returns the expansion of attribute macro.
     fn get_stored_attribute_expansion(
         &self,
         params: PlainExpandAttributeParams,
-    ) -> Option<ProcMacroResult>;
+    ) -> Option<ProcMacroResult> {
+        get_stored_attribute_expansion(self.as_dyn_database(), params)
+    }
     /// Returns the expansion of derive macros.
     fn get_stored_derive_expansion(
         &self,
         params: PlainExpandDeriveParams,
-    ) -> Option<ProcMacroResult>;
+    ) -> Option<ProcMacroResult> {
+        get_stored_derive_expansion(self.as_dyn_database(), params)
+    }
     /// Returns the expansion of inline macro.
     fn get_stored_inline_macros_expansion(
         &self,
         params: PlainExpandInlineParams,
-    ) -> Option<ProcMacroResult>;
+    ) -> Option<ProcMacroResult> {
+        get_stored_inline_macros_expansion(self.as_dyn_database(), params)
+    }
+    fn proc_macro_input(&self) -> &ProcMacroInput {
+        proc_macro_input(self.as_dyn_database())
+    }
 }
 
-pub fn init_proc_macro_group(db: &mut dyn ProcMacroGroup) {
-    db.set_attribute_macro_resolution(Default::default());
-    db.set_derive_macro_resolution(Default::default());
-    db.set_inline_macro_resolution(Default::default());
-    db.set_proc_macro_server_status(Default::default());
+impl<T: Database + ?Sized> ProcMacroGroup for T {}
+
+#[salsa::input]
+
+pub struct ProcMacroInput {
+    #[returns(ref)]
+    pub attribute_macro_resolution: HashMap<PlainExpandAttributeParams, ProcMacroResult>,
+    #[returns(ref)]
+    pub derive_macro_resolution: HashMap<PlainExpandDeriveParams, ProcMacroResult>,
+    #[returns(ref)]
+    pub inline_macro_resolution: HashMap<PlainExpandInlineParams, ProcMacroResult>,
+
+    pub proc_macro_server_status: ServerStatus,
+}
+
+#[salsa::tracked(returns(ref))]
+fn proc_macro_input(db: &dyn Database) -> ProcMacroInput {
+    ProcMacroInput::new(
+        db,
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+    )
 }
 
 fn get_stored_attribute_expansion(
-    db: &dyn ProcMacroGroup,
+    db: &dyn Database,
     params: PlainExpandAttributeParams,
 ) -> Option<ProcMacroResult> {
-    db.attribute_macro_resolution().get(&params).cloned()
+    db.proc_macro_input().attribute_macro_resolution(db).get(&params).cloned()
 }
 
 fn get_stored_derive_expansion(
-    db: &dyn ProcMacroGroup,
+    db: &dyn Database,
     params: PlainExpandDeriveParams,
 ) -> Option<ProcMacroResult> {
-    db.derive_macro_resolution().get(&params).cloned()
+    db.proc_macro_input().derive_macro_resolution(db).get(&params).cloned()
 }
 
 fn get_stored_inline_macros_expansion(
-    db: &dyn ProcMacroGroup,
+    db: &dyn Database,
     params: PlainExpandInlineParams,
 ) -> Option<ProcMacroResult> {
-    db.inline_macro_resolution().get(&params).cloned()
+    db.proc_macro_input().inline_macro_resolution(db).get(&params).cloned()
 }
 
 pub fn get_attribute_expansion(
-    db: &dyn ProcMacroGroup,
+    db: &dyn Database,
     mut params: ExpandAttributeParams,
 ) -> ProcMacroResult {
     let stabilizer = SpansStabilizer::new(&mut params.adapted_call_site, &mut params.item);
@@ -87,7 +100,7 @@ pub fn get_attribute_expansion(
     let result = db.get_stored_attribute_expansion(params.clone().into()).unwrap_or_else(|| {
         let token_stream = params.item.clone();
 
-        if let Some(client) = db.proc_macro_server_status().ready()
+        if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).ready()
             && !client.was_requested(RequestParams::Attribute(params.clone().into()))
         {
             client.request_attribute(params);
@@ -103,14 +116,11 @@ pub fn get_attribute_expansion(
     stabilizer.apply_original_offsets_to_result(result)
 }
 
-pub fn get_derive_expansion(
-    db: &dyn ProcMacroGroup,
-    mut params: ExpandDeriveParams,
-) -> ProcMacroResult {
+pub fn get_derive_expansion(db: &dyn Database, mut params: ExpandDeriveParams) -> ProcMacroResult {
     let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.item);
 
     let result = db.get_stored_derive_expansion(params.clone().into()).unwrap_or_else(|| {
-        if let Some(client) = db.proc_macro_server_status().ready()
+        if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).ready()
             && !client.was_requested(RequestParams::Derive(params.clone().into()))
         {
             client.request_derives(params);
@@ -128,7 +138,7 @@ pub fn get_derive_expansion(
 }
 
 pub fn get_inline_macros_expansion(
-    db: &dyn ProcMacroGroup,
+    db: &dyn Database,
     mut params: ExpandInlineMacroParams,
 ) -> ProcMacroResult {
     let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.args);
@@ -138,7 +148,7 @@ pub fn get_inline_macros_expansion(
             // We can't return the original node because it will make us fall into infinite recursion.
             let unit = "()".to_string();
 
-            if let Some(client) = db.proc_macro_server_status().ready()
+            if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).ready()
                 && !client.was_requested(RequestParams::Inline(params.clone().into()))
             {
                 client.request_inline_macros(params);

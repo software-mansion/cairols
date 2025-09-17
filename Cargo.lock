@@ -904,7 +904,6 @@ dependencies = [
  "cairo-lang-macro 0.2.0-rc.0 (git+https://github.com/software-mansion/scarb.git?rev=a7b5dce2aea8ee404c51057c0180de721950f961)",
  "cairo-lang-parser",
  "cairo-lang-plugins",
- "cairo-lang-proc-macros",
  "cairo-lang-project",
  "cairo-lang-semantic",
  "cairo-lang-starknet",
@@ -949,7 +948,7 @@ dependencies = [
 [[package]]
 name = "cairo-lint"
 version = "2.12.3"
-source = "git+https://github.com/software-mansion/cairo-lint?rev=1cdaf44824d87f1fe8447de5d7c2432ab78f85de#1cdaf44824d87f1fe8447de5d7c2432ab78f85de"
+source = "git+https://github.com/software-mansion/cairo-lint?rev=458cf55715e8c158a8604700024321036fca2fa2#458cf55715e8c158a8604700024321036fca2fa2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -958,7 +957,6 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-formatter",
  "cairo-lang-parser",
- "cairo-lang-proc-macros",
  "cairo-lang-semantic",
  "cairo-lang-syntax",
  "cairo-lang-test-plugin",

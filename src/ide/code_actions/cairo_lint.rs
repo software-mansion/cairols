@@ -30,10 +30,10 @@ pub fn cairo_lint<'db>(
     // We collect the semantic diagnostics, as the unused imports diagnostics (which come from the semantic diags),
     // can be fixed with the linter.
     let semantic_diags = db.module_semantic_diagnostics(module_id).ok()?;
-    let linter_diags = db.linter_diagnostics(linter_params, module_id).into_iter().map(|diag| {
+    let linter_diags = db.linter_diagnostics(linter_params, module_id).iter().map(|diag| {
         SemanticDiagnostic::new(
             StableLocation::new(diag.stable_ptr),
-            SemanticDiagnosticKind::PluginDiagnostic(diag),
+            SemanticDiagnosticKind::PluginDiagnostic(diag.clone()),
         )
     });
 
