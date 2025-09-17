@@ -44,7 +44,6 @@ fn unit_test_with_assert_macro() {
 }
 
 #[test]
-#[ignore] // probably wrong corelib version
 fn integration_test_with_fork_and_fuzzer() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithSnforgeIntegrationTest,
