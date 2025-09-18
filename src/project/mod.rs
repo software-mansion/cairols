@@ -11,7 +11,7 @@ use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
-use tracing::{debug, error, warn};
+use tracing::{debug, error, trace, warn};
 
 pub use self::crate_data::{Crate, extract_custom_file_stems};
 pub use self::model::ConfigsRegistry;
@@ -119,9 +119,18 @@ impl ProjectController {
                 state.project_controller.model.load_workspace(
                     db,
                     crates,
-                    workspace_dir,
+                    workspace_dir.clone(),
                     &state.proc_macro_controller,
                 );
+
+                let manifest_path = {
+                    let mut dir = workspace_dir.clone();
+                    dir.push("Scarb.toml");
+                    dir
+                };
+
+                trace!("[ProjectController] Sending discoverWorkspace request");
+                state.proc_macro_controller.discover_workspace(db, manifest_path);
 
                 state.analysis_progress_controller.project_model_loaded();
             }

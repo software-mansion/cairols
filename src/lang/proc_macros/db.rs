@@ -102,7 +102,7 @@ pub fn get_attribute_expansion(
         let token_stream = params.item.clone();
 
         if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).ready()
-            && !client.was_requested(RequestParams::Attribute(params.clone().into()))
+            && !client.was_requested(RequestParams::ExpandAttribute(params.clone().into()))
         {
             client.request_attribute(params);
         }
@@ -122,7 +122,7 @@ pub fn get_derive_expansion(db: &dyn Database, mut params: ExpandDeriveParams) -
 
     let result = db.get_stored_derive_expansion(params.clone().into()).unwrap_or_else(|| {
         if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).ready()
-            && !client.was_requested(RequestParams::Derive(params.clone().into()))
+            && !client.was_requested(RequestParams::ExpandDerive(params.clone().into()))
         {
             client.request_derives(params);
         }
@@ -150,7 +150,7 @@ pub fn get_inline_macros_expansion(
             let unit = "()".to_string();
 
             if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).ready()
-                && !client.was_requested(RequestParams::Inline(params.clone().into()))
+                && !client.was_requested(RequestParams::ExpandInline(params.clone().into()))
             {
                 client.request_inline_macros(params);
             }
