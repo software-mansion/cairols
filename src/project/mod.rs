@@ -119,10 +119,17 @@ impl ProjectController {
                 state.project_controller.model.load_workspace(
                     db,
                     crates,
-                    workspace_dir,
+                    workspace_dir.clone(),
                     &state.proc_macro_controller,
                 );
 
+                let manifest_path = {
+                    let mut dir = workspace_dir.clone();
+                    dir.push("Scarb.toml");
+                    dir
+                };
+
+                state.proc_macro_controller.request_defined_macros(db, manifest_path);
                 state.analysis_progress_controller.project_model_loaded();
             }
             ProjectUpdate::ScarbMetadataFailed => {
