@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
+use std::hash::Hash;
 
 use lsp_types::CompletionItem;
 use serde::Serialize;
-use std::hash::Hash;
 
 // Specifies how relevant a completion is relative to the scope of the current cursor position.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Serialize, Debug, Copy)]

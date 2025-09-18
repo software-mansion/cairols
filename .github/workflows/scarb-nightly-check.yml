@@ -1,7 +1,7 @@
 name: Check new scarb nightly
 on:
   repository_dispatch:
-    types: [ new-scarb-nightly-published ]
+    types: [new-scarb-nightly-published]
   workflow_dispatch:
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        partition: [ 1, 2, 3, 4 ]
+        partition: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable

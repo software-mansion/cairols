@@ -14,6 +14,7 @@ use cairo_lang_semantic::diagnostic::SemanticDiagnosticKind;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lint::{CairoLintToolMetadata, LinterDiagnosticParams, LinterGroup};
 use lsp_types::{Diagnostic, Url};
+use salsa::Database;
 use tracing::info_span;
 
 use crate::config::Config;
@@ -22,7 +23,6 @@ use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::project::ConfigsRegistry;
 use crate::toolchain::scarb::ScarbToolchain;
-use salsa::Database;
 
 /// Result of processing a single on disk file `root_on_disk_file` and virtual files that are its
 /// descendants in search for diagnostics.

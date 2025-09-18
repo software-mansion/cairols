@@ -1,16 +1,5 @@
-use super::{
-    AnnotatedNode, CodeLensBuilder, CodeLensInterface, CodeLensProvider, LSCodeLens,
-    collect_functions_with_attrs, get_original_module_item_and_file, make_lens_args,
-    send_execute_in_terminal,
-};
-use crate::config::{Config, TestRunner};
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::db::LsSemanticGroup;
-use crate::lang::db::LsSyntaxGroup;
-use crate::lang::lsp::ToLsp;
-use crate::lang::lsp::{LsProtoGroup, ToCairo};
-use crate::server::client::Notifier;
-use crate::state::State;
+use std::ops::Not;
+
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::FreeFunctionLongId;
 use cairo_lang_defs::ids::ModuleFileId;
@@ -28,7 +17,19 @@ use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::Intern;
 use lsp_types::{CodeLens, Command, Position, Range, Url};
 
-use std::ops::Not;
+use super::{
+    AnnotatedNode, CodeLensBuilder, CodeLensInterface, CodeLensProvider, LSCodeLens,
+    collect_functions_with_attrs, get_original_module_item_and_file, make_lens_args,
+    send_execute_in_terminal,
+};
+use crate::config::{Config, TestRunner};
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::db::LsSemanticGroup;
+use crate::lang::db::LsSyntaxGroup;
+use crate::lang::lsp::ToLsp;
+use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::server::client::Notifier;
+use crate::state::State;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct TestCodeLens {

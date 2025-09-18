@@ -1,5 +1,6 @@
-use crate::lang::db::AnalysisDatabase;
 use salsa::Database;
+
+use crate::lang::db::AnalysisDatabase;
 
 /// This function is necessary due to trait bounds that cannot be bypassed in any other way.
 /// `generate_code()` takes db: [`&dyn Database`](`Database`),
@@ -26,6 +27,7 @@ mod unsafe_downcast_ref_tests {
     use std::collections::HashMap;
 
     use cairo_lang_macro_v1::TokenStream;
+    use salsa::{Database, Setter};
     use scarb_proc_macro_server_types::methods::ProcMacroResult;
     use scarb_proc_macro_server_types::scope::ProcMacroScope;
 
@@ -33,7 +35,6 @@ mod unsafe_downcast_ref_tests {
     use crate::lang::db::AnalysisDatabase;
     use crate::lang::proc_macros::client::plain_request_response::PlainExpandAttributeParams;
     use crate::lang::proc_macros::db::ProcMacroGroup;
-    use salsa::{Database, Setter};
 
     #[test]
     fn cast_succeed() {

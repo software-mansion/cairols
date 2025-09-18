@@ -1,5 +1,6 @@
-use crate::code_lens::test_code_lens_scarb_execute;
 use indoc::indoc;
+
+use crate::code_lens::test_code_lens_scarb_execute;
 
 #[test]
 fn test_one_executable_whole_package() {

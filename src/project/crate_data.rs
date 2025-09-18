@@ -1,6 +1,7 @@
-use super::builtin_plugins::BuiltinPlugin;
-use crate::lang::db::AnalysisDatabase;
-use crate::project::model::PackageConfig;
+use std::collections::HashSet;
+use std::path::PathBuf;
+use std::sync::Arc;
+
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
@@ -14,9 +15,10 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::Intern;
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
 use itertools::chain;
-use std::collections::HashSet;
-use std::path::PathBuf;
-use std::sync::Arc;
+
+use super::builtin_plugins::BuiltinPlugin;
+use crate::lang::db::AnalysisDatabase;
+use crate::project::model::PackageConfig;
 
 #[derive(Debug)]
 pub struct CrateInfo {

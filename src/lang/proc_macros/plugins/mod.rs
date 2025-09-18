@@ -10,6 +10,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use convert_case::{Case, Casing};
 use downcast::unsafe_downcast_ref;
 use itertools::Itertools;
+use salsa::Database;
 use scarb::inline::inline_macro_generate_code;
 use scarb::regular::macro_generate_code;
 use scarb_proc_macro_server_types::methods::defined_macros::{
@@ -18,7 +19,6 @@ use scarb_proc_macro_server_types::methods::defined_macros::{
 use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, ProcMacroScope};
 
 use crate::lang::plugins::DowncastRefUnchecked;
-use salsa::Database;
 
 mod downcast;
 // TODO(#6666) Evict this module when this is possible.
