@@ -145,6 +145,7 @@ fn complete_ex<'db>(
     completions.extend(macro_call_completions(db, &ctx, was_node_corrected));
 
     if trigger_kind == CompletionTriggerKind::INVOKED {
+        eprintln!("Triggering path suffix completions");
         completions.extend(path_suffix_completions(db, &ctx, was_node_corrected))
     }
 

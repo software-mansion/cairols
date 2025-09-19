@@ -68,7 +68,7 @@ pub fn start() -> ExitCode {
     let _log_guard = init_logging();
     set_panic_hook();
 
-    info!("language server starting");
+    info!("==DEV== language server starting");
     env_config::report_to_logs();
 
     let exit_code = match Backend::new() {
