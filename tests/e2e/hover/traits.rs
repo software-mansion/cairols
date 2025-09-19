@@ -141,13 +141,10 @@ fn self_type_member() {
     """
     popover = """
     ```cairo
-    hello
+    hello::SelfType
     ```
     ```cairo
-    struct SelfType {
-        aaa: felt252,
-        b: felt252,
-    }
+    aaa: felt252
     ```
     """
     "#)

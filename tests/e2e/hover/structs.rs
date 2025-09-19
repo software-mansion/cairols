@@ -20,13 +20,10 @@ fn member_definition_name() {
     """
     popover = """
     ```cairo
-    hello
+    hello::Struct
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member1: felt252
     ```
     ---
     Docstring of member1."""
@@ -52,13 +49,10 @@ fn member_definition_name_macro() {
     """
     popover = """
     ```cairo
-    hello
+    hello::Struct
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member1: felt252
     ```
     ---
     Docstring of member1."""
@@ -91,13 +85,10 @@ fn struct_init_first_member_name() {
     """
     popover = """
     ```cairo
-    hello
+    hello::Struct
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member1: felt252
     ```
     ---
     Docstring of member1."""
@@ -130,13 +121,10 @@ fn struct_init_second_member_name() {
     """
     popover = """
     ```cairo
-    hello
+    hello::Struct
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member2: u256
     ```
     """
     "#)
@@ -170,13 +158,10 @@ fn struct_init_first_member_shorthand() {
     """
     popover = """
     ```cairo
-    hello
+    hello::Struct
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member1: felt252
     ```
     ---
     Docstring of member1."""
@@ -210,13 +195,10 @@ fn struct_init_second_member_shorthand_after() {
     """
     popover = """
     ```cairo
-    hello
+    hello::Struct
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member2: u256
     ```
     """
     "#)
@@ -249,13 +231,10 @@ fn struct_member_access_after_name() {
     """
     popover = """
     ```cairo
-    hello
+    hello::Struct
     ```
     ```cairo
-    struct Struct {
-        member1: felt252,
-        member2: u256,
-    }
+    member1: felt252
     ```
     ---
     Docstring of member1."""

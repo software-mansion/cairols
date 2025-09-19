@@ -215,12 +215,10 @@ fn enum_member() {
     """
     popover = """
     ```cairo
-    hello
+    hello::Coin
     ```
     ```cairo
-    enum Coin {
-        Penny,
-    }
+    Penny
     ```
     """
     "#)
@@ -345,30 +343,28 @@ fn enum_value() {
 #[test]
 fn enum_member_in_match() {
     test_transform_plain!(Hover,r#"
-    enum Coin {
-        Penny,
+    enum CoinAmt {
+        Pennies: felt252,
     }
 
-    fn value_in_cents(coin: Coin) -> felt252 {
+    fn value_in_cents(coins: CoinAmt) -> felt252 {
         match coin {
-            Coin::P<caret>enny => 1,
+            CoinAmt::P<caret>ennies(x) => x,
         }
     }
     "#,@r#"
     source_context = """
-            Coin::P<caret>enny => 1,
+            CoinAmt::P<caret>ennies(x) => x,
     """
     highlight = """
-            Coin::<sel>Penny</sel> => 1,
+            CoinAmt::<sel>Pennies</sel>(x) => x,
     """
     popover = """
     ```cairo
-    hello
+    hello::CoinAmt
     ```
     ```cairo
-    enum Coin {
-        Penny,
-    }
+    Pennies: felt252
     ```
     """
     "#)
