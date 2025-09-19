@@ -33,12 +33,11 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-
-use crate::lang::db::SyntaxNodeExt;
-use crate::lang::db::upstream::file_syntax;
+use salsa::Database;
 
 use super::LsSyntaxGroup;
-use salsa::Database;
+use crate::lang::db::SyntaxNodeExt;
+use crate::lang::db::upstream::file_syntax;
 
 pub trait LsSemanticGroup: Database {
     /// Returns a [`LookupItemId`] corresponding to the node or its first parent all the way up to

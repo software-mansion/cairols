@@ -8,7 +8,7 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: '0 0 * * 1-5'
+    - cron: "0 0 * * 1-5"
 
 concurrency:
   group: ${{ github.workflow }}
@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        partition: [ 1, 2, 3, 4 ]
+        partition: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable

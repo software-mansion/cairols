@@ -1,17 +1,10 @@
-use crate::config::Config;
-use crate::ide::code_lens::executables::{
-    ExecutableCodeLens, ExecutableCodeLensConstructionParams, ExecutableCodeLensProvider,
-};
-use crate::ide::code_lens::tests::{
-    TestCodeLens, TestCodeLensConstructionParams, TestCodeLensProvider,
-};
-use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lsp::capabilities::client::ClientCapabilitiesExt;
-use crate::lsp::ext::{ExecuteInTerminal, ExecuteInTerminalParams};
-use crate::server::client::{Notifier, Requester};
-use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
-use crate::server::schedule::{Task, thread};
-use crate::state::State;
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
+use std::vec;
+
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ModuleId, ModuleItemId, TopLevelLanguageElementId};
 use cairo_lang_filesystem::db::get_originating_location;
@@ -26,12 +19,21 @@ use lsp_types::notification::ShowMessage;
 use lsp_types::request::CodeLensRefresh;
 use lsp_types::{CodeLens, MessageType, ShowMessageParams, Url};
 use serde_json::{Number, Value};
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
-use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
-use std::vec;
+
+use crate::config::Config;
+use crate::ide::code_lens::executables::{
+    ExecutableCodeLens, ExecutableCodeLensConstructionParams, ExecutableCodeLensProvider,
+};
+use crate::ide::code_lens::tests::{
+    TestCodeLens, TestCodeLensConstructionParams, TestCodeLensProvider,
+};
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
+use crate::lsp::capabilities::client::ClientCapabilitiesExt;
+use crate::lsp::ext::{ExecuteInTerminal, ExecuteInTerminalParams};
+use crate::server::client::{Notifier, Requester};
+use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
+use crate::server::schedule::{Task, thread};
+use crate::state::State;
 
 mod executables;
 mod tests;

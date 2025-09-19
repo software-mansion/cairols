@@ -1,4 +1,3 @@
-use crate::support::sandbox;
 use indoc::indoc;
 use lsp_types::notification::DidChangeWatchedFiles;
 use lsp_types::request::Formatting;
@@ -7,6 +6,8 @@ use lsp_types::{
     Range, TextEdit,
 };
 use serde_json::json;
+
+use crate::support::sandbox;
 
 #[test]
 fn lint_config_is_respected() {

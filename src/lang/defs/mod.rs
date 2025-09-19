@@ -1,14 +1,3 @@
-pub use self::finder::ResolvedItem;
-pub use self::finder::{find_declaration, find_definition};
-pub use self::generic_param::GenericParamDef;
-pub use self::item::ItemDef;
-pub use self::member::MemberDef;
-pub use self::module::ModuleDef;
-pub use self::variable::VariableDef;
-pub use self::variant::VariantDef;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::lang::usages::FindUsages;
-use crate::lang::usages::search_scope::SearchScope;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, ModuleId};
 use cairo_lang_filesystem::db::get_originating_location;
@@ -23,6 +12,18 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+
+pub use self::finder::ResolvedItem;
+pub use self::finder::{find_declaration, find_definition};
+pub use self::generic_param::GenericParamDef;
+pub use self::item::ItemDef;
+pub use self::member::MemberDef;
+pub use self::module::ModuleDef;
+pub use self::variable::VariableDef;
+pub use self::variant::VariantDef;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::usages::FindUsages;
+use crate::lang::usages::search_scope::SearchScope;
 
 mod finder;
 mod generic_param;

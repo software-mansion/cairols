@@ -1,9 +1,5 @@
-use crate::lang::analysis_context::AnalysisContext;
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::importer::import_edit_for_trait_if_needed;
-use crate::lang::lsp::ToLsp;
-use crate::lang::methods::find_methods_for_type;
-use crate::lang::text_matching::text_matches;
+use std::collections::HashMap;
+
 use cairo_lang_defs::ids::NamedLanguageElementLongId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::{
@@ -13,7 +9,13 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use lsp_types::{CodeAction, CodeActionKind, TextEdit, Url, WorkspaceEdit};
-use std::collections::HashMap;
+
+use crate::lang::analysis_context::AnalysisContext;
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::importer::import_edit_for_trait_if_needed;
+use crate::lang::lsp::ToLsp;
+use crate::lang::methods::find_methods_for_type;
+use crate::lang::text_matching::text_matches;
 
 /// Create a Quick Fix code action to substitute this call with a similar one.
 pub fn suggest_similar_method<'db>(

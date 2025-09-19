@@ -1,5 +1,6 @@
 use std::num::NonZeroU32;
 
+use cairo_lang_filesystem::db::ext_as_virtual;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::Intern;
@@ -8,7 +9,6 @@ use salsa::{Database, Id};
 use tracing::error;
 
 use crate::lang::lsp::ToLsp;
-use cairo_lang_filesystem::db::ext_as_virtual;
 
 #[cfg(test)]
 #[path = "ls_proto_group_test.rs"]

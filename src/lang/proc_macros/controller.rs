@@ -16,7 +16,9 @@ use governor::{Quota, RateLimiter};
 use lsp_types::notification::ShowMessage;
 use lsp_types::request::SemanticTokensRefresh;
 use lsp_types::{ClientCapabilities, MessageType, ShowMessageParams};
+use salsa::Setter;
 use scarb_proc_macro_server_types::jsonrpc::RpcResponse;
+use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use tracing::error;
 
 use super::client::connection::ProcMacroServerConnection;
@@ -34,8 +36,6 @@ use crate::server::client::{Notifier, Requester};
 use crate::server::schedule::Task;
 use crate::server::schedule::thread::JoinHandle;
 use crate::toolchain::scarb::ScarbToolchain;
-use salsa::Setter;
-use scarb_proc_macro_server_types::methods::ProcMacroResult;
 
 const RESTART_RATE_LIMITER_PERIOD_SEC: u64 = 180;
 const RESTART_RATE_LIMITER_RETRIES: u32 = 5;

@@ -4,6 +4,8 @@ use bincode::{
     config::standard,
     serde::{decode_from_slice, encode_to_vec},
 };
+use salsa::{Database, Setter};
+use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use serde::{Deserialize, Serialize};
 use tracing::error;
 
@@ -15,8 +17,6 @@ use crate::{
         PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
     },
 };
-use salsa::{Database, Setter};
-use scarb_proc_macro_server_types::methods::ProcMacroResult;
 
 pub fn save_proc_macro_cache(db: &dyn Database, config: &Config) {
     if !config.enable_experimental_proc_macro_cache {
