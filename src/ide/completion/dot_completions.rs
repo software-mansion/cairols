@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId};
+use cairo_lang_defs::ids::{NamedLanguageElementId, TraitFunctionId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::{
     FunctionWithBodySemantic, SemanticExprLookup,
@@ -124,8 +124,9 @@ fn completion_for_method<'db>(
     let name = trait_function.name(db);
     let signature = db.trait_function_signature(trait_function).ok()?;
 
-    // TODO(spapini): Add signature.
-    let detail = trait_id.full_path(db);
+    let explicit_signature = signature.stable_ptr.0.lookup(db).get_text_without_trivia(db);
+    let abbreviated_signature = abbreviate_signature(explicit_signature);
+
     let mut additional_text_edits = vec![];
 
     // If the trait is not in scope, add a use statement.
@@ -138,7 +139,7 @@ fn completion_for_method<'db>(
             label: format!("{name}()"),
             insert_text: Some(snippet_for_function_call(name, signature)),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
-            detail: Some(detail),
+            detail: Some(abbreviated_signature),
             kind: Some(CompletionItemKind::METHOD),
             additional_text_edits: Some(additional_text_edits),
             ..CompletionItem::default()
@@ -147,4 +148,16 @@ fn completion_for_method<'db>(
         relevance: CompletionRelevance::Medium,
     };
     Some(completion)
+}
+
+// Delete all the whitespace and newlines from the signature, format it and add `fn` marker.
+fn abbreviate_signature(serialized_signature: &str) -> String {
+    let mut result = serialized_signature.to_owned();
+
+    result = result.replace("\n", "");
+    result = result.replace("\t", "");
+    result = result.replace("    ", "");
+    result = result.replace(",)", ")");
+    result = format!("fn{result}");
+    result
 }
