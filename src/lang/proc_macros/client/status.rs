@@ -6,8 +6,7 @@ use super::ProcMacroClient;
 pub enum ServerStatus {
     #[default]
     Pending,
-    Starting(Arc<ProcMacroClient>),
-    Ready(Arc<ProcMacroClient>),
+    Connected(Arc<ProcMacroClient>),
     /// Failed to start multiple times.
     /// No more actions will be taken.
     Crashed,
@@ -15,7 +14,7 @@ pub enum ServerStatus {
 
 impl ServerStatus {
     pub fn ready(&self) -> Option<&ProcMacroClient> {
-        if let Self::Ready(client) = self { Some(client) } else { None }
+        if let Self::Connected(client) = self { Some(client) } else { None }
     }
 
     pub fn is_pending(&self) -> bool {
