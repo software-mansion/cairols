@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId};
+use cairo_lang_defs::ids::{NamedLanguageElementId, TraitFunctionId};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::{
@@ -18,6 +18,7 @@ use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
 use tracing::debug;
 
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use crate::ide::completion::helpers::formatting::generate_abbreviated_signature;
 use crate::ide::completion::helpers::snippets::snippet_for_function_call;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::ide::format::types::format_type;
@@ -124,8 +125,9 @@ fn completion_for_method<'db>(
     let name = trait_function.name(db).to_string(db);
     let signature = db.trait_function_signature(trait_function).ok()?;
 
-    // TODO(spapini): Add signature.
-    let detail = trait_id.full_path(db);
+    let abbreviated_signature =
+        generate_abbreviated_signature(db, signature, Some(trait_function.trait_id(db)));
+
     let mut additional_text_edits = vec![];
 
     // If the trait is not in scope, add a use statement.
@@ -138,7 +140,7 @@ fn completion_for_method<'db>(
             label: format!("{name}()"),
             insert_text: Some(snippet_for_function_call(db, &name, signature)),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
-            detail: Some(detail),
+            detail: Some(abbreviated_signature),
             kind: Some(CompletionItemKind::METHOD),
             additional_text_edits: Some(additional_text_edits),
             ..CompletionItem::default()
