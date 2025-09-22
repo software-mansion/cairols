@@ -7,6 +7,7 @@ use cairo_lang_filesystem::db::{
     CORELIB_CRATE_NAME, CORELIB_VERSION, FilesGroup, init_dev_corelib,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
+use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_utils::Intern;
 use indoc::indoc;
 use semver::Version;
@@ -16,7 +17,6 @@ use tracing::{error, warn};
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::toolchain::scarb::{SCARB_TOML, ScarbToolchain};
-use cairo_lang_filesystem::set_crate_config;
 
 /// Try to find a Cairo `core` crate (see [`find_unmanaged_core`]) and initialize it in the
 /// provided database.

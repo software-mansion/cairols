@@ -1,3 +1,11 @@
+use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_executable_plugin::EXECUTABLE_ATTR;
+use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use lsp_types::{CodeLens, Command, Position, Range, Url};
+
 use crate::ide::code_lens::{
     AnnotatedNode, CodeLensBuilder, CodeLensInterface, CodeLensProvider, LSCodeLens,
     collect_functions_with_attrs, get_original_module_item_and_file, make_lens_args,
@@ -8,13 +16,6 @@ use crate::lang::lsp::{LsProtoGroup, ToLsp};
 use crate::project::builtin_plugins::BuiltinPlugin;
 use crate::server::client::Notifier;
 use crate::state::State;
-use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_executable_plugin::EXECUTABLE_ATTR;
-use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use lsp_types::{CodeLens, Command, Position, Range, Url};
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct ExecutableCodeLens {

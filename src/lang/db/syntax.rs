@@ -1,10 +1,11 @@
-use crate::lang::db::upstream::file_syntax;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan};
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal};
 use salsa::Database;
+
+use crate::lang::db::upstream::file_syntax;
 
 /// LS-specific extensions to the syntax group of the Cairo compiler.
 pub trait LsSyntaxGroup: Database {

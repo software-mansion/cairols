@@ -1,9 +1,10 @@
-use crate::lang::db::AnalysisDatabase;
 use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
 use cairo_lang_semantic::items::imp::ImplSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
+
+use crate::lang::db::AnalysisDatabase;
 
 /// Finds and returns the members associated with a given type in the context of the specified function.
 pub fn find_members_for_type<'db>(

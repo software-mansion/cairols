@@ -10,6 +10,7 @@ use cairo_lang_semantic::db::{SemanticGroup, semantic_group_input};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use crossbeam::channel::Sender;
 use lsp_types::Url;
+use salsa::Setter;
 use serde::Serialize;
 use tracing::{error, trace, warn};
 
@@ -20,7 +21,6 @@ use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::project::ProjectController;
-use salsa::Setter;
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub enum SwapReason {

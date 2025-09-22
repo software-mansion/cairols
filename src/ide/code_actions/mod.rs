@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ops::Not;
 
 use cairo_lang_syntax::node::SyntaxNode;
 use itertools::Itertools;
@@ -12,7 +13,6 @@ use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::project::ConfigsRegistry;
-use std::ops::Not;
 
 mod add_missing_trait;
 mod cairo_lint;

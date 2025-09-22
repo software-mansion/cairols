@@ -1,6 +1,9 @@
-use cairo_lang_filesystem::ids::CrateInput;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
+
+use cairo_lang_filesystem::db::files_group_input;
+use cairo_lang_filesystem::ids::CrateInput;
+use salsa::Setter;
 
 pub use self::configs_registry::{ConfigsRegistry, PackageConfig};
 use crate::lang::db::AnalysisDatabase;
@@ -8,8 +11,6 @@ use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::project::Crate;
 use crate::project::crate_data::CrateInfo;
 use crate::state::{Owned, Snapshot};
-use cairo_lang_filesystem::db::files_group_input;
-use salsa::Setter;
 
 mod configs_registry;
 

@@ -1,10 +1,5 @@
 use std::collections::HashMap;
 
-use super::client::{RequestParams, ServerStatus};
-use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::proc_macros::client::plain_request_response::{
-    PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
-};
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
 use cairo_lang_syntax::node::SyntaxNode;
@@ -13,6 +8,12 @@ use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
 use scarb_proc_macro_server_types::methods::{
     CodeOrigin, ProcMacroResult,
     expand::{ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams},
+};
+
+use super::client::{RequestParams, ServerStatus};
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
+use crate::lang::proc_macros::client::plain_request_response::{
+    PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
 };
 
 /// A set of queries that enable access to proc macro client from compiler plugins

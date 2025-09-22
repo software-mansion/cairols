@@ -4,6 +4,7 @@ use cairo_lang_defs::{
     db::DefsGroup,
     ids::{LanguageElementId, ModuleId},
 };
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::{
     TypedStablePtr, TypedSyntaxNode, ast::ItemUse, ids::SyntaxStablePtrId,
 };
@@ -11,7 +12,6 @@ use lsp_types::{Position, Range, TextEdit};
 
 use super::{analysis_context::AnalysisContext, db::AnalysisDatabase};
 use crate::lang::{db::LsSemanticGroup, lsp::ToLsp};
-use cairo_lang_semantic::lsp_helpers::LspHelpers;
 
 /// Returns a TextEdit to import the given trait if it is not already in scope.
 /// The decision is based on visibility from the current module in `ctx`.

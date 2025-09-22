@@ -1,15 +1,17 @@
-use crate::lang::analysis_context::AnalysisContext;
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::ToLsp;
-use crate::lang::members::find_members_for_type;
-use crate::lang::text_matching::text_matches;
+use std::collections::HashMap;
+
 use cairo_lang_semantic::items::function_with_body::{
     FunctionWithBodySemantic, SemanticExprLookup,
 };
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use lsp_types::{CodeAction, CodeActionKind, TextEdit, Url, WorkspaceEdit};
-use std::collections::HashMap;
+
+use crate::lang::analysis_context::AnalysisContext;
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::lsp::ToLsp;
+use crate::lang::members::find_members_for_type;
+use crate::lang::text_matching::text_matches;
 
 pub fn suggest_similar_member<'db>(
     db: &'db AnalysisDatabase,

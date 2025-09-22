@@ -1,3 +1,6 @@
+use lsp_types::{SemanticTokens, SemanticTokensParams, SemanticTokensResult};
+use tracing::error;
+
 pub use self::token_kind::SemanticTokenKind;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
@@ -6,8 +9,6 @@ use crate::{
     ide::semantic_highlighting::token_traverser::SemanticTokensTraverser,
     lang::db::upstream::file_syntax,
 };
-use lsp_types::{SemanticTokens, SemanticTokensParams, SemanticTokensResult};
-use tracing::error;
 
 mod encoder;
 pub mod token_kind;

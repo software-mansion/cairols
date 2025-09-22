@@ -1,9 +1,9 @@
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_utils::Intern;
 use lsp_types::Url;
+use salsa::AsDynDatabase;
 
 use crate::lang::{db::AnalysisDatabase, lsp::LsProtoGroup};
-use salsa::AsDynDatabase;
 
 #[test]
 fn file_url() {
