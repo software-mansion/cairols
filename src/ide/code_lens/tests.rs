@@ -9,18 +9,18 @@ use cairo_lang_defs::ids::SubmoduleLongId;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_filesystem::span::TextPositionSpan;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast::ModuleItem};
 use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::Intern;
-use lsp_types::{CodeLens, Command, Position, Range, Url};
+use lsp_types::{CodeLens, Command, Range, Url};
 
 use super::{
     AnnotatedNode, CodeLensBuilder, CodeLensInterface, CodeLensProvider, LSCodeLens,
-    collect_functions_with_attrs, get_original_module_item_and_file, make_lens_args,
-    send_execute_in_terminal,
+    collect_functions_with_attrs, make_lens_args, send_execute_in_terminal,
 };
 use crate::config::{Config, TestRunner};
 use crate::lang::db::AnalysisDatabase;
@@ -34,25 +34,38 @@ use crate::state::State;
 #[derive(PartialEq, Clone, Debug)]
 pub struct TestCodeLens {
     lens: CodeLens,
+    full_path: String,
 }
 
 impl CodeLensInterface for TestCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
         let db = &state.db;
 
-        let position = self.lens.range.start.to_cairo();
-
         let file = db.file_for_url(&file_url)?;
         let file_path = file_url.to_file_path().ok()?;
+        let span = TextPositionSpan::offset_in_file(self.lens.range.to_cairo(), db, file)?;
+        let node = db.widest_node_within_span(file, span)?;
 
-        let node = db.find_syntax_node_at_position(file, position)?;
+        let (full_qualified_path, module_id) = db
+            .get_node_resultants(node)
+            .as_ref()?
+            .iter()
+            .filter_map(|resultant| {
+                let module_item = resultant
+                    .ancestors_with_self(db)
+                    .find_map(|node| ModuleItem::cast(db, node))?;
+                let module_file_id =
+                    db.find_module_file_containing_node(module_item.as_syntax_node())?;
+                let path = TestFullQualifiedPath::new(db, module_item, module_file_id)?;
 
-        let module_item = node.ancestor_of_type::<ModuleItem>(db)?;
-        let module_file_id = db.find_module_file_containing_node(module_item.as_syntax_node())?;
+                (sanitize_test_case_name(path.as_ref()) == self.full_path)
+                    .then_some((path, module_file_id.0))
+            })
+            .next()?;
 
         let command = state.config.test_runner.command(
-            TestFullQualifiedPath::new(db, module_item, module_file_id)?,
-            AvailableTestRunners::new(db, module_file_id.0.owning_crate(db))?,
+            full_qualified_path,
+            AvailableTestRunners::new(db, module_id.owning_crate(db))?,
             &state.config.run_test_command,
         )?;
         let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
@@ -66,20 +79,21 @@ impl CodeLensInterface for TestCodeLens {
 }
 
 pub struct TestCodeLensBuilder {
+    full_path: String,
     title: String,
     range: Range,
     file_url: Url,
 }
 
 impl TestCodeLensBuilder {
-    fn new(position: Position, file_url: Url, is_plural: bool) -> Self {
+    fn new(range: Range, full_path: String, file_url: Url, is_plural: bool) -> Self {
         let mut title = "▶ Run test".to_string();
 
         if is_plural {
             title.push('s');
         }
 
-        Self { title, file_url, range: Range::new(position, position) }
+        Self { full_path: sanitize_test_case_name(&full_path), title, file_url, range }
     }
 }
 
@@ -93,6 +107,7 @@ impl CodeLensBuilder for TestCodeLensBuilder {
 
         LSCodeLens::Test(TestCodeLens {
             lens: CodeLens { range: self.range, command: Some(command), data: None },
+            full_path: self.full_path,
         })
     }
 }
@@ -152,10 +167,10 @@ impl TestFullQualifiedPath {
     fn snforge_command(&self) -> String {
         match self {
             TestFullQualifiedPath::Function(path) => {
-                format!("snforge test {path} --exact")
+                format!("snforge test {path} --exact", path = sanitize_test_case_name(path))
             }
             TestFullQualifiedPath::Module(path) => {
-                format!("snforge test {path}")
+                format!("snforge test {path}", path = sanitize_test_case_name(path))
             }
         }
     }
@@ -255,7 +270,7 @@ fn collect_test_lenses<'db>(
         maybe_push_code_lens(
             db,
             file_code_lens,
-            |position| TestCodeLensBuilder::new(position, file_url.clone(), false),
+            |range, full_path| TestCodeLensBuilder::new(range, full_path, file_url.clone(), false),
             node,
         );
     }
@@ -289,7 +304,9 @@ fn collect_test_lenses<'db>(
             maybe_push_code_lens(
                 db,
                 file_code_lens,
-                |position| TestCodeLensBuilder::new(position, file_url.clone(), true),
+                |range, full_path| {
+                    TestCodeLensBuilder::new(range, full_path, file_url.clone(), true)
+                },
                 module_node,
             );
         }
@@ -308,31 +325,32 @@ fn has_any_test<'db>(db: &'db AnalysisDatabase, module: ModuleId<'db>) -> bool {
     })
 }
 
-fn get_test_lens_position<'db>(
+fn get_test_lens_range<'db>(
     db: &'db AnalysisDatabase,
     ptr: SyntaxStablePtrId<'db>,
-) -> Option<Position> {
-    let (original_node, original_file) = get_original_module_item_and_file(db, ptr)?;
-    original_node
-        .find_attr(db, "test")
-        // If attr is not found we are probably on mod.
-        .map(|attr| attr.as_syntax_node())
-        .unwrap_or_else(|| original_node.as_syntax_node())
-        .span_start_without_trivia(db)
-        .position_in_file(db, original_file)
-        .map(|position| position.to_lsp())
+) -> Option<Range> {
+    let (file, span) =
+        get_originating_location(db, ptr.file_id(db), ptr.lookup(db).span_without_trivia(db), None);
+
+    span.position_in_file(db, file).map(|position| position.to_lsp())
 }
 
 fn maybe_push_code_lens(
     db: &AnalysisDatabase,
     file_state: &mut Vec<TestCodeLensBuilder>,
-    make_code_lens: impl FnOnce(Position) -> TestCodeLensBuilder,
+    make_code_lens: impl FnOnce(Range, String) -> TestCodeLensBuilder,
     annotated_function: AnnotatedNode,
 ) {
-    let AnnotatedNode { attribute_ptr, full_path: _ } = annotated_function;
-    if let Some(position) = get_test_lens_position(db, attribute_ptr) {
-        let lens_builder = make_code_lens(position);
+    let AnnotatedNode { attribute_ptr, full_path } = annotated_function;
+    if let Some(range) = get_test_lens_range(db, attribute_ptr) {
+        let lens_builder = make_code_lens(range, full_path);
 
         file_state.push(lens_builder)
     }
+}
+
+// Copied from starknet-foundry
+fn sanitize_test_case_name(name: &str) -> String {
+    // Test names generated by `#[test]` and `#[fuzzer]` macros contain internal suffixes
+    name.replace("__test_generated", "").replace("__fuzzer_generated", "")
 }
