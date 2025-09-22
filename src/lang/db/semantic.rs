@@ -661,7 +661,9 @@ fn find_generated_nodes<'db>(
         let mappings: Vec<_> = mappings
             .iter()
             .filter(|mapping| match mapping.origin {
-                CodeOrigin::CallSite(_) => true,
+                // This is in fact default mapping containing whole file
+                // Skip it as whole file content `ModuleItemList` or `SyntaxFile` node is found otherwise
+                CodeOrigin::CallSite(_) => false,
                 CodeOrigin::Start(start) => start == node.span(db).start,
                 CodeOrigin::Span(span) => node.span(db).contains(span),
             })

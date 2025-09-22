@@ -135,3 +135,121 @@ fn complex() {
     index = 0
     "#)
 }
+
+#[test]
+fn test_case_1() {
+    test_transform!(test_code_lens_snforge, r#"
+    #[test]
+    #[test_case(1)]<caret>
+    #[test_case(2)]
+    fn a(_a: felt252) {}
+    "#, @r#"
+    [[lenses]]
+    line = 1
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 0
+
+    [[lenses]]
+    line = 2
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 1
+
+    [execute_in_terminal]
+    command = "snforge test hello::a_1 --exact"
+    cwd = "./"
+    "#)
+}
+
+#[test]
+fn test_case_2() {
+    test_transform!(test_code_lens_snforge, r#"
+    #[test]
+    #[test_case(1)]
+    #[test_case(2)]<caret>
+    fn a(_a: felt252) {}
+    "#, @r#"
+    [[lenses]]
+    line = 1
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 0
+
+    [[lenses]]
+    line = 2
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 1
+
+    [execute_in_terminal]
+    command = "snforge test hello::a_2 --exact"
+    cwd = "./"
+    "#)
+}
+
+#[test]
+fn test_case_with_fuzzer() {
+    test_transform!(test_code_lens_snforge, r#"
+    #[test]
+    #[fuzzer]
+    #[test_case(1)]<caret>
+    #[test_case(2)]
+    fn a(_a: felt252) {}
+    "#, @r#"
+    [[lenses]]
+    line = 0
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 0
+
+    [[lenses]]
+    line = 2
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 1
+
+    [[lenses]]
+    line = 3
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 2
+
+    [execute_in_terminal]
+    command = "snforge test hello::a_1 --exact"
+    cwd = "./"
+    "#)
+}
+
+#[test]
+fn fuzzer_with_test_case() {
+    test_transform!(test_code_lens_snforge, r#"
+    #[test]<caret>
+    #[fuzzer]
+    #[test_case(1)]
+    #[test_case(2)]
+    fn a(_a: felt252) {}
+    "#, @r#"
+    [[lenses]]
+    line = 0
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 0
+
+    [[lenses]]
+    line = 2
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 1
+
+    [[lenses]]
+    line = 3
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 2
+
+    [execute_in_terminal]
+    command = "snforge test hello::a --exact"
+    cwd = "./"
+    "#)
+}
