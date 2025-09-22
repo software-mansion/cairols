@@ -373,3 +373,315 @@ fn dep_without_visibility_support() {
     detail = "felt252"
     "#);
 }
+
+#[test]
+fn basic_initialization() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    #[derive(Drop)]
+    struct Abc {
+        pub a: u128,
+        pub b: u128,
+        pub c: u128,
+    }
+
+    fn func() {
+        let a = Ab<caret>
+    }
+    ",@r#"
+    caret = """
+        let a = Ab<caret>
+    """
+
+    [[completions]]
+    completion_label = "Abc"
+    insert_text = """
+    Abc {
+    \ta: $1,
+    \tb: $2,
+    \tc: $3,
+    }"""
+
+    [[completions]]
+    completion_label = "AbcDrop"
+
+    [[completions]]
+    completion_label = "AccountContractLibraryDispatcherSubPointers"
+    insert_text = """
+    AccountContractLibraryDispatcherSubPointers {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractLibraryDispatcherSubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractLibraryDispatcherSubPointersMut"
+    insert_text = """
+    AccountContractLibraryDispatcherSubPointersMut {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
+    insert_text = """
+    AccountContractSafeLibraryDispatcherSubPointers {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
+    insert_text = """
+    AccountContractSafeLibraryDispatcherSubPointersMut {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
+
+    """]
+    "#);
+}
+
+#[test]
+fn initialization_non_imported_struct() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod m {
+        #[derive(Drop)]
+        pub struct Abc {
+            pub a: u128,
+            pub b: u128,
+            pub c: u128,
+        }
+    }
+
+    fn func() {
+        let a = Ab<caret>
+    }
+    ",@r#"
+    caret = """
+        let a = Ab<caret>
+    """
+
+    [[completions]]
+    completion_label = "Abc"
+    insert_text = """
+    Abc {
+    \ta: $1,
+    \tb: $2,
+    \tc: $3,
+    }"""
+    text_edits = ["""
+    use m::Abc;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractLibraryDispatcherSubPointers"
+    insert_text = """
+    AccountContractLibraryDispatcherSubPointers {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractLibraryDispatcherSubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractLibraryDispatcherSubPointersMut"
+    insert_text = """
+    AccountContractLibraryDispatcherSubPointersMut {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
+    insert_text = """
+    AccountContractSafeLibraryDispatcherSubPointers {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
+    insert_text = """
+    AccountContractSafeLibraryDispatcherSubPointersMut {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
+
+    """]
+    "#);
+}
+
+#[test]
+fn initialization_with_macro() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    #[derive(Drop)]
+    struct Abc {
+        pub a: u128,
+        pub b: u128,
+        pub c: u128,
+    }
+
+    #[complex_attribute_macro_v2]
+    fn func() {
+        let s = Ab<caret>
+    }
+    ",@r#"
+    caret = """
+        let s = Ab<caret>
+    """
+
+    [[completions]]
+    completion_label = "Abc"
+    insert_text = """
+    Abc {
+    \ta: $1,
+    \tb: $2,
+    \tc: $3,
+    }"""
+
+    [[completions]]
+    completion_label = "AbcDrop"
+
+    [[completions]]
+    completion_label = "AccountContractLibraryDispatcherSubPointers"
+    insert_text = """
+    AccountContractLibraryDispatcherSubPointers {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractLibraryDispatcherSubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractLibraryDispatcherSubPointersMut"
+    insert_text = """
+    AccountContractLibraryDispatcherSubPointersMut {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
+    insert_text = """
+    AccountContractSafeLibraryDispatcherSubPointers {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
+    insert_text = """
+    AccountContractSafeLibraryDispatcherSubPointersMut {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
+
+    """]
+    "#);
+}
+
+#[test]
+fn initialization_non_imported_struct_with_macro() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod m {
+        #[derive(Drop)]
+        pub struct Abc {
+            pub a: u128,
+            pub b: u128,
+            pub c: u128,
+        }
+    }
+
+    #[complex_attribute_macro_v2]
+    fn func() {
+        let s = Ab<caret>
+    }
+    ",@r#"
+    caret = """
+        let s = Ab<caret>
+    """
+
+    [[completions]]
+    completion_label = "Abc"
+    insert_text = """
+    Abc {
+    \ta: $1,
+    \tb: $2,
+    \tc: $3,
+    }"""
+    text_edits = ["""
+    use m::Abc;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractLibraryDispatcherSubPointers"
+    insert_text = """
+    AccountContractLibraryDispatcherSubPointers {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractLibraryDispatcherSubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractLibraryDispatcherSubPointersMut"
+    insert_text = """
+    AccountContractLibraryDispatcherSubPointersMut {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
+    insert_text = """
+    AccountContractSafeLibraryDispatcherSubPointers {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
+    insert_text = """
+    AccountContractSafeLibraryDispatcherSubPointersMut {
+    \tclass_hash: $1,
+    }"""
+    text_edits = ["""
+    use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
+
+    """]
+    "#);
+}

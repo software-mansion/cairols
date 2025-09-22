@@ -120,7 +120,7 @@ pub fn path_suffix_completions<'db>(
                     label: last_segment.to_string(),
                     insert_text: struct_initialization_text.clone(),
                     insert_text_format: struct_initialization_text
-                        .map(|_| InsertTextFormat::PLAIN_TEXT),
+                        .map(|_| InsertTextFormat::SNIPPET),
                     kind: Some(importable_completion_kind(*importable)),
                     label_details: Some(CompletionItemLabelDetails {
                         detail: None,
@@ -286,19 +286,28 @@ fn struct_initialization_completion_text<'db>(
         let args = struct_node
             .members(db)
             .elements(db)
-            .map(|member| {
-                format!("\t{}: (),", member.name(db).as_syntax_node().get_text_without_trivia(db))
+            .enumerate()
+            .map(|(index, member)| {
+                format!(
+                    "\t{}: ${},",
+                    member.name(db).as_syntax_node().get_text_without_trivia(db),
+                    index + 1,
+                )
             })
             .join("\n");
 
-        return Some(formatdoc!(
-            r#"
-          {} {{
-          {}
-          }}"#,
-            struct_name,
-            args
-        ));
+        return Some(if args.is_empty() {
+            format!("{} {{}}", struct_name)
+        } else {
+            formatdoc!(
+                r#"
+            {} {{
+            {}
+            }}"#,
+                struct_name,
+                args
+            )
+        });
     }
 
     None
