@@ -17,7 +17,8 @@ pub fn format_trait_path<'db>(
     importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> String {
     let importable = ImportableId::Trait(trait_id);
-    let path = importables.get(&importable).map(String::as_str).unwrap_or(trait_id.name(db));
+    let path: String =
+        importables.get(&importable).cloned().unwrap_or_else(|| trait_id.name(db).to_string(db));
 
     let generics = db
         .trait_generic_params(trait_id)

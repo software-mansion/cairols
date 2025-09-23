@@ -306,7 +306,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
         if let Some(file_id) = db.file_for_url(&uri) {
             state.open_files.insert(uri.clone());
             if let Some(content) = db.file_content(file_id)
-                && content.long(db).as_ref() != params.text_document.text.as_str()
+                && content != params.text_document.text.as_str()
             {
                 override_file_content!(db, file_id, Some(params.text_document.text.into()));
             }
@@ -421,7 +421,7 @@ impl BackgroundDocumentRequestHandler for ProvideVirtualFile {
             .db
             .file_for_url(&params.uri)
             .and_then(|file_id| snapshot.db.file_content(file_id))
-            .map(|content| content.long(&snapshot.db).to_string());
+            .map(|content| content.to_string());
 
         Ok(ProvideVirtualFileResponse { content })
     }

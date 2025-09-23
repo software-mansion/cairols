@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::resolve::AsSegments;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 
@@ -20,7 +21,7 @@ pub fn self_completions<'db>(
             }
         }
         && let Some(first_segment) = segments.first()
-        && first_segment.as_syntax_node().get_text_without_trivia(db) == "Self"
+        && first_segment.as_syntax_node().get_text_without_trivia(db) == SmolStrId::from(db, "Self")
         && let Some(result) = path_prefix_completions(db, ctx, segments)
     {
         result

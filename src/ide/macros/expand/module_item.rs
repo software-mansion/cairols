@@ -2,7 +2,7 @@ use cairo_lang_defs::{
     db::DefsGroup,
     plugin::{MacroPlugin, MacroPluginMetadata},
 };
-use cairo_lang_filesystem::ids::{CrateId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{CrateId, FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast::ModuleItem};
 use cairo_lang_utils::Intern;
@@ -51,8 +51,8 @@ fn expand_module_item<'db>(
         if let Some(generated) = result.code {
             let new_file = FileLongId::Virtual(VirtualFile {
                 parent: Some(item.stable_ptr(db).untyped().file_id(db)),
-                name: generated.name,
-                content: generated.content.into(),
+                name: SmolStrId::from(db, generated.name.as_str()),
+                content: SmolStrId::from(db, generated.content.as_str()),
                 code_mappings: generated.code_mappings.into(),
                 kind: FileKind::Module,
                 original_item_removed: false,

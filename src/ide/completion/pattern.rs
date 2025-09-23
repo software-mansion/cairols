@@ -52,15 +52,16 @@ pub fn struct_pattern_completions<'db>(
         })
         .collect();
 
-    let typed = typed.map(|ident| ident.name(db).token(db).text(db)).unwrap_or_default();
+    let typed =
+        typed.map(|ident| ident.name(db).token(db).text(db).to_string(db)).unwrap_or_default();
 
     all_members
         .keys()
-        .filter(|member| !existing_members.contains(&***member))
-        .filter(|member| text_matches(&***member, typed))
+        .filter(|member| !existing_members.contains(member))
+        .filter(|member| text_matches(member.to_string(db), &typed))
         .map(|member| CompletionItemOrderable {
             item: CompletionItem {
-                label: member.to_string(),
+                label: member.to_string(db),
                 kind: Some(CompletionItemKind::VARIABLE),
                 ..CompletionItem::default()
             },

@@ -32,7 +32,7 @@ pub fn inline_macro_generate_code<'db>(
         db,
         ExpandInlineMacroParams {
             context: expansion_context,
-            name: inline_macro_name.to_string(),
+            name: inline_macro_name.to_string(db),
             args: token_stream,
             call_site: call_site.span,
         },
@@ -67,7 +67,8 @@ pub fn inline_macro_generate_code<'db>(
                 content,
                 aux_data: None,
                 diagnostics_note: Some(format!(
-                    "this error originates in the inline macro: `{inline_macro_name}`",
+                    "this error originates in the inline macro: `{}`",
+                    inline_macro_name.to_string(db),
                 )),
                 is_unhygienic: false,
             }),

@@ -98,11 +98,11 @@ impl<'db> ItemDef<'db> {
     }
 
     /// Gets the name of the item.
-    pub fn name(&self, db: &'db AnalysisDatabase) -> &'db str {
+    pub fn name(&self, db: &'db AnalysisDatabase) -> String {
         match self.lookup_item_id {
-            LookupItemId::ModuleItem(item) => item.name(db),
-            LookupItemId::TraitItem(item) => item.name(db),
-            LookupItemId::ImplItem(item) => item.name(db),
+            LookupItemId::ModuleItem(item) => item.name(db).to_string(db),
+            LookupItemId::TraitItem(item) => item.name(db).to_string(db),
+            LookupItemId::ImplItem(item) => item.name(db).to_string(db),
         }
     }
 }

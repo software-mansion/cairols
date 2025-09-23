@@ -38,8 +38,8 @@ pub fn suggest_similar_member<'db>(
     // Filter member candidates by similarity to the typed member name
     let suggestions: Vec<String> = member_candidates
         .into_iter()
-        .filter(|name| text_matches(&**name, typed_member_name))
-        .map(|name| name.to_string())
+        .map(|name| name.to_string(db))
+        .filter(|name| text_matches(name, typed_member_name.to_string(db)))
         .collect();
 
     if suggestions.is_empty() {

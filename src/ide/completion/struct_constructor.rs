@@ -41,9 +41,14 @@ fn struct_constructor_completions_ex<'db>(
         .arguments(db)
         .elements(db)
         .filter_map(|member| match member {
-            ast::StructArg::StructArgSingle(struct_arg_single) => {
-                Some(struct_arg_single.identifier(db).token(db).as_syntax_node().get_text(db))
-            }
+            ast::StructArg::StructArgSingle(struct_arg_single) => Some(
+                struct_arg_single
+                    .identifier(db)
+                    .token(db)
+                    .as_syntax_node()
+                    .get_text(db)
+                    .to_string(),
+            ),
             // although tail covers all remaining unspecified members, we still want to show them in
             // completion.
             ast::StructArg::StructArgTail(_) => None,
@@ -76,12 +81,12 @@ fn struct_constructor_completions_ex<'db>(
     let completions = struct_members
         .iter()
         .filter_map(|(name, data)| {
-            if already_present_members.contains(&&**name) {
+            if already_present_members.contains(&name.to_string(db)) {
                 None
             } else {
                 Some(CompletionItemOrderable {
                     item: CompletionItem {
-                        label: name.to_string(),
+                        label: name.to_string(db),
                         detail: Some(format_type(db, data.ty, &importables)),
                         kind: Some(CompletionItemKind::VALUE),
                         ..Default::default()

@@ -88,7 +88,7 @@ impl CrateView {
         let plugins = Plugins::for_crate(db, crate_id);
 
         Some(Self {
-            name: name.clone(),
+            name: name.to_string(db),
             source_paths,
             settings: settings.clone(),
             linter_configuration,

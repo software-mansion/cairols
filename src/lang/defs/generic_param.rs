@@ -12,7 +12,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GenericParamDef<'db> {
     id: GenericParamId<'db>,
-    name: &'db str,
+    name: String,
     definition_stable_ptr: SyntaxStablePtrId<'db>,
     semantic: GenericParamSemantic<'db>,
 }
@@ -49,7 +49,7 @@ impl<'db> GenericParamDef<'db> {
 
         Some(Self {
             id: generic_param.id(),
-            name,
+            name: name.to_string(db),
             definition_stable_ptr: generic_param.stable_ptr(db).untyped(),
             semantic: details,
         })
@@ -60,8 +60,8 @@ impl<'db> GenericParamDef<'db> {
         self.definition_stable_ptr
     }
 
-    pub fn name(&self, _db: &'db AnalysisDatabase) -> &'db str {
-        self.name
+    pub fn name(&self, _db: &'db AnalysisDatabase) -> &str {
+        &self.name
     }
 
     pub fn signature(&self, db: &AnalysisDatabase) -> String {

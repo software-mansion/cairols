@@ -1,6 +1,7 @@
 // Modified and extended code from
 // https://github.com/starkware-libs/cairo/blob/932767340c4b8a762140bf9eba305f437587ac1b/crates/cairo-lang-parser/src/printer.rs.
 
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::ast::SyntaxFile;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -143,7 +144,7 @@ impl<'a> Printer<'a> {
         field_description: &str,
         indent: &str,
         extra_head_indent: &str,
-        text: &str,
+        text: &SmolStrId,
         kind: SyntaxKind,
     ) {
         let text = if kind == SyntaxKind::TokenMissing {
@@ -153,7 +154,10 @@ impl<'a> Printer<'a> {
                 SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
                 | SyntaxKind::TokenEndOfFile => ".".to_string(),
-                _ => format!(": '{}'", self.green(self.bold(text.into()))),
+                _ => {
+                    let t = text.to_string(self.db);
+                    format!(": '{}'", self.green(self.bold(t.into())))
+                }
             };
             format!("{} (kind: {:?}){token_text}", self.blue(field_description.into()), kind)
         };

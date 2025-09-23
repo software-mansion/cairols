@@ -92,7 +92,7 @@ pub fn fill_struct_fields<'db>(
         .ok()?
         .iter()
         .filter_map(|(name, member)| {
-            if already_present_arguments.contains(&&**name) {
+            if already_present_arguments.contains(name) {
                 None
             } else if peek_visible_in_with_edition(
                 db,
@@ -100,7 +100,7 @@ pub fn fill_struct_fields<'db>(
                 struct_parent_module_id,
                 module_file_id,
             ) {
-                Some(format!("{name}: ()"))
+                Some(format!("{}: ()", name.to_string(db)))
             } else {
                 None
             }

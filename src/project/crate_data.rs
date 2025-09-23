@@ -157,7 +157,6 @@ pub fn extract_custom_file_stems<'db>(
     let content = db.file_content(file_id)?;
 
     content
-        .long(db)
         .lines()
         .filter(|line| !line.is_empty())
         .map(|line| Some(line.strip_prefix("mod ")?.strip_suffix(';')?.into()))

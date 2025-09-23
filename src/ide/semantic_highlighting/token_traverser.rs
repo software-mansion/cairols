@@ -31,9 +31,12 @@ impl SemanticTokensTraverser {
     ) -> Vec<SemanticToken> {
         let green_node = node.green_node(db);
         match &green_node.details {
-            GreenNodeDetails::Token(text) => {
-                self.find_semantic_tokens_for_syntax_token(db, node, text, green_node.kind)
-            }
+            GreenNodeDetails::Token(text) => self.find_semantic_tokens_for_syntax_token(
+                db,
+                node,
+                &text.to_string(db),
+                green_node.kind,
+            ),
             GreenNodeDetails::Node { .. } => {
                 let mut semantic_tokens = vec![];
                 let children = node.get_children(db);
@@ -66,11 +69,11 @@ impl SemanticTokensTraverser {
             .or_else(|| SemanticTokenKind::from_syntax_node(db, node));
 
         if let Some(semantic_kind) = maybe_semantic_kind {
-            let text = node.text(db).expect("Node text should be available");
+            let text = node.text(db).expect("Node text should be available").to_string(db);
 
             // Case where a token spans multiple lines.
             if text.contains('\n') {
-                self.get_tokens_from_multiline_syntax_node(semantic_kind, text)
+                self.get_tokens_from_multiline_syntax_node(semantic_kind, &text)
             } else {
                 vec![self.get_semantic_token(width, &semantic_kind)]
             }

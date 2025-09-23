@@ -516,7 +516,7 @@ fn parse_attrs<'db>(
         // We ensure that this flag is changed *after* the expansion is found.
         if last {
             let structured_attr = attr.clone().structurize(db);
-            let found = defined_attributes.contains(&structured_attr.id.to_string());
+            let found = defined_attributes.contains(&structured_attr.id.to_string(db));
             if found {
                 if expansion.is_none() {
                     let mut args_builder = TokenStreamBuilder::new(db);
@@ -527,7 +527,7 @@ fn parse_attrs<'db>(
                             .attr(db)
                             .as_syntax_node()
                             .get_text_without_trivia(db)
-                            .to_string(),
+                            .to_string(db),
                         args,
                         call_site: CallSiteLocation::new(&attr, db),
                         attribute_location: ExpandableAttrLocation::new(
@@ -586,7 +586,7 @@ fn parse_derive<'db>(
                 return None;
             };
             let ident = segment.ident(db);
-            let value = ident.text(db).to_string();
+            let value = ident.text(db).to_string(db);
 
             let matching_derive = defined_derives
                 .iter()

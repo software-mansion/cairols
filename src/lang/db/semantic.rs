@@ -324,7 +324,7 @@ fn find_module_containing_node<'db>(
         // And get id of the (sub)module containing the node by traversing this stack top-down.
         .try_rfold(main_module, |module, name| {
             let ModuleItemId::Submodule(submodule) =
-                db.module_item_by_name(module, name.into()).ok()??
+                db.module_item_by_name(module, name).ok()??
             else {
                 return None;
             };

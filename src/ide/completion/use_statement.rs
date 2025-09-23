@@ -57,7 +57,7 @@ pub fn use_statement_first_segment<'db>(
         // Should be always true if invariant is not violated.
         if segments.segments.is_empty() {
             if let PathSegment::Simple(typed) = typed {
-                first_segment(db, typed.ident(db).token(db).text(db), ctx)
+                first_segment(db, &typed.ident(db).token(db).text(db).to_string(db), ctx)
             } else {
                 None
             }

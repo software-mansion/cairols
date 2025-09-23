@@ -1,7 +1,7 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{CrateId, FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{CrateId, FileId, FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::ModuleItem;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -80,8 +80,8 @@ fn expand_macro_ex<'db>(
 
         FileLongId::Virtual(VirtualFile {
             parent: None,
-            name: "macro_expand".into(),
-            content: replaced_content.into(),
+            name: SmolStrId::from(db, "macro_expand"),
+            content: SmolStrId::from(db, replaced_content.as_str()),
             code_mappings: Default::default(),
             kind: FileKind::Module,
             original_item_removed: false,
@@ -124,7 +124,7 @@ fn expand_macro_ex<'db>(
         span_after_inlining(db, file_to_process, replaced_content_file, item_node.span(db))?;
 
     let new_file_content = db.file_content(replaced_content_file)?;
-    let replaced_content = new_span.take(new_file_content.long(db));
+    let replaced_content = new_span.take(new_file_content);
 
     let replaced_content = if extra_files.is_empty() {
         replaced_content.to_string()

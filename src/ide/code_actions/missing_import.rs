@@ -20,7 +20,7 @@ pub fn missing_import<'db>(
     let typed_path_segments: Vec<_> = typed_path_generic
         .segments(db)
         .elements(db)
-        .map(|e| e.identifier(db).to_string())
+        .map(|e| e.identifier(db).to_string(db))
         .rev()
         .collect();
 

@@ -1,5 +1,5 @@
 use cairo_lang_defs::ids::FunctionWithBodyId;
-use cairo_lang_filesystem::ids::StrRef;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
 use cairo_lang_semantic::items::imp::ImplSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
@@ -11,7 +11,7 @@ pub fn find_members_for_type<'db>(
     db: &'db AnalysisDatabase,
     function_with_body: FunctionWithBodyId<'db>,
     ty: cairo_lang_semantic::TypeId<'db>,
-) -> Option<Vec<StrRef<'db>>> {
+) -> Option<Vec<SmolStrId<'db>>> {
     let resolver_data = match function_with_body {
         FunctionWithBodyId::Free(id) => db.free_function_body_resolver_data(id).ok(),
         FunctionWithBodyId::Impl(id) => db.impl_function_body_resolver_data(id).ok(),
