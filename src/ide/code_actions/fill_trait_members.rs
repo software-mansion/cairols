@@ -56,9 +56,9 @@ pub fn fill_trait_members<'db>(
     let mut trait_types = db.trait_types(trait_id).ok()?.clone();
     let mut trait_functions = db.trait_functions(trait_id).ok()?.clone();
 
-    trait_constants.retain(|key, _| !already_implemented_item_names.contains(&&**key));
-    trait_types.retain(|key, _| !already_implemented_item_names.contains(&&**key));
-    trait_functions.retain(|key, _| !already_implemented_item_names.contains(&&**key));
+    trait_constants.retain(|key, _| !already_implemented_item_names.contains(key));
+    trait_types.retain(|key, _| !already_implemented_item_names.contains(key));
+    trait_functions.retain(|key, _| !already_implemented_item_names.contains(key));
 
     if trait_constants.is_empty() && trait_types.is_empty() && trait_functions.is_empty() {
         return None;
@@ -69,7 +69,7 @@ pub fn fill_trait_members<'db>(
     let substitution = GenericSubstitution::new(trait_generics, specified_generics);
 
     let code = chain!(
-        trait_types.values().map(|id| format!("type {} = ();", id.name(db))),
+        trait_types.values().map(|id| format!("type {} = ();", id.name(db).to_string(db))),
         trait_constants.values().filter_map(|&id| constant_code(
             db,
             id,
@@ -139,7 +139,7 @@ fn constant_code<'db>(
     substitution: &GenericSubstitution<'db>,
     importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
-    let name = id.name(db);
+    let name = id.name(db).to_string(db);
     let ty = format_type(
         db,
         substitution.substitute(db, db.trait_constant_type(id).ok()?).ok()?,
@@ -188,7 +188,7 @@ fn function_code<'db>(
         .collect::<Option<Vec<_>>>()?
         .join(", ");
 
-    let name = id.name(db);
+    let name = id.name(db).to_string(db);
     let title = Some(format!("fn {name}{generic_parameters_bracket}({parameters})"));
 
     let return_type = substitution.substitute(db, signature.return_type).ok()?;
@@ -225,13 +225,13 @@ fn generic_parameter_code<'db>(
     match parameter {
         GenericParam::Const(param) => Some(format!(
             "const {}: {}",
-            param.id.format(db),
+            param.id.format(db).to_string(db),
             format_type(db, param.ty, importables)
         )),
 
         GenericParam::Impl(param) => {
             let concrete_trait = param.concrete_trait.ok()?;
-            let trait_name = concrete_trait.name(db);
+            let trait_name = concrete_trait.name(db).to_string(db);
             let trait_generic_arguments = concrete_trait.generic_args(db);
 
             let generic_arguments_bracket = if trait_generic_arguments.is_empty() {
@@ -250,11 +250,16 @@ fn generic_parameter_code<'db>(
                 // concrete trait used only as a constraint
                 || format!("+{trait_name}{generic_arguments_bracket}"),
                 // concrete trait with explicit impl
-                |name| format!("impl {name}: {trait_name}{generic_arguments_bracket}"),
+                |name| {
+                    format!(
+                        "impl {name}: {trait_name}{generic_arguments_bracket}",
+                        name = name.to_string(db)
+                    )
+                },
             ))
         }
 
-        GenericParam::Type(ty) => Some(ty.id.format(db)),
+        GenericParam::Type(ty) => Some(ty.id.format(db).to_string(db)),
 
         GenericParam::NegImpl(_) => None,
     }
@@ -300,5 +305,5 @@ fn function_parameter<'db>(
     let name = parameter.id.name(db);
     let ty = format_type(db, substitution.substitute(db, parameter.ty).ok()?, importables);
 
-    Some(format!("{prefix}{name}: {ty}"))
+    Some(format!("{prefix}{name}: {ty}", name = name.to_string(db)))
 }

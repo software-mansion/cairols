@@ -56,7 +56,9 @@ pub trait LsProtoGroup: Database {
         //   url-encode any funky characters in parts that LS is not controlling.
         let mut url = Url::parse("vfs://").unwrap();
         url.set_host(Some(&file_id.as_intern_id().index().to_string())).unwrap();
-        url.path_segments_mut().unwrap().push(&format!("{}.cairo", vf.name));
+        url.path_segments_mut()
+            .unwrap()
+            .push(&format!("{}.cairo", vf.name.to_string(self.as_dyn_database())));
         Some(url)
     }
 

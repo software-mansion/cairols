@@ -30,7 +30,7 @@ pub fn variables_completions<'db>(
         && let Some(function_id) = lookup_item_id.function_with_body()
         && let Ok(body) = db.function_body(function_id)
     {
-        patterns(body, db, ctx, segment.ident(db).token(db).text(db))
+        patterns(body, db, ctx, segment.ident(db).token(db).text(db).to_string(db).as_str())
     } else {
         Default::default()
     }
@@ -100,13 +100,13 @@ fn patterns<'db>(
                 _ => continue,
             }
 
-            if !text_matches(&*var.name, typed_text) {
+            if !text_matches(var.name.to_string(db), typed_text) {
                 continue;
             }
 
             completions.push(CompletionItemOrderable {
                 item: CompletionItem {
-                    label: var.name.to_string(),
+                    label: var.name.to_string(db),
                     kind: Some(CompletionItemKind::VARIABLE),
                     ..CompletionItem::default()
                 },

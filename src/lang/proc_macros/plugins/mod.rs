@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{MaybeImplBody, MaybeTraitBody, ModuleItem};
@@ -126,9 +127,10 @@ impl MacroPlugin for ProcMacroPlugin {
             _ => Default::default(),
         };
 
-        if !self.declared_attributes().into_iter().any(|declared_attr|
-            item_ast.has_attr(db, &declared_attr) || inner_attrs.contains(declared_attr.as_str())
-        )
+        if !self.declared_attributes(db).into_iter().any(|declared_attr| {
+            let name = declared_attr.to_string(db);
+            item_ast.has_attr(db, &name) || inner_attrs.contains(&declared_attr)
+        })
             // Plugins can implement own derives.
             && !item_ast.has_attr(db, "derive")
             // Plugins does not declare module inline macros they support.
@@ -150,12 +152,20 @@ impl MacroPlugin for ProcMacroPlugin {
         )
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        [&self.defined_attributes[..], &self.defined_executable_attributes[..]].concat()
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        [&self.defined_attributes[..], &self.defined_executable_attributes[..]]
+            .concat()
+            .into_iter()
+            .map(|s| SmolStrId::from(db, s))
+            .collect()
     }
 
-    fn declared_derives(&self) -> Vec<String> {
-        self.defined_derives.iter().map(|derive| derive.to_case(Case::Pascal)).collect()
+    fn declared_derives<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        self.defined_derives
+            .iter()
+            .map(|derive| derive.to_case(Case::Pascal))
+            .map(|s| SmolStrId::from(db, s))
+            .collect()
     }
 }
 

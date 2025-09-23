@@ -1,5 +1,5 @@
 use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_formatter::FormatterConfig;
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_parser::utils::SimpleParserDatabase;
@@ -12,8 +12,8 @@ pub fn format_output(output: &str, kind: SyntaxKind) -> String {
     let db = &SimpleParserDatabase::default();
     let virtual_file = FileLongId::Virtual(VirtualFile {
         parent: Default::default(),
-        name: Default::default(),
-        content: output.to_owned().into(),
+        name: SmolStrId::from(db, ""),
+        content: SmolStrId::from(db, output),
         code_mappings: Default::default(),
         kind: FileKind::Module,
         original_item_removed: false,

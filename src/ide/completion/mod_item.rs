@@ -26,7 +26,7 @@ pub fn mod_completions<'db>(
         // We are in nested mod, we should not show completions for file modules.
         && module_item.as_syntax_node().ancestor_of_kind(db, SyntaxKind::ItemModule).is_none()
         && let Some(mod_names_completions) =
-            mod_completions_ex(db, module_item, file_id, ident.text(db))
+            mod_completions_ex(db, module_item, file_id, ident.text(db).to_string(db).as_str())
     {
         return mod_names_completions;
     }

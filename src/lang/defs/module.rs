@@ -57,7 +57,7 @@ impl<'db> ModuleDef<'db> {
         let module_id: ModuleId = id.into();
         let parent_full_path = module_id
             .full_path(db)
-            .strip_suffix(module_id.name(db))
+            .strip_suffix(module_id.name(db).to_string(db).as_str())
             .unwrap()
             // Fails when the path lacks `::`, i.e. when we import from a crate root.
             .strip_suffix("::")
@@ -96,8 +96,8 @@ impl<'db> ModuleDef<'db> {
     }
 
     /// Gets the name of the module.
-    pub fn name(&self, db: &'db AnalysisDatabase) -> &'db str {
-        self.module_id().name(db)
+    pub fn name(&self, db: &'db AnalysisDatabase) -> String {
+        self.module_id().name(db).to_string(db)
     }
 
     /// Gets the id of the module.

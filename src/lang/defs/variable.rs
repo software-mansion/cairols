@@ -75,7 +75,7 @@ impl<'db> VariableDef<'db> {
     }
 
     /// Gets this variable's name.
-    pub fn name(&self, db: &'db AnalysisDatabase) -> &'db str {
-        self.identifier.text(db)
+    pub fn name(&self, db: &'db AnalysisDatabase) -> String {
+        self.identifier.text(db).to_string(db)
     }
 }

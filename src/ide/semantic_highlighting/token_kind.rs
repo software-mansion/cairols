@@ -49,7 +49,8 @@ impl SemanticTokenKind {
         let identifier = node.ancestor_of_type::<ast::TerminalIdentifier>(db)?;
 
         // Non-keyword keywords.
-        if [SUPER_KW, SELF_TYPE_KW, CRATE_KW].contains(&identifier.text(db)) {
+        if [SUPER_KW, SELF_TYPE_KW, CRATE_KW].contains(&identifier.text(db).to_string(db).as_str())
+        {
             return Some(SemanticTokenKind::Keyword);
         }
 

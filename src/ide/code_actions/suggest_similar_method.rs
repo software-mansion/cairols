@@ -46,8 +46,8 @@ pub fn suggest_similar_method<'db>(
     let suggestions: Vec<(String, Option<TextEdit>)> = method_candidates
         .into_iter()
         .filter_map(|function_id| {
-            let fn_name = function_id.long(db).name(db);
-            let matches = text_matches(fn_name, typed_fn_name);
+            let fn_name = function_id.long(db).name(db).to_string(db);
+            let matches = text_matches(&fn_name, typed_fn_name);
             if !matches {
                 return None;
             }
@@ -55,7 +55,7 @@ pub fn suggest_similar_method<'db>(
             // Determine if the trait providing this method is in scope, and if not, prepare an import edit.
             let trait_id = function_id.trait_id(db);
             let import_edit = import_edit_for_trait_if_needed(db, ctx, trait_id);
-            Some((fn_name.to_string(), import_edit))
+            Some((fn_name, import_edit))
         })
         .collect();
 

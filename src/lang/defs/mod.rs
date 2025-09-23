@@ -43,7 +43,7 @@ pub use module::NonMacroModuleId;
 pub enum SymbolDef<'db> {
     Item(ItemDef<'db>),
     Variable(VariableDef<'db>),
-    PluginInlineMacro(&'db str),
+    PluginInlineMacro(String),
     Member(MemberDef<'db>),
     Variant(VariantDef<'db>),
     Module(ModuleDef<'db>),
@@ -161,7 +161,7 @@ impl<'db> SymbolSearch<'db> {
             }
 
             ResolvedItem::PluginInlineMacro(inline_macro) => {
-                Some(SymbolDef::PluginInlineMacro(inline_macro))
+                Some(SymbolDef::PluginInlineMacro(inline_macro.to_string(db)))
             }
 
             ResolvedItem::GenericParam(ref generic_param) => {
@@ -206,15 +206,15 @@ impl<'db> SymbolDef<'db> {
     }
 
     /// Gets the name of the symbol.
-    pub fn name(&self, db: &'db AnalysisDatabase) -> &'db str {
+    pub fn name(&self, db: &'db AnalysisDatabase) -> String {
         match self {
             Self::Item(it) => it.name(db),
             Self::Variable(it) => it.name(db),
-            Self::PluginInlineMacro(name) => name,
+            Self::PluginInlineMacro(name) => name.clone(),
             Self::Member(it) => it.name(db),
             Self::Variant(it) => it.name(db),
             Self::Module(it) => it.name(db),
-            Self::GenericParam(it) => it.name(db),
+            Self::GenericParam(it) => it.name(db).to_string(),
         }
     }
 

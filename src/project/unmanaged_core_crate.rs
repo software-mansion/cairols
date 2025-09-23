@@ -33,7 +33,7 @@ pub fn try_to_init_unmanaged_core_if_not_present(
         // Initialize with default config.
         init_dev_corelib(db, path);
 
-        let core_id = CrateLongId::core().intern(db);
+        let core_id = CrateLongId::core(db).intern(db);
 
         // Override the config with the correct version.
         let mut crate_configs = db.crate_config(core_id).unwrap().clone();

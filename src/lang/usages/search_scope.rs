@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_filesystem::{db::FilesGroup, ids::StrId};
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
@@ -67,7 +67,7 @@ impl<'db> SearchScope<'db> {
     pub fn files_contents_and_spans<'a>(
         &'a self,
         db: &'db AnalysisDatabase,
-    ) -> impl Iterator<Item = (FileId<'db>, StrId<'db>, Option<TextSpan>)> + use<'a, 'db> {
+    ) -> impl Iterator<Item = (FileId<'db>, &'db str, Option<TextSpan>)> + use<'a, 'db> {
         self.entries.iter().map(|(&file, &span)| (file, span)).filter_map(move |(file, span)| {
             let text = db.file_content(file)?;
             Some((file, text, span))

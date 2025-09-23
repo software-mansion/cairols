@@ -4,6 +4,7 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, MacroPlugin, MacroPluginMetadata, PluginResult,
 };
 use cairo_lang_executable_plugin::executable_plugin_suite;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::ast::ModuleItem;
@@ -106,12 +107,12 @@ impl MacroPlugin for CairoRunPlugin {
         PluginResult::default()
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec![CAIRO_RUN_EXECUTABLE.to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, CAIRO_RUN_EXECUTABLE)]
     }
 
-    fn executable_attributes(&self) -> Vec<String> {
-        self.declared_attributes()
+    fn executable_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        self.declared_attributes(db)
     }
 }
 

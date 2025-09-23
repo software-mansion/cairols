@@ -39,7 +39,8 @@ fn attribute_completions_ex<'db>(
     Some(
         plugins
             .iter()
-            .flat_map(|plugin_id| plugin_id.long(db).declared_attributes())
+            .flat_map(|plugin_id| plugin_id.long(db).declared_attributes(db))
+            .map(|name| name.to_string(db))
             .filter(|name| text_matches(name, attr_name))
             .map(|name| CompletionItemOrderable {
                 item: CompletionItem {

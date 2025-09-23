@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{NamedLanguageElementId, TraitFunctionId};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, FilesGroup};
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
 use cairo_lang_semantic::expr::inference::solver::SolutionSet;
@@ -45,8 +45,11 @@ pub fn find_methods_for_type<'db>(
         [resolver.owning_crate_id],
         (!dependencies.contains_key(CORELIB_CRATE_NAME)).then(|| CrateId::core(db)),
         dependencies.iter().map(|(name, setting)| {
-            CrateLongId::Real { name: name.clone(), discriminator: setting.discriminator.clone() }
-                .intern(db)
+            CrateLongId::Real {
+                name: SmolStrId::from(db, name.as_str()),
+                discriminator: setting.discriminator.clone(),
+            }
+            .intern(db)
         })
     ) {
         let methods = db.methods_in_crate(crate_id, type_filter.clone());
@@ -112,7 +115,7 @@ pub fn available_traits_for_method<'db>(
     Some(
         find_methods_for_type(db, &mut ctx.resolver(db), ty, stable_ptr.untyped())
             .into_iter()
-            .filter(|method| method.name(db) == unknown_method_name)
+            .filter(|method| method.name(db).to_string(db).as_str() == unknown_method_name)
             .filter_map(|method| module_visible_traits.get(&method.trait_id(db)).cloned())
             .collect(),
     )

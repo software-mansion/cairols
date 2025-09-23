@@ -22,8 +22,8 @@ pub fn span_after_inlining<'db>(
     new_file: FileId<'db>,
     old_file_span: TextSpan,
 ) -> Option<TextSpan> {
-    let old_len = TextOffset::from_str(db.file_content(old_file)?.long(db));
-    let new_len = TextOffset::from_str(db.file_content(new_file)?.long(db));
+    let old_len = TextOffset::from_str(db.file_content(old_file)?);
+    let new_len = TextOffset::from_str(db.file_content(new_file)?);
 
     Some(TextSpan {
         start: old_file_span.start,
@@ -43,7 +43,7 @@ pub fn inline_files<'db>(
     file: FileId<'db>,
     files: &[FileWithOrigin<'db>],
 ) -> Option<String> {
-    let mut result_content = db.file_content(file)?.long(db).to_string();
+    let mut result_content = db.file_content(file)?.to_string();
 
     let mut replacements = Vec::new();
 
