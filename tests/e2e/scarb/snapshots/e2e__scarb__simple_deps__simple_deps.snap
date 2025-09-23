@@ -94,7 +94,7 @@ expression: "normalize(&ls, analyzed_crates)"
   "settings": {
     "name": "core",
     "edition": "2024_07",
-    "version": "2.12.2",
+    "version": "2.12.3",
     "cfg_set": [
       [
         "target",
