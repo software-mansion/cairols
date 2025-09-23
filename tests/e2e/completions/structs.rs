@@ -394,22 +394,14 @@ fn basic_initialization() {
 
     [[completions]]
     completion_label = "Abc"
-    insert_text = """
-    Abc {
-    \ta: $1,
-    \tb: $2,
-    \tc: $3,
-    }"""
+    insert_text = "Abc { a: $1, b: $2, c: $3 }"
 
     [[completions]]
     completion_label = "AbcDrop"
 
     [[completions]]
     completion_label = "AccountContractLibraryDispatcherSubPointers"
-    insert_text = """
-    AccountContractLibraryDispatcherSubPointers {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointers;
 
@@ -417,10 +409,7 @@ fn basic_initialization() {
 
     [[completions]]
     completion_label = "AccountContractLibraryDispatcherSubPointersMut"
-    insert_text = """
-    AccountContractLibraryDispatcherSubPointersMut {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
 
@@ -428,10 +417,7 @@ fn basic_initialization() {
 
     [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
-    insert_text = """
-    AccountContractSafeLibraryDispatcherSubPointers {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
 
@@ -439,10 +425,7 @@ fn basic_initialization() {
 
     [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
-    insert_text = """
-    AccountContractSafeLibraryDispatcherSubPointersMut {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
 
@@ -472,12 +455,7 @@ fn initialization_non_imported_struct() {
 
     [[completions]]
     completion_label = "Abc"
-    insert_text = """
-    Abc {
-    \ta: $1,
-    \tb: $2,
-    \tc: $3,
-    }"""
+    insert_text = "Abc { a: $1, b: $2, c: $3 }"
     text_edits = ["""
     use m::Abc;
 
@@ -485,10 +463,7 @@ fn initialization_non_imported_struct() {
 
     [[completions]]
     completion_label = "AccountContractLibraryDispatcherSubPointers"
-    insert_text = """
-    AccountContractLibraryDispatcherSubPointers {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointers;
 
@@ -496,10 +471,7 @@ fn initialization_non_imported_struct() {
 
     [[completions]]
     completion_label = "AccountContractLibraryDispatcherSubPointersMut"
-    insert_text = """
-    AccountContractLibraryDispatcherSubPointersMut {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
 
@@ -507,10 +479,7 @@ fn initialization_non_imported_struct() {
 
     [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
-    insert_text = """
-    AccountContractSafeLibraryDispatcherSubPointers {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
 
@@ -518,10 +487,7 @@ fn initialization_non_imported_struct() {
 
     [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
-    insert_text = """
-    AccountContractSafeLibraryDispatcherSubPointersMut {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
 
@@ -550,22 +516,14 @@ fn initialization_with_macro() {
 
     [[completions]]
     completion_label = "Abc"
-    insert_text = """
-    Abc {
-    \ta: $1,
-    \tb: $2,
-    \tc: $3,
-    }"""
+    insert_text = "Abc { a: $1, b: $2, c: $3 }"
 
     [[completions]]
     completion_label = "AbcDrop"
 
     [[completions]]
     completion_label = "AccountContractLibraryDispatcherSubPointers"
-    insert_text = """
-    AccountContractLibraryDispatcherSubPointers {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointers;
 
@@ -573,10 +531,7 @@ fn initialization_with_macro() {
 
     [[completions]]
     completion_label = "AccountContractLibraryDispatcherSubPointersMut"
-    insert_text = """
-    AccountContractLibraryDispatcherSubPointersMut {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
 
@@ -584,10 +539,7 @@ fn initialization_with_macro() {
 
     [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
-    insert_text = """
-    AccountContractSafeLibraryDispatcherSubPointers {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
 
@@ -595,10 +547,7 @@ fn initialization_with_macro() {
 
     [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
-    insert_text = """
-    AccountContractSafeLibraryDispatcherSubPointersMut {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
 
@@ -629,12 +578,7 @@ fn initialization_non_imported_struct_with_macro() {
 
     [[completions]]
     completion_label = "Abc"
-    insert_text = """
-    Abc {
-    \ta: $1,
-    \tb: $2,
-    \tc: $3,
-    }"""
+    insert_text = "Abc { a: $1, b: $2, c: $3 }"
     text_edits = ["""
     use m::Abc;
 
@@ -642,10 +586,7 @@ fn initialization_non_imported_struct_with_macro() {
 
     [[completions]]
     completion_label = "AccountContractLibraryDispatcherSubPointers"
-    insert_text = """
-    AccountContractLibraryDispatcherSubPointers {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointers;
 
@@ -653,10 +594,7 @@ fn initialization_non_imported_struct_with_macro() {
 
     [[completions]]
     completion_label = "AccountContractLibraryDispatcherSubPointersMut"
-    insert_text = """
-    AccountContractLibraryDispatcherSubPointersMut {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
 
@@ -664,10 +602,7 @@ fn initialization_non_imported_struct_with_macro() {
 
     [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
-    insert_text = """
-    AccountContractSafeLibraryDispatcherSubPointers {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
 
@@ -675,10 +610,7 @@ fn initialization_non_imported_struct_with_macro() {
 
     [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
-    insert_text = """
-    AccountContractSafeLibraryDispatcherSubPointersMut {
-    \tclass_hash: $1,
-    }"""
+    insert_text = "AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
 

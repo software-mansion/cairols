@@ -51,8 +51,6 @@ pub fn path_suffix_completions<'db>(
         return Default::default();
     };
 
-    // eprintln!("check1");
-
     let mut typed_text = typed_text
         .into_iter()
         .map(|segment| segment.as_syntax_node())
@@ -289,21 +287,19 @@ fn struct_initialization_completion_text<'db>(
             .enumerate()
             .map(|(index, member)| {
                 format!(
-                    "\t{}: ${},",
+                    "{}: ${}",
                     member.name(db).as_syntax_node().get_text_without_trivia(db),
                     index + 1,
                 )
             })
-            .join("\n");
+            .join(", ");
 
         return Some(if args.is_empty() {
             format!("{} {{}}", struct_name)
         } else {
             formatdoc!(
                 r#"
-            {} {{
-            {}
-            }}"#,
+                {} {{ {} }}"#,
                 struct_name,
                 args
             )
