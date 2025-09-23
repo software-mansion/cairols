@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
 use cairo_lang_syntax::node::SyntaxNode;
-use salsa::Database;
+use salsa::{Database, Setter};
 use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
 use scarb_proc_macro_server_types::methods::{
     CodeOrigin, ProcMacroResult,
@@ -43,12 +43,18 @@ pub trait ProcMacroGroup: Database {
     fn proc_macro_input(&self) -> &ProcMacroInput {
         proc_macro_input(self.as_dyn_database())
     }
+
+    fn reset_proc_macro_resolutions(&mut self) {
+        let db = self.as_dyn_database_mut();
+        proc_macro_input(db).set_attribute_macro_resolution(db).to(Default::default());
+        proc_macro_input(db).set_derive_macro_resolution(db).to(Default::default());
+        proc_macro_input(db).set_inline_macro_resolution(db).to(Default::default());
+    }
 }
 
 impl<T: Database + ?Sized> ProcMacroGroup for T {}
 
 #[salsa::input]
-
 pub struct ProcMacroInput {
     #[returns(ref)]
     pub attribute_macro_resolution: HashMap<PlainExpandAttributeParams, ProcMacroResult>,
