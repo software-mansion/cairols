@@ -1,5 +1,4 @@
 use std::fmt::{Display, Formatter};
-use std::mem;
 use std::num::NonZeroU32;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -134,8 +133,8 @@ impl ProcMacroClientController {
             // Clear resolved macros if proc macro server should be disabled.
             self.remove_current_plugins_from_db(db);
             self.crate_plugin_suites.clear();
-
             self.clean_up_previous_proc_macro_server(db);
+            db.reset_proc_macro_resolutions();
         }
 
         if db.proc_macro_input().proc_macro_server_status(db).is_pending() {
@@ -155,9 +154,10 @@ impl ProcMacroClientController {
     /// This ensures that a fresh proc-macro-server is used.
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn force_restart(&mut self, db: &mut AnalysisDatabase, config: &Config) {
-        for (crate_input, plugins) in mem::take(&mut self.crate_plugin_suites) {
-            db.remove_crate_plugin_suite(crate_input, plugins);
-        }
+        self.remove_current_plugins_from_db(db);
+        self.crate_plugin_suites.clear();
+        db.reset_proc_macro_resolutions();
+        self.clean_up_previous_proc_macro_server(db);
 
         self.try_initialize(db, config);
     }
