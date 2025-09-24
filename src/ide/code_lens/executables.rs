@@ -144,7 +144,7 @@ fn get_executable_lens_position(
     original_node.find_attr(db, EXECUTABLE_ATTR).map(|attribute| {
         attribute
             .as_syntax_node()
-            .span(db)
+            .span_without_trivia(db)
             .start
             .position_in_file(db, original_file)
             .map(|position| position.to_lsp())
