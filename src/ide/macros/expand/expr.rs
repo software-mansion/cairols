@@ -4,6 +4,7 @@ use cairo_lang_defs::{
     db::DefsGroup,
     plugin::{InlineMacroExprPlugin, MacroPluginMetadata},
 };
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_filesystem::{
     ids::{CrateId, FileId, FileKind, FileLongId, VirtualFile},
     span::TextSpan,
@@ -47,15 +48,15 @@ pub fn expand_inline_macros_to_file<'db>(
 
     for inline_macro in inline_macros {
         let macro_name = inline_macro.path(db).as_syntax_node().get_text_without_trivia(db);
-        let &plugin_id = plugins.get(&macro_name.to_string())?;
+        let &plugin_id = plugins.get(&macro_name.to_string(db))?;
 
         let plugin = plugin_id.long(db);
         let generated = plugin.generate_code(db, &inline_macro, metadata).code?; // None here means macro failed.
 
         let file = FileLongId::Virtual(VirtualFile {
             parent: Some(file_to_process),
-            name: generated.name,
-            content: generated.content.into(),
+            name: SmolStrId::from(db, generated.name.as_str()),
+            content: SmolStrId::from(db, generated.content.as_str()),
             code_mappings: generated.code_mappings.into(),
             kind: FileKind::Module,
             original_item_removed: false,
@@ -75,8 +76,8 @@ pub fn expand_inline_macros_to_file<'db>(
 
     let new_file = FileLongId::Virtual(VirtualFile {
         parent: None,
-        name: "macro_expand".into(),
-        content: replaced_content.into(),
+        name: SmolStrId::from(db, "macro_expand"),
+        content: SmolStrId::from(db, replaced_content.as_str()),
         code_mappings: Default::default(),
         kind: file_to_process.kind(db),
         original_item_removed: false,

@@ -64,7 +64,7 @@ pub fn definition<'db>(
 
             if let Some(doc) = db
                 .crate_inline_macro_plugins(crate_id)
-                .get(*macro_name)
+                .get(macro_name.as_str())
                 .map(|&id| id.long(db))?
                 .documentation()
             {
@@ -165,13 +165,13 @@ fn concrete_signature<'db>(
             let mut result = generics.into_iter().zip(generic_args_concrete).fold(
                 "\n\n".to_string(),
                 |mut acc, (generic, concrete)| {
-                    let left = generic.as_syntax_node().get_text_without_trivia(db);
+                    let left = generic.as_syntax_node().get_text_without_trivia(db).to_string(db);
 
                     let right = InferredValue::try_from_generic_arg_id(concrete)
                         .map(|value| value.format(db, importables))
                         .unwrap_or_else(|| concrete.format(db));
 
-                    acc.push_str(left);
+                    acc.push_str(&left);
                     acc.push_str(" = ");
                     acc.push_str(&right);
                     acc.push('\n');

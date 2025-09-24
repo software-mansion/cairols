@@ -28,7 +28,7 @@ pub fn create_module_file<'db>(
         is_crate_root = true;
     };
 
-    let module_name = item_module.name(db).text(db);
+    let module_name = item_module.name(db).text(db).to_string(db);
     if module_name.is_empty() {
         return None;
     }

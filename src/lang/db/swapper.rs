@@ -217,7 +217,7 @@ impl AnalysisDatabaseSwapper {
             };
             let file_input = file_id.long(old_db).into_file_input(old_db);
             if let Some(content) = overrides.get(&file_id) {
-                new_overrides.insert(file_input, content.long(old_db).clone());
+                new_overrides.insert(file_input, content.to_string().into());
             }
         }
         files_group_input(new_db).set_file_overrides(new_db).to(Some(new_overrides));

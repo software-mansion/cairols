@@ -48,7 +48,7 @@ pub fn rename(
         return Ok(None);
     };
 
-    if identifier.text(db) == SELF_TYPE_KW {
+    if identifier.text(db).to_string(db) == SELF_TYPE_KW {
         return Err(LSPError::new(
             anyhow!(
                 "Renaming via `{SELF_TYPE_KW}` reference is not supported. Rename the item directly instead."
@@ -154,7 +154,9 @@ fn find_usages<'db>(
                 //    Rationale: These symbols most likely are nodes mapped back to call site.
                 //    If this is not the case, it means that the macro does something unusual and
                 //    the user should rename the remaining cases themselves.
-                .is_some_and(|node| node.span(db) == *span && node.text(db) == symbol_name)
+                .is_some_and(|node| {
+                    node.span(db) == *span && node.text(db).map(|t| t.to_string(db)) == symbol_name
+                })
         })
         .unique()
         .collect()

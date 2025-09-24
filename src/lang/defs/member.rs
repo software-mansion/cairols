@@ -41,7 +41,7 @@ impl<'db> MemberDef<'db> {
     }
 
     /// Gets member's name.
-    pub fn name(&self, db: &'db AnalysisDatabase) -> &'db str {
-        self.member_id.name(db)
+    pub fn name(&self, db: &'db AnalysisDatabase) -> String {
+        self.member_id.name(db).to_string(db)
     }
 }

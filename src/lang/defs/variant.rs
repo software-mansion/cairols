@@ -41,7 +41,7 @@ impl<'db> VariantDef<'db> {
     }
 
     /// Gets variant's name.
-    pub fn name(&self, db: &'db AnalysisDatabase) -> &'db str {
-        self.variant_id.name(db)
+    pub fn name(&self, db: &'db AnalysisDatabase) -> String {
+        self.variant_id.name(db).to_string(db)
     }
 }

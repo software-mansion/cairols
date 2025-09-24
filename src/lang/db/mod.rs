@@ -66,7 +66,7 @@ impl AnalysisDatabase {
         // Set default plugins for core to make sure starknet plugin is not applied to it.
         let core_plugin_suite = Self::default_corelib_plugin_suite();
         db.set_override_crate_plugins_from_suite(
-            CrateLongId::core().into_crate_input(&db),
+            CrateLongId::core(&db).into_crate_input(&db),
             core_plugin_suite,
         );
 

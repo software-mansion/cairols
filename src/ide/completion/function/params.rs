@@ -25,17 +25,18 @@ pub fn params_completions<'db>(
         && let Some(function_id) = lookup_item_id.function_with_body()
         && let Ok(signature) = db.function_with_body_signature(function_id)
     {
-        (signature.params.clone(), segment.ident(db).token(db).text(db))
+        (signature.params.clone(), segment.ident(db).token(db).text(db).to_string(db))
     } else {
         Default::default()
     };
 
     params
         .iter()
-        .filter(|param| text_matches(&*param.name, typed_text))
-        .map(|param| CompletionItemOrderable {
+        .map(|param| param.name.to_string(db))
+        .filter(|name| text_matches(name, &typed_text))
+        .map(|name| CompletionItemOrderable {
             item: CompletionItem {
-                label: param.name.to_string(),
+                label: name,
                 kind: Some(CompletionItemKind::VARIABLE),
                 ..CompletionItem::default()
             },

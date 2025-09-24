@@ -1,4 +1,4 @@
-use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_utils::Intern;
 use lsp_types::Url;
 use salsa::AsDynDatabase;
@@ -32,24 +32,24 @@ fn file_url() {
     check("file:///", FileLongId::OnDisk("/".into()));
 
     // NOTE: We expect that Salsa is assigning sequential numeric ids to files,
-    //   hence numbers 8194 and 8195 appear further down.
+    //   hence numbers 9218 and 9219 appear further down.
     check(
-        "vfs://8194/foo.cairo",
+        "vfs://9218/foo.cairo",
         FileLongId::Virtual(VirtualFile {
             parent: None,
-            name: "foo".into(),
-            content: "".into(),
+            name: SmolStrId::from(db, "foo"),
+            content: SmolStrId::from(db, ""),
             code_mappings: [].into(),
             kind: FileKind::Module,
             original_item_removed: false,
         }),
     );
     check(
-        "vfs://8195/foo%2Fbar.cairo",
+        "vfs://9219/foo%2Fbar.cairo",
         FileLongId::Virtual(VirtualFile {
             parent: None,
-            name: "foo/bar".into(),
-            content: "".into(),
+            name: SmolStrId::from(db, "foo/bar"),
+            content: SmolStrId::from(db, ""),
             code_mappings: [].into(),
             kind: FileKind::Module,
             original_item_removed: false,

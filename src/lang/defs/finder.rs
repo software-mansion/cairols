@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     MacroCallLongId, MemberId, ModuleId, NamedLanguageElementId, StructLongId, SubmoduleLongId,
     TraitItemId, VarId,
 };
-use cairo_lang_filesystem::ids::StrRef;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{SemanticGroup, get_resolver_data_options};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
@@ -57,7 +57,7 @@ pub enum ResolvedItem<'db> {
     // CairoLS-specific additions.
     Member(MemberId<'db>),
     ImplItem(ImplItemId<'db>),
-    PluginInlineMacro(&'db str),
+    PluginInlineMacro(SmolStrId<'db>),
     GenericParam(GenericParam<'db>),
 }
 
@@ -130,7 +130,7 @@ fn try_trait_or_impl_item_with_self_reference<'db>(
         return None;
     };
 
-    if first_path_segment_simple.ident(db).text(db) != SELF_TYPE_KW {
+    if first_path_segment_simple.ident(db).text(db).to_string(db) != SELF_TYPE_KW {
         return None;
     }
 
@@ -167,9 +167,8 @@ fn try_trait_or_impl_item_with_self_reference<'db>(
 
         match resolved_self {
             ResolvedConcreteItem::SelfTrait(concrete_trait_id) => {
-                let trait_item = db
-                    .trait_item_by_name(concrete_trait_id.trait_id(db), item_name.into())
-                    .ok()??;
+                let trait_item =
+                    db.trait_item_by_name(concrete_trait_id.trait_id(db), item_name).ok()??;
 
                 Some(ResolvedItem::Generic(TraitItem(trait_item)))
             }
@@ -180,8 +179,7 @@ fn try_trait_or_impl_item_with_self_reference<'db>(
                 };
 
                 let impl_def_id = concrete_impl_id.impl_def_id(db);
-                let impl_item_id =
-                    db.impl_item_info_by_name(impl_def_id, item_name.into()).ok()??.id;
+                let impl_item_id = db.impl_item_info_by_name(impl_def_id, item_name).ok()??.id;
                 Some(ResolvedItem::ImplItem(impl_item_id))
             }
             _ => None,
@@ -247,7 +245,7 @@ fn try_impl_item_usages<'db>(
     let item = db
         .impl_item_info_by_name(
             concrete_impl_long_id.impl_def_id,
-            associated_item_name_candidate.as_syntax_node().get_text_without_trivia(db).into(),
+            associated_item_name_candidate.as_syntax_node().get_text_without_trivia(db),
         )
         .ok()??
         .id;
@@ -319,7 +317,7 @@ fn try_impl_items<'db>(
         let function_name = function.name(db);
         if &function_name == identifier {
             let function_name = function_name.text(db);
-            let function = db.trait_function_by_name(trait_id, function_name.into()).ok()??;
+            let function = db.trait_function_by_name(trait_id, function_name).ok()??;
             return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Function(function))));
         }
     }
@@ -327,7 +325,7 @@ fn try_impl_items<'db>(
     if let Some(constant) = identifier.as_syntax_node().ancestor_of_type::<ast::ItemConstant>(db) {
         let constant_name = constant.name(db);
         if &constant_name == identifier {
-            let constant_name = constant_name.text(db).into();
+            let constant_name = constant_name.text(db);
             let constant = db.trait_constant_by_name(trait_id, constant_name).ok()??;
             return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Constant(constant))));
         }
@@ -339,8 +337,7 @@ fn try_impl_items<'db>(
         let associated_type_name = associated_type.name(db);
         if &associated_type_name == identifier {
             let associated_type_name = associated_type_name.text(db);
-            let associated_type =
-                db.trait_type_by_name(trait_id, associated_type_name.into()).ok()??;
+            let associated_type = db.trait_type_by_name(trait_id, associated_type_name).ok()??;
             return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Type(associated_type))));
         }
     }
@@ -350,7 +347,7 @@ fn try_impl_items<'db>(
     {
         let associated_impl_name = associated_impl.name(db);
         if &associated_impl_name == identifier {
-            let associated_impl_name = associated_impl_name.text(db).into();
+            let associated_impl_name = associated_impl_name.text(db);
             let associated_impl = db.trait_impl_by_name(trait_id, associated_impl_name).ok()??;
             return Some(ResolvedItem::Generic(TraitItem(TraitItemId::Impl(associated_impl))));
         }
@@ -404,7 +401,7 @@ fn try_member_from_constructor<'db>(
     let member_id = constructor_expr_semantic
         .members
         .iter()
-        .find_map(|(_, id)| struct_member_name.eq(id.name(db)).then_some(*id))?;
+        .find_map(|(_, id)| struct_member_name.eq(&id.name(db)).then_some(*id))?;
 
     Some(ResolvedItem::Member(member_id))
 }
@@ -473,7 +470,7 @@ fn try_member_declaration<'db>(
     )
     .intern(db);
     let struct_members = db.struct_members(struct_id).ok()?;
-    let name: StrRef<'db> = member.name(db).text(db).into();
+    let name: SmolStrId<'db> = member.name(db).text(db);
     let member_id = struct_members.get(&name)?.id;
     Some(ResolvedItem::Member(member_id))
 }
@@ -494,7 +491,7 @@ fn try_variant_declaration<'db>(
     )
     .intern(db);
     let enum_variants = db.enum_variants(enum_id).ok()?;
-    let name: StrRef<'db> = variant.name(db).text(db).into();
+    let name: SmolStrId<'db> = variant.name(db).text(db);
     let variant_id = *enum_variants.get(&name)?;
     let variant = db.variant_semantic(enum_id, variant_id).ok()?;
     Some(ResolvedItem::Generic(ResolvedGenericItem::Variant(variant)))

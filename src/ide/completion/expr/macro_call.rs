@@ -31,7 +31,7 @@ pub fn macro_call_completions<'db>(
 
         let inline_plugins = db.crate_inline_macro_plugins(crate_id);
 
-        let typed = path_segment.ident(db).token(db).text(db).to_string();
+        let typed = path_segment.ident(db).token(db).text(db).to_string(db);
 
         inline_plugins
             .iter()

@@ -41,7 +41,7 @@ fn dot_completions_ex<'db>(
     was_node_corrected: bool,
 ) -> Option<Vec<CompletionItemOrderable>> {
     let expr = dot_expr_rhs(db, &ctx.node, was_node_corrected)?;
-    let typed = expr.rhs(db).as_syntax_node().get_text_without_trivia(db);
+    let typed = expr.rhs(db).as_syntax_node().get_text_without_trivia(db).to_string(db);
     // Get a resolver in the current context.
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let mut resolver = ctx.resolver(db);
@@ -70,7 +70,7 @@ fn dot_completions_ex<'db>(
         // Find relevant methods for type.
         let relevant_methods = find_methods_for_type(db, &mut resolver, ty, stable_ptr)
             .into_iter()
-            .filter(|method| text_matches(method.name(db), typed));
+            .filter(|method| text_matches(method.name(db).to_string(db), &typed));
 
         for trait_function in relevant_methods {
             let Some(completion) = completion_for_method(db, ctx, trait_function) else {
@@ -86,7 +86,7 @@ fn dot_completions_ex<'db>(
                 |(name, member)| {
                     let completion = CompletionItemOrderable {
                         item: CompletionItem {
-                            label: name.to_string(),
+                            label: name.to_string(db),
                             detail: Some(format_type(db, member.ty, &importables)),
                             kind: Some(CompletionItemKind::FIELD),
                             ..CompletionItem::default()
@@ -121,7 +121,7 @@ fn completion_for_method<'db>(
     trait_function: TraitFunctionId<'db>,
 ) -> Option<CompletionItemOrderable> {
     let trait_id = trait_function.trait_id(db);
-    let name = trait_function.name(db);
+    let name = trait_function.name(db).to_string(db);
     let signature = db.trait_function_signature(trait_function).ok()?;
 
     // TODO(spapini): Add signature.
@@ -136,7 +136,7 @@ fn completion_for_method<'db>(
     let completion = CompletionItemOrderable {
         item: CompletionItem {
             label: format!("{name}()"),
-            insert_text: Some(snippet_for_function_call(name, signature)),
+            insert_text: Some(snippet_for_function_call(db, &name, signature)),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
             detail: Some(detail),
             kind: Some(CompletionItemKind::METHOD),

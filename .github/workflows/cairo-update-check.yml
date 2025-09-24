@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        partition: [1, 2, 3, 4]
+        partition: [ 1, 2, 3, 4 ]
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
@@ -75,8 +75,8 @@ jobs:
 
   notify_failed:
     runs-on: ubuntu-latest
-    if: always() && !(inputs.no_slack) && needs.test.result == 'failure'
-    needs: test
+    if: failure() && !(inputs.no_slack)
+    needs: [ build-test, test ]
     steps:
       - name: Notify the team about workflow failure
         uses: slackapi/slack-github-action@v2.1.1

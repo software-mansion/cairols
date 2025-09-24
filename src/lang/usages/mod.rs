@@ -135,7 +135,6 @@ impl<'db> FindUsages<'db> {
         let self_finder = Finder::new(SELF_TYPE_KW.as_bytes());
 
         for (file, text, search_span) in search_scope.files_contents_and_spans(db) {
-            let text = text.long(db);
             let mut found_offsets: Vec<TextOffset> =
                 Self::match_offsets(&finder, text, search_span).collect();
             if search_for_self_usages {
