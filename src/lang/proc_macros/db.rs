@@ -5,6 +5,7 @@ use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
 use cairo_lang_syntax::node::SyntaxNode;
 use salsa::{Database, Setter};
 use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
+use scarb_proc_macro_server_types::methods::CodeMapping;
 use scarb_proc_macro_server_types::methods::{
     CodeOrigin, ProcMacroResult,
     expand::{ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams},
@@ -101,6 +102,7 @@ fn get_stored_inline_macros_expansion(
 pub fn get_attribute_expansion(
     db: &dyn Database,
     mut params: ExpandAttributeParams,
+    call_site: SyntaxNode<'_>,
 ) -> ProcMacroResult {
     let stabilizer = SpansStabilizer::new(&mut params.adapted_call_site, &mut params.item);
 
@@ -120,10 +122,16 @@ pub fn get_attribute_expansion(
         }
     });
 
-    stabilizer.apply_original_offsets_to_result(result)
+    let result = stabilizer.apply_original_offsets_to_result(result);
+
+    stabilizer.granulate_call_site(result, db, call_site)
 }
 
-pub fn get_derive_expansion(db: &dyn Database, mut params: ExpandDeriveParams) -> ProcMacroResult {
+pub fn get_derive_expansion(
+    db: &dyn Database,
+    mut params: ExpandDeriveParams,
+    call_site: SyntaxNode<'_>,
+) -> ProcMacroResult {
     let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.item);
 
     let result = db.get_stored_derive_expansion(params.clone().into()).unwrap_or_else(|| {
@@ -141,12 +149,15 @@ pub fn get_derive_expansion(db: &dyn Database, mut params: ExpandDeriveParams) -
         }
     });
 
-    stabilizer.apply_original_offsets_to_result(result)
+    let result = stabilizer.apply_original_offsets_to_result(result);
+
+    stabilizer.granulate_call_site(result, db, call_site)
 }
 
 pub fn get_inline_macros_expansion(
     db: &dyn Database,
     mut params: ExpandInlineMacroParams,
+    call_site: SyntaxNode<'_>,
 ) -> ProcMacroResult {
     let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.args);
 
@@ -167,8 +178,9 @@ pub fn get_inline_macros_expansion(
                 code_mappings: None,
             }
         });
+    let result = stabilizer.apply_original_offsets_to_result(result);
 
-    stabilizer.apply_original_offsets_to_result(result)
+    stabilizer.granulate_call_site(result, db, call_site)
 }
 
 /// When storing a procedural macro result, parameters are used as the cache key.
@@ -217,7 +229,7 @@ impl SpansStabilizer {
         Self { original_call_site, original_item_offset }
     }
 
-    pub fn apply_original_offsets_to_result(self, mut result: ProcMacroResult) -> ProcMacroResult {
+    pub fn apply_original_offsets_to_result(&self, mut result: ProcMacroResult) -> ProcMacroResult {
         if let Some(code_mappings) = &mut result.code_mappings {
             for mapping in code_mappings.iter_mut() {
                 match mapping.origin {
@@ -251,6 +263,41 @@ impl SpansStabilizer {
                 end: span.end + self.original_item_offset,
             };
         }
+    }
+
+    fn granulate_call_site(
+        &self,
+        mut result: ProcMacroResult,
+        db: &dyn Database,
+        call_site: SyntaxNode,
+    ) -> ProcMacroResult {
+        let call_site_spans: Vec<_> = call_site
+            .tokens(db)
+            .map(|n| {
+                let span = n.span_without_trivia(db);
+
+                TextSpan::new(span.start.as_u32(), span.end.as_u32())
+            })
+            .collect();
+
+        if let Some(code_mappings) = &mut result.code_mappings {
+            let mut call_sites = vec![];
+            code_mappings.retain(|mapping| match &mapping.origin {
+                CodeOrigin::Span(span) if span == &self.original_call_site => {
+                    call_sites.extend(call_site_spans.iter().map(|call_site_span| CodeMapping {
+                        span: mapping.span.clone(),
+                        origin: CodeOrigin::Span(call_site_span.clone()),
+                    }));
+
+                    false
+                }
+                _ => true,
+            });
+
+            code_mappings.extend(call_sites);
+        }
+
+        result
     }
 }
 

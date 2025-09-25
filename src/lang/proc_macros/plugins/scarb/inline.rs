@@ -36,6 +36,7 @@ pub fn inline_macro_generate_code<'db>(
             args: token_stream,
             call_site: call_site.span,
         },
+        syntax.as_syntax_node(),
     );
     // endregion
     // Handle diagnostics.

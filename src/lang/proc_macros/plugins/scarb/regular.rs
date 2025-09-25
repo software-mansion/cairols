@@ -288,6 +288,7 @@ fn do_expand_inner_attr<'db>(
             item: TokenStream::from(token_stream.clone()),
             adapted_call_site: input.attribute_location.adapted_call_site().into(),
         },
+        input.call_site.stable_ptr.lookup(db),
     );
 
     if result.code_mappings.is_some() {
@@ -633,6 +634,7 @@ fn expand_derives<'db>(
             item: token_stream,
             call_site,
         },
+        stable_ptr.lookup(db),
     );
     // endregion
 
@@ -689,6 +691,7 @@ fn expand_attribute<'db>(
             item: token_stream.clone().into(),
             adapted_call_site: input.attribute_location.adapted_call_site().into(),
         },
+        input.call_site.stable_ptr.lookup(db),
     );
     // endregion
     let diagnostics =
