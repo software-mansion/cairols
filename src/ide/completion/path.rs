@@ -41,7 +41,6 @@ pub fn path_suffix_completions<'db>(
             .node
             .ancestor_of_type::<ExprPath>(db)
             .map(|path| path.segments(db).elements(db).collect_vec())
-        && !typed_text_segments.is_empty()
     {
         (importables, typed_text_segments)
     } else {
@@ -61,7 +60,7 @@ pub fn path_suffix_completions<'db>(
         SmolStrId::from(db, "")
     } else {
         // Otherwise, the last segment is a partial identifier we want to complete using fuzzy search.
-        typed_text.pop().expect("typed path should not be empty")
+        typed_text.pop().unwrap_or_default()
     };
 
     let current_crate = ctx.module_file_id.0.owning_crate(db);
