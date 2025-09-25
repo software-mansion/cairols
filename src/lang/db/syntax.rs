@@ -74,10 +74,13 @@ fn widest_node_within_span<'db>(
 ) -> Option<SyntaxNode<'db>> {
     let precise_node = db.find_syntax_node_at_offset(file, span.start)?;
 
-    precise_node
+    let nodes: Vec<_> = precise_node
         .ancestors_with_self(db)
         .take_while(|new_node| span.contains(new_node.span(db)))
-        .last()
+        .collect();
+
+    let last_node = nodes.last().cloned()?;
+    nodes.into_iter().rev().take_while(|node| node.span(db) == last_node.span(db)).last()
 }
 
 /// Finds the most specific [`SyntaxNode`] at the given [`TextPosition`] in the file.
