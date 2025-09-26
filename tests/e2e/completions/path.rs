@@ -27,9 +27,11 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteA_ActuallyNotByteArray"
+    insert_text = "ByteA_ActuallyNotByteArray {}"
 
     [[completions]]
     completion_label = "ByteArray"
+    insert_text = "ByteArray { data: $1, pending_word: $2, pending_word_len: $3 }"
 
     [[completions]]
     completion_label = "ByteArrayImpl"
@@ -40,6 +42,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteArrayIter"
+    insert_text = "ByteArrayIter { ba: $1, current_index: $2 }"
     text_edits = ["""
     use core::byte_array::ByteArrayIter;
 
@@ -81,6 +84,7 @@ fn multi_segment_path() {
 
     [[completions]]
     completion_label = "Baz"
+    insert_text = "Baz {}"
     "#);
 }
 
@@ -104,6 +108,7 @@ fn multi_segment_path_partial() {
 
     [[completions]]
     completion_label = "Baz"
+    insert_text = "Baz {}"
     text_edits = ["""
     use foo::bar;
 
@@ -132,6 +137,7 @@ fn multi_segment_path_partial_macro() {
 
     [[completions]]
     completion_label = "Baz"
+    insert_text = "Baz {}"
     text_edits = ["""
     use foo::bar;
 
