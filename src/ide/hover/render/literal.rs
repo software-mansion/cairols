@@ -109,7 +109,7 @@ fn number_hover<'db>(
     let mut representation = formatdoc!("value of literal: `{value} ({value:#x} | {value:#b})`");
 
     if !is_type_missing(type_id, db) {
-        let ty = format_type(db, *type_id, importables);
+        let ty = format_type(db, *type_id, importables, None);
         representation = formatdoc!(
             "
             ```cairo
@@ -133,7 +133,7 @@ fn string_hover<'db>(
     if is_type_missing(type_id, db) {
         None
     } else {
-        let ty = format_type(db, *type_id, importables);
+        let ty = format_type(db, *type_id, importables, None);
         Some(formatdoc!(
             "
             ```cairo
@@ -161,7 +161,7 @@ fn short_string_hover<'db>(
     }?;
 
     if !is_type_missing(&type_id, db) {
-        let ty = format_type(db, type_id, importables);
+        let ty = format_type(db, type_id, importables, None);
         representation = formatdoc!(
             "
             ```cairo

@@ -88,7 +88,7 @@ fn dot_completions_ex<'db>(
                     let completion = CompletionItemOrderable {
                         item: CompletionItem {
                             label: name.to_string(db),
-                            detail: Some(format_type(db, member.ty, &importables)),
+                            detail: Some(format_type(db, member.ty, &importables, None)),
                             kind: Some(CompletionItemKind::FIELD),
                             ..CompletionItem::default()
                         },

@@ -49,7 +49,12 @@ fn pattern<'db>(
         .ok()?;
 
     let semantic_db: &dyn SemanticGroup = db.upcast();
-    Some(format_type(db, semantic_db.pattern_semantic(function_id, pattern_id).ty(), importables))
+    Some(format_type(
+        db,
+        semantic_db.pattern_semantic(function_id, pattern_id).ty(),
+        importables,
+        None,
+    ))
 }
 
 fn path<'db>(
