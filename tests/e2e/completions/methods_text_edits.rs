@@ -35,7 +35,7 @@ fn simple_trait_macro() {
 
     [[completions]]
     completion_label = "some_method()"
-    detail = "hello::hidden_trait::ATrait1"
+    detail = "fn(self: @T) -> ()"
     insert_text = "some_method()"
     text_edits = ["""
     use crate::ATrait1;
@@ -71,7 +71,7 @@ fn simple_trait() {
 
     [[completions]]
     completion_label = "some_method()"
-    detail = "hello::hidden_trait::ATrait1"
+    detail = "fn(self: @T) -> ()"
     insert_text = "some_method()"
     text_edits = ["""
     use crate::ATrait1;
@@ -108,7 +108,7 @@ fn non_directly_visible_trait() {
 
     [[completions]]
     completion_label = "some_method()"
-    detail = "hello::hidden_trait::ATrait1"
+    detail = "fn(self: @T) -> ()"
     insert_text = "some_method()"
     text_edits = ["""
     use crate::ATrait1;
@@ -156,7 +156,7 @@ fn methods_from_deps_included() {
 
     [[completions]]
     completion_label = "some_method()"
-    detail = "dep::X"
+    detail = "fn(self: @T) -> ()"
     insert_text = "some_method()"
     text_edits = ["""
     use dep::X;

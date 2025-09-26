@@ -87,7 +87,7 @@ fn struct_constructor_completions_ex<'db>(
                 Some(CompletionItemOrderable {
                     item: CompletionItem {
                         label: name.to_string(db),
-                        detail: Some(format_type(db, data.ty, &importables)),
+                        detail: Some(format_type(db, data.ty, &importables, None)),
                         kind: Some(CompletionItemKind::VALUE),
                         ..Default::default()
                     },
