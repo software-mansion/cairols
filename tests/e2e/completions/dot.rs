@@ -353,3 +353,109 @@ fn with_mutable_self() {
     insert_text = "get_descriptor()"
     "#);
 }
+
+// FIXME(#589): This test should yield a literal instead of constant when resolver is fixed
+#[test]
+fn with_const_parametrized_generic_function() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    mod impler {
+        pub struct S {}
+
+        pub struct ConstParamStruct<const CONSTANT: felt252>  {
+            pub name: felt252
+        }
+
+        trait ConstFunction<T> {
+            fn hehe<const name: felt252>(self: T) -> ConstParamStruct<'const    \n\tvalue'>;
+        }
+
+        impl SConstFunction of ConstFunction<S> {
+            fn hehe<'const    \n\tvalue'>(self: S) -> ConstParamStruct<'const    \n\tvalue'> { 123 }
+        }
+    }
+
+    use impler::S;
+
+    fn test() {
+        let s = S{};
+        s.he<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        s.he<caret>
+    """
+
+    [[completions]]
+    completion_label = "hehe()"
+    detail = "fn(self: T) -> ConstParamStruct<132172156746238226582224867971537073509>"
+    insert_text = "hehe()"
+    "#);
+}
+
+#[test]
+fn with_not_imported_return_type() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    mod outer {
+        pub mod inner {
+            pub struct Long {}
+        }
+    }
+
+    mod impler {
+        pub struct S {}
+
+        use super::outer::inner::Long;
+
+        trait ReturnLong<T> {
+            fn make(self: T) -> Long;
+        }
+
+        impl SReturnLong of ReturnLong<S> {
+            fn make(self: S) -> Long { Long {} }
+        }
+    }
+
+    use impler::S;
+
+    fn test() {
+        let s = S{};
+        s.<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        s.<caret>
+    """
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
+
+    [[completions]]
+    completion_label = "into()"
+    detail = "fn(self: T) -> S"
+    insert_text = "into()"
+
+    [[completions]]
+    completion_label = "make()"
+    detail = "fn(self: T) -> Long"
+    insert_text = "make()"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs()"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+    """]
+
+    [[completions]]
+    completion_label = "try_into()"
+    detail = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+    "#);
+}

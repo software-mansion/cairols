@@ -69,7 +69,7 @@ impl<'db> VariableDef<'db> {
 
         let type_id = binding.ty();
 
-        let ty = format_type(db, type_id, importables);
+        let ty = format_type(db, type_id, importables, None);
 
         Some(format!("{prefix}{mutability}{name}: {ty}"))
     }

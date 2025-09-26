@@ -113,7 +113,7 @@ pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec
                         ));
                     }
                 } else {
-                    let type_string = format_type(db, ty, &importables);
+                    let type_string = format_type(db, ty, &importables, None);
                     let tooltip = fenced_code_block(&type_string);
 
                     result.extend(var_type_inlay_hint(db, file, og_var_node, type_string, tooltip));
