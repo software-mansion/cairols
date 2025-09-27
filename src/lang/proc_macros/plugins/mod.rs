@@ -17,7 +17,7 @@ use scarb::regular::macro_generate_code;
 use scarb_proc_macro_server_types::methods::defined_macros::{
     CompilationUnitComponentMacros, DebugInfo, DefinedMacrosResponse,
 };
-use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, ProcMacroScope};
+use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, ProcMacroScope, Workspace};
 
 use crate::lang::plugins::DowncastRefUnchecked;
 
@@ -29,6 +29,7 @@ mod scarb;
 /// supported by the proc-macro-server, used by those packages.
 pub fn proc_macro_plugin_suites(
     defined_macros: DefinedMacrosResponse,
+    workspace: Workspace,
 ) -> OrderedHashMap<CompilationUnitComponent, PluginSuite> {
     defined_macros
         .macros_for_cu_components
@@ -44,7 +45,8 @@ pub fn proc_macro_plugin_suites(
              }| {
                 let mut plugin_suite = PluginSuite::default();
 
-                let plugin_scope = ProcMacroScope { component: component.clone() };
+                let plugin_scope =
+                    ProcMacroScope { component: component.clone(), workspace: workspace.clone() };
 
                 plugin_suite.add_plugin_ex(Arc::new(ProcMacroPlugin {
                     scope: plugin_scope.clone(),
