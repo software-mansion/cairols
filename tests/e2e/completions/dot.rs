@@ -29,17 +29,17 @@ fn simple_struct() {
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "core::circuit::GetCircuitDescriptor"
+    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "into()"
-    detail = "core::traits::Into"
+    detail = "fn(self: T) -> S"
     insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
-    detail = "core::circuit::CircuitInputs"
+    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
@@ -48,7 +48,7 @@ fn simple_struct() {
 
     [[completions]]
     completion_label = "try_into()"
-    detail = "core::traits::TryInto"
+    detail = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
     "#);
 }
@@ -80,17 +80,17 @@ fn simple_struct_semicolon() {
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "core::circuit::GetCircuitDescriptor"
+    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "into()"
-    detail = "core::traits::Into"
+    detail = "fn(self: T) -> S"
     insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
-    detail = "core::circuit::CircuitInputs"
+    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
@@ -99,7 +99,7 @@ fn simple_struct_semicolon() {
 
     [[completions]]
     completion_label = "try_into()"
-    detail = "core::traits::TryInto"
+    detail = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
     "#);
 }
@@ -145,7 +145,7 @@ fn with_deref() {
 
     [[completions]]
     completion_label = "deref()"
-    detail = "core::ops::deref::Deref"
+    detail = "fn(self: T) -> Self::Target"
     insert_text = "deref()"
 
     [[completions]]
@@ -154,17 +154,17 @@ fn with_deref() {
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "core::circuit::GetCircuitDescriptor"
+    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "into()"
-    detail = "core::traits::Into"
+    detail = "fn(self: T) -> S"
     insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
-    detail = "core::circuit::CircuitInputs"
+    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
@@ -173,7 +173,7 @@ fn with_deref() {
 
     [[completions]]
     completion_label = "try_into()"
-    detail = "core::traits::TryInto"
+    detail = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
     "#);
 }
@@ -215,17 +215,17 @@ fn with_deref_starknet() {
 
     [[completions]]
     completion_label = "clone()"
-    detail = "core::clone::Clone"
+    detail = "fn(self: @T) -> T"
     insert_text = "clone()"
 
     [[completions]]
     completion_label = "deref()"
-    detail = "core::ops::deref::Deref"
+    detail = "fn(self: T) -> Self::Target"
     insert_text = "deref()"
 
     [[completions]]
     completion_label = "deref_mut()"
-    detail = "core::ops::deref::DerefMut"
+    detail = "fn(ref self: T) -> Self::Target"
     insert_text = "deref_mut()"
     text_edits = ["""
     use core::ops::DerefMut;
@@ -234,12 +234,12 @@ fn with_deref_starknet() {
 
     [[completions]]
     completion_label = "destruct()"
-    detail = "core::traits::Destruct"
+    detail = "fn(self: T) -> () nopanic"
     insert_text = "destruct()"
 
     [[completions]]
     completion_label = "emit()"
-    detail = "core::starknet::event::EventEmitter"
+    detail = "fn(ref self: T, event: S) -> ()"
     insert_text = "emit(${1:event})"
     text_edits = ["""
     use starknet::event::EventEmitter;
@@ -248,22 +248,22 @@ fn with_deref_starknet() {
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "core::circuit::GetCircuitDescriptor"
+    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "internal_func()"
-    detail = "hello::SpyEventsChecker::InternalTrait"
+    detail = "fn(ref self: ContractState) -> ()"
     insert_text = "internal_func()"
 
     [[completions]]
     completion_label = "into()"
-    detail = "core::traits::Into"
+    detail = "fn(self: T) -> S"
     insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
-    detail = "core::circuit::CircuitInputs"
+    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
@@ -272,12 +272,12 @@ fn with_deref_starknet() {
 
     [[completions]]
     completion_label = "panic_destruct()"
-    detail = "core::traits::PanicDestruct"
+    detail = "fn(self: T, ref panic: Panic) -> () nopanic"
     insert_text = "panic_destruct(${1:panic})"
 
     [[completions]]
     completion_label = "storage_mut()"
-    detail = "core::starknet::storage::storage_base::StorageTraitMut"
+    detail = "fn(self: FlattenedStorage<Mutable<T>>) -> Self::BaseType"
     insert_text = "storage_mut()"
     text_edits = ["""
     use starknet::storage::StorageTraitMut;
@@ -286,7 +286,7 @@ fn with_deref_starknet() {
 
     [[completions]]
     completion_label = "try_into()"
-    detail = "core::traits::TryInto"
+    detail = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
 
     [[completions]]
@@ -344,12 +344,118 @@ fn with_mutable_self() {
 
     [[completions]]
     completion_label = "get_balance()"
-    detail = "hello::IHelloStarknet"
+    detail = "fn(self: @TContractState) -> felt252"
     insert_text = "get_balance()"
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "core::circuit::GetCircuitDescriptor"
+    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
+    "#);
+}
+
+// FIXME(#589): This test should yield a literal instead of constant when resolver is fixed
+#[test]
+fn with_const_parametrized_generic_function() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    mod impler {
+        pub struct S {}
+
+        pub struct ConstParamStruct<const CONSTANT: felt252>  {
+            pub name: felt252
+        }
+
+        trait ConstFunction<T> {
+            fn hehe<const name: felt252>(self: T) -> ConstParamStruct<'const    \n\tvalue'>;
+        }
+
+        impl SConstFunction of ConstFunction<S> {
+            fn hehe<'const    \n\tvalue'>(self: S) -> ConstParamStruct<'const    \n\tvalue'> { 123 }
+        }
+    }
+
+    use impler::S;
+
+    fn test() {
+        let s = S{};
+        s.he<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        s.he<caret>
+    """
+
+    [[completions]]
+    completion_label = "hehe()"
+    detail = "fn(self: T) -> ConstParamStruct<132172156746238226582224867971537073509>"
+    insert_text = "hehe()"
+    "#);
+}
+
+#[test]
+fn with_not_imported_return_type() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    mod outer {
+        pub mod inner {
+            pub struct Long {}
+        }
+    }
+
+    mod impler {
+        pub struct S {}
+
+        use super::outer::inner::Long;
+
+        trait ReturnLong<T> {
+            fn make(self: T) -> Long;
+        }
+
+        impl SReturnLong of ReturnLong<S> {
+            fn make(self: S) -> Long { Long {} }
+        }
+    }
+
+    use impler::S;
+
+    fn test() {
+        let s = S{};
+        s.<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        s.<caret>
+    """
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
+
+    [[completions]]
+    completion_label = "into()"
+    detail = "fn(self: T) -> S"
+    insert_text = "into()"
+
+    [[completions]]
+    completion_label = "make()"
+    detail = "fn(self: T) -> Long"
+    insert_text = "make()"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs()"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+    """]
+
+    [[completions]]
+    completion_label = "try_into()"
+    detail = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
     "#);
 }
