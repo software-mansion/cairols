@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::mem;
 use std::num::NonZeroU32;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -26,7 +27,7 @@ use super::client::{ProcMacroClient, RequestParams};
 use crate::config::Config;
 use crate::ide::analysis_progress::{ProcMacroServerStatus, ProcMacroServerTracker};
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::proc_macros::cache::load_proc_macro_cache;
+use crate::lang::proc_macros::cache::try_load_proc_macro_cache;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suites;
 use crate::lang::proc_macros::response_poll::ResponsePollThread;
@@ -124,55 +125,10 @@ impl ProcMacroClientController {
         }
     }
 
-    /// Start proc-macro-server after config reload.
-    /// Note that this will only try to go from `ClientStatus::Pending` to
-    /// `ClientStatus::Starting` if config allows this.
+    /// Applies all pending responses received from the server.
+    /// Does nothing if the server is not connected.
     #[tracing::instrument(level = "trace", skip_all)]
-    pub fn on_config_change(&mut self, db: &mut AnalysisDatabase, config: &Config) {
-        if !config.enable_proc_macros {
-            // Clear resolved macros if proc macro server should be disabled.
-            self.remove_current_plugins_from_db(db);
-            self.crate_plugin_suites.clear();
-            self.clean_up_previous_proc_macro_server(db);
-            db.reset_proc_macro_resolutions();
-        }
-
-        if db.proc_macro_input().proc_macro_server_status(db).is_pending() {
-            self.try_initialize(db, config);
-        }
-    }
-
-    fn set_proc_macro_server_status(&self, db: &mut AnalysisDatabase, server_status: ServerStatus) {
-        let tracker_server_status = ProcMacroServerStatus::from(&server_status);
-        db.proc_macro_input().set_proc_macro_server_status(db).to(server_status);
-        self.proc_macro_server_tracker.set_server_status(tracker_server_status);
-    }
-
-    /// Forcibly restarts the proc-macro-server, shutting down any currently running instances.
-    ///
-    /// A new server instance is only started if there are available restart attempts left.
-    /// This ensures that a fresh proc-macro-server is used.
-    #[tracing::instrument(level = "trace", skip_all)]
-    pub fn force_restart(&mut self, db: &mut AnalysisDatabase, config: &Config) {
-        self.remove_current_plugins_from_db(db);
-        self.crate_plugin_suites.clear();
-        db.reset_proc_macro_resolutions();
-        self.clean_up_previous_proc_macro_server(db);
-
-        self.try_initialize(db, config);
-    }
-
-    /// Check if an error was reported. If so, try to restart.
-    #[tracing::instrument(level = "trace", skip_all)]
-    pub fn handle_error(&mut self, db: &mut AnalysisDatabase, config: &Config) {
-        if !self.try_initialize(db, config) {
-            self.fatal_failed(db, InitializationFailedInfo::NoMoreRetries);
-        }
-    }
-
-    /// If the client is ready, apply all available responses.
-    #[tracing::instrument(level = "trace", skip_all)]
-    pub fn on_response(
+    pub fn handle_response(
         &mut self,
         db: &mut AnalysisDatabase,
         config: &Config,
@@ -183,12 +139,11 @@ impl ProcMacroClientController {
             ServerStatus::Starting(client) => {
                 let Ok(defined_macros) = client.finish_initialize() else {
                     drop(client);
-                    self.handle_error(db, config);
-
+                    self.force_restart(db, config);
                     return;
                 };
 
-                self.remove_current_plugins_from_db(db);
+                self.remove_all_proc_macro_plugins(db);
 
                 self.crate_plugin_suites = proc_macro_plugin_suites(defined_macros)
                     .into_iter()
@@ -226,14 +181,42 @@ impl ProcMacroClientController {
         }
     }
 
+    /// Handles the update of the config related to proc macros.
+    /// Launches the proc macro server if proc macros have been enabled
+    /// or kills it otherwise.
+    #[tracing::instrument(level = "trace", skip_all)]
+    pub fn handle_config_update(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+        if !config.enable_proc_macros {
+            self.reset_proc_macro_state(db);
+        }
+
+        if db.proc_macro_input().proc_macro_server_status(db).is_pending() {
+            self.try_launch_proc_macro_server(db, config);
+        }
+    }
+
+    /// Forcibly restarts the proc-macro-server, shutting down any currently running instances.
+    ///
+    /// A new server instance is started only if there are available restart attempts left.
+    /// This ensures that a fresh proc-macro-server is used.
+    ///
+    /// # Safety
+    /// Don't call this function if any reference to the [`ProcMacroClient`] exist,
+    /// except the one in the [`ProcMacroInput`].
+    #[tracing::instrument(level = "trace", skip_all)]
+    pub fn force_restart(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+        self.reset_proc_macro_state(db);
+        self.try_launch_proc_macro_server(db, config);
+    }
+
     pub fn proc_macro_plugin_suite_for_crate(&self, id: &CrateInput) -> Option<&PluginSuite> {
         self.crate_plugin_suites.get(id)
     }
 
-    fn remove_current_plugins_from_db(&self, db: &mut AnalysisDatabase) {
-        for (crate_input, suite) in self.crate_plugin_suites.iter() {
-            db.remove_crate_plugin_suite(crate_input.clone(), suite.clone());
-        }
+    fn set_proc_macro_server_status(&self, db: &mut AnalysisDatabase, server_status: ServerStatus) {
+        let tracker_server_status = ProcMacroServerStatus::from(&server_status);
+        self.proc_macro_server_tracker.set_server_status(tracker_server_status);
+        db.proc_macro_input().set_proc_macro_server_status(db).to(server_status);
     }
 
     /// Sends `workspace/semanticTokens/refresh` if supported by the client to make sure macros
@@ -247,60 +230,69 @@ impl ProcMacroClientController {
         config: &Config,
         requester: &mut Requester,
     ) {
-        if client_capabilities.workspace_semantic_tokens_refresh_support()
-            && let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing())
-        {
-            error!("semantic tokens refresh failed: {err:#?}");
-        }
-
-        // Try loading proc macro cache if availale.
-        load_proc_macro_cache(db, config);
+        try_request_semantic_tokens_refresh(client_capabilities, requester);
+        try_load_proc_macro_cache(db, config);
     }
 
-    /// Tries starting proc-macro-server initialization process, if allowed by config.
-    ///
-    /// Returns value indicating if initialization was attempted.
+    /// Tries to launch the proc-macro-server if it is allowed by the config.
+    /// If the served could not be spawned or the limit of retries has been reached,
+    /// sets the status in [`ProcMacroInput`] to [`ServerStatus::Crashed`] and notifies the client.
     #[tracing::instrument(level = "trace", skip_all)]
-    fn try_initialize(&mut self, db: &mut AnalysisDatabase, config: &Config) -> bool {
-        // Keep the rate limiter check as second condition when config doesn't allow it to make
-        // sure it is not impacted.
-        let initialize = config.enable_proc_macros && self.initialization_retries.check().is_ok();
-
-        if initialize {
-            self.spawn_server(db);
+    fn try_launch_proc_macro_server(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+        if !config.enable_proc_macros {
+            return;
         }
 
-        initialize
+        if self.initialization_retries.check().is_err() {
+            self.handle_fatal_error(db, FatalInitializationError::NoMoreRetries);
+            return;
+        }
+
+        match self.spawn_proc_macro_server_process() {
+            Ok(client) => {
+                self.set_proc_macro_server_status(db, ServerStatus::Starting(Arc::new(client)))
+            }
+            Err(error) => {
+                error!("spawning proc-macro-server failed: {error:?}");
+                self.handle_fatal_error(db, FatalInitializationError::SpawnFailed);
+            }
+        }
     }
 
-    /// Spawns proc-macro-server.
+    /// Spawns the process of proc-macro-server and sets up the [`ProcMacroClient`] to control it.
     #[tracing::instrument(level = "trace", skip_all)]
-    fn spawn_server(&mut self, db: &mut AnalysisDatabase) {
+    fn spawn_proc_macro_server_process(&self) -> Result<ProcMacroClient> {
+        let server_process = self.scarb.proc_macro_server(&self.cwd)?;
+
+        let client = ProcMacroClient::new(
+            ProcMacroServerConnection::stdio(server_process),
+            self.channels.error_sender.clone(),
+            self.proc_macro_server_tracker.clone(),
+        );
+        client.start_initialize();
+
+        Ok(client)
+    }
+
+    /// Removes all loaded proc macros and their resolutions from [`AnalysisDatabase`].
+    /// Clears all the information about them stored in [`ProcMacroClientController`].
+    fn reset_proc_macro_state(&mut self, db: &mut AnalysisDatabase) {
+        db.reset_proc_macro_resolutions();
+        self.remove_all_proc_macro_plugins(db);
         self.clean_up_previous_proc_macro_server(db);
+    }
 
-        match self.scarb.proc_macro_server(&self.cwd) {
-            Ok(proc_macro_server) => {
-                let client = ProcMacroClient::new(
-                    ProcMacroServerConnection::stdio(proc_macro_server),
-                    self.channels.error_sender.clone(),
-                    self.proc_macro_server_tracker.clone(),
-                );
-
-                client.start_initialize();
-
-                self.set_proc_macro_server_status(db, ServerStatus::Starting(Arc::new(client)));
-            }
-            Err(err) => {
-                error!("spawning proc-macro-server failed: {err:?}");
-
-                self.fatal_failed(db, InitializationFailedInfo::SpawnFail);
-            }
+    /// Removes all proc macro plugins from [`AnalysisDatabase`]
+    /// and from the state of [`ProcMacroClientController`].
+    fn remove_all_proc_macro_plugins(&mut self, db: &mut AnalysisDatabase) {
+        for (crate_input, suite) in mem::take(&mut self.crate_plugin_suites) {
+            db.remove_crate_plugin_suite(crate_input, suite);
         }
     }
 
-    #[tracing::instrument(level = "trace", skip_all)]
     /// NOTE: while this function is being called, there **MUST NOT** exist
     /// any [`Arc`]s with [`ProcMacroClient`] anywhere in this thread except in the `db`.
+    #[tracing::instrument(level = "trace", skip_all)]
     fn clean_up_previous_proc_macro_server(&mut self, db: &mut AnalysisDatabase) {
         // We have to make sure that snapshots will not report errors from the previous client after
         // we create a new one.
@@ -329,11 +321,14 @@ impl ProcMacroClientController {
         self.proc_macro_server_tracker.reset_requests_counter();
     }
 
+    /// Handles an unrecoverable error.
+    /// Sets the status in [`ProcMacroInput`] to [`ServerStatus::Crashed`]
+    /// and notifies the client about the failure.
     #[tracing::instrument(level = "trace", skip_all)]
-    fn fatal_failed(
+    fn handle_fatal_error(
         &self,
         db: &mut AnalysisDatabase,
-        initialization_failed_info: InitializationFailedInfo,
+        initialization_failed_info: FatalInitializationError,
     ) {
         self.set_proc_macro_server_status(db, ServerStatus::Crashed);
 
@@ -371,15 +366,15 @@ impl ProcMacroClientController {
             match parse_proc_macro_response(response) {
                 Ok(result) => {
                     match params {
-                        RequestParams::Attribute(params) => {
+                        RequestParams::ExpandAttribute(params) => {
                             attribute_resolutions.insert(params, result);
                             attribute_resolutions_changed = true;
                         }
-                        RequestParams::Derive(params) => {
+                        RequestParams::ExpandDerive(params) => {
                             derive_resolutions.insert(params, result);
                             derive_resolutions_changed = true;
                         }
-                        RequestParams::Inline(params) => {
+                        RequestParams::ExpandInline(params) => {
                             inline_macro_resolutions.insert(params, result);
                             inline_macro_resolutions_changed = true;
                         }
@@ -398,7 +393,7 @@ impl ProcMacroClientController {
         // deadlock.
         if error_occurred {
             drop(client);
-            self.handle_error(db, config);
+            self.force_restart(db, config);
         }
 
         // Set input only if resolution changed, this way we don't recompute queries if there were
@@ -423,6 +418,20 @@ fn parse_proc_macro_response(response: RpcResponse) -> Result<ProcMacroResult> {
         .map_err(|error| anyhow!("proc-macro-server responded with error: {error:?}"))?;
 
     serde_json::from_value(success).context("failed to deserialize response into `ProcMacroResult`")
+}
+
+/// Requests the client to refresh the semantic tokens via `workspace/semanticTokens/refresh`
+/// if such action is supported by the client.
+/// This way we make sure that the code related macro invocations is properly colored.
+fn try_request_semantic_tokens_refresh(
+    client_capabilities: &ClientCapabilities,
+    requester: &mut Requester,
+) {
+    if client_capabilities.workspace_semantic_tokens_refresh_support()
+        && let Err(err) = requester.request::<SemanticTokensRefresh>((), |_| Task::nothing())
+    {
+        error!("semantic tokens refresh failed: {err:#?}");
+    }
 }
 
 #[derive(Clone)]
@@ -450,15 +459,16 @@ impl ProcMacroChannels {
     }
 }
 
-enum InitializationFailedInfo {
+/// Indicates a non-recoverable error of proc-macro-server.
+enum FatalInitializationError {
     NoMoreRetries,
-    SpawnFail,
+    SpawnFailed,
 }
 
-impl Display for InitializationFailedInfo {
+impl Display for FatalInitializationError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            InitializationFailedInfo::NoMoreRetries => {
+            FatalInitializationError::NoMoreRetries => {
                 write!(
                     f,
                     "Starting proc-macro-server failed {RESTART_RATE_LIMITER_RETRIES} times in {} \
@@ -466,7 +476,7 @@ impl Display for InitializationFailedInfo {
                     RESTART_RATE_LIMITER_PERIOD_SEC / 60
                 )
             }
-            InitializationFailedInfo::SpawnFail => {
+            FatalInitializationError::SpawnFailed => {
                 write!(f, "Starting proc-macro-server failed fatally.")
             }
         }?;

@@ -27,11 +27,12 @@ mod id_generator;
 pub mod plain_request_response;
 pub mod status;
 
+#[allow(clippy::enum_variant_names)] // Next PR adds a new variant with different prefix.
 #[derive(Debug, PartialEq, Eq)]
 pub enum RequestParams {
-    Attribute(PlainExpandAttributeParams),
-    Derive(PlainExpandDeriveParams),
-    Inline(PlainExpandInlineParams),
+    ExpandAttribute(PlainExpandAttributeParams),
+    ExpandDerive(PlainExpandDeriveParams),
+    ExpandInline(PlainExpandInlineParams),
 }
 
 pub struct ProcMacroClient {
@@ -66,18 +67,22 @@ impl ProcMacroClient {
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_attribute(&self, params: ExpandAttributeParams) {
         self.send_request::<ExpandAttribute>(params, |params| {
-            RequestParams::Attribute(params.into())
+            RequestParams::ExpandAttribute(params.into())
         })
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_derives(&self, params: ExpandDeriveParams) {
-        self.send_request::<ExpandDerive>(params, |params| RequestParams::Derive(params.into()))
+        self.send_request::<ExpandDerive>(params, |params| {
+            RequestParams::ExpandDerive(params.into())
+        })
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_inline_macros(&self, params: ExpandInlineMacroParams) {
-        self.send_request::<ExpandInline>(params, |params| RequestParams::Inline(params.into()))
+        self.send_request::<ExpandInline>(params, |params| {
+            RequestParams::ExpandInline(params.into())
+        })
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
