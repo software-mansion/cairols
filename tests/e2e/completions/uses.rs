@@ -312,3 +312,25 @@ fn enum_variant() {
     completion_label = "B"
     "#);
 }
+
+#[test]
+fn declarative_macro() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod my_mod {
+        pub macro my_own_macro {
+            ($x:ident) => {
+                1
+            };
+        }
+    }
+
+    use my_mod::<caret>
+    ",@r#"
+    caret = """
+    use my_mod::<caret>
+    """
+
+    [[completions]]
+    completion_label = "my_own_macro"
+    "#);
+}

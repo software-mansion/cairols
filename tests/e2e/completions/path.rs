@@ -372,3 +372,56 @@ fn duplicated_completion_without_explicit_path() {
     """]
     "#);
 }
+
+#[test]
+fn simple_declarative_macro_completion() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    macro my_own_macro {
+        ($x:ident) => {
+            1
+        };
+    }
+
+    fn foo() {
+        let _a = my_own<caret>
+    }
+    ",@r#"
+    caret = """
+        let _a = my_own<caret>
+    """
+
+    [[completions]]
+    completion_label = "my_own_macro!"
+    "#);
+}
+
+#[test]
+fn declarative_macro_completion_without_explicit_path() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod my_mod {
+        pub macro my_own_macro {
+            ($x:ident) => {
+                1
+            };
+        }
+    }
+
+    fn foo() {
+        let _a = my_own<caret>
+    }
+    ",@r#"
+    caret = """
+        let _a = my_own<caret>
+    """
+
+    [[completions]]
+    completion_label = "my_mod"
+
+    [[completions]]
+    completion_label = "my_own_macro!"
+    text_edits = ["""
+    use my_mod::my_own_macro;
+
+    """]
+    "#);
+}

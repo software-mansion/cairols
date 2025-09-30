@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{LanguageElementId, NamedLanguageElementId};
+use cairo_lang_defs::ids::{ImportableId, LanguageElementId, NamedLanguageElementId};
 use cairo_lang_filesystem::ids::{CrateLongId, SmolStrId};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::items::enm::EnumSemantic;
@@ -67,6 +67,15 @@ pub fn path_suffix_completions<'db>(
 
     let current_crate = ctx.module_file_id.0.owning_crate(db);
 
+    db.visible_importables_from_module(ctx.module_file_id)
+        .unwrap()
+        .iter()
+        .filter(|importable| importable.1.contains("haslo"))
+        .for_each(|importable| {
+            eprintln!("Ignoring macro importable: {:?}", importable.1);
+        });
+
+    eprintln!("=======");
     let mut completions: Vec<CompletionItemOrderable> = importables
         .iter()
         .filter_map(|(importable, path_str)| {
@@ -105,13 +114,20 @@ pub fn path_suffix_completions<'db>(
             } else {
                 None
             };
+
+            let is_declarative_macro = matches!(importable, ImportableId::MacroDeclaration(_));
+
             let importable_crate = importable_crate_id(db, *importable);
             let is_current_crate = importable_crate == current_crate;
             let is_core = *importable_crate.long(db) == CrateLongId::core(db);
 
             Some(CompletionItemOrderable {
                 item: CompletionItem {
-                    label: last_segment.to_string(),
+                    label: if is_declarative_macro {
+                        format!("{}!", last_segment.to_string())
+                    } else {
+                        last_segment.to_string()
+                    },
                     kind: Some(importable_completion_kind(*importable)),
                     label_details: Some(CompletionItemLabelDetails {
                         detail: None,
