@@ -31,7 +31,6 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteArray"
-    insert_text = "ByteArray { data: $1, pending_word: $2, pending_word_len: $3 }"
 
     [[completions]]
     completion_label = "ByteArrayImpl"
@@ -42,7 +41,6 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteArrayIter"
-    insert_text = "ByteArrayIter { ba: $1, current_index: $2 }"
     text_edits = ["""
     use core::byte_array::ByteArrayIter;
 

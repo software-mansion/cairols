@@ -617,3 +617,53 @@ fn initialization_non_imported_struct_with_macro() {
     """]
     "#);
 }
+
+#[test]
+fn no_initialization_completion_for_types_in_closures() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    struct Abc {
+        pub a: u128,
+        pub b: u128,
+        pub c: u128,
+    }
+
+    fn func() {
+        let f = |x: Ab<caret>| {};
+    }
+    ",@r#"
+    caret = """
+        let f = |x: Ab<caret>| {};
+    """
+
+    [[completions]]
+    completion_label = "Abc"
+
+    [[completions]]
+    completion_label = "AccountContractLibraryDispatcherSubPointers"
+    text_edits = ["""
+    use starknet::account::AccountContractLibraryDispatcherSubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractLibraryDispatcherSubPointersMut"
+    text_edits = ["""
+    use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
+    text_edits = ["""
+    use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
+    text_edits = ["""
+    use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
+
+    """]
+    "#);
+}
