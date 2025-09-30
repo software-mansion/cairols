@@ -323,9 +323,9 @@ fn get_struct_initialization_completion_text<'db>(
         })
         .join(", ");
 
-    return Some(if args.is_empty() {
+    Some(if args.is_empty() {
         format!("{} {{}}", struct_name)
     } else {
         format!("{} {{ {} }}", struct_name, args)
-    });
+    })
 }
