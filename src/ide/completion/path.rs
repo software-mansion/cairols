@@ -35,7 +35,8 @@ pub fn path_suffix_completions<'db>(
     ctx: &AnalysisContext<'db>,
     was_node_corrected: bool,
 ) -> Vec<CompletionItemOrderable> {
-    let (importables, typed_text) = if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
+    let (importables, typed_text) = if ctx.node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
+        && ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
         && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
         // Enum patterns are handled in a separate function.
         && ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none()

@@ -1,0 +1,9 @@
+---
+source: tests/e2e/code_lens/executable.rs
+expression: "test_code_lens_scarb_execute((r#\"\n        fn mock() {\n\n        }\n\n\n\n        #[executable]\n        fn main<caret>(){\n            // Do stuff\n        }\n        \"#,\nindoc!(r#\"\n            [package]\n            name = \"indor\"\n            version = \"0.1.0\"\n            edition = \"2024_07\"\n\n            [dependencies]\n            cairo_execute = \"2.9.0\"\n\n            [executable]\n            \"#)))"
+---
+[[lenses]]
+line = 6
+command = "▶ Execute function"
+file_path = "src/lib.cairo"
+index = 0
