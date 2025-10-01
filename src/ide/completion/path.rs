@@ -124,7 +124,7 @@ pub fn path_suffix_completions<'db>(
             Some(CompletionItemOrderable {
                 item: CompletionItem {
                     label: if is_declarative_macro {
-                        format!("{}!", last_segment.to_string())
+                        format!("{}!", last_segment)
                     } else {
                         last_segment.to_string()
                     },
