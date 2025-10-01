@@ -70,15 +70,6 @@ pub fn path_suffix_completions<'db>(
 
     let current_crate = ctx.module_file_id.0.owning_crate(db);
 
-    db.visible_importables_from_module(ctx.module_file_id)
-        .unwrap()
-        .iter()
-        .filter(|importable| importable.1.contains("haslo"))
-        .for_each(|importable| {
-            eprintln!("Ignoring macro importable: {:?}", importable.1);
-        });
-
-    eprintln!("=======");
     let mut completions: Vec<CompletionItemOrderable> = importables
         .iter()
         .filter_map(|(importable, path_str)| {
