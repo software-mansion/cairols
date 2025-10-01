@@ -1,27 +1,30 @@
-use cairo_lang_defs::ids::{LanguageElementId, NamedLanguageElementId};
+use cairo_lang_defs::ids::{ImportableId, LanguageElementId, NamedLanguageElementId};
 use cairo_lang_filesystem::ids::{CrateLongId, SmolStrId};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::items::enm::EnumSemantic;
 use cairo_lang_semantic::items::module::ModuleSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
+use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
+use cairo_lang_syntax::node::ast::{
+    ExprPath, ItemStruct, PathSegment, StatementExpr, StatementLet, TypeClause,
+};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use itertools::Itertools;
-use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat};
 
 use super::helpers::completion_kind::{
     importable_completion_kind, resolved_generic_item_completion_kind,
 };
+use crate::ide::completion::CompletionItemHashable;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
-use crate::ide::completion::helpers::item::get_item_relevance;
-use crate::ide::completion::{CompletionItemHashable, CompletionItemOrderable};
+use crate::ide::completion::helpers::item::{CompletionItemOrderable, get_item_relevance};
 use crate::lang::analysis_context::AnalysisContext;
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::importable::importable_crate_id;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::importable::{importable_crate_id, importable_syntax_node};
 use crate::lang::importer::new_import_edit;
 use crate::lang::text_matching::text_matches;
 use crate::lang::visibility::peek_visible_in_with_edition;
@@ -109,9 +112,25 @@ pub fn path_suffix_completions<'db>(
             let is_current_crate = importable_crate == current_crate;
             let is_core = *importable_crate.long(db) == CrateLongId::core(db);
 
+            let struct_initialization_text = match importable {
+                ImportableId::Struct(_) => {
+                    importable_syntax_node(db, *importable).and_then(|struct_node| {
+                        get_struct_initialization_completion_text(
+                            db,
+                            ctx,
+                            ItemStruct::from_syntax_node(db, struct_node),
+                        )
+                    })
+                }
+                _ => None,
+            };
+
             Some(CompletionItemOrderable {
                 item: CompletionItem {
                     label: last_segment.to_string(),
+                    insert_text: struct_initialization_text.clone(),
+                    insert_text_format: struct_initialization_text
+                        .map(|_| InsertTextFormat::SNIPPET),
                     kind: Some(importable_completion_kind(*importable)),
                     label_details: Some(CompletionItemLabelDetails {
                         detail: None,
@@ -255,5 +274,58 @@ pub fn path_prefix_completions<'db>(
             _ => vec![],
         },
         _ => vec![],
+    })
+}
+
+fn get_struct_initialization_completion_text<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    struct_node: ItemStruct<'db>,
+) -> Option<String> {
+    if (ctx.node.ancestor_of_type::<StatementLet>(db).is_none()
+        && ctx.node.ancestor_of_type::<StatementExpr>(db).is_none())
+        || ctx.node.ancestor_of_type::<ExprPath>(db).is_none()
+        || ctx.node.ancestor_of_type::<TypeClause>(db).is_some()
+    {
+        return None;
+    }
+
+    let struct_parent_module_id = db.find_module_containing_node(struct_node.as_syntax_node())?;
+
+    let mut diagnostics = SemanticDiagnostics::default();
+
+    // If any field of the struct is not visible, we should not propose initialization.
+    if !struct_node.members(db).elements(db).all(|member| {
+        peek_visible_in_with_edition(
+            db,
+            Visibility::from_ast(db, &mut diagnostics, &member.visibility(db)),
+            struct_parent_module_id,
+            ctx.module_file_id,
+        )
+    }) {
+        return None;
+    }
+
+    let struct_name =
+        struct_node.name(db).as_syntax_node().get_text_without_trivia(db).long(db).as_str();
+
+    let args = struct_node
+        .members(db)
+        .elements(db)
+        .enumerate()
+        .map(|(index, member)| {
+            format!(
+                "{}: ${}",
+                member.name(db).as_syntax_node().get_text_without_trivia(db).long(db).as_str(),
+                // We use 1-based indexing for snippet placeholders, as the `0` is reserved for the final cursor position.
+                index + 1,
+            )
+        })
+        .join(", ");
+
+    Some(if args.is_empty() {
+        format!("{} {{}}", struct_name)
+    } else {
+        format!("{} {{ {} }}", struct_name, args)
     })
 }
