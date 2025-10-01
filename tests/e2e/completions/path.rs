@@ -27,6 +27,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteA_ActuallyNotByteArray"
+    insert_text = "ByteA_ActuallyNotByteArray {}"
 
     [[completions]]
     completion_label = "ByteArray"
@@ -81,6 +82,7 @@ fn multi_segment_path() {
 
     [[completions]]
     completion_label = "Baz"
+    insert_text = "Baz {}"
     "#);
 }
 
@@ -104,6 +106,7 @@ fn multi_segment_path_partial() {
 
     [[completions]]
     completion_label = "Baz"
+    insert_text = "Baz {}"
     text_edits = ["""
     use foo::bar;
 
@@ -132,6 +135,7 @@ fn multi_segment_path_partial_macro() {
 
     [[completions]]
     completion_label = "Baz"
+    insert_text = "Baz {}"
     text_edits = ["""
     use foo::bar;
 
