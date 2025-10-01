@@ -7,7 +7,8 @@
         <div class="container features-container">
             <div class="vp-doc">
                 <h1 style="text-align: center">
-                    Implementation of the <a
+                    Implementation of the
+                    <a
                         href="https://microsoft.github.io/language-server-protocol/"
                         rel="noreferrer"
                         target="_blank"
@@ -17,13 +18,10 @@
                     <a href="https://www.cairo-lang.org/" rel="noreferrer" target="_blank">Cairo</a>
                     language.
                 </h1>
-                <p style="text-align: center;">
-            To get started, click
-            <a
-                href="/cairols/docs"
-                >here</a
-            >.
-        </p>
+                <p style="text-align: center">
+                    To get started, click
+                    <a href="/cairols/docs">here</a>.
+                </p>
             </div>
         </div>
     </div>

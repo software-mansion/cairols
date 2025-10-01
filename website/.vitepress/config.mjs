@@ -17,7 +17,11 @@ const getSidebar = () => ({
     "/docs": [
         {
             text: "Overview",
-            items: [p("Quick start", "/docs"), p("Troubleshooting", "/docs/troubleshooting")],
+            items: [
+                p("Quick start", "/docs"),
+                p("Troubleshooting", "/docs/troubleshooting"),
+                p("Settings", "/docs/settings"),
+            ],
         },
     ],
 });
