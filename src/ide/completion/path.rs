@@ -108,6 +108,9 @@ pub fn path_suffix_completions<'db>(
             } else {
                 None
             };
+
+            let is_declarative_macro = matches!(importable, ImportableId::MacroDeclaration(_));
+
             let importable_crate = importable_crate_id(db, *importable);
             let is_current_crate = importable_crate == current_crate;
             let is_core = *importable_crate.long(db) == CrateLongId::core(db);
@@ -127,7 +130,11 @@ pub fn path_suffix_completions<'db>(
 
             Some(CompletionItemOrderable {
                 item: CompletionItem {
-                    label: last_segment.to_string(),
+                    label: if is_declarative_macro {
+                        format!("{}!", last_segment)
+                    } else {
+                        last_segment.to_string()
+                    },
                     insert_text: struct_initialization_text.clone(),
                     insert_text_format: struct_initialization_text
                         .map(|_| InsertTextFormat::SNIPPET),
