@@ -107,7 +107,7 @@ pub fn get_attribute_expansion(
     let result = db.get_stored_attribute_expansion(params.clone().into()).unwrap_or_else(|| {
         let token_stream = params.item.clone();
 
-        if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).ready()
+        if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
             && !client.was_requested(RequestParams::ExpandAttribute(params.clone().into()))
         {
             client.request_attribute(params);
@@ -127,7 +127,7 @@ pub fn get_derive_expansion(db: &dyn Database, mut params: ExpandDeriveParams) -
     let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.item);
 
     let result = db.get_stored_derive_expansion(params.clone().into()).unwrap_or_else(|| {
-        if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).ready()
+        if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
             && !client.was_requested(RequestParams::ExpandDerive(params.clone().into()))
         {
             client.request_derives(params);
@@ -155,7 +155,7 @@ pub fn get_inline_macros_expansion(
             // We can't return the original node because it will make us fall into infinite recursion.
             let unit = "()".to_string();
 
-            if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).ready()
+            if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
                 && !client.was_requested(RequestParams::ExpandInline(params.clone().into()))
             {
                 client.request_inline_macros(params);
