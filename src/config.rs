@@ -233,7 +233,7 @@ impl Config {
         proc_macro_controller: &mut ProcMacroClientController,
         analysis_progress_controller: &mut AnalysisProgressController,
     ) {
-        proc_macro_controller.on_config_change(db, self);
+        proc_macro_controller.handle_config_update(db, self);
         analysis_progress_controller.on_config_change(self);
     }
 }
