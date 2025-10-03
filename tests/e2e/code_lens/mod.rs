@@ -46,7 +46,7 @@ fn test_code_lens_snforge(cairo_code: &str) -> Report {
             edition = "2024_07"
 
             [dependencies]
-            snforge_std = "0.38.3"
+            snforge_std = "0.50.0"
 
             [tool.scarb]
             allow-prebuilt-plugins = ["snforge_std"]
