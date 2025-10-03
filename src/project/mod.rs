@@ -113,16 +113,15 @@ impl ProjectController {
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
         let db = &mut state.db;
         match project_update {
-            ProjectUpdate::Scarb { crates, workspace_dir } => {
+            ProjectUpdate::Scarb { crates, workspace_dir, workspace_manifest_path } => {
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
-
+                state.proc_macro_controller.request_defined_macros(db, workspace_manifest_path);
                 state.project_controller.model.load_workspace(
                     db,
                     crates,
                     workspace_dir,
                     &state.proc_macro_controller,
                 );
-
                 state.analysis_progress_controller.project_model_loaded();
             }
             ProjectUpdate::ScarbMetadataFailed => {
@@ -221,7 +220,7 @@ impl ProjectController {
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
 pub enum ProjectUpdate {
-    Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf },
+    Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf, workspace_manifest_path: PathBuf },
     ScarbMetadataFailed,
     CairoProjectToml(Box<Option<ProjectConfig>>),
     NoConfig(PathBuf),
@@ -295,6 +294,10 @@ impl ProjectControllerThread {
                     .map(|metadata| ProjectUpdate::Scarb {
                         crates: extract_crates(&metadata),
                         workspace_dir: metadata.workspace.root.into_std_path_buf(),
+                        workspace_manifest_path: metadata
+                            .workspace
+                            .manifest_path
+                            .into_std_path_buf(),
                     })
                     .unwrap_or(ProjectUpdate::ScarbMetadataFailed)
             }

@@ -12,8 +12,7 @@ use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 #[derive(Copy, Clone, PartialEq)]
 pub enum ProcMacroServerStatus {
     Pending,
-    Starting,
-    Ready,
+    Connected,
     Crashed,
 }
 
@@ -181,7 +180,7 @@ impl AnalysisProgressThread {
 
                     if analysis_in_progress
                         && (!enable_proc_macros
-                            || (pms_status == ProcMacroServerStatus::Ready
+                            || (pms_status == ProcMacroServerStatus::Connected
                                 && pending_requests == 0))
                         && (!was_cancelled && request_count == received_responses)
                     {
@@ -209,14 +208,12 @@ impl AnalysisProgressThread {
                 }
                 AnalysisEvent::PMSStatusChange(new_pms_status) => {
                     match (pms_status, new_pms_status) {
-                        // Pending -> Starting and Starting -> Ready are natural flow, ignore this case.
-                        (ProcMacroServerStatus::Pending, ProcMacroServerStatus::Starting)
-                        | (ProcMacroServerStatus::Starting, ProcMacroServerStatus::Ready)
-                        // If state is unchanged, ignore this event.
+                        // Transition from `Pending` to `Connected` is a natural flow.
+                        (ProcMacroServerStatus::Pending, ProcMacroServerStatus::Connected)
+                        // If the state remains unchanged, ignore this event.
                         | (ProcMacroServerStatus::Pending, ProcMacroServerStatus::Pending)
-                        | (ProcMacroServerStatus::Starting, ProcMacroServerStatus::Starting)
-                        | (ProcMacroServerStatus::Ready, ProcMacroServerStatus::Ready)
-                        | (ProcMacroServerStatus::Crashed, ProcMacroServerStatus::Crashed) => { }
+                        | (ProcMacroServerStatus::Connected, ProcMacroServerStatus::Connected)
+                        | (ProcMacroServerStatus::Crashed, ProcMacroServerStatus::Crashed) => {}
                         // Every other case means that PMS either crashed or was restarted so reset PMS related data.
                         _ => {
                             all_prev_requests_count = 0;

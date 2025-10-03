@@ -386,7 +386,7 @@ impl Backend {
         requester: &mut Requester<'_>,
         _: Responder,
     ) {
-        if let ServerStatus::Starting(client) | ServerStatus::Ready(client) =
+        if let ServerStatus::Connected(client) =
             state.db.proc_macro_input().proc_macro_server_status(&state.db)
             && client.available_responses().len() != 0
         {
