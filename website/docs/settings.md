@@ -27,7 +27,7 @@ Enables support for procedural macros.
 
 Absolute path to the [Scarb](https://docs.swmansion.com/scarb/) binary.
 
-**Default**: Scarb version defined in the `.tool-versions` file.
+**Default**: Scarb executable set in your `PATH` environment variable.
 
 ## Language Server Path
 
@@ -46,4 +46,4 @@ Absolute path to Cairo core library. It's necessary if the project doesn't use S
 Enables on disk cache for procedural macros.
 
 > [!WARNING]
-> Currently the cache is **never** invalidated. If **ANY** of your procedural macro dependencies change - remove the `cairo-language-server/proc_macro.cache` file from your target.
+> Currently the cache is **never** invalidated. If **ANY** of your procedural macro dependencies change - remove the `cairo-language-server/proc_macro.cache` file from your target directory.
