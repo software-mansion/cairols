@@ -27,7 +27,7 @@ pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) 
     let file_id = db.file_for_url(&params.text_document.uri)?;
     let node = db.find_syntax_node_at_position(file_id, params.position.to_cairo())?;
 
-    let crate_id = db.find_module_file_containing_node(node)?.0.owning_crate(db);
+    let crate_id = db.find_module_containing_node(node)?.owning_crate(db);
     let cfg_set = db
         .crate_config(crate_id)
         .and_then(|cfg| cfg.settings.cfg_set.as_ref())
