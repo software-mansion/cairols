@@ -17,7 +17,7 @@ use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, W
 
 use crate::ide::format::types::{InferredValue, format_type};
 use crate::lang::analysis_context::AnalysisContext;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::ToLsp;
 
 /// Generates a completion adding all trait members that have not yet been specified.
@@ -27,7 +27,7 @@ pub fn fill_trait_members<'db>(
     ctx: &AnalysisContext<'db>,
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
-    let file = db.find_module_file_containing_node(ctx.node)?.file_id(db).ok()?;
+    let file = ctx.node.stable_ptr(db).file_id(db);
     let importables = db.visible_importables_from_module(ctx.module_file_id)?;
 
     let item_impl = ctx.node.ancestor_of_type::<ItemImpl>(db)?;

@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::{
 use lsp_types::{Position, Range, TextEdit};
 
 use super::{analysis_context::AnalysisContext, db::AnalysisDatabase};
-use crate::lang::{db::LsSemanticGroup, lsp::ToLsp};
+use crate::lang::lsp::ToLsp;
 
 /// Returns a TextEdit to import the given trait if it is not already in scope.
 /// The decision is based on visibility from the current module in `ctx`.
@@ -99,10 +99,7 @@ impl UsePosition {
         Some(Self {
             position: node
                 .span_start_without_trivia(db)
-                .position_in_file(
-                    db,
-                    db.module_file(db.find_module_file_containing_node(node)?).ok()?,
-                )?
+                .position_in_file(db, ptr.file_id(db))?
                 .to_lsp(),
             is_sticking,
         })
