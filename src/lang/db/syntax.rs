@@ -1,11 +1,10 @@
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan};
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal};
 use salsa::Database;
-
-use crate::lang::db::upstream::file_syntax;
 
 /// LS-specific extensions to the syntax group of the Cairo compiler.
 pub trait LsSyntaxGroup: Database {
@@ -73,7 +72,7 @@ fn find_syntax_node_at_offset<'db>(
     file: FileId<'db>,
     offset: TextOffset,
 ) -> Option<SyntaxNode<'db>> {
-    Some(file_syntax(db, file).to_option()?.lookup_offset(db, offset))
+    Some(db.file_syntax(file).to_option()?.lookup_offset(db, offset))
 }
 
 /// Finds the widest [`SyntaxNode`] within the given [`TextSpan`] in the file.
@@ -112,7 +111,7 @@ fn find_syntax_node_at_position<'db>(
     file: FileId<'db>,
     position: TextPosition,
 ) -> Option<SyntaxNode<'db>> {
-    Some(file_syntax(db, file).to_option()?.lookup_position(db, position))
+    Some(db.file_syntax(file).to_option()?.lookup_position(db, position))
 }
 
 /// Finds a [`TerminalIdentifier`] at the given [`TextPosition`] in the file.

@@ -37,7 +37,6 @@ pub use self::syntax::*;
 mod semantic;
 mod swapper;
 mod syntax;
-pub mod upstream;
 
 /// The Cairo compiler Salsa database tailored for language server usage.
 #[salsa::db]

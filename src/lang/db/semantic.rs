@@ -4,15 +4,15 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
-    FreeFunctionLongId, FunctionWithBodyId, ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId,
-    ImplFunctionLongId, ImplItemId, LanguageElementId, LookupItemId, MacroDeclarationLongId,
-    ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasLongId, StructLongId, TraitConstantLongId,
-    TraitFunctionLongId, TraitImplLongId, TraitItemId, TraitLongId, TraitTypeLongId, UseLongId,
-    VarId,
+    FreeFunctionLongId, ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId,
+    ImplItemId, LanguageElementId, LookupItemId, MacroDeclarationLongId, ModuleFileId, ModuleId,
+    ModuleItemId, ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId,
+    TraitImplLongId, TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
 };
 use cairo_lang_filesystem::db::{ext_as_virtual, get_parent_and_mapping, translate_location};
 use cairo_lang_filesystem::ids::{CodeOrigin, FileId, FileLongId};
-use cairo_lang_semantic::expr::pattern::PatternVariablesQueryable;
+use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::enm::EnumSemantic;
 use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
 use cairo_lang_semantic::items::extern_type::ExternTypeSemantic;
@@ -27,7 +27,7 @@ use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use cairo_lang_semantic::{Binding, GenericParam, Pattern, PatternId, PatternVariable};
+use cairo_lang_semantic::{Binding, GenericParam};
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
@@ -37,7 +37,6 @@ use salsa::Database;
 
 use super::LsSyntaxGroup;
 use crate::lang::db::SyntaxNodeExt;
-use crate::lang::db::upstream::file_syntax;
 
 pub trait LsSemanticGroup: Database {
     /// Returns a [`LookupItemId`] corresponding to the node or its first parent all the way up to
@@ -368,21 +367,6 @@ fn lookup_binding<'db>(
                 db.lookup_pattern_by_ptr(function_id, pattern.stable_ptr(db)).ok()?,
             );
 
-            // REGION: Modified compiler code https://github.com/starkware-libs/cairo/blob/dacfb4568f4d1ba265130d90788802349c31d7b3/crates/cairo-lang-semantic/src/expr/pattern.rs#L121-L135
-            // TODO(#442) remove when db type is changed in compiler.
-            pub struct QueryPatternVariablesFromDb<'a>(
-                pub &'a (dyn Database + 'static),
-                pub FunctionWithBodyId<'a>,
-            );
-
-            impl<'a> PatternVariablesQueryable<'a> for QueryPatternVariablesFromDb<'a> {
-                fn query(&self, id: PatternId) -> Vec<PatternVariable<'a>> {
-                    let pattern: Pattern<'a> = self.0.pattern_semantic(self.1, id);
-                    pattern.variables(self)
-                }
-            }
-            // ENDREGION
-
             // Extract the binding from the found pattern.
             let binding = pattern
                 .variables(&QueryPatternVariablesFromDb(db, function_id))
@@ -654,7 +638,7 @@ fn find_generated_nodes<'db>(
             continue;
         }
 
-        let Ok(file_syntax) = file_syntax(db, file) else {
+        let Ok(file_syntax) = db.file_syntax(file) else {
             continue;
         };
 
