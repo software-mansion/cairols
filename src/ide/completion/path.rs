@@ -1,9 +1,12 @@
+use cairo_lang_defs::ids::{GenericTypeId, ModuleFileId, ModuleItemId};
 use cairo_lang_defs::ids::{ImportableId, LanguageElementId, NamedLanguageElementId};
 use cairo_lang_filesystem::ids::{CrateLongId, SmolStrId};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use cairo_lang_semantic::items::constant::ConstantSemantic;
 use cairo_lang_semantic::items::enm::EnumSemantic;
 use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
 use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::module::ModuleSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::items::visibility::Visibility;
@@ -15,6 +18,7 @@ use cairo_lang_syntax::node::ast::{
     ExprPath, ItemStruct, PathSegment, StatementExpr, StatementLet, TypeClause,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_utils::OptionFrom;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat};
 
@@ -23,8 +27,12 @@ use super::helpers::completion_kind::{
 };
 use crate::ide::completion::CompletionItemHashable;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use crate::ide::completion::helpers::formatting::{
+    format_enum_variant, generate_abbreviated_signature,
+};
 use crate::ide::completion::helpers::item::{CompletionItemOrderable, get_item_relevance};
 use crate::ide::completion::helpers::snippets::snippet_for_function_call;
+use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::importable::{importable_crate_id, importable_syntax_node};
@@ -204,6 +212,7 @@ pub fn path_prefix_completions<'db>(
                 .then(|| CompletionItemOrderable {
                     item: CompletionItem {
                         label: item.name(db).to_string(db),
+                        detail: module_item_completion_detail(db, *item, ctx.module_file_id),
                         kind: Some(resolved_generic_item_completion_kind(resolved_item)),
                         ..CompletionItem::default()
                     },
@@ -220,11 +229,23 @@ pub fn path_prefix_completions<'db>(
             .cloned()
             .unwrap_or_default()
             .iter()
-            .map(|(name, _)| {
+            .map(|(name, trait_function_id)| {
+                let signature = db
+                    .trait_function_signature(*trait_function_id)
+                    .map(|sig| {
+                        generate_abbreviated_signature(
+                            db,
+                            sig,
+                            Some(trait_function_id.trait_id(db)),
+                        )
+                    })
+                    .ok();
+
                 let crate_id = item.trait_id(db).parent_module(db).owning_crate(db);
                 CompletionItemOrderable {
                     item: CompletionItem {
                         label: name.to_string(db),
+                        detail: signature,
                         kind: Some(CompletionItemKind::FUNCTION),
                         ..CompletionItem::default()
                     },
@@ -243,11 +264,19 @@ pub fn path_prefix_completions<'db>(
                     .cloned()
                     .unwrap_or_default()
                     .iter()
-                    .map(|(name, _)| {
+                    .map(|(name, trait_function_id)| {
                         let crate_id = trait_id.trait_id(db).parent_module(db).owning_crate(db);
+                        let signature = db
+                            .trait_function_signature(*trait_function_id)
+                            .map(|sig| {
+                                generate_abbreviated_signature(db, sig, Some(trait_id.trait_id(db)))
+                            })
+                            .ok();
+
                         CompletionItemOrderable {
                             item: CompletionItem {
                                 label: name.to_string(db),
+                                detail: signature,
                                 kind: Some(CompletionItemKind::FUNCTION),
                                 ..CompletionItem::default()
                             },
@@ -267,11 +296,15 @@ pub fn path_prefix_completions<'db>(
                 .cloned()
                 .unwrap_or_default()
                 .iter()
-                .map(|(name, _)| {
+                .map(|(name, variant_id)| {
+                    let formatted_enum_variant =
+                        format_enum_variant(db, &enum_id.enum_id(db), variant_id);
+
                     let crate_id = enum_id.enum_id(db).parent_module(db).owning_crate(db);
                     CompletionItemOrderable {
                         item: CompletionItem {
                             label: name.to_string(db),
+                            detail: formatted_enum_variant,
                             kind: Some(CompletionItemKind::ENUM_MEMBER),
                             ..CompletionItem::default()
                         },
@@ -287,6 +320,29 @@ pub fn path_prefix_completions<'db>(
         },
         _ => vec![],
     })
+}
+
+/// Returns completion item detail (label annotation) for module items.
+fn module_item_completion_detail<'db>(
+    db: &'db AnalysisDatabase,
+    item: ModuleItemId<'db>,
+    ctx_module_file_id: ModuleFileId<'db>,
+) -> Option<String> {
+    if let ModuleItemId::Constant(constant_id) = item
+        && let Ok(constant) = db.constant_semantic_data(constant_id)
+        && let Some(importables) = db.visible_importables_from_module(ctx_module_file_id)
+    {
+        Some(format_type(db, constant.ty(), &importables, None))
+    } else if let Some(generic_type_id) = GenericTypeId::option_from(item) {
+        Some(generic_type_id.format(db))
+    } else if let Some(generic_function_id) = GenericFunctionId::option_from(item)
+        && let Ok(signature) = generic_function_id.generic_signature(db)
+    {
+        let abbreviated_signature = generate_abbreviated_signature(db, signature, None);
+        Some(abbreviated_signature)
+    } else {
+        None
+    }
 }
 
 fn get_struct_initialization_completion_text<'db>(
