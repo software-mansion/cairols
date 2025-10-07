@@ -396,6 +396,7 @@ fn simple_declarative_macro_completion() {
 
     [[completions]]
     completion_label = "my_own_macro!"
+    insert_text = "my_own_macro!($1)"
     "#);
 }
 
@@ -423,6 +424,7 @@ fn declarative_macro_completion_without_explicit_path() {
 
     [[completions]]
     completion_label = "my_own_macro!"
+    insert_text = "my_own_macro!($1)"
     text_edits = ["""
     use my_mod::my_own_macro;
 

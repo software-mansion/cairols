@@ -349,3 +349,25 @@ fn partially_typed_top_level_macro_after_items() {
     completion_label = "core"
     "#);
 }
+
+#[test]
+fn top_level_inline_macro() {
+    test_transform_plain!(Completion,"
+    macro my_own_macro {
+        ($x:ident) => {
+            fn foo() {}
+        };
+    }
+
+    my_own_m<caret>
+
+    ",@r#"
+    caret = """
+    my_own_m<caret>
+    """
+
+    [[completions]]
+    completion_label = "my_own_macro!"
+    insert_text = "my_own_macro!($1)"
+    "#);
+}

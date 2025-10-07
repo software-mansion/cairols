@@ -16,6 +16,7 @@ use lsp_types::{CompletionItem, InsertTextFormat};
 
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use crate::ide::completion::path::path_suffix_completions;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
@@ -54,6 +55,7 @@ pub fn expr_inline_macro_completions<'db>(
 pub fn top_level_inline_macro_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
+    was_node_corrected: bool,
 ) -> Vec<CompletionItemOrderable> {
     // Covers the case when we are not in any module item:
     //
@@ -93,6 +95,7 @@ pub fn top_level_inline_macro_completions<'db>(
             .into_iter()
             .filter(|name| text_matches(name, &typed))
             .map(snippet_completions_for_inline_plugins)
+            .chain(path_suffix_completions(db, ctx, was_node_corrected, true))
             .collect()
     } else {
         Default::default()

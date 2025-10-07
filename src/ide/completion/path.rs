@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::ids::{ImportableId, LanguageElementId, NamedLanguageElementId};
 use cairo_lang_filesystem::ids::{CrateLongId, SmolStrId};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
@@ -13,6 +15,7 @@ use cairo_lang_syntax::node::ast::{
     ExprPath, ItemStruct, PathSegment, StatementExpr, StatementLet, TypeClause,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat};
 
@@ -34,22 +37,25 @@ pub fn path_suffix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     was_node_corrected: bool,
+    only_top_level_declarative_macros: bool,
 ) -> Vec<CompletionItemOrderable> {
-    let (importables, typed_text) = if ctx.node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
-        && ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
-        && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
-        // Enum patterns are handled in a separate function.
-        && ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none()
-        && let Some(importables) = db.visible_importables_from_module(ctx.module_file_id)
-        && let Some(typed_text_segments) = ctx
-            .node
-            .ancestor_of_type::<ExprPath>(db)
-            .map(|path| path.segments(db).elements(db).collect_vec())
-        && !typed_text_segments.is_empty()
+    let importables = match get_importables_for_path_suffix_completions(
+        db,
+        ctx,
+        was_node_corrected,
+        only_top_level_declarative_macros,
+    ) {
+        Some(importables) => importables,
+        None => return Default::default(),
+    };
+
+    let typed_text = match ctx
+        .node
+        .ancestor_of_type::<ExprPath>(db)
+        .map(|path| path.segments(db).elements(db).collect_vec())
     {
-        (importables, typed_text_segments)
-    } else {
-        return Default::default();
+        Some(segments) if !segments.is_empty() => segments,
+        _ => return Default::default(),
     };
 
     let mut typed_text = typed_text
@@ -73,6 +79,11 @@ pub fn path_suffix_completions<'db>(
     let mut completions: Vec<CompletionItemOrderable> = importables
         .iter()
         .filter_map(|(importable, path_str)| {
+            let is_declarative_macro = matches!(importable, ImportableId::MacroDeclaration(_));
+            if !is_declarative_macro && only_top_level_declarative_macros {
+                return None;
+            }
+
             let mut path_segments: Vec<_> = path_str.split("::").collect();
 
             let is_not_in_scope = path_segments.len() != 1;
@@ -109,13 +120,11 @@ pub fn path_suffix_completions<'db>(
                 None
             };
 
-            let is_declarative_macro = matches!(importable, ImportableId::MacroDeclaration(_));
-
             let importable_crate = importable_crate_id(db, *importable);
             let is_current_crate = importable_crate == current_crate;
             let is_core = *importable_crate.long(db) == CrateLongId::core(db);
 
-            let struct_initialization_text = match importable {
+            let struct_initialization_snippet_text = match importable {
                 ImportableId::Struct(_) => {
                     importable_syntax_node(db, *importable).and_then(|struct_node| {
                         get_struct_initialization_completion_text(
@@ -128,6 +137,12 @@ pub fn path_suffix_completions<'db>(
                 _ => None,
             };
 
+            let snippet_text = get_snippet_text(
+                last_segment,
+                is_declarative_macro,
+                struct_initialization_snippet_text.clone(),
+            );
+
             Some(CompletionItemOrderable {
                 item: CompletionItem {
                     label: if is_declarative_macro {
@@ -135,9 +150,12 @@ pub fn path_suffix_completions<'db>(
                     } else {
                         last_segment.to_string()
                     },
-                    insert_text: struct_initialization_text.clone(),
-                    insert_text_format: struct_initialization_text
-                        .map(|_| InsertTextFormat::SNIPPET),
+                    insert_text: get_snippet_text(
+                        last_segment,
+                        is_declarative_macro,
+                        struct_initialization_snippet_text.clone(),
+                    ),
+                    insert_text_format: snippet_text.map(|_| InsertTextFormat::SNIPPET),
                     kind: Some(importable_completion_kind(*importable)),
                     label_details: Some(CompletionItemLabelDetails {
                         detail: None,
@@ -282,6 +300,37 @@ pub fn path_prefix_completions<'db>(
         },
         _ => vec![],
     })
+}
+
+fn get_importables_for_path_suffix_completions<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    was_node_corrected: bool,
+    only_top_level_declarative_macros: bool,
+) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
+    if (ctx.node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
+        || only_top_level_declarative_macros)
+        && ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
+        && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
+        && ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none()
+    {
+        db.visible_importables_from_module(ctx.module_file_id)
+    } else {
+        None
+    }
+}
+fn get_snippet_text(
+    last_segment: &str,
+    is_declarative_macro: bool,
+    struct_initialization_text: Option<String>,
+) -> Option<String> {
+    if struct_initialization_text.is_some() {
+        struct_initialization_text
+    } else if is_declarative_macro {
+        Some(format!("{}!($1)", last_segment))
+    } else {
+        None
+    }
 }
 
 fn get_struct_initialization_completion_text<'db>(
