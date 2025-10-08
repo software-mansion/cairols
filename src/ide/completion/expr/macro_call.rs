@@ -16,7 +16,7 @@ use lsp_types::{CompletionItem, InsertTextFormat};
 
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
-use crate::ide::completion::path::path_suffix_completions;
+use crate::ide::completion::path::path_suffix_completions_for_top_level_declarative_macros;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
@@ -95,7 +95,11 @@ pub fn top_level_inline_macro_completions<'db>(
             .into_iter()
             .filter(|name| text_matches(name, &typed))
             .map(snippet_completions_for_inline_plugins)
-            .chain(path_suffix_completions(db, ctx, was_node_corrected, true))
+            .chain(path_suffix_completions_for_top_level_declarative_macros(
+                db,
+                ctx,
+                was_node_corrected,
+            ))
             .collect()
     } else {
         Default::default()

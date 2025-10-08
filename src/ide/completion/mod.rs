@@ -144,7 +144,7 @@ fn complete_ex<'db>(
     completions.extend(top_level_inline_macro_completions(db, &ctx, was_node_corrected));
 
     if trigger_kind == CompletionTriggerKind::INVOKED {
-        completions.extend(path_suffix_completions(db, &ctx, was_node_corrected, false))
+        completions.extend(path_suffix_completions(db, &ctx, was_node_corrected))
     }
 
     Some(completions)

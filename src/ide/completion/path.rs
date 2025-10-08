@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ImportableId, LanguageElementId, NamedLanguageElementId};
-use cairo_lang_filesystem::ids::{CrateLongId, SmolStrId};
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::items::enm::EnumSemantic;
 use cairo_lang_semantic::items::module::ModuleSemantic;
@@ -37,42 +37,65 @@ pub fn path_suffix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     was_node_corrected: bool,
-    only_top_level_declarative_macros: bool,
 ) -> Vec<CompletionItemOrderable> {
-    let importables = match get_importables_for_path_suffix_completions(
-        db,
-        ctx,
-        was_node_corrected,
-        only_top_level_declarative_macros,
-    ) {
+    let importables = if ctx.node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
+        && let Some(importables) =
+            get_importables_for_path_suffix_completions(db, ctx, was_node_corrected)
+    {
+        importables
+    } else {
+        return Default::default();
+    };
+
+    let mut typed_text = match get_typed_text(db, ctx) {
+        Some(typed_text) => typed_text,
+        None => return Default::default(),
+    };
+
+    let last_typed_segment = get_last_typed_segment(db, ctx, &mut typed_text);
+
+    let current_crate = ctx.module_file_id.0.owning_crate(db);
+
+    let mut completions: Vec<CompletionItemOrderable> = importables
+        .iter()
+        .filter_map(|(importable, path_str)| {
+            get_completion_item_for_importable(
+                db,
+                ctx,
+                importable,
+                current_crate,
+                path_str,
+                &typed_text,
+                &last_typed_segment,
+                matches!(importable, ImportableId::MacroDeclaration(_)),
+            )
+        })
+        .unique_by(|completion| CompletionItemHashable(completion.clone()))
+        .collect();
+
+    remove_path_label_details_from_unique_labels(&mut completions);
+
+    completions
+}
+
+/// Treats provided path as suffix, proposing elements that can prefix this path.
+pub fn path_suffix_completions_for_top_level_declarative_macros<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    was_node_corrected: bool,
+) -> Vec<CompletionItemOrderable> {
+    let importables = match get_importables_for_path_suffix_completions(db, ctx, was_node_corrected)
+    {
         Some(importables) => importables,
         None => return Default::default(),
     };
 
-    let typed_text = match ctx
-        .node
-        .ancestor_of_type::<ExprPath>(db)
-        .map(|path| path.segments(db).elements(db).collect_vec())
-    {
-        Some(segments) if !segments.is_empty() => segments,
-        _ => return Default::default(),
+    let mut typed_text = match get_typed_text(db, ctx) {
+        Some(typed_text) => typed_text,
+        None => return Default::default(),
     };
 
-    let mut typed_text = typed_text
-        .into_iter()
-        .map(|segment| segment.as_syntax_node())
-        // Allow proposing items in the middle of the existing path by filtering out the nodes which lie after the cursor:
-        .filter(|segment_node| segment_node.offset(db) <= ctx.node.offset(db))
-        .map(|segment_node| segment_node.get_text_without_trivia(db))
-        .collect::<Vec<_>>();
-
-    // After `::`, we want to propose all importables available at the preceding path.
-    let last_typed_segment = if ctx.node.kind(db) == SyntaxKind::TerminalColonColon {
-        SmolStrId::from(db, "")
-    } else {
-        // Otherwise, the last segment is a partial identifier we want to complete using fuzzy search.
-        typed_text.pop().expect("typed path should not be empty")
-    };
+    let last_typed_segment = get_last_typed_segment(db, ctx, &mut typed_text);
 
     let current_crate = ctx.module_file_id.0.owning_crate(db);
 
@@ -80,103 +103,24 @@ pub fn path_suffix_completions<'db>(
         .iter()
         .filter_map(|(importable, path_str)| {
             let is_declarative_macro = matches!(importable, ImportableId::MacroDeclaration(_));
-            if !is_declarative_macro && only_top_level_declarative_macros {
+            if !is_declarative_macro {
                 return None;
             }
-
-            let mut path_segments: Vec<_> = path_str.split("::").collect();
-
-            let is_not_in_scope = path_segments.len() != 1;
-
-            let last_segment = path_segments.pop().expect("path to import should not be empty");
-
-            let mut last_poped = None;
-
-            let previous_segment_matches = typed_text.iter().rev().all(|typed_segment| {
-                last_poped = path_segments.pop();
-                last_poped.map(|s| s == typed_segment.to_string(db).as_str()).unwrap_or(false)
-            });
-
-            // Import path and typed path must have single overlapping element.
-            // use foo::bar;
-            //          bar::baz(12345);
-            // If path was *not* empty we should *not* add use statement at all.
-            if !path_segments.is_empty() {
-                path_segments.push(last_poped.unwrap_or(last_segment));
-            }
-
-            if !previous_segment_matches
-                || !text_matches(last_segment, last_typed_segment.to_string(db).as_str())
-            {
-                return None;
-            }
-
-            let additional_text_edits = if is_not_in_scope
-                && !path_segments.is_empty()
-                && let Some(import_edit) = new_import_edit(db, ctx, path_segments.join("::"))
-            {
-                Some(vec![import_edit])
-            } else {
-                None
-            };
-
-            let importable_crate = importable_crate_id(db, *importable);
-            let is_current_crate = importable_crate == current_crate;
-            let is_core = *importable_crate.long(db) == CrateLongId::core(db);
-
-            let struct_initialization_snippet_text = match importable {
-                ImportableId::Struct(_) => {
-                    importable_syntax_node(db, *importable).and_then(|struct_node| {
-                        get_struct_initialization_completion_text(
-                            db,
-                            ctx,
-                            ItemStruct::from_syntax_node(db, struct_node),
-                        )
-                    })
-                }
-                _ => None,
-            };
-
-            let snippet_text = get_snippet_text(
-                last_segment,
+            get_completion_item_for_importable(
+                db,
+                ctx,
+                importable,
+                current_crate,
+                path_str,
+                &typed_text,
+                &last_typed_segment,
                 is_declarative_macro,
-                struct_initialization_snippet_text.clone(),
-            );
-
-            Some(CompletionItemOrderable {
-                item: CompletionItem {
-                    label: if is_declarative_macro {
-                        format!("{}!", last_segment)
-                    } else {
-                        last_segment.to_string()
-                    },
-                    insert_text: get_snippet_text(
-                        last_segment,
-                        is_declarative_macro,
-                        struct_initialization_snippet_text.clone(),
-                    ),
-                    insert_text_format: snippet_text.map(|_| InsertTextFormat::SNIPPET),
-                    kind: Some(importable_completion_kind(*importable)),
-                    label_details: Some(CompletionItemLabelDetails {
-                        detail: None,
-                        description: Some(path_str.to_string()),
-                    }),
-                    additional_text_edits,
-                    ..CompletionItem::default()
-                },
-                relevance: get_item_relevance(!is_not_in_scope, is_current_crate, is_core),
-            })
+            )
         })
         .unique_by(|completion| CompletionItemHashable(completion.clone()))
         .collect();
 
-    // Remove path label_details from all completions, that are NOT duplicated.
-    let label_counts = completions.iter().map(|item| item.item.label.clone()).counts();
-    for completion in &mut completions {
-        if label_counts[&completion.item.label] == 1 {
-            completion.item.label_details = None;
-        }
-    }
+    remove_path_label_details_from_unique_labels(&mut completions);
 
     completions
 }
@@ -302,15 +246,131 @@ pub fn path_prefix_completions<'db>(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
+fn get_completion_item_for_importable(
+    db: &AnalysisDatabase,
+    ctx: &AnalysisContext,
+    importable: &ImportableId,
+    current_crate: CrateId,
+    path_str: &str,
+    typed_text: &[SmolStrId],
+    last_typed_segment: &SmolStrId,
+    is_declarative_macro: bool,
+) -> Option<CompletionItemOrderable> {
+    let mut path_segments: Vec<_> = path_str.split("::").collect();
+
+    let is_not_in_scope = path_segments.len() != 1;
+
+    let last_segment = path_segments.pop().expect("path to import should not be empty");
+
+    let mut last_popped = None;
+
+    let previous_segment_matches = typed_text.iter().rev().all(|typed_segment| {
+        last_popped = path_segments.pop();
+        last_popped.map(|s| s == typed_segment.to_string(db).as_str()).unwrap_or(false)
+    });
+
+    // Import path and typed path must have single overlapping element.
+    // use foo::bar;
+    //          bar::baz(12345);
+    // If path was *not* empty we should *not* add use statement at all.
+    if !path_segments.is_empty() {
+        path_segments.push(last_popped.unwrap_or(last_segment));
+    }
+
+    if !previous_segment_matches
+        || !text_matches(last_segment, last_typed_segment.to_string(db).as_str())
+    {
+        return None;
+    }
+
+    let additional_text_edits = if is_not_in_scope
+        && !path_segments.is_empty()
+        && let Some(import_edit) = new_import_edit(db, ctx, path_segments.join("::"))
+    {
+        Some(vec![import_edit])
+    } else {
+        None
+    };
+
+    let importable_crate = importable_crate_id(db, *importable);
+    let is_current_crate = importable_crate == current_crate;
+    let is_core = *importable_crate.long(db) == CrateLongId::core(db);
+
+    let (snippet_text, label) =
+        get_snippet_text_and_label(db, ctx, importable, last_segment, is_declarative_macro);
+
+    Some(CompletionItemOrderable {
+        item: CompletionItem {
+            label,
+            insert_text: snippet_text.clone(),
+            insert_text_format: snippet_text.map(|_| InsertTextFormat::SNIPPET),
+            kind: Some(importable_completion_kind(*importable)),
+            label_details: Some(CompletionItemLabelDetails {
+                detail: None,
+                description: Some(path_str.to_string()),
+            }),
+            additional_text_edits,
+            ..CompletionItem::default()
+        },
+        relevance: get_item_relevance(!is_not_in_scope, is_current_crate, is_core),
+    })
+}
+
+fn remove_path_label_details_from_unique_labels(completions: &mut Vec<CompletionItemOrderable>) {
+    // Remove path label_details from all completions, that are NOT duplicated.
+    let label_counts = completions.iter().map(|item| item.item.label.clone()).counts();
+    for completion in completions {
+        if label_counts[&completion.item.label] == 1 {
+            completion.item.label_details = None;
+        }
+    }
+}
+
+fn get_typed_text<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+) -> Option<Vec<SmolStrId<'db>>> {
+    let typed_text = match ctx
+        .node
+        .ancestor_of_type::<ExprPath>(db)
+        .map(|path| path.segments(db).elements(db).collect_vec())
+    {
+        Some(segments) if !segments.is_empty() => segments,
+        _ => return None,
+    };
+
+    Some(
+        typed_text
+            .into_iter()
+            .map(|segment| segment.as_syntax_node())
+            // Allow proposing items in the middle of the existing path by filtering out the nodes which lie after the cursor:
+            .filter(|segment_node| segment_node.offset(db) <= ctx.node.offset(db))
+            .map(|segment_node| segment_node.get_text_without_trivia(db))
+            .collect::<Vec<_>>(),
+    )
+}
+
+fn get_last_typed_segment<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    typed_text: &mut Vec<SmolStrId<'db>>,
+) -> SmolStrId<'db> {
+    // After `::`, we want to propose all importables available at the preceding path.
+    if ctx.node.kind(db) == SyntaxKind::TerminalColonColon {
+        SmolStrId::from(db, "")
+    } else {
+        // Otherwise, the last segment is a partial identifier we want to complete using fuzzy search.
+        typed_text.pop().expect("typed path should not be empty")
+    }
+}
+
 fn get_importables_for_path_suffix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     was_node_corrected: bool,
-    only_top_level_declarative_macros: bool,
 ) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
-    if (ctx.node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
-        || only_top_level_declarative_macros)
-        && ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
+    if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
         && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
         && ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none()
     {
@@ -319,18 +379,37 @@ fn get_importables_for_path_suffix_completions<'db>(
         None
     }
 }
-fn get_snippet_text(
+
+fn get_snippet_text_and_label(
+    db: &AnalysisDatabase,
+    ctx: &AnalysisContext<'_>,
+    importable: &ImportableId<'_>,
     last_segment: &str,
     is_declarative_macro: bool,
-    struct_initialization_text: Option<String>,
-) -> Option<String> {
-    if struct_initialization_text.is_some() {
-        struct_initialization_text
-    } else if is_declarative_macro {
-        Some(format!("{}!($1)", last_segment))
-    } else {
-        None
-    }
+) -> (Option<String>, String) {
+    let snippet = match importable {
+        ImportableId::Struct(_) => {
+            importable_syntax_node(db, *importable).and_then(|struct_node| {
+                get_struct_initialization_completion_text(
+                    db,
+                    ctx,
+                    ItemStruct::from_syntax_node(db, struct_node),
+                )
+            })
+        }
+        _ => {
+            if is_declarative_macro {
+                Some(format!("{}!($1)", last_segment))
+            } else {
+                None
+            }
+        }
+    };
+
+    let label =
+        if is_declarative_macro { format!("{}!", last_segment) } else { last_segment.to_string() };
+
+    (snippet, label)
 }
 
 fn get_struct_initialization_completion_text<'db>(
