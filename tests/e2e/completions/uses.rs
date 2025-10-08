@@ -312,3 +312,72 @@ fn enum_variant() {
     completion_label = "B"
     "#);
 }
+
+#[test]
+fn no_text_in_use_statement() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod my_mod {
+       pub const MY_CONST: u8 = 5;
+       pub fn my_func() {}
+    }
+
+    use <caret>
+
+    fn a() {}
+    ",@r#"
+    caret = """
+    use <caret>
+    """
+
+    [[completions]]
+    completion_label = "Option"
+
+    [[completions]]
+    completion_label = "PanicResult"
+
+    [[completions]]
+    completion_label = "Result"
+
+    [[completions]]
+    completion_label = "bool"
+
+    [[completions]]
+    completion_label = "core"
+
+    [[completions]]
+    completion_label = "dep"
+
+    [[completions]]
+    completion_label = "hello"
+
+    [[completions]]
+    completion_label = "my_mod"
+
+    [[completions]]
+    completion_label = "starknet"
+    "#);
+}
+
+#[test]
+fn no_text_last_segment_in_use_statement() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod my_mod {
+       pub const MY_CONST: u8 = 5;
+       pub fn my_func() {}
+    }
+
+    use my_mod::<caret>
+
+    fn a() {}
+    ",@r#"
+    caret = """
+    use my_mod::<caret>
+    """
+
+    [[completions]]
+    completion_label = "MY_CONST"
+
+    [[completions]]
+    completion_label = "my_func"
+    "#);
+}
