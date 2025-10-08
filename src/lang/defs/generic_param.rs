@@ -73,7 +73,7 @@ impl<'db> GenericParamDef<'db> {
         match self.semantic {
             GenericParamSemantic::Type => self.name(db).to_string(),
             GenericParamSemantic::Const { ty } => {
-                let formatted_type = format_type(db, ty, &importables());
+                let formatted_type = format_type(db, ty, &importables(), None);
                 format!("const {}: {}", self.name(db), formatted_type)
             }
             GenericParamSemantic::Impl { concrete_trait } => {

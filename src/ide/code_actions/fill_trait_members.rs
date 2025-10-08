@@ -17,7 +17,7 @@ use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, W
 
 use crate::ide::format::types::{InferredValue, format_type};
 use crate::lang::analysis_context::AnalysisContext;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::ToLsp;
 
 /// Generates a completion adding all trait members that have not yet been specified.
@@ -27,7 +27,7 @@ pub fn fill_trait_members<'db>(
     ctx: &AnalysisContext<'db>,
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
-    let file = db.find_module_file_containing_node(ctx.node)?.file_id(db).ok()?;
+    let file = ctx.node.stable_ptr(db).file_id(db);
     let importables = db.visible_importables_from_module(ctx.module_file_id)?;
 
     let item_impl = ctx.node.ancestor_of_type::<ItemImpl>(db)?;
@@ -144,6 +144,7 @@ fn constant_code<'db>(
         db,
         substitution.substitute(db, db.trait_constant_type(id).ok()?).ok()?,
         importables,
+        None,
     );
 
     Some(format!("const {name}: {ty} = ();"))
@@ -195,14 +196,14 @@ fn function_code<'db>(
     let return_type = if return_type.is_unit(db) {
         None
     } else {
-        Some(format!("-> {}", format_type(db, return_type, importables)))
+        Some(format!("-> {}", format_type(db, return_type, importables, None)))
     };
 
     let implicits = match &signature.implicits[..] {
         [] => None,
         types => Some(format!(
             "implicits({})",
-            types.iter().map(|ty| format_type(db, *ty, importables)).join(", ")
+            types.iter().map(|ty| format_type(db, *ty, importables, None)).join(", ")
         )),
     };
 
@@ -226,7 +227,7 @@ fn generic_parameter_code<'db>(
         GenericParam::Const(param) => Some(format!(
             "const {}: {}",
             param.id.format(db).to_string(db),
-            format_type(db, param.ty, importables)
+            format_type(db, param.ty, importables, None)
         )),
 
         GenericParam::Impl(param) => {
@@ -275,7 +276,7 @@ fn generic_argument_code<'db>(
 ) -> Option<String> {
     match argument {
         GenericArgumentId::Type(type_id) => {
-            Some(format_type(db, substitution.substitute(db, type_id).ok()?, importables))
+            Some(format_type(db, substitution.substitute(db, type_id).ok()?, importables, None))
         }
         GenericArgumentId::Constant(const_value) => {
             Some(InferredValue::Constant(const_value).format(db, importables))
@@ -303,7 +304,7 @@ fn function_parameter<'db>(
     };
 
     let name = parameter.id.name(db);
-    let ty = format_type(db, substitution.substitute(db, parameter.ty).ok()?, importables);
+    let ty = format_type(db, substitution.substitute(db, parameter.ty).ok()?, importables, None);
 
     Some(format!("{prefix}{name}: {ty}", name = name.to_string(db)))
 }

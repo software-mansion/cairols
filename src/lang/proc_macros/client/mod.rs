@@ -2,14 +2,12 @@ use std::collections::{HashMap, VecDeque};
 use std::fmt::{Debug, Formatter};
 use std::sync::{MutexGuard, RwLock, RwLockWriteGuard};
 
-use anyhow::{Context, Result, anyhow, ensure};
+use anyhow::{Context, Result, anyhow};
 use connection::ProcMacroServerConnection;
 use crossbeam::channel::Sender;
 use scarb_proc_macro_server_types::jsonrpc::{RequestId, RpcRequest, RpcResponse};
 use scarb_proc_macro_server_types::methods::Method;
-use scarb_proc_macro_server_types::methods::defined_macros::{
-    DefinedMacros, DefinedMacrosParams, DefinedMacrosResponse,
-};
+use scarb_proc_macro_server_types::methods::defined_macros::{DefinedMacros, DefinedMacrosParams};
 use scarb_proc_macro_server_types::methods::expand::{
     ExpandAttribute, ExpandAttributeParams, ExpandDerive, ExpandDeriveParams, ExpandInline,
     ExpandInlineMacroParams,
@@ -27,11 +25,13 @@ mod id_generator;
 pub mod plain_request_response;
 pub mod status;
 
+#[allow(clippy::enum_variant_names)] // Next PR adds a new variant with different prefix.
 #[derive(Debug, PartialEq, Eq)]
 pub enum RequestParams {
-    Attribute(PlainExpandAttributeParams),
-    Derive(PlainExpandDeriveParams),
-    Inline(PlainExpandInlineParams),
+    DefinedMacros(DefinedMacrosParams),
+    ExpandAttribute(PlainExpandAttributeParams),
+    ExpandDerive(PlainExpandDeriveParams),
+    ExpandInline(PlainExpandInlineParams),
 }
 
 pub struct ProcMacroClient {
@@ -64,35 +64,29 @@ impl ProcMacroClient {
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
+    pub fn request_defined_macros(&self, params: DefinedMacrosParams) {
+        self.send_request::<DefinedMacros>(params, RequestParams::DefinedMacros);
+    }
+
+    #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_attribute(&self, params: ExpandAttributeParams) {
         self.send_request::<ExpandAttribute>(params, |params| {
-            RequestParams::Attribute(params.into())
+            RequestParams::ExpandAttribute(params.into())
         })
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_derives(&self, params: ExpandDeriveParams) {
-        self.send_request::<ExpandDerive>(params, |params| RequestParams::Derive(params.into()))
+        self.send_request::<ExpandDerive>(params, |params| {
+            RequestParams::ExpandDerive(params.into())
+        })
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn request_inline_macros(&self, params: ExpandInlineMacroParams) {
-        self.send_request::<ExpandInline>(params, |params| RequestParams::Inline(params.into()))
-    }
-
-    #[tracing::instrument(level = "trace", skip_all)]
-    pub fn start_initialize(&self) {
-        if let Err(err) = self.request_defined_macros() {
-            error!("failed to request defined macros: {err:?}");
-
-            self.failed();
-        }
-    }
-
-    #[tracing::instrument(level = "trace", skip_all)]
-    pub fn finish_initialize(&self) -> Result<DefinedMacrosResponse> {
-        self.handle_defined_macros()
-            .inspect_err(|err| error!("failed to fetch defined macros: {err:?}"))
+        self.send_request::<ExpandInline>(params, |params| {
+            RequestParams::ExpandInline(params.into())
+        })
     }
 
     /// Returns an iterator over all available responses. This iterator does not wait for new
@@ -115,44 +109,6 @@ impl ProcMacroClient {
         if self.connection.server_killed_receiver.wait().is_none() {
             error!("failed to receive information that proc macro server was killed");
         }
-    }
-
-    fn request_defined_macros(&self) -> Result<()> {
-        let id = self.id_generator.unique_id();
-
-        self.send_request_untracked::<DefinedMacros>(id, &DefinedMacrosParams {})?;
-
-        ensure!(
-            id == 0,
-            "fetching defined macros should be the first sent request, expected id=0 instead it \
-             is: {id}"
-        );
-
-        Ok(())
-    }
-
-    fn handle_defined_macros(&self) -> Result<DefinedMacrosResponse> {
-        let response = self
-            .connection
-            .responses
-            .lock()
-            .expect("responses lock should not be poisoned")
-            .pop_front()
-            .expect("responses should not be empty after receiving response");
-
-        ensure!(
-            response.id == 0,
-            "fetching defined macros should be done before any other request is sent, received \
-             response id: {}, expected 0",
-            response.id
-        );
-
-        let success = response
-            .into_result()
-            .map_err(|error| anyhow!("proc-macro-server responded with error: {error:?}"))?;
-
-        serde_json::from_value(success)
-            .context("failed to deserialize response for defined macros request")
     }
 
     fn send_request_untracked<M: Method>(&self, id: RequestId, params: &M::Params) -> Result<()> {

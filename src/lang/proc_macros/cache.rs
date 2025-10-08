@@ -40,7 +40,7 @@ pub fn save_proc_macro_cache(db: &dyn Database, config: &Config) {
     }
 }
 
-pub fn load_proc_macro_cache(db: &mut dyn Database, config: &Config) {
+pub fn try_load_proc_macro_cache(db: &mut dyn Database, config: &Config) {
     let resolution = if config.enable_experimental_proc_macro_cache
         && let Some(cache_path) = cache_path()
         && let Ok(buffer) = fs::read(&cache_path)

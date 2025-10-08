@@ -29,7 +29,7 @@ use lsp_types::{
     TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
 use serde_json::Value;
-use tracing::error;
+use tracing::{error, trace};
 
 use crate::ide::code_lens::{CodeLensController, FileChange};
 use crate::lang::lsp::LsProtoGroup;
@@ -119,6 +119,7 @@ impl SyncRequestHandler for ExecuteCommand {
         if let Ok(cmd) = command {
             match cmd {
                 ServerCommands::Reload => {
+                    trace!("reloading backend from executeCommand handler");
                     Backend::reload(state, requester)?;
                 }
                 ServerCommands::ExecuteCodeLens => {
@@ -208,6 +209,7 @@ impl SyncNotificationHandler for DidChangeConfiguration {
         requester: &mut Requester<'_>,
         _params: DidChangeConfigurationParams,
     ) -> LSPResult<()> {
+        trace!("reloading configuration from didChangeConfiguration handler");
         state.config.reload(requester, &state.client_capabilities)
     }
 }
@@ -237,6 +239,7 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
             //  metadata call, so it is easy to fall in a loop here.
             if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
             {
+                trace!("reloading backend from didChangeWatchedFiles handler");
                 Backend::reload(state, requester)?;
 
                 state.proc_macro_controller.force_restart(&mut state.db, &state.config);

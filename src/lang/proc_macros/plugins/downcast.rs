@@ -29,7 +29,7 @@ mod unsafe_downcast_ref_tests {
     use cairo_lang_macro_v1::TokenStream;
     use salsa::{Database, Setter};
     use scarb_proc_macro_server_types::methods::ProcMacroResult;
-    use scarb_proc_macro_server_types::scope::ProcMacroScope;
+    use scarb_proc_macro_server_types::scope::{ProcMacroScope, Workspace};
 
     use super::unsafe_downcast_ref;
     use crate::lang::db::AnalysisDatabase;
@@ -40,7 +40,10 @@ mod unsafe_downcast_ref_tests {
     fn cast_succeed() {
         let mut db = AnalysisDatabase::new();
 
-        let context = ProcMacroScope { component: Default::default() };
+        let context = ProcMacroScope {
+            component: Default::default(),
+            workspace: Workspace { manifest_path: "".into() },
+        };
 
         let input = PlainExpandAttributeParams {
             context,

@@ -1,4 +1,5 @@
 use cairo_lang_filesystem::{ids::FileId, span::TextPositionSpan};
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::{
@@ -19,11 +20,11 @@ use lsp_types::{
 use types::find_underscores;
 
 use super::{format::types::format_type, markdown::fenced_code_block};
-use crate::lang::{db::upstream::file_syntax, lsp::LsProtoGroup, proc_macros::db::get_og_node};
 use crate::lang::{
     db::{AnalysisDatabase, LsSemanticGroup},
     lsp::{ToCairo, ToLsp},
 };
+use crate::lang::{lsp::LsProtoGroup, proc_macros::db::get_og_node};
 
 mod types;
 
@@ -31,7 +32,7 @@ pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec
     let file = db.file_for_url(&params.text_document.uri)?;
     let range = TextPositionSpan::offset_in_file(params.range.to_cairo(), db, file)?;
 
-    let syntax = file_syntax(db, file).ok()?;
+    let syntax = db.file_syntax(file).ok()?;
 
     let mut result = vec![];
 
@@ -113,7 +114,7 @@ pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec
                         ));
                     }
                 } else {
-                    let type_string = format_type(db, ty, &importables);
+                    let type_string = format_type(db, ty, &importables, None);
                     let tooltip = fenced_code_block(&type_string);
 
                     result.extend(var_type_inlay_hint(db, file, og_var_node, type_string, tooltip));

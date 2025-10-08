@@ -27,7 +27,7 @@ pub fn fill_struct_fields<'db>(
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
     let module_file_id = db.find_module_file_containing_node(node)?;
-    let file_id = module_file_id.file_id(db).ok()?;
+    let file_id = node.stable_ptr(db).file_id(db);
     let function_id = db.find_lookup_item(node)?.function_with_body()?;
 
     let constructor_expr = node.ancestor_of_type::<ExprStructCtorCall>(db)?;
