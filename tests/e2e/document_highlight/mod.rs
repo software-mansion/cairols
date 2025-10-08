@@ -8,6 +8,7 @@ use crate::support::cursor::render_selections_with_attrs;
 use crate::support::transform::Transformer;
 
 mod highlight;
+mod macros;
 
 impl Transformer for DocumentHighlight {
     fn capabilities(base: ClientCapabilities) -> ClientCapabilities {
