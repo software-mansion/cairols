@@ -2,6 +2,8 @@ use cairo_lang_defs::ids::{ImportableId, LanguageElementId, NamedLanguageElement
 use cairo_lang_filesystem::ids::{CrateLongId, SmolStrId};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::items::enm::EnumSemantic;
+use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
+use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
 use cairo_lang_semantic::items::module::ModuleSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::items::visibility::Visibility;
@@ -22,6 +24,7 @@ use super::helpers::completion_kind::{
 use crate::ide::completion::CompletionItemHashable;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use crate::ide::completion::helpers::item::{CompletionItemOrderable, get_item_relevance};
+use crate::ide::completion::helpers::snippets::snippet_for_function_call;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::importable::{importable_crate_id, importable_syntax_node};
@@ -112,7 +115,7 @@ pub fn path_suffix_completions<'db>(
             let is_current_crate = importable_crate == current_crate;
             let is_core = *importable_crate.long(db) == CrateLongId::core(db);
 
-            let struct_initialization_text = match importable {
+            let maybe_snippet = match importable {
                 ImportableId::Struct(_) => {
                     importable_syntax_node(db, *importable).and_then(|struct_node| {
                         get_struct_initialization_completion_text(
@@ -122,15 +125,24 @@ pub fn path_suffix_completions<'db>(
                         )
                     })
                 }
+                ImportableId::FreeFunction(id) => {
+                    db.free_function_signature(*id).ok().map(|signature| {
+                        snippet_for_function_call(db, &id.name(db).to_string(db), signature)
+                    })
+                }
+                ImportableId::ExternFunction(id) => {
+                    db.extern_function_signature(*id).ok().map(|signature| {
+                        snippet_for_function_call(db, &id.name(db).to_string(db), signature)
+                    })
+                }
                 _ => None,
             };
 
             Some(CompletionItemOrderable {
                 item: CompletionItem {
                     label: last_segment.to_string(),
-                    insert_text: struct_initialization_text.clone(),
-                    insert_text_format: struct_initialization_text
-                        .map(|_| InsertTextFormat::SNIPPET),
+                    insert_text: maybe_snippet.clone(),
+                    insert_text_format: maybe_snippet.map(|_| InsertTextFormat::SNIPPET),
                     kind: Some(importable_completion_kind(*importable)),
                     label_details: Some(CompletionItemLabelDetails {
                         detail: None,

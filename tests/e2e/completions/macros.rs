@@ -41,6 +41,7 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "min"
+    insert_text = "min(${1:a}, ${2:b})"
     text_edits = ["""
     use core::cmp::min;
 
@@ -55,6 +56,7 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "panic"
+    insert_text = "panic(${1:data})"
 
     [[completions]]
     completion_label = "panic!"
@@ -66,6 +68,7 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "print_byte_array_as_string"
+    insert_text = "print_byte_array_as_string()"
     text_edits = ["""
     use core::debug::print_byte_array_as_string;
 
@@ -124,6 +127,7 @@ fn exp_inline_macro_in_let_statement() {
 
     [[completions]]
     completion_label = "a"
+    insert_text = "a()"
 
     [[completions]]
     completion_label = "array"
@@ -326,6 +330,7 @@ fn partially_typed_top_level_macro_after_items() {
 
     [[completions]]
     completion_label = "compute_keccak_byte_array"
+    insert_text = "compute_keccak_byte_array(${1:arr})"
     text_edits = ["""
     use core::keccak::compute_keccak_byte_array;
 
@@ -333,6 +338,7 @@ fn partially_typed_top_level_macro_after_items() {
 
     [[completions]]
     completion_label = "compute_sha256_byte_array"
+    insert_text = "compute_sha256_byte_array(${1:arr})"
     text_edits = ["""
     use core::sha256::compute_sha256_byte_array;
 
@@ -340,6 +346,7 @@ fn partially_typed_top_level_macro_after_items() {
 
     [[completions]]
     completion_label = "compute_sha256_u32_array"
+    insert_text = "compute_sha256_u32_array(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
     text_edits = ["""
     use core::sha256::compute_sha256_u32_array;
 
