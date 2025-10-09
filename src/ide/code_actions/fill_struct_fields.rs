@@ -11,7 +11,6 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::ast::{ExprStructCtorCall, StructArg};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::Upcast;
 use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, WorkspaceEdit};
 use tracing::error;
 
@@ -73,7 +72,7 @@ pub fn fill_struct_fields<'db>(
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr(db).into()).ok()?;
 
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
     let constructor_semantic = match semantic_db.expr_semantic(function_id, constructor_expr_id) {
         Expr::StructCtor(semantic) => semantic,
         _ => {

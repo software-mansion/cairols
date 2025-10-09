@@ -8,7 +8,6 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::ExprStructCtorCall;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
-use cairo_lang_utils::Upcast;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
@@ -58,7 +57,7 @@ fn struct_constructor_completions_ex<'db>(
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor.stable_ptr(db).into()).ok()?;
 
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
     let semantic_expr = semantic_db.expr_semantic(function_id, constructor_expr_id);
 
     let cairo_lang_semantic::Expr::StructCtor(constructor_semantic_expr) = semantic_expr else {
