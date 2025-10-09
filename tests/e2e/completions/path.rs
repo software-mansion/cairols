@@ -451,3 +451,61 @@ fn no_text_last_segment_in_function_context() {
     insert_text = "my_func()"
     "#);
 }
+
+#[test]
+fn simple_declarative_macro_completion() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    macro my_own_macro {
+        ($x:ident) => {
+            1
+        };
+    }
+
+    fn foo() {
+        let _a = my_own<caret>
+    }
+    ",@r#"
+    caret = """
+        let _a = my_own<caret>
+    """
+
+    [[completions]]
+    completion_label = "my_own_macro!"
+    completion_label_path = "my_own_macro"
+    insert_text = "my_own_macro!($1)"
+    "#);
+}
+
+#[test]
+fn declarative_macro_completion_without_explicit_path() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod my_mod {
+        pub macro my_own_macro {
+            ($x:ident) => {
+                1
+            };
+        }
+    }
+
+    fn foo() {
+        let _a = my_own<caret>
+    }
+    ",@r#"
+    caret = """
+        let _a = my_own<caret>
+    """
+
+    [[completions]]
+    completion_label = "my_mod"
+    completion_label_path = "my_mod"
+
+    [[completions]]
+    completion_label = "my_own_macro!"
+    completion_label_path = "my_mod::my_own_macro"
+    insert_text = "my_own_macro!($1)"
+    text_edits = ["""
+    use my_mod::my_own_macro;
+
+    """]
+    "#);
+}
