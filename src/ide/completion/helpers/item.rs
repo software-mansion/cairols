@@ -217,7 +217,7 @@ fn get_snippet_text_and_label(
     (snippet, label)
 }
 
-fn get_struct_initialization_completion_text<'db>(
+pub fn get_struct_initialization_completion_text<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     struct_node: ItemStruct<'db>,

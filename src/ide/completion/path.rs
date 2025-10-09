@@ -37,45 +37,35 @@ use crate::lang::visibility::peek_visible_in_with_edition;
 /// Treats provided path as suffix, proposing elements that can prefix this path.
 pub fn path_suffix_completions<'db>(
     db: &'db AnalysisDatabase,
-    ctx: &AnalysisContext<'db>,
+    ctx: &'db AnalysisContext<'db>,
     was_node_corrected: bool,
 ) -> Vec<ImportableCompletionItem<'db>> {
-    let (importables, typed_text) = if ctx.node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
-        && ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
-        && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
-        // Enum patterns are handled in a separate function.
-        && ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none()
-        && let Some(importables) = db.visible_importables_from_module(ctx.module_id)
-        && let Some(typed_text_segments) = ctx
-            .node
-            .ancestor_of_type::<ExprPath>(db)
-            .map(|path| path.segments(db).elements(db).collect_vec())
-        && !typed_text_segments.is_empty()
+    let importables = if let Some(importables) =
+        get_importables_for_path_suffix_completions(db, ctx, was_node_corrected)
     {
-        (importables, typed_text_segments)
+        importables
     } else {
         return Default::default();
     };
 
-    let (typed_text, last_typed_segment) = get_typed_text_and_last_segment(db, ctx);
-
-    if let (None, None) = (&typed_text, &last_typed_segment) {
-        return Default::default();
-    }
+    let (typed_text, last_typed_segment) = match get_typed_text_and_last_segment(db, ctx) {
+        (Some(typed_text), Some(last_typed_segment)) => (typed_text, last_typed_segment),
+        _ => return Default::default(),
+    };
 
     let current_crate = ctx.module_id.owning_crate(db);
 
     importables
         .iter()
-        .filter_map(|(importable, path_str): (&ImportableId<'db>, &String)| {
+        .filter_map(|(importable, path_str)| {
             ImportableCompletionItem::get_completion_item_for_importable(
                 db,
                 ctx,
                 importable,
                 current_crate,
                 path_str,
-                typed_text.clone().unwrap(),
-                last_typed_segment.unwrap(),
+                typed_text.clone(),
+                last_typed_segment,
             )
         })
         .unique_by(|completion| ImportableCompletionItemHashable(completion.clone()))
@@ -223,6 +213,21 @@ pub fn path_prefix_completions<'db>(
     })
 }
 
+fn get_importables_for_path_suffix_completions<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    was_node_corrected: bool,
+) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
+    if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
+        && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
+        && ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none()
+    {
+        db.visible_importables_from_module(ctx.module_id)
+    } else {
+        None
+    }
+}
+
 fn get_typed_text_and_last_segment<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
@@ -259,21 +264,6 @@ fn get_typed_text_and_last_segment<'db>(
     };
 
     (Some(typed_text_as_smol_str), Some(last_typed_segment))
-}
-
-fn get_importables_for_path_suffix_completions<'db>(
-    db: &'db AnalysisDatabase,
-    ctx: &AnalysisContext<'db>,
-    was_node_corrected: bool,
-) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
-    if ctx.node.ancestor_of_kind(db, SyntaxKind::Attribute).is_none()
-        && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
-        && ctx.node.ancestor_of_kind(db, SyntaxKind::PatternEnum).is_none()
-    {
-        db.visible_importables_from_module(ctx.module_id)
-    } else {
-        None
-    }
 }
 
 fn module_item_completion_detail<'db>(

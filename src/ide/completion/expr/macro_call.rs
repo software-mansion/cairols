@@ -105,6 +105,7 @@ pub fn top_level_inline_macro_completions<'db>(
             .into_iter()
             .filter(|name| text_matches(name, &typed))
             .map(snippet_completions_for_inline_plugins)
+            .chain(top_level_inline_macros)
             .collect()
     } else {
         Default::default()
