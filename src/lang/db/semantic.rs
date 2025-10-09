@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves};
 use cairo_lang_defs::ids::{
-    ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
+    ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId,
     FreeFunctionLongId, ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId,
-    ImplItemId, LanguageElementId, LookupItemId, MacroDeclarationLongId, ModuleFileId, ModuleId,
+    ImplItemId, LanguageElementId, LookupItemId, MacroDeclarationLongId, ModuleId,
     ModuleItemId, ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId,
     TraitImplLongId, TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
 };
@@ -89,12 +89,12 @@ pub trait LsSemanticGroup: Database {
         collect_lookup_items(self.as_dyn_database(), node).as_ref()
     }
 
-    /// Returns a [`ModuleFileId`] containing the node.
+    /// Returns a [`ModuleId`] containing the node.
     fn find_module_file_containing_node<'db>(
         &'db self,
         node: SyntaxNode<'db>,
-    ) -> Option<ModuleFileId<'db>> {
-        find_module_file_containing_node(self.as_dyn_database(), node)
+    ) -> Option<ModuleId<'db>> {
+        find_module_containing_node(self.as_dyn_database(), node)
     }
 
     /// Finds a [`ModuleId`] containing the node.
@@ -221,10 +221,10 @@ fn collect_lookup_items_leaf<'db>(
     db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Option<Vec<LookupItemId<'db>>> {
-    let module_file_id = db.find_module_file_containing_node(node)?;
+    let module_id = db.find_module_containing_node(node)?;
 
     node.ancestors_with_self(db)
-        .find_map(|node| lookup_item_from_ast(db, module_file_id, node).clone())
+        .find_map(|node| lookup_item_from_ast(db, module_id, node).clone())
 }
 
 #[salsa::tracked(returns(ref))]
@@ -261,38 +261,15 @@ fn collect_lookup_items<'db>(
     db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Option<Vec<LookupItemId<'db>>> {
-    let module_file_id = db.find_module_file_containing_node(node)?;
+    let module_id = db.find_module_containing_node(node)?;
 
     Some(
         node.ancestors_with_self(db)
-            .flat_map(|node| lookup_item_from_ast(db, module_file_id, node).unwrap_or_default())
+            .flat_map(|node| lookup_item_from_ast(db, module_id, node).unwrap_or_default())
             .collect(),
     )
 }
 
-#[salsa::tracked]
-fn find_module_file_containing_node<'db>(
-    db: &'db dyn Database,
-    node: SyntaxNode<'db>,
-) -> Option<ModuleFileId<'db>> {
-    let module_id = db.find_module_containing_node(node)?;
-    let file = node.stable_ptr(db).file_id(db);
-
-    let i = module_id
-        .module_data(db)
-        .map(|data| {
-            data.files(db)
-                .iter()
-                .enumerate()
-                .find(|(_, f)| **f == file)
-                .map(|(i, _)| i)
-                .unwrap_or_default()
-        })
-        .unwrap_or_default();
-
-    let file_index = FileIndex(i);
-    Some(ModuleFileId(module_id, file_index))
-}
 
 #[salsa::tracked]
 fn find_module_containing_node<'db>(
@@ -442,7 +419,7 @@ fn get_node_resultants<'db>(
 /// See [LookupItemId<'db>].
 fn lookup_item_from_ast<'db>(
     db: &'db dyn Database,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
     node: SyntaxNode<'db>,
 ) -> Option<Vec<LookupItemId<'db>>> {
     let syntax_db = db;
@@ -454,7 +431,7 @@ fn lookup_item_from_ast<'db>(
             if is_in_impl {
                 vec![LookupItemId::ImplItem(ImplItemId::Constant(
                     ImplConstantDefLongId(
-                        module_file_id,
+                        module_id,
                         ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(syntax_db),
                     )
                     .intern(db),
@@ -462,7 +439,7 @@ fn lookup_item_from_ast<'db>(
             } else {
                 vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
                     ConstantLongId(
-                        module_file_id,
+                        module_id,
                         ast::ItemConstant::from_syntax_node(db, node).stable_ptr(db),
                     )
                     .intern(db),
@@ -473,7 +450,7 @@ fn lookup_item_from_ast<'db>(
             if is_in_impl {
                 vec![LookupItemId::ImplItem(ImplItemId::Function(
                     ImplFunctionLongId(
-                        module_file_id,
+                        module_id,
                         ast::FunctionWithBody::from_syntax_node(db, node).stable_ptr(db),
                     )
                     .intern(db),
@@ -481,7 +458,7 @@ fn lookup_item_from_ast<'db>(
             } else {
                 vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
                     FreeFunctionLongId(
-                        module_file_id,
+                        module_id,
                         ast::FunctionWithBody::from_syntax_node(db, node).stable_ptr(db),
                     )
                     .intern(db),
@@ -491,7 +468,7 @@ fn lookup_item_from_ast<'db>(
         SyntaxKind::ItemExternFunction => {
             vec![LookupItemId::ModuleItem(ModuleItemId::ExternFunction(
                 ExternFunctionLongId(
-                    module_file_id,
+                    module_id,
                     ast::ItemExternFunction::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
@@ -499,7 +476,7 @@ fn lookup_item_from_ast<'db>(
         }
         SyntaxKind::ItemExternType => vec![LookupItemId::ModuleItem(ModuleItemId::ExternType(
             ExternTypeLongId(
-                module_file_id,
+                module_id,
                 ast::ItemExternType::from_syntax_node(db, node).stable_ptr(db),
             )
             .intern(db),
@@ -507,7 +484,7 @@ fn lookup_item_from_ast<'db>(
         SyntaxKind::ItemTrait => {
             vec![LookupItemId::ModuleItem(ModuleItemId::Trait(
                 TraitLongId(
-                    module_file_id,
+                    module_id,
                     ast::ItemTrait::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
@@ -516,7 +493,7 @@ fn lookup_item_from_ast<'db>(
         SyntaxKind::TraitItemConstant => {
             vec![LookupItemId::TraitItem(TraitItemId::Constant(
                 TraitConstantLongId(
-                    module_file_id,
+                    module_id,
                     ast::TraitItemConstant::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
@@ -525,7 +502,7 @@ fn lookup_item_from_ast<'db>(
         SyntaxKind::TraitItemFunction => {
             vec![LookupItemId::TraitItem(TraitItemId::Function(
                 TraitFunctionLongId(
-                    module_file_id,
+                    module_id,
                     ast::TraitItemFunction::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
@@ -534,7 +511,7 @@ fn lookup_item_from_ast<'db>(
         SyntaxKind::TraitItemImpl => {
             vec![LookupItemId::TraitItem(TraitItemId::Impl(
                 TraitImplLongId(
-                    module_file_id,
+                    module_id,
                     ast::TraitItemImpl::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
@@ -543,7 +520,7 @@ fn lookup_item_from_ast<'db>(
         SyntaxKind::TraitItemType => {
             vec![LookupItemId::TraitItem(TraitItemId::Type(
                 TraitTypeLongId(
-                    module_file_id,
+                    module_id,
                     ast::TraitItemType::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
@@ -552,7 +529,7 @@ fn lookup_item_from_ast<'db>(
         SyntaxKind::ItemImpl => {
             vec![LookupItemId::ModuleItem(ModuleItemId::Impl(
                 ImplDefLongId(
-                    module_file_id,
+                    module_id,
                     ast::ItemImpl::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
@@ -561,7 +538,7 @@ fn lookup_item_from_ast<'db>(
         SyntaxKind::ItemStruct => {
             vec![LookupItemId::ModuleItem(ModuleItemId::Struct(
                 StructLongId(
-                    module_file_id,
+                    module_id,
                     ast::ItemStruct::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
@@ -570,7 +547,7 @@ fn lookup_item_from_ast<'db>(
         SyntaxKind::ItemEnum => {
             vec![LookupItemId::ModuleItem(ModuleItemId::Enum(
                 EnumLongId(
-                    module_file_id,
+                    module_id,
                     ast::ItemEnum::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),
@@ -583,21 +560,21 @@ fn lookup_item_from_ast<'db>(
             get_all_path_leaves(db, &item_use)
                 .into_iter()
                 .map(|leaf| {
-                    let use_long_id = UseLongId(module_file_id, leaf.stable_ptr(syntax_db));
+                    let use_long_id = UseLongId(module_id, leaf.stable_ptr(syntax_db));
                     LookupItemId::ModuleItem(ModuleItemId::Use(use_long_id.intern(db)))
                 })
                 .collect()
         }
         SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
             ModuleTypeAliasLongId(
-                module_file_id,
+                module_id,
                 ast::ItemTypeAlias::from_syntax_node(db, node).stable_ptr(db),
             )
             .intern(db),
         ))],
         SyntaxKind::ItemImplAlias => vec![LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
             ImplAliasLongId(
-                module_file_id,
+                module_id,
                 ast::ItemImplAlias::from_syntax_node(db, node).stable_ptr(db),
             )
             .intern(db),
@@ -605,7 +582,7 @@ fn lookup_item_from_ast<'db>(
         SyntaxKind::ItemMacroDeclaration => {
             vec![LookupItemId::ModuleItem(ModuleItemId::MacroDeclaration(
                 MacroDeclarationLongId(
-                    module_file_id,
+                    module_id,
                     ast::ItemMacroDeclaration::from_syntax_node(db, node).stable_ptr(db),
                 )
                 .intern(db),

@@ -71,7 +71,7 @@ pub fn path_suffix_completions<'db>(
         typed_text.pop().expect("typed path should not be empty")
     };
 
-    let current_crate = ctx.module_file_id.0.owning_crate(db);
+    let current_crate = ctx.module_file_id.owning_crate(db);
 
     let mut completions: Vec<CompletionItemOrderable> = importables
         .iter()
@@ -182,7 +182,7 @@ pub fn path_prefix_completions<'db>(
         .resolve_concrete_path(&mut diagnostics, segments, NotFoundItemType::Identifier)
         .ok()?;
 
-    let current_crate = ctx.module_file_id.0.owning_crate(db);
+    let current_crate = ctx.module_file_id.owning_crate(db);
 
     Some(match item {
         ResolvedConcreteItem::Module(module_id) => module_id
