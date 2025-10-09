@@ -377,6 +377,47 @@ fn duplicated_completion_without_explicit_path() {
     "#);
 }
 
+// FIXME(#957)
+#[test]
+fn no_text_in_function_context() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    struct MyStruct {}
+
+    fn a() {
+        <caret>
+    }
+    ",@r#"
+    caret = """
+        <caret>
+    """
+    completions = []
+    "#);
+}
+
+#[test]
+fn no_text_last_segment_in_function_context() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod my_mod {
+       pub const MY_CONST: u8 = 5;
+       pub fn my_func() {}
+    }
+
+    fn a() {
+        my_mod::<caret>
+    }
+    ",@r#"
+    caret = """
+        my_mod::<caret>
+    """
+
+    [[completions]]
+    completion_label = "MY_CONST"
+
+    [[completions]]
+    completion_label = "my_func"
+    "#);
+}
+
 #[test]
 fn simple_declarative_macro_completion() {
     test_transform_plain!(Completion, completion_fixture(), "
