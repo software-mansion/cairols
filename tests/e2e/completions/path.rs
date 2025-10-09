@@ -20,6 +20,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "BitAnd"
+    completion_label_path = "core::traits::BitAnd"
     text_edits = ["""
     use core::traits::BitAnd;
 
@@ -27,13 +28,16 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteA_ActuallyNotByteArray"
+    completion_label_path = "ByteA_ActuallyNotByteArray"
     insert_text = "ByteA_ActuallyNotByteArray {}"
 
     [[completions]]
     completion_label = "ByteArray"
+    completion_label_path = "ByteArray"
 
     [[completions]]
     completion_label = "ByteArrayImpl"
+    completion_label_path = "core::byte_array::ByteArrayImpl"
     text_edits = ["""
     use core::byte_array::ByteArrayImpl;
 
@@ -41,6 +45,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteArrayIter"
+    completion_label_path = "core::byte_array::ByteArrayIter"
     text_edits = ["""
     use core::byte_array::ByteArrayIter;
 
@@ -48,9 +53,11 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteArrayTrait"
+    completion_label_path = "ByteArrayTrait"
 
     [[completions]]
     completion_label = "Bytes31Impl"
+    completion_label_path = "core::bytes_31::Bytes31Impl"
     text_edits = ["""
     use core::bytes_31::Bytes31Impl;
 
@@ -58,9 +65,11 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "Bytes31Trait"
+    completion_label_path = "Bytes31Trait"
 
     [[completions]]
     completion_label = "System"
+    completion_label_path = "System"
     "#);
 }
 
@@ -82,6 +91,7 @@ fn multi_segment_path() {
 
     [[completions]]
     completion_label = "Baz"
+    completion_label_path = "foo::Baz"
     insert_text = "Baz {}"
     "#);
 }
@@ -106,6 +116,7 @@ fn multi_segment_path_partial() {
 
     [[completions]]
     completion_label = "Baz"
+    completion_label_path = "foo::bar::Baz"
     insert_text = "Baz {}"
     text_edits = ["""
     use foo::bar;
@@ -135,6 +146,7 @@ fn multi_segment_path_partial_macro() {
 
     [[completions]]
     completion_label = "Baz"
+    completion_label_path = "foo::bar::Baz"
     insert_text = "Baz {}"
     text_edits = ["""
     use foo::bar;
@@ -161,9 +173,11 @@ fn enum_variant() {
 
     [[completions]]
     completion_label = "A"
+    completion_label_path = "Enumik::A"
 
     [[completions]]
     completion_label = "B"
+    completion_label_path = "Enumik::B"
     "#);
 }
 
@@ -185,9 +199,11 @@ fn type_annotation() {
 
     [[completions]]
     completion_label = "felt"
+    completion_label_path = "module::felt"
 
     [[completions]]
     completion_label = "int"
+    completion_label_path = "module::int"
     "#);
 }
 
@@ -216,15 +232,19 @@ fn type_annotation_with_dangling_path() {
 
     [[completions]]
     completion_label = "CONST"
+    completion_label_path = "module::CONST"
 
     [[completions]]
     completion_label = "felt"
+    completion_label_path = "module::felt"
 
     [[completions]]
     completion_label = "int"
+    completion_label_path = "module::int"
 
     [[completions]]
     completion_label = "nested_module"
+    completion_label_path = "module::nested_module"
     "#);
 }
 
@@ -247,9 +267,11 @@ fn type_annotation_with_trivia() {
 
     [[completions]]
     completion_label = "felt"
+    completion_label_path = "module::felt"
 
     [[completions]]
     completion_label = "int"
+    completion_label_path = "module::int"
     "#);
 }
 
@@ -271,9 +293,11 @@ fn generic_parameter() {
 
     [[completions]]
     completion_label = "felt"
+    completion_label_path = "module::felt"
 
     [[completions]]
     completion_label = "int"
+    completion_label_path = "module::int"
     "#);
 }
 
@@ -296,9 +320,11 @@ fn generic_parameter_with_trivia() {
 
     [[completions]]
     completion_label = "felt"
+    completion_label_path = "module::felt"
 
     [[completions]]
     completion_label = "int"
+    completion_label_path = "module::int"
     "#);
 }
 
@@ -313,6 +339,7 @@ fn function_implicit_parameter() {
 
     [[completions]]
     completion_label = "RangeCheck"
+    completion_label_path = "core::RangeCheck"
     "#);
 }
 
@@ -333,6 +360,7 @@ fn simple_completion_without_explicit_path() {
 
     [[completions]]
     completion_label = "xyz"
+    completion_label_path = "a::xyz"
     text_edits = ["""
     use a::xyz;
 
@@ -412,8 +440,10 @@ fn no_text_last_segment_in_function_context() {
 
     [[completions]]
     completion_label = "MY_CONST"
+    completion_label_path = "my_mod::MY_CONST"
 
     [[completions]]
     completion_label = "my_func"
+    completion_label_path = "my_mod::my_func"
     "#);
 }

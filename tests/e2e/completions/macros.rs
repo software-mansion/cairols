@@ -17,9 +17,11 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "Option"
+    completion_label_path = "Option"
 
     [[completions]]
     completion_label = "WrappingAdd"
+    completion_label_path = "core::num::traits::WrappingAdd"
     text_edits = ["""
     use core::num::traits::WrappingAdd;
 
@@ -27,6 +29,7 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "WrappingMul"
+    completion_label_path = "core::num::traits::WrappingMul"
     text_edits = ["""
     use core::num::traits::WrappingMul;
 
@@ -34,6 +37,7 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "WrappingSub"
+    completion_label_path = "core::num::traits::WrappingSub"
     text_edits = ["""
     use core::num::traits::WrappingSub;
 
@@ -41,6 +45,7 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "min"
+    completion_label_path = "core::cmp::min"
     text_edits = ["""
     use core::cmp::min;
 
@@ -48,6 +53,7 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "option"
+    completion_label_path = "core::option"
     text_edits = ["""
     use core::option;
 
@@ -55,6 +61,7 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "panic"
+    completion_label_path = "panic"
 
     [[completions]]
     completion_label = "panic!"
@@ -66,6 +73,7 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "print_byte_array_as_string"
+    completion_label_path = "core::debug::print_byte_array_as_string"
     text_edits = ["""
     use core::debug::print_byte_array_as_string;
 
@@ -77,6 +85,7 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "string"
+    completion_label_path = "core::string"
     text_edits = ["""
     use core::string;
 
@@ -84,6 +93,7 @@ fn exp_inline_macro() {
 
     [[completions]]
     completion_label = "wrapping"
+    completion_label_path = "core::num::traits::ops::wrapping"
     text_edits = ["""
     use core::num::traits::ops::wrapping;
 
@@ -106,9 +116,11 @@ fn exp_inline_macro_in_let_statement() {
 
     [[completions]]
     completion_label = "Array"
+    completion_label_path = "Array"
 
     [[completions]]
     completion_label = "ArrayTrait"
+    completion_label_path = "ArrayTrait"
 
     [[completions]]
     completion_label = "Err"
@@ -124,9 +136,11 @@ fn exp_inline_macro_in_let_statement() {
 
     [[completions]]
     completion_label = "a"
+    completion_label_path = "a"
 
     [[completions]]
     completion_label = "array"
+    completion_label_path = "core::array"
     text_edits = ["""
     use core::array;
 
@@ -138,6 +152,7 @@ fn exp_inline_macro_in_let_statement() {
 
     [[completions]]
     completion_label = "metaprogramming"
+    completion_label_path = "core::metaprogramming"
     text_edits = ["""
     use core::metaprogramming;
 
@@ -315,6 +330,7 @@ fn partially_typed_top_level_macro_after_items() {
 
     [[completions]]
     completion_label = "cmp"
+    completion_label_path = "core::cmp"
     text_edits = ["""
     use core::cmp;
 
@@ -326,6 +342,7 @@ fn partially_typed_top_level_macro_after_items() {
 
     [[completions]]
     completion_label = "compute_keccak_byte_array"
+    completion_label_path = "core::keccak::compute_keccak_byte_array"
     text_edits = ["""
     use core::keccak::compute_keccak_byte_array;
 
@@ -333,6 +350,7 @@ fn partially_typed_top_level_macro_after_items() {
 
     [[completions]]
     completion_label = "compute_sha256_byte_array"
+    completion_label_path = "core::sha256::compute_sha256_byte_array"
     text_edits = ["""
     use core::sha256::compute_sha256_byte_array;
 
@@ -340,6 +358,7 @@ fn partially_typed_top_level_macro_after_items() {
 
     [[completions]]
     completion_label = "compute_sha256_u32_array"
+    completion_label_path = "core::sha256::compute_sha256_u32_array"
     text_edits = ["""
     use core::sha256::compute_sha256_u32_array;
 
@@ -347,5 +366,6 @@ fn partially_typed_top_level_macro_after_items() {
 
     [[completions]]
     completion_label = "core"
+    completion_label_path = "core"
     "#);
 }

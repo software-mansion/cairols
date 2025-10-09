@@ -70,7 +70,7 @@ pub fn path_suffix_completions<'db>(
 
     let current_crate = ctx.module_file_id.0.owning_crate(db);
 
-    let mut completions: Vec<CompletionItemOrderable> = importables
+    importables
         .iter()
         .filter_map(|(importable, path_str)| {
             let mut path_segments: Vec<_> = path_str.split("::").collect();
@@ -143,17 +143,7 @@ pub fn path_suffix_completions<'db>(
             })
         })
         .unique_by(|completion| CompletionItemHashable(completion.clone()))
-        .collect();
-
-    // Remove path label_details from all completions, that are NOT duplicated.
-    let label_counts = completions.iter().map(|item| item.item.label.clone()).counts();
-    for completion in &mut completions {
-        if label_counts[&completion.item.label] == 1 {
-            completion.item.label_details = None;
-        }
-    }
-
-    completions
+        .collect()
 }
 
 /// Treats provided path as prefix, proposing elements that should go next.

@@ -29,6 +29,7 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "blake"
+    completion_label_path = "core::blake"
     text_edits = ["""
     use core::blake;
 
@@ -36,6 +37,7 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "blake2s_compress"
+    completion_label_path = "core::blake::blake2s_compress"
     text_edits = ["""
     use core::blake::blake2s_compress;
 
@@ -43,6 +45,7 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "blake2s_finalize"
+    completion_label_path = "core::blake::blake2s_finalize"
     text_edits = ["""
     use core::blake::blake2s_finalize;
 
@@ -50,6 +53,7 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "byte_array"
+    completion_label_path = "core::byte_array"
     text_edits = ["""
     use core::byte_array;
 
@@ -57,6 +61,7 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "library_call_syscall"
+    completion_label_path = "starknet::syscalls::library_call_syscall"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;
 
@@ -89,6 +94,7 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "blake"
+    completion_label_path = "core::blake"
     text_edits = ["""
     use core::blake;
 
@@ -96,6 +102,7 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "blake2s_compress"
+    completion_label_path = "core::blake::blake2s_compress"
     text_edits = ["""
     use core::blake::blake2s_compress;
 
@@ -103,6 +110,7 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "blake2s_finalize"
+    completion_label_path = "core::blake::blake2s_finalize"
     text_edits = ["""
     use core::blake::blake2s_finalize;
 
@@ -110,6 +118,7 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "byte_array"
+    completion_label_path = "core::byte_array"
     text_edits = ["""
     use core::byte_array;
 
@@ -117,6 +126,7 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "library_call_syscall"
+    completion_label_path = "starknet::syscalls::library_call_syscall"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;
 
@@ -145,6 +155,7 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "blake"
+    completion_label_path = "core::blake"
     text_edits = ["""
     use core::blake;
 
@@ -152,6 +163,7 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "blake2s_compress"
+    completion_label_path = "core::blake::blake2s_compress"
     text_edits = ["""
     use core::blake::blake2s_compress;
 
@@ -159,6 +171,7 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "blake2s_finalize"
+    completion_label_path = "core::blake::blake2s_finalize"
     text_edits = ["""
     use core::blake::blake2s_finalize;
 
@@ -166,6 +179,7 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "byte_array"
+    completion_label_path = "core::byte_array"
     text_edits = ["""
     use core::byte_array;
 
@@ -173,6 +187,7 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "library_call_syscall"
+    completion_label_path = "starknet::syscalls::library_call_syscall"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;
 
@@ -193,6 +208,7 @@ fn disallow_recursive_definition() {
 
     [[completions]]
     completion_label = "OverflowingAdd"
+    completion_label_path = "core::num::traits::OverflowingAdd"
     text_edits = ["""
     use core::num::traits::OverflowingAdd;
 
@@ -200,6 +216,7 @@ fn disallow_recursive_definition() {
 
     [[completions]]
     completion_label = "OverflowingMul"
+    completion_label_path = "core::num::traits::OverflowingMul"
     text_edits = ["""
     use core::num::traits::OverflowingMul;
 
@@ -207,6 +224,7 @@ fn disallow_recursive_definition() {
 
     [[completions]]
     completion_label = "OverflowingSub"
+    completion_label_path = "core::num::traits::OverflowingSub"
     text_edits = ["""
     use core::num::traits::OverflowingSub;
 
@@ -248,9 +266,11 @@ fn work_with_params() {
 
     [[completions]]
     completion_label = "a"
+    completion_label_path = "a"
 
     [[completions]]
     completion_label = "max"
+    completion_label_path = "core::cmp::max"
     text_edits = ["""
     use core::cmp::max;
 
@@ -258,6 +278,7 @@ fn work_with_params() {
 
     [[completions]]
     completion_label = "panic"
+    completion_label_path = "panic"
 
     [[completions]]
     completion_label = "panic!"
@@ -294,6 +315,7 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "blake"
+    completion_label_path = "core::blake"
     text_edits = ["""
     use core::blake;
 
@@ -301,6 +323,7 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "blake2s_compress"
+    completion_label_path = "core::blake::blake2s_compress"
     text_edits = ["""
     use core::blake::blake2s_compress;
 
@@ -308,6 +331,7 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "blake2s_finalize"
+    completion_label_path = "core::blake::blake2s_finalize"
     text_edits = ["""
     use core::blake::blake2s_finalize;
 
@@ -315,6 +339,7 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "byte_array"
+    completion_label_path = "core::byte_array"
     text_edits = ["""
     use core::byte_array;
 
@@ -322,6 +347,7 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "library_call_syscall"
+    completion_label_path = "starknet::syscalls::library_call_syscall"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;
 
