@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::hash::Hash;
 
+use cairo_lang_defs::ids::ImportableId;
 use lsp_types::CompletionItem;
 use serde::Serialize;
 
@@ -25,6 +26,12 @@ pub fn get_item_relevance(
         (false, false, false) => CompletionRelevance::Low,
         _ => CompletionRelevance::Lowest,
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ImportableCompletionItem<'a> {
+    pub item: CompletionItemOrderable,
+    pub importable_id: ImportableId<'a>,
 }
 
 /// Internal representation of a [`CompletionItem`].
@@ -66,5 +73,16 @@ impl Eq for CompletionItemHashable {}
 impl Hash for CompletionItemHashable {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         serde_json::to_string(&self.0).expect("serialization should not fail").hash(state);
+    }
+}
+
+#[derive(PartialEq)]
+pub struct ImportableCompletionItemHashable<'a>(pub ImportableCompletionItem<'a>);
+
+impl Eq for ImportableCompletionItemHashable<'_> {}
+
+impl Hash for ImportableCompletionItemHashable<'_> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        serde_json::to_string(&self.0.item).expect("serialization should not fail").hash(state);
     }
 }
