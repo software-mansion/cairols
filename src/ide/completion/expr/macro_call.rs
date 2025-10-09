@@ -1,4 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_plugins::plugins::CompileErrorPlugin;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
@@ -16,6 +17,7 @@ use lsp_types::{CompletionItem, InsertTextFormat};
 
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use crate::ide::completion::path::path_suffix_completions;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
@@ -54,6 +56,7 @@ pub fn expr_inline_macro_completions<'db>(
 pub fn top_level_inline_macro_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
+    was_node_corrected: bool,
 ) -> Vec<CompletionItemOrderable> {
     // Covers the case when we are not in any module item:
     //
@@ -88,6 +91,15 @@ pub fn top_level_inline_macro_completions<'db>(
         let available_top_level_inline_macros = available_top_level_inline_macro(db, ctx);
 
         let typed = path_segment.ident(db).token(db).text(db).to_string(db);
+
+        let top_level_inline_macros =
+            path_suffix_completions(db, ctx, was_node_corrected).into_iter().filter_map(|item| {
+                if let ImportableId::MacroDeclaration(_) = item.importable_id {
+                    Some(item.item)
+                } else {
+                    None
+                }
+            });
 
         available_top_level_inline_macros
             .into_iter()
