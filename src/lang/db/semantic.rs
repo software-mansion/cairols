@@ -3,11 +3,11 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves};
 use cairo_lang_defs::ids::{
-    ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId,
-    FreeFunctionLongId, ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId,
-    ImplItemId, LanguageElementId, LookupItemId, MacroDeclarationLongId, ModuleId,
-    ModuleItemId, ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId,
-    TraitImplLongId, TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
+    ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FreeFunctionLongId,
+    ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId, ImplItemId,
+    LanguageElementId, LookupItemId, MacroDeclarationLongId, ModuleId, ModuleItemId,
+    ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
+    TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
 };
 use cairo_lang_filesystem::db::{ext_as_virtual, get_parent_and_mapping, translate_location};
 use cairo_lang_filesystem::ids::{CodeOrigin, FileId, FileLongId};
@@ -223,8 +223,7 @@ fn collect_lookup_items_leaf<'db>(
 ) -> Option<Vec<LookupItemId<'db>>> {
     let module_id = db.find_module_containing_node(node)?;
 
-    node.ancestors_with_self(db)
-        .find_map(|node| lookup_item_from_ast(db, module_id, node).clone())
+    node.ancestors_with_self(db).find_map(|node| lookup_item_from_ast(db, module_id, node).clone())
 }
 
 #[salsa::tracked(returns(ref))]
@@ -269,7 +268,6 @@ fn collect_lookup_items<'db>(
             .collect(),
     )
 }
-
 
 #[salsa::tracked]
 fn find_module_containing_node<'db>(
@@ -483,11 +481,8 @@ fn lookup_item_from_ast<'db>(
         ))],
         SyntaxKind::ItemTrait => {
             vec![LookupItemId::ModuleItem(ModuleItemId::Trait(
-                TraitLongId(
-                    module_id,
-                    ast::ItemTrait::from_syntax_node(db, node).stable_ptr(db),
-                )
-                .intern(db),
+                TraitLongId(module_id, ast::ItemTrait::from_syntax_node(db, node).stable_ptr(db))
+                    .intern(db),
             ))]
         }
         SyntaxKind::TraitItemConstant => {
@@ -528,29 +523,20 @@ fn lookup_item_from_ast<'db>(
         }
         SyntaxKind::ItemImpl => {
             vec![LookupItemId::ModuleItem(ModuleItemId::Impl(
-                ImplDefLongId(
-                    module_id,
-                    ast::ItemImpl::from_syntax_node(db, node).stable_ptr(db),
-                )
-                .intern(db),
+                ImplDefLongId(module_id, ast::ItemImpl::from_syntax_node(db, node).stable_ptr(db))
+                    .intern(db),
             ))]
         }
         SyntaxKind::ItemStruct => {
             vec![LookupItemId::ModuleItem(ModuleItemId::Struct(
-                StructLongId(
-                    module_id,
-                    ast::ItemStruct::from_syntax_node(db, node).stable_ptr(db),
-                )
-                .intern(db),
+                StructLongId(module_id, ast::ItemStruct::from_syntax_node(db, node).stable_ptr(db))
+                    .intern(db),
             ))]
         }
         SyntaxKind::ItemEnum => {
             vec![LookupItemId::ModuleItem(ModuleItemId::Enum(
-                EnumLongId(
-                    module_id,
-                    ast::ItemEnum::from_syntax_node(db, node).stable_ptr(db),
-                )
-                .intern(db),
+                EnumLongId(module_id, ast::ItemEnum::from_syntax_node(db, node).stable_ptr(db))
+                    .intern(db),
             ))]
         }
         SyntaxKind::ItemUse => {
