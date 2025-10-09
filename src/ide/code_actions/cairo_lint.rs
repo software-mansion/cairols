@@ -1,3 +1,4 @@
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::{
@@ -25,7 +26,7 @@ pub fn cairo_lint<'db>(
         tool_metadata: get_linter_tool_metadata(db, ctx, config_registry),
     };
 
-    let module_id = ctx.module_file_id.0;
+    let module_id = ctx.module_file_id;
 
     // We collect the semantic diagnostics, as the unused imports diagnostics (which come from the semantic diags),
     // can be fixed with the linter.
@@ -89,9 +90,9 @@ fn get_linter_tool_metadata<'db>(
     ctx: &AnalysisContext<'db>,
     config_registry: &ConfigsRegistry,
 ) -> CairoLintToolMetadata {
-    if let Ok(module_file_id) = ctx.module_file_id.file_id(db)
+    if let Ok(module_file_id) = db.module_main_file(ctx.module_file_id)
         && let FileLongId::OnDisk(file_id) = module_file_id.long(db)
-        && let Some(file_config) = config_registry.config_for_file(file_id)
+        && let Some(file_config) = config_registry.config_for_file(&file_id)
     {
         file_config.lint.clone()
     } else {

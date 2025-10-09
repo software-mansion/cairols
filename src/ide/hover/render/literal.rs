@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::Intern;
 use indoc::formatdoc;
 
 use crate::ide::format::types::format_type;
@@ -74,7 +74,7 @@ fn find_type_in_function_context<'db>(
 ) -> Option<TypeId<'db>> {
     let expr = Expr::from_syntax_node(db, node);
     let expr_id = db.lookup_expr_by_ptr(function_id, expr.stable_ptr(db)).ok()?;
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
     let type_id = semantic_db.expr_semantic(function_id, expr_id).ty();
 
     Some(type_id)

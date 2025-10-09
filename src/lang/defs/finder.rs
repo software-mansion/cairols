@@ -35,7 +35,7 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::Intern;
 use itertools::Itertools;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
@@ -385,7 +385,7 @@ fn try_member_from_constructor<'db>(
     let constructor_expr = identifier_node.ancestor_of_type::<ast::ExprStructCtorCall>(db)?;
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr(db).into()).ok()?;
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
 
     let Expr::StructCtor(constructor_expr_semantic) =
         semantic_db.expr_semantic(function_id, constructor_expr_id)
@@ -419,7 +419,7 @@ fn try_member<'db>(
 
     let expr_id =
         db.lookup_expr_by_ptr(function_with_body, binary_expr.stable_ptr(db).into()).ok()?;
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
     let semantic_expr = semantic_db.expr_semantic(function_with_body, expr_id);
 
     // Desnap the binary expression to the member access expression.
@@ -521,7 +521,7 @@ fn try_variable_declaration<'db>(
         {
             let expr_id =
                 db.lookup_expr_by_ptr(function_id, expr_closure_ast.stable_ptr(db).into()).ok()?;
-            let semantic_db: &dyn SemanticGroup = db.upcast();
+            let semantic_db: &dyn SemanticGroup = db;
 
             let Expr::ExprClosure(expr_closure_semantic) =
                 semantic_db.expr_semantic(function_id, expr_id)
@@ -546,7 +546,7 @@ fn try_variable_declaration<'db>(
     // Look at identifier patterns in the function body.
     if let Some(pattern_ast) = identifier.as_syntax_node().ancestor_of_type::<ast::Pattern>(db) {
         let pattern_id = db.lookup_pattern_by_ptr(function_id, pattern_ast.stable_ptr(db)).ok()?;
-        let semantic_db: &dyn SemanticGroup = db.upcast();
+        let semantic_db: &dyn SemanticGroup = db;
         let pattern = semantic_db.pattern_semantic(function_id, pattern_id);
         let pattern_variable = pattern
             .variables(&QueryPatternVariablesFromDb(db, function_id))

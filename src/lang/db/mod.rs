@@ -9,9 +9,8 @@ use cairo_lang_executable_plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{FilesGroup, files_group_input, init_files_group};
 use cairo_lang_filesystem::ids::{CrateInput, CrateLongId};
-use cairo_lang_lowering::db::{LoweringGroup, init_lowering_group};
+use cairo_lang_lowering::db::init_lowering_group;
 use cairo_lang_lowering::utils::InliningStrategy;
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::db::{
     PluginSuiteInput, SemanticGroup, init_semantic_group, semantic_group_input,
@@ -20,12 +19,9 @@ use cairo_lang_semantic::ids::AnalyzerPluginLongId;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_starknet::starknet_plugin_suite;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::Intern;
-use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lint::LinterGroup;
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
 use itertools::Itertools;
 use salsa::{Database, Durability, Setter};
@@ -276,50 +272,3 @@ impl AnalysisDatabase {
 }
 
 impl salsa::Database for AnalysisDatabase {}
-
-impl<'db> Upcast<'db, dyn FilesGroup> for AnalysisDatabase {
-    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn salsa::Database> for AnalysisDatabase {
-    fn upcast(&self) -> &(dyn salsa::Database + 'static) {
-        self
-    }
-}
-
-impl<'db> Upcast<'db, dyn SyntaxGroup> for AnalysisDatabase {
-    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
-        self
-    }
-}
-
-impl<'db> Upcast<'db, dyn DefsGroup> for AnalysisDatabase {
-    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
-        self
-    }
-}
-
-impl<'db> Upcast<'db, dyn SemanticGroup> for AnalysisDatabase {
-    fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
-        self
-    }
-}
-
-impl<'db> Upcast<'db, dyn LoweringGroup> for AnalysisDatabase {
-    fn upcast(&self) -> &(dyn LoweringGroup + 'static) {
-        self
-    }
-}
-
-impl<'db> Upcast<'db, dyn ParserGroup> for AnalysisDatabase {
-    fn upcast(&self) -> &(dyn ParserGroup + 'static) {
-        self
-    }
-}
-
-impl<'db> Upcast<'db, dyn LinterGroup> for AnalysisDatabase {
-    fn upcast(&self) -> &(dyn LinterGroup + 'static) {
-        self
-    }
-}

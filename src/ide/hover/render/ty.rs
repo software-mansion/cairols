@@ -12,7 +12,7 @@ use cairo_lang_syntax::node::{
     TypedSyntaxNode,
     ast::{ExprPath, PathSegment, Pattern, TerminalUnderscore},
 };
-use cairo_lang_utils::{Upcast, ordered_hash_map::OrderedHashMap};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
 use super::super::super::markdown::fenced_code_block;
@@ -48,7 +48,7 @@ fn pattern<'db>(
         .lookup_pattern_by_ptr(function_id, Pattern::Underscore(underscore).stable_ptr(db))
         .ok()?;
 
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
     Some(format_type(
         db,
         semantic_db.pattern_semantic(function_id, pattern_id).ty(),
