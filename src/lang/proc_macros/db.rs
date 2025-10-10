@@ -45,10 +45,15 @@ pub trait ProcMacroGroup: Database {
     }
 
     fn reset_proc_macro_resolutions(&mut self) {
-        let db = self.as_dyn_database_mut();
-        proc_macro_input(db).set_attribute_macro_resolution(db).to(Default::default());
-        proc_macro_input(db).set_derive_macro_resolution(db).to(Default::default());
-        proc_macro_input(db).set_inline_macro_resolution(db).to(Default::default());
+        proc_macro_input(self.as_dyn_database())
+            .set_attribute_macro_resolution(self)
+            .to(Default::default());
+        proc_macro_input(self.as_dyn_database())
+            .set_derive_macro_resolution(self)
+            .to(Default::default());
+        proc_macro_input(self.as_dyn_database())
+            .set_inline_macro_resolution(self)
+            .to(Default::default());
     }
 }
 

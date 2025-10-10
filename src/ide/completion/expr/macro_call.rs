@@ -35,7 +35,7 @@ pub fn expr_inline_macro_completions<'db>(
         && let [PathSegment::Simple(path_segment)] =
         path.segments(db).elements(db).take(2).collect_vec().as_slice()
     {
-        let crate_id = ctx.module_file_id.0.owning_crate(db);
+        let crate_id = ctx.module_id.owning_crate(db);
 
         let inline_plugins = db.crate_inline_macro_plugins(crate_id);
 
@@ -103,7 +103,7 @@ fn available_top_level_inline_macro(
     db: &AnalysisDatabase,
     ctx: &AnalysisContext,
 ) -> Vec<&'static str> {
-    let crate_id = ctx.module_file_id.0.owning_crate(db);
+    let crate_id = ctx.module_id.owning_crate(db);
     let macro_plugins = db.crate_macro_plugins(crate_id);
 
     let starknet_plugin_present = macro_plugins

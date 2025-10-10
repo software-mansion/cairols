@@ -2,7 +2,6 @@ use std::ops::Not;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::FreeFunctionLongId;
-use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_defs::ids::SubmoduleLongId;
@@ -52,13 +51,12 @@ impl CodeLensInterface for TestCodeLens {
                 let module_item = resultant
                     .ancestors_with_self(db)
                     .find_map(|node| ModuleItem::cast(db, node))?;
-                let module_file_id =
-                    db.find_module_file_containing_node(module_item.as_syntax_node())?;
-                let path = TestFullQualifiedPath::new(db, module_item, module_file_id)?;
+                let module_id = db.find_module_containing_node(module_item.as_syntax_node())?;
+                let path = TestFullQualifiedPath::new(db, module_item, module_id)?;
 
                 // Find resultant that produced this codelens earlier by comparing full paths
                 (sanitize_test_case_name(path.as_ref()) == self.full_path)
-                    .then_some((path, module_file_id.0))
+                    .then_some((path, module_id))
             })?;
 
         let command = state.config.test_runner.command(
@@ -186,13 +184,12 @@ impl TestFullQualifiedPath {
     pub fn new(
         db: &AnalysisDatabase,
         module_item: ModuleItem,
-        module_file_id: ModuleFileId,
+        module_id: ModuleId,
     ) -> Option<Self> {
         match module_item {
             ModuleItem::FreeFunction(function_with_body) => {
                 let path = ModuleItemId::FreeFunction(
-                    FreeFunctionLongId(module_file_id, function_with_body.stable_ptr(db))
-                        .intern(db),
+                    FreeFunctionLongId(module_id, function_with_body.stable_ptr(db)).intern(db),
                 )
                 .full_path(db);
 
@@ -200,7 +197,7 @@ impl TestFullQualifiedPath {
             }
             ModuleItem::Module(item_module) => {
                 let path = ModuleItemId::Submodule(
-                    SubmoduleLongId(module_file_id, item_module.stable_ptr(db)).intern(db),
+                    SubmoduleLongId(module_id, item_module.stable_ptr(db)).intern(db),
                 )
                 .full_path(db);
 

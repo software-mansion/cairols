@@ -35,7 +35,7 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::Intern;
 use itertools::Itertools;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
@@ -135,9 +135,8 @@ fn try_trait_or_impl_item_with_self_reference<'db>(
     }
 
     lookup_items.iter().find_map(|item| {
-        let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
-        let mut resolver =
-            Resolver::new(db, module_file_id, InferenceId::LookupItemDeclaration(*item));
+        let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
+        let mut resolver = Resolver::new(db, module_id, InferenceId::LookupItemDeclaration(*item));
 
         let trait_or_impl_ctx = match item {
             LookupItemId::ModuleItem(_) => None,
@@ -214,15 +213,12 @@ fn try_impl_item_usages<'db>(
         return None;
     }
 
-    let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
+    let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
 
     let try_find_impl_id = || {
         for &lookup_item_id in lookup_items {
-            let mut resolver = Resolver::new(
-                db,
-                module_file_id,
-                InferenceId::LookupItemDeclaration(lookup_item_id),
-            );
+            let mut resolver =
+                Resolver::new(db, module_id, InferenceId::LookupItemDeclaration(lookup_item_id));
 
             let diags = &mut SemanticDiagnostics::default();
             if let Ok(ResolvedConcreteItem::Impl(impl_id)) = resolver.resolve_concrete_path(
@@ -286,9 +282,8 @@ fn try_top_level_declarative_inline_macro<'db>(
     if let Some(item_macro_call) =
         identifier.as_syntax_node().ancestor_of_type::<ast::ItemInlineMacro>(db)
     {
-        let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
-        let macro_call_id =
-            MacroCallLongId(module_file_id, item_macro_call.stable_ptr(db)).intern(db);
+        let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
+        let macro_call_id = MacroCallLongId(module_id, item_macro_call.stable_ptr(db)).intern(db);
 
         resolve_macro_call_module(db, macro_call_id)
     } else {
@@ -305,7 +300,7 @@ fn try_impl_items<'db>(
         return None;
     };
     let long_id = ImplDefLongId(
-        db.find_module_file_containing_node(identifier.as_syntax_node())?,
+        db.find_module_containing_node(identifier.as_syntax_node())?,
         item_impl.stable_ptr(db),
     )
     .intern(db);
@@ -365,10 +360,8 @@ fn try_submodule_name<'db>(
         .as_syntax_node()
         .parent_of_type::<ast::ItemModule>(db)
         .filter(|item_module| item_module.name(db) == *identifier)?;
-    let containing_module_file_id =
-        db.find_module_file_containing_node(item_module.as_syntax_node())?;
-    let submodule_id =
-        SubmoduleLongId(containing_module_file_id, item_module.stable_ptr(db)).intern(db);
+    let containing_module_id = db.find_module_containing_node(item_module.as_syntax_node())?;
+    let submodule_id = SubmoduleLongId(containing_module_id, item_module.stable_ptr(db)).intern(db);
     Some(ResolvedItem::Generic(ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id))))
 }
 
@@ -385,7 +378,7 @@ fn try_member_from_constructor<'db>(
     let constructor_expr = identifier_node.ancestor_of_type::<ast::ExprStructCtorCall>(db)?;
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr(db).into()).ok()?;
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
 
     let Expr::StructCtor(constructor_expr_semantic) =
         semantic_db.expr_semantic(function_id, constructor_expr_id)
@@ -419,7 +412,7 @@ fn try_member<'db>(
 
     let expr_id =
         db.lookup_expr_by_ptr(function_with_body, binary_expr.stable_ptr(db).into()).ok()?;
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
     let semantic_expr = semantic_db.expr_semantic(function_with_body, expr_id);
 
     // Desnap the binary expression to the member access expression.
@@ -465,7 +458,7 @@ fn try_member_declaration<'db>(
         .filter(|member| member.name(db) == *identifier)?;
     let item_struct = member.as_syntax_node().ancestor_of_type::<ast::ItemStruct>(db)?;
     let struct_id = StructLongId(
-        db.find_module_file_containing_node(item_struct.as_syntax_node())?,
+        db.find_module_containing_node(item_struct.as_syntax_node())?,
         item_struct.stable_ptr(db),
     )
     .intern(db);
@@ -486,7 +479,7 @@ fn try_variant_declaration<'db>(
         .filter(|variant| variant.name(db) == *identifier)?;
     let item_enum = variant.as_syntax_node().ancestor_of_type::<ast::ItemEnum>(db)?;
     let enum_id = EnumLongId(
-        db.find_module_file_containing_node(item_enum.as_syntax_node())?,
+        db.find_module_containing_node(item_enum.as_syntax_node())?,
         item_enum.stable_ptr(db),
     )
     .intern(db);
@@ -521,7 +514,7 @@ fn try_variable_declaration<'db>(
         {
             let expr_id =
                 db.lookup_expr_by_ptr(function_id, expr_closure_ast.stable_ptr(db).into()).ok()?;
-            let semantic_db: &dyn SemanticGroup = db.upcast();
+            let semantic_db: &dyn SemanticGroup = db;
 
             let Expr::ExprClosure(expr_closure_semantic) =
                 semantic_db.expr_semantic(function_id, expr_id)
@@ -546,7 +539,7 @@ fn try_variable_declaration<'db>(
     // Look at identifier patterns in the function body.
     if let Some(pattern_ast) = identifier.as_syntax_node().ancestor_of_type::<ast::Pattern>(db) {
         let pattern_id = db.lookup_pattern_by_ptr(function_id, pattern_ast.stable_ptr(db)).ok()?;
-        let semantic_db: &dyn SemanticGroup = db.upcast();
+        let semantic_db: &dyn SemanticGroup = db;
         let pattern = semantic_db.pattern_semantic(function_id, pattern_id);
         let pattern_variable = pattern
             .variables(&QueryPatternVariablesFromDb(db, function_id))
@@ -567,7 +560,7 @@ fn try_concrete_type_or_impl<'db>(
     lookup_items: &[LookupItemId<'db>],
 ) -> Option<ResolvedItem<'db>> {
     let ptr = identifier.stable_ptr(db);
-    let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
+    let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
 
     for &lookup_item_id in lookup_items {
         let resolved_generic = db.lookup_resolved_generic_item_by_ptr(lookup_item_id, ptr);
@@ -602,7 +595,7 @@ fn try_concrete_type_or_impl<'db>(
         }
 
         let mut resolver =
-            Resolver::new(db, module_file_id, InferenceId::LookupItemDeclaration(lookup_item_id));
+            Resolver::new(db, module_id, InferenceId::LookupItemDeclaration(lookup_item_id));
 
         // Concrete types and type/impl aliases resolve correctly when interpreted as paths.
         let resolved_item = resolver
@@ -727,7 +720,7 @@ fn try_trait_as_generic_parameter_bound<'db>(
 ) -> Option<ResolvedItem<'db>> {
     identifier.as_syntax_node().ancestor_of_kind(db, SyntaxKind::GenericParamList)?;
 
-    let module_file_id = db.find_module_file_containing_node(identifier.as_syntax_node())?;
+    let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
 
     for &lookup_item_id in lookup_items {
         let type_path_segments =
@@ -740,7 +733,7 @@ fn try_trait_as_generic_parameter_bound<'db>(
         }
 
         let mut resolver =
-            Resolver::new(db, module_file_id, InferenceId::LookupItemDeclaration(lookup_item_id));
+            Resolver::new(db, module_id, InferenceId::LookupItemDeclaration(lookup_item_id));
 
         let resolved_item = resolver
             .resolve_generic_path_with_args(

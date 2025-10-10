@@ -28,7 +28,7 @@ pub fn fill_trait_members<'db>(
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
     let file = ctx.node.stable_ptr(db).file_id(db);
-    let importables = db.visible_importables_from_module(ctx.module_file_id)?;
+    let importables = db.visible_importables_from_module(ctx.module_id)?;
 
     let item_impl = ctx.node.ancestor_of_type::<ItemImpl>(db)?;
 

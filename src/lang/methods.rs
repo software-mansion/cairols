@@ -12,7 +12,7 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::{LspHelpers, TypeFilter};
 use cairo_lang_semantic::resolve::Resolver;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::Intern;
 use itertools::chain;
 use tracing::debug;
 
@@ -102,14 +102,14 @@ pub fn available_traits_for_method<'db>(
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let expr_id = db.lookup_expr_by_ptr(function_with_body, stable_ptr).ok()?;
 
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
     let ty = semantic_db.expr_semantic(function_with_body, expr_id).ty();
 
     if ty.is_missing(db) {
         return None;
     }
 
-    let module_visible_traits = db.visible_traits_from_module(ctx.module_file_id)?;
+    let module_visible_traits = db.visible_traits_from_module(ctx.module_id)?;
     let unknown_method_name = ctx.node.get_text(db);
 
     Some(

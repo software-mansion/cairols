@@ -7,7 +7,6 @@ use cairo_lang_semantic::items::function_with_body::{
 };
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::Upcast;
 use lsp_types::{CodeAction, CodeActionKind, TextEdit, Url, WorkspaceEdit};
 
 use crate::lang::analysis_context::AnalysisContext;
@@ -30,7 +29,7 @@ pub fn suggest_similar_method<'db>(
 
     let expr_id = db.lookup_expr_by_ptr(function_with_body, lhs_stable_ptr).ok()?;
 
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
     let ty = semantic_db.expr_semantic(function_with_body, expr_id).ty();
 
     if ty.is_missing(db) {
@@ -60,7 +59,7 @@ pub fn suggest_similar_method<'db>(
         .collect();
 
     let bad_method_name_span =
-        ctx.node.span(db).position_in_file(db, ctx.module_file_id.file_id(db).ok()?)?;
+        ctx.node.span(db).position_in_file(db, ctx.node.stable_ptr(db).file_id(db))?;
 
     let code_actions = suggestions
         .into_iter()

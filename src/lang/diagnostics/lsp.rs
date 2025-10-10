@@ -4,19 +4,18 @@ use cairo_lang_diagnostics::{
     DiagnosticEntry, DiagnosticLocation, Diagnostics, PluginFileDiagnosticNotes, Severity,
 };
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_utils::Upcast;
 use lsp_types::{
     Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Range,
     Url,
 };
-use salsa::{AsDynDatabase, Database};
+use salsa::Database;
 use tracing::{error, trace};
 
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
 /// Converts internal diagnostics to LSP format.
 pub fn map_cairo_diagnostics_to_lsp<'db, T>(
-    db: &'db T::DbType,
+    db: &'db dyn Database,
     diags: &mut HashMap<(Url, FileId<'db>), Vec<Diagnostic>>,
     diagnostics: &Diagnostics<'db, T>,
     trace_macro_diagnostics: bool,
@@ -93,11 +92,11 @@ fn get_mapped_range_and_add_mapping_note<'db>(
     related_info: Option<&mut Vec<DiagnosticRelatedInformation>>,
     message: &str,
 ) -> Option<(Range, FileId<'db>)> {
-    let mapped = orig.user_location(db.upcast());
-    let mapped_range = get_lsp_range(db.upcast(), &mapped)?;
+    let mapped = orig.user_location(db);
+    let mapped_range = get_lsp_range(db, &mapped)?;
     if let Some(related_info) = related_info
         && *orig != mapped
-        && let Some(range) = get_lsp_range(db.upcast(), orig)
+        && let Some(range) = get_lsp_range(db, orig)
     {
         related_info.push(DiagnosticRelatedInformation {
             location: Location { uri: db.url_for_file(orig.file_id)?, range },
