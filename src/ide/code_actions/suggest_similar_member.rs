@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_semantic::items::function_with_body::{
     FunctionWithBodySemantic, SemanticExprLookup,
 };
@@ -50,7 +49,7 @@ pub fn suggest_similar_member<'db>(
     let bad_member_span = ctx
         .node
         .span_without_trivia(db)
-        .position_in_file(db, db.module_main_file(ctx.module_id).ok()?)?;
+        .position_in_file(db, ctx.node.stable_ptr(db).file_id(db))?;
 
     let code_actions = suggestions
         .into_iter()

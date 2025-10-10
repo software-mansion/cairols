@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::NamedLanguageElementLongId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::{
@@ -60,7 +59,7 @@ pub fn suggest_similar_method<'db>(
         .collect();
 
     let bad_method_name_span =
-        ctx.node.span(db).position_in_file(db, db.module_main_file(ctx.module_id).ok()?)?;
+        ctx.node.span(db).position_in_file(db, ctx.node.stable_ptr(db).file_id(db))?;
 
     let code_actions = suggestions
         .into_iter()
