@@ -60,7 +60,7 @@ pub fn suggest_similar_method<'db>(
         .collect();
 
     let bad_method_name_span =
-        ctx.node.span(db).position_in_file(db, db.module_main_file(ctx.module_file_id).ok()?)?;
+        ctx.node.span(db).position_in_file(db, db.module_main_file(ctx.module_id).ok()?)?;
 
     let code_actions = suggestions
         .into_iter()

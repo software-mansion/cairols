@@ -51,8 +51,7 @@ impl CodeLensInterface for TestCodeLens {
                 let module_item = resultant
                     .ancestors_with_self(db)
                     .find_map(|node| ModuleItem::cast(db, node))?;
-                let module_id =
-                    db.find_module_file_containing_node(module_item.as_syntax_node())?;
+                let module_id = db.find_module_containing_node(module_item.as_syntax_node())?;
                 let path = TestFullQualifiedPath::new(db, module_item, module_id)?;
 
                 // Find resultant that produced this codelens earlier by comparing full paths

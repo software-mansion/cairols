@@ -66,8 +66,8 @@ impl<'db> GenericParamDef<'db> {
 
     pub fn signature(&self, db: &AnalysisDatabase) -> String {
         let importables = || {
-            let module_file_id = self.id.module_id(db);
-            db.visible_importables_from_module(module_file_id).unwrap_or_default()
+            let module_id = self.id.module_id(db);
+            db.visible_importables_from_module(module_id).unwrap_or_default()
         };
 
         match self.semantic {

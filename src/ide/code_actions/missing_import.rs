@@ -24,7 +24,7 @@ pub fn missing_import<'db>(
         .rev()
         .collect();
 
-    let items = db.visible_importables_from_module(ctx.module_file_id)?;
+    let items = db.visible_importables_from_module(ctx.module_id)?;
 
     let items: Vec<_> = items
         .iter()
