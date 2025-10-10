@@ -34,12 +34,14 @@ fn helper_module() {
 
     [[completions]]
     completion_label = "CONST"
+    detail = "felt252"
 
     [[completions]]
     completion_label = "Trait1"
 
     [[completions]]
     completion_label = "bar"
+    detail = "fn() -> ()"
     "#);
 }
 
@@ -160,9 +162,11 @@ fn in_use_path_multi() {
 
     [[completions]]
     completion_label = "x"
+    detail = "fn() -> ()"
 
     [[completions]]
     completion_label = "y"
+    detail = "fn() -> ()"
     "#);
 }
 
@@ -184,9 +188,11 @@ fn in_use_path_multi_macro() {
 
     [[completions]]
     completion_label = "x"
+    detail = "fn() -> ()"
 
     [[completions]]
     completion_label = "y"
+    detail = "fn() -> ()"
     "#);
 }
 
@@ -207,9 +213,11 @@ fn in_use_path_multi_with_one_in_scope() {
 
     [[completions]]
     completion_label = "x"
+    detail = "fn() -> ()"
 
     [[completions]]
     completion_label = "y"
+    detail = "fn() -> ()"
     "#);
 }
 
@@ -286,16 +294,24 @@ fn nested_enum() {
 
     [[completions]]
     completion_label = "MyAnotherEnum"
+    detail = "hello::modzik::MyAnotherEnum"
     "#);
 }
 
 #[test]
 fn enum_variant() {
     test_transform_plain!(Completion, completion_fixture(), "
+    mod struct_module {
+        struct MyStruct {
+            field: felt252,
+        }
+    }
+
     mod modzik {
+        use super::struct_module::MyStruct;
         pub enum MyAnotherEnum {
             A,
-            B,
+            B: MyStruct,
         }
     }
 
@@ -307,9 +323,11 @@ fn enum_variant() {
 
     [[completions]]
     completion_label = "A"
+    detail = "MyAnotherEnum::A"
 
     [[completions]]
     completion_label = "B"
+    detail = "MyAnotherEnum::B: MyStruct"
     "#);
 }
 
@@ -376,9 +394,11 @@ fn no_text_last_segment_in_use_statement() {
 
     [[completions]]
     completion_label = "MY_CONST"
+    detail = "u8"
 
     [[completions]]
     completion_label = "my_func"
+    detail = "fn() -> ()"
     "#);
 }
 

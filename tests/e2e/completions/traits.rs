@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-fn self_completions() {
+fn self_completions_trait() {
     test_transform_plain!(Completion, completion_fixture(), "
     trait Foo {
         fn bar() {
@@ -20,6 +20,35 @@ fn self_completions() {
 
     [[completions]]
     completion_label = "bar"
+    detail = "fn() -> ()"
+    "#);
+}
+
+#[test]
+fn self_completions_impl() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait AbMaker<T> {
+        fn a() -> T;
+        fn b(c: T) -> T;
+    }
+
+    impl AbMakerFelt252 of AbMaker<felt252> {
+        fn a() -> felt252 {
+            Self::<caret>
+        }
+    }
+    ",@r#"
+    caret = """
+            Self::<caret>
+    """
+
+    [[completions]]
+    completion_label = "a"
+    detail = "fn() -> T"
+
+    [[completions]]
+    completion_label = "b"
+    detail = "fn(c: T) -> T"
     "#);
 }
 
@@ -39,6 +68,7 @@ fn self_completions_macro() {
 
     [[completions]]
     completion_label = "bar"
+    detail = "fn() -> ()"
     "#);
 }
 

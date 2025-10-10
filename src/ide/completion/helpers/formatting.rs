@@ -1,8 +1,10 @@
-use cairo_lang_defs::ids::TraitId;
+use cairo_lang_defs::ids::{EnumId, NamedLanguageElementLongId, TraitId, VariantId};
+use cairo_lang_doc::db::DocGroup;
+use cairo_lang_doc::documentable_item::DocumentableItemId;
 use cairo_lang_semantic::items::modifiers::get_relevant_modifier;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
-use cairo_lang_semantic::{Mutability, Signature};
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_semantic::{Mutability, Signature, TypeId};
+use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode};
 use itertools::Itertools;
 
 use crate::ide::format::types::format_type;
@@ -57,4 +59,35 @@ pub fn generate_abbreviated_signature(
     }
 
     s
+}
+
+/// Formats a type with a given context node, fetching the importables if possible and shortening paths.
+/// For example, `felt252` (instead of `core::felt252` for a simpler display)
+pub fn format_type_in_node_context(
+    db: &AnalysisDatabase,
+    context_node: SyntaxNode,
+    type_id: &TypeId,
+) -> String {
+    let importables = if let Some(module_file_id) =
+        db.find_module_file_containing_node(context_node)
+        && let Some(importables) = db.visible_importables_from_module(module_file_id)
+    {
+        importables
+    } else {
+        Default::default()
+    };
+
+    format_type(db, *type_id, &importables, None)
+}
+
+/// Formats an enum variant and its type along with the enums name.
+/// For example, `MyEnum::Variant1: felt252`
+pub fn format_enum_variant<'db>(
+    db: &'db AnalysisDatabase,
+    enum_id: &'db EnumId,
+    variant_id: &'db VariantId,
+) -> Option<String> {
+    db.get_item_signature(DocumentableItemId::Variant(*variant_id)).map(|variant_signature| {
+        format!("{}::{}", enum_id.long(db).name(db).to_string(db), variant_signature)
+    })
 }
