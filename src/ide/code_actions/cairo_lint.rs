@@ -92,7 +92,7 @@ fn get_linter_tool_metadata<'db>(
 ) -> CairoLintToolMetadata {
     if let Ok(module_file_id) = db.module_main_file(ctx.module_file_id)
         && let FileLongId::OnDisk(file_id) = module_file_id.long(db)
-        && let Some(file_config) = config_registry.config_for_file(&file_id)
+        && let Some(file_config) = config_registry.config_for_file(file_id)
     {
         file_config.lint.clone()
     } else {

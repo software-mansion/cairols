@@ -190,8 +190,7 @@ impl TestFullQualifiedPath {
         match module_item {
             ModuleItem::FreeFunction(function_with_body) => {
                 let path = ModuleItemId::FreeFunction(
-                    FreeFunctionLongId(module_id, function_with_body.stable_ptr(db))
-                        .intern(db),
+                    FreeFunctionLongId(module_id, function_with_body.stable_ptr(db)).intern(db),
                 )
                 .full_path(db);
 
