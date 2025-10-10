@@ -1,4 +1,3 @@
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::{
@@ -90,8 +89,8 @@ fn get_linter_tool_metadata<'db>(
     ctx: &AnalysisContext<'db>,
     config_registry: &ConfigsRegistry,
 ) -> CairoLintToolMetadata {
-    if let Ok(module_file_id) = db.module_main_file(ctx.module_id)
-        && let FileLongId::OnDisk(file_id) = module_file_id.long(db)
+    let file_id = ctx.node.stable_ptr(db).file_id(db);
+    if let FileLongId::OnDisk(file_id) = file_id.long(db)
         && let Some(file_config) = config_registry.config_for_file(file_id)
     {
         file_config.lint.clone()
