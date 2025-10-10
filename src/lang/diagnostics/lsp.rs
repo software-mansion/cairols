@@ -8,14 +8,14 @@ use lsp_types::{
     Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Range,
     Url,
 };
-use salsa::{AsDynDatabase, Database};
+use salsa::Database;
 use tracing::{error, trace};
 
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
 /// Converts internal diagnostics to LSP format.
 pub fn map_cairo_diagnostics_to_lsp<'db, T>(
-    db: &'db T::DbType,
+    db: &'db dyn Database,
     diags: &mut HashMap<(Url, FileId<'db>), Vec<Diagnostic>>,
     diagnostics: &Diagnostics<'db, T>,
     trace_macro_diagnostics: bool,
