@@ -45,7 +45,7 @@ fn dot_completions_ex<'db>(
     // Get a resolver in the current context.
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let mut resolver = ctx.resolver(db);
-    let importables = db.visible_importables_from_module(ctx.module_file_id)?;
+    let importables = db.visible_importables_from_module(ctx.module_id)?;
 
     // Extract lhs node.
     let node = expr.lhs(db);

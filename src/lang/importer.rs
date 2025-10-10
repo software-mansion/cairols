@@ -20,7 +20,7 @@ pub fn import_edit_for_trait_if_needed<'db>(
     ctx: &AnalysisContext<'db>,
     trait_id: cairo_lang_defs::ids::TraitId<'db>,
 ) -> Option<TextEdit> {
-    let trait_path = db.visible_traits_from_module(ctx.module_file_id)?.get(&trait_id)?.clone();
+    let trait_path = db.visible_traits_from_module(ctx.module_id)?.get(&trait_id)?.clone();
     // If the path contains '::', it means it is not currently in scope and needs an import.
     if trait_path.contains("::") { new_import_edit(db, ctx, trait_path) } else { None }
 }
@@ -42,10 +42,10 @@ pub fn new_import_edit<'db>(
 }
 
 fn use_position<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>) -> Option<UsePosition> {
-    db.module_uses_ids(ctx.module_file_id)
+    db.module_uses_ids(ctx.module_id)
         .ok()
         .and_then(|uses| {
-            let module_main_file = db.module_main_file(ctx.module_file_id).ok()?;
+            let module_main_file = db.module_main_file(ctx.module_id).ok()?;
 
             uses.iter()
                 .find(|use_statement| {
@@ -66,7 +66,7 @@ fn use_position<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>) -> O
                 .map(|stable_ptr| UsePosition::new(db, stable_ptr, true))
                 .map(Some)
                 .unwrap_or_else(|| {
-                    ctx.module_file_id
+                    ctx.module_id
                         .module_data(db)
                         .ok()?
                         .items(db)
@@ -75,7 +75,7 @@ fn use_position<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>) -> O
                 })
         })
         .unwrap_or_else(|| {
-            let ModuleId::Submodule(submodule) = ctx.module_file_id else { unreachable!() };
+            let ModuleId::Submodule(submodule) = ctx.module_id else { unreachable!() };
 
             UsePosition::new(db, submodule.untyped_stable_ptr(db), false)
         })

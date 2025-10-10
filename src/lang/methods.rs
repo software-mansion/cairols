@@ -109,7 +109,7 @@ pub fn available_traits_for_method<'db>(
         return None;
     }
 
-    let module_visible_traits = db.visible_traits_from_module(ctx.module_file_id)?;
+    let module_visible_traits = db.visible_traits_from_module(ctx.module_id)?;
     let unknown_method_name = ctx.node.get_text(db);
 
     Some(

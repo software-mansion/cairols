@@ -19,7 +19,7 @@ pub fn generate_abbreviated_signature(
 ) -> String {
     let importables = db
         .visible_importables_from_module(
-            db.find_module_file_containing_node(signature.stable_ptr.lookup(db).as_syntax_node())
+            db.find_module_containing_node(signature.stable_ptr.lookup(db).as_syntax_node())
                 .unwrap(),
         )
         .unwrap();

@@ -89,14 +89,6 @@ pub trait LsSemanticGroup: Database {
         collect_lookup_items(self.as_dyn_database(), node).as_ref()
     }
 
-    /// Returns a [`ModuleId`] containing the node.
-    fn find_module_file_containing_node<'db>(
-        &'db self,
-        node: SyntaxNode<'db>,
-    ) -> Option<ModuleId<'db>> {
-        find_module_containing_node(self.as_dyn_database(), node)
-    }
-
     /// Finds a [`ModuleId`] containing the node.
     fn find_module_containing_node<'db>(&'db self, node: SyntaxNode<'db>) -> Option<ModuleId<'db>> {
         find_module_containing_node(self.as_dyn_database(), node)
