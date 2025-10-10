@@ -10,8 +10,8 @@ use cairo_lang_syntax::node::ast::{
     Expr, ItemConstant, TerminalLiteralNumber, TerminalShortString, TerminalString,
 };
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Intern;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use crate::ide::format::types::format_type;
