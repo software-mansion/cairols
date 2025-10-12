@@ -6,8 +6,7 @@ use crate::lang::{db::AnalysisDatabase, lsp::LsProtoGroup};
 
 #[test]
 fn file_url() {
-    let analysis_database = AnalysisDatabase::new();
-    let db = &analysis_database;
+    let db = &AnalysisDatabase::new();
 
     let check = |expected_url: &str, expected_file_long: FileLongId| {
         let expected_url = Url::parse(expected_url).unwrap();
