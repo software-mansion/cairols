@@ -86,7 +86,7 @@ fn first_segment<'db>(
     typed: &str,
     ctx: &AnalysisContext<'db>,
 ) -> Option<Vec<CompletionItemOrderable>> {
-    let importables = db.visible_importables_from_module(ctx.module_file_id)?;
+    let importables = db.visible_importables_from_module(ctx.module_id)?;
 
     Some(
         importables

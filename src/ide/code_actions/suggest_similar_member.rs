@@ -49,7 +49,7 @@ pub fn suggest_similar_member<'db>(
     let bad_member_span = ctx
         .node
         .span_without_trivia(db)
-        .position_in_file(db, ctx.module_file_id.file_id(db).ok()?)?;
+        .position_in_file(db, ctx.node.stable_ptr(db).file_id(db))?;
 
     let code_actions = suggestions
         .into_iter()

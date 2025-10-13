@@ -1,14 +1,12 @@
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_utils::Intern;
 use lsp_types::Url;
-use salsa::AsDynDatabase;
 
 use crate::lang::{db::AnalysisDatabase, lsp::LsProtoGroup};
 
 #[test]
 fn file_url() {
-    let analysis_database = AnalysisDatabase::new();
-    let db = analysis_database.as_dyn_database();
+    let db = &AnalysisDatabase::new();
 
     let check = |expected_url: &str, expected_file_long: FileLongId| {
         let expected_url = Url::parse(expected_url).unwrap();

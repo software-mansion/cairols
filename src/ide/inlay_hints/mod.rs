@@ -37,7 +37,7 @@ pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec
     let mut result = vec![];
 
     let importables =
-        db.visible_importables_from_module(db.find_module_file_containing_node(syntax)?)?;
+        db.visible_importables_from_module(db.find_module_containing_node(syntax)?)?;
 
     for let_statement in syntax
         .descendants(db)

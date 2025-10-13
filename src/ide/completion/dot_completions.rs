@@ -12,7 +12,6 @@ use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::Upcast;
 use itertools::chain;
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
 use tracing::debug;
@@ -46,14 +45,14 @@ fn dot_completions_ex<'db>(
     // Get a resolver in the current context.
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let mut resolver = ctx.resolver(db);
-    let importables = db.visible_importables_from_module(ctx.module_file_id)?;
+    let importables = db.visible_importables_from_module(ctx.module_id)?;
 
     // Extract lhs node.
     let node = expr.lhs(db);
     let stable_ptr = node.stable_ptr(db).untyped();
     // Get its semantic model.
     let expr_id = db.lookup_expr_by_ptr(function_with_body, node.stable_ptr(db)).ok()?;
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
     let semantic_expr = semantic_db.expr_semantic(function_with_body, expr_id);
     // Get the type.
     let ty = semantic_expr.ty();

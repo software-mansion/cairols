@@ -8,7 +8,6 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::ExprStructCtorCall;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
-use cairo_lang_utils::Upcast;
 use lsp_types::{CompletionItem, CompletionItemKind};
 
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
@@ -31,10 +30,10 @@ fn struct_constructor_completions_ex<'db>(
     ctx: &AnalysisContext<'db>,
 ) -> Option<Vec<CompletionItemOrderable>> {
     let constructor = ctx.node.ancestor_of_type::<ExprStructCtorCall>(db)?;
-    let module_id = ctx.module_file_id;
+    let module_id = ctx.module_id;
     let lookup_item_id = ctx.lookup_item_id?;
     let function_id = lookup_item_id.function_with_body()?;
-    let importables = db.visible_importables_from_module(ctx.module_file_id)?;
+    let importables = db.visible_importables_from_module(ctx.module_id)?;
 
     let already_present_members = constructor
         .arguments(db)
@@ -58,7 +57,7 @@ fn struct_constructor_completions_ex<'db>(
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor.stable_ptr(db).into()).ok()?;
 
-    let semantic_db: &dyn SemanticGroup = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db;
     let semantic_expr = semantic_db.expr_semantic(function_id, constructor_expr_id);
 
     let cairo_lang_semantic::Expr::StructCtor(constructor_semantic_expr) = semantic_expr else {
