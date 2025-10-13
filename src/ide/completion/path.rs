@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{GenericTypeId, ModuleFileId, ModuleItemId};
+use cairo_lang_defs::ids::{GenericTypeId, ModuleId, ModuleItemId};
 use cairo_lang_defs::ids::{ImportableId, LanguageElementId, NamedLanguageElementId};
 use cairo_lang_filesystem::ids::{CrateLongId, SmolStrId};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
@@ -207,7 +207,8 @@ pub fn path_prefix_completions<'db>(
                     .then(|| CompletionItemOrderable {
                         item: CompletionItem {
                             label: item.name(db).to_string(db),
-                            detail: module_item_completion_detail(db, *item, ctx.module_file_id),kind: Some(resolved_generic_item_completion_kind(resolved_item)),
+                            detail: module_item_completion_detail(db, *item, ctx.module_id),
+                            kind: Some(resolved_generic_item_completion_kind(resolved_item)),
                             ..CompletionItem::default()
                         },
                         relevance: get_item_relevance(
@@ -320,11 +321,11 @@ pub fn path_prefix_completions<'db>(
 fn module_item_completion_detail<'db>(
     db: &'db AnalysisDatabase,
     item: ModuleItemId<'db>,
-    ctx_module_file_id: ModuleFileId<'db>,
+    ctx_module_id: ModuleId<'db>,
 ) -> Option<String> {
     if let ModuleItemId::Constant(constant_id) = item
         && let Ok(constant) = db.constant_semantic_data(constant_id)
-        && let Some(importables) = db.visible_importables_from_module(ctx_module_file_id)
+        && let Some(importables) = db.visible_importables_from_module(ctx_module_id)
     {
         Some(format_type(db, constant.ty(), &importables, None))
     } else if let Some(generic_type_id) = GenericTypeId::option_from(item) {

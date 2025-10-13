@@ -68,9 +68,8 @@ pub fn format_type_in_node_context(
     context_node: SyntaxNode,
     type_id: &TypeId,
 ) -> String {
-    let importables = if let Some(module_file_id) =
-        db.find_module_file_containing_node(context_node)
-        && let Some(importables) = db.visible_importables_from_module(module_file_id)
+    let importables = if let Some(module_id) = db.find_module_containing_node(context_node)
+        && let Some(importables) = db.visible_importables_from_module(module_id)
     {
         importables
     } else {
