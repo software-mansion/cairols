@@ -25,6 +25,7 @@ fn partially_typed() {
 
     [[completions]]
     completion_label = "abc"
+    detail = "felt252"
     "#);
 }
 
@@ -50,6 +51,7 @@ fn partially_typed_macro() {
 
     [[completions]]
     completion_label = "abc"
+    detail = "felt252"
     "#);
 }
 
@@ -95,6 +97,7 @@ fn partially_typed_some_filled() {
 
     [[completions]]
     completion_label = "abc"
+    detail = "felt252"
     "#);
 }
 
@@ -118,9 +121,11 @@ fn untyped() {
 
     [[completions]]
     completion_label = "abc"
+    detail = "felt252"
 
     [[completions]]
     completion_label = "qwerty"
+    detail = "felt252"
     "#);
 }
 
@@ -145,6 +150,7 @@ fn untyped_some_filled() {
 
     [[completions]]
     completion_label = "abc"
+    detail = "felt252"
     "#);
 }
 
@@ -193,6 +199,7 @@ fn wrong_value() {
 
     [[completions]]
     completion_label = "abc"
+    detail = "felt252"
     "#);
 }
 
@@ -222,6 +229,7 @@ fn partially_typed_nested() {
 
     [[completions]]
     completion_label = "abc"
+    detail = "felt252"
     "#);
 }
 
@@ -243,8 +251,10 @@ fn enum_pattern() {
 
     [[completions]]
     completion_label = "Abc"
+    detail = "Foo::Abc"
 
     [[completions]]
     completion_label = "Qwerty"
+    detail = "Foo::Qwerty"
     "#);
 }

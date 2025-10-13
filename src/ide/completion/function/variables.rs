@@ -12,6 +12,7 @@ use lsp_types::{CompletionItem, CompletionItemKind};
 
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use crate::ide::completion::helpers::formatting::format_type_in_node_context;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
@@ -107,6 +108,11 @@ fn patterns<'db>(
             completions.push(CompletionItemOrderable {
                 item: CompletionItem {
                     label: var.name.to_string(db),
+                    detail: Some(format_type_in_node_context(
+                        db,
+                        var.stable_ptr.0.lookup(db),
+                        &var.var.ty,
+                    )),
                     kind: Some(CompletionItemKind::VARIABLE),
                     ..CompletionItem::default()
                 },
