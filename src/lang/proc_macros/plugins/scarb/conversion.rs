@@ -1,14 +1,13 @@
 use cairo_lang_macro::TextSpan;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 
 pub trait SpanSource<'db> {
-    fn text_span(&self, db: &'db dyn SyntaxGroup) -> TextSpan;
+    fn text_span(&self, db: &'db dyn Database) -> TextSpan;
 }
 
 impl<'db, T: TypedSyntaxNode<'db>> SpanSource<'db> for T {
-    fn text_span(&self, db: &'db dyn SyntaxGroup) -> TextSpan {
+    fn text_span(&self, db: &'db dyn Database) -> TextSpan {
         let node = self.as_syntax_node();
         let span = node.span_without_trivia(db);
         TextSpan::new(span.start.as_u32(), span.end.as_u32())
@@ -21,7 +20,7 @@ pub struct CallSiteLocation<'db> {
 }
 
 impl<'db> CallSiteLocation<'db> {
-    pub fn new<T: TypedSyntaxNode<'db>>(node: &T, db: &'db dyn SyntaxGroup) -> Self {
+    pub fn new<T: TypedSyntaxNode<'db>>(node: &T, db: &'db dyn Database) -> Self {
         Self { stable_ptr: node.stable_ptr(db).untyped(), span: node.text_span(db) }
     }
 }
@@ -30,6 +29,7 @@ use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{
     TextOffset as CairoTextOffset, TextSpan as CairoTextSpan, TextWidth as CairoTextWidth,
 };
+use salsa::Database;
 use scarb_proc_macro_server_types::methods::{
     CodeMapping as InterfaceCodeMapping, CodeOrigin as InterfaceCodeOrigin,
     TextOffset as InterfaceTextOffset, TextSpan as InterfaceTextSpan,

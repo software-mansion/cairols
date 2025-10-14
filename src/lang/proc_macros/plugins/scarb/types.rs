@@ -8,7 +8,8 @@ use cairo_lang_macro::{
     AllocationContext, TextSpan, Token, TokenStream, TokenStreamMetadata, TokenTree,
 };
 use cairo_lang_macro::{Diagnostic, TextOffset};
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, db::SyntaxGroup};
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use salsa::Database;
 
 use crate::lang::db::SyntaxNodeExt;
 use crate::lang::proc_macros::plugins::scarb::conversion::SpanSource;
@@ -17,13 +18,13 @@ use crate::lang::proc_macros::plugins::scarb::regular::AttrExpansionFound;
 /// Helps creating TokenStream based on multiple SyntaxNodes,
 /// which aren't descendants or ascendants of each other inside the SyntaxTree.
 pub struct TokenStreamBuilder<'db> {
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     nodes: Vec<SyntaxNode<'db>>,
     metadata: Option<TokenStreamMetadata>,
 }
 
 impl<'db> TokenStreamBuilder<'db> {
-    pub fn new(db: &'db dyn SyntaxGroup) -> Self {
+    pub fn new(db: &'db dyn Database) -> Self {
         Self { db, nodes: Vec::default(), metadata: None }
     }
 
@@ -167,7 +168,7 @@ impl ExpandableAttrLocation {
     pub fn new<'db, T: TypedSyntaxNode<'db>>(
         node: &T,
         item_start_offset: CairoTextOffset,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
     ) -> Self {
         let span_without_trivia = node.text_span(db);
         let span_with_trivia = node.as_syntax_node().span(db);

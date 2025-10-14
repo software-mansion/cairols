@@ -10,19 +10,18 @@ use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStr
 use cairo_lang_syntax::node::ast::{
     self, Expr, ImplItem, MaybeImplBody, MaybeTraitBody, PathSegment,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
 use convert_case::{Case, Casing};
 use itertools::Itertools;
+use salsa::Database;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use scarb_proc_macro_server_types::methods::expand::{ExpandAttributeParams, ExpandDeriveParams};
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
 use scarb_stable_hash::StableHasher;
 
 use super::into_cairo_diagnostics;
-use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::{get_attribute_expansion, get_derive_expansion};
 use crate::lang::proc_macros::plugins::scarb::child_nodes::{
     ChildNodesWithoutAttributes, ItemWithAttributes,
@@ -41,7 +40,7 @@ const DERIVE_ATTR: &str = "derive";
 /// Modified scarb code with replaced dylib calls in favour of [`ProcMacroGroup`] calls. Also
 /// removed `aux_data`.
 pub fn macro_generate_code<'db>(
-    db: &'db AnalysisDatabase,
+    db: &'db dyn Database,
     expansion_context: ProcMacroScope,
     item_ast: ast::ModuleItem<'db>,
     defined_attributes: &[String],
@@ -109,7 +108,7 @@ pub fn macro_generate_code<'db>(
 }
 
 fn expand_inner_attr<'db>(
-    db: &'db AnalysisDatabase,
+    db: &'db dyn Database,
     expansion_context: ProcMacroScope,
     defined_attributes: &[String],
     item_ast: ast::ModuleItem<'db>,
@@ -256,7 +255,7 @@ fn expand_inner_attr<'db>(
 }
 
 fn do_expand_inner_attr<'db>(
-    db: &'db AnalysisDatabase,
+    db: &'db dyn Database,
     context: &mut InnerAttrExpansionContext<'db>,
     expansion_context: ProcMacroScope,
     found: AttrExpansionFound<'db>,
@@ -312,7 +311,7 @@ struct InnerAttrExpansionContext<'db> {
 }
 
 impl<'db> InnerAttrExpansionContext<'db> {
-    pub fn new(db: &'db dyn SyntaxGroup, item_ast: &ast::ModuleItem<'db>) -> Self {
+    pub fn new(db: &'db dyn Database, item_ast: &ast::ModuleItem<'db>) -> Self {
         Self {
             diagnostics: Vec::new(),
             any_changed: false,
@@ -326,7 +325,7 @@ impl<'db> InnerAttrExpansionContext<'db> {
 
     fn register_diagnotics(
         &mut self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         diagnostics: Vec<AdaptedDiagnostic>,
         stable_ptr: SyntaxStablePtrId<'db>,
     ) {
@@ -336,7 +335,7 @@ impl<'db> InnerAttrExpansionContext<'db> {
 
     pub fn register_result_metadata_v2(
         &mut self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         input: &AttrExpansionArgs<'db>,
         original: String,
         result: ProcMacroResult,
@@ -425,7 +424,7 @@ impl<'db> AttrExpansionFound<'db> {
 ///
 /// Remove the attribute from the code.
 pub(crate) fn parse_attribute<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     defined_attributes: Vec<String>,
     item_ast: ast::ModuleItem<'db>,
     ctx: &AllocationContext,
@@ -480,7 +479,7 @@ pub(crate) fn parse_attribute<'db>(
 
 fn parse_item<'db, T: ItemWithAttributes<'db> + ChildNodesWithoutAttributes<'db>>(
     ast: &T,
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     token_stream_builder: &mut TokenStreamBuilder<'db>,
     ctx: &AllocationContext,
     defined_attributes: Vec<String>,
@@ -494,7 +493,7 @@ fn parse_item<'db, T: ItemWithAttributes<'db> + ChildNodesWithoutAttributes<'db>
 }
 
 fn parse_attrs<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     defined_attributes: &[String],
     builder: &mut TokenStreamBuilder<'db>,
     item_attrs: Vec<ast::Attribute<'db>>,
@@ -556,7 +555,7 @@ fn parse_attrs<'db>(
 ///
 /// Returns a list of expansions that this plugin should apply.
 fn parse_derive<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     defined_derives: &[String],
     item_ast: ast::ModuleItem<'db>,
 ) -> Vec<(String, CallSiteLocation<'db>)> {
@@ -599,7 +598,7 @@ fn parse_derive<'db>(
 }
 
 fn expand_derives<'db>(
-    db: &'db AnalysisDatabase,
+    db: &'db dyn Database,
     expansion_context: ProcMacroScope,
     defined_derives: &[String],
     item_ast: ast::ModuleItem<'db>,
@@ -672,7 +671,7 @@ fn expand_derives<'db>(
 
 #[allow(clippy::too_many_arguments)]
 fn expand_attribute<'db>(
-    db: &'db AnalysisDatabase,
+    db: &'db dyn Database,
     expansion_context: ProcMacroScope,
     last: bool,
     token_stream: AdaptedTokenStream,
@@ -758,7 +757,7 @@ fn expand_attribute<'db>(
 }
 
 fn calculate_metadata(
-    db: &dyn SyntaxGroup,
+    db: &dyn Database,
     item_ast: ast::ModuleItem,
     edition: Edition,
 ) -> TokenStreamMetadata {
@@ -789,7 +788,7 @@ impl<'db> AttributePluginResult<'db> {
 
     pub fn with_diagnostics(
         mut self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         call_site_stable_ptr: SyntaxStablePtrId<'db>,
         diagnostics: Vec<AdaptedDiagnostic>,
     ) -> Self {
