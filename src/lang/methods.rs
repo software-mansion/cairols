@@ -13,7 +13,7 @@ use cairo_lang_semantic::lsp_helpers::{LspHelpers, TypeFilter};
 use cairo_lang_semantic::resolve::Resolver;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
-use itertools::chain;
+use itertools::{Itertools, chain};
 use tracing::debug;
 
 use super::analysis_context::AnalysisContext;
@@ -87,7 +87,7 @@ pub fn find_methods_for_type<'db>(
             relevant_methods.push(trait_function);
         }
     }
-    relevant_methods
+    relevant_methods.iter().unique().copied().collect()
 }
 
 /// Finds all available traits with method.
