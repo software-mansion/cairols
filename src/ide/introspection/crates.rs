@@ -1,4 +1,4 @@
-use std::any::TypeId;
+use std::any::Any;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -13,7 +13,6 @@ use serde::Serialize;
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::plugins::DowncastRefUnchecked;
 use crate::lang::proc_macros::plugins::{InlineProcMacroPlugin, ProcMacroPlugin};
 use crate::project::builtin_plugins::BuiltinPlugin;
 use crate::project::{ConfigsRegistry, extract_custom_file_stems};
@@ -193,13 +192,9 @@ impl TryFrom<MacroPluginLongId> for Plugin {
             return Ok(Self::Builtin(builtin_plugin));
         }
 
-        if plugin.plugin_type_id() != TypeId::of::<ProcMacroPlugin>() {
-            return Err(());
-        }
+        let plugin_any: &dyn Any = plugin;
+        let plugin: &ProcMacroPlugin = plugin_any.downcast_ref().ok_or(())?;
 
-        // Safety: we explicitly check if `id` points to `ProcMacroPlugin`.
-        // We also extract the `&dyn MacroPlugin` from `Arc`.
-        let plugin = unsafe { ProcMacroPlugin::downcast_ref_unchecked(&*id.0) };
         Ok(Self::ProcMacro(ProcMacro { source_packages: plugin.source_packages().to_vec() }))
     }
 }
@@ -214,13 +209,9 @@ impl TryFrom<InlineMacroExprPluginLongId> for Plugin {
             return Ok(Self::Builtin(builtin_plugin));
         }
 
-        if plugin.plugin_type_id() != TypeId::of::<InlineProcMacroPlugin>() {
-            return Err(());
-        }
+        let plugin_any: &dyn Any = plugin;
+        let plugin: &InlineProcMacroPlugin = plugin_any.downcast_ref().ok_or(())?;
 
-        // Safety: we explicitly check if `id` points to `InlineProcMacroPlugin`.
-        // We also extract the `&dyn InlineMacroExprPlugin` from `Arc`.
-        let plugin = unsafe { InlineProcMacroPlugin::downcast_ref_unchecked(&*id.0) };
         Ok(Self::ProcMacro(ProcMacro { source_packages: plugin.source_packages().to_vec() }))
     }
 }
