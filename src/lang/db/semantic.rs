@@ -634,10 +634,12 @@ fn find_generated_nodes<'db>(
                 let nodes: Vec<_> = terminal
                     .ancestors_with_self(db)
                     .map_while(|new_node| {
-                        translate_location(&mappings, new_node.span(db))
+                        translate_location(&mappings, new_node.span_without_trivia(db))
                             .map(|span_in_parent| (new_node, span_in_parent))
                     })
-                    .take_while(|(_, span_in_parent)| node.span(db).contains(*span_in_parent))
+                    .take_while(|(_, span_in_parent)| {
+                        node.span_without_trivia(db).contains(*span_in_parent)
+                    })
                     .collect();
 
                 if let Some((last_node, _)) = nodes.last().cloned() {
