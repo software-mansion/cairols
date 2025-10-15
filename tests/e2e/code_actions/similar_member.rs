@@ -182,3 +182,22 @@ fn typo_in_macro_call() {
     At: Range { start: Position { line: 7, character: 15 }, end: Position { line: 7, character: 21 } }
     "#);
 }
+
+#[test]
+fn typo_in_macro_call_with_trivia() {
+    test_transform!(quick_fix_with_macros, "
+    struct ElStructuro {
+        membero: felt252
+    }
+
+    #[test]
+    fn test_el_structuro() {
+        let x = ElStructuro { membero: 1 };
+        let _v = x.me<caret>mber + 1;
+    }
+    ", @r#"
+    Title: Use membero instead
+    Add new text: "membero"
+    At: Range { start: Position { line: 7, character: 15 }, end: Position { line: 7, character: 21 } }
+    "#);
+}
