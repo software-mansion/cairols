@@ -9,7 +9,6 @@ use cairo_lang_syntax::node::ast::{MaybeImplBody, MaybeTraitBody, ModuleItem};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use convert_case::{Case, Casing};
-use downcast::unsafe_downcast_ref;
 use itertools::Itertools;
 use salsa::Database;
 use scarb::inline::inline_macro_generate_code;
@@ -21,7 +20,6 @@ use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, ProcMacroSc
 
 use crate::lang::plugins::DowncastRefUnchecked;
 
-mod downcast;
 // TODO(#6666) Evict this module when this is possible.
 mod scarb;
 
@@ -141,11 +139,8 @@ impl MacroPlugin for ProcMacroPlugin {
             return Default::default();
         };
 
-        // Safety: We use this plugin only in AnalysisDatabase.
-        let analysis_db = unsafe { unsafe_downcast_ref(db) };
-
         macro_generate_code(
-            analysis_db,
+            db,
             self.scope.clone(),
             item_ast,
             &self.defined_attributes,
@@ -200,9 +195,6 @@ impl InlineMacroExprPlugin for InlineProcMacroPlugin {
         item_ast: &cairo_lang_syntax::node::ast::ExprInlineMacro<'db>,
         _metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
     ) -> cairo_lang_defs::plugin::InlinePluginResult<'db> {
-        // Safety: We use this plugin only in AnalysisDatabase.
-        let analysis_db = unsafe { unsafe_downcast_ref(db) };
-
-        inline_macro_generate_code(analysis_db, self.scope.clone(), item_ast)
+        inline_macro_generate_code(db, self.scope.clone(), item_ast)
     }
 }

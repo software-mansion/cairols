@@ -6,10 +6,10 @@ use cairo_lang_macro::{
     Diagnostic as DiagnosticV2, Severity as SeverityV2, TextSpan as TextSpanV2,
 };
 use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use itertools::Itertools;
+use salsa::Database;
 
 mod child_nodes;
 mod conversion;
@@ -19,7 +19,7 @@ mod types;
 
 // <https://github.com/software-mansion/scarb/blob/741336e8abdcc2e13f852b65c5ce37ae2dd83a5a/scarb/src/compiler/plugin/proc_macro/v2/host/conversion.rs#L37-L123>
 pub fn into_cairo_diagnostics<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     diagnostics: Vec<DiagnosticV2>,
     call_site_stable_ptr: SyntaxStablePtrId<'db>,
 ) -> Vec<PluginDiagnostic<'db>> {
@@ -56,7 +56,7 @@ pub fn into_cairo_diagnostics<'db>(
 }
 
 fn get_root_ptr<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     stable_ptr: SyntaxStablePtrId<'db>,
 ) -> SyntaxStablePtrId<'db> {
     let mut current_ptr = stable_ptr;
@@ -73,7 +73,7 @@ fn get_root_ptr<'db>(
 /// Returns `None` if unable to find such node.
 pub fn find_encompassing_node<'db>(
     root_syntax_node: &SyntaxNode<'db>,
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     span: &TextSpanV2,
 ) -> Option<SyntaxNode<'db>> {
     let start_offset =
@@ -95,7 +95,7 @@ pub fn find_encompassing_node<'db>(
 /// Computes a span relative to `node` from an `absolute_span`.
 fn compute_relative_span(
     node: &SyntaxNode,
-    db: &dyn SyntaxGroup,
+    db: &dyn Database,
     absolute_span: &TextSpanV2,
 ) -> (TextWidth, TextWidth) {
     let offset = node.offset(db).as_u32();

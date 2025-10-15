@@ -3,11 +3,11 @@ use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::TextSpan as CairoTextSpan;
 use cairo_lang_macro::AllocationContext;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use salsa::Database;
 use scarb_proc_macro_server_types::methods::expand::ExpandInlineMacroParams;
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
 
 use super::into_cairo_diagnostics;
-use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::get_inline_macros_expansion;
 use crate::lang::proc_macros::plugins::scarb::conversion::{
     CallSiteLocation, code_mapping_from_proc_macro_server,
@@ -16,7 +16,7 @@ use crate::lang::proc_macros::plugins::scarb::types::TokenStreamBuilder;
 
 // <https://github.com/software-mansion/scarb/blob/4e81d1c4498137f80e211c6e2c6a5a6de01c66f2/scarb/src/compiler/plugin/proc_macro/host.rs#L1015-L1059>
 pub fn inline_macro_generate_code<'db>(
-    db: &'db AnalysisDatabase,
+    db: &'db dyn Database,
     expansion_context: ProcMacroScope,
     syntax: &ast::ExprInlineMacro<'db>,
 ) -> InlinePluginResult<'db> {
