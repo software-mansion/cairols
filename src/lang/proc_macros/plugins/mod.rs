@@ -18,8 +18,6 @@ use scarb_proc_macro_server_types::methods::defined_macros::{
 };
 use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, ProcMacroScope, Workspace};
 
-use crate::lang::plugins::DowncastRefUnchecked;
-
 // TODO(#6666) Evict this module when this is possible.
 mod scarb;
 
@@ -81,14 +79,6 @@ pub struct ProcMacroPlugin {
 impl ProcMacroPlugin {
     pub fn source_packages(&self) -> &[String] {
         &self.source_packages
-    }
-}
-
-impl<'t> DowncastRefUnchecked<'t> for ProcMacroPlugin {
-    type From = &'t dyn MacroPlugin;
-
-    unsafe fn downcast_ref_unchecked(value: Self::From) -> &'t Self {
-        unsafe { &*(value as *const dyn MacroPlugin as *const Self) }
     }
 }
 
@@ -176,14 +166,6 @@ pub struct InlineProcMacroPlugin {
 impl InlineProcMacroPlugin {
     pub fn source_packages(&self) -> &[String] {
         &self.source_packages
-    }
-}
-
-impl<'t> DowncastRefUnchecked<'t> for InlineProcMacroPlugin {
-    type From = &'t dyn InlineMacroExprPlugin;
-
-    unsafe fn downcast_ref_unchecked(value: Self::From) -> &'t Self {
-        unsafe { &*(value as *const dyn InlineMacroExprPlugin as *const Self) }
     }
 }
 
