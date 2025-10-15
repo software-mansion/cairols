@@ -1,3 +1,4 @@
+use indoc::indoc;
 use lsp_types::{
     ClientCapabilities, CodeActionContext, CodeActionOrCommand, CodeActionParams,
     HoverClientCapabilities, MarkupKind, Range, TextDocumentClientCapabilities, lsp_request,
@@ -42,6 +43,29 @@ fn quick_fix_with_linter(cairo_code: &str) -> String {
             "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
         },
         true,
+        false,
+    )
+}
+
+fn quick_fix_with_macros(cairo_code: &str) -> String {
+    quick_fix_general(
+        cairo_code,
+        fixture! {
+            "Scarb.toml" => indoc! (r#"
+                [package]
+                name = "a"
+                version = "0.1.0"
+                edition = "2024_07"
+
+                [dev-dependencies]
+                snforge_std = "0.50.0"
+
+                [tool.scarb]
+                allow-prebuilt-plugins = ["snforge_std"]
+            "#)
+        },
+        true,
+        true,
     )
 }
 
@@ -51,6 +75,7 @@ fn quick_fix(cairo_code: &str) -> String {
         fixture! {
             "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
         },
+        false,
         false,
     )
 }
@@ -62,10 +87,11 @@ fn quick_fix_without_visibility_constraints(cairo_code: &str) -> String {
             "cairo_project.toml" => CAIRO_PROJECT_TOML,
         },
         false,
+        false,
     )
 }
 
-fn quick_fix_general(cairo_code: &str, mut fixture: Fixture, linter: bool) -> String {
+fn quick_fix_general(cairo_code: &str, mut fixture: Fixture, linter: bool, macros: bool) -> String {
     let (cairo, cursors) = cursors(cairo_code);
 
     fixture.add_file("src/lib.cairo", cairo);
@@ -74,7 +100,8 @@ fn quick_fix_general(cairo_code: &str, mut fixture: Fixture, linter: bool) -> St
         client_capabilities = caps;
         workspace_configuration = json!({
             "cairo1": {
-                "enableLinter": linter
+                "enableLinter": linter,
+                "enableProcMacros": macros,
             }
         });
     };

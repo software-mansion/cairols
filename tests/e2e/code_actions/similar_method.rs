@@ -1,4 +1,4 @@
-use crate::code_actions::quick_fix;
+use crate::code_actions::{quick_fix, quick_fix_with_macros};
 use crate::support::insta::test_transform;
 
 #[test]
@@ -95,4 +95,26 @@ fn no_similar_method_found() {
         x.completely_different_na<caret>me();
     }
     ", @"No code actions.");
+}
+
+#[test]
+fn add_1_char_typo_in_macro_call() {
+    test_transform!(quick_fix_with_macros, "
+    trait ATrait<T> {
+        fn some_method(self: @T);
+    }
+    impl Felt252ATraitImpl of ATrait<felt252> {
+        fn some_method(self: @felt252) {}
+    }
+
+    #[test]
+    fn test_a_trait() {
+        let x = 5_felt252;
+        x.some_me<caret>thood();
+    }
+    ", @r#"
+    Title: Use some_method instead
+    Add new text: "some_method"
+    At: Range { start: Position { line: 10, character: 6 }, end: Position { line: 10, character: 18 } }
+    "#);
 }

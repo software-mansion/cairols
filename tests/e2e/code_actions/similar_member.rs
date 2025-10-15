@@ -1,4 +1,4 @@
-use crate::code_actions::quick_fix;
+use crate::code_actions::{quick_fix, quick_fix_with_macros};
 use crate::support::insta::test_transform;
 
 #[test]
@@ -73,7 +73,6 @@ fn no_similar_member_found() {
     ", @"No code actions.");
 }
 
-// FIXME
 #[test]
 fn trait_function_body_member_typo() {
     test_transform!(quick_fix, "
@@ -162,5 +161,24 @@ fn typo_with_trivia() {
     Title: Use membero instead
     Add new text: "membero"
     At: Range { start: Position { line: 6, character: 22 }, end: Position { line: 6, character: 28 } }
+    "#);
+}
+
+#[test]
+fn typo_in_macro_call() {
+    test_transform!(quick_fix_with_macros, "
+    struct ElStructuro {
+        membero: felt252
+    }
+
+    #[test]
+    fn test_el_structuro() {
+        let x = ElStructuro { membero: 1 };
+        let _v = x.me<caret>mber;
+    }
+    ", @r#"
+    Title: Use membero instead
+    Add new text: "membero"
+    At: Range { start: Position { line: 7, character: 15 }, end: Position { line: 7, character: 21 } }
     "#);
 }
