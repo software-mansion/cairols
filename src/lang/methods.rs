@@ -11,13 +11,12 @@ use cairo_lang_semantic::items::function_with_body::{
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::{LspHelpers, TypeFilter};
 use cairo_lang_semantic::resolve::Resolver;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use itertools::{Itertools, chain};
 use tracing::debug;
 
-use super::analysis_context::AnalysisContext;
-use crate::lang::db::AnalysisDatabase;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 /// Finds all methods that can be called on a type.
 /// The order of which the methods are searched is:
@@ -94,12 +93,13 @@ pub fn find_methods_for_type<'db>(
 /// Returns list of full qualified paths as strings.
 pub fn available_traits_for_method<'db>(
     db: &'db AnalysisDatabase,
-    ctx: &AnalysisContext<'db>,
+    node: &SyntaxNode<'db>,
+    resolver: &mut Resolver<'db>,
 ) -> Option<Vec<String>> {
-    let stable_ptr = ctx.node.ancestor_of_type::<ast::ExprBinary>(db)?.lhs(db).stable_ptr(db);
+    let stable_ptr = node.ancestor_of_type::<ast::ExprBinary>(db)?.lhs(db).stable_ptr(db);
 
     // Get its semantic model.
-    let function_with_body = ctx.lookup_item_id?.function_with_body()?;
+    let function_with_body = db.find_lookup_item(*node)?.function_with_body()?;
     let expr_id = db.lookup_expr_by_ptr(function_with_body, stable_ptr).ok()?;
 
     let semantic_db: &dyn SemanticGroup = db;
@@ -109,11 +109,12 @@ pub fn available_traits_for_method<'db>(
         return None;
     }
 
-    let module_visible_traits = db.visible_traits_from_module(ctx.module_id)?;
-    let unknown_method_name = ctx.node.get_text(db);
+    let module = db.find_module_containing_node(*node)?;
+    let module_visible_traits = db.visible_traits_from_module(module)?;
+    let unknown_method_name = node.get_text(db);
 
     Some(
-        find_methods_for_type(db, &mut ctx.resolver(db), ty, stable_ptr.untyped())
+        find_methods_for_type(db, resolver, ty, stable_ptr.untyped())
             .into_iter()
             .filter(|method| method.name(db).to_string(db).as_str() == unknown_method_name)
             .filter_map(|method| module_visible_traits.get(&method.trait_id(db)).cloned())
