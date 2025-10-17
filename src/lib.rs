@@ -25,6 +25,7 @@ use crossbeam::channel::{Receiver, select_biased};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use lsp_types::request::SemanticTokensRefresh;
+use mimalloc::MiMalloc;
 use tracing::{debug, error, info};
 
 use crate::ide::analysis_progress::AnalysisStatus;
@@ -58,6 +59,9 @@ mod state;
 #[cfg(feature = "testing")]
 pub mod testing;
 mod toolchain;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Starts the language server.
 ///
