@@ -1,6 +1,6 @@
 use indoc::indoc;
 
-use crate::code_actions::{quick_fix, quick_fix_general};
+use crate::code_actions::{quick_fix, quick_fix_general, quick_fix_with_scarb_macros};
 use crate::support::fixture;
 use crate::support::insta::test_transform;
 
@@ -24,6 +24,10 @@ const TRAIT_CODE: &str = r#"
 
 fn test_fill_trait(cairo_code: &str) -> String {
     quick_fix(format!("{TRAIT_CODE}{cairo_code}").as_str())
+}
+
+fn test_fill_trait_with_scarb_macros(cairo_code: &str) -> String {
+    quick_fix_with_scarb_macros(format!("{TRAIT_CODE}{cairo_code}").as_str())
 }
 
 fn test_fill_trait_nested(cairo_code: &str) -> String {
@@ -297,4 +301,37 @@ fn methods_from_non_deps_excluded() {
         x.some_meth<caret>od();
     }
     ",@"No code actions.");
+}
+
+#[test]
+fn methods_in_macro_controlled_code() {
+    test_transform!(
+        test_fill_trait_with_scarb_macros,
+        r#"
+        #[complex_attribute_macro_v2]
+        mod scarb_test_macros_v2 {
+            use super::MyTrait;
+
+            impl ImplWithoutGenericArgs<caret> of MyTrait {}
+        }
+    "#, @r#"
+    Title: Implement missing members
+    Add new text: "type Type = ();
+
+    const CONCRETE_CONST: u32 = ();
+
+    const GENERIC_CONST: ?2 = ();
+
+    fn foo(t: ?2, v: ?3) -> ?2 {}
+
+    fn bar(t: ?2) -> ?3 {}
+
+    fn baz(s: crate::SomeStructWithConstParameter<?1>) {}
+
+    fn generic<const V: u32, W, +Into<?2, W>>(w: W) {}
+
+    fn with_concrete_impl<W, impl SomeImpl: Into<?2, W>>(w: W) -> W {}"
+    At: Range { start: Position { line: 19, character: 44 }, end: Position { line: 19, character: 44 } }
+    "#
+    )
 }
