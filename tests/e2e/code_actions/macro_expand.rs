@@ -1,4 +1,4 @@
-use crate::code_actions::quick_fix;
+use crate::code_actions::{quick_fix, quick_fix_with_macros};
 use crate::support::insta::test_transform;
 
 #[test]
@@ -70,6 +70,16 @@ fn inline_macro_inside_ident() {
 fn inline_macro_after_ident() {
     test_transform!(quick_fix, r#"
     fn c() {
+        println<caret>!("a");
+    }
+    "#, @"Title: Expand macro recursively at caret")
+}
+
+#[test]
+fn inline_macro_inside_macro_controlled_code() {
+    test_transform!(quick_fix_with_macros, r#"
+    #[test]
+    fn test_smthing() {
         println<caret>!("a");
     }
     "#, @"Title: Expand macro recursively at caret")
