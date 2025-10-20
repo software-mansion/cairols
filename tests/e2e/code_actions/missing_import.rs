@@ -1,4 +1,6 @@
-use crate::code_actions::{quick_fix, quick_fix_without_visibility_constraints};
+use crate::code_actions::{
+    quick_fix, quick_fix_with_macros, quick_fix_without_visibility_constraints,
+};
 use crate::support::insta::test_transform;
 
 #[test]
@@ -181,6 +183,35 @@ fn fix_all() {
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     Add new text: "use aa::dd;
+
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    "#);
+}
+
+#[test]
+fn in_proc_macro_controlled_code() {
+    test_transform!(quick_fix_with_macros, "
+    mod aa {
+        pub mod bb {
+            pub fn cc<T>(a: @T) {}
+        }
+
+        pub fn dd() {}
+    }
+
+    #[test]
+    fn test() {
+        b<caret>b::cc();
+    }
+    ", @r#"
+    Title: Import `aa::bb`
+    Add new text: "use aa::bb;
+
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Fix All
+    Add new text: "use aa::bb;
 
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
