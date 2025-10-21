@@ -1,10 +1,11 @@
-use indoc::indoc;
+use indoc::{formatdoc, indoc};
 use lsp_types::{
     ClientCapabilities, CodeActionContext, CodeActionOrCommand, CodeActionParams,
     HoverClientCapabilities, MarkupKind, Range, TextDocumentClientCapabilities, lsp_request,
 };
 use serde_json::json;
 
+use crate::macros::SCARB_TEST_MACROS_V2_PACKAGE;
 use crate::support::cairo_project_toml::{CAIRO_PROJECT_TOML, CAIRO_PROJECT_TOML_2024_07};
 use crate::support::cursor::Cursor;
 use crate::support::fixture::Fixture;
@@ -63,6 +64,28 @@ fn quick_fix_with_macros(cairo_code: &str) -> String {
                 [tool.scarb]
                 allow-prebuilt-plugins = ["snforge_std"]
             "#)
+        },
+        true,
+        true,
+    )
+}
+
+fn quick_fix_with_scarb_macros(cairo_code: &str) -> String {
+    quick_fix_general(
+        cairo_code,
+        fixture! {
+           "Scarb.toml" => formatdoc!(
+            r#"
+                [package]
+                name = "test_package"
+                version = "0.1.0"
+                edition = "2024_07"
+
+                [dependencies]
+                cairols_test_macros_v2 = {{ path = "{}" }}
+                "#,
+            SCARB_TEST_MACROS_V2_PACKAGE.display()
+        )
         },
         true,
         true,
