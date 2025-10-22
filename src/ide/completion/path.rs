@@ -119,6 +119,8 @@ pub fn path_suffix_completions<'db>(
             } else {
                 None
             };
+
+            let is_in_scope = additional_text_edits.is_none();
             let importable_crate = importable_crate_id(db, *importable);
             let is_current_crate = importable_crate == current_crate;
             let is_core = *importable_crate.long(db) == CrateLongId::core(db);
@@ -159,7 +161,7 @@ pub fn path_suffix_completions<'db>(
                     additional_text_edits,
                     ..CompletionItem::default()
                 },
-                relevance: get_item_relevance(!is_not_in_scope, is_current_crate, is_core),
+                relevance: get_item_relevance(is_in_scope, is_current_crate, is_core),
             })
         })
         .unique_by(|completion| CompletionItemHashable(completion.clone()))

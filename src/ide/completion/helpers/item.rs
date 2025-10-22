@@ -10,8 +10,9 @@ pub enum CompletionRelevance {
     Lowest = 0,
     Low = 1,
     Medium = 2,
-    High = 3,
-    Highest = 4,
+    MediumHigh = 3,
+    High = 4,
+    Highest = 5,
 }
 
 pub fn get_item_relevance(
@@ -20,7 +21,9 @@ pub fn get_item_relevance(
     is_corelib: bool,
 ) -> CompletionRelevance {
     match (is_in_scope, is_current_crate, is_corelib) {
-        (true, _, _) => CompletionRelevance::High,
+        (true, _, false) => CompletionRelevance::High,
+        // This one ensures that prelude items are below items from the current scope, but still high enough.
+        (true, _, _) => CompletionRelevance::MediumHigh,
         (false, true, _) => CompletionRelevance::Medium,
         (false, false, false) => CompletionRelevance::Low,
         _ => CompletionRelevance::Lowest,
