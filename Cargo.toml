@@ -40,7 +40,7 @@ cairo-lang-executable-plugin = "2.13.0"
 cairo-lang-filesystem = "2.13.0"
 cairo-lang-formatter = "2.13.0"
 cairo-lang-lowering = "2.13.0"
-cairo-lang-macro = { git = "https://github.com/software-mansion/scarb", rev = "d22d0e0fb0429ae5924c51e6ecd7b1b5fea47034" }
+cairo-lang-macro = "0.2.1"
 cairo-lang-macro-v1 = { version = "0.1", package = "cairo-lang-macro", features = ["serde"] }
 cairo-lang-parser = "2.13.0"
 cairo-lang-plugins = "2.13.0"
@@ -51,7 +51,7 @@ cairo-lang-syntax = "2.13.0"
 cairo-lang-syntax-codegen = "2.13.0"
 cairo-lang-test-plugin = "2.13.0"
 cairo-lang-utils = "2.13.0"
-cairo-lint = "*"
+cairo-lint = "2.13.0"
 colored = "3.0.0"
 convert_case = "0.8.0"
 crossbeam = "0.8.4"
@@ -66,7 +66,7 @@ memchr = "2.7.6"
 mimalloc = "0.1.48"
 salsa = "0.24.0"
 scarb-metadata = "1.15.1"
-scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb", rev = "d22d0e0fb0429ae5924c51e6ecd7b1b5fea47034" }
+scarb-proc-macro-server-types = "0.4.0"
 scarb-stable-hash = "1"
 semver = "1"
 serde = { version = "1", default-features = false, features = ["derive"] }
@@ -96,7 +96,6 @@ similar = "2.7"
 # on some of them directly.
 # This ensures no duplicate instances of Cairo crates are pulled in by mistake.
 [patch.crates-io]
-cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "704ecd73e424cb2b51ba49a6ec4f2dc1aebcc71a" }
 
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,
