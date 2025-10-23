@@ -237,25 +237,21 @@ impl<'db> SymbolDef<'db> {
                         .is_some()
                     {
                         let file_id = owning_function.stable_ptr(db).file_id(db);
-                        if let Some((subfiles, _)) =
-                            db.file_and_subfiles_with_corresponding_modules(file_id)
-                        {
-                            let files_spans = subfiles
-                                .iter()
-                                .copied()
-                                .map(|f| {
-                                    if f == file_id {
-                                        (f, Some(owning_function.span(db)))
-                                    } else {
-                                        (f, None)
-                                    }
-                                })
-                                .collect();
+                        let (subfiles, _) =
+                            db.file_and_subfiles_with_corresponding_modules(file_id);
+                        let files_spans = subfiles
+                            .iter()
+                            .copied()
+                            .map(|f| {
+                                if f == file_id {
+                                    (f, Some(owning_function.span(db)))
+                                } else {
+                                    (f, None)
+                                }
+                            })
+                            .collect();
 
-                            SearchScope::files_spans(files_spans)
-                        } else {
-                            SearchScope::empty()
-                        }
+                        SearchScope::files_spans(files_spans)
                     } else {
                         SearchScope::file_span(
                             owning_function.stable_ptr(db).file_id(db),

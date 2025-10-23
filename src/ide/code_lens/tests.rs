@@ -48,7 +48,7 @@ impl CodeLensInterface for TestCodeLens {
         let node = db.widest_node_within_span_without_trivia(file, span)?;
 
         let (full_qualified_path, module_id) =
-            db.get_node_resultants(node).as_ref()?.iter().find_map(|resultant| {
+            db.get_node_resultants(node).iter().find_map(|resultant| {
                 let module_item = resultant
                     .ancestors_with_self(db)
                     .find_map(|node| ModuleItem::cast(db, node))?;

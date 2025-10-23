@@ -25,7 +25,7 @@ pub fn fill_struct_fields<'db>(
     node: SyntaxNode<'db>,
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
-    db.get_node_resultants(node)?.iter().find_map(|resultant_node| {
+    db.get_node_resultants(node).iter().find_map(|resultant_node| {
         let module_id = db.find_module_containing_node(*resultant_node)?;
         let original_file_id = node.stable_ptr(db).file_id(db);
         let function_id = db.find_lookup_item(*resultant_node)?.function_with_body()?;

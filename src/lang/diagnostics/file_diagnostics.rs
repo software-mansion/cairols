@@ -75,7 +75,7 @@ impl<'db> FilesDiagnostics<'db> {
             <AnalysisDatabase as LsSemanticGroup>::file_and_subfiles_with_corresponding_modules(
                 db,
                 root_on_disk_file,
-            )?;
+            );
 
         for module_id in modules_to_process.iter().copied() {
             if let Ok(notes) = module_id.module_data(db).map(|data| data.diagnostics_notes(db)) {

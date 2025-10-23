@@ -59,9 +59,7 @@ pub fn rename(
     let position = params.text_document_position.position.to_cairo();
     let Some(identifier) = db.find_identifier_at_position(file, position) else { return Ok(None) };
 
-    let Some(resultants) = db.get_node_resultants(identifier.as_syntax_node()) else {
-        return Ok(None);
-    };
+    let resultants = db.get_node_resultants(identifier.as_syntax_node());
 
     let symbols: Vec<_> =
         resultants.iter().filter_map(|node| declaration_from_resultant(db, *node)).collect();

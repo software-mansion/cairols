@@ -20,7 +20,7 @@ pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
         .map(|ident| ident.as_syntax_node())
         .or_else(|| db.find_syntax_node_at_position(file_id, position))?;
 
-    let resultants = db.get_node_resultants(node)?;
+    let resultants = db.get_node_resultants(node);
 
     let hover_content = resultants
         .iter()

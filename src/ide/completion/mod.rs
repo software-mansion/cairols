@@ -93,7 +93,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED);
 
     let deduplicated_items: Vec<_> = db
-        .get_node_resultants(node)?
+        .get_node_resultants(node)
         .iter()
         .filter_map(|resultant| complete_ex(*resultant, trigger_kind, was_node_corrected, db))
         .flatten()

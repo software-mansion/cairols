@@ -109,8 +109,8 @@ pub trait LsSemanticGroup: Database {
     fn file_and_subfiles_with_corresponding_modules<'db>(
         &'db self,
         file: FileId<'db>,
-    ) -> Option<&'db (OrderedHashSet<FileId<'db>>, OrderedHashSet<ModuleId<'db>>)> {
-        Some(file_and_subfiles_with_corresponding_modules(self.as_dyn_database(), file))
+    ) -> &'db (OrderedHashSet<FileId<'db>>, OrderedHashSet<ModuleId<'db>>) {
+        file_and_subfiles_with_corresponding_modules(self.as_dyn_database(), file)
     }
 
     /// We use the term `resultants` to refer to generated nodes that are mapped to the original node and are not deleted.
@@ -171,11 +171,8 @@ pub trait LsSemanticGroup: Database {
     /// Additionally `FooTrait` from file 2 is mapped to `FooTrait` from file 1.
     ///
     /// Therefore for `FooTrait` from file 1, `FooTrait` from file 1 and `FooTrait` from file 2 are returned.
-    fn get_node_resultants<'db>(
-        &'db self,
-        node: SyntaxNode<'db>,
-    ) -> Option<&'db Vec<SyntaxNode<'db>>> {
-        get_node_resultants(self.as_dyn_database(), (), node).as_ref()
+    fn get_node_resultants<'db>(&'db self, node: SyntaxNode<'db>) -> &'db Vec<SyntaxNode<'db>> {
+        get_node_resultants(self.as_dyn_database(), (), node)
     }
 
     fn find_generated_nodes<'db>(
@@ -435,15 +432,15 @@ fn get_node_resultants<'db>(
     db: &'db dyn Database,
     _: (),
     node: SyntaxNode<'db>,
-) -> Option<Vec<SyntaxNode<'db>>> {
+) -> Vec<SyntaxNode<'db>> {
     let main_file = node.stable_ptr(db).file_id(db);
 
-    let (files, _) = db.file_and_subfiles_with_corresponding_modules(main_file)?;
+    let (files, _) = db.file_and_subfiles_with_corresponding_modules(main_file);
 
     let files: Arc<[FileId]> = files.iter().filter(|file| **file != main_file).copied().collect();
     let resultants = db.find_generated_nodes(files, node);
 
-    Some(resultants.into_iter().copied().collect())
+    resultants.into_iter().copied().collect()
 }
 
 /// If the ast node is a lookup item, return corresponding ids. Otherwise, returns `None`.

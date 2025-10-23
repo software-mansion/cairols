@@ -50,9 +50,7 @@ pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec
 
         let pattern = let_statement.pattern(db);
 
-        let Some(pattern_resultants) = db.get_node_resultants(pattern.as_syntax_node()) else {
-            continue;
-        };
+        let pattern_resultants = db.get_node_resultants(pattern.as_syntax_node());
 
         for pattern_resultant in pattern_resultants
             .iter()

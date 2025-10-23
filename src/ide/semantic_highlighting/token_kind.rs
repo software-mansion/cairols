@@ -77,9 +77,7 @@ impl SemanticTokenKind {
                 _ => {}
             };
 
-            let Some(resultants) = db.get_node_resultants(identifier.as_syntax_node()) else {
-                continue;
-            };
+            let resultants = db.get_node_resultants(identifier.as_syntax_node());
             // We use resultants here to get semantics of the actual node that is generated.
             for resultant in resultants {
                 if let Some(lookup_item_id) = db.find_lookup_item(*resultant) {

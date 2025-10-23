@@ -17,7 +17,7 @@ pub fn references(params: ReferenceParams, db: &AnalysisDatabase) -> Option<Vec<
     // Try to apply identifier correction before resultants.
     let node = db.find_identifier_at_position(file, position)?;
 
-    let resultants = db.get_node_resultants(node.as_syntax_node())?;
+    let resultants = db.get_node_resultants(node.as_syntax_node());
     let locations: OrderedHashSet<_> = resultants
         .iter()
         .filter_map(|node| find_references(db, *node, include_declaration))
