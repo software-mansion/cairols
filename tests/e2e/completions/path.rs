@@ -56,6 +56,27 @@ fn single_element_path() {
     completion_label_path = "ByteArrayTrait"
 
     [[completions]]
+    completion_label = "ByteSpan"
+    text_edits = ["""
+    use core::byte_array::ByteSpan;
+
+    """]
+
+    [[completions]]
+    completion_label = "ByteSpanImpl"
+    text_edits = ["""
+    use core::byte_array::ByteSpanImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "ByteSpanTrait"
+    text_edits = ["""
+    use core::byte_array::ByteSpanTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "Bytes31Impl"
     completion_label_path = "core::bytes_31::Bytes31Impl"
     text_edits = ["""

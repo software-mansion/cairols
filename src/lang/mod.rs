@@ -7,7 +7,6 @@ pub mod importer;
 pub mod lsp;
 pub mod members;
 pub mod methods;
-pub mod plugins;
 pub mod proc_macros;
 pub mod rename_file;
 pub mod text_matching;

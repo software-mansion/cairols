@@ -1,4 +1,6 @@
-use crate::code_actions::{quick_fix, quick_fix_without_visibility_constraints};
+use crate::code_actions::{
+    quick_fix, quick_fix_with_macros, quick_fix_without_visibility_constraints,
+};
 use crate::support::insta::test_transform;
 
 #[test]
@@ -242,4 +244,28 @@ fn from_corelib_visible_only_in_editions_without_visibility_constraints() {
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     "#);
+}
+
+#[test]
+fn from_corelib_inside_proc_macro() {
+    test_transform!(quick_fix_with_macros, "
+    #[test]
+    fn test_costam() {
+        let x = core::pedersen::PedersenTrait::new(5_felt252);
+        let _y = x.upda<caret>te(3_felt252);
+    }
+    ",
+    @r#"
+    Title: Import core::hash::HashStateTrait
+    Add new text: "use core::hash::HashStateTrait;
+
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Fix All
+    Add new text: "use core::hash::HashStateTrait;
+
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    "#
+    )
 }

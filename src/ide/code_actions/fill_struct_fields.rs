@@ -25,107 +25,116 @@ pub fn fill_struct_fields<'db>(
     node: SyntaxNode<'db>,
     params: &CodeActionParams,
 ) -> Option<CodeAction> {
-    let module_id = db.find_module_containing_node(node)?;
-    let file_id = node.stable_ptr(db).file_id(db);
-    let function_id = db.find_lookup_item(node)?.function_with_body()?;
+    db.get_node_resultants(node)?.iter().find_map(|resultant_node| {
+        let module_id = db.find_module_containing_node(*resultant_node)?;
+        let original_file_id = node.stable_ptr(db).file_id(db);
+        let function_id = db.find_lookup_item(*resultant_node)?.function_with_body()?;
 
-    let constructor_expr = node.ancestor_of_type::<ExprStructCtorCall>(db)?;
+        let constructor_expr = node.ancestor_of_type::<ExprStructCtorCall>(db)?;
+        let constructor_expr_semantic =
+            resultant_node.ancestor_of_type::<ExprStructCtorCall>(db)?;
 
-    let mut last_important_element = None;
-    let mut has_trailing_comma = false;
+        let mut last_important_element = None;
+        let mut has_trailing_comma = false;
 
-    for node in constructor_expr.as_syntax_node().descendants(db) {
-        match node.kind(db) {
-            SyntaxKind::TokenComma => {
-                has_trailing_comma = true;
-                last_important_element = Some(node)
+        for node in constructor_expr.as_syntax_node().descendants(db) {
+            match node.kind(db) {
+                SyntaxKind::TokenComma => {
+                    has_trailing_comma = true;
+                    last_important_element = Some(node)
+                }
+                SyntaxKind::StructArgSingle => {
+                    has_trailing_comma = false;
+                    last_important_element = Some(node)
+                }
+                // Don't complete any fields if initialization contains tail.
+                SyntaxKind::StructArgTail => return None,
+                _ => {}
             }
-            SyntaxKind::StructArgSingle => {
-                has_trailing_comma = false;
-                last_important_element = Some(node)
-            }
-            // Don't complete any fields if initialization contains tail.
-            SyntaxKind::StructArgTail => return None,
-            _ => {}
         }
-    }
 
-    let code_prefix = String::from(if !has_trailing_comma && last_important_element.is_some() {
-        ", "
-    } else {
-        " "
-    });
-
-    let struct_arguments = constructor_expr.arguments(db);
-    let left_brace = struct_arguments.lbrace(db);
-    let struct_arguments = struct_arguments.arguments(db).elements(db);
-
-    let already_present_arguments = struct_arguments
-        .map(|member| match member {
-            StructArg::StructArgSingle(argument) => {
-                argument.identifier(db).token(db).as_syntax_node().get_text_without_trivia(db)
-            }
-            StructArg::StructArgTail(_) => unreachable!(),
-        })
-        .collect::<Vec<_>>();
-
-    let constructor_expr_id =
-        db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr(db).into()).ok()?;
-
-    let semantic_db: &dyn SemanticGroup = db;
-    let constructor_semantic = match semantic_db.expr_semantic(function_id, constructor_expr_id) {
-        Expr::StructCtor(semantic) => semantic,
-        _ => {
-            error!(
-                "Semantic expression obtained from StructCtorCall doesn't refer to constructor."
-            );
-            return None;
-        }
-    };
-
-    let concrete_struct_id = constructor_semantic.concrete_struct_id;
-    let struct_parent_module_id = concrete_struct_id.struct_id(db).parent_module(db);
-
-    let arguments_to_complete = db
-        .concrete_struct_members(concrete_struct_id)
-        .ok()?
-        .iter()
-        .filter_map(|(name, member)| {
-            if already_present_arguments.contains(name) {
-                None
-            } else if peek_visible_in_with_edition(
-                db,
-                member.visibility,
-                struct_parent_module_id,
-                module_id,
-            ) {
-                Some(format!("{}: ()", name.to_string(db)))
+        let code_prefix =
+            String::from(if !has_trailing_comma && last_important_element.is_some() {
+                ", "
             } else {
-                None
+                " "
+            });
+
+        let struct_arguments = constructor_expr.arguments(db);
+        let left_brace = struct_arguments.lbrace(db);
+        let struct_arguments = struct_arguments.arguments(db).elements(db);
+
+        let already_present_arguments = struct_arguments
+            .map(|member| match member {
+                StructArg::StructArgSingle(argument) => {
+                    argument.identifier(db).token(db).as_syntax_node().get_text_without_trivia(db)
+                }
+                StructArg::StructArgTail(_) => unreachable!(),
+            })
+            .collect::<Vec<_>>();
+
+        let constructor_resultant_expr_id = db
+            .lookup_expr_by_ptr(function_id, constructor_expr_semantic.stable_ptr(db).into())
+            .ok()?;
+
+        let semantic_db: &dyn SemanticGroup = db;
+        let constructor_semantic = match semantic_db
+            .expr_semantic(function_id, constructor_resultant_expr_id)
+        {
+            Expr::StructCtor(semantic) => semantic,
+            _ => {
+                error!(
+                    "Semantic expression obtained from StructCtorCall doesn't refer to constructor."
+                );
+                return None;
             }
+        };
+
+        let concrete_struct_id = constructor_semantic.concrete_struct_id;
+        let struct_parent_module_id = concrete_struct_id.struct_id(db).parent_module(db);
+
+        let arguments_to_complete = db
+            .concrete_struct_members(concrete_struct_id)
+            .ok()?
+            .iter()
+            .filter_map(|(name, member)| {
+                if already_present_arguments.contains(name) {
+                    None
+                } else if peek_visible_in_with_edition(
+                    db,
+                    member.visibility,
+                    struct_parent_module_id,
+                    module_id,
+                ) {
+                    Some(format!("{}: ()", name.to_string(db)))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let code_to_insert = code_prefix + &arguments_to_complete.join(", ");
+
+        let edit_start = last_important_element
+            .unwrap_or(left_brace.as_syntax_node())
+            .span_end_without_trivia(db)
+            .position_in_file(db, original_file_id)?
+            .to_lsp();
+
+        let mut changes = HashMap::new();
+        let url = params.text_document.uri.clone();
+        let change =
+            TextEdit { range: Range::new(edit_start, edit_start), new_text: code_to_insert };
+
+        changes.insert(url, vec![change]);
+
+        let edit = WorkspaceEdit::new(changes);
+
+        Some(CodeAction {
+            title: String::from("Fill struct fields"),
+            kind: Some(CodeActionKind::QUICKFIX),
+            edit: Some(edit),
+            ..Default::default()
         })
-        .collect::<Vec<_>>();
-
-    let code_to_insert = code_prefix + &arguments_to_complete.join(", ");
-
-    let edit_start = last_important_element
-        .unwrap_or(left_brace.as_syntax_node())
-        .span_end_without_trivia(db)
-        .position_in_file(db, file_id)?
-        .to_lsp();
-
-    let mut changes = HashMap::new();
-    let url = params.text_document.uri.clone();
-    let change = TextEdit { range: Range::new(edit_start, edit_start), new_text: code_to_insert };
-
-    changes.insert(url, vec![change]);
-
-    let edit = WorkspaceEdit::new(changes);
-
-    Some(CodeAction {
-        title: String::from("Fill struct fields"),
-        kind: Some(CodeActionKind::QUICKFIX),
-        edit: Some(edit),
-        ..Default::default()
     })
 }
