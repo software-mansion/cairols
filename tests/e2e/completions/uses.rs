@@ -424,3 +424,25 @@ fn only_proposing_currently_visible_items() {
     completion_label = "foorator_mod"
     "#);
 }
+
+#[test]
+fn declarative_macro() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod my_mod {
+        pub macro my_own_macro {
+            ($x:ident) => {
+                1
+            };
+        }
+    }
+
+    use my_mod::<caret>
+    ",@r#"
+    caret = """
+    use my_mod::<caret>
+    """
+
+    [[completions]]
+    completion_label = "my_own_macro"
+    "#);
+}
