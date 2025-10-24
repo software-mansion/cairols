@@ -57,6 +57,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteSpan"
+    completion_label_path = "core::byte_array::ByteSpan"
     text_edits = ["""
     use core::byte_array::ByteSpan;
 
@@ -64,6 +65,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteSpanImpl"
+    completion_label_path = "core::byte_array::ByteSpanImpl"
     text_edits = ["""
     use core::byte_array::ByteSpanImpl;
 
@@ -71,6 +73,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteSpanTrait"
+    completion_label_path = "core::byte_array::ByteSpanTrait"
     text_edits = ["""
     use core::byte_array::ByteSpanTrait;
 
