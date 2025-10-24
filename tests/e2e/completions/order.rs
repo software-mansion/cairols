@@ -24,11 +24,14 @@ fn order_with_current_crate_and_core_deps() {
     """
 
     [[completions]]
-    completion_label = "Add"
-
-    [[completions]]
     completion_label = "AddAssign"
     completion_label_path = "AddAssign"
+
+    [[completions]]
+    completion_label = "AddAssignImpl"
+
+    [[completions]]
+    completion_label = "Add"
 
     [[completions]]
     completion_label = "AddAssign"
@@ -53,9 +56,6 @@ fn order_with_current_crate_and_core_deps() {
     use core::ops::AddAssign;
 
     """]
-
-    [[completions]]
-    completion_label = "AddAssignImpl"
 
     [[completions]]
     completion_label = "AddEq"
@@ -144,11 +144,14 @@ fn order_with_current_crate_and_core_deps_macros() {
     """
 
     [[completions]]
-    completion_label = "Add"
-
-    [[completions]]
     completion_label = "AddAssign"
     completion_label_path = "AddAssign"
+
+    [[completions]]
+    completion_label = "AddAssignImpl"
+
+    [[completions]]
+    completion_label = "Add"
 
     [[completions]]
     completion_label = "AddAssign"
@@ -173,9 +176,6 @@ fn order_with_current_crate_and_core_deps_macros() {
     use core::ops::AddAssign;
 
     """]
-
-    [[completions]]
-    completion_label = "AddAssignImpl"
 
     [[completions]]
     completion_label = "AddEq"
@@ -237,6 +237,83 @@ fn order_with_current_crate_and_core_deps_macros() {
     completion_label = "SubAssign"
     text_edits = ["""
     use core::ops::SubAssign;
+
+    """]
+    "#);
+}
+
+#[test]
+fn prelude_ordering() {
+    test_transform_plain!(Completion, completion_fixture_with_pub_dep_items(), "
+    #[derive(Copy, Drop, Debug, Serde, PartialEq)]
+    trait ResultTraitCustom2 {}
+
+    impl ResultTraitImpl of ResultTrai<caret>
+    ",@r#"
+    caret = """
+    impl ResultTraitImpl of ResultTrai<caret>
+    """
+
+    [[completions]]
+    completion_label = "ResultTraitCustom2"
+
+    [[completions]]
+    completion_label = "ResultTraitImpl"
+    completion_label_path = "ResultTraitImpl"
+
+    [[completions]]
+    completion_label = "Result"
+
+    [[completions]]
+    completion_label = "ResultTrait"
+
+    [[completions]]
+    completion_label = "ResultTraitCustom"
+    text_edits = ["""
+    use dep::ResultTraitCustom;
+
+    """]
+
+    [[completions]]
+    completion_label = "AddInputResultTrait"
+    text_edits = ["""
+    use core::circuit::AddInputResultTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "LoopResult"
+    text_edits = ["""
+    use core::internal::LoopResult;
+
+    """]
+
+    [[completions]]
+    completion_label = "RangeTrait"
+    text_edits = ["""
+    use core::ops::RangeTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "ResourceBounds"
+    text_edits = ["""
+    use starknet::ResourceBounds;
+
+    """]
+
+    [[completions]]
+    completion_label = "ResultTraitImpl"
+    completion_label_path = "core::result::ResultTraitImpl"
+    text_edits = ["""
+    use core::result::ResultTraitImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "result"
+    text_edits = ["""
+    use core::result;
 
     """]
     "#);
