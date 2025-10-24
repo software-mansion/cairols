@@ -92,7 +92,7 @@ pub fn top_level_inline_macro_completions<'db>(
 
         let typed = path_segment.ident(db).token(db).text(db).to_string(db);
 
-        let top_level_inline_macros =
+        let declarative_macros =
             path_suffix_completions(db, ctx, was_node_corrected).into_iter().filter_map(|item| {
                 if let ImportableId::MacroDeclaration(_) = item.importable_id {
                     Some(item.item)
@@ -105,7 +105,7 @@ pub fn top_level_inline_macro_completions<'db>(
             .into_iter()
             .filter(|name| text_matches(name, &typed))
             .map(snippet_completions_for_inline_plugins)
-            .chain(top_level_inline_macros)
+            .chain(declarative_macros)
             .collect()
     } else {
         Default::default()
