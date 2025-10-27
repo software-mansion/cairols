@@ -31,6 +31,7 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "blake"
+    completion_label_path = "core::blake"
     text_edits = ["""
     use core::blake;
 
@@ -38,6 +39,7 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "blake2s_compress"
+    completion_label_path = "core::blake::blake2s_compress"
     insert_text = "blake2s_compress(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_compress;
@@ -46,6 +48,7 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "blake2s_finalize"
+    completion_label_path = "core::blake::blake2s_finalize"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
@@ -54,6 +57,7 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "byte_array"
+    completion_label_path = "core::byte_array"
     text_edits = ["""
     use core::byte_array;
 
@@ -61,6 +65,7 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "library_call_syscall"
+    completion_label_path = "starknet::syscalls::library_call_syscall"
     insert_text = "library_call_syscall(${1:class_hash}, ${2:function_selector}, ${3:calldata})"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;
@@ -96,6 +101,7 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "blake"
+    completion_label_path = "core::blake"
     text_edits = ["""
     use core::blake;
 
@@ -103,6 +109,7 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "blake2s_compress"
+    completion_label_path = "core::blake::blake2s_compress"
     insert_text = "blake2s_compress(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_compress;
@@ -111,6 +118,7 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "blake2s_finalize"
+    completion_label_path = "core::blake::blake2s_finalize"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
@@ -119,6 +127,7 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "byte_array"
+    completion_label_path = "core::byte_array"
     text_edits = ["""
     use core::byte_array;
 
@@ -126,6 +135,7 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "library_call_syscall"
+    completion_label_path = "starknet::syscalls::library_call_syscall"
     insert_text = "library_call_syscall(${1:class_hash}, ${2:function_selector}, ${3:calldata})"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;
@@ -156,6 +166,7 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "blake"
+    completion_label_path = "core::blake"
     text_edits = ["""
     use core::blake;
 
@@ -163,6 +174,7 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "blake2s_compress"
+    completion_label_path = "core::blake::blake2s_compress"
     insert_text = "blake2s_compress(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_compress;
@@ -171,6 +183,7 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "blake2s_finalize"
+    completion_label_path = "core::blake::blake2s_finalize"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
@@ -179,6 +192,7 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "byte_array"
+    completion_label_path = "core::byte_array"
     text_edits = ["""
     use core::byte_array;
 
@@ -186,6 +200,7 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "library_call_syscall"
+    completion_label_path = "starknet::syscalls::library_call_syscall"
     insert_text = "library_call_syscall(${1:class_hash}, ${2:function_selector}, ${3:calldata})"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;
@@ -211,6 +226,7 @@ fn disallow_recursive_definition() {
 
     [[completions]]
     completion_label = "OverflowingAdd"
+    completion_label_path = "core::num::traits::OverflowingAdd"
     text_edits = ["""
     use core::num::traits::OverflowingAdd;
 
@@ -218,6 +234,7 @@ fn disallow_recursive_definition() {
 
     [[completions]]
     completion_label = "OverflowingMul"
+    completion_label_path = "core::num::traits::OverflowingMul"
     text_edits = ["""
     use core::num::traits::OverflowingMul;
 
@@ -225,6 +242,7 @@ fn disallow_recursive_definition() {
 
     [[completions]]
     completion_label = "OverflowingSub"
+    completion_label_path = "core::num::traits::OverflowingSub"
     text_edits = ["""
     use core::num::traits::OverflowingSub;
 
@@ -274,6 +292,7 @@ fn work_with_params() {
 
     [[completions]]
     completion_label = "a"
+    completion_label_path = "a"
     insert_text = "a(${1:paxram}, ${2:paxram2}, ${3:paxram3})"
 
     [[completions]]
@@ -282,10 +301,12 @@ fn work_with_params() {
 
     [[completions]]
     completion_label = "panic"
+    completion_label_path = "panic"
     insert_text = "panic(${1:data})"
 
     [[completions]]
     completion_label = "max"
+    completion_label_path = "core::cmp::max"
     insert_text = "max(${1:a}, ${2:b})"
     text_edits = ["""
     use core::cmp::max;
@@ -316,6 +337,7 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "blake"
+    completion_label_path = "core::blake"
     text_edits = ["""
     use core::blake;
 
@@ -323,6 +345,7 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "blake2s_compress"
+    completion_label_path = "core::blake::blake2s_compress"
     insert_text = "blake2s_compress(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_compress;
@@ -331,6 +354,7 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "blake2s_finalize"
+    completion_label_path = "core::blake::blake2s_finalize"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
@@ -339,6 +363,7 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "byte_array"
+    completion_label_path = "core::byte_array"
     text_edits = ["""
     use core::byte_array;
 
@@ -346,6 +371,7 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "library_call_syscall"
+    completion_label_path = "starknet::syscalls::library_call_syscall"
     insert_text = "library_call_syscall(${1:class_hash}, ${2:function_selector}, ${3:calldata})"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;

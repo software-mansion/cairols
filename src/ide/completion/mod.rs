@@ -143,10 +143,14 @@ fn complete_ex<'db>(
     completions.extend(struct_pattern_completions(db, &ctx));
     completions.extend(enum_pattern_completions(db, &ctx));
     completions.extend(expr_inline_macro_completions(db, &ctx, was_node_corrected));
-    completions.extend(top_level_inline_macro_completions(db, &ctx));
+    completions.extend(top_level_inline_macro_completions(db, &ctx, was_node_corrected));
 
-    if trigger_kind == CompletionTriggerKind::INVOKED {
-        completions.extend(path_suffix_completions(db, &ctx, was_node_corrected))
+    if trigger_kind == CompletionTriggerKind::INVOKED
+        && ctx.node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
+    {
+        completions.extend(
+            path_suffix_completions(db, &ctx, was_node_corrected).into_iter().map(|item| item.item),
+        )
     }
 
     Some(completions)

@@ -36,14 +36,18 @@ pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec
 
     let mut result = vec![];
 
-    let importables =
-        db.visible_importables_from_module(db.find_module_containing_node(syntax)?)?;
-
     for let_statement in syntax
         .descendants(db)
         .filter(|node| range.contains(node.span_without_trivia(db)))
         .filter_map(|node| StatementLet::cast(db, node))
     {
+        // In particular, this can be an inline module (normal or component).
+        let module = db.find_module_containing_node(let_statement.as_syntax_node())?;
+
+        // Importables should be retrieved for each node separately to handle inline modules properly
+        // and make sure each path is the shortest possible in the context of the containing (inline) module.
+        let importables = db.visible_importables_from_module(module)?;
+
         let pattern = let_statement.pattern(db);
 
         let Some(pattern_resultants) = db.get_node_resultants(pattern.as_syntax_node()) else {

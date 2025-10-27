@@ -1,4 +1,4 @@
-use crate::code_actions::quick_fix;
+use crate::code_actions::{quick_fix, quick_fix_with_macros};
 use crate::support::insta::test_transform;
 
 fn quick_fix_struct_simple(cairo_code: &str) -> String {
@@ -136,4 +136,24 @@ fn no_fill_nonexistent_struct() {
         }
     "#, @"No code actions."
     )
+}
+
+#[test]
+fn fill_struct_in_macro_controlled_code() {
+    test_transform!(quick_fix_with_macros, r#"
+     pub struct Struct {
+        x: u32,
+        pub y: felt252,
+        pub z: i16
+     }
+
+    #[test]
+    fn test_fn() {
+        let s = Struct { <caret> };
+    }
+    "#, @r#"
+    Title: Fill struct fields
+    Add new text: " x: (), y: (), z: ()"
+    At: Range { start: Position { line: 8, character: 20 }, end: Position { line: 8, character: 20 } }
+    "#)
 }
