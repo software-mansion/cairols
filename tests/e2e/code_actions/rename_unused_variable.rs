@@ -1,4 +1,4 @@
-use crate::code_actions::quick_fix;
+use crate::code_actions::{quick_fix, quick_fix_with_macros};
 use crate::support::insta::test_transform;
 
 #[test]
@@ -153,4 +153,21 @@ fn after_let_statement_when_mut() {
         let mut b = 1234;<caret>
     }
     ", @"No code actions.");
+}
+
+#[test]
+fn in_proc_macro_controlled_code() {
+    test_transform!(quick_fix_with_macros, "
+    #[test]
+    fn test_costam() {
+        let x<caret> = 1234;
+    }
+    ", @r#"
+    Title: Rename to `_x`
+    Add new text: "_"
+    At: Range { start: Position { line: 2, character: 8 }, end: Position { line: 2, character: 8 } }
+    Title: Fix All
+    Add new text: "_"
+    At: Range { start: Position { line: 2, character: 8 }, end: Position { line: 2, character: 8 } }
+    "#)
 }
