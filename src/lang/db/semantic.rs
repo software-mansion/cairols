@@ -45,7 +45,7 @@ pub trait LsSemanticGroup: Database {
     /// This method is a shortcut for getting the first item out of `collect_lookup_items_leaf`.
     /// Returns `None` if there is missing data in the compiler database.
     fn find_lookup_item<'db>(&'db self, node: SyntaxNode<'db>) -> Option<LookupItemId<'db>> {
-        find_lookup_item(self.as_dyn_database(), node)
+        find_lookup_item(self.as_dyn_database(), (), node)
     }
 
     /// Returns [`LookupItemId`]s corresponding to the node or its first parent all the way up to
@@ -57,7 +57,7 @@ pub trait LsSemanticGroup: Database {
         &'db self,
         node: SyntaxNode<'db>,
     ) -> Option<&'db Vec<LookupItemId<'db>>> {
-        collect_lookup_items_leaf(self.as_dyn_database(), node).as_ref()
+        collect_lookup_items_leaf(self.as_dyn_database(), (), node).as_ref()
     }
 
     /// Calls [`LsSemanticGroup::collect_lookup_items`] on provided node and all parent files that this node is mapping to.
@@ -65,7 +65,7 @@ pub trait LsSemanticGroup: Database {
         &'db self,
         node: SyntaxNode<'db>,
     ) -> Option<&'db Vec<LookupItemId<'db>>> {
-        collect_lookup_items_with_parent_files(self.as_dyn_database(), node).as_ref()
+        collect_lookup_items_with_parent_files(self.as_dyn_database(), (), node).as_ref()
     }
 
     /// Finds the corresponding node in the parent file for a given node using code mappings.
@@ -74,7 +74,7 @@ pub trait LsSemanticGroup: Database {
         &'db self,
         node: SyntaxNode<'db>,
     ) -> Option<SyntaxNode<'db>> {
-        corresponding_node_in_parent_file(self.as_dyn_database(), node)
+        corresponding_node_in_parent_file(self.as_dyn_database(), (), node)
     }
 
     /// Returns [`LookupItemId`]s corresponding to the node and its parents all the way up to syntax
@@ -86,12 +86,12 @@ pub trait LsSemanticGroup: Database {
         &'db self,
         node: SyntaxNode<'db>,
     ) -> Option<&'db Vec<LookupItemId<'db>>> {
-        collect_lookup_items(self.as_dyn_database(), node).as_ref()
+        collect_lookup_items(self.as_dyn_database(), (), node).as_ref()
     }
 
     /// Finds a [`ModuleId`] containing the node.
     fn find_module_containing_node<'db>(&'db self, node: SyntaxNode<'db>) -> Option<ModuleId<'db>> {
-        find_module_containing_node(self.as_dyn_database(), node)
+        find_module_containing_node(self.as_dyn_database(), (), node)
     }
 
     /// Reverse lookups [`VarId`] to get a [`Binding`] associated with it.
@@ -177,7 +177,7 @@ pub trait LsSemanticGroup: Database {
         &'db self,
         node: SyntaxNode<'db>,
     ) -> Option<&'db Vec<SyntaxNode<'db>>> {
-        get_node_resultants(self.as_dyn_database(), node).as_ref()
+        get_node_resultants(self.as_dyn_database(), (), node).as_ref()
     }
 
     fn find_generated_nodes<'db>(
@@ -203,14 +203,16 @@ impl<T: Database + ?Sized> LsSemanticGroup for T {}
 #[salsa::tracked]
 fn find_lookup_item<'db>(
     db: &'db dyn Database,
+    _: (),
     node: SyntaxNode<'db>,
 ) -> Option<LookupItemId<'db>> {
-    db.collect_lookup_items_leaf(node)?.iter().next().copied()
+    db.collect_lookup_items_leaf(node)?.first().copied()
 }
 
 #[salsa::tracked(returns(ref))]
 fn collect_lookup_items_leaf<'db>(
     db: &'db dyn Database,
+    _: (),
     node: SyntaxNode<'db>,
 ) -> Option<Vec<LookupItemId<'db>>> {
     let module_id = db.find_module_containing_node(node)?;
@@ -221,6 +223,7 @@ fn collect_lookup_items_leaf<'db>(
 #[salsa::tracked(returns(ref))]
 fn collect_lookup_items_with_parent_files<'db>(
     db: &'db dyn Database,
+    _: (),
     node: SyntaxNode<'db>,
 ) -> Option<Vec<LookupItemId<'db>>> {
     let mut node = Some(node);
@@ -238,6 +241,7 @@ fn collect_lookup_items_with_parent_files<'db>(
 #[salsa::tracked]
 fn corresponding_node_in_parent_file<'db>(
     db: &'db dyn Database,
+    _: (),
     node: SyntaxNode<'db>,
 ) -> Option<SyntaxNode<'db>> {
     let (parent, mappings) = get_parent_and_mapping(db, node.stable_ptr(db).file_id(db))?;
@@ -250,6 +254,7 @@ fn corresponding_node_in_parent_file<'db>(
 #[salsa::tracked(returns(ref))]
 fn collect_lookup_items<'db>(
     db: &'db dyn Database,
+    _: (),
     node: SyntaxNode<'db>,
 ) -> Option<Vec<LookupItemId<'db>>> {
     let module_id = db.find_module_containing_node(node)?;
@@ -264,6 +269,7 @@ fn collect_lookup_items<'db>(
 #[salsa::tracked]
 fn find_module_containing_node<'db>(
     db: &'db dyn Database,
+    _: (),
     node: SyntaxNode<'db>,
 ) -> Option<ModuleId<'db>> {
     // Get the main module of the main file containing the node.
@@ -393,6 +399,7 @@ fn file_and_subfiles_with_corresponding_modules<'db>(
 #[salsa::tracked(returns(ref))]
 fn get_node_resultants<'db>(
     db: &'db dyn Database,
+    _: (),
     node: SyntaxNode<'db>,
 ) -> Option<Vec<SyntaxNode<'db>>> {
     let main_file = node.stable_ptr(db).file_id(db);
