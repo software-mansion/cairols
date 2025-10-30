@@ -82,6 +82,30 @@ fn type_bound() {
     """
 
     [[completions]]
+    completion_label = "Default"
+    completion_label_path = "Default"
+
+    [[completions]]
+    completion_label = "Deref"
+    completion_label_path = "Deref"
+
+    [[completions]]
+    completion_label = "Destruct"
+    completion_label_path = "Destruct"
+
+    [[completions]]
+    completion_label = "Div"
+    completion_label_path = "Div"
+
+    [[completions]]
+    completion_label = "DivRem"
+    completion_label_path = "DivRem"
+
+    [[completions]]
+    completion_label = "Drop"
+    completion_label_path = "Drop"
+
+    [[completions]]
     completion_label = "Debug"
     completion_label_path = "core::fmt::Debug"
     text_edits = ["""
@@ -98,10 +122,6 @@ fn type_bound() {
     """]
 
     [[completions]]
-    completion_label = "Default"
-    completion_label_path = "Default"
-
-    [[completions]]
     completion_label = "DeploymentParams"
     completion_label_path = "starknet::deployment::DeploymentParams"
     text_edits = ["""
@@ -110,20 +130,12 @@ fn type_bound() {
     """]
 
     [[completions]]
-    completion_label = "Deref"
-    completion_label_path = "Deref"
-
-    [[completions]]
     completion_label = "DerefMut"
     completion_label_path = "core::ops::DerefMut"
     text_edits = ["""
     use core::ops::DerefMut;
 
     """]
-
-    [[completions]]
-    completion_label = "Destruct"
-    completion_label_path = "Destruct"
 
     [[completions]]
     completion_label = "DestructFailureGuarantee"
@@ -158,10 +170,6 @@ fn type_bound() {
     """]
 
     [[completions]]
-    completion_label = "Div"
-    completion_label_path = "Div"
-
-    [[completions]]
     completion_label = "DivAssign"
     completion_label_path = "core::ops::DivAssign"
     text_edits = ["""
@@ -176,10 +184,6 @@ fn type_bound() {
     use core::traits::DivEq;
 
     """]
-
-    [[completions]]
-    completion_label = "DivRem"
-    completion_label_path = "DivRem"
 
     [[completions]]
     completion_label = "DivRem"
@@ -204,10 +208,6 @@ fn type_bound() {
     use core::circuit::AddInputResult::Done;
 
     """]
-
-    [[completions]]
-    completion_label = "Drop"
-    completion_label_path = "Drop"
 
     [[completions]]
     completion_label = "DropWith"
@@ -230,6 +230,30 @@ fn negative_type_bound() {
     """
 
     [[completions]]
+    completion_label = "Default"
+    completion_label_path = "Default"
+
+    [[completions]]
+    completion_label = "Deref"
+    completion_label_path = "Deref"
+
+    [[completions]]
+    completion_label = "Destruct"
+    completion_label_path = "Destruct"
+
+    [[completions]]
+    completion_label = "Div"
+    completion_label_path = "Div"
+
+    [[completions]]
+    completion_label = "DivRem"
+    completion_label_path = "DivRem"
+
+    [[completions]]
+    completion_label = "Drop"
+    completion_label_path = "Drop"
+
+    [[completions]]
     completion_label = "Debug"
     completion_label_path = "core::fmt::Debug"
     text_edits = ["""
@@ -246,10 +270,6 @@ fn negative_type_bound() {
     """]
 
     [[completions]]
-    completion_label = "Default"
-    completion_label_path = "Default"
-
-    [[completions]]
     completion_label = "DeploymentParams"
     completion_label_path = "starknet::deployment::DeploymentParams"
     text_edits = ["""
@@ -258,20 +278,12 @@ fn negative_type_bound() {
     """]
 
     [[completions]]
-    completion_label = "Deref"
-    completion_label_path = "Deref"
-
-    [[completions]]
     completion_label = "DerefMut"
     completion_label_path = "core::ops::DerefMut"
     text_edits = ["""
     use core::ops::DerefMut;
 
     """]
-
-    [[completions]]
-    completion_label = "Destruct"
-    completion_label_path = "Destruct"
 
     [[completions]]
     completion_label = "DestructFailureGuarantee"
@@ -306,10 +318,6 @@ fn negative_type_bound() {
     """]
 
     [[completions]]
-    completion_label = "Div"
-    completion_label_path = "Div"
-
-    [[completions]]
     completion_label = "DivAssign"
     completion_label_path = "core::ops::DivAssign"
     text_edits = ["""
@@ -324,10 +332,6 @@ fn negative_type_bound() {
     use core::traits::DivEq;
 
     """]
-
-    [[completions]]
-    completion_label = "DivRem"
-    completion_label_path = "DivRem"
 
     [[completions]]
     completion_label = "DivRem"
@@ -352,10 +356,6 @@ fn negative_type_bound() {
     use core::circuit::AddInputResult::Done;
 
     """]
-
-    [[completions]]
-    completion_label = "Drop"
-    completion_label_path = "Drop"
 
     [[completions]]
     completion_label = "DropWith"
@@ -377,6 +377,30 @@ fn impl_bound() {
     """
 
     [[completions]]
+    completion_label = "Default"
+    completion_label_path = "Default"
+
+    [[completions]]
+    completion_label = "Deref"
+    completion_label_path = "Deref"
+
+    [[completions]]
+    completion_label = "Destruct"
+    completion_label_path = "Destruct"
+
+    [[completions]]
+    completion_label = "Div"
+    completion_label_path = "Div"
+
+    [[completions]]
+    completion_label = "DivRem"
+    completion_label_path = "DivRem"
+
+    [[completions]]
+    completion_label = "Drop"
+    completion_label_path = "Drop"
+
+    [[completions]]
     completion_label = "Debug"
     completion_label_path = "core::fmt::Debug"
     text_edits = ["""
@@ -393,10 +417,6 @@ fn impl_bound() {
     """]
 
     [[completions]]
-    completion_label = "Default"
-    completion_label_path = "Default"
-
-    [[completions]]
     completion_label = "DeploymentParams"
     completion_label_path = "starknet::deployment::DeploymentParams"
     text_edits = ["""
@@ -405,20 +425,12 @@ fn impl_bound() {
     """]
 
     [[completions]]
-    completion_label = "Deref"
-    completion_label_path = "Deref"
-
-    [[completions]]
     completion_label = "DerefMut"
     completion_label_path = "core::ops::DerefMut"
     text_edits = ["""
     use core::ops::DerefMut;
 
     """]
-
-    [[completions]]
-    completion_label = "Destruct"
-    completion_label_path = "Destruct"
 
     [[completions]]
     completion_label = "DestructFailureGuarantee"
@@ -453,10 +465,6 @@ fn impl_bound() {
     """]
 
     [[completions]]
-    completion_label = "Div"
-    completion_label_path = "Div"
-
-    [[completions]]
     completion_label = "DivAssign"
     completion_label_path = "core::ops::DivAssign"
     text_edits = ["""
@@ -471,10 +479,6 @@ fn impl_bound() {
     use core::traits::DivEq;
 
     """]
-
-    [[completions]]
-    completion_label = "DivRem"
-    completion_label_path = "DivRem"
 
     [[completions]]
     completion_label = "DivRem"
@@ -499,10 +503,6 @@ fn impl_bound() {
     use core::circuit::AddInputResult::Done;
 
     """]
-
-    [[completions]]
-    completion_label = "Drop"
-    completion_label_path = "Drop"
 
     [[completions]]
     completion_label = "DropWith"
@@ -525,6 +525,10 @@ fn type_bound_user_trait() {
     """
 
     [[completions]]
+    completion_label = "Traicik"
+    completion_label_path = "Traicik"
+
+    [[completions]]
     completion_label = "BoxTrait"
     completion_label_path = "BoxTrait"
 
@@ -535,10 +539,6 @@ fn type_bound_user_trait() {
     use core::result::ResultTraitImpl;
 
     """]
-
-    [[completions]]
-    completion_label = "Traicik"
-    completion_label_path = "Traicik"
 
     [[completions]]
     completion_label = "TrimMaxHelper"

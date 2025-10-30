@@ -76,6 +76,8 @@ fn completion_fixture_with_pub_dep_items() -> Fixture {
             pub trait AddAssign {
                 fn add_assign() -> felt252;
             }
+
+            pub trait ResultTraitCustom {}
         ")
     }
 }
@@ -106,7 +108,17 @@ fn transform(mut ls: MockClient, cursors: Cursors, main_file: &str) -> String {
         })
         .unwrap_or_default();
 
-    completion_items.sort_by_key(|x| x.label.clone());
+    // This ensures that tests return the same order that will be presented on the client side.
+    // Refer to [lsp_types::CompletionItem::sort_text] for more details.
+    completion_items.sort_by(|a, b| match (&a.sort_text, &b.sort_text) {
+        (Some(a_sort), Some(b_sort)) => {
+            let ord = a_sort.cmp(b_sort);
+            if ord == std::cmp::Ordering::Equal { a.label.cmp(&b.label) } else { ord }
+        }
+        (Some(_), None) => std::cmp::Ordering::Less,
+        (None, Some(_)) => std::cmp::Ordering::Greater,
+        (None, None) => a.label.cmp(&b.label),
+    });
 
     Report {
         caret,

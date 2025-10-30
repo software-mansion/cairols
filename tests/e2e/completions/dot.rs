@@ -144,13 +144,13 @@ fn with_deref() {
     detail = "felt252"
 
     [[completions]]
+    completion_label = "foofoo"
+    detail = "felt252"
+
+    [[completions]]
     completion_label = "deref()"
     detail = "fn(self: T) -> Self::Target"
     insert_text = "deref()"
-
-    [[completions]]
-    completion_label = "foofoo"
-    detail = "felt252"
 
     [[completions]]
     completion_label = "get_descriptor()"
@@ -212,6 +212,14 @@ fn with_deref_starknet() {
     caret = """
             self.<caret>
     """
+
+    [[completions]]
+    completion_label = "x"
+    detail = "starknet::storage::StorageBase<starknet::storage::Mutable<u8>>"
+
+    [[completions]]
+    completion_label = "y"
+    detail = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
 
     [[completions]]
     completion_label = "clone()"
@@ -288,14 +296,6 @@ fn with_deref_starknet() {
     completion_label = "try_into()"
     detail = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
-
-    [[completions]]
-    completion_label = "x"
-    detail = "starknet::storage::StorageBase<starknet::storage::Mutable<u8>>"
-
-    [[completions]]
-    completion_label = "y"
-    detail = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
     "#);
 }
 
