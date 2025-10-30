@@ -7,7 +7,6 @@ use cairo_lang_macro::{
 };
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use itertools::Itertools;
 use salsa::Database;
 
@@ -59,14 +58,12 @@ fn get_root_ptr<'db>(
     db: &'db dyn Database,
     stable_ptr: SyntaxStablePtrId<'db>,
 ) -> SyntaxStablePtrId<'db> {
-    let mut current_ptr = stable_ptr;
+    let mut current_node = stable_ptr.0;
 
-    while let SyntaxStablePtr::Child { parent: parent_ptr, kind: _, key_fields: _, index: _ } =
-        current_ptr.long(db)
-    {
-        current_ptr = *parent_ptr;
+    while let Some(parent) = current_node.parent(db) {
+        current_node = parent;
     }
-    current_ptr
+    current_node.stable_ptr(db)
 }
 
 /// Finds the most specific node that fully encompasses the given text span.
