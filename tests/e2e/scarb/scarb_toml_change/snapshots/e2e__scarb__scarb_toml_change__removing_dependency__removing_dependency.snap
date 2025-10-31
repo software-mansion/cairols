@@ -95,7 +95,7 @@ analyzed_crates = '''
   "settings": {
     "name": "core",
     "edition": "2024_07",
-    "version": "2.12.3",
+    "version": "2.13.1",
     "cfg_set": [
       [
         "target",
