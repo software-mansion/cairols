@@ -64,6 +64,10 @@ fn render_hover<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> Option
         return Some(hover);
     }
 
+    if node.kind(db).is_keyword_token() {
+        return render::keyword(db, node.kind(db));
+    }
+
     None
 
     // TODO(mkaput): If client only supports plaintext, strip markdown formatting here like RA.
