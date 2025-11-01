@@ -43,7 +43,7 @@ jobs:
 
       - name: nextest archive
         run: cargo nextest archive --workspace --all-features --cargo-profile ci --archive-file 'nextest-archive.tar.zst'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: nextest-archive
           path: nextest-archive.tar.zst
@@ -67,7 +67,7 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: nextest@0.9.98
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: nextest-archive
       - name: nextest partition ${{ matrix.partition }}/4
