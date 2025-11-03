@@ -16,8 +16,25 @@ fn exp_inline_macro() {
     """
 
     [[completions]]
+    completion_label = "panic!"
+    insert_text = 'panic!("$1")'
+
+    [[completions]]
+    completion_label = "print!"
+    insert_text = 'print!("$1")'
+
+    [[completions]]
+    completion_label = "println!"
+    insert_text = 'println!("$1")'
+
+    [[completions]]
     completion_label = "Option"
     completion_label_path = "Option"
+
+    [[completions]]
+    completion_label = "panic"
+    completion_label_path = "panic"
+    insert_text = "panic(${1:data})"
 
     [[completions]]
     completion_label = "WrappingAdd"
@@ -61,19 +78,6 @@ fn exp_inline_macro() {
     """]
 
     [[completions]]
-    completion_label = "panic"
-    completion_label_path = "panic"
-    insert_text = "panic(${1:data})"
-
-    [[completions]]
-    completion_label = "panic!"
-    insert_text = 'panic!("$1")'
-
-    [[completions]]
-    completion_label = "print!"
-    insert_text = 'print!("$1")'
-
-    [[completions]]
     completion_label = "print_byte_array_as_string"
     completion_label_path = "core::debug::print_byte_array_as_string"
     insert_text = "print_byte_array_as_string()"
@@ -81,10 +85,6 @@ fn exp_inline_macro() {
     use core::debug::print_byte_array_as_string;
 
     """]
-
-    [[completions]]
-    completion_label = "println!"
-    insert_text = 'println!("$1")'
 
     [[completions]]
     completion_label = "string"
@@ -118,6 +118,15 @@ fn exp_inline_macro_in_let_statement() {
     """
 
     [[completions]]
+    completion_label = "a"
+    completion_label_path = "a"
+    insert_text = "a()"
+
+    [[completions]]
+    completion_label = "array!"
+    insert_text = "array![$1]"
+
+    [[completions]]
     completion_label = "Array"
     completion_label_path = "Array"
 
@@ -138,21 +147,12 @@ fn exp_inline_macro_in_let_statement() {
     """]
 
     [[completions]]
-    completion_label = "a"
-    completion_label_path = "a"
-    insert_text = "a()"
-
-    [[completions]]
     completion_label = "array"
     completion_label_path = "core::array"
     text_edits = ["""
     use core::array;
 
     """]
-
-    [[completions]]
-    completion_label = "array!"
-    insert_text = "array![$1]"
 
     [[completions]]
     completion_label = "metaprogramming"
@@ -333,16 +333,20 @@ fn partially_typed_top_level_macro_after_items() {
     """
 
     [[completions]]
+    completion_label = "compile_error!"
+    insert_text = 'compile_error!("$1");'
+
+    [[completions]]
+    completion_label = "core"
+    completion_label_path = "core"
+
+    [[completions]]
     completion_label = "cmp"
     completion_label_path = "core::cmp"
     text_edits = ["""
     use core::cmp;
 
     """]
-
-    [[completions]]
-    completion_label = "compile_error!"
-    insert_text = 'compile_error!("$1");'
 
     [[completions]]
     completion_label = "compute_keccak_byte_array"
@@ -370,10 +374,6 @@ fn partially_typed_top_level_macro_after_items() {
     use core::sha256::compute_sha256_u32_array;
 
     """]
-
-    [[completions]]
-    completion_label = "core"
-    completion_label_path = "core"
     "#);
 }
 

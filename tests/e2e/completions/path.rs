@@ -19,14 +19,6 @@ fn single_element_path() {
     """
 
     [[completions]]
-    completion_label = "BitAnd"
-    completion_label_path = "core::traits::BitAnd"
-    text_edits = ["""
-    use core::traits::BitAnd;
-
-    """]
-
-    [[completions]]
     completion_label = "ByteA_ActuallyNotByteArray"
     completion_label_path = "ByteA_ActuallyNotByteArray"
     insert_text = "ByteA_ActuallyNotByteArray {}"
@@ -34,6 +26,26 @@ fn single_element_path() {
     [[completions]]
     completion_label = "ByteArray"
     completion_label_path = "ByteArray"
+
+    [[completions]]
+    completion_label = "ByteArrayTrait"
+    completion_label_path = "ByteArrayTrait"
+
+    [[completions]]
+    completion_label = "Bytes31Trait"
+    completion_label_path = "Bytes31Trait"
+
+    [[completions]]
+    completion_label = "System"
+    completion_label_path = "System"
+
+    [[completions]]
+    completion_label = "BitAnd"
+    completion_label_path = "core::traits::BitAnd"
+    text_edits = ["""
+    use core::traits::BitAnd;
+
+    """]
 
     [[completions]]
     completion_label = "ByteArrayImpl"
@@ -50,10 +62,6 @@ fn single_element_path() {
     use core::byte_array::ByteArrayIter;
 
     """]
-
-    [[completions]]
-    completion_label = "ByteArrayTrait"
-    completion_label_path = "ByteArrayTrait"
 
     [[completions]]
     completion_label = "ByteSpan"
@@ -94,14 +102,6 @@ fn single_element_path() {
     use core::bytes_31::Bytes31Impl;
 
     """]
-
-    [[completions]]
-    completion_label = "Bytes31Trait"
-    completion_label_path = "Bytes31Trait"
-
-    [[completions]]
-    completion_label = "System"
-    completion_label_path = "System"
     "#);
 }
 

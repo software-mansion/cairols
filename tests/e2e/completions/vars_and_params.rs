@@ -221,6 +221,10 @@ fn disallow_recursive_definition() {
     """
 
     [[completions]]
+    completion_label = "format!"
+    insert_text = 'format!("$1")'
+
+    [[completions]]
     completion_label = "OverflowingAdd"
     completion_label_path = "core::num::traits::OverflowingAdd"
     text_edits = ["""
@@ -243,10 +247,6 @@ fn disallow_recursive_definition() {
     use core::num::traits::OverflowingSub;
 
     """]
-
-    [[completions]]
-    completion_label = "format!"
-    insert_text = 'format!("$1")'
     "#);
 }
 
@@ -279,29 +279,6 @@ fn work_with_params() {
     """
 
     [[completions]]
-    completion_label = "a"
-    completion_label_path = "a"
-    insert_text = "a(${1:paxram}, ${2:paxram2}, ${3:paxram3})"
-
-    [[completions]]
-    completion_label = "max"
-    completion_label_path = "core::cmp::max"
-    insert_text = "max(${1:a}, ${2:b})"
-    text_edits = ["""
-    use core::cmp::max;
-
-    """]
-
-    [[completions]]
-    completion_label = "panic"
-    completion_label_path = "panic"
-    insert_text = "panic(${1:data})"
-
-    [[completions]]
-    completion_label = "panic!"
-    insert_text = 'panic!("$1")'
-
-    [[completions]]
     completion_label = "paxram"
     detail = "felt252"
 
@@ -312,6 +289,29 @@ fn work_with_params() {
     [[completions]]
     completion_label = "paxram3"
     detail = "felt252"
+
+    [[completions]]
+    completion_label = "a"
+    completion_label_path = "a"
+    insert_text = "a(${1:paxram}, ${2:paxram2}, ${3:paxram3})"
+
+    [[completions]]
+    completion_label = "panic!"
+    insert_text = 'panic!("$1")'
+
+    [[completions]]
+    completion_label = "panic"
+    completion_label_path = "panic"
+    insert_text = "panic(${1:data})"
+
+    [[completions]]
+    completion_label = "max"
+    completion_label_path = "core::cmp::max"
+    insert_text = "max(${1:a}, ${2:b})"
+    text_edits = ["""
+    use core::cmp::max;
+
+    """]
     "#);
 }
 

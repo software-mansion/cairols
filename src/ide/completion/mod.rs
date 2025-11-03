@@ -112,7 +112,9 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     // Set the sort text as it's used to sort the items on the client side.
     // We want to keep the order the same way we have it here.
     for (index, item) in result.iter_mut().enumerate() {
-        item.item.sort_text = Some(index.to_string());
+        // Pad length is here to ensure we return `sort_text` in such format "1____", "10___" etc.
+        // This ensures correct lexicographical ordering on the client side.
+        item.item.sort_text = Some(format!("{:0width$}_", index + 1, width = 5));
     }
 
     Some(CompletionResponse::Array(result.into_iter().map(|item| item.item).collect()))
