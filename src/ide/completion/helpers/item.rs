@@ -156,7 +156,7 @@ impl ImportableCompletionItem<'_> {
             None
         };
 
-        let is_in_scope = additional_text_edits.is_none();
+        let does_require_import = additional_text_edits.is_some();
         let importable_crate = importable_crate_id(db, *importable);
         let is_current_crate = importable_crate == current_crate;
         let is_core = *importable_crate.long(db) == CrateLongId::core(db);
@@ -177,7 +177,7 @@ impl ImportableCompletionItem<'_> {
                     additional_text_edits,
                     ..CompletionItem::default()
                 },
-                relevance: get_item_relevance(is_in_scope, is_current_crate, is_core),
+                relevance: get_item_relevance(!does_require_import, is_current_crate, is_core),
             },
             importable_id: *importable,
         })
