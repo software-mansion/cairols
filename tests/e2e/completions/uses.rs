@@ -332,6 +332,55 @@ fn enum_variant() {
 }
 
 #[test]
+fn nested_trait() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod trait_module {
+        pub trait Traitor {
+            fn treason() -> felt252;
+        }
+    }
+
+    mod modzik {
+        use super::trait_module::<caret>;
+    }
+
+    ",@r#"
+    caret = """
+        use super::trait_module::<caret>;
+    """
+
+    [[completions]]
+    completion_label = "Traitor"
+    "#);
+}
+
+#[test]
+fn nested_externs() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod extern_module {
+        pub extern fn functioner() -> felt252;
+        pub extern type felt256;
+    }
+
+    mod modzik {
+        use super::extern_module::<caret>;
+    }
+    ",@r#"
+    caret = """
+        use super::extern_module::<caret>;
+    """
+
+    [[completions]]
+    completion_label = "felt256"
+    detail = "hello::extern_module::felt256"
+
+    [[completions]]
+    completion_label = "functioner"
+    detail = "fn() -> felt252"
+    "#);
+}
+
+#[test]
 fn no_text_in_use_statement() {
     test_transform_plain!(Completion, completion_fixture(), "
     mod my_mod {
