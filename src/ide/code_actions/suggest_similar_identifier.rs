@@ -15,7 +15,7 @@ use crate::lang::text_matching::text_matches;
 pub fn suggest_similar_identifier<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-    uri: Url,
+    uri: &Url,
 ) -> Option<Vec<CodeAction>> {
     let typed_path_generic = ctx.node.ancestor_of_type::<ExprPath>(db)?;
     let typed_path_segments: Vec<_> = typed_path_generic
@@ -26,20 +26,23 @@ pub fn suggest_similar_identifier<'db>(
 
     db.get_node_resultants(typed_path_generic.as_syntax_node())?.iter().find_map(|resultant_node| {
         let resultant_expression_path = match resultant_node.kind(db) {
-            SyntaxKind::ExprPath => ExprPath::cast(db, *resultant_node)?,
+            SyntaxKind::ExprPath => ExprPath::from_syntax_node(db, *resultant_node),
             SyntaxKind::ExprPathInner => ExprPath::from_syntax_node(db, resultant_node.parent(db)?),
             _ => return None,
         };
-        let expression_path =
-            resultant_expression_path.as_syntax_node().get_text_without_trivia(db).to_string(db);
-        let expression_path_segments: Vec<_> = expression_path.split("::").collect();
+        let expression_path_segments: Vec<_> = resultant_expression_path
+            .as_syntax_node()
+            .descendants(db)
+            .filter(|node| node.kind(db) == SyntaxKind::PathSegmentSimple)
+            .map(|segment| segment.get_text_without_trivia(db).to_string(db))
+            .collect();
 
         if typed_path_segments != expression_path_segments {
             return None;
         }
 
         let expression_span =
-            ctx.node.span(db).position_in_file(db, ctx.node.stable_ptr(db).file_id(db))?;
+            ctx.node.span(db).position_in_file(db, ctx.node.stable_ptr(db).file_id(db))?.to_lsp();
 
         let module_id = db.find_module_containing_node(*resultant_node)?;
         let items = db.visible_importables_from_module(module_id)?;
@@ -49,10 +52,8 @@ pub fn suggest_similar_identifier<'db>(
             .iter()
             .filter_map(|(_item, proposed_path)| {
                 segment_suggestion(proposed_path, &expression_path_segments).map(|suggestion| {
-                    let edit = TextEdit {
-                        range: expression_span.to_lsp(),
-                        new_text: suggestion.to_string(),
-                    };
+                    let edit =
+                        TextEdit { range: expression_span, new_text: suggestion.to_string() };
                     (suggestion.to_string(), edit)
                 })
             })
@@ -77,19 +78,16 @@ pub fn suggest_similar_identifier<'db>(
     })
 }
 
-fn segment_suggestion<'a>(proposed_path: &'a str, typed_segments: &Vec<&str>) -> Option<&'a str> {
+fn segment_suggestion<'a>(proposed_path: &'a str, typed_segments: &[String]) -> Option<&'a str> {
     let proposed_segments: Vec<_> = proposed_path.split("::").collect();
 
     if proposed_segments.len() != typed_segments.len() {
         return None;
     }
 
-    for (p, t) in proposed_segments.iter().zip(typed_segments) {
-        if *p == *t {
-            continue;
-        }
-        return if text_matches(p, t) { Some(p) } else { None };
-    }
-
-    None
+    proposed_segments
+        .iter()
+        .zip(typed_segments)
+        .find(|(p, t)| *p != *t)
+        .and_then(|(p, t)| text_matches(p, t).then_some(*p))
 }

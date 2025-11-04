@@ -64,6 +64,34 @@ fn multi_segment_third_bad() {
 }
 
 #[test]
+fn multi_segment_with_trivia_comment() {
+    test_transform!(quick_fix, "
+    fn main() {
+        starknet
+        // this is a comment
+        ::sysk<caret>alls::emit_event_syscall(array![1].span(), array![2].span()).unwrap_syscall();
+    }
+    ", @r#"
+    Title: Did you mean `syscalls`?
+    Add new text: "syscalls"
+    At: Range { start: Position { line: 3, character: 6 }, end: Position { line: 3, character: 14 } }
+    "#);
+}
+
+#[test]
+fn multi_segment_with_trivia_whitespace() {
+    test_transform!(quick_fix, "
+    fn main() {
+        starknet::    sysk<caret>ells    ::emit_event_syscall(array![1].span(), array![2].span()).unwrap_syscall();
+    }
+    ", @r#"
+    Title: Did you mean `syscalls`?
+    Add new text: "syscalls"
+    At: Range { start: Position { line: 1, character: 18 }, end: Position { line: 1, character: 26 } }
+    "#);
+}
+
+#[test]
 fn in_proc_macro_controlled_code() {
     test_transform!(quick_fix_with_macros, "
     #[test]

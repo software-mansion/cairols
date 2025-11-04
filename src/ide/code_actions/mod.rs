@@ -114,7 +114,7 @@ fn get_code_actions_for_diagnostics(
                 {
                     fixes
                 } else {
-                    suggest_similar_identifier::suggest_similar_identifier(db, &ctx, uri.clone())
+                    suggest_similar_identifier::suggest_similar_identifier(db, &ctx, uri)
                         .unwrap_or_default()
                 }
             }
