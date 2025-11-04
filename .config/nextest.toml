@@ -1,0 +1,4 @@
+[profile.ci]
+[[profile.ci.overrides]]
+filter = 'test(/^(code_lens|completions|find_references|goto_definition|macros|rename)::.*/)'
+threads-required = "num-cpus"

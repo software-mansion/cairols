@@ -52,7 +52,7 @@ jobs:
         with:
           name: nextest-archive
       - name: nextest partition ${{ matrix.partition }}/4
-        run: cargo nextest run --partition 'count:${{ matrix.partition }}/4' --archive-file 'nextest-archive.tar.zst' --test-threads 4
+        run: cargo nextest run --profile ci --partition 'count:${{ matrix.partition }}/4' --archive-file 'nextest-archive.tar.zst'
 
   fmt:
     runs-on: ubuntu-latest
