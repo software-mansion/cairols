@@ -26,14 +26,14 @@ jobs:
           path: nextest-archive.tar.zst
 
   test:
-    name: test ${{ matrix.partition }}/4
+    name: test ${{ matrix.partition }}/6
     runs-on: ubuntu-latest
     needs:
       - build-test
     strategy:
       fail-fast: false
       matrix:
-        partition: [ 1, 2, 3, 4 ]
+        partition: [ 1, 2, 3, 4, 5, 6 ]
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
@@ -47,8 +47,8 @@ jobs:
       - uses: actions/download-artifact@v6
         with:
           name: nextest-archive
-      - name: nextest partition ${{ matrix.partition }}/4
-        run: cargo nextest run --partition 'count:${{ matrix.partition }}/4' --archive-file 'nextest-archive.tar.zst' --test-threads 4
+      - name: nextest partition ${{ matrix.partition }}/6
+        run: cargo nextest run --profile ci --partition 'count:${{ matrix.partition }}/6' --archive-file 'nextest-archive.tar.zst'
 
   notify_failed:
     runs-on: ubuntu-latest
