@@ -1,4 +1,6 @@
 [profile.ci]
+# We filter computation-heavy tests to run sequentially (to stop them competing over resources and timing out)
+# https://nexte.st/docs/configuration/threads-required/#heavy-tests-and-threads-required
 [[profile.ci.overrides]]
 filter = 'test(/^(code_lens|completions|find_references|goto_definition|macros|rename)::.*/)'
 threads-required = "num-cpus"
