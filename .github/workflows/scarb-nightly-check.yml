@@ -1,7 +1,7 @@
 name: Check new scarb nightly
 on:
   repository_dispatch:
-    types: [ new-scarb-nightly-published ]
+    types: [new-scarb-nightly-published]
   workflow_dispatch:
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        partition: [ 1, 2, 3, 4 ]
+        partition: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
@@ -48,7 +48,7 @@ jobs:
         with:
           name: nextest-archive
       - name: nextest partition ${{ matrix.partition }}/4
-        run: cargo nextest run --partition 'count:${{ matrix.partition }}/4' --archive-file 'nextest-archive.tar.zst' --test-threads 4
+        run: cargo nextest run --partition 'count:${{ matrix.partition }}/4' --archive-file 'nextest-archive.tar.zst'
 
   notify_failed:
     runs-on: ubuntu-latest
