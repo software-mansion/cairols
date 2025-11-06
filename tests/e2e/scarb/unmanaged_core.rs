@@ -39,7 +39,8 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
           "negative_impls": true,
           "associated_item_constraints": true,
           "coupons": true,
-          "user_defined_inline_macros": true
+          "user_defined_inline_macros": true,
+          "references": true
         }
       },
       "linter_configuration": "Off",

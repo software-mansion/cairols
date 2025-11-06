@@ -10,6 +10,7 @@ use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{FilesGroup, files_group_input, init_files_group};
 use cairo_lang_filesystem::ids::{CrateInput, CrateLongId};
 use cairo_lang_lowering::db::init_lowering_group;
+use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::db::{
@@ -51,7 +52,11 @@ impl AnalysisDatabase {
         init_files_group(&mut db);
         init_defs_group(&mut db);
         init_semantic_group(&mut db);
-        init_lowering_group(&mut db, InliningStrategy::Default, None);
+        init_lowering_group(
+            &mut db,
+            Optimizations::enabled_with_default_movable_functions(InliningStrategy::Default),
+            None,
+        );
         files_group_input(&db).set_cfg_set(&mut db).to(Some(Self::initial_cfg_set()));
 
         // Those plugins are relevant for projects with `cairo_project.toml` (e.g. our tests).
