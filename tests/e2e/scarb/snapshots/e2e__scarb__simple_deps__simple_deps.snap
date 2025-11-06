@@ -41,7 +41,8 @@ expression: "normalize(&ls, analyzed_crates)"
       "negative_impls": false,
       "associated_item_constraints": false,
       "coupons": false,
-      "user_defined_inline_macros": false
+      "user_defined_inline_macros": false,
+      "references": false
     }
   },
   "linter_configuration": "Off",
@@ -79,7 +80,8 @@ expression: "normalize(&ls, analyzed_crates)"
       "negative_impls": false,
       "associated_item_constraints": false,
       "coupons": false,
-      "user_defined_inline_macros": false
+      "user_defined_inline_macros": false,
+      "references": false
     }
   },
   "linter_configuration": "Off",
@@ -114,7 +116,8 @@ expression: "normalize(&ls, analyzed_crates)"
       "negative_impls": true,
       "associated_item_constraints": true,
       "coupons": true,
-      "user_defined_inline_macros": false
+      "user_defined_inline_macros": false,
+      "references": false
     }
   },
   "linter_configuration": "Off",

@@ -35,7 +35,8 @@ analyzed_crates = '''
       "negative_impls": true,
       "associated_item_constraints": true,
       "coupons": true,
-      "user_defined_inline_macros": false
+      "user_defined_inline_macros": false,
+      "references": false
     }
   },
   "linter_configuration": "Off",
@@ -83,7 +84,8 @@ analyzed_crates = '''
       "negative_impls": false,
       "associated_item_constraints": false,
       "coupons": false,
-      "user_defined_inline_macros": false
+      "user_defined_inline_macros": false,
+      "references": false
     }
   },
   "linter_configuration": "Off",
@@ -122,7 +124,8 @@ analyzed_crates = '''
       "negative_impls": false,
       "associated_item_constraints": false,
       "coupons": false,
-      "user_defined_inline_macros": false
+      "user_defined_inline_macros": false,
+      "references": false
     }
   },
   "linter_configuration": "Off",
@@ -162,10 +165,10 @@ analyzed_crates_diff = '''
        "negative_impls": true,
        "associated_item_constraints": true,
        "coupons": true,
-       "user_defined_inline_macros": false
+       "user_defined_inline_macros": false,
+       "references": false
      }
-   },
-@@ -46,30 +50,34 @@
+@@ -47,30 +51,34 @@
    "name": "dep",
    "source_paths": [
      "[ROOT]/dep/src/lib.cairo"
@@ -200,8 +203,7 @@ analyzed_crates_diff = '''
          "discriminator": "dev_dep 0.1.0 (path+[ROOT_URL]dev_dep/Scarb.toml)"
        }
      },
-@@ -110,16 +118,58 @@
-       },
+@@ -113,16 +121,59 @@
        "dev_dep": {
          "discriminator": "dev_dep 0.1.0 (path+[ROOT_URL]dev_dep/Scarb.toml)"
        }
@@ -210,7 +212,8 @@ analyzed_crates_diff = '''
        "negative_impls": false,
        "associated_item_constraints": false,
        "coupons": false,
-       "user_defined_inline_macros": false
+       "user_defined_inline_macros": false,
+       "references": false
      }
    },
    "linter_configuration": "Off",
@@ -252,7 +255,8 @@ analyzed_crates_diff = '''
 +      "negative_impls": false,
 +      "associated_item_constraints": false,
 +      "coupons": false,
-+      "user_defined_inline_macros": false
++      "user_defined_inline_macros": false,
++      "references": false
 +    }
 +  },
 +  "linter_configuration": "Off",
