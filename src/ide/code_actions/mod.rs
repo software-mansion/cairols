@@ -22,6 +22,7 @@ mod fill_struct_fields;
 mod fill_trait_members;
 mod missing_import;
 mod rename_unused_variable;
+mod suggest_similar_identifier;
 mod suggest_similar_member;
 mod suggest_similar_method;
 
@@ -107,7 +108,15 @@ fn get_code_actions_for_diagnostics(
                 create_module_file::create_module_file(db, ctx.node, uri.clone()).to_vec()
             }
             Some("E0006") => {
-                missing_import::missing_import(db, &ctx, uri.clone()).unwrap_or_default()
+                let fixes = missing_import::missing_import(db, &ctx, uri.clone());
+                if let Some(fixes) = fixes
+                    && fixes.is_empty().not()
+                {
+                    fixes
+                } else {
+                    suggest_similar_identifier::suggest_similar_identifier(db, &ctx, uri)
+                        .unwrap_or_default()
+                }
             }
             Some("E0007") => suggest_similar_member::suggest_similar_member(db, &ctx, uri.clone())
                 .unwrap_or_default(),
