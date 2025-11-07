@@ -31,8 +31,10 @@ pub fn suggest_similar_identifier<'db>(
             _ => return None,
         };
         let expression_path_segments: Vec<_> = resultant_expression_path
+            .segments(db)
             .as_syntax_node()
-            .descendants(db)
+            .get_children(db)
+            .iter()
             .filter(|node| node.kind(db) == SyntaxKind::PathSegmentSimple)
             .map(|segment| segment.get_text_without_trivia(db).to_string(db))
             .collect();
