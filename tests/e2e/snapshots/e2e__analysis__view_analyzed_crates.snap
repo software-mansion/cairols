@@ -22,7 +22,7 @@ expression: "normalize(&ls, output)"
       "associated_item_constraints": true,
       "coupons": true,
       "user_defined_inline_macros": true,
-      "references": true
+      "repr_ptrs": true
     }
   },
   "linter_configuration": "Off",
@@ -51,7 +51,7 @@ expression: "normalize(&ls, output)"
       "associated_item_constraints": false,
       "coupons": false,
       "user_defined_inline_macros": false,
-      "references": false
+      "repr_ptrs": false
     }
   },
   "linter_configuration": "Off",
@@ -81,7 +81,7 @@ expression: "normalize(&ls, output)"
       "associated_item_constraints": false,
       "coupons": false,
       "user_defined_inline_macros": false,
-      "references": false
+      "repr_ptrs": false
     }
   },
   "linter_configuration": "Off",
@@ -111,7 +111,7 @@ expression: "normalize(&ls, output)"
       "associated_item_constraints": false,
       "coupons": false,
       "user_defined_inline_macros": false,
-      "references": false
+      "repr_ptrs": false
     }
   },
   "linter_configuration": "Off",

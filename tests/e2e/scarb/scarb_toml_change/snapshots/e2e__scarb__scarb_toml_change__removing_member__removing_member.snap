@@ -43,7 +43,7 @@ analyzed_crates = '''
       "associated_item_constraints": false,
       "coupons": false,
       "user_defined_inline_macros": false,
-      "references": false
+      "repr_ptrs": false
     }
   },
   "linter_configuration": "Off",
@@ -83,7 +83,7 @@ analyzed_crates = '''
       "associated_item_constraints": false,
       "coupons": false,
       "user_defined_inline_macros": false,
-      "references": false
+      "repr_ptrs": false
     }
   },
   "linter_configuration": "Off",
@@ -119,7 +119,7 @@ analyzed_crates = '''
       "associated_item_constraints": true,
       "coupons": true,
       "user_defined_inline_macros": false,
-      "references": false
+      "repr_ptrs": false
     }
   },
   "linter_configuration": "Off",
@@ -166,5 +166,5 @@ analyzed_crates_diff = '''
        "associated_item_constraints": false,
        "coupons": false,
        "user_defined_inline_macros": false,
-       "references": false
+       "repr_ptrs": false
 '''
