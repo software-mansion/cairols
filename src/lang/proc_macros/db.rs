@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use cairo_lang_filesystem::db::get_originating_location;
+use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
 use cairo_lang_syntax::node::SyntaxNode;
 use salsa::{Database, Setter};
@@ -264,8 +265,11 @@ pub fn get_og_node<'db>(
     db: &'db AnalysisDatabase,
     node: SyntaxNode<'db>,
 ) -> Option<SyntaxNode<'db>> {
-    let (og_file, og_span) =
-        get_originating_location(db, node.stable_ptr(db).file_id(db), node.span(db), None);
+    let SpanInFile { file_id, span } = get_originating_location(
+        db,
+        SpanInFile { file_id: node.stable_ptr(db).file_id(db), span: node.span(db) },
+        None,
+    );
 
-    db.widest_node_within_span(og_file, og_span)
+    db.widest_node_within_span(file_id, span)
 }

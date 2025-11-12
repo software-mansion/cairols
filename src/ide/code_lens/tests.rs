@@ -10,6 +10,7 @@ use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_filesystem::span::TextPositionSpan;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast::ModuleItem};
@@ -325,10 +326,13 @@ fn get_test_lens_range<'db>(
     ptr: SyntaxStablePtrId<'db>,
 ) -> Option<Range> {
     // Use [`SyntaxNode::span_without_trivia`] to place lens next to attribute
-    let (file, span) =
-        get_originating_location(db, ptr.file_id(db), ptr.lookup(db).span_without_trivia(db), None);
+    let SpanInFile { file_id, span } = get_originating_location(
+        db,
+        SpanInFile { file_id: ptr.file_id(db), span: ptr.lookup(db).span_without_trivia(db) },
+        None,
+    );
 
-    span.position_in_file(db, file).map(|position| position.to_lsp())
+    span.position_in_file(db, file_id).map(|position| position.to_lsp())
 }
 
 fn maybe_push_code_lens(

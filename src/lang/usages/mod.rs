@@ -1,7 +1,7 @@
 use std::ops::ControlFlow;
 
 use cairo_lang_filesystem::db::get_originating_location;
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_semantic::keyword::SELF_TYPE_KW;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -41,16 +41,11 @@ pub struct FindUsages<'db> {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct FoundUsage<'db> {
-    pub file: FileId<'db>,
-    pub span: TextSpan,
-}
+pub struct FoundUsage<'db>(SpanInFile<'db>);
 
 impl<'db> FoundUsage<'db> {
     fn originating_location(&self, db: &'db AnalysisDatabase) -> Self {
-        let (file, span) = get_originating_location(db, self.file, self.span, None);
-
-        Self { file, span }
+        Self(get_originating_location(db, self.0, None))
     }
 }
 
@@ -94,7 +89,7 @@ impl<'db> FindUsages<'db> {
     pub fn originating_locations(
         self,
         db: &'db AnalysisDatabase,
-    ) -> impl Iterator<Item = (FileId<'db>, TextSpan)> {
+    ) -> impl Iterator<Item = SpanInFile<'db>> {
         self.collect().into_iter().map(|usage| usage.originating_location(db).location())
     }
 
@@ -211,10 +206,10 @@ impl<'db> FindUsages<'db> {
 
 impl<'db> FoundUsage<'db> {
     fn from_syntax_node(db: &'db AnalysisDatabase, syntax_node: SyntaxNode<'db>) -> Self {
-        Self {
-            file: syntax_node.stable_ptr(db).file_id(db),
+        Self(SpanInFile {
+            file_id: syntax_node.stable_ptr(db).file_id(db),
             span: syntax_node.span_without_trivia(db),
-        }
+        })
     }
 
     fn from_stable_ptr(db: &'db AnalysisDatabase, stable_ptr: SyntaxStablePtrId<'db>) -> Self {
@@ -222,7 +217,7 @@ impl<'db> FoundUsage<'db> {
     }
 
     /// Converts this object to a file-span tuple, losing any extra carried information.
-    pub fn location(self) -> (FileId<'db>, TextSpan) {
-        (self.file, self.span)
+    pub fn location(self) -> SpanInFile<'db> {
+        self.0
     }
 }

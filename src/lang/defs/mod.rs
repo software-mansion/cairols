@@ -1,8 +1,7 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, ModuleId};
 use cairo_lang_filesystem::db::get_originating_location;
-use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_semantic::diagnostic::NotFoundItemType;
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::resolve::{
@@ -185,24 +184,23 @@ impl<'db> SymbolDef<'db> {
     pub fn definition_originating_location(
         &self,
         db: &'db AnalysisDatabase,
-    ) -> Option<(FileId<'db>, TextSpan)> {
+    ) -> Option<SpanInFile<'db>> {
         let stable_ptr = self.definition_stable_ptr(db)?;
         let node = stable_ptr.lookup(db);
         let found_file = stable_ptr.file_id(db);
         let span = node.span_without_trivia(db);
-        Some(get_originating_location(db, found_file, span, None))
+        let span_in_file =
+            get_originating_location(db, SpanInFile { file_id: found_file, span }, None);
+        Some(get_originating_location(db, span_in_file, None))
     }
 
     /// Gets the [`FileId`] and [`TextSpan`] of symbol's definition node's non-translated location.
-    pub fn definition_location(
-        &self,
-        db: &'db AnalysisDatabase,
-    ) -> Option<(FileId<'db>, TextSpan)> {
+    pub fn definition_location(&self, db: &'db AnalysisDatabase) -> Option<SpanInFile<'db>> {
         let stable_ptr = self.definition_stable_ptr(db)?;
         let node = stable_ptr.lookup(db);
         let found_file = stable_ptr.file_id(db);
         let span = node.span_without_trivia(db);
-        Some((found_file, span))
+        Some(SpanInFile { file_id: found_file, span })
     }
 
     /// Gets the name of the symbol.

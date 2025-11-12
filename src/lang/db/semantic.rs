@@ -248,7 +248,7 @@ fn corresponding_node_in_parent_file<'db>(
 
     let span_in_parent = translate_location(mappings, node.span(db))?;
 
-    db.widest_node_within_span(parent, span_in_parent)
+    db.widest_node_within_span(parent.file_id, span_in_parent)
 }
 
 #[salsa::tracked(returns(ref))]
@@ -596,7 +596,7 @@ fn find_generated_nodes<'db>(
             continue;
         };
 
-        if parent != start_file {
+        if parent.file_id != start_file {
             continue;
         }
 

@@ -1,8 +1,7 @@
 use std::num::NonZeroU32;
 
 use cairo_lang_filesystem::db::ext_as_virtual;
-use cairo_lang_filesystem::ids::{FileId, FileLongId};
-use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_filesystem::ids::{FileId, FileLongId, SpanInFile};
 use cairo_lang_utils::Intern;
 use lsp_types::{Location, Url};
 use salsa::{Database, Id};
@@ -63,9 +62,9 @@ pub trait LsProtoGroup: Database {
     }
 
     /// Converts a [`FileId`]-[`TextSpan`] pair into a [`Location`].
-    fn lsp_location<'db>(&self, (file, span): (FileId<'db>, TextSpan)) -> Option<Location> {
-        let found_uri = self.url_for_file(file)?;
-        let range = span.position_in_file(self.as_dyn_database(), file)?.to_lsp();
+    fn lsp_location<'db>(&self, SpanInFile { file_id, span }: SpanInFile<'db>) -> Option<Location> {
+        let found_uri = self.url_for_file(file_id)?;
+        let range = span.position_in_file(self.as_dyn_database(), file_id)?.to_lsp();
         let location = Location { uri: found_uri, range };
         Some(location)
     }

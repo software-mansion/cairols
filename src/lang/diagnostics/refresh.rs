@@ -104,8 +104,10 @@ fn refresh_file_diagnostics<'db>(
 fn originating_file_path<'db>(db: &'db dyn FilesGroup, file_id: FileId<'db>) -> Option<PathBuf> {
     match file_id.long(db) {
         FileLongId::OnDisk(path) => Some(path.clone()),
-        FileLongId::Virtual(vf) => originating_file_path(db, vf.parent?),
-        FileLongId::External(id) => originating_file_path(db, ext_as_virtual(db, *id).parent?),
+        FileLongId::Virtual(vf) => originating_file_path(db, vf.parent?.file_id),
+        FileLongId::External(id) => {
+            originating_file_path(db, ext_as_virtual(db, *id).parent?.file_id)
+        }
     }
 }
 
