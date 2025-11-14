@@ -235,9 +235,17 @@ impl ProcMacroClientController {
             match params {
                 RequestParams::DefinedMacros(params) => {
                     let defined_macros = parse_response::<DefinedMacrosResponse>(response)?;
-                    self.apply_defined_macros_response(db, params.workspace, defined_macros);
+                    self.apply_defined_macros_response(
+                        db,
+                        params.workspace,
+                        defined_macros.clone(),
+                    );
                     self.try_load_proc_macro_cache(db, config);
                     try_request_semantic_tokens_refresh(client_capabilities, requester);
+                    if defined_macros.macros_for_cu_components.is_empty() {
+                        // We have to make sure that we re-run the diagnostics here even if there were no macros defined
+                        db.cancel_all();
+                    }
                 }
                 RequestParams::ExpandAttribute(params) => {
                     let proc_macro_result = parse_response::<ProcMacroResult>(response)?;
