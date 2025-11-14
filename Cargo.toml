@@ -134,9 +134,9 @@ cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "12
 # This is a trade-off between build time and e2e test time.
 [profile.ci]
 inherits = "test"
-[profile.ci.package."*"] # external dependencies
+[profile.test.package."*"] # external dependencies
 opt-level = 1
-[profile.ci.package."salsa"]
+[profile.test.package."salsa"]
 opt-level = 3
 
 [profile.dev.package]
