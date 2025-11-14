@@ -1,5 +1,4 @@
-use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_syntax::node::ast::{Attribute, TerminalIdentifier};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -60,10 +59,10 @@ fn find_references<'db>(
 /// always contain usages of an item they’re on.
 fn is_in_derive_attribute<'db>(
     db: &'db AnalysisDatabase,
-    (file, span): &(FileId<'db>, TextSpan),
+    SpanInFile { file_id, span }: &SpanInFile<'db>,
 ) -> bool {
     let Some(token) = db
-        .find_syntax_node_at_offset(*file, span.start)
+        .find_syntax_node_at_offset(*file_id, span.start)
         // Sanity check: `span` is a span of a terminal identifier without trivia.
         // It should be the same as the span of a token at offset `span.start`.
         .filter(|node| node.span(db) == *span)

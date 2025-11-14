@@ -4,7 +4,7 @@ use cairo_lang_defs::{
     db::DefsGroup,
     plugin::{InlineMacroExprPlugin, MacroPluginMetadata},
 };
-use cairo_lang_filesystem::ids::SmolStrId;
+use cairo_lang_filesystem::ids::{SmolStrId, SpanInFile};
 use cairo_lang_filesystem::{
     ids::{CrateId, FileId, FileKind, FileLongId, VirtualFile},
     span::TextSpan,
@@ -56,7 +56,10 @@ pub fn expand_inline_macros_to_file<'db>(
         let generated = plugin.generate_code(db, &inline_macro, metadata).code?; // None here means macro failed.
 
         let file = FileLongId::Virtual(VirtualFile {
-            parent: Some(file_to_process),
+            parent: Some(SpanInFile {
+                file_id: file_to_process,
+                span: inline_macro.as_syntax_node().span_without_trivia(db),
+            }),
             name: SmolStrId::from(db, generated.name.as_str()),
             content: SmolStrId::from(db, generated.content.as_str()),
             code_mappings: generated.code_mappings.into(),

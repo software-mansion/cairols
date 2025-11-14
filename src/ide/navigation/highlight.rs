@@ -1,4 +1,4 @@
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use itertools::Itertools;
@@ -46,9 +46,9 @@ fn highlights<'db>(
         .include_declaration(true)
         .in_scope(SearchScope::file_with_subfiles(db, file))
         .originating_locations(db)
-        .filter(|(found_file, _)| *found_file == file)
-        .filter_map(|(file, text_span)| {
-            text_span.position_in_file(db, file).as_ref().map(ToLsp::to_lsp)
+        .filter(|found| found.file_id == file)
+        .filter_map(|SpanInFile { file_id, span }: SpanInFile<'_>| {
+            span.position_in_file(db, file_id).as_ref().map(ToLsp::to_lsp)
         })
         .collect();
 

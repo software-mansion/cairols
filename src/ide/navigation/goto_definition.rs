@@ -1,8 +1,7 @@
 use std::ops::Not;
 
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_filesystem::ids::{FileId, FileLongId};
-use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_filesystem::ids::{FileLongId, SpanInFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -41,10 +40,10 @@ fn goto<'db>(db: &'db AnalysisDatabase, syntax_node: SyntaxNode<'db>) -> Option<
         syntax_node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
     let symbol = SymbolSearch::find_definition(db, &identifier)?.def;
 
-    let og_location = (
-        identifier.as_syntax_node().stable_ptr(db).file_id(db),
-        identifier.as_syntax_node().span_without_trivia(db),
-    );
+    let og_location = SpanInFile {
+        file_id: identifier.as_syntax_node().stable_ptr(db).file_id(db),
+        span: identifier.as_syntax_node().span_without_trivia(db),
+    };
 
     #[allow(unused_doc_comments)]
     /// Try looking for declaration if we were on the definition.
@@ -56,17 +55,17 @@ fn goto<'db>(db: &'db AnalysisDatabase, syntax_node: SyntaxNode<'db>) -> Option<
         symbol
     };
 
-    let (found_file, span) = try_special_case_non_inline_module(db, &symbol)
+    let span_in_file = try_special_case_non_inline_module(db, &symbol)
         .map_or_else(|| symbol.definition_originating_location(db), Some)?;
 
-    db.lsp_location((found_file, span))
+    db.lsp_location(span_in_file)
 }
 
 // In the case of a non-inline module redirect to a module file instead of a definition node.
 fn try_special_case_non_inline_module<'db>(
     db: &'db AnalysisDatabase,
     symbol: &SymbolDef<'db>,
-) -> Option<(FileId<'db>, TextSpan)> {
+) -> Option<SpanInFile<'db>> {
     if let SymbolDef::Module(module_def) = symbol {
         let module_id = module_def.non_macro_module_id();
         match module_id {
@@ -78,7 +77,10 @@ fn try_special_case_non_inline_module<'db>(
                     let file = db.module_main_file(module_def.module_id()).ok()?;
 
                     match file.long(db) {
-                        FileLongId::OnDisk(_) => Some((file, db.file_syntax(file).ok()?.span(db))),
+                        FileLongId::OnDisk(_) => Some(SpanInFile {
+                            file_id: file,
+                            span: db.file_syntax(file).ok()?.span(db),
+                        }),
                         FileLongId::Virtual(_) | FileLongId::External(_) => None,
                     }
                 })

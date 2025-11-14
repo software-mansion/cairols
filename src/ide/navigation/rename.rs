@@ -3,8 +3,7 @@ use std::collections::HashMap;
 use anyhow::anyhow;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::ids::{FileId, FileLongId};
-use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_filesystem::ids::{FileLongId, SpanInFile};
 use cairo_lang_semantic::keyword::SELF_TYPE_KW;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
@@ -136,18 +135,15 @@ fn declaration_from_resultant<'db>(
     SymbolSearch::find_declaration(db, &identifier)
 }
 
-fn find_usages<'db>(
-    db: &'db AnalysisDatabase,
-    symbol: SymbolSearch<'db>,
-) -> Vec<(FileId<'db>, TextSpan)> {
+fn find_usages<'db>(db: &'db AnalysisDatabase, symbol: SymbolSearch<'db>) -> Vec<SpanInFile<'db>> {
     let symbol_name = Some(symbol.def.name(db));
 
     symbol
         .usages(db)
         .include_declaration(true)
         .originating_locations(db)
-        .filter(|(file, span)| {
-            db.find_syntax_node_at_offset(*file, span.start)
+        .filter(|&SpanInFile { file_id, span }| {
+            db.find_syntax_node_at_offset(file_id, span.start)
                 // 1. Sanity check: `span` is a span of a terminal identifier without trivia.
                 //    It should be the same as the span of a token at offset `span.start`.
                 // 2. Filter out any symbol with a different name than the definition.
@@ -155,7 +151,7 @@ fn find_usages<'db>(
                 //    If this is not the case, it means that the macro does something unusual and
                 //    the user should rename the remaining cases themselves.
                 .is_some_and(|node| {
-                    node.span(db) == *span && node.text(db).map(|t| t.to_string(db)) == symbol_name
+                    node.span(db) == span && node.text(db).map(|t| t.to_string(db)) == symbol_name
                 })
         })
         .unique()

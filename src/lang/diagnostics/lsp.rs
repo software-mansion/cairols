@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use cairo_lang_diagnostics::{
-    DiagnosticEntry, DiagnosticLocation, Diagnostics, PluginFileDiagnosticNotes, Severity,
+    DiagnosticEntry, Diagnostics, PluginFileDiagnosticNotes, Severity, UserLocationWithPluginNotes,
 };
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use lsp_types::{
     Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Range,
     Url,
@@ -29,9 +29,9 @@ pub fn map_cairo_diagnostics_to_lsp<'db, T>(
         diagnostics.get_diagnostics_without_duplicates(db)
     } {
         let mut message = diagnostic.format(db);
-        let diagnostic_location = diagnostic.location(db);
-        let (_, parent_file_notes) = diagnostic_location
-            .user_location_with_plugin_notes(db.as_dyn_database(), plugin_file_notes);
+        let span_in_file = diagnostic.location(db);
+        let (_, parent_file_notes) =
+            span_in_file.user_location_with_plugin_notes(db.as_dyn_database(), plugin_file_notes);
         let mut related_information = vec![];
         for note in diagnostic.notes(db).iter().chain(&parent_file_notes) {
             if let Some(location) = &note.location {
@@ -88,7 +88,7 @@ pub fn map_cairo_diagnostics_to_lsp<'db, T>(
 /// location.
 fn get_mapped_range_and_add_mapping_note<'db>(
     db: &'db dyn Database,
-    orig: &DiagnosticLocation<'db>,
+    orig: &SpanInFile<'db>,
     related_info: Option<&mut Vec<DiagnosticRelatedInformation>>,
     message: &str,
 ) -> Option<(Range, FileId<'db>)> {
@@ -107,7 +107,7 @@ fn get_mapped_range_and_add_mapping_note<'db>(
 }
 
 /// Converts an internal diagnostic location to an LSP range.
-fn get_lsp_range<'db>(db: &'db dyn Database, location: &DiagnosticLocation<'db>) -> Option<Range> {
+fn get_lsp_range<'db>(db: &'db dyn Database, location: &SpanInFile<'db>) -> Option<Range> {
     let Some(span) = location.span.position_in_file(db, location.file_id) else {
         error!("failed to get range for diagnostic");
         return None;

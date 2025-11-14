@@ -89,8 +89,9 @@ fn handle_rename(
     for usage in
         SymbolSearch::find_definition(db, &mod_name)?.usages(db).include_declaration(true).collect()
     {
-        let file = db.url_for_file(usage.file)?;
-        let range = usage.span.position_in_file(db, usage.file)?;
+        let usage_location = usage.location();
+        let file = db.url_for_file(usage_location.file_id)?;
+        let range = usage_location.span.position_in_file(db, usage_location.file_id)?;
 
         changes
             .entry(file)

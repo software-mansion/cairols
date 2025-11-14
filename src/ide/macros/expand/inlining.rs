@@ -49,7 +49,7 @@ pub fn inline_files<'db>(
 
     for file_with_origin in files {
         if let Some((parent, _)) = get_parent_and_mapping(db, file_with_origin.file)
-            && parent == file
+            && parent.file_id == file
             && let Some(child_content) = inline_files(db, file_with_origin.file, files)
         {
             replacements

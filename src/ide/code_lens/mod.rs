@@ -8,7 +8,7 @@ use std::vec;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ModuleId, ModuleItemId, TopLevelLanguageElementId};
 use cairo_lang_filesystem::db::get_originating_location;
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_syntax::node::ast::ModuleItem;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -385,12 +385,15 @@ fn get_original_module_item_and_file<'db>(
     db: &'db AnalysisDatabase,
     ptr: SyntaxStablePtrId<'db>,
 ) -> Option<(ModuleItem<'db>, FileId<'db>)> {
-    let (file, span) =
-        get_originating_location(db, ptr.file_id(db), ptr.lookup(db).span_without_trivia(db), None);
+    let SpanInFile { file_id, span } = get_originating_location(
+        db,
+        SpanInFile { file_id: ptr.file_id(db), span: ptr.lookup(db).span_without_trivia(db) },
+        None,
+    );
 
-    db.find_syntax_node_at_offset(file, span.start)?.ancestors_with_self(db).find_map(|n| {
+    db.find_syntax_node_at_offset(file_id, span.start)?.ancestors_with_self(db).find_map(|n| {
         let module_item = ModuleItem::cast(db, n);
-        module_item.map(|module_item| (module_item, file))
+        module_item.map(|module_item| (module_item, file_id))
     })
 }
 
