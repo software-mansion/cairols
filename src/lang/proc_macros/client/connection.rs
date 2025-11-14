@@ -108,6 +108,6 @@ struct KillOnDrop(Child);
 impl Drop for KillOnDrop {
     fn drop(&mut self) {
         // Make sure server is closed.
-        self.0.kill().expect("failed to kill");
+        let _ = self.0.kill();
     }
 }
