@@ -201,7 +201,7 @@ impl AnalysisProgressThread {
                             || (pms_status == ProcMacroServerStatus::Connected
                                 && pending_requests == 0))
                         && (!was_cancelled
-                            // && !did_mutation_happen_during_tick
+                            && !did_mutation_happen_during_tick
                             && request_count == received_responses)
                     {
                         self.notifier.notify::<ServerStatus>(ServerStatusParams {
