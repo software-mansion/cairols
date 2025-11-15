@@ -23,3 +23,84 @@ if !(1 == 1) {
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
 }
 """
+
+mapped_diagnostics:
+- url: file://[SCARB_REGISTRY_STD]/core/src/test/language_features/macro_test.cairo
+  diagnostics:
+  - related_code: define_fn!(func_macro_fn);
+    diagnostic:
+      range:
+        start:
+          line: 567
+          character: 4
+        end:
+          line: 567
+          character: 30
+      severity: 1
+      message: Missing token ';'.
+  - related_code: define_ty_and_getter!(MyStruct);
+    diagnostic:
+      range:
+        start:
+          line: 585
+          character: 4
+        end:
+          line: 585
+          character: 36
+      severity: 1
+      message: Missing token ';'.
+  - related_code: define_enum!(MyEnum);
+    diagnostic:
+      range:
+        start:
+          line: 605
+          character: 4
+        end:
+          line: 605
+          character: 25
+      severity: 1
+      message: Missing token ';'.
+  - related_code: generic_fn_macro!();
+    diagnostic:
+      range:
+        start:
+          line: 621
+          character: 4
+        end:
+          line: 621
+          character: 24
+      severity: 1
+      message: Missing token ';'.
+  - related_code: define_in_mod!(a, b);
+    diagnostic:
+      range:
+        start:
+          line: 639
+          character: 4
+        end:
+          line: 639
+          character: 25
+      severity: 1
+      message: Missing token ';'.
+  - related_code: define_outer_and_call_inner!();
+    diagnostic:
+      range:
+        start:
+          line: 661
+          character: 4
+        end:
+          line: 661
+          character: 35
+      severity: 1
+      message: Missing token ';'.
+  - related_code: define_foo!();
+    diagnostic:
+      range:
+        start:
+          line: 686
+          character: 8
+        end:
+          line: 686
+          character: 22
+      severity: 1
+      message: Missing token ';'.
