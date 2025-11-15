@@ -24,7 +24,7 @@ pub fn suggest_similar_identifier<'db>(
         .map(|e| e.identifier(db).to_string(db))
         .collect();
 
-    db.get_node_resultants(typed_path_generic.as_syntax_node())?.iter().find_map(|resultant_node| {
+    db.get_node_resultants(typed_path_generic.as_syntax_node()).iter().find_map(|resultant_node| {
         let resultant_expression_path = match resultant_node.kind(db) {
             SyntaxKind::ExprPath => ExprPath::from_syntax_node(db, *resultant_node),
             SyntaxKind::ExprPathInner => ExprPath::from_syntax_node(db, resultant_node.parent(db)?),

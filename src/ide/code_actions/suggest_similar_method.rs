@@ -22,7 +22,7 @@ pub fn suggest_similar_method<'db>(
     ctx: &AnalysisContext<'db>,
     uri: Url,
 ) -> Option<Vec<CodeAction>> {
-    db.get_node_resultants(ctx.node)?.iter().find_map(|resultant_node| {
+    db.get_node_resultants(ctx.node).iter().find_map(|resultant_node| {
         let expr_binary = resultant_node.ancestor_of_type::<ast::ExprBinary>(db)?;
         let lhs_stable_ptr = expr_binary.lhs(db).stable_ptr(db);
         // Get its semantic model.

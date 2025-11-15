@@ -18,10 +18,8 @@ pub fn highlight(
 
     let identifier = db.find_identifier_at_position(file, position)?.as_syntax_node();
 
-    let default = vec![identifier];
     let highlights = db
         .get_node_resultants(identifier)
-        .unwrap_or(&default)
         .iter()
         .filter_map(|node| highlights(db, node, file))
         .flatten()

@@ -14,7 +14,7 @@ pub fn add_missing_trait<'db>(
     ctx: &AnalysisContext<'db>,
     uri: Url,
 ) -> Option<Vec<CodeAction>> {
-    db.get_node_resultants(ctx.node)?.iter().find_map(|resultant_node| {
+    db.get_node_resultants(ctx.node).iter().find_map(|resultant_node| {
         let resultant_ctx = AnalysisContext::from_node(db, *resultant_node)?;
         let trait_paths =
             available_traits_for_method(db, resultant_node, &mut resultant_ctx.resolver(db))?;
