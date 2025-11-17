@@ -304,6 +304,7 @@ fn methods_from_non_deps_excluded() {
 }
 
 #[test]
+// This may produce different ?<number> values depending if run in debug or release
 fn methods_in_macro_controlled_code() {
     test_transform!(
         test_fill_trait_with_scarb_macros,

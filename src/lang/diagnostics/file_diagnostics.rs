@@ -71,11 +71,10 @@ impl<'db> FilesDiagnostics<'db> {
                 .map_or_else(CairoLintToolMetadata::default, |config| config.lint.clone()),
         };
 
+        // Don't include inline macro files as these are expanded in semantic.
+        // Diagnostics will be included with `db.module_semantic_diagnostics()`.
         let (files_to_process, modules_to_process) =
-            <AnalysisDatabase as LsSemanticGroup>::file_and_subfiles_with_corresponding_modules(
-                db,
-                root_on_disk_file,
-            )?;
+            db.file_and_subfiles_with_corresponding_modules_without_inline(root_on_disk_file)?;
 
         for module_id in modules_to_process.iter().copied() {
             if let Ok(notes) = module_id.module_data(db).map(|data| data.diagnostics_notes(db)) {
