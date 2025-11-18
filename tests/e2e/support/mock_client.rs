@@ -261,61 +261,7 @@ impl MockClient {
             predicate(&params).then_some(params)
         })
     }
-
-    fn wait_for_notification_sequence(
-        &mut self,
-        notification_matchers: Vec<Box<NotificationMatcher>>,
-    ) {
-        // Block which checks if the notification matches the next expected one in the sequence
-        let try_advance_sequence = |message: &Message, current_seq: &mut usize| {
-            let mut advanced = false;
-            if *current_seq < notification_matchers.len()
-                && let Message::Notification(notification) = message
-                && notification_matchers[*current_seq](notification)
-            {
-                *current_seq += 1;
-                advanced = true;
-            }
-            advanced
-        };
-
-        let mut seq: usize = 0;
-        // Check for sequence in existing trace
-        let mut message_matched = vec![];
-        for message in self.trace.iter() {
-            if try_advance_sequence(message, &mut seq) {
-                message_matched.push(true);
-            } else {
-                message_matched.push(false);
-            }
-        }
-
-        // Remove matched messages from the trace
-        self.trace = self
-            .trace
-            .iter()
-            .zip(message_matched.iter())
-            .filter_map(|(msg, matched)| if *matched { None } else { Some(msg.clone()) })
-            .collect();
-
-        // Check if sequence wasn't whole in the trace
-        if seq == notification_matchers.len() {
-            return;
-        }
-
-        // Wait for next messages in sequence
-        while let Some(message) = self.recv().expect("No message received") {
-            if try_advance_sequence(&message, &mut seq) {
-                self.trace.pop();
-                if seq == notification_matchers.len() {
-                    return;
-                }
-            }
-        }
-    }
 }
-
-type NotificationMatcher = dyn Fn(&Notification) -> bool;
 
 /// Methods for handling interactive requests.
 impl MockClient {
@@ -416,22 +362,8 @@ impl MockClient {
     /// path.
     pub fn open_and_wait_for_diagnostics(&mut self, path: impl AsRef<Path>) -> Vec<Diagnostic> {
         let path = path.as_ref();
-        let file_url = self.fixture.file_url(path);
         self.open(path);
-        self.wait_for_notification_sequence(vec![
-            Box::new(|notification: &Notification| {
-                notification.method == "cairo/projectUpdatingFinished"
-            }),
-            Box::new(move |notification: &Notification| {
-                if notification.method == "textDocument/publishDiagnostics" {
-                    let params: PublishDiagnosticsParams =
-                        serde_json::from_value(notification.params.clone()).unwrap();
-
-                    return params.uri == file_url;
-                }
-                false
-            }),
-        ]);
+        self.wait_for_diagnostics_generation();
         self.get_diagnostics_for_file(path)
     }
 
@@ -470,7 +402,7 @@ impl MockClient {
     /// Waits until all procmacros, and related diagnostics get resolved within
     /// one generation span (until AnalysisStarted + AnalysisFinished get emitted via
     /// `cairo/serverStatus` notification).
-    fn wait_for_diagnostics_generation(&mut self) -> HashMap<Url, Vec<Diagnostic>> {
+    pub fn wait_for_diagnostics_generation(&mut self) -> HashMap<Url, Vec<Diagnostic>> {
         let mut in_progress_open = false;
         let mut project_updated = false;
 
