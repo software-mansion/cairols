@@ -85,7 +85,7 @@ fn fmt_config_is_respected() {
         }
     };
 
-    ls.open_and_wait_for_project_update("src/lib.cairo");
+    ls.open_and_wait_for_diagnostics_generation("src/lib.cairo");
     let text_edits = ls
         .send_request::<Formatting>(DocumentFormattingParams {
             text_document: ls.doc_id("src/lib.cairo"),

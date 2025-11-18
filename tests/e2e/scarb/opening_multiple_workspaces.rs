@@ -1,4 +1,3 @@
-use cairo_language_server::lsp;
 use indoc::indoc;
 use similar::TextDiff;
 
@@ -44,13 +43,11 @@ fn opening_dependency_first() {
     };
 
     // 1. Open `dep`.
-    ls.open_and_wait_for_project_update("dep/src/lib.cairo");
-    let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    let analyzed_crates = ls.open_and_wait_for_project_update("dep/src/lib.cairo");
     let analyzed_crates = normalize(&ls, analyzed_crates);
 
     // 2. Open a package that has `dep` in dependencies.
-    ls.open_and_wait_for_project_update("pkg/src/lib.cairo");
-    let analyzed_crates_after = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    let analyzed_crates_after = ls.open_and_wait_for_project_update("pkg/src/lib.cairo");
     let analyzed_crates_after = normalize(&ls, analyzed_crates_after);
 
     // 3. Check if `dep` properties were not overwritten, but merged.

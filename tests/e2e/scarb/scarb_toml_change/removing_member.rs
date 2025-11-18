@@ -62,9 +62,7 @@ fn test_removing_member() {
     ls.send_notification::<DidChangeWatchedFiles>(DidChangeWatchedFilesParams {
         changes: vec![FileEvent { uri: ls.doc_id("Scarb.toml").uri, typ: FileChangeType::CHANGED }],
     });
-    ls.wait_for_project_update();
-
-    let analyzed_crates_after_member_removal = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    let analyzed_crates_after_member_removal = ls.wait_for_project_update();
     let analyzed_crates_after_member_removal = normalize(&ls, analyzed_crates_after_member_removal);
 
     let analyzed_crates_diff =
