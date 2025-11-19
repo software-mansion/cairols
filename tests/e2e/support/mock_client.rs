@@ -10,7 +10,6 @@ use cairo_language_server::lsp::ext::ServerStatusParams;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
 use cairo_language_server::testing::BackendForTesting;
 use lsp_server::{Message, Notification, Request, Response};
-use lsp_types::notification::PublishDiagnostics;
 use lsp_types::request::{RegisterCapability, Request as LspRequest};
 use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url, lsp_notification, lsp_request};
 use serde_json::Value;
@@ -474,15 +473,6 @@ impl MockClient {
                 };
             }
         }
-    }
-
-    /// Waits for `textDocument/publishDiagnostics` notification for the given file.
-    pub fn wait_for_diagnostics(&mut self, path: impl AsRef<Path>) -> Vec<Diagnostic> {
-        let url = self.fixture.file_url(path);
-        self.wait_for_notification::<PublishDiagnostics>(|params: &PublishDiagnosticsParams| {
-            params.uri == url
-        })
-        .diagnostics
     }
 
     /// Waits for `cairo/projectUpdatingFinished` notification.
