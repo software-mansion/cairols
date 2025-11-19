@@ -1,7 +1,7 @@
-use std::path;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, OnceLock};
+use std::{fs, path};
 
 use anyhow::{Context, Result, bail, ensure};
 use lsp_types::notification::ShowMessage;
@@ -137,14 +137,21 @@ impl ScarbToolchain {
             bail!("could not find scarb executable");
         };
 
+        eprintln!("(ScarbToolchain): I am about to execute scarb metatadata!");
+        let manifest_content = fs::read_to_string(manifest)?;
+        eprintln!("(ScarbToolchain): Manifest content: {}", manifest_content);
         let result = MetadataCommand::new()
             .scarb_path(scarb_path)
             .manifest_path(manifest)
             .inherit_stderr()
+            // .inherit_stdout()
+            // .env("SCARB_LOG", "scarb=trace")
             .exec()
             .context("failed to execute: scarb metadata");
+        eprintln!("(ScarbToolchain): I finished executing scarb metatadata!");
 
         if !self.is_silent && result.is_err() {
+            eprintln!("(ScarbToolchain): Scarb metadata errored!");
             self.notifier.notify::<ShowMessage>(ShowMessageParams {
                 typ: MessageType::ERROR,
                 message: "`scarb metadata` failed. Check if your project builds correctly via \

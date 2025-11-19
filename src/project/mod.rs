@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fs;
 use std::path::PathBuf;
 
 use anyhow::Context;
@@ -114,7 +115,7 @@ impl ProjectController {
         let db = &mut state.db;
         match project_update {
             ProjectUpdate::Scarb { crates, workspace_dir, workspace_manifest_path } => {
-                debug!("updating crate roots from scarb metadata: {crates:#?}");
+                eprintln!("updating crate roots from scarb metadata: {crates:#?}");
                 state.proc_macro_controller.request_defined_macros(db, workspace_manifest_path);
                 state.project_controller.model.load_workspace(
                     db,
@@ -125,6 +126,7 @@ impl ProjectController {
                 state.analysis_progress_controller.project_model_loaded();
             }
             ProjectUpdate::ScarbMetadataFailed => {
+                eprintln!("failed to refresh scarb workspace");
                 // Try to set up a corelib at least if it is not in the db already.
                 try_to_init_unmanaged_core_if_not_present(
                     db,
@@ -168,7 +170,7 @@ impl ProjectController {
                 );
 
                 if let Err(err) = setup_project(&mut *db, &file_path) {
-                    error!(
+                    eprintln!(
                         "error loading file {} as a single crate: {err}",
                         file_path.to_string_lossy()
                     );
@@ -219,6 +221,7 @@ impl ProjectController {
 
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
+#[derive(Debug)]
 pub enum ProjectUpdate {
     Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf, workspace_manifest_path: PathBuf },
     ScarbMetadataFailed,
@@ -255,7 +258,10 @@ impl ProjectControllerThread {
         while let Ok(request) = self.requests_receiver.recv() {
             let project_update = self.fetch_project_update_for_file(request);
             if let Some(project_update) = project_update {
+                eprintln!("(ProjectControllerThread): sending project update!");
                 self.send_project_update(project_update);
+            } else {
+                eprintln!("(ProjectControllerThread): NOT sending project update! XD");
             }
         }
     }
@@ -269,16 +275,30 @@ impl ProjectControllerThread {
         &mut self,
         project_update_request: ProjectUpdateRequest,
     ) -> Option<ProjectUpdate> {
+        eprintln!(
+            "(ProjectController): fetching project update for file: {}",
+            project_update_request.file_path.display()
+        );
         let project_update = match ProjectManifestPath::discover(
             &project_update_request.file_path,
             &self.notifier,
         ) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
+                eprintln!("(ProjectController): scarb project");
+                eprintln!(
+                    "(ProjectController): Scarb.toml: \n{}",
+                    fs::read_to_string(&manifest_path).unwrap_or_default()
+                );
+
                 if project_update_request.loaded_manifests.contains(&manifest_path) {
-                    debug!("scarb project is already loaded: {}", manifest_path.display());
+                    eprintln!(
+                        "(ProjectController): scarb project is already loaded: {}",
+                        manifest_path.display()
+                    );
                     return None;
                 }
 
+                eprintln!("(ProjectController): Invoking metadata");
                 let metadata = self
                     .scarb_toolchain
                     .metadata(&manifest_path)
@@ -286,11 +306,11 @@ impl ProjectControllerThread {
                         format!("failed to refresh scarb workspace: {}", manifest_path.display())
                     })
                     .inspect_err(|err| {
-                        error!("{err:?}");
+                        eprintln!("(ProjectController): metadata err {err:?}");
                     })
                     .ok();
 
-                metadata
+                let project_update = metadata
                     .map(|metadata| ProjectUpdate::Scarb {
                         crates: extract_crates(&metadata),
                         workspace_dir: metadata.workspace.root.into_std_path_buf(),
@@ -299,10 +319,18 @@ impl ProjectControllerThread {
                             .manifest_path
                             .into_std_path_buf(),
                     })
-                    .unwrap_or(ProjectUpdate::ScarbMetadataFailed)
+                    .unwrap_or(ProjectUpdate::ScarbMetadataFailed);
+
+                eprintln!(
+                    "(ProjectController): scarb project update - metadata success: {:?}",
+                    project_update
+                );
+                project_update
             }
 
             Some(ProjectManifestPath::CairoProject(config_path)) => {
+                eprintln!("(ProjectController): cairo project");
+
                 // The base path of ProjectConfig must be absolute to ensure that all paths in Salsa
                 // DB will also be absolute.
                 assert!(config_path.is_absolute());
@@ -323,7 +351,11 @@ impl ProjectControllerThread {
                 ProjectUpdate::CairoProjectToml(Box::new(maybe_project_config))
             }
 
-            None => ProjectUpdate::NoConfig(project_update_request.file_path),
+            None => {
+                eprintln!("(ProjectController): no cfg");
+
+                ProjectUpdate::NoConfig(project_update_request.file_path)
+            }
         };
 
         Some(project_update)

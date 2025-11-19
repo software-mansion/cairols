@@ -134,6 +134,7 @@ impl ProcMacroClient {
 
         match self.send_request_untracked::<M>(id, &params) {
             Ok(()) => {
+                eprintln!("(Proc Macro Client): Request registered: {}", M::METHOD);
                 self.proc_macro_server_tracker.register_procmacro_request();
                 requests_params.insert(id, map(params));
             }
