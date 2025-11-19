@@ -304,7 +304,6 @@ fn methods_from_non_deps_excluded() {
 }
 
 #[test]
-// This may produce different ?<number> values depending if run in debug or release
 fn methods_in_macro_controlled_code() {
     test_transform!(
         test_fill_trait_with_scarb_macros,
@@ -321,17 +320,17 @@ fn methods_in_macro_controlled_code() {
 
     const CONCRETE_CONST: u32 = ();
 
-    const GENERIC_CONST: ?2 = ();
+    const GENERIC_CONST: ?0 = ();
 
-    fn foo(t: ?2, v: ?3) -> ?2 {}
+    fn foo(t: ?0, v: ?1) -> ?0 {}
 
-    fn bar(t: ?2) -> ?3 {}
+    fn bar(t: ?0) -> ?1 {}
 
-    fn baz(s: crate::SomeStructWithConstParameter<?1>) {}
+    fn baz(s: crate::SomeStructWithConstParameter<?0>) {}
 
-    fn generic<const V: u32, W, +Into<?2, W>>(w: W) {}
+    fn generic<const V: u32, W, +Into<?0, W>>(w: W) {}
 
-    fn with_concrete_impl<W, impl SomeImpl: Into<?2, W>>(w: W) -> W {}"
+    fn with_concrete_impl<W, impl SomeImpl: Into<?0, W>>(w: W) -> W {}"
     At: Range { start: Position { line: 19, character: 44 }, end: Position { line: 19, character: 44 } }
     "#
     )

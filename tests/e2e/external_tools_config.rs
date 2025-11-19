@@ -55,8 +55,9 @@ fn lint_config_is_respected() {
         changes: vec![FileEvent { uri: ls.doc_id("Scarb.toml").uri, typ: FileChangeType::CHANGED }],
     });
 
-    ls.wait_for_project_update();
-    assert!(ls.wait_for_diagnostics("src/lib.cairo").is_empty());
+    ls.wait_for_diagnostics_generation();
+
+    assert!(ls.get_diagnostics_for_file("src/lib.cairo").is_empty());
 }
 
 #[test]
