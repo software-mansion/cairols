@@ -297,11 +297,14 @@ impl SyncNotificationHandler for DidOpenTextDocument {
         params: DidOpenTextDocumentParams,
     ) -> LSPResult<()> {
         let uri = params.text_document.uri;
-
+        eprintln!("(DidOpen): uri {:?}", uri);
         // Try to detect the crate for physical files.
         // The crate for virtual files is already known.
         if uri.scheme() == "file" {
+            eprintln!("(DidOpen): xdd");
             let Ok(path) = uri.to_file_path() else { return Ok(()) };
+
+            eprintln!("(DidOpen): req {}", path.display());
 
             state.project_controller.request_updating_project_for_file(path);
         }

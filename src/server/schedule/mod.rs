@@ -95,8 +95,15 @@ impl<'s> Scheduler<'s> {
                 let old_revision = current_revision(&self.state.db);
                 func(self.state, notifier.clone(), &mut self.client.requester, responder);
                 let new_revision = current_revision(&self.state.db);
-
+                // eprintln!(
+                //     "(Scheduler): comparing revisions: {:?}, {:?}",
+                //     old_revision, new_revision
+                // );
                 if old_revision != new_revision {
+                    // eprintln!(
+                    //     "(Scheduler): executing hooks since revision changed: {:?}, {:?}",
+                    //     old_revision, new_revision
+                    // );
                     for hook in &self.sync_mut_task_hooks {
                         hook(self.state, self.meta_state.clone(), notifier.clone());
                     }

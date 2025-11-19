@@ -140,6 +140,7 @@ impl ProcMacroClientController {
     ) {
         let ServerStatus::Connected(client) = db.proc_macro_input().proc_macro_server_status(db)
         else {
+            eprintln!("Disconnected in the process?");
             return;
         };
 
@@ -230,11 +231,19 @@ impl ProcMacroClientController {
 
         let available_responses = client.available_responses();
         let request_count = available_responses.len() as u64;
+        eprintln!(
+            "(PMCController): {} Requests are available from proc-macro-server.",
+            request_count
+        );
 
         for (params, response) in available_responses {
             match params {
                 RequestParams::DefinedMacros(params) => {
                     let defined_macros = parse_response::<DefinedMacrosResponse>(response)?;
+                    eprintln!(
+                        "(PMCController): Apply DefinedMacros repsonse: {:?}",
+                        defined_macros
+                    );
                     self.apply_defined_macros_response(
                         db,
                         params.workspace,
@@ -251,16 +260,28 @@ impl ProcMacroClientController {
                 }
                 RequestParams::ExpandAttribute(params) => {
                     let proc_macro_result = parse_response::<ProcMacroResult>(response)?;
+                    eprintln!(
+                        "(PMCController): Apply ExpandAttribute repsonse: {:?}",
+                        proc_macro_result
+                    );
                     attribute_resolutions.insert(params, proc_macro_result);
                     attribute_resolutions_changed = true;
                 }
                 RequestParams::ExpandDerive(params) => {
                     let proc_macro_result = parse_response::<ProcMacroResult>(response)?;
+                    eprintln!(
+                        "(PMCController): Apply ExpandDerive repsonse: {:?}",
+                        proc_macro_result
+                    );
                     derive_resolutions.insert(params, proc_macro_result);
                     derive_resolutions_changed = true;
                 }
                 RequestParams::ExpandInline(params) => {
                     let proc_macro_result = parse_response::<ProcMacroResult>(response)?;
+                    eprintln!(
+                        "(PMCController): Apply ExpandInline repsonse: {:?}",
+                        proc_macro_result
+                    );
                     inline_macro_resolutions.insert(params, proc_macro_result);
                     inline_macro_resolutions_changed = true;
                 }
@@ -279,6 +300,7 @@ impl ProcMacroClientController {
             db.proc_macro_input().set_inline_macro_resolution(db).to(inline_macro_resolutions);
         }
 
+        eprintln!("{} Requests were handled by proc-macro-server.", request_count);
         self.proc_macro_server_tracker.mark_requests_as_handled(request_count);
 
         Ok(())

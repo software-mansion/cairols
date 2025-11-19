@@ -256,6 +256,7 @@ impl Backend {
         scheduler.local_mut(Self::register_dynamic_capabilities);
 
         scheduler.local_mut(|state, _notifier, requester, _responder| {
+            eprintln!("(Scheduler): reload config on start");
             let _ = state.config.reload_on_start(
                 requester,
                 &mut state.db,
@@ -272,6 +273,7 @@ impl Backend {
         requester: &mut Requester<'_>,
         _responder: Responder,
     ) {
+        eprintln!("(Scheduler): register dynamic caps");
         let registrations = collect_dynamic_registrations(&state.client_capabilities);
 
         let _ = requester
@@ -312,8 +314,8 @@ impl Backend {
                 // they should be handled first in case of multiple operations being ready at once.
                 // To ensure it, keep project updates channel in the first arm of `select_biased!`.
                 recv(project_updates_receiver) -> project_update => {
+                    eprintln!("(EventLoop): prodżekt aptejt {:?}", project_update);
                     let Ok(project_update) = project_update else { break };
-
                     scheduler.local_mut(move |state, notifier, _, _| ProjectController::handle_update(state, notifier, project_update));
                 }
                 recv(incoming) -> msg => {
@@ -322,11 +324,12 @@ impl Backend {
                     if connection.handle_shutdown(&msg)? {
                         break;
                     }
-                    let task = match msg {
+                    let task = match msg.clone() {
                         Message::Request(req) => server::request(req),
                         Message::Notification(notification) => server::notification(notification),
                         Message::Response(response) => scheduler.response(response),
                     };
+                    eprintln!("(EventLoop): msg {:?}", msg);
                     scheduler.dispatch(task);
                 }
                 recv(proc_macro_channels.poll_responses_receiver) -> response => {
@@ -379,6 +382,8 @@ impl Backend {
     /// Calls [`lang::proc_macros::controller::ProcMacroClientController::handle_error`] to do its
     /// work.
     fn on_proc_macro_error(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
+        eprintln!("(Scheduler): on proc macro ełoł");
+
         state.proc_macro_controller.force_restart(&mut state.db, &state.config);
     }
 
@@ -394,12 +399,26 @@ impl Backend {
             state.db.proc_macro_input().proc_macro_server_status(&state.db)
             && client.available_responses().len() != 0
         {
+            eprintln!(
+                "(Scheduler): Applying responses of proc macros ({})",
+                client.available_responses().len()
+            );
+
+            // eprintln!(
+            //     "I process some responses because there are some available ({})",
+            //     client.available_responses().len()
+            // );
             state.proc_macro_controller.handle_response(
                 &mut state.db,
                 &state.config,
                 &state.client_capabilities,
                 requester,
             );
+        } else {
+            // eprintln!(
+            //     "I process no responses because there are no available responses or the server is not connected ({:?})",
+            //     state.db.proc_macro_input().proc_macro_server_status(&state.db)
+            // );
         }
     }
 
@@ -445,12 +464,15 @@ impl Backend {
 
     /// Reload config and update project model for all open files.
     fn reload(state: &mut State, requester: &mut Requester<'_>) -> LSPResult<()> {
+        eprintln!("(Scheduler): reload config");
         state.project_controller.clear_loaded_workspaces();
         state.config.reload(requester, &state.client_capabilities)?;
 
         for uri in state.open_files.iter() {
+            eprintln!("(Scheduler): reload project for file uri {:?}", uri);
             let Some(file_id) = state.db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = file_id.long(&state.db) {
+                eprintln!("(Scheduler): reload project for file pth {:?}", file_path);
                 state.project_controller.request_updating_project_for_file(file_path.clone());
             }
         }
