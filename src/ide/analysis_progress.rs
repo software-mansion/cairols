@@ -9,7 +9,7 @@ use crate::lsp::ext::{ServerStatus, ServerStatusEvent, ServerStatusParams};
 use crate::server::client::Notifier;
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum ProcMacroServerStatus {
     Pending,
     Connected,
@@ -110,6 +110,7 @@ pub enum AnalysisStatus {
     Finished,
 }
 
+#[derive(Debug)]
 pub enum AnalysisEvent {
     ConfigLoad {
         /// Loaded asynchronously from config
@@ -165,6 +166,7 @@ impl AnalysisProgressThread {
         let mut pms_status = ProcMacroServerStatus::default();
 
         while let Ok(event) = self.events_receiver.recv() {
+            eprintln!("(AnalysisProgress): {:?}", event);
             match event {
                 AnalysisEvent::ConfigLoad { enable_proc_macros: new_enable_proc_macros } => {
                     enable_proc_macros = new_enable_proc_macros;
@@ -182,13 +184,24 @@ impl AnalysisProgressThread {
                 }
                 AnalysisEvent::DiagnosticsTickEnd { was_cancelled, all_request_count } => {
                     let request_count = all_request_count.into();
+                    eprintln!(
+                        "(AnalysisProgress): diagnosics tick end: analysis_in_progress: {}, received_responses: {}, pending_requests: {}, all_request_count: {}, enable_proc_macros: {:?} pms_status: {:?} was_cancelled: {:?}, did_mutation_happen_during_tick: {:?}",
+                        analysis_in_progress,
+                        received_responses,
+                        pending_requests,
+                        all_request_count,
+                        enable_proc_macros,
+                        pms_status,
+                        was_cancelled,
+                        did_mutation_happen_during_tick
+                    );
 
                     if analysis_in_progress
                         && (!enable_proc_macros
                             || (pms_status == ProcMacroServerStatus::Connected
                                 && pending_requests == 0))
                         && (!was_cancelled
-                            && !did_mutation_happen_during_tick
+                            // && !did_mutation_happen_during_tick
                             && request_count == received_responses)
                     {
                         self.notifier.notify::<ServerStatus>(ServerStatusParams {
@@ -199,12 +212,12 @@ impl AnalysisProgressThread {
 
                         analysis_in_progress = false;
                     }
-
                     all_prev_requests_count = request_count;
                 }
                 AnalysisEvent::Mutation | AnalysisEvent::DatabaseSwap => {
                     did_mutation_happen_during_tick = true;
                     if project_loaded && !analysis_in_progress {
+                        eprintln!("(AnalysisProgress): Aj start analajsis");
                         self.notifier.notify::<ServerStatus>(ServerStatusParams {
                             event: ServerStatusEvent::AnalysisStarted,
                             idle: false,
@@ -230,7 +243,6 @@ impl AnalysisProgressThread {
                             // Mutation event will happen after this, so no need to restart analysis here.
                         }
                     }
-
                     pms_status = new_pms_status;
                 }
                 AnalysisEvent::ProjectLoaded => {

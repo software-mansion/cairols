@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::ops::ControlFlow;
 use std::path::Path;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 use std::{fmt, process};
 
 use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, AnalysisStarted};
@@ -184,6 +184,8 @@ impl MockClient {
             Err(crossbeam::channel::RecvTimeoutError::Disconnected) => None,
             Err(crossbeam::channel::RecvTimeoutError::Timeout) => return Err(RecvError::Timeout),
         };
+
+        eprintln!("(MockClient): received message: {message:?}");
 
         if let Some(message) = &message {
             self.trace.push(message.clone());
