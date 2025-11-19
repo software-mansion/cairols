@@ -37,9 +37,7 @@ fn test_invalid_scarb_toml_change() {
     ls.send_notification::<DidChangeWatchedFiles>(DidChangeWatchedFilesParams {
         changes: vec![FileEvent { uri: ls.doc_id("Scarb.toml").uri, typ: FileChangeType::CHANGED }],
     });
-    ls.wait_for_project_update();
-
-    let analyzed_crates_after_failed_metadata = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    let analyzed_crates_after_failed_metadata = ls.wait_for_project_update();
 
     assert_eq!(analyzed_crates, analyzed_crates_after_failed_metadata);
 }

@@ -58,9 +58,7 @@ fn test_removing_dependency() {
             typ: FileChangeType::CHANGED,
         }],
     });
-    ls.wait_for_project_update();
-
-    let analyzed_crates_after_dep_removal = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    let analyzed_crates_after_dep_removal = ls.wait_for_project_update();
     let analyzed_crates_after_dep_removal = normalize(&ls, analyzed_crates_after_dep_removal);
 
     let analyzed_crates_diff =

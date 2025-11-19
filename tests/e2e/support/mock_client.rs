@@ -7,6 +7,7 @@ use std::{fmt, process};
 
 use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, AnalysisStarted};
 use cairo_language_server::lsp::ext::ServerStatusParams;
+use cairo_language_server::lsp::ext::ViewAnalyzedCrates;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
 use cairo_language_server::testing::BackendForTesting;
 use lsp_server::{Message, Notification, Request, Response};
@@ -351,9 +352,12 @@ impl MockClient {
 
     /// Sends `textDocument/didOpen` notification to the server and
     /// waits for `cairo/projectUpdatingFinished` to be sent.
-    pub fn open_and_wait_for_project_update(&mut self, path: impl AsRef<Path>) {
+    ///
+    /// CAVEAT: `ViewAnalyzedCrates` is the only request that will calculate correctly right after `ProjectUpdatingFinished`.
+    /// For any other case prefer [`Self::wait_for_diagnostics_generation`] instead.
+    pub fn open_and_wait_for_project_update(&mut self, path: impl AsRef<Path>) -> String {
         self.open(path);
-        self.wait_for_project_update();
+        self.wait_for_project_update()
     }
 
     /// Sends `textDocument/didOpen` notification to the server and then waits for
@@ -475,9 +479,13 @@ impl MockClient {
         }
     }
 
-    /// Waits for `cairo/projectUpdatingFinished` notification.
-    pub fn wait_for_project_update(&mut self) {
+    /// Waits for `cairo/projectUpdatingFinished` notification. Then requests `cairo/viewAnalyzedCrates`.
+    ///
+    /// CAVEAT: `ViewAnalyzedCrates` is the only request that will calculate correctly right after `ProjectUpdatingFinished`.
+    /// For any other case prefer [`Self::wait_for_diagnostics_generation`] instead.
+    pub fn wait_for_project_update(&mut self) -> String {
         self.wait_for_notification::<ProjectUpdatingFinished>(|_| true);
+        self.send_request::<ViewAnalyzedCrates>(())
     }
 
     /// Sends `textDocument/didChange` notification to the server for each `*.cairo` file in test
