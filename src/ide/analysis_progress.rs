@@ -159,6 +159,9 @@ impl AnalysisProgressThread {
         let mut all_prev_requests_count = 0_i128;
         let mut received_responses = 0_i128;
         let mut pending_requests = 0_i128;
+        // Accounts for a situation when a mutation happens during diagnostics tick
+        // and the cancellation flag is not set in time (i.e., after the condition is checked).
+        let mut did_mutation_happen_during_tick = false;
         let mut pms_status = ProcMacroServerStatus::default();
 
         while let Ok(event) = self.events_receiver.recv() {
@@ -171,8 +174,10 @@ impl AnalysisProgressThread {
                 AnalysisEvent::ApplyResponses { response_count } => {
                     // Response count is delta, add it.
                     received_responses += response_count as i128;
+                    did_mutation_happen_during_tick = true;
                 }
                 AnalysisEvent::DiagnosticsTickStart => {
+                    did_mutation_happen_during_tick = false;
                     pending_requests = all_prev_requests_count - received_responses;
                 }
                 AnalysisEvent::DiagnosticsTickEnd { was_cancelled, all_request_count } => {
@@ -182,7 +187,9 @@ impl AnalysisProgressThread {
                         && (!enable_proc_macros
                             || (pms_status == ProcMacroServerStatus::Connected
                                 && pending_requests == 0))
-                        && (!was_cancelled && request_count == received_responses)
+                        && (!was_cancelled
+                            && !did_mutation_happen_during_tick
+                            && request_count == received_responses)
                     {
                         self.notifier.notify::<ServerStatus>(ServerStatusParams {
                             event: ServerStatusEvent::AnalysisFinished,
@@ -196,6 +203,7 @@ impl AnalysisProgressThread {
                     all_prev_requests_count = request_count;
                 }
                 AnalysisEvent::Mutation | AnalysisEvent::DatabaseSwap => {
+                    did_mutation_happen_during_tick = true;
                     if project_loaded && !analysis_in_progress {
                         self.notifier.notify::<ServerStatus>(ServerStatusParams {
                             event: ServerStatusEvent::AnalysisStarted,
