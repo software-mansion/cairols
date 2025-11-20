@@ -7,10 +7,10 @@ use std::{fmt, process};
 
 use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, AnalysisStarted};
 use cairo_language_server::lsp::ext::ServerStatusParams;
+use cairo_language_server::lsp::ext::ViewAnalyzedCrates;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
 use cairo_language_server::testing::BackendForTesting;
 use lsp_server::{Message, Notification, Request, Response};
-use lsp_types::notification::PublishDiagnostics;
 use lsp_types::request::{RegisterCapability, Request as LspRequest};
 use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url, lsp_notification, lsp_request};
 use serde_json::Value;
@@ -263,61 +263,7 @@ impl MockClient {
             predicate(&params).then_some(params)
         })
     }
-
-    fn wait_for_notification_sequence(
-        &mut self,
-        notification_matchers: Vec<Box<NotificationMatcher>>,
-    ) {
-        // Block which checks if the notification matches the next expected one in the sequence
-        let try_advance_sequence = |message: &Message, current_seq: &mut usize| {
-            let mut advanced = false;
-            if *current_seq < notification_matchers.len()
-                && let Message::Notification(notification) = message
-                && notification_matchers[*current_seq](notification)
-            {
-                *current_seq += 1;
-                advanced = true;
-            }
-            advanced
-        };
-
-        let mut seq: usize = 0;
-        // Check for sequence in existing trace
-        let mut message_matched = vec![];
-        for message in self.trace.iter() {
-            if try_advance_sequence(message, &mut seq) {
-                message_matched.push(true);
-            } else {
-                message_matched.push(false);
-            }
-        }
-
-        // Remove matched messages from the trace
-        self.trace = self
-            .trace
-            .iter()
-            .zip(message_matched.iter())
-            .filter_map(|(msg, matched)| if *matched { None } else { Some(msg.clone()) })
-            .collect();
-
-        // Check if sequence wasn't whole in the trace
-        if seq == notification_matchers.len() {
-            return;
-        }
-
-        // Wait for next messages in sequence
-        while let Some(message) = self.recv().expect("No message received") {
-            if try_advance_sequence(&message, &mut seq) {
-                self.trace.pop();
-                if seq == notification_matchers.len() {
-                    return;
-                }
-            }
-        }
-    }
 }
-
-type NotificationMatcher = dyn Fn(&Notification) -> bool;
 
 /// Methods for handling interactive requests.
 impl MockClient {
@@ -408,9 +354,12 @@ impl MockClient {
 
     /// Sends `textDocument/didOpen` notification to the server and
     /// waits for `cairo/projectUpdatingFinished` to be sent.
-    pub fn open_and_wait_for_project_update(&mut self, path: impl AsRef<Path>) {
+    ///
+    /// CAVEAT: `ViewAnalyzedCrates` is the only request that will calculate correctly right after `ProjectUpdatingFinished`.
+    /// For any other case prefer [`Self::wait_for_diagnostics_generation`] instead.
+    pub fn open_and_wait_for_project_update(&mut self, path: impl AsRef<Path>) -> String {
         self.open(path);
-        self.wait_for_project_update();
+        self.wait_for_project_update()
     }
 
     /// Sends `textDocument/didOpen` notification to the server and then waits for
@@ -418,22 +367,8 @@ impl MockClient {
     /// path.
     pub fn open_and_wait_for_diagnostics(&mut self, path: impl AsRef<Path>) -> Vec<Diagnostic> {
         let path = path.as_ref();
-        let file_url = self.fixture.file_url(path);
         self.open(path);
-        self.wait_for_notification_sequence(vec![
-            Box::new(|notification: &Notification| {
-                notification.method == "cairo/projectUpdatingFinished"
-            }),
-            Box::new(move |notification: &Notification| {
-                if notification.method == "textDocument/publishDiagnostics" {
-                    let params: PublishDiagnosticsParams =
-                        serde_json::from_value(notification.params.clone()).unwrap();
-
-                    return params.uri == file_url;
-                }
-                false
-            }),
-        ]);
+        self.wait_for_diagnostics_generation();
         self.get_diagnostics_for_file(path)
     }
 
@@ -472,7 +407,7 @@ impl MockClient {
     /// Waits until all procmacros, and related diagnostics get resolved within
     /// one generation span (until AnalysisStarted + AnalysisFinished get emitted via
     /// `cairo/serverStatus` notification).
-    fn wait_for_diagnostics_generation(&mut self) -> HashMap<Url, Vec<Diagnostic>> {
+    pub fn wait_for_diagnostics_generation(&mut self) -> HashMap<Url, Vec<Diagnostic>> {
         let mut in_progress_open = false;
         let mut project_updated = false;
 
@@ -546,18 +481,13 @@ impl MockClient {
         }
     }
 
-    /// Waits for `textDocument/publishDiagnostics` notification for the given file.
-    pub fn wait_for_diagnostics(&mut self, path: impl AsRef<Path>) -> Vec<Diagnostic> {
-        let url = self.fixture.file_url(path);
-        self.wait_for_notification::<PublishDiagnostics>(|params: &PublishDiagnosticsParams| {
-            params.uri == url
-        })
-        .diagnostics
-    }
-
-    /// Waits for `cairo/projectUpdatingFinished` notification.
-    pub fn wait_for_project_update(&mut self) {
+    /// Waits for `cairo/projectUpdatingFinished` notification. Then requests `cairo/viewAnalyzedCrates`.
+    ///
+    /// CAVEAT: `ViewAnalyzedCrates` is the only request that will calculate correctly right after `ProjectUpdatingFinished`.
+    /// For any other case prefer [`Self::wait_for_diagnostics_generation`] instead.
+    pub fn wait_for_project_update(&mut self) -> String {
         self.wait_for_notification::<ProjectUpdatingFinished>(|_| true);
+        self.send_request::<ViewAnalyzedCrates>(())
     }
 
     /// Sends `textDocument/didChange` notification to the server for each `*.cairo` file in test

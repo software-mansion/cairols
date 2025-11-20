@@ -1,4 +1,3 @@
-use cairo_language_server::lsp;
 use indoc::indoc;
 
 use crate::support::normalize::normalize;
@@ -16,9 +15,7 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
         }
     };
 
-    ls.open_and_wait_for_project_update("src/lib.cairo");
-
-    let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    let analyzed_crates = ls.open_and_wait_for_project_update("src/lib.cairo");
 
     insta::assert_snapshot!(normalize(&ls, analyzed_crates), @r#"
     # Analyzed Crates

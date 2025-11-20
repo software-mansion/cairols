@@ -55,8 +55,9 @@ fn lint_config_is_respected() {
         changes: vec![FileEvent { uri: ls.doc_id("Scarb.toml").uri, typ: FileChangeType::CHANGED }],
     });
 
-    ls.wait_for_project_update();
-    assert!(ls.wait_for_diagnostics("src/lib.cairo").is_empty());
+    ls.wait_for_diagnostics_generation();
+
+    assert!(ls.get_diagnostics_for_file("src/lib.cairo").is_empty());
 }
 
 #[test]
@@ -84,7 +85,7 @@ fn fmt_config_is_respected() {
         }
     };
 
-    ls.open_and_wait_for_project_update("src/lib.cairo");
+    ls.open_and_wait_for_diagnostics_generation("src/lib.cairo");
     let text_edits = ls
         .send_request::<Formatting>(DocumentFormattingParams {
             text_document: ls.doc_id("src/lib.cairo"),

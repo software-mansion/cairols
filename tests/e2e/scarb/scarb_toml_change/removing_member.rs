@@ -43,7 +43,7 @@ fn test_removing_member() {
 
     assert!(ls.open_and_wait_for_diagnostics("a/src/lib.cairo").is_empty());
     // Check if opening `a` triggers calculating diagnostics for `b`.
-    assert!(ls.wait_for_diagnostics("b/src/lib.cairo").is_empty());
+    assert!(ls.get_diagnostics_for_file("b/src/lib.cairo").is_empty());
 
     let analyzed_crates = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
     let analyzed_crates = normalize(&ls, analyzed_crates);
@@ -62,9 +62,7 @@ fn test_removing_member() {
     ls.send_notification::<DidChangeWatchedFiles>(DidChangeWatchedFilesParams {
         changes: vec![FileEvent { uri: ls.doc_id("Scarb.toml").uri, typ: FileChangeType::CHANGED }],
     });
-    ls.wait_for_project_update();
-
-    let analyzed_crates_after_member_removal = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
+    let analyzed_crates_after_member_removal = ls.wait_for_project_update();
     let analyzed_crates_after_member_removal = normalize(&ls, analyzed_crates_after_member_removal);
 
     let analyzed_crates_diff =
