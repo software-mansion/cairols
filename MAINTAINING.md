@@ -12,14 +12,15 @@ In order to release a new version of `cairo-language-server` follow steps below.
 1. Create a new branch, preferably denoting the next version of cairols to be released.
 2. Bump `cairo-language-server` version in `Cargo.toml`.
 3. Bump `cairo-lint` dependency to appropriate version.
-4. Make sure all the `cairo-lang-*` dependencies are set to a version appropriate for your release. 
+4. Make sure all the `cairo-lang-*` dependencies are set to a version appropriate for your release.
 You can use the following command:
 ```bash
 cargo xtask upgrade cairo <<VERSION>>
 ```
 where <<VERSION>> is the appropriate version.
 
-**NOTE:** The `patch` section in `Cargo.tom`l should be empty after doing this.
+**NOTE:** The `patch` section in `Cargo.toml` should be empty after doing this. It is important to use `cairo-lang-*` 
+dependencies directly from `crates.io` when releasing new `CairoLS`.
 5. Push the changes, create a PR, verify the CI passes all checks. Have it merged to the main branch.
 6. (Optional) If releasing for the first time, run:
 ```bash
