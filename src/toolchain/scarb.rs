@@ -1,12 +1,15 @@
+use std::io::Read;
+use std::ops::RangeInclusive;
+use std::path;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, OnceLock};
 use std::{fs, path};
 
-use anyhow::{Context, Result, bail, ensure};
+use anyhow::{Context, Result, anyhow, bail, ensure};
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
-use scarb_metadata::{Metadata, MetadataCommand};
+use scarb_metadata::{Metadata, MetadataCommandError};
 use tracing::{debug, error, warn};
 use which::which;
 
@@ -140,27 +143,64 @@ impl ScarbToolchain {
         eprintln!("(ScarbToolchain): I am about to execute scarb metatadata!");
         let manifest_content = fs::read_to_string(manifest)?;
         eprintln!("(ScarbToolchain): Manifest content: {}", manifest_content);
-        let result = MetadataCommand::new()
-            .scarb_path(scarb_path)
-            .manifest_path(manifest)
-            .inherit_stderr()
-            // .inherit_stdout()
-            // .env("SCARB_LOG", "scarb=trace")
-            .exec()
-            .context("failed to execute: scarb metadata");
-        eprintln!("(ScarbToolchain): I finished executing scarb metatadata!");
+        let mut metadata_process = Command::new(scarb_path)
+            .args(["--manifest-path", manifest.to_str().unwrap()])
+            .arg("--json")
+            .arg("--quiet")
+            .args(["metadata", "--format-version", "1"])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .context("failed to spawn: scarb metadata")?;
 
-        if !self.is_silent && result.is_err() {
+        let mut stdout = metadata_process.stdout.take().unwrap();
+
+        let metadata_reader = std::thread::spawn(move || {
+            let mut buffer = [0u8; 1];
+            let mut stdout_string = String::new();
+            let mut was_opened = false;
+            let mut open_braces = 0;
+            loop {
+                let n = stdout.read(&mut buffer).unwrap();
+                if n == 0 {
+                    break;
+                }
+
+                // Process the byte read
+                if buffer[0] == b'{' {
+                    was_opened = true;
+                    open_braces += 1;
+                } else if buffer[0] == b'}' {
+                    open_braces -= 1;
+                }
+
+                stdout_string.push(buffer[0] as char);
+
+                if was_opened && (open_braces == 0) {
+                    return stdout_string;
+                }
+            }
+            unreachable!("Metadata read: Loop exit without finding closing brace");
+        });
+
+        let metadata_read_output = metadata_reader.join().unwrap();
+        let status = metadata_process.wait()?;
+
+        eprintln!("(ScarbToolchain): I finished executing scarb metatadata!");
+        if status.success() {
+            return parse_stream(metadata_read_output)
+                .map(|output| output.metadata)
+                .context("failed to parse scarb metadata output");
+        } else if !self.is_silent {
             eprintln!("(ScarbToolchain): Scarb metadata errored!");
             self.notifier.notify::<ShowMessage>(ShowMessageParams {
                 typ: MessageType::ERROR,
                 message: "`scarb metadata` failed. Check if your project builds correctly via \
-                              `scarb build`."
+                                      `scarb build`."
                     .to_string(),
             });
         }
-
-        result
+        Err(anyhow!("failed to execute: scarb metadata"))
     }
 
     pub fn proc_macro_server(&self, cwd: &Path) -> Result<Child> {
@@ -228,4 +268,64 @@ impl ScarbToolchain {
             .inspect(|p| debug!("Scarb cache path: {}", p.display()))
             .inspect_err(|err| error!("{err:#?}"))
     }
+}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+struct ParseResult {
+    metadata: Metadata,
+    /// lines from `scarb metadata` output that were consumed for parsing [`Metadata`]
+    used_lines: RangeInclusive<usize>,
+}
+
+impl ParseResult {
+    fn new(metadata: Metadata, used_lines: RangeInclusive<usize>) -> Self {
+        Self { metadata, used_lines }
+    }
+}
+
+// Copied over from scarb with necessary structs
+fn parse_stream(stdout: String) -> Result<ParseResult, MetadataCommandError> {
+    const OPEN_BRACKET: &str = "{";
+    const CLOSE_BRACKET: &str = "}";
+
+    let mut err = None;
+    let mut lines = stdout.split('\n').map(|line| line.trim_end()).enumerate();
+
+    // depending on usage of --json flag scarb returns either one line json
+    // or pretty printed one which starts with "{" and ends with "}" on single lines
+    //
+    // singleline json's
+    for (n, line) in lines
+        .clone()
+        .filter(|(_, line)| line.starts_with(OPEN_BRACKET) && line.ends_with(CLOSE_BRACKET))
+    {
+        match serde_json::from_str(line) {
+            Ok(metadata) => return Ok(ParseResult::new(metadata, n..=n)),
+            Err(serde_err) => err = Some(serde_err.into()),
+        }
+    }
+    // multiline json's
+    loop {
+        let json_lines = lines
+            .by_ref()
+            .skip_while(|(_, line)| *line != OPEN_BRACKET)
+            .skip(1)
+            .take_while(|(_, line)| *line != CLOSE_BRACKET);
+
+        let json_lines = json_lines.collect::<Vec<_>>();
+
+        let used_lines = match (json_lines.first(), json_lines.last()) {
+            (Some((first, _)), Some((last, _))) => *first - 1..=*last + 1,
+            _ => break,
+        };
+        let json_string = json_lines.into_iter().map(|(_, line)| line).collect::<Vec<_>>().join("");
+
+        match serde_json::from_str(&format!("{OPEN_BRACKET}{json_string}{CLOSE_BRACKET}")) {
+            Ok(metadata) => return Ok(ParseResult::new(metadata, used_lines)),
+            Err(serde_err) => err = Some(serde_err.into()),
+        }
+    }
+
+    Err(err.unwrap_or(MetadataCommandError::NotFound { stdout }))
 }
