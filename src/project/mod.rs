@@ -12,7 +12,7 @@ use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
-use tracing::{debug, error, warn};
+use tracing::{error, warn};
 
 pub use self::crate_data::{Crate, extract_custom_file_stems};
 pub use self::model::ConfigsRegistry;

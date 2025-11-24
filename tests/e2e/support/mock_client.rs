@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::ops::ControlFlow;
 use std::path::Path;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use std::{fmt, process};
 
 use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, AnalysisStarted};

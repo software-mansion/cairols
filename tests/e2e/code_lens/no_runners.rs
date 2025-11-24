@@ -64,7 +64,6 @@ fn complex() {
     "#, @"lenses = []")
 }
 
-
 #[test]
 fn only_functions_1() {
     test_transform!(test_code_lens_no_runner, r#"
@@ -513,7 +512,6 @@ fn complex_7() {
     "#, @"lenses = []")
 }
 
-
 #[test]
 fn only_functions_8() {
     test_transform!(test_code_lens_no_runner, r#"
@@ -833,7 +831,6 @@ fn complex_12() {
     fn f() {}<caret>
     "#, @"lenses = []")
 }
-
 
 #[test]
 fn only_functions_13() {
