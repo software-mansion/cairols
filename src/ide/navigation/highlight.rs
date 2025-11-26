@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -17,11 +18,8 @@ pub fn highlight(
     let position = params.text_document_position_params.position.to_cairo();
 
     let identifier = db.find_identifier_at_position(file, position)?.as_syntax_node();
-
-    let default = vec![identifier];
     let highlights = db
-        .get_node_resultants(identifier)
-        .unwrap_or(&default)
+        .get_node_resultants(identifier)?
         .iter()
         .filter_map(|node| highlights(db, node, file))
         .flatten()
@@ -47,6 +45,14 @@ fn highlights<'db>(
         .in_scope(SearchScope::file_with_subfiles(db, file))
         .originating_locations(db)
         .filter(|found| found.file_id == file)
+        .filter(|found| {
+            // Check if the content matches the found usage
+            db.file_content(found.file_id)
+                .map(|file_content| found.span.take(file_content))
+                .is_some_and(|found_string| {
+                    found_string == syntax_node.get_text_without_trivia(db).to_string(db).as_str()
+                })
+        })
         .filter_map(|SpanInFile { file_id, span }: SpanInFile<'_>| {
             span.position_in_file(db, file_id).as_ref().map(ToLsp::to_lsp)
         })

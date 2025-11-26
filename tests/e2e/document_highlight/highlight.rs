@@ -125,3 +125,55 @@ fn multiple_resultants_with_macros() {
     "
     );
 }
+
+#[test]
+fn on_component_macro() {
+    test_transform_with_macros!(DocumentHighlight, r#"
+    #[starknet::interface]
+    trait IERC4906<TState> {
+        fn emit_metadata_update(ref self: TState, token_id: u256);
+        fn emit_batch_metadata_update(ref self: TState, from_token_id: u256, to_token_id: u256);
+    }
+    #[starknet::component]
+    pub mod ERC4906Component {
+        use super::IERC4906;
+
+        #[storage]
+        pub struct Storage {}
+
+        #[embeddable_as(ERC4906Implementation)]
+        impl ERC4906<
+            TContractState, +HasC<caret>omponent<TContractState>, +Drop<TContractState>,
+        > of IERC4906<ComponentState<TContractState>> {
+            fn emit_metadata_update(ref self: ComponentState<TContractState>, token_id: u256) {}
+            fn emit_batch_metadata_update(
+                ref self: ComponentState<TContractState>, from_token_id: u256, to_token_id: u256,
+            ) {}
+        }
+    }
+    "#, @r"
+    #[starknet::interface]
+    trait IERC4906<TState> {
+        fn emit_metadata_update(ref self: TState, token_id: u256);
+        fn emit_batch_metadata_update(ref self: TState, from_token_id: u256, to_token_id: u256);
+    }
+    #[starknet::component]
+    pub mod ERC4906Component {
+        use super::IERC4906;
+
+        #[storage]
+        pub struct Storage {}
+
+        #[embeddable_as(ERC4906Implementation)]
+        impl ERC4906<
+            TContractState, +<sel>HasComponent</sel><TContractState>, +Drop<TContractState>,
+        > of IERC4906<ComponentState<TContractState>> {
+            fn emit_metadata_update(ref self: ComponentState<TContractState>, token_id: u256) {}
+            fn emit_batch_metadata_update(
+                ref self: ComponentState<TContractState>, from_token_id: u256, to_token_id: u256,
+            ) {}
+        }
+    }
+    "
+    );
+}
