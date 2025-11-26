@@ -30,7 +30,6 @@ impl ImplA of ATrait {
         self.a + 1;
     }
 }
-//-----
 trait ATrait {
     fn c(self: A);
 }

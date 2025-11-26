@@ -13,8 +13,6 @@ struct EmptyStruct {<caret>}
 generated_code = """
 #[derive(ImproperDeriveMacro)]
 struct EmptyStruct {}
-
-//-----
 fn generated_function() {
     some < *> haskell < $> syntax
 }
@@ -30,7 +28,6 @@ struct EmptyStructV2 {<caret>}
 generated_code = """
 #[derive(ImproperDeriveMacroV2)]
 struct EmptyStructV2 {}
-//-----
 fn generated_function_v2() {
     some < *> haskell < $> syntax
 }
