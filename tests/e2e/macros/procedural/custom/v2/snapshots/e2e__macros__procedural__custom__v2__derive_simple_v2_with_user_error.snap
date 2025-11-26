@@ -15,11 +15,9 @@ generated_code = """
 struct EmptyStruct {
     x: unknown_type,
 }
-//-----
 trait MyTrait<T> {
     fn foo(t: T);
 }
-
 impl MyTraitImpl of MyTrait<felt252> {
     fn foo(t: felt252) {}
 }
