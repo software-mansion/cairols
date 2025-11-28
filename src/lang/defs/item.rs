@@ -64,6 +64,16 @@ impl<'db> ItemDef<'db> {
         self.definition_stable_ptr
     }
 
+    /// Gets the lookup item id associated with this symbol.
+    pub fn lookup_item_id(&self) -> LookupItemId<'db> {
+        self.lookup_item_id
+    }
+
+    /// Gets the parent context item
+    pub fn context_items(&self) -> &[LookupItemId<'db>] {
+        self.context_items.as_slice()
+    }
+
     /// Get item signature without its body including signatures of its contexts.
     pub fn signature(&self, db: &'db AnalysisDatabase) -> String {
         let contexts = self.context_items.iter().copied().rev();
