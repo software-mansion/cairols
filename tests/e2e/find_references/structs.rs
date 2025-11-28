@@ -132,3 +132,62 @@ fn struct_member_via_field_access_with_macros() {
     }
     ")
 }
+
+#[test]
+fn struct_member_via_definition_with_macros() {
+    test_transform_plain!(References, r#"
+    #[starknet::interface]
+    pub trait IMyContract<TContractState> {
+        fn set_something(ref self: TContractState);
+        fn get_something(self: @TContractState) -> bool;
+    }
+    #[starknet::contract]
+    pub mod MyContract {
+        use openzeppelin_access::ownable::OwnableComponent;
+        use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+        use super::IMyContract;
+        #[storage]
+        struct Storage {
+            what<caret>ever: bool,
+            #[substorage(v0)]
+            ownable: OwnableComponent::Storage,
+        }
+        #[abi(embed_v0)]
+        impl MyContractImpl of IMyContract<ContractState> {
+            fn set_something(ref self: ContractState) {
+                self.whatever.write(true);
+            }
+            fn get_something(self: @ContractState) -> bool {
+                self.whatever.read()
+            }
+        }
+    }
+    "#, @r"
+    #[starknet::interface]
+    pub trait IMyContract<TContractState> {
+        fn set_something(ref self: TContractState);
+        fn get_something(self: @TContractState) -> bool;
+    }
+    #[starknet::contract]
+    pub mod MyContract {
+        use openzeppelin_access::ownable::OwnableComponent;
+        use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+        use super::IMyContract;
+        #[storage]
+        struct Storage {
+            <sel>whatever</sel>: bool,
+            #[substorage(v0)]
+            ownable: OwnableComponent::Storage,
+        }
+        #[abi(embed_v0)]
+        impl MyContractImpl of IMyContract<ContractState> {
+            fn set_something(ref self: ContractState) {
+                self.<sel>whatever</sel>.write(true);
+            }
+            fn get_something(self: @ContractState) -> bool {
+                self.<sel>whatever</sel>.read()
+            }
+        }
+    }
+    ")
+}
