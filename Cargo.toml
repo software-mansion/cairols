@@ -53,7 +53,7 @@ cairo-lang-test-plugin = "*"
 cairo-lang-utils = "*"
 cairo-lint = "2.14.0"
 colored = "3.0.0"
-convert_case = "0.8.0"
+convert_case = "0.10.0"
 crossbeam = "0.8.4"
 governor = { version = "0.8.0", default-features = false, features = ["std", "quanta"] }
 indoc = "2"
@@ -85,7 +85,7 @@ libc = "0.2.177"
 [dev-dependencies]
 assert_fs = "1.1"
 cairo-language-server = { path = ".", features = ["testing"] }
-insta = { version = "1.43", features = ["toml", "json", "redactions"] }
+insta = { version = "1.44", features = ["toml", "json", "redactions"] }
 pathdiff = "0.2"
 regex = "1.12.2"
 similar = "2.7"
