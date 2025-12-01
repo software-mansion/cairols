@@ -26,7 +26,6 @@ use super::{
 };
 use crate::config::{Config, TestRunner};
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::db::LsSemanticGroup;
 use crate::lang::db::LsSyntaxGroup;
 use crate::lang::lsp::ToLsp;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};

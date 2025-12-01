@@ -1,4 +1,4 @@
-use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves};
+use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FreeFunctionLongId,
     ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId, ImplItemId,
@@ -6,8 +6,7 @@ use cairo_lang_defs::ids::{
     ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
     TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
 };
-use cairo_lang_filesystem::db::{ext_as_virtual, get_parent_and_mapping, translate_location};
-use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_filesystem::db::{get_parent_and_mapping, translate_location};
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::enm::EnumSemantic;
 use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
@@ -22,6 +21,7 @@ use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::{Binding, GenericParam};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
