@@ -366,8 +366,10 @@ impl Backend {
                 recv(code_lens_request_refresh_receiver) -> error => {
                     let Ok(()) = error else { break };
 
-                    scheduler.local(|_, _, _, requester, _| {
-                        CodeLensController::handle_refresh(requester);
+                    scheduler.local(|state: &State, _, _, requester, _| {
+                        if state.client_capabilities.workspace_code_lens_refresh_support() {
+                            CodeLensController::handle_refresh(requester);
+                        }
                     });
                 }
             }

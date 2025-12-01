@@ -1,4 +1,5 @@
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::{ItemModule, MaybeModuleBody};
 use cairo_lang_syntax::node::{SyntaxNode, Terminal};
 use lsp_types::{
@@ -6,7 +7,7 @@ use lsp_types::{
     Url, WorkspaceEdit,
 };
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::AnalysisDatabase;
 
 /// Code actions for missing module file.
 pub fn create_module_file<'db>(

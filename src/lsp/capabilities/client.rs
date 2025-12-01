@@ -19,6 +19,9 @@ pub trait ClientCapabilitiesExt {
     /// The client supports `workspace/semanticTokens/refresh` requests.
     fn workspace_semantic_tokens_refresh_support(&self) -> bool;
 
+    /// The client supports `workspace/codeLens/refresh` requests.
+    fn workspace_code_lens_refresh_support(&self) -> bool;
+
     /// The client supports renaming files and directories as a part of `WorkspaceEdit` requests.
     fn workspace_edit_rename_resource_support(&self) -> bool;
 
@@ -83,6 +86,10 @@ impl ClientCapabilitiesExt for ClientCapabilities {
 
     fn workspace_semantic_tokens_refresh_support(&self) -> bool {
         try_or_default!(self.workspace.as_ref()?.semantic_tokens.as_ref()?.refresh_support?)
+    }
+
+    fn workspace_code_lens_refresh_support(&self) -> bool {
+        try_or_default!(self.workspace.as_ref()?.code_lens.as_ref()?.refresh_support?)
     }
 
     fn workspace_edit_rename_resource_support(&self) -> bool {

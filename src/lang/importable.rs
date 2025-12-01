@@ -1,8 +1,9 @@
 use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode};
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::AnalysisDatabase;
 
 pub fn importable_crate_id<'db>(
     db: &'db AnalysisDatabase,

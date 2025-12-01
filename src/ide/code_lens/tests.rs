@@ -12,6 +12,7 @@ use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_filesystem::span::TextPositionSpan;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast::ModuleItem};
 use cairo_lang_test_plugin::TestPlugin;
