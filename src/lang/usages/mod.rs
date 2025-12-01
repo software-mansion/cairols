@@ -13,7 +13,7 @@ use memchr::memmem::Finder;
 use search_scope::SearchScope;
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
-use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch};
+use crate::lang::defs::{MemberDef, ResolvedItem, SymbolDef, SymbolSearch};
 
 pub mod search_scope;
 
@@ -192,9 +192,35 @@ impl<'db> FindUsages<'db> {
         let found_symbol_declaration =
             SymbolSearch::find_declaration(self.db, &identifier).map(|ss| ss.def);
 
+        // We check if a SymbolDef is in a MemberDef in order to see if we're dealing with a member
+        // of a struct annotated with a macro. Non-annotated structs do not need this.
+        fn as_member<'a>(sym: &'a Option<SymbolDef<'a>>) -> Option<&'a MemberDef<'a>> {
+            match sym {
+                Some(SymbolDef::Member(m)) => Some(m),
+                _ => None,
+            }
+        }
+
+        // We check if a symbol is a Member of a struct, then compare its item_id with a context
+        // of found symbol definitions and declarations
+        let symbol_in_context = match &self.symbol {
+            SymbolDef::Member(member_def) => {
+                let id = member_def.struct_item().lookup_item_id();
+
+                let in_context = |m: &MemberDef| m.struct_item().context_items().contains(&id);
+
+                let in_definition = as_member(&found_symbol_definition).is_some_and(in_context);
+                let in_declaration = as_member(&found_symbol_declaration).is_some_and(in_context);
+
+                in_definition || in_declaration
+            }
+            _ => false,
+        };
+
         // Check if declaration or definition matches
         if found_symbol_definition.as_ref() == Some(&self.symbol)
             || found_symbol_declaration.as_ref() == Some(&self.symbol)
+            || symbol_in_context
         {
             let usage = FoundUsage::from_syntax_node(self.db, identifier.as_syntax_node());
             sink(usage)
