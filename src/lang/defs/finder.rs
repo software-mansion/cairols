@@ -21,6 +21,7 @@ use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::keyword::SELF_TYPE_KW;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::ResolvedGenericItem::TraitItem;
 use cairo_lang_semantic::resolve::{
     AsSegments, ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver,

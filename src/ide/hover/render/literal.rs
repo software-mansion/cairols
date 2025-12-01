@@ -5,6 +5,7 @@ use cairo_lang_semantic::items::function_with_body::{
     FunctionWithBodySemantic, SemanticExprLookup,
 };
 use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::{TypeId, TypeLongId};
 use cairo_lang_syntax::node::ast::{
     Expr, ItemConstant, TerminalLiteralNumber, TerminalShortString, TerminalString,

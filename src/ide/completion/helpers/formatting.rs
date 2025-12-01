@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode};
 use itertools::Itertools;
 
 use crate::ide::format::types::format_type;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::AnalysisDatabase;
 
 /// Generates a concise one-line signature without resolver generics, and a name prefixed by `fn`.
 /// Example output: `fn(param_a: felt252, param_b: Array<B>) -> Something<B, C> nopanic`

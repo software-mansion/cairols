@@ -3,6 +3,7 @@ use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::ModuleItem;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -14,7 +15,7 @@ use itertools::Itertools;
 use lsp_types::TextDocumentPositionParams;
 use module_item::expand_module_item_macros;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod expr;

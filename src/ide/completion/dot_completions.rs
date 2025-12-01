@@ -22,7 +22,7 @@ use crate::ide::completion::helpers::snippets::snippet_for_function_call;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::import_edit_for_trait_if_needed;
 use crate::lang::methods::find_methods_for_type;
 use crate::lang::text_matching::text_matches;

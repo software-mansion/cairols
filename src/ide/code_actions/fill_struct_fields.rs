@@ -8,6 +8,7 @@ use cairo_lang_semantic::items::function_with_body::{
 };
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::{ExprStructCtorCall, StructArg};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};

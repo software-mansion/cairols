@@ -1,6 +1,7 @@
 use cairo_lang_defs::ids::{LookupItemId, ModuleId};
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::lookup_item::HasResolverData;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::Resolver;
 use cairo_lang_syntax::node::SyntaxNode;
 
