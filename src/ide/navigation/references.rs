@@ -2,9 +2,10 @@ use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_syntax::node::ast::{Attribute, TerminalIdentifier};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_language_common::CommonGroup;
 use lsp_types::{Location, ReferenceParams};
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::SymbolSearch;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 

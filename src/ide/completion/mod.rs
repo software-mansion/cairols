@@ -10,6 +10,7 @@ use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_language_common::CommonGroup;
 use function::params::params_completions;
 use function::variables::variables_completions;
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
@@ -28,7 +29,7 @@ use crate::ide::completion::helpers::item::{
 use crate::ide::completion::mod_item::mod_completions;
 use crate::ide::completion::use_statement::use_completions;
 use crate::lang::analysis_context::AnalysisContext;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod attribute;

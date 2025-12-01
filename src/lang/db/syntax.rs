@@ -1,22 +1,14 @@
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan};
+use cairo_lang_filesystem::span::{TextPosition, TextSpan};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal};
+use cairo_language_common::CommonGroup;
 use salsa::Database;
 
 /// LS-specific extensions to the syntax group of the Cairo compiler.
 pub trait LsSyntaxGroup: Database {
-    /// Finds the most specific [`SyntaxNode`] at the given [`TextOffset`] in the file.
-    fn find_syntax_node_at_offset<'db>(
-        &'db self,
-        file: FileId<'db>,
-        offset: TextOffset,
-    ) -> Option<SyntaxNode<'db>> {
-        find_syntax_node_at_offset(self.as_dyn_database(), file, offset)
-    }
-
     /// Finds the widest [`SyntaxNode`] within the given [`TextSpan`] in the file.
     fn widest_node_within_span<'db>(
         &'db self,
@@ -64,16 +56,6 @@ pub trait LsSyntaxGroup: Database {
 }
 
 impl<T: Database + ?Sized> LsSyntaxGroup for T {}
-
-/// Finds the most specific [`SyntaxNode`] at the given [`TextOffset`] in the file.
-#[salsa::tracked]
-fn find_syntax_node_at_offset<'db>(
-    db: &'db dyn Database,
-    file: FileId<'db>,
-    offset: TextOffset,
-) -> Option<SyntaxNode<'db>> {
-    Some(db.file_syntax(file).to_option()?.lookup_offset(db, offset))
-}
 
 /// Finds the widest [`SyntaxNode`] within the given [`TextSpan`] in the file.
 #[salsa::tracked]
@@ -138,38 +120,4 @@ fn find_identifier_at_position<'db>(
         let col = position.col.checked_sub(1)?;
         find(TextPosition { col, ..position })
     })
-}
-
-pub trait SyntaxNodeExt {
-    /// Faster than [`SyntaxNode::tokens`] because we don't travel each leaf, and does not allocate.
-    fn for_each_terminal<'db>(&self, db: &'db dyn Database, callback: impl FnMut(&SyntaxNode<'db>))
-    where
-        Self: 'db;
-}
-
-impl<'a> SyntaxNodeExt for SyntaxNode<'a> {
-    fn for_each_terminal<'db>(
-        &self,
-        db: &'db dyn Database,
-        mut callback: impl FnMut(&SyntaxNode<'db>),
-    ) where
-        Self: 'db,
-    {
-        for_each_terminals_ex(self, db, &mut callback)
-    }
-}
-
-fn for_each_terminals_ex<'db>(
-    node: &SyntaxNode<'db>,
-    db: &'db dyn Database,
-    callback: &mut impl FnMut(&SyntaxNode<'db>),
-) {
-    if node.green_node(db).kind.is_terminal() {
-        callback(node);
-        return;
-    }
-
-    for child in node.get_children(db) {
-        for_each_terminals_ex(child, db, callback);
-    }
 }

@@ -5,6 +5,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::ExprPath;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_language_common::CommonGroup;
 use lsp_types::{CodeAction, CodeActionKind, TextEdit, Url, WorkspaceEdit};
 
 use crate::lang::analysis_context::AnalysisContext;

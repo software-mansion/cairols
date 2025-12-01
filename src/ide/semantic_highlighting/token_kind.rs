@@ -7,6 +7,7 @@ use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::ast::{ExprPathPtr, TerminalIdentifier, TerminalIdentifierPtr};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
+use cairo_language_common::CommonGroup;
 use lsp_types::SemanticTokenType;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};

@@ -2,6 +2,7 @@ use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::{TerminalIdentifier, TerminalUnderscore};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_language_common::CommonGroup;
 use lsp_types::{Hover, HoverContents, HoverParams, MarkupContent, MarkupKind};
 
 use crate::ide::markdown::RULE;

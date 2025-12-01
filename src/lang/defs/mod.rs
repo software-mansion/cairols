@@ -23,6 +23,7 @@ pub use self::variant::VariantDef;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::usages::FindUsages;
 use crate::lang::usages::search_scope::SearchScope;
+use cairo_language_common::CommonGroup;
 
 mod finder;
 mod generic_param;

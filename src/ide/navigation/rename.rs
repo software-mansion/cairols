@@ -7,6 +7,7 @@ use cairo_lang_filesystem::ids::{FileLongId, SpanInFile};
 use cairo_lang_semantic::keyword::SELF_TYPE_KW;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_language_common::CommonGroup;
 use itertools::Itertools;
 use lsp_server::ErrorCode;
 use lsp_types::{
@@ -15,7 +16,7 @@ use lsp_types::{
     TextDocumentEdit, TextEdit, Url, WorkspaceEdit,
 };
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::{NonMacroModuleId, SymbolDef, SymbolSearch};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;

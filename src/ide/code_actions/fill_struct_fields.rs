@@ -11,6 +11,7 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::ast::{ExprStructCtorCall, StructArg};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_language_common::CommonGroup;
 use lsp_types::{CodeAction, CodeActionKind, CodeActionParams, Range, TextEdit, WorkspaceEdit};
 use tracing::error;
 

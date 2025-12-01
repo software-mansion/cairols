@@ -12,13 +12,14 @@ use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::SemanticDiagnosticKind;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_language_common::CommonGroup;
 use cairo_lint::{CairoLintToolMetadata, LinterDiagnosticParams, LinterGroup};
 use lsp_types::{Diagnostic, Url};
 use salsa::Database;
 use tracing::info_span;
 
 use crate::config::Config;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::project::ConfigsRegistry;

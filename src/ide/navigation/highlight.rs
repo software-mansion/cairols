@@ -1,10 +1,11 @@
 use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_language_common::CommonGroup;
 use itertools::Itertools;
 use lsp_types::{DocumentHighlight, DocumentHighlightParams};
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::SymbolSearch;
 use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
 use crate::lang::usages::search_scope::SearchScope;

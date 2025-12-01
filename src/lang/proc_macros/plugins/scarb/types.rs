@@ -9,9 +9,9 @@ use cairo_lang_macro::{
 };
 use cairo_lang_macro::{Diagnostic, TextOffset};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_language_common::SyntaxNodeExt;
 use salsa::Database;
 
-use crate::lang::db::SyntaxNodeExt;
 use crate::lang::proc_macros::plugins::scarb::conversion::SpanSource;
 use crate::lang::proc_macros::plugins::scarb::regular::AttrExpansionFound;
 
