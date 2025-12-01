@@ -7,6 +7,7 @@ use cairo_lang_semantic::items::function_with_body::{
 };
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_language_common::CommonGroup;
 use lsp_types::{CodeAction, CodeActionKind, TextEdit, Url, WorkspaceEdit};
 
 use crate::lang::analysis_context::AnalysisContext;

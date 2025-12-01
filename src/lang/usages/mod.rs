@@ -9,10 +9,11 @@ use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_language_common::CommonGroup;
 use memchr::memmem::Finder;
 use search_scope::SearchScope;
 
-use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch};
 
 pub mod search_scope;

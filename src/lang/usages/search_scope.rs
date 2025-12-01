@@ -4,8 +4,9 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
+use cairo_language_common::CommonGroup;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::AnalysisDatabase;
 
 #[derive(Clone, Default)]
 pub struct SearchScope<'db> {

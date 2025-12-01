@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
+use cairo_language_common::CommonGroup;
 use lsp_types::{CodeAction, CodeActionKind, Url, WorkspaceEdit};
 
 use super::missing_import::is_preferred;
 use crate::lang::analysis_context::AnalysisContext;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::new_import_edit;
 use crate::lang::methods::available_traits_for_method;
 

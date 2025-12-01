@@ -13,6 +13,7 @@ use cairo_lang_syntax::node::ast::ModuleItem;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_language_common::CommonGroup;
 use crossbeam::channel::{self, Receiver, Sender};
 use itertools::Itertools;
 use lsp_types::notification::ShowMessage;
@@ -27,7 +28,7 @@ use crate::ide::code_lens::executables::{
 use crate::ide::code_lens::tests::{
     TestCodeLens, TestCodeLensConstructionParams, TestCodeLensProvider,
 };
-use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
+use crate::lang::db::AnalysisDatabase;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::ext::{ExecuteInTerminal, ExecuteInTerminalParams};
 use crate::server::client::{Notifier, Requester};

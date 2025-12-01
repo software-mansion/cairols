@@ -17,6 +17,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast::ModuleItem};
 use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::Intern;
+use cairo_language_common::CommonGroup;
 use lsp_types::{CodeLens, Command, Range, Url};
 
 use super::{
@@ -25,7 +26,6 @@ use super::{
 };
 use crate::config::{Config, TestRunner};
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::db::LsSemanticGroup;
 use crate::lang::db::LsSyntaxGroup;
 use crate::lang::lsp::ToLsp;
 use crate::lang::lsp::{LsProtoGroup, ToCairo};

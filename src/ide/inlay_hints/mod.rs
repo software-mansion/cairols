@@ -12,6 +12,7 @@ use cairo_lang_syntax::node::{
     SyntaxNode, TypedStablePtr, TypedSyntaxNode,
     ast::{OptionTypeClause, StatementLet},
 };
+use cairo_language_common::CommonGroup;
 use itertools::Itertools;
 use lsp_types::{
     InlayHint, InlayHintKind, InlayHintLabel, InlayHintLabelPart, InlayHintLabelPartTooltip,
