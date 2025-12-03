@@ -96,7 +96,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     let deduplicated_items: Vec<_> = db
         .get_node_resultants(node)?
         .iter()
-        .filter_map(|resultant| complete_ex(*resultant, trigger_kind, was_node_corrected, db))
+        .filter_map(|resultant| complete_ex(*resultant, node, trigger_kind, was_node_corrected, db))
         .flatten()
         .map(CompletionItemHashable)
         .collect::<OrderedHashSet<_>>()
@@ -123,6 +123,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 
 fn complete_ex<'db>(
     node: SyntaxNode<'db>,
+    og_node: SyntaxNode<'db>,
     trigger_kind: CompletionTriggerKind,
     was_node_corrected: bool,
     db: &'db AnalysisDatabase,
@@ -132,7 +133,7 @@ fn complete_ex<'db>(
 
     let mut completions = vec![];
 
-    completions.extend(dot_completions(db, &ctx, was_node_corrected));
+    completions.extend(dot_completions(db, &ctx, og_node, was_node_corrected));
     completions.extend(struct_constructor_completions(db, &ctx));
     completions.extend(use_completions(db, &ctx));
     completions.extend(self_completions(db, &ctx));
