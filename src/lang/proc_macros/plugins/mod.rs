@@ -14,7 +14,7 @@ use salsa::Database;
 use scarb::inline::inline_macro_generate_code;
 use scarb::regular::macro_generate_code;
 use scarb_proc_macro_server_types::methods::defined_macros::{
-    CompilationUnitComponentMacros, DebugInfo, DefinedMacrosResponse,
+    CompilationUnitComponentMacros, DebugInfo, DefinedMacrosResponse, MacroWithHash,
 };
 use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, ProcMacroScope, Workspace};
 
@@ -49,14 +49,25 @@ pub fn proc_macro_plugin_suites(
                     source_packages: source_packages.clone(),
                     defined_attributes: attributes,
                     defined_derives: derives,
+                    defined_inlines: inline_macros.clone(),
                     defined_executable_attributes: executables,
                 }));
 
-                let inline_plugin =
-                    Arc::new(InlineProcMacroPlugin { scope: plugin_scope, source_packages });
+                // Reuse same plugin if possible to reduce memory usage.
+                let grouped_inline_macros_by_hash =
+                    inline_macros.into_iter().into_group_map_by(|m| m.hash);
 
-                for inline_macro in inline_macros {
-                    plugin_suite.add_inline_macro_plugin_ex(&inline_macro, inline_plugin.clone());
+                for (fingerprint, inline_macros) in grouped_inline_macros_by_hash {
+                    let inline_plugin = Arc::new(InlineProcMacroPlugin {
+                        scope: plugin_scope.clone(),
+                        source_packages: source_packages.clone(),
+                        fingerprint,
+                    });
+
+                    for inline_macro in inline_macros {
+                        plugin_suite
+                            .add_inline_macro_plugin_ex(&inline_macro.name, inline_plugin.clone());
+                    }
                 }
 
                 (component, plugin_suite)
@@ -71,8 +82,9 @@ pub fn proc_macro_plugin_suites(
 pub struct ProcMacroPlugin {
     scope: ProcMacroScope,
     source_packages: Vec<String>,
-    defined_attributes: Vec<String>,
-    defined_derives: Vec<String>,
+    defined_attributes: Vec<MacroWithHash>,
+    defined_derives: Vec<MacroWithHash>,
+    defined_inlines: Vec<MacroWithHash>,
     defined_executable_attributes: Vec<String>,
 }
 
@@ -135,14 +147,16 @@ impl MacroPlugin for ProcMacroPlugin {
             item_ast,
             &self.defined_attributes,
             &self.defined_derives,
+            &self.defined_inlines,
             metadata,
         )
     }
 
     fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
-        [&self.defined_attributes[..], &self.defined_executable_attributes[..]]
-            .concat()
-            .into_iter()
+        self.defined_attributes
+            .iter()
+            .map(|m| &m.name)
+            .chain(self.defined_executable_attributes.iter())
             .map(|s| SmolStrId::from(db, s))
             .collect()
     }
@@ -150,7 +164,7 @@ impl MacroPlugin for ProcMacroPlugin {
     fn declared_derives<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         self.defined_derives
             .iter()
-            .map(|derive| derive.to_case(Case::Pascal))
+            .map(|derive| derive.name.to_case(Case::Pascal))
             .map(|s| SmolStrId::from(db, s))
             .collect()
     }
@@ -161,6 +175,7 @@ impl MacroPlugin for ProcMacroPlugin {
 pub struct InlineProcMacroPlugin {
     scope: ProcMacroScope,
     source_packages: Vec<String>,
+    fingerprint: u64,
 }
 
 impl InlineProcMacroPlugin {
@@ -177,6 +192,6 @@ impl InlineMacroExprPlugin for InlineProcMacroPlugin {
         item_ast: &cairo_lang_syntax::node::ast::ExprInlineMacro<'db>,
         _metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
     ) -> cairo_lang_defs::plugin::InlinePluginResult<'db> {
-        inline_macro_generate_code(db, self.scope.clone(), item_ast)
+        inline_macro_generate_code(db, self.scope.clone(), item_ast, self.fingerprint)
     }
 }

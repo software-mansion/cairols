@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::hash::{Hash, Hasher};
 
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
@@ -17,6 +18,7 @@ use convert_case::{Case, Casing};
 use itertools::Itertools;
 use salsa::Database;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
+use scarb_proc_macro_server_types::methods::defined_macros::MacroWithHash;
 use scarb_proc_macro_server_types::methods::expand::{
     ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
 };
@@ -47,8 +49,9 @@ pub fn macro_generate_code<'db>(
     db: &'db dyn Database,
     expansion_context: ProcMacroScope,
     item_ast: ast::ModuleItem<'db>,
-    defined_attributes: &[String],
-    defined_derives: &[String],
+    defined_attributes: &[MacroWithHash],
+    defined_derives: &[MacroWithHash],
+    defined_inlines: &[MacroWithHash],
     metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
 ) -> PluginResult<'db> {
     let stream_metadata = calculate_metadata(db, item_ast.clone(), metadata.edition);
@@ -62,8 +65,12 @@ pub fn macro_generate_code<'db>(
 
     // Expand module-level inline macro.
     if let ast::ModuleItem::InlineMacro(inline_macro) = &item_ast
-        && let Some(result) =
-            expand_module_level_inline_macro(db, inline_macro, expansion_context.clone())
+        && let Some(result) = expand_module_level_inline_macro(
+            db,
+            inline_macro,
+            expansion_context.clone(),
+            defined_inlines,
+        )
     {
         return result;
     }
@@ -80,16 +87,18 @@ pub fn macro_generate_code<'db>(
             args,
             call_site,
             attribute_location,
-        }) => Some((name, args, call_site, attribute_location, true)),
+            fingerprint,
+        }) => Some((name, args, call_site, attribute_location, true, fingerprint)),
         AttrExpansionFound::Some(AttrExpansionArgs {
             name,
             args,
             call_site,
             attribute_location,
-        }) => Some((name, args, call_site, attribute_location, false)),
+            fingerprint,
+        }) => Some((name, args, call_site, attribute_location, false, fingerprint)),
         AttrExpansionFound::None => None,
     }
-    .map(|(name, args, call_site, attribute_location, last)| {
+    .map(|(name, args, call_site, attribute_location, last, fingerprint)| {
         let token_stream = body.with_metadata(stream_metadata.clone());
         expand_attribute(
             db,
@@ -97,7 +106,7 @@ pub fn macro_generate_code<'db>(
             last,
             token_stream,
             item_ast.as_syntax_node(),
-            AttrExpansionArgs { name, call_site, args, attribute_location },
+            AttrExpansionArgs { name, call_site, args, attribute_location, fingerprint },
         )
     }) {
         return result.into();
@@ -123,6 +132,7 @@ fn expand_module_level_inline_macro<'db>(
     db: &'db dyn Database,
     inline_macro: &ast::ItemInlineMacro<'db>,
     expansion_context: ProcMacroScope,
+    defined_inlines: &[MacroWithHash],
 ) -> Option<PluginResult<'db>> {
     let path = inline_macro.path(db).segments(db).elements(db).last()?;
     let PathSegment::Simple(segment) = path else {
@@ -138,6 +148,8 @@ fn expand_module_level_inline_macro<'db>(
     token_stream_builder.add_node(arguments.as_syntax_node());
     let token_stream = token_stream_builder.build(&ctx);
 
+    let fingerprint = defined_inlines.iter().find(|m| m.name == inline_macro_name)?.hash;
+
     let result = get_inline_macros_expansion(
         db,
         ExpandInlineMacroParams {
@@ -146,6 +158,7 @@ fn expand_module_level_inline_macro<'db>(
             args: token_stream,
             call_site: call_site.span,
         },
+        fingerprint,
     );
 
     let result_content_string = result.token_stream.to_string();
@@ -180,7 +193,7 @@ fn expand_module_level_inline_macro<'db>(
 fn expand_inner_attr<'db>(
     db: &'db dyn Database,
     expansion_context: ProcMacroScope,
-    defined_attributes: &[String],
+    defined_attributes: &[MacroWithHash],
     item_ast: ast::ModuleItem<'db>,
 ) -> InnerAttrExpansionResult<'db> {
     let mut context = InnerAttrExpansionContext::new(db, &item_ast);
@@ -357,6 +370,7 @@ fn do_expand_inner_attr<'db>(
             item: TokenStream::from(token_stream.clone()),
             adapted_call_site: input.attribute_location.adapted_call_site().into(),
         },
+        input.fingerprint,
     );
 
     if result.code_mappings.is_some() {
@@ -478,6 +492,7 @@ pub struct AttrExpansionArgs<'db> {
     pub args: TokenStream,
     pub call_site: CallSiteLocation<'db>,
     pub attribute_location: ExpandableAttrLocation,
+    pub fingerprint: u64,
 }
 
 impl<'db> AttrExpansionFound<'db> {
@@ -495,7 +510,7 @@ impl<'db> AttrExpansionFound<'db> {
 /// Remove the attribute from the code.
 pub(crate) fn parse_attribute<'db>(
     db: &'db dyn Database,
-    defined_attributes: Vec<String>,
+    defined_attributes: Vec<MacroWithHash>,
     item_ast: ast::ModuleItem<'db>,
     ctx: &AllocationContext,
 ) -> (AttrExpansionFound<'db>, AdaptedTokenStream) {
@@ -552,7 +567,7 @@ fn parse_item<'db, T: ItemWithAttributes<'db> + ChildNodesWithoutAttributes<'db>
     db: &'db dyn Database,
     token_stream_builder: &mut TokenStreamBuilder<'db>,
     ctx: &AllocationContext,
-    defined_attributes: Vec<String>,
+    defined_attributes: Vec<MacroWithHash>,
 ) -> AttrExpansionFound<'db> {
     let span = ast.span_with_trivia(db);
     let attrs = ast.item_attributes(db);
@@ -564,7 +579,7 @@ fn parse_item<'db, T: ItemWithAttributes<'db> + ChildNodesWithoutAttributes<'db>
 
 fn parse_attrs<'db>(
     db: &'db dyn Database,
-    defined_attributes: &[String],
+    defined_attributes: &[MacroWithHash],
     builder: &mut TokenStreamBuilder<'db>,
     item_attrs: Vec<ast::Attribute<'db>>,
     item_start_offset: TextOffset,
@@ -585,8 +600,9 @@ fn parse_attrs<'db>(
         // We ensure that this flag is changed *after* the expansion is found.
         if last {
             let structured_attr = attr.clone().structurize(db);
-            let found = defined_attributes.contains(&structured_attr.id.to_string(db));
-            if found {
+            let attr_name = structured_attr.id.long(db);
+            let found = defined_attributes.iter().find(|m| m.name.as_str() == attr_name.as_str());
+            if let Some(m) = found {
                 if expansion.is_none() {
                     let mut args_builder = TokenStreamBuilder::new(db);
                     args_builder.add_node(attr.arguments(db).as_syntax_node());
@@ -604,6 +620,7 @@ fn parse_attrs<'db>(
                             item_start_offset,
                             db,
                         ),
+                        fingerprint: m.hash,
                     });
                     // Do not add the attribute for found expansion.
                     continue;
@@ -626,9 +643,9 @@ fn parse_attrs<'db>(
 /// Returns a list of expansions that this plugin should apply.
 fn parse_derive<'db>(
     db: &'db dyn Database,
-    defined_derives: &[String],
+    defined_derives: &[MacroWithHash],
     item_ast: ast::ModuleItem<'db>,
-) -> Vec<(String, CallSiteLocation<'db>)> {
+) -> Vec<(MacroWithHash, CallSiteLocation<'db>)> {
     let attrs = match item_ast {
         ast::ModuleItem::Struct(struct_ast) => {
             Some(struct_ast.query_attr(db, DERIVE_ATTR).collect_vec())
@@ -659,7 +676,7 @@ fn parse_derive<'db>(
 
             let matching_derive = defined_derives
                 .iter()
-                .find(|derive| derive.to_case(Case::Pascal) == value)
+                .find(|derive| derive.name.to_case(Case::Pascal) == value)
                 .cloned()?;
 
             Some((matching_derive, CallSiteLocation::new(&segment, db)))
@@ -670,7 +687,7 @@ fn parse_derive<'db>(
 fn expand_derives<'db>(
     db: &'db dyn Database,
     expansion_context: ProcMacroScope,
-    defined_derives: &[String],
+    defined_derives: &[MacroWithHash],
     item_ast: ast::ModuleItem<'db>,
     stream_metadata: TokenStreamMetadata,
 ) -> Option<PluginResult<'db>> {
@@ -681,7 +698,7 @@ fn expand_derives<'db>(
     let token_stream = token_stream_builder.build(&ctx);
 
     // All derives to be applied.
-    let derives = parse_derive(db, defined_derives, item_ast.clone());
+    let mut derives = parse_derive(db, defined_derives, item_ast.clone());
 
     if derives.is_empty() {
         // No derives found - returning early.
@@ -692,7 +709,19 @@ fn expand_derives<'db>(
     let span_db = stable_ptr.lookup(db).span(db);
     let call_site = TextSpan { start: span_db.start.as_u32(), end: span_db.end.as_u32() };
 
-    let derive_names: Vec<String> = derives.into_iter().map(|a| a.0).collect();
+    // We resolve all derives in a single batch rather than per plugin as the compiler does.
+    // This may involve multiple proc-macro binaries for a single request.
+    // To ensure deterministic results, we sort the derives and combine the
+    // fingerprints of each proc-macro. The PMS side uses the same approach.
+    derives.sort_by_key(|(m, _)| m.name.clone());
+
+    let mut hasher = StableHasher::new();
+
+    derives.iter().for_each(|(m, _)| {
+        m.hash.hash(&mut hasher);
+    });
+
+    let derive_names: Vec<String> = derives.into_iter().map(|a| a.0.name).collect();
     // region: Modified scarb code
     let result = get_derive_expansion(
         db,
@@ -702,6 +731,7 @@ fn expand_derives<'db>(
             item: token_stream,
             call_site,
         },
+        hasher.finish(),
     );
     // endregion
 
@@ -758,6 +788,7 @@ fn expand_attribute<'db>(
             item: token_stream.clone().into(),
             adapted_call_site: input.attribute_location.adapted_call_site().into(),
         },
+        input.fingerprint,
     );
     // endregion
     let diagnostics =
