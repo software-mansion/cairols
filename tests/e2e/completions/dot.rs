@@ -641,3 +641,47 @@ fn with_already_typed_incomplete_parens_and_caret_after() {
     completions = []
     "#);
 }
+
+#[test]
+fn with_nested_binary_expressions_and_caret_afterc() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    struct S2 {}
+
+    trait ReturnLong2<T> {
+        fn make(self: T, long: Long) -> Long;
+    }
+
+    impl SReturnLong2 of ReturnLong2<S2> {
+        fn make(self: S2, long: Long) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        let s2 = S2{};
+        s2.make(s.m<caret>());
+    }
+    ",
+    @r#"
+    caret = """
+        s2.make(s.m<caret>());
+    """
+
+    [[completions]]
+    completion_label = "make()"
+    detail = "fn(self: T, a: u32) -> Long"
+    insert_text = "make(${1:a})"
+    "#);
+}
