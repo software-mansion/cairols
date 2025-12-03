@@ -459,3 +459,185 @@ fn with_not_imported_return_type() {
     insert_text = "try_into()"
     "#);
 }
+
+#[test]
+fn with_already_typed_parens() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.m<caret>();
+    }
+    ",
+    @r#"
+    caret = """
+        s.m<caret>();
+    """
+
+    [[completions]]
+    completion_label = "make()"
+    detail = "fn(self: T, a: u32) -> Long"
+    insert_text = "make(${1:a})"
+    "#);
+}
+
+#[test]
+fn with_already_typed_parens_and_caret_inside() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.m(<caret>);
+    }
+    ",
+    @r#"
+    caret = """
+        s.m(<caret>);
+    """
+    completions = []
+    "#);
+}
+
+#[test]
+fn with_already_typed_arg_and_caret_inside() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.m(37<caret>);
+    }
+    ",
+    @r#"
+    caret = """
+        s.m(37<caret>);
+    """
+    completions = []
+    "#);
+}
+
+#[test]
+fn with_already_typed_parens_and_caret_after() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.m()<caret>;
+    }
+    ",
+    @r#"
+    caret = """
+        s.m()<caret>;
+    """
+    completions = []
+    "#);
+}
+
+#[test]
+fn with_already_typed_incomplete_parens_and_caret_before() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.m<caret>(;
+    }
+    ",
+    @r#"
+    caret = """
+        s.m<caret>(;
+    """
+
+    [[completions]]
+    completion_label = "make()"
+    detail = "fn(self: T, a: u32) -> Long"
+    insert_text = "make(${1:a})"
+    "#);
+}
+
+#[test]
+fn with_already_typed_incomplete_parens_and_caret_after() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.m(<caret>;
+    }
+    ",
+    @r#"
+    caret = """
+        s.m(<caret>;
+    """
+    completions = []
+    "#);
+}
