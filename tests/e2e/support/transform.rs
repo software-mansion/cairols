@@ -3,7 +3,7 @@ use lsp_types::ClientCapabilities;
 use serde_json::json;
 
 use crate::macros::SCARB_TEST_MACROS_V2_PACKAGE;
-use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
+use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2025_12;
 use crate::support::cursor::Cursors;
 use crate::support::fixture::Fixture;
 use crate::support::{MockClient, cursors, sandbox};
@@ -27,7 +27,7 @@ pub fn conduct_transformation<T: Transformer>(
                 [package]
                 name = "hello"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 cairols_test_macros_v2 = {{ path = "{}" }}
@@ -37,7 +37,7 @@ pub fn conduct_transformation<T: Transformer>(
             ),
         );
     } else {
-        fixture.add_file_if_not_exists("cairo_project.toml", CAIRO_PROJECT_TOML_2024_07);
+        fixture.add_file_if_not_exists("cairo_project.toml", CAIRO_PROJECT_TOML_2025_12);
     };
 
     let workspace_config = if with_macros {

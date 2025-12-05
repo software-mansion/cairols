@@ -5,6 +5,14 @@ pub const CAIRO_PROJECT_TOML: &str = indoc! {r#"
     hello = "src"
 "#};
 
+pub const CAIRO_PROJECT_TOML_2025_12: &str = indoc! {r#"
+    [crate_roots]
+    hello = "src"
+
+    [config.global]
+    edition = "2025_12"
+"#};
+
 pub const CAIRO_PROJECT_TOML_2024_07: &str = indoc! {r#"
     [crate_roots]
     hello = "src"
@@ -21,5 +29,9 @@ pub const CAIRO_PROJECT_TOML_2023_11: &str = indoc! {r#"
     edition = "2023_11"
 "#};
 
-pub const WELL_KNOWN_CAIRO_PROJECT_TOMLS: &[&str] =
-    &[CAIRO_PROJECT_TOML, CAIRO_PROJECT_TOML_2023_11, CAIRO_PROJECT_TOML_2024_07];
+pub const WELL_KNOWN_CAIRO_PROJECT_TOMLS: &[&str] = &[
+    CAIRO_PROJECT_TOML,
+    CAIRO_PROJECT_TOML_2023_11,
+    CAIRO_PROJECT_TOML_2024_07,
+    CAIRO_PROJECT_TOML_2025_12,
+];

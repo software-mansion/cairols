@@ -262,7 +262,7 @@ fn methods_from_deps_included() {
         dep = "dep"
 
         [config.override.this]
-        edition = "2024_07"
+        edition = "2025_12"
 
         [config.override.this.dependencies]
         dep = { discriminator = "dep" }

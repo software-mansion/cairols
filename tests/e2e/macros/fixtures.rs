@@ -20,7 +20,7 @@ impl MacroTest for ProjectWithCustomMacros {
                 [package]
                 name = "test_package"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 cairols_test_macros = {{ path = "{}" }}
@@ -39,7 +39,7 @@ impl MacroTest for ProjectWithCustomMacrosV2 {
                 [package]
                 name = "test_package"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 cairols_test_macros_v2 = {{ path = "{}" }}
@@ -58,7 +58,7 @@ impl MacroTest for ProjectWithCustomMacrosV1AndV2 {
                 [package]
                 name = "test_package"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 cairols_test_macros = {{ path = "{}" }}
@@ -89,7 +89,7 @@ impl MacroTest for ProjectWithMultipleCrates {
                 [package]
                 name = "package_a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 package_b.workspace = true
@@ -100,7 +100,7 @@ impl MacroTest for ProjectWithMultipleCrates {
                 [package]
                 name = "package_b"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 another_test_macros.workspace = true
@@ -123,7 +123,7 @@ impl MacroTest for ProjectWithMultipleCrates {
                 [package]
                 name = "another_test_macros"
                 version = "1.0.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [cairo-plugin]
             "#),
@@ -148,7 +148,7 @@ impl MacroTest for ProjectWithSnforgeUnitTest {
                 [package]
                 name = "test_package"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [tool.scarb]
                 allow-prebuilt-plugins = ["snforge_scarb_plugin"]
@@ -171,7 +171,7 @@ impl MacroTest for ProjectWithSnforgeIntegrationTest {
                 [package]
                 name = "test_package"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dev-dependencies]
                 snforge_std = "0.37.0"
@@ -197,7 +197,7 @@ impl MacroTest for ProjectWithCairoProjectToml {
                 test_package = "src"
 
                 [config.global]
-                edition = "2024_07"
+                edition = "2025_12"
             "#)
         }
     }

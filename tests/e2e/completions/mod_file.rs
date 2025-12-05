@@ -2,7 +2,7 @@ use lsp_types::ClientCapabilities;
 use lsp_types::request::Completion;
 
 use crate::completions::transform;
-use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
+use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2025_12;
 use crate::support::cursor::Cursors;
 use crate::support::fixture::Fixture;
 use crate::support::insta::{test_transform_plain, test_transform_with_macros};
@@ -11,7 +11,7 @@ use crate::support::{MockClient, fixture};
 
 fn lib_cairo_fixture() -> Fixture {
     fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+        "cairo_project.toml" => CAIRO_PROJECT_TOML_2025_12,
         "src/aaaa.cairo" => "",
         "src/bbbb.cairo" => "",
         "src/cccc.cairo" => "",
@@ -125,7 +125,7 @@ impl Transformer for OtherTopLevelFile {
 
 fn other_top_level_file_fixture() -> Fixture {
     fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+        "cairo_project.toml" => CAIRO_PROJECT_TOML_2025_12,
         "src/lib.cairo" => "mod aaaa;",
         "src/aaaa/bbbb.cairo" => "",
         "src/bbbb.cairo" => "",
@@ -214,7 +214,7 @@ impl Transformer for NestedFile {
 
 fn nested_file_fixture() -> Fixture {
     fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+        "cairo_project.toml" => CAIRO_PROJECT_TOML_2025_12,
         "src/lib.cairo" => "mod x;",
         "src/x/d/aaaa.cairo" => "",
         "src/x/d/bbbb.cairo" => "",

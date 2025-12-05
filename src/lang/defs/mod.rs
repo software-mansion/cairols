@@ -298,7 +298,7 @@ fn resolve_macro_call_module<'db>(
 ) -> Option<ResolvedItem<'db>> {
     let macro_call_path = db.module_macro_call_by_id(id).ok()?.path(db);
     let inference_id = InferenceId::MacroCall(id);
-    let module_id = id.module_id(db);
+    let module_id = id.parent_module(db);
     let mut resolver = Resolver::new(db, module_id, inference_id);
 
     match resolver.resolve_generic_path(

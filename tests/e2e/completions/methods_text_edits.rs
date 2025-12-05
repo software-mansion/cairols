@@ -125,7 +125,7 @@ fn only_dependencies_methods_included_fixture() -> Fixture {
             dep = "dep"
 
             [config.override.this]
-            edition = "2024_07"
+            edition = "2025_12"
 
             [config.override.this.dependencies]
             dep = { discriminator = "dep" }

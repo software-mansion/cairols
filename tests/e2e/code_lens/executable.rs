@@ -16,7 +16,7 @@ fn test_one_executable_whole_package() {
             [package]
             name = "indor"
             version = "0.1.0"
-            edition = "2024_07"
+            edition = "2025_12"
 
             [dependencies]
             cairo_execute = "2.9.0"
@@ -47,7 +47,7 @@ fn test_one_executable_with_trivia() {
             [package]
             name = "indor"
             version = "0.1.0"
-            edition = "2024_07"
+            edition = "2025_12"
 
             [dependencies]
             cairo_execute = "2.9.0"
@@ -76,7 +76,7 @@ fn test_two_executables_whole_package() {
             [package]
             name = "indor"
             version = "0.1.0"
-            edition = "2024_07"
+            edition = "2025_12"
 
             [dependencies]
             cairo_execute = "2.9.0"
@@ -105,7 +105,7 @@ fn test_two_executables_one_precise_def() {
             [package]
             name = "indor"
             version = "0.1.0"
-            edition = "2024_07"
+            edition = "2025_12"
 
             [dependencies]
             cairo_execute = "2.9.0"

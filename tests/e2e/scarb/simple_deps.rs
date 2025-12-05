@@ -13,7 +13,7 @@ fn test_simple_deps() {
                 [package]
                 name = "a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 b = { path = "../b" }
@@ -33,7 +33,7 @@ fn test_simple_deps() {
                 [package]
                 name = "b"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
             "#),
             "b/src/lib.cairo" => indoc!(r#"
                 pub enum Foo {

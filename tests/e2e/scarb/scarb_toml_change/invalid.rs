@@ -14,7 +14,7 @@ fn test_invalid_scarb_toml_change() {
                 [package]
                 name = "a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
             "#},
             "src/lib.cairo" => "",
         }
@@ -30,7 +30,7 @@ fn test_invalid_scarb_toml_change() {
         indoc! {r#"
             [package]
             version = "0.1.0"
-            edition = "2024_07"
+            edition = "2025_12"
         "#},
     );
 
