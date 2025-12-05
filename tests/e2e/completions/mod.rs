@@ -41,7 +41,7 @@ fn completion_fixture() -> Fixture {
             dep = "dep"
 
             [config.override.hello]
-            edition = "2024_07"
+            edition = "2025_12"
             [config.override.dep]
             edition = "2023_10" # Edition with visibility ignores
 
@@ -65,7 +65,7 @@ fn completion_fixture_with_pub_dep_items() -> Fixture {
             dep = "dep"
 
             [config.override.hello]
-            edition = "2024_07"
+            edition = "2025_12"
             [config.override.dep]
             edition = "2023_10" # Edition with visibility ignores
 

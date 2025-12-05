@@ -22,7 +22,7 @@ fn default_config_is_applied() {
                 [package]
                 name = "a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 snforge_std = "0.38.0"

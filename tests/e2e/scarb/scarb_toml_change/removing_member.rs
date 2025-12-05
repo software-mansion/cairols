@@ -24,7 +24,7 @@ fn test_removing_member() {
                 [package]
                 name = "a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 b = { path = "../b" }
@@ -34,7 +34,7 @@ fn test_removing_member() {
                 [package]
                 name = "b"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
             "#),
             "b/src/lib.cairo" => "",
         }

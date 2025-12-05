@@ -2,6 +2,6 @@
 name = "cairols_test_macros"
 version = "1.0.0"
 description = "A set of procedural macros used to test the Cairo Language Server"
-edition = "2024_07"
+edition = "2025_12"
 
 [cairo-plugin]

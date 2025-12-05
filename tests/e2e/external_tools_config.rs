@@ -17,7 +17,7 @@ fn lint_config_is_respected() {
                 [package]
                 name = "a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
             "#),
             "src/lib.cairo" => indoc! {r#"
                 fn main() {
@@ -44,7 +44,7 @@ fn lint_config_is_respected() {
                 [package]
                 name = "a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [tool.cairo-lint]
                 double_parens = false
@@ -68,7 +68,7 @@ fn fmt_config_is_respected() {
                 [package]
                 name = "a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 snforge_std = "0.38.0"
