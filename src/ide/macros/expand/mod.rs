@@ -1,137 +1,158 @@
-use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::plugin::MacroPluginMetadata;
+use std::cmp::Reverse;
+
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{CrateId, FileId, FileKind, FileLongId, SmolStrId, VirtualFile};
+use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
-use cairo_lang_syntax::node::ast::ModuleItem;
+use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::ast::{ExprInlineMacro, ModuleItem};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::Intern;
-use expr::expand_inline_macros_to_file;
+use cairo_language_common::{CommonGroup, FileIdExt};
 use format::format_output;
-use inlining::{inline_files, span_after_inlining};
-use itertools::Itertools;
 use lsp_types::TextDocumentPositionParams;
-use module_item::expand_module_item_macros;
+use salsa::Database;
 
+use crate::ide::macros::expand::recovery::expand_inline_macro_no_context;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
-mod expr;
 mod format;
-mod inlining;
-mod module_item;
+mod recovery;
 
 /// Tries to expand macro, returns it as string.
 pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) -> Option<String> {
     let file_id = db.file_for_url(&params.text_document.uri)?;
     let node = db.find_syntax_node_at_position(file_id, params.position.to_cairo())?;
 
-    let crate_id = db.find_module_containing_node(node)?.owning_crate(db);
-    let cfg_set = db
-        .crate_config(crate_id)
-        .and_then(|cfg| cfg.settings.cfg_set.as_ref())
-        .unwrap_or(db.cfg_set());
-    let edition = db.crate_config(crate_id).map(|cfg| cfg.settings.edition).unwrap_or_default();
-
-    let metadata = MacroPluginMetadata {
-        cfg_set,
-        declared_derives: db.declared_derives(crate_id),
-        allowed_features: &Default::default(),
-        edition,
-    };
-
     let item_node = node.ancestors_with_self(db).find(|node| {
         let kind = node.kind(db);
         ModuleItem::is_variant(kind) || kind == SyntaxKind::ExprInlineMacro
     })?;
+    let item_node_span = item_node.span(db);
 
-    expand_macro_ex(db, file_id, crate_id, &metadata, item_node)
+    let (files, _) = db.file_and_subfiles_with_corresponding_modules_without_inline(file_id)?;
+    let (files_with_inlines, _) = db.file_and_subfiles_with_corresponding_modules(file_id)?;
+
+    let mut inline_files: Vec<_> = (files_with_inlines - files).into_iter().collect();
+
+    // Filter out files pointing to main file or outside of interesting span.
+    // This way macros from other ModuleItem/Expr will not be applied keeping prefix and suffix code constant.
+    let filter = |file: &FileId<'_>| {
+        file.maybe_as_virtual(db)
+            .and_then(|vfs| vfs.parent)
+            .is_some_and(|parent| parent.file_id != file_id || item_node_span.contains(parent.span))
+    };
+
+    if let Some(syntax) = ExprInlineMacro::cast(db, item_node) {
+        inline_files.retain(filter);
+
+        // If there is no inline macro file pointing to origin file, then we can only expand with no context.
+        if inline_files.iter().all(|file| file.as_virtual(db).parent.unwrap().file_id != file_id) {
+            let module_id = db.find_module_containing_node(item_node)?;
+
+            return expand_inline_macro_no_context(db, syntax, module_id);
+        }
+    }
+    let files: Vec<_> = files.into_iter().copied().filter(filter).collect();
+
+    let file_end = db.file_syntax(file_id).unwrap().span(db).end;
+    let suffix = file_end - item_node_span.end;
+    let expansion = expand(db, file_id, Some(suffix), &files, &inline_files)?;
+
+    let expansion_end = TextOffset::from_str(&expansion);
+
+    // Code could only change in item_node_span, so code in 0..item_node_span.start and item_node_span.end..file_end - item_node_span.end
+    // is guaranteed to stay untouched, use this property to strip code from user defined file that should *not* be a part of expansion.
+    let expansion = TextSpan { start: item_node_span.start, end: expansion_end.sub_width(suffix) }
+        .take(&expansion);
+
+    Some(format_output(expansion, item_node.kind(db)))
 }
 
-// Recursively expand macros.
-fn expand_macro_ex<'db>(
-    db: &'db AnalysisDatabase,
-    file_to_process: FileId<'db>,
-    crate_id: CrateId<'db>,
-    metadata: &MacroPluginMetadata<'_>,
-    item_node: SyntaxNode<'db>,
+fn expand<'db>(
+    db: &'db dyn Database,
+    start_file: FileId<'db>,
+    suffix: Option<TextWidth>,
+    og_files: &[FileId<'db>],
+    inline_files: &[FileId<'db>],
 ) -> Option<String> {
-    let mut extra_files = vec![];
+    let mut files = direct_child_files(db, og_files, start_file);
 
-    let file_with_inlined_module_items = if item_node.kind(db) == SyntaxKind::ExprInlineMacro {
-        file_to_process
-    } else {
-        // If it is not inline-expr macro, start with expanding regular plugins as these have to be done *before* inline-expr.
-        let module_item = ModuleItem::from_syntax_node(db, item_node);
+    files.sort_by_key(|file| file.as_virtual(db).original_item_removed);
 
-        let mut files = vec![];
-        expand_module_item_macros(
-            db,
-            module_item,
-            crate_id,
-            metadata,
-            &mut files,
-            &mut extra_files,
-        )?;
+    let mut files = files.into_iter().peekable();
 
-        // Inline all files that should be inlined, keep others in `extra_files` for further processing.
-        let replaced_content = inline_files(db, file_to_process, &files)?;
+    let mut content = expand_inline(db, start_file, inline_files)?;
 
-        FileLongId::Virtual(VirtualFile {
-            parent: None,
-            name: SmolStrId::from(db, "macro_expand"),
-            content: SmolStrId::from(db, replaced_content.as_str()),
-            code_mappings: Default::default(),
-            kind: FileKind::Module,
-            original_item_removed: false,
-        })
-        .intern(db)
+    let Some(first_file) = files.peek() else {
+        return Some(content);
     };
 
-    // Process `extra_files` by collecting all module items in these files and expanding same way as user file.
-    let extra_files = extra_files
-        .into_iter()
-        .filter_map(|content| {
-            let expanded_items = db
-                .file_module_syntax(content.file)
-                .ok()?
-                .items(db)
-                .elements(db)
-                .map(|item| {
-                    expand_macro_ex(db, content.file, crate_id, metadata, item.as_syntax_node())
-                        .unwrap()
-                })
-                .join("\n\n");
+    let first_file_virtual = first_file.as_virtual(db);
+    if first_file_virtual.original_item_removed {
+        let first_file_content = expand(db, *first_file, None, og_files, inline_files)?;
+        files.next(); // Consume it
+        content.replace_range(
+            first_file_virtual.parent.unwrap().span.to_str_range(),
+            &first_file_content,
+        );
+    }
 
-            Some(expanded_items)
+    // There should be at most 1 file that replaces it.
+    // This is true because compiler will stop processing module item when any plugin will return `remove_original_item == true`.
+    // See: https://github.com/starkware-libs/cairo/blob/482afce5f4cd2c1c2e0c6b2357b5021695904877/crates/cairo-lang-defs/src/db.rs#L1220
+    if let Some(f) = files.peek() {
+        assert!(!f.as_virtual(db).original_item_removed);
+    }
+    let file_end = TextOffset::from_str(&content);
+    // We want to insert files that does not remove original item right after original code/file that removed original code.
+    // Easiest way is to determine position is using prefix which is constant.
+    let insert_extra_at = TextSpan::new_with_width(
+        suffix.map(|suffix| file_end.sub_width(suffix)).unwrap_or(file_end),
+        TextWidth::ZERO,
+    )
+    .to_str_range();
+    let extra_content: String =
+        files.filter_map(|file| expand(db, file, None, og_files, inline_files)).collect();
+
+    content.replace_range(insert_extra_at, &extra_content);
+
+    Some(content)
+}
+
+fn expand_inline<'db>(
+    db: &'db dyn Database,
+    start_file: FileId<'db>,
+    og_files: &[FileId<'db>],
+) -> Option<String> {
+    let mut files = direct_child_files(db, og_files, start_file);
+
+    files.sort_by_key(|file| Reverse(file.as_virtual(db).parent.unwrap().span));
+
+    let mut content = db.file_content(start_file)?.to_string();
+
+    for file in files {
+        let range = file.as_virtual(db).parent.unwrap().span.to_str_range();
+
+        content.replace_range(range, &expand_inline(db, file, og_files)?);
+    }
+
+    Some(content)
+}
+
+fn direct_child_files<'db>(
+    db: &'db dyn Database,
+    files: &[FileId<'db>],
+    start_file: FileId<'db>,
+) -> Vec<FileId<'db>> {
+    files
+        .iter()
+        .filter(|file| {
+            file.maybe_as_virtual(db)
+                .and_then(|vfs| vfs.parent)
+                .is_some_and(|parent| parent.file_id == start_file)
         })
-        .collect::<Vec<_>>();
-
-    // Expand inline macros only in this span, this prevents expansion of unwanted items
-    let span = span_after_inlining(
-        db,
-        file_to_process,
-        file_with_inlined_module_items,
-        item_node.span(db),
-    )?;
-
-    let replaced_content_file =
-        expand_inline_macros_to_file(db, crate_id, file_with_inlined_module_items, span, metadata)?;
-
-    // Span of replaced content in new generated file.
-    let new_span =
-        span_after_inlining(db, file_to_process, replaced_content_file, item_node.span(db))?;
-
-    let new_file_content = db.file_content(replaced_content_file)?;
-    let replaced_content = new_span.take(new_file_content);
-
-    let replaced_content = if extra_files.is_empty() {
-        replaced_content.to_string()
-    } else {
-        format!("{replaced_content}\n//-----\n{}", extra_files.join("\n//-----\n"))
-    };
-
-    Some(format_output(&replaced_content, item_node.kind(db)))
+        .copied()
+        .collect()
 }

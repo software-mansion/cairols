@@ -13,6 +13,7 @@ fn test_nothing() {
     if snforge_std::_internals::_is_config_run() {
         return;
     }
+
     {
         let __lhs_value_for_assert_eq_macro__ = @(1);
         let __rhs_value_for_assert_eq_macro__ = @(1);
@@ -98,6 +99,13 @@ analyzed_lines = """
         <caret>assert_eq!(1, 1, "Who knows");
 """
 generated_code = """
+// ==================================================================
+// This expansion was done out of context.
+// It may be inaccurate — consider expanding the surrounding function
+// for more reliable results.
+// ==================================================================
+
+
 {
     let __lhs_value_for_assert_eq_macro__ = @(1);
     let __rhs_value_for_assert_eq_macro__ = @(1);

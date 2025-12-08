@@ -13,8 +13,6 @@ struct EmptyStruct {<caret>}
 generated_code = """
 #[derive(ComplexDeriveMacro)]
 struct EmptyStruct {}
-
-//-----
 fn generated_function() {}
 
 trait MyTrait<T> {
@@ -36,14 +34,11 @@ struct EmptyStructV2 {<caret>}
 generated_code = """
 #[derive(ComplexDeriveMacroV2)]
 struct EmptyStructV2 {}
-//-----
 fn another_generated_function_v2() {}
 fn generated_function_v2() {}
-
 trait MyTraitV2<T> {
     fn bar(t: T);
 }
-
 impl MyTraitImpl of MyTraitV2<felt252> {
     fn bar(t: felt252) {}
 }

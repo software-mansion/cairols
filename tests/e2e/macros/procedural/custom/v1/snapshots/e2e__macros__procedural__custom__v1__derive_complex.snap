@@ -13,7 +13,6 @@ struct EmptyStruct {<caret>}
 generated_code = """
 #[derive(ComplexDeriveMacro)]
 struct EmptyStruct {}
-//-----
 fn generated_function() {}
 
 trait MyTrait<T> {

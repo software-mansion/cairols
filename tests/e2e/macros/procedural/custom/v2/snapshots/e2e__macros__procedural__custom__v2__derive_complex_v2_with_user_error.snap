@@ -16,14 +16,11 @@ struct EmptyStruct {
     x: u8,
     x: u8,
 }
-//-----
 fn another_generated_function_v2() {}
 fn generated_function_v2() {}
-
 trait MyTraitV2<T> {
     fn bar(t: T);
 }
-
 impl MyTraitImpl of MyTraitV2<felt252> {
     fn bar(t: felt252) {}
 }
