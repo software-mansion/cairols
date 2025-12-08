@@ -43,11 +43,10 @@ fn dot_completions_ex<'db>(
     og_node: SyntaxNode<'db>,
     was_node_corrected: bool,
 ) -> Option<Vec<CompletionItemOrderable>> {
-    let parent_arg_list_node = og_node.ancestor_of_kind(db, SyntaxKind::ArgListParenthesized);
-
     // Check whether the OG node is part of the parenthesized arg list that is a part of a binary expression.
     // This way we ignore `my_struct.method(<caret>)` cases, but make sure to allow `my_struct.method(arg1, arg2, my_struct2.method<caret>())` cases.
-    if let Some(parent_arg_list_node) = parent_arg_list_node
+    if let Some(parent_arg_list_node) =
+        og_node.ancestor_of_kind(db, SyntaxKind::ArgListParenthesized)
         && !parent_arg_list_node.descendants(db).any(|node| node.kind(db) == SyntaxKind::ExprBinary)
     {
         return None;
