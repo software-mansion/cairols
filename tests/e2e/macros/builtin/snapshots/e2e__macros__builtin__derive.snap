@@ -1,6 +1,6 @@
 ---
 source: tests/e2e/macros/builtin/mod.rs
-description: "// → test_package/cairo_project.toml\n[crate_roots]\ntest_package = \"src\"\n\n[config.global]\nedition = \"2024_07\"\n\n// → test_package/src/lib.cairo\n#[derive(Drop, Serde)]\nstruct A {\n    a: felt252\n}"
+description: "// → test_package/cairo_project.toml\n[crate_roots]\ntest_package = \"src\"\n\n[config.global]\nedition = \"2025_12\"\n\n// → test_package/src/lib.cairo\n#[derive(Drop, Serde)]\nstruct A {\n    a: felt252\n}"
 expression: report
 ---
 [[expansions]]
@@ -20,7 +20,7 @@ impl ADrop<> of core::traits::Drop<A>;
 
 impl ASerde<> of core::serde::Serde<A> {
     fn serialize(self: @A, ref output: core::array::Array<felt252>) {
-        core::serde::Serde::<felt252>::serialize(self.a, ref output)
+        core::serde::Serde::<felt252>::serialize(@self.a, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<A> {
         let a = core::internal::InferDestruct::<

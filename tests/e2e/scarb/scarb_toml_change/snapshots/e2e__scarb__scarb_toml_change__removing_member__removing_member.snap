@@ -1,6 +1,6 @@
 ---
 source: tests/e2e/scarb/scarb_toml_change/removing_member.rs
-description: "// → Scarb.toml\n[workspace]\nmembers = [\n    \"a\",\n    \"b\"\n]\n\n// → a/Scarb.toml\n[package]\nname = \"a\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\nb = { path = \"../b\" }\n\n// → a/src/lib.cairo\n\n\n// → b/Scarb.toml\n[package]\nname = \"b\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n// → b/src/lib.cairo\n"
+description: "// → Scarb.toml\n[workspace]\nmembers = [\n    \"a\",\n    \"b\"\n]\n\n// → a/Scarb.toml\n[package]\nname = \"a\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\nb = { path = \"../b\" }\n\n// → a/src/lib.cairo\n\n\n// → b/Scarb.toml\n[package]\nname = \"b\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n// → b/src/lib.cairo\n"
 expression: "AnalyzedCratesResult { analyzed_crates, analyzed_crates_diff }"
 ---
 analyzed_crates = '''
@@ -14,7 +14,7 @@ analyzed_crates = '''
   ],
   "settings": {
     "name": "a",
-    "edition": "2024_07",
+    "edition": "2025_12",
     "version": "0.1.0",
     "cfg_set": [
       [
@@ -57,7 +57,7 @@ analyzed_crates = '''
   ],
   "settings": {
     "name": "b",
-    "edition": "2024_07",
+    "edition": "2025_12",
     "version": "0.1.0",
     "cfg_set": [
       [
@@ -97,8 +97,8 @@ analyzed_crates = '''
   ],
   "settings": {
     "name": "core",
-    "edition": "2024_07",
-    "version": "2.13.1",
+    "edition": "2025_12",
+    "version": "2.14.0",
     "cfg_set": [
       [
         "target",
@@ -139,7 +139,7 @@ analyzed_crates_diff = '''
    ],
    "settings": {
      "name": "b",
-     "edition": "2024_07",
+     "edition": "2025_12",
      "version": "0.1.0",
      "cfg_set": [
        [
