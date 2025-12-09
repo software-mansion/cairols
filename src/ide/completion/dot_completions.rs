@@ -12,7 +12,7 @@ use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use itertools::chain;
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
 use tracing::debug;
@@ -31,22 +31,20 @@ use crate::lang::text_matching::text_matches;
 pub fn dot_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-    og_node: SyntaxNode<'db>,
     was_node_corrected: bool,
 ) -> Vec<CompletionItemOrderable> {
-    dot_completions_ex(db, ctx, og_node, was_node_corrected).unwrap_or_default()
+    dot_completions_ex(db, ctx, was_node_corrected).unwrap_or_default()
 }
 
 fn dot_completions_ex<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
-    og_node: SyntaxNode<'db>,
     was_node_corrected: bool,
 ) -> Option<Vec<CompletionItemOrderable>> {
-    // Check whether the OG node is part of the parenthesized arg list that is a part of a binary expression.
+    // Check whether the node is part of the parenthesized arg list that is a part of a binary expression.
     // This way we ignore `my_struct.method(<caret>)` cases, but make sure to allow `my_struct.method(arg1, arg2, my_struct2.method<caret>())` cases.
     if let Some(parent_arg_list_node) =
-        og_node.ancestor_of_kind(db, SyntaxKind::ArgListParenthesized)
+        ctx.node.ancestor_of_kind(db, SyntaxKind::ArgListParenthesized)
         && !parent_arg_list_node.descendants(db).any(|node| node.kind(db) == SyntaxKind::ExprBinary)
     {
         return None;
