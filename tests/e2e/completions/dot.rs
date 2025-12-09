@@ -497,6 +497,63 @@ fn with_already_typed_parens() {
 }
 
 #[test]
+fn with_already_typed_parens_and_no_method_chars() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.<caret>();
+    }
+    ",
+    @r#"
+    caret = """
+        s.<caret>();
+    """
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
+
+    [[completions]]
+    completion_label = "into()"
+    detail = "fn(self: T) -> S"
+    insert_text = "into()"
+
+    [[completions]]
+    completion_label = "make()"
+    detail = "fn(self: T, a: u32) -> Long"
+    insert_text = "make(${1:a})"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs()"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
+
+    [[completions]]
+    completion_label = "try_into()"
+    detail = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+    "#);
+}
+
+#[test]
 fn with_already_typed_parens_and_caret_inside() {
     test_transform_plain!(Completion, completion_fixture(),
     "
