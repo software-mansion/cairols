@@ -56,7 +56,13 @@ fn dot_completions_ex<'db>(
         return None;
     }
 
-    let typed = expr.rhs(db).as_syntax_node().get_text_without_trivia(db).to_string(db);
+    // If the only thing on the rhs are parentheses, make typed empty, so anything will match.
+    let typed = if matches!(expr.rhs(db), Expr::Tuple(_)) {
+        "".to_string()
+    } else {
+        rhs.unwrap_or(expr.rhs(db).as_syntax_node()).get_text_without_trivia(db).to_string(db)
+    };
+
     // Get a resolver in the current context.
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let mut resolver = ctx.resolver(db);
@@ -85,7 +91,7 @@ fn dot_completions_ex<'db>(
         // Find relevant methods for type.
         let relevant_methods = find_methods_for_type(db, &mut resolver, ty, stable_ptr)
             .into_iter()
-            .filter(|method| text_matches(method.name(db).to_string(db), strip_parens(&typed)));
+            .filter(|method| text_matches(method.name(db).to_string(db), &typed));
 
         for trait_function in relevant_methods {
             let Some(completion) = completion_for_method(db, ctx, trait_function) else {
@@ -163,13 +169,4 @@ fn completion_for_method<'db>(
         relevance: CompletionRelevance::Medium,
     };
     Some(completion)
-}
-
-// Strips the starting (left) parentheses and anything after from the input string.
-fn strip_parens(input: &str) -> String {
-    if let Some(index) = input.find('(') {
-        String::from(&input[..index])
-    } else {
-        input.to_string()
-    }
 }
