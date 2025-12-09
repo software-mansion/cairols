@@ -35,7 +35,7 @@ fn test_ignore_warnings_from_non_path_deps() {
                 [package]
                 name = "a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dev-dependencies]
                 snforge_std = "0.37.0"  # This version contains lint errors.

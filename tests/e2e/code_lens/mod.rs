@@ -43,7 +43,7 @@ fn test_code_lens_snforge(cairo_code: &str) -> Report {
             [package]
             name = "hello"
             version = "0.1.0"
-            edition = "2024_07"
+            edition = "2025_12"
 
             [dependencies]
             snforge_std = "0.50.0"
@@ -68,7 +68,7 @@ fn test_code_lens_cairo_test(cairo_code: &str) -> Report {
             [package]
             name = "hello"
             version = "0.1.0"
-            edition = "2024_07"
+            edition = "2025_12"
 
             [dependencies]
             cairo_test = "2.9.0"
@@ -90,7 +90,7 @@ fn test_code_lens_both_runners(cairo_code: &str) -> Report {
             [package]
             name = "hello"
             version = "0.1.0"
-            edition = "2024_07"
+            edition = "2025_12"
 
             [dependencies]
             cairo_test = "2.9.0"
@@ -116,7 +116,7 @@ fn test_code_lens_no_runner(cairo_code: &str) -> Report {
             [package]
             name = "hello"
             version = "0.1.0"
-            edition = "2024_07"
+            edition = "2025_12"
             "#
         ),
         json!({
@@ -135,7 +135,7 @@ fn test_code_lens_custom_runner(cairo_code: &str) -> Report {
             [package]
             name = "hello"
             version = "0.1.0"
-            edition = "2024_07"
+            edition = "2025_12"
             "#
         ),
         json!({

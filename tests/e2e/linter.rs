@@ -4,14 +4,14 @@ use indoc::indoc;
 use serde::Serialize;
 use serde_json::json;
 
-use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2024_07;
+use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2025_12;
 use crate::support::fixture::{Fixture, fixture};
 use crate::support::sandbox;
 
 #[test]
 fn test_simple_lint() {
     let report = test_linter_diagnostics(fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+        "cairo_project.toml" => CAIRO_PROJECT_TOML_2025_12,
         "src/lib.cairo" => indoc!(r#"
             fn foo() {
                 let mut span = array![0x0].span();
@@ -39,7 +39,7 @@ fn test_simple_lint() {
 #[test]
 fn test_two_simultaneous_lints() {
     let report = test_linter_diagnostics(fixture! {
-        "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+        "cairo_project.toml" => CAIRO_PROJECT_TOML_2025_12,
         "src/lib.cairo" => r#"
         fn foo() {
             let mut span = array![0x0].span();
@@ -75,7 +75,7 @@ fn test_linter_with_starknet_analyzer_plugins() {
             [package]
             name = "test_package"
             version = "0.1.0"
-            edition = "2024_07"
+            edition = "2025_12"
 
             [dependencies]
             starknet = "2.10.0"
@@ -119,7 +119,7 @@ fn test_linter_with_starknet_analyzer_plugins() {
 fn allow_lint_doesnt_generate_diagnostics_with_linter_off() {
     let mut ls = sandbox! {
         files {
-            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2025_12,
             "src/lib.cairo" => indoc!(r#"
                 #[allow(break_unit)]
                 fn uwu() {}
@@ -143,7 +143,7 @@ fn allow_lint_doesnt_generate_diagnostics_for_scarb_package_with_linter_off() {
                 [package]
                 name = "a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
             "#),
             "src/lib.cairo" => indoc!(r#"
                 #[allow(break_unit)]

@@ -13,7 +13,7 @@ fn opening_dependency_first() {
                 [package]
                 name = "pkg"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [[target.starknet-contract]]
 
@@ -25,7 +25,7 @@ fn opening_dependency_first() {
                 [package]
                 name = "dep"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dev-dependencies]
                 cairo_test = "2"
@@ -36,7 +36,7 @@ fn opening_dependency_first() {
                 [package]
                 name = "dev_dep"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
             "#),
             "dev_dep/src/lib.cairo" => "",
         }

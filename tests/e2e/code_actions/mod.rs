@@ -6,7 +6,7 @@ use lsp_types::{
 use serde_json::json;
 
 use crate::macros::SCARB_TEST_MACROS_V2_PACKAGE;
-use crate::support::cairo_project_toml::{CAIRO_PROJECT_TOML, CAIRO_PROJECT_TOML_2024_07};
+use crate::support::cairo_project_toml::{CAIRO_PROJECT_TOML, CAIRO_PROJECT_TOML_2025_12};
 use crate::support::cursor::Cursor;
 use crate::support::fixture::Fixture;
 use crate::support::{cursors, fixture, sandbox};
@@ -42,7 +42,7 @@ fn quick_fix_with_linter(cairo_code: &str) -> String {
     quick_fix_general(
         cairo_code,
         fixture! {
-            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2025_12,
         },
         true,
         false,
@@ -57,7 +57,7 @@ fn quick_fix_with_macros(cairo_code: &str) -> String {
                 [package]
                 name = "a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dev-dependencies]
                 snforge_std = "0.50.0"
@@ -80,7 +80,7 @@ fn quick_fix_with_scarb_macros(cairo_code: &str) -> String {
                 [package]
                 name = "test_package"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 cairols_test_macros_v2 = {{ path = "{}" }}
@@ -97,7 +97,7 @@ fn quick_fix(cairo_code: &str) -> String {
     quick_fix_general(
         cairo_code,
         fixture! {
-            "cairo_project.toml" => CAIRO_PROJECT_TOML_2024_07,
+            "cairo_project.toml" => CAIRO_PROJECT_TOML_2025_12,
         },
         false,
         false,

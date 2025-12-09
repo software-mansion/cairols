@@ -67,7 +67,7 @@ fn assert_macros_with_no_cairo_test() {
                 [package]
                 name = "a"
                 version = "0.1.0"
-                edition = "2024_07"
+                edition = "2025_12"
 
                 [dependencies]
                 assert_macros = "2"
