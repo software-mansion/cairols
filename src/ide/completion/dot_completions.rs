@@ -50,9 +50,9 @@ fn dot_completions_ex<'db>(
     .and_then(|rhs| Some(rhs.segments(db).elements(db).next()?.as_syntax_node()));
 
     // This way we ignore `my_struct.method(<caret>)` cases, but make sure to allow `my_struct.method(arg1, arg2, my_struct2.method<caret>())` cases.
-    if let Some(rhs) = rhs
-        && !rhs.is_descendant_or_self(db, &ctx.node.parent(db)?)
-    {
+    if rhs.is_some_and(|rhs| {
+        ctx.node.parent(db).is_some_and(|parent| !rhs.is_descendant_or_self(db, &parent))
+    }) {
         return None;
     }
 
