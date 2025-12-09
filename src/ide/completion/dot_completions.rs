@@ -11,6 +11,7 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
+use cairo_lang_syntax::node::ast::Expr;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use itertools::chain;
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
@@ -41,7 +42,27 @@ fn dot_completions_ex<'db>(
     was_node_corrected: bool,
 ) -> Option<Vec<CompletionItemOrderable>> {
     let expr = dot_expr_rhs(db, &ctx.node, was_node_corrected)?;
-    let typed = expr.rhs(db).as_syntax_node().get_text_without_trivia(db).to_string(db);
+    let rhs = match expr.rhs(db) {
+        Expr::FunctionCall(function_call) => Some(function_call.path(db)),
+        Expr::Path(path) => Some(path),
+        _ => None,
+    }
+    .and_then(|rhs| Some(rhs.segments(db).elements(db).next()?.as_syntax_node()));
+
+    // This way we ignore `my_struct.method(<caret>)` cases, but make sure to allow `my_struct.method(arg1, arg2, my_struct2.method<caret>())` cases.
+    if rhs.is_some_and(|rhs| {
+        ctx.node.parent(db).is_some_and(|parent| !rhs.is_descendant_or_self(db, &parent))
+    }) {
+        return None;
+    }
+
+    // If the only thing on the rhs are parentheses, make typed empty, so anything will match.
+    let typed = if matches!(expr.rhs(db), Expr::Tuple(_)) {
+        "".to_string()
+    } else {
+        rhs.unwrap_or(expr.rhs(db).as_syntax_node()).get_text_without_trivia(db).to_string(db)
+    };
+
     // Get a resolver in the current context.
     let function_with_body = ctx.lookup_item_id?.function_with_body()?;
     let mut resolver = ctx.resolver(db);
