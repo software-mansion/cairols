@@ -20,6 +20,8 @@ Install the latest stable Rust via [rustup](https://rustup.rs/).
 Install [Scarb via ASDF](https://docs.swmansion.com/scarb/download.html#install-via-asdf)
 and ensure you have installed the version we require in our [ `.tool-versions`](.tool-versions).
 
+Make sure [git](https://git-scm.com/install/) is installed and available in `PATH` env, it is required to build CairoLS correctly.
+
 This document assumes that you are using Visual Studio Code with
 the [Cairo extension](https://marketplace.visualstudio.com/items?itemName=starkware.cairo1) as the
 editor of choice for running CairoLS against.
