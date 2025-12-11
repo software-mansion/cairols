@@ -103,7 +103,7 @@ pub trait LsSemanticGroup: Database {
 
 impl<T: Database + ?Sized> LsSemanticGroup for T {}
 
-#[salsa::tracked]
+#[cairo_lang_proc_macros::tracked]
 fn find_lookup_item<'db>(
     db: &'db dyn Database,
     _: (),
@@ -112,7 +112,7 @@ fn find_lookup_item<'db>(
     db.collect_lookup_items_leaf(node)?.first().copied()
 }
 
-#[salsa::tracked(returns(ref))]
+#[cairo_lang_proc_macros::tracked(returns(ref))]
 fn collect_lookup_items_leaf<'db>(
     db: &'db dyn Database,
     _: (),
@@ -123,7 +123,7 @@ fn collect_lookup_items_leaf<'db>(
     node.ancestors_with_self(db).find_map(|node| lookup_item_from_ast(db, module_id, node).clone())
 }
 
-#[salsa::tracked(returns(ref))]
+#[cairo_lang_proc_macros::tracked(returns(ref))]
 fn collect_lookup_items_with_parent_files<'db>(
     db: &'db dyn Database,
     _: (),
@@ -141,7 +141,7 @@ fn collect_lookup_items_with_parent_files<'db>(
     Some(result)
 }
 
-#[salsa::tracked]
+#[cairo_lang_proc_macros::tracked]
 fn corresponding_node_in_parent_file<'db>(
     db: &'db dyn Database,
     _: (),
@@ -154,7 +154,7 @@ fn corresponding_node_in_parent_file<'db>(
     db.widest_node_within_span(parent.file_id, span_in_parent)
 }
 
-#[salsa::tracked(returns(ref))]
+#[cairo_lang_proc_macros::tracked(returns(ref))]
 fn collect_lookup_items<'db>(
     db: &'db dyn Database,
     _: (),
@@ -169,7 +169,6 @@ fn collect_lookup_items<'db>(
     )
 }
 
-#[salsa::tracked]
 fn lookup_binding<'db>(
     db: &'db dyn Database,
     _tracked: (),
@@ -388,7 +387,7 @@ fn lookup_item_from_ast<'db>(
     })
 }
 
-#[salsa::tracked(returns(ref))]
+#[cairo_lang_proc_macros::tracked(returns(ref))]
 fn item_generic_params<'db>(
     db: &'db dyn Database,
     _tracked: (),

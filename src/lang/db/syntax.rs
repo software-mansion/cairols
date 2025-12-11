@@ -58,7 +58,7 @@ pub trait LsSyntaxGroup: Database {
 impl<T: Database + ?Sized> LsSyntaxGroup for T {}
 
 /// Finds the widest [`SyntaxNode`] within the given [`TextSpan`] in the file.
-#[salsa::tracked]
+#[cairo_lang_proc_macros::tracked]
 fn widest_node_within_span<'db>(
     db: &'db dyn Database,
     file: FileId<'db>,
@@ -87,7 +87,7 @@ fn widest_node_within_ex<'db>(
 }
 
 /// Finds the most specific [`SyntaxNode`] at the given [`TextPosition`] in the file.
-#[salsa::tracked]
+#[cairo_lang_proc_macros::tracked]
 fn find_syntax_node_at_position<'db>(
     db: &'db dyn Database,
     file: FileId<'db>,
@@ -104,7 +104,6 @@ fn find_syntax_node_at_position<'db>(
 /// return the left paren, a much better UX would be to correct the lookup to the identifier.
 /// Such corrections are always valid and deterministic, because grammar-wise it is not possible
 /// to have two identifiers/keywords being glued to each other.
-#[salsa::tracked]
 fn find_identifier_at_position<'db>(
     db: &'db dyn Database,
     file: FileId<'db>,

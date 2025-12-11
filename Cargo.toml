@@ -45,6 +45,7 @@ cairo-lang-macro = "0.2.1"
 cairo-lang-macro-v1 = { version = "0.1", package = "cairo-lang-macro", features = ["serde"] }
 cairo-lang-parser = "*"
 cairo-lang-plugins = "*"
+cairo-lang-proc-macros = "*"
 cairo-lang-project = "*"
 cairo-lang-semantic = "*"
 cairo-lang-starknet = "*"
