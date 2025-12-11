@@ -143,7 +143,7 @@ impl ProcMacroClientController {
             return;
         };
 
-        let result = self.apply_responses(db, config, client, client_capabilities, requester);
+        let result = self.apply_responses(db, client, client_capabilities, requester);
         let Err(error) = result else {
             return;
         };
@@ -212,7 +212,6 @@ impl ProcMacroClientController {
     fn apply_responses(
         &mut self,
         db: &mut AnalysisDatabase,
-        config: &Config,
         client: Arc<ProcMacroClient>,
         client_capabilities: &ClientCapabilities,
         requester: &mut Requester,
@@ -236,7 +235,7 @@ impl ProcMacroClientController {
                 RequestParams::DefinedMacros(params) => {
                     let defined_macros = parse_response::<DefinedMacrosResponse>(response)?;
                     self.apply_defined_macros_response(db, params.workspace, defined_macros);
-                    self.try_load_proc_macro_cache(db, config);
+                    self.try_load_proc_macro_cache(db);
                     try_request_semantic_tokens_refresh(client_capabilities, requester);
                 }
                 RequestParams::ExpandAttribute(params) => {
@@ -311,9 +310,9 @@ impl ProcMacroClientController {
     ///
     /// # Note
     /// This function has effect only when called **for the first time**.
-    fn try_load_proc_macro_cache(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+    fn try_load_proc_macro_cache(&mut self, db: &mut AnalysisDatabase) {
         static TRY_LOAD_CACHE: Once = Once::new();
-        TRY_LOAD_CACHE.call_once(|| try_load_proc_macro_cache(db, config));
+        TRY_LOAD_CACHE.call_once(|| try_load_proc_macro_cache(db));
     }
 
     /// Tries to launch the proc-macro-server if it is allowed by the config.
