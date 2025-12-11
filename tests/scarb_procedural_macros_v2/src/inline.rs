@@ -42,3 +42,12 @@ pub fn error_inline_macro_v2(_item: TokenStream) -> ProcMacroResult {
     ProcMacroResult::new(TokenStream::empty())
         .with_diagnostics(Diagnostic::error("Error from procedural macro").into())
 }
+
+#[inline_macro]
+pub fn simple_module_level_inline_macro_v2(_item: TokenStream) -> ProcMacroResult {
+    ProcMacroResult::new(quote! {
+        pub fn foo() -> felt252 {
+            123
+        }
+    })
+}

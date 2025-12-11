@@ -278,6 +278,24 @@ fn inline_with_error_v2_with_user_error() {
 }
 
 #[test]
+fn inline_simple_module_level_v2() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacrosV2,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                mod fu {
+                    simple_module_level_inline_macro_v2!()<caret>;
+                }
+                fn main() {
+                    fu::foo();
+                }
+            "#)
+        }
+    );
+}
+
+#[test]
 fn attribute_simple_v2_with_user_error() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithCustomMacrosV2,
