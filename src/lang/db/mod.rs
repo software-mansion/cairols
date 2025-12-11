@@ -44,7 +44,6 @@ pub struct AnalysisDatabase {
 
 impl AnalysisDatabase {
     /// Creates a new instance of the database.
-    #[expect(clippy::new_without_default)]
     pub fn new() -> Self {
         let mut db = Self { storage: Default::default() };
 
