@@ -140,3 +140,11 @@ impl Notification for ExecuteInTerminal {
     type Params = ExecuteInTerminalParams;
     const METHOD: &'static str = "cairo/executeInTerminal";
 }
+
+pub struct ShowMemoryUsage;
+
+impl Request for ShowMemoryUsage {
+    type Params = ();
+    type Result = serde_json::Value;
+    const METHOD: &'static str = "cairo/showMemoryUsage";
+}
