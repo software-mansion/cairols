@@ -22,7 +22,6 @@ use tracing::error;
 
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::{
-    config::Config,
     env_config::scarb_target_path,
     lang::proc_macros::client::plain_request_response::{
         PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
@@ -109,11 +108,7 @@ impl<'de, K: Deserialize<'de> + Hash + Eq, V: Deserialize<'de>> Deserialize<'de>
     }
 }
 
-pub fn save_proc_macro_cache(db: &dyn Database, config: &Config) {
-    if !config.enable_experimental_proc_macro_cache {
-        return;
-    }
-
+pub fn save_proc_macro_cache(db: &dyn Database) {
     let Some(cache_path) = cache_path() else { return };
 
     let mut resolution = Resolution {
@@ -142,9 +137,8 @@ pub fn save_proc_macro_cache(db: &dyn Database, config: &Config) {
     }
 }
 
-pub fn try_load_proc_macro_cache(db: &mut dyn Database, config: &Config) {
-    let resolution = if config.enable_experimental_proc_macro_cache
-        && let Some(cache_path) = cache_path()
+pub fn try_load_proc_macro_cache(db: &mut dyn Database) {
+    let resolution = if let Some(cache_path) = cache_path()
         && let Ok(buffer) = fs::read(&cache_path)
         && let Ok((resolution, _)) = decode_from_slice::<Resolution, _>(&buffer, standard())
     {

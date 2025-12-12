@@ -406,7 +406,7 @@ impl Backend {
     }
 
     fn on_stopped_analysis(state: &State, requester: &mut Requester<'_>) {
-        proc_macros::cache::save_proc_macro_cache(&state.db, &state.config);
+        proc_macros::cache::save_proc_macro_cache(&state.db);
         state
             .code_lens_controller
             .schedule_refreshing_all_lenses(state.db.clone(), state.config.clone());
