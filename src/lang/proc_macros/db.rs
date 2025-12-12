@@ -1,6 +1,7 @@
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
+use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_syntax::node::SyntaxNode;
 use salsa::{Database, Setter};
 use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
@@ -63,6 +64,7 @@ pub trait ProcMacroGroup: Database {
 impl<T: Database + ?Sized> ProcMacroGroup for T {}
 
 #[salsa::input]
+#[derive(HeapSize)]
 pub struct ProcMacroInput {
     #[returns(ref)]
     pub attribute_macro_resolution:
@@ -75,7 +77,7 @@ pub struct ProcMacroInput {
     pub proc_macro_server_status: ServerStatus,
 }
 
-#[salsa::tracked(returns(ref))]
+#[cairo_lang_proc_macros::tracked(returns(ref))]
 fn proc_macro_input(db: &dyn Database) -> ProcMacroInput {
     ProcMacroInput::new(
         db,
