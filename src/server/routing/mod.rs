@@ -24,7 +24,8 @@ use tracing::{error, trace, warn};
 
 use super::client::{Notifier, Responder};
 use crate::lsp::ext::{
-    ExpandMacro, ProvideVirtualFile, ToolchainInfo, ViewAnalyzedCrates, ViewSyntaxTree,
+    ExpandMacro, ProvideVirtualFile, ShowMemoryUsage, ToolchainInfo, ViewAnalyzedCrates,
+    ViewSyntaxTree,
 };
 use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
 use crate::server::panic::cancelled_anyhow;
@@ -85,6 +86,9 @@ pub fn request<'a>(request: Request) -> Task<'a> {
         }
         ViewAnalyzedCrates::METHOD => {
             background_request_task::<ViewAnalyzedCrates>(request, BackgroundSchedule::Worker)
+        }
+        ShowMemoryUsage::METHOD => {
+            background_request_task::<ShowMemoryUsage>(request, BackgroundSchedule::Worker)
         }
         WillRenameFiles::METHOD => background_request_task::<WillRenameFiles>(
             request,
