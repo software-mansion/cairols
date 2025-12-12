@@ -14,6 +14,7 @@ use bincode::{
     config::standard,
     serde::{decode_from_slice, encode_to_vec},
 };
+use git_version::git_version;
 use salsa::{Database, Setter};
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use serde::{Deserialize, Serialize, ser::SerializeMap};
@@ -170,9 +171,14 @@ pub fn try_load_proc_macro_cache(db: &mut dyn Database, config: &Config) {
 fn cache_path() -> Option<PathBuf> {
     scarb_target_path().or_else(current_dir_target).map(|mut cache_path| {
         cache_path.push("cairo-language-server");
-        cache_path.push("proc_macro.cache");
+        cache_path.push(cache_file_name());
         cache_path
     })
+}
+
+fn cache_file_name() -> String {
+    // Use commit for file name, so each LS version (even dev ones) will use different cache
+    format!("{}_proc_macro.cache", git_version!())
 }
 
 fn current_dir_target() -> Option<PathBuf> {
