@@ -17,12 +17,16 @@ use convert_case::{Case, Casing};
 use itertools::Itertools;
 use salsa::Database;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
-use scarb_proc_macro_server_types::methods::expand::{ExpandAttributeParams, ExpandDeriveParams};
+use scarb_proc_macro_server_types::methods::expand::{
+    ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
+};
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
 use scarb_stable_hash::StableHasher;
 
 use super::into_cairo_diagnostics;
-use crate::lang::proc_macros::db::{get_attribute_expansion, get_derive_expansion};
+use crate::lang::proc_macros::db::{
+    get_attribute_expansion, get_derive_expansion, get_inline_macros_expansion,
+};
 use crate::lang::proc_macros::plugins::scarb::child_nodes::{
     ChildNodesWithoutAttributes, ItemWithAttributes,
 };
@@ -54,6 +58,14 @@ pub fn macro_generate_code<'db>(
         expand_inner_attr(db, expansion_context.clone(), defined_attributes, item_ast.clone())
     {
         return result.into();
+    }
+
+    // Expand module-level inline macro.
+    if let ast::ModuleItem::InlineMacro(inline_macro) = &item_ast
+        && let Some(result) =
+            expand_module_level_inline_macro(db, inline_macro, expansion_context.clone())
+    {
+        return result;
     }
 
     // Expand first attribute.
@@ -105,6 +117,64 @@ pub fn macro_generate_code<'db>(
 
     // No expansions can be applied.
     PluginResult { code: None, diagnostics: Vec::new(), remove_original_item: false }
+}
+
+fn expand_module_level_inline_macro<'db>(
+    db: &'db dyn Database,
+    inline_macro: &ast::ItemInlineMacro<'db>,
+    expansion_context: ProcMacroScope,
+) -> Option<PluginResult<'db>> {
+    let path = inline_macro.path(db).segments(db).elements(db).last()?;
+    let PathSegment::Simple(segment) = path else {
+        return None;
+    };
+    let inline_macro_name = segment.ident(db).text(db).to_string(db);
+
+    let call_site = CallSiteLocation::new(inline_macro, db);
+    let ctx = AllocationContext::default();
+    let arguments = inline_macro.arguments(db);
+
+    let mut token_stream_builder = TokenStreamBuilder::new(db);
+    token_stream_builder.add_node(arguments.as_syntax_node());
+    let token_stream = token_stream_builder.build(&ctx);
+
+    let result = get_inline_macros_expansion(
+        db,
+        ExpandInlineMacroParams {
+            context: expansion_context,
+            name: inline_macro_name.clone(),
+            args: token_stream,
+            call_site: call_site.span,
+        },
+    );
+
+    let result_content_string = result.token_stream.to_string();
+    Some(PluginResult {
+        code: Some(PluginGeneratedFile {
+            name: "inline_proc_macro".into(),
+            code_mappings: result
+                .code_mappings
+                .map(|x| x.into_iter().map(code_mapping_from_proc_macro_server).collect())
+                // Scarb returns an empty vector for v1 macros, but our solution is better.
+                .unwrap_or_else(|| {
+                    vec![CodeMapping {
+                        origin: CodeOrigin::Span(
+                            inline_macro.as_syntax_node().span_without_trivia(db),
+                        ),
+                        span: CairoTextSpan::from_str(&result_content_string),
+                    }]
+                }),
+            content: result_content_string,
+            aux_data: None,
+            diagnostics_note: Some(format!(
+                "this error originates in the inline macro: `{}`",
+                inline_macro_name
+            )),
+            is_unhygienic: false,
+        }),
+        diagnostics: into_cairo_diagnostics(db, result.diagnostics, call_site.stable_ptr),
+        remove_original_item: true,
+    })
 }
 
 fn expand_inner_attr<'db>(
