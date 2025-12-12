@@ -19,6 +19,7 @@ pub fn inline_macro_generate_code<'db>(
     db: &'db dyn Database,
     expansion_context: ProcMacroScope,
     syntax: &ast::ExprInlineMacro<'db>,
+    fingerprint: u64,
 ) -> InlinePluginResult<'db> {
     let call_site = CallSiteLocation::new(syntax, db);
     let ctx = AllocationContext::default();
@@ -36,6 +37,7 @@ pub fn inline_macro_generate_code<'db>(
             args: token_stream,
             call_site: call_site.span,
         },
+        fingerprint,
     );
     // endregion
     // Handle diagnostics.

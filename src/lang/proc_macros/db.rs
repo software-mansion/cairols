@@ -23,22 +23,25 @@ pub trait ProcMacroGroup: Database {
     fn get_stored_attribute_expansion(
         &self,
         params: PlainExpandAttributeParams,
+        fingerprint: u64,
     ) -> Option<ProcMacroResult> {
-        get_stored_attribute_expansion(self.as_dyn_database(), params)
+        get_stored_attribute_expansion(self.as_dyn_database(), params, fingerprint)
     }
     /// Returns the expansion of derive macros.
     fn get_stored_derive_expansion(
         &self,
         params: PlainExpandDeriveParams,
+        fingerprint: u64,
     ) -> Option<ProcMacroResult> {
-        get_stored_derive_expansion(self.as_dyn_database(), params)
+        get_stored_derive_expansion(self.as_dyn_database(), params, fingerprint)
     }
     /// Returns the expansion of inline macro.
     fn get_stored_inline_macros_expansion(
         &self,
         params: PlainExpandInlineParams,
+        fingerprint: u64,
     ) -> Option<ProcMacroResult> {
-        get_stored_inline_macros_expansion(self.as_dyn_database(), params)
+        get_stored_inline_macros_expansion(self.as_dyn_database(), params, fingerprint)
     }
     fn proc_macro_input(&self) -> &ProcMacroInput {
         proc_macro_input(self.as_dyn_database())
@@ -62,11 +65,12 @@ impl<T: Database + ?Sized> ProcMacroGroup for T {}
 #[salsa::input]
 pub struct ProcMacroInput {
     #[returns(ref)]
-    pub attribute_macro_resolution: ProcMacroCache<PlainExpandAttributeParams, ProcMacroResult>,
+    pub attribute_macro_resolution:
+        ProcMacroCache<(PlainExpandAttributeParams, u64), ProcMacroResult>,
     #[returns(ref)]
-    pub derive_macro_resolution: ProcMacroCache<PlainExpandDeriveParams, ProcMacroResult>,
+    pub derive_macro_resolution: ProcMacroCache<(PlainExpandDeriveParams, u64), ProcMacroResult>,
     #[returns(ref)]
-    pub inline_macro_resolution: ProcMacroCache<PlainExpandInlineParams, ProcMacroResult>,
+    pub inline_macro_resolution: ProcMacroCache<(PlainExpandInlineParams, u64), ProcMacroResult>,
 
     pub proc_macro_server_status: ServerStatus,
 }
@@ -85,66 +89,72 @@ fn proc_macro_input(db: &dyn Database) -> ProcMacroInput {
 fn get_stored_attribute_expansion(
     db: &dyn Database,
     params: PlainExpandAttributeParams,
+    fingerprint: u64,
 ) -> Option<ProcMacroResult> {
-    db.proc_macro_input().attribute_macro_resolution(db).get(&params).cloned()
+    db.proc_macro_input().attribute_macro_resolution(db).get(&(params, fingerprint)).cloned()
 }
 
 fn get_stored_derive_expansion(
     db: &dyn Database,
     params: PlainExpandDeriveParams,
+    fingerprint: u64,
 ) -> Option<ProcMacroResult> {
-    db.proc_macro_input().derive_macro_resolution(db).get(&params).cloned()
+    db.proc_macro_input().derive_macro_resolution(db).get(&(params, fingerprint)).cloned()
 }
 
 fn get_stored_inline_macros_expansion(
     db: &dyn Database,
     params: PlainExpandInlineParams,
+    fingerprint: u64,
 ) -> Option<ProcMacroResult> {
-    db.proc_macro_input().inline_macro_resolution(db).get(&params).cloned()
+    db.proc_macro_input().inline_macro_resolution(db).get(&(params, fingerprint)).cloned()
 }
 
 pub fn get_attribute_expansion(
     db: &dyn Database,
     mut params: ExpandAttributeParams,
+    fingerprint: u64,
 ) -> ProcMacroResult {
     let stabilizer = SpansStabilizer::new(&mut params.adapted_call_site, &mut params.item);
 
-    let result = db.get_stored_attribute_expansion(params.clone().into()).unwrap_or_else(|| {
-        let token_stream = params.item.clone();
+    let result = db
+        .get_stored_attribute_expansion(params.clone().into(), fingerprint)
+        .unwrap_or_else(|| {
+            let token_stream = params.item.clone();
 
-        if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
-            && !client.was_requested(RequestParams::ExpandAttribute(params.clone().into()))
-        {
-            client.request_attribute(params);
-        }
+            if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
+                && !client.was_requested(RequestParams::ExpandAttribute(params.clone().into()))
+            {
+                client.request_attribute(params);
+            }
 
-        ProcMacroResult {
-            token_stream: token_stream_v2_to_v1(&token_stream),
-            diagnostics: Default::default(),
-            code_mappings: None,
-        }
-    });
+            ProcMacroResult {
+                token_stream: token_stream_v2_to_v1(&token_stream),
+                ..Default::default()
+            }
+        });
 
     stabilizer.apply_original_offsets_to_result(result)
 }
 
-pub fn get_derive_expansion(db: &dyn Database, mut params: ExpandDeriveParams) -> ProcMacroResult {
+pub fn get_derive_expansion(
+    db: &dyn Database,
+    mut params: ExpandDeriveParams,
+    fingerprint: u64,
+) -> ProcMacroResult {
     let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.item);
 
-    let result = db.get_stored_derive_expansion(params.clone().into()).unwrap_or_else(|| {
-        if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
-            && !client.was_requested(RequestParams::ExpandDerive(params.clone().into()))
-        {
-            client.request_derives(params);
-        }
+    let result =
+        db.get_stored_derive_expansion(params.clone().into(), fingerprint).unwrap_or_else(|| {
+            if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
+                && !client.was_requested(RequestParams::ExpandDerive(params.clone().into()))
+            {
+                client.request_derives(params);
+            }
 
-        ProcMacroResult {
             // We don't remove the original item for derive macros, so return nothing.
-            token_stream: Default::default(),
-            diagnostics: Default::default(),
-            code_mappings: None,
-        }
-    });
+            Default::default()
+        });
 
     stabilizer.apply_original_offsets_to_result(result)
 }
@@ -152,11 +162,13 @@ pub fn get_derive_expansion(db: &dyn Database, mut params: ExpandDeriveParams) -
 pub fn get_inline_macros_expansion(
     db: &dyn Database,
     mut params: ExpandInlineMacroParams,
+    fingerprint: u64,
 ) -> ProcMacroResult {
     let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.args);
 
-    let result =
-        db.get_stored_inline_macros_expansion(params.clone().into()).unwrap_or_else(|| {
+    let result = db
+        .get_stored_inline_macros_expansion(params.clone().into(), fingerprint)
+        .unwrap_or_else(|| {
             // We can't return the original node because it will make us fall into infinite recursion.
             let unit = "()".to_string();
 
@@ -168,8 +180,7 @@ pub fn get_inline_macros_expansion(
 
             ProcMacroResult {
                 token_stream: cairo_lang_macro_v1::TokenStream::new(unit),
-                diagnostics: Default::default(),
-                code_mappings: None,
+                ..Default::default()
             }
         });
 

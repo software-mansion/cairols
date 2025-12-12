@@ -190,7 +190,7 @@ fn current_dir_target() -> Option<PathBuf> {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Resolution {
-    attr: ProcMacroCache<PlainExpandAttributeParams, ProcMacroResult>,
-    derive: ProcMacroCache<PlainExpandDeriveParams, ProcMacroResult>,
-    inline: ProcMacroCache<PlainExpandInlineParams, ProcMacroResult>,
+    attr: ProcMacroCache<(PlainExpandAttributeParams, u64), ProcMacroResult>,
+    derive: ProcMacroCache<(PlainExpandDeriveParams, u64), ProcMacroResult>,
+    inline: ProcMacroCache<(PlainExpandInlineParams, u64), ProcMacroResult>,
 }

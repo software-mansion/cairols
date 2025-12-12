@@ -67,7 +67,7 @@ memchr = "2.7.6"
 mimalloc = "0.1.48"
 salsa = "0.24.0"
 scarb-metadata = "1.15.1"
-scarb-proc-macro-server-types = "0.4.0"
+scarb-proc-macro-server-types = "0.5.0"
 scarb-stable-hash = "1"
 semver = "1"
 serde = { version = "1", default-features = false, features = ["derive"] }

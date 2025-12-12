@@ -241,17 +241,20 @@ impl ProcMacroClientController {
                 }
                 RequestParams::ExpandAttribute(params) => {
                     let proc_macro_result = parse_response::<ProcMacroResult>(response)?;
-                    attribute_resolutions.insert(params, proc_macro_result);
+                    attribute_resolutions
+                        .insert((params, proc_macro_result.fingerprint), proc_macro_result);
                     attribute_resolutions_changed = true;
                 }
                 RequestParams::ExpandDerive(params) => {
                     let proc_macro_result = parse_response::<ProcMacroResult>(response)?;
-                    derive_resolutions.insert(params, proc_macro_result);
+                    derive_resolutions
+                        .insert((params, proc_macro_result.fingerprint), proc_macro_result);
                     derive_resolutions_changed = true;
                 }
                 RequestParams::ExpandInline(params) => {
                     let proc_macro_result = parse_response::<ProcMacroResult>(response)?;
-                    inline_macro_resolutions.insert(params, proc_macro_result);
+                    inline_macro_resolutions
+                        .insert((params, proc_macro_result.fingerprint), proc_macro_result);
                     inline_macro_resolutions_changed = true;
                 }
             }
