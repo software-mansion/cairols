@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
@@ -16,6 +14,7 @@ use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::proc_macros::client::plain_request_response::{
     PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
 };
+use crate::proc_macros::cache::ProcMacroCache;
 
 /// A set of queries that enable access to proc macro client from compiler plugins
 /// `.generate_code()` methods.
@@ -63,11 +62,11 @@ impl<T: Database + ?Sized> ProcMacroGroup for T {}
 #[salsa::input]
 pub struct ProcMacroInput {
     #[returns(ref)]
-    pub attribute_macro_resolution: HashMap<PlainExpandAttributeParams, ProcMacroResult>,
+    pub attribute_macro_resolution: ProcMacroCache<PlainExpandAttributeParams, ProcMacroResult>,
     #[returns(ref)]
-    pub derive_macro_resolution: HashMap<PlainExpandDeriveParams, ProcMacroResult>,
+    pub derive_macro_resolution: ProcMacroCache<PlainExpandDeriveParams, ProcMacroResult>,
     #[returns(ref)]
-    pub inline_macro_resolution: HashMap<PlainExpandInlineParams, ProcMacroResult>,
+    pub inline_macro_resolution: ProcMacroCache<PlainExpandInlineParams, ProcMacroResult>,
 
     pub proc_macro_server_status: ServerStatus,
 }
