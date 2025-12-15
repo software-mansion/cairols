@@ -3,7 +3,7 @@
 ## Maintainers
 
 All CairoLS maintainers are members of the **[@software-mansion/cairo-ls]** GitHub team.
-Current project leader is **[@THenry14]**.
+Current project leader is **[@wawel37]**.
 
 ## Release procedure
 
@@ -46,4 +46,4 @@ if things are running rather smoothly and without any major problems. This can b
 
 [@software-mansion/scarb-maintainers]: https://github.com/orgs/software-mansion/teams/scarb-maintainers
 [@software-mansion/cairo-ls]: https://github.com/orgs/software-mansion/teams/cairo-ls
-[@THenry14]: https://github.com/THenry14
+[@wawel37]: https://github.com/wawel37
