@@ -190,11 +190,9 @@ impl SemanticTokenKind {
                     Some(SyntaxKind::GenericParamImplAnonymous) => {
                         Some(SemanticTokenKind::GenericParamImpl)
                     }
-                    Some(
-                        SyntaxKind::GenericArgNamed
-                        | SyntaxKind::GenericArgUnnamed
-                        | SyntaxKind::GenericArgValueExpr,
-                    ) => Some(SemanticTokenKind::TypeParameter),
+                    Some(SyntaxKind::GenericArgNamed | SyntaxKind::GenericArgUnnamed) => {
+                        Some(SemanticTokenKind::TypeParameter)
+                    }
                     _ => None,
                 }
             }

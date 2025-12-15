@@ -1,6 +1,6 @@
 use cairo_lang_semantic::{GenericArgumentId, TypeId, TypeLongId};
 use cairo_lang_syntax::node::{
-    ast::{Expr, GenericArg, GenericArgValue, TerminalUnderscore, UnaryOperator},
+    ast::{Expr, GenericArg, TerminalUnderscore, UnaryOperator},
     helpers::PathSegmentEx,
 };
 
@@ -38,18 +38,13 @@ fn find_underscores_ex<'db>(
                             GenericArg::Unnamed(unnamed) => unnamed.value(db),
                         };
 
-                        match value {
-                            GenericArgValue::Underscore(underscore) => {
-                                result.extend(
-                                    InferredValue::try_from_generic_arg_id(ty)
-                                        .map(|value| (underscore, value)),
-                                );
-                            }
-                            GenericArgValue::Expr(expr) => {
-                                if let GenericArgumentId::Type(ty) = ty {
-                                    find_underscores_ex(db, expr.expr(db), ty, result);
-                                }
-                            }
+                        if let Expr::Underscore(underscore) = value {
+                            result.extend(
+                                InferredValue::try_from_generic_arg_id(ty)
+                                    .map(|inferred| (underscore, inferred)),
+                            );
+                        } else if let GenericArgumentId::Type(ty) = ty {
+                            find_underscores_ex(db, value, ty, result);
                         }
                     }
                 }
