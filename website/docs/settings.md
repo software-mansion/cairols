@@ -21,7 +21,10 @@ Enables [Cairo lint](https://docs.swmansion.com/cairo-lint/) diagnostics and cod
 
 ## Enable Proc Macros
 
-Enables support for procedural macros.
+Enables support for procedural macros. 
+
+> [!WARNING]
+> With Language Server version 2.15 and above, the proc macro cache will be enabled by default and the option to turn it off will no longer be available. 
 
 ## Scarb Path
 
