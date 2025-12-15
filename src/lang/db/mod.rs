@@ -276,9 +276,3 @@ impl AnalysisDatabase {
 }
 
 impl salsa::Database for AnalysisDatabase {}
-
-impl Default for AnalysisDatabase {
-    fn default() -> Self {
-        Self::new()
-    }
-}
