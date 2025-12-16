@@ -14,7 +14,6 @@ use bincode::{
     config::standard,
     serde::{decode_from_slice, encode_to_vec},
 };
-use git_version::git_version;
 use salsa::{Database, Setter};
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use serde::{Deserialize, Serialize, ser::SerializeMap};
@@ -171,8 +170,14 @@ fn cache_path() -> Option<PathBuf> {
 }
 
 fn cache_file_name() -> String {
+    let pkg = env!("CARGO_PKG_VERSION");
     // Use commit for file name, so each LS version (even dev ones) will use different cache
-    format!("{}_proc_macro.cache", git_version!())
+    // It is unavailable when building from `crates.io` (there is no `.git` dir). Use only version in this case.
+    let commit = option_env!("LS_COMMIT_HASH");
+    let separator = if commit.is_some() { "-" } else { "" };
+    let commit = commit.unwrap_or_default();
+
+    format!("{pkg}{separator}{commit}_proc_macro.cache",)
 }
 
 fn current_dir_target() -> Option<PathBuf> {
