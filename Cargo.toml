@@ -57,7 +57,6 @@ cairo-lint = "2.15.0-rc.0"
 colored = "3.0.0"
 convert_case = "0.10.0"
 crossbeam = "0.8.4"
-git-version = "0.3.9"
 governor = { version = "0.8.0", default-features = false, features = ["std", "quanta"] }
 indoc = "2"
 itertools = "0.14.0"
