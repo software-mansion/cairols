@@ -56,6 +56,7 @@ cairo-language-common = "2.15.0-rc.0"
 cairo-lint = "2.15.0-rc.0"
 colored = "3.0.0"
 convert_case = "0.10.0"
+create-output-dir = "1.0.0"
 crossbeam = "0.8.4"
 governor = { version = "0.8.0", default-features = false, features = ["std", "quanta"] }
 indoc = "2"
