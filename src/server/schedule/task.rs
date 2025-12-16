@@ -11,7 +11,7 @@ use tracing::error;
 
 use crate::lsp::result::LSPError;
 use crate::server::client::{Notifier, Requester, Responder};
-use crate::state::{MetaState, State};
+use crate::state::{MetaState, State, StateSnapshot};
 
 type LocalMutFn<'s> = Box<dyn FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's>;
 type LocalFn<'s> = Box<dyn FnOnce(&State, MetaState, Notifier, &mut Requester<'_>, Responder) + 's>;
@@ -117,3 +117,8 @@ impl<'s> Task<'s> {
         Self::local(move |_, _, _, _, _| {})
     }
 }
+
+pub trait Handler: FnOnce(StateSnapshot, MetaState, Notifier, Responder) + Send + 'static {}
+
+impl<T> Handler for T where T: FnOnce(StateSnapshot, MetaState, Notifier, Responder) + Send + 'static
+{}

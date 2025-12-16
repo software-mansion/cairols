@@ -29,7 +29,7 @@ use crate::lsp::ext::{
 };
 use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
 use crate::server::panic::cancelled_anyhow;
-use crate::server::schedule::{BackgroundSchedule, Task};
+use crate::server::schedule::{BackgroundSchedule, Handler, Task};
 use crate::state::{MetaState, State};
 
 mod handlers;
@@ -173,28 +173,47 @@ fn background_fmt_task<'a, R: handlers::BackgroundDocumentRequestHandler + 'a>(
     Ok(Task::fmt(create_background_fn_builder::<R>(id, params)))
 }
 
+fn create_background_fn_handler_raw<R: handlers::BackgroundDocumentRequestHandler>(
+    id: RequestId,
+    params: serde_json::Value,
+) -> impl Handler {
+    |state_snapshot, meta_state, notifier, responder| match catch_unwind(AssertUnwindSafe(|| {
+        R::run_with_snapshot(
+            state_snapshot,
+            meta_state,
+            notifier,
+            serde_json::from_value(params).unwrap(),
+        )
+    })) {
+        Ok(result) => respond::<R>(id, result, &responder),
+        Err(err) => {
+            if let Ok(err) = cancelled_anyhow(err, "LSP worker thread was cancelled") {
+                let err = LSPError::new(err, ErrorCode::ServerCancelled);
+                respond::<R>(id, Err(err), &responder)
+            } else {
+                let err = LSPError::new(
+                    anyhow!("caught panic in LSP worker thread"),
+                    ErrorCode::InternalError,
+                );
+                respond::<R>(id, Err(err), &responder)
+            }
+        }
+    }
+}
+
 fn create_background_fn_builder<R: handlers::BackgroundDocumentRequestHandler>(
     id: RequestId,
     params: <R as RequestTrait>::Params,
 ) -> impl FnOnce(&State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> {
+    // Clone version of params.
+    let params_json = serde_json::to_value(&params).unwrap();
+
+    let handler = create_background_fn_handler_raw::<R>(id, params_json);
+
     move |state: &State, meta_state: MetaState| {
         let state_snapshot = state.snapshot();
         Box::new(move |notifier, responder| {
-            let result = catch_unwind(AssertUnwindSafe(|| {
-                R::run_with_snapshot(state_snapshot, meta_state, notifier, params)
-            }))
-            .map_err(|err| {
-                if let Ok(err) = cancelled_anyhow(err, "LSP worker thread was cancelled") {
-                    LSPError::new(err, ErrorCode::ServerCancelled)
-                } else {
-                    LSPError::new(
-                        anyhow!("caught panic in LSP worker thread"),
-                        ErrorCode::InternalError,
-                    )
-                }
-            })
-            .and_then(|res| res);
-            respond::<R>(id, result, &responder);
+            handler(state_snapshot, meta_state, notifier, responder);
         })
     }
 }
