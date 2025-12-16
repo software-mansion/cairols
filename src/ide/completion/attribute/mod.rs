@@ -1,6 +1,3 @@
-use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
-use crate::lang::lsp::ToLsp;
-use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_filesystem::ids::CrateId;
@@ -8,6 +5,10 @@ use cairo_lang_syntax::node::ast::Attribute;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionTextEdit, Range, TextEdit};
+
+use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
+use crate::lang::lsp::ToLsp;
+use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 
 pub mod derive;
 
