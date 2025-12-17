@@ -14,6 +14,7 @@ use bincode::{
     config::standard,
     serde::{decode_from_slice, encode_to_vec},
 };
+use create_output_dir::create_output_dir;
 use salsa::{Database, Setter};
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use serde::{Deserialize, Serialize, ser::SerializeMap};
@@ -129,7 +130,9 @@ pub fn save_proc_macro_cache(db: &dyn Database) {
 
     let buffer = encode_to_vec(resolution, standard()).expect("serialize should not fail");
 
-    let _ = fs::create_dir_all(cache_path.parent().expect("parent must exist"));
+    let cache_path_parent = cache_path.parent().expect("LS subdir must exist");
+    let _ = create_output_dir(cache_path_parent.parent().expect("target must exist"));
+    let _ = fs::create_dir_all(cache_path_parent);
 
     if let Err(err) = fs::write(&cache_path, buffer) {
         error!("failed to save proc macro cache to disk {err:?}");
