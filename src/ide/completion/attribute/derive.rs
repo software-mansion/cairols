@@ -6,8 +6,8 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionTextEdit, Range, TextEdit};
 
+use crate::ide::completion::helpers::span::get_resultant_range;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
-use crate::lang::lsp::ToLsp;
 use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 
 pub fn derive_completions<'db>(
@@ -20,9 +20,9 @@ pub fn derive_completions<'db>(
     if let Some(path_node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
         && let Some(node) = path_node.parent_of_kind(db, SyntaxKind::ArgClauseUnnamed)
         && let Some(attr) = node.ancestor_of_type::<Attribute>(db)
-        && let Some(span) = node.span(db).position_in_file(db, node.stable_ptr(db).file_id(db))
+        && let Some(span) = get_resultant_range(db, node)
         && let Some(derive_completions) =
-            derive_completions_ex(db, path_node.get_text(db), attr, span.to_lsp(), crate_id)
+            derive_completions_ex(db, path_node.get_text(db), attr, span, crate_id)
     {
         return derive_completions;
     }
@@ -31,9 +31,8 @@ pub fn derive_completions<'db>(
 
     if node.ancestor_of_kind(db, SyntaxKind::Arg).is_none()
         && let Some(attr) = node.ancestor_of_type::<Attribute>(db)
-        && let Some(span) = node.span(db).position_in_file(db, node.stable_ptr(db).file_id(db))
-        && let Some(derive_completions) =
-            derive_completions_ex(db, "", attr, span.to_lsp(), crate_id)
+        && let Some(span) = get_resultant_range(db, node)
+        && let Some(derive_completions) = derive_completions_ex(db, "", attr, span, crate_id)
     {
         return derive_completions;
     }
