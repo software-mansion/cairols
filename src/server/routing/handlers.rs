@@ -61,6 +61,9 @@ pub trait SyncRequestHandler: Request {
 
 /// A request handler that can be run on a background thread.
 pub trait BackgroundDocumentRequestHandler: Request {
+    #[expect(dead_code)]
+    const RETRY: bool;
+
     fn run_with_snapshot(
         snapshot: StateSnapshot,
         _meta_state: MetaState,
@@ -83,6 +86,8 @@ pub trait SyncNotificationHandler: Notification {
 }
 
 impl BackgroundDocumentRequestHandler for CodeActionRequest {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "textDocument/codeAction", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -134,6 +139,8 @@ impl SyncRequestHandler for ExecuteCommand {
 }
 
 impl BackgroundDocumentRequestHandler for HoverRequest {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "textDocument/hover", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -153,6 +160,8 @@ impl BackgroundDocumentRequestHandler for HoverRequest {
 }
 
 impl BackgroundDocumentRequestHandler for Formatting {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "textDocument/formatting", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -353,6 +362,8 @@ impl SyncNotificationHandler for DidSaveTextDocument {
 }
 
 impl BackgroundDocumentRequestHandler for GotoDefinition {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "textDocument/definition", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -374,6 +385,10 @@ impl BackgroundDocumentRequestHandler for GotoDefinition {
 }
 
 impl BackgroundDocumentRequestHandler for Completion {
+    /// This should be `false`, but incorrect result is more acceptable than no result at all here.
+    /// See: https://github.com/software-mansion/cairols/issues/1154
+    const RETRY: bool = true;
+
     #[tracing::instrument(name = "textDocument/completion", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -393,6 +408,8 @@ impl BackgroundDocumentRequestHandler for Completion {
 }
 
 impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
+    const RETRY: bool = true;
+
     #[tracing::instrument(name = "textDocument/semanticTokens/full", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -414,6 +431,8 @@ impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
 }
 
 impl BackgroundDocumentRequestHandler for ProvideVirtualFile {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "vfs/provide", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -432,6 +451,8 @@ impl BackgroundDocumentRequestHandler for ProvideVirtualFile {
 }
 
 impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "cairo/viewAnalyzedCrates", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -449,6 +470,8 @@ impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
 }
 
 impl BackgroundDocumentRequestHandler for ShowMemoryUsage {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "cairo/showMemoryUsage", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -484,6 +507,8 @@ impl BackgroundDocumentRequestHandler for ShowMemoryUsage {
 }
 
 impl BackgroundDocumentRequestHandler for ExpandMacro {
+    const RETRY: bool = true;
+
     #[tracing::instrument(name = "cairo/expandMacro", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -496,6 +521,8 @@ impl BackgroundDocumentRequestHandler for ExpandMacro {
 }
 
 impl BackgroundDocumentRequestHandler for ToolchainInfo {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "cairo/toolchainInfo", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -508,6 +535,8 @@ impl BackgroundDocumentRequestHandler for ToolchainInfo {
 }
 
 impl BackgroundDocumentRequestHandler for References {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "textDocument/references", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -529,6 +558,8 @@ impl BackgroundDocumentRequestHandler for References {
 }
 
 impl BackgroundDocumentRequestHandler for DocumentHighlightRequest {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "textDocument/documentHighlight", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -550,6 +581,8 @@ impl BackgroundDocumentRequestHandler for DocumentHighlightRequest {
 }
 
 impl BackgroundDocumentRequestHandler for Rename {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "textDocument/rename", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -571,6 +604,8 @@ impl BackgroundDocumentRequestHandler for Rename {
 }
 
 impl BackgroundDocumentRequestHandler for ViewSyntaxTree {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "cairo/viewSyntaxTree", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -587,6 +622,8 @@ impl BackgroundDocumentRequestHandler for ViewSyntaxTree {
 }
 
 impl BackgroundDocumentRequestHandler for CodeLensRequest {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "textDocument/codeLens", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -612,6 +649,8 @@ impl BackgroundDocumentRequestHandler for CodeLensRequest {
 }
 
 impl BackgroundDocumentRequestHandler for WillRenameFiles {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "workspace/willRenameFiles", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
@@ -624,6 +663,8 @@ impl BackgroundDocumentRequestHandler for WillRenameFiles {
 }
 
 impl BackgroundDocumentRequestHandler for InlayHintRequest {
+    const RETRY: bool = false;
+
     #[tracing::instrument(name = "textDocument/inlayHint", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
