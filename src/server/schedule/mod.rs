@@ -21,7 +21,7 @@ mod task;
 pub mod thread;
 
 pub(super) use self::task::BackgroundSchedule;
-pub use self::task::{Handler, SyncMutTask, Task};
+pub use self::task::{Handler, RetryTaskInfo, SyncMutTask, Task};
 use crate::server::schedule::task::SyncTask;
 
 /// The event loop thread is actually a secondary thread that we spawn from the

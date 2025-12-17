@@ -61,7 +61,6 @@ pub trait SyncRequestHandler: Request {
 
 /// A request handler that can be run on a background thread.
 pub trait BackgroundDocumentRequestHandler: Request {
-    #[expect(dead_code)]
     const RETRY: bool;
 
     fn run_with_snapshot(
