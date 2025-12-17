@@ -6,8 +6,8 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionTextEdit, Range, TextEdit};
 
+use crate::ide::completion::helpers::span::get_resultant_range;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
-use crate::lang::lsp::ToLsp;
 use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 
 pub mod derive;
@@ -20,8 +20,8 @@ pub fn attribute_completions<'db>(
     // Check if cursor is on attribute name. `#[my_a<cursor>ttr(arg1, args2: 1234)]`
     if let Some(node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
         && let Some(attr) = node.parent_of_type::<Attribute>(db)
-        && let Some(span) = node.span(db).position_in_file(db, node.stable_ptr(db).file_id(db))
-        && let Some(attr_completions) = attribute_completions_ex(db, attr, span.to_lsp(), crate_id)
+        && let Some(span) = get_resultant_range(db, node)
+        && let Some(attr_completions) = attribute_completions_ex(db, attr, span, crate_id)
     {
         return attr_completions;
     }
