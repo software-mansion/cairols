@@ -21,7 +21,7 @@ use std::{io, panic};
 
 use anyhow::Result;
 use cairo_lang_filesystem::ids::FileLongId;
-use crossbeam::channel::{Receiver, select_biased};
+use crossbeam::channel::{self, Receiver, select_biased};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use lsp_types::request::SemanticTokensRefresh;
@@ -305,6 +305,7 @@ impl Backend {
         mut scheduler: Scheduler<'_>,
     ) -> Result<()> {
         let incoming = connection.incoming();
+        let (retry_sender, retry_receiver) = channel::unbounded();
 
         loop {
             select_biased! {
@@ -323,7 +324,7 @@ impl Backend {
                         break;
                     }
                     let task = match msg {
-                        Message::Request(req) => server::request(req),
+                        Message::Request(req) => server::request(req, retry_sender.clone()),
                         Message::Notification(notification) => server::notification(notification),
                         Message::Response(response) => scheduler.response(response),
                     };
@@ -338,6 +339,12 @@ impl Backend {
                     let Ok(()) = error else { break };
 
                     scheduler.local_mut(Self::on_proc_macro_error);
+                }
+                recv(retry_receiver) -> retry => {
+                    let Ok((retry_info, handler)) = retry else { break };
+
+                    let task = retry_info.task(handler);
+                    scheduler.dispatch(task);
                 }
                 recv(analysis_progress_status_receiver) -> analysis_progress_status => {
                     let Ok(analysis_status) = analysis_progress_status else { break };

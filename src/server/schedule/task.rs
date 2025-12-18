@@ -123,8 +123,25 @@ pub trait Handler: FnOnce(StateSnapshot, MetaState, Notifier, Responder) + Send 
 impl<T> Handler for T where T: FnOnce(StateSnapshot, MetaState, Notifier, Responder) + Send + 'static
 {}
 
-#[expect(dead_code)]
+#[derive(Debug, Clone, Copy)]
 pub enum RetryTaskInfo {
     Fmt,
     Background(BackgroundSchedule),
+}
+
+impl RetryTaskInfo {
+    pub fn task(self, request_handler: impl Handler) -> Task<'static> {
+        let builder: BackgroundFnBuilder = Box::new(|state: &State, meta_state| {
+            let state_snapshot = state.snapshot();
+            Box::new(|notifier, responder| {
+                request_handler(state_snapshot, meta_state, notifier, responder)
+            })
+        });
+        match self {
+            Self::Fmt => Task::Fmt(builder),
+            Self::Background(schedule) => {
+                Task::Background(BackgroundTaskBuilder { schedule, builder })
+            }
+        }
+    }
 }

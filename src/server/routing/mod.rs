@@ -8,6 +8,7 @@
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use anyhow::anyhow;
+use crossbeam::channel::Sender;
 pub use handlers::is_cairo_file_path;
 use lsp_server::{ErrorCode, ExtractError, Notification, Request, RequestId};
 use lsp_types::notification::{
@@ -34,69 +35,99 @@ use crate::state::{MetaState, State};
 
 mod handlers;
 
-pub fn request<'a>(request: Request) -> Task<'a> {
+pub fn request<'a>(
+    request: Request,
+    retry_sender: Sender<(RetryTaskInfo, Box<dyn Handler>)>,
+) -> Task<'a> {
     let id = request.id.clone();
 
     match request.method.as_str() {
         CodeActionRequest::METHOD => background_request_task::<CodeActionRequest>(
             request,
             BackgroundSchedule::LatencySensitive,
+            retry_sender,
         ),
-        Completion::METHOD => {
-            background_request_task::<Completion>(request, BackgroundSchedule::LatencySensitive)
-        }
+        Completion::METHOD => background_request_task::<Completion>(
+            request,
+            BackgroundSchedule::LatencySensitive,
+            retry_sender,
+        ),
         ExecuteCommand::METHOD => local_request_task::<ExecuteCommand>(request),
-        ExpandMacro::METHOD => {
-            background_request_task::<ExpandMacro>(request, BackgroundSchedule::Worker)
-        }
-        Formatting::METHOD => background_fmt_task::<Formatting>(request),
-        GotoDefinition::METHOD => {
-            background_request_task::<GotoDefinition>(request, BackgroundSchedule::LatencySensitive)
-        }
-        HoverRequest::METHOD => {
-            background_request_task::<HoverRequest>(request, BackgroundSchedule::LatencySensitive)
-        }
+        ExpandMacro::METHOD => background_request_task::<ExpandMacro>(
+            request,
+            BackgroundSchedule::Worker,
+            retry_sender,
+        ),
+        Formatting::METHOD => background_fmt_task::<Formatting>(request, retry_sender),
+        GotoDefinition::METHOD => background_request_task::<GotoDefinition>(
+            request,
+            BackgroundSchedule::LatencySensitive,
+            retry_sender,
+        ),
+        HoverRequest::METHOD => background_request_task::<HoverRequest>(
+            request,
+            BackgroundSchedule::LatencySensitive,
+            retry_sender,
+        ),
         ProvideVirtualFile::METHOD => background_request_task::<ProvideVirtualFile>(
             request,
             BackgroundSchedule::LatencySensitive,
+            retry_sender,
         ),
-        References::METHOD => {
-            background_request_task::<References>(request, BackgroundSchedule::LatencySensitive)
-        }
+        References::METHOD => background_request_task::<References>(
+            request,
+            BackgroundSchedule::LatencySensitive,
+            retry_sender,
+        ),
         DocumentHighlightRequest::METHOD => background_request_task::<DocumentHighlightRequest>(
             request,
             BackgroundSchedule::LatencySensitive,
+            retry_sender,
         ),
         CodeLensRequest::METHOD => background_request_task::<CodeLensRequest>(
             request,
             BackgroundSchedule::LatencySensitive,
+            retry_sender,
         ),
-        Rename::METHOD => {
-            background_request_task::<Rename>(request, BackgroundSchedule::LatencySensitive)
-        }
+        Rename::METHOD => background_request_task::<Rename>(
+            request,
+            BackgroundSchedule::LatencySensitive,
+            retry_sender,
+        ),
         SemanticTokensFullRequest::METHOD => background_request_task::<SemanticTokensFullRequest>(
             request,
             BackgroundSchedule::Worker,
+            retry_sender,
         ),
-        ViewSyntaxTree::METHOD => {
-            background_request_task::<ViewSyntaxTree>(request, BackgroundSchedule::Worker)
-        }
-        ToolchainInfo::METHOD => {
-            background_request_task::<ToolchainInfo>(request, BackgroundSchedule::Worker)
-        }
-        ViewAnalyzedCrates::METHOD => {
-            background_request_task::<ViewAnalyzedCrates>(request, BackgroundSchedule::Worker)
-        }
-        ShowMemoryUsage::METHOD => {
-            background_request_task::<ShowMemoryUsage>(request, BackgroundSchedule::Worker)
-        }
+        ViewSyntaxTree::METHOD => background_request_task::<ViewSyntaxTree>(
+            request,
+            BackgroundSchedule::Worker,
+            retry_sender,
+        ),
+        ToolchainInfo::METHOD => background_request_task::<ToolchainInfo>(
+            request,
+            BackgroundSchedule::Worker,
+            retry_sender,
+        ),
+        ViewAnalyzedCrates::METHOD => background_request_task::<ViewAnalyzedCrates>(
+            request,
+            BackgroundSchedule::Worker,
+            retry_sender,
+        ),
+        ShowMemoryUsage::METHOD => background_request_task::<ShowMemoryUsage>(
+            request,
+            BackgroundSchedule::Worker,
+            retry_sender,
+        ),
         WillRenameFiles::METHOD => background_request_task::<WillRenameFiles>(
             request,
             BackgroundSchedule::LatencySensitive,
+            retry_sender,
         ),
         InlayHintRequest::METHOD => background_request_task::<InlayHintRequest>(
             request,
             BackgroundSchedule::LatencySensitive,
+            retry_sender,
         ),
 
         method => {
@@ -161,40 +192,56 @@ fn local_request_task<'a, R: handlers::SyncRequestHandler>(
 fn background_request_task<'a, R: handlers::BackgroundDocumentRequestHandler + 'a>(
     request: Request,
     schedule: BackgroundSchedule,
+    retry_sender: Sender<(RetryTaskInfo, Box<dyn Handler>)>,
 ) -> Result<Task<'a>, LSPError> {
     let (id, params) = cast_request::<R>(request)?;
     Ok(Task::background(
         schedule,
-        create_background_fn_builder::<R>(id, params, RetryTaskInfo::Background(schedule)),
+        create_background_fn_builder::<R>(
+            id,
+            params,
+            RetryTaskInfo::Background(schedule),
+            retry_sender,
+        ),
     ))
 }
 
 fn background_fmt_task<'a, R: handlers::BackgroundDocumentRequestHandler + 'a>(
     request: Request,
+    retry_sender: Sender<(RetryTaskInfo, Box<dyn Handler>)>,
 ) -> Result<Task<'a>, LSPError> {
     let (id, params) = cast_request::<R>(request)?;
-    Ok(Task::fmt(create_background_fn_builder::<R>(id, params, RetryTaskInfo::Fmt)))
+    Ok(Task::fmt(create_background_fn_builder::<R>(id, params, RetryTaskInfo::Fmt, retry_sender)))
 }
 
-#[expect(clippy::only_used_in_recursion)]
 fn create_background_fn_handler_raw<R: handlers::BackgroundDocumentRequestHandler>(
     id: RequestId,
     params: serde_json::Value,
     retry_info: RetryTaskInfo,
+    retry_sender: Sender<(RetryTaskInfo, Box<dyn Handler>)>,
 ) -> impl Handler {
-    |state_snapshot, meta_state, notifier, responder| match catch_unwind(AssertUnwindSafe(|| {
-        R::run_with_snapshot(
-            state_snapshot,
-            meta_state,
-            notifier,
-            serde_json::from_value(params.clone()).unwrap(),
-        )
-    })) {
+    move |state_snapshot, meta_state, notifier, responder| match catch_unwind(AssertUnwindSafe(
+        || {
+            R::run_with_snapshot(
+                state_snapshot,
+                meta_state,
+                notifier,
+                serde_json::from_value(params.clone()).unwrap(),
+            )
+        },
+    )) {
         Ok(result) => respond::<R>(id, result, &responder),
         Err(err) => {
             if let Ok(err) = cancelled_anyhow(err, "LSP worker thread was cancelled") {
                 if R::RETRY {
-                    let _handler = create_background_fn_handler_raw::<R>(id, params, retry_info);
+                    let handler = create_background_fn_handler_raw::<R>(
+                        id,
+                        params,
+                        retry_info,
+                        retry_sender.clone(),
+                    );
+
+                    let _ = retry_sender.send((retry_info, Box::new(handler)));
                 } else {
                     let err = LSPError::new(err, ErrorCode::ServerCancelled);
                     respond::<R>(id, Err(err), &responder)
@@ -214,11 +261,12 @@ fn create_background_fn_builder<R: handlers::BackgroundDocumentRequestHandler>(
     id: RequestId,
     params: <R as RequestTrait>::Params,
     retry_info: RetryTaskInfo,
+    retry_sender: Sender<(RetryTaskInfo, Box<dyn Handler>)>,
 ) -> impl FnOnce(&State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> {
     // Clone version of params.
     let params_json = serde_json::to_value(&params).unwrap();
 
-    let handler = create_background_fn_handler_raw::<R>(id, params_json, retry_info);
+    let handler = create_background_fn_handler_raw::<R>(id, params_json, retry_info, retry_sender);
 
     move |state: &State, meta_state: MetaState| {
         let state_snapshot = state.snapshot();
