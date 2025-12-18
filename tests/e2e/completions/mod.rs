@@ -126,7 +126,11 @@ fn transform(mut ls: MockClient, cursors: Cursors, main_file: &str) -> String {
             .into_iter()
             .map(|completion| Completions {
                 completion_label: completion.label,
-                completion_label_path: completion.label_details.unwrap_or_default().description,
+                completion_label_path: completion.label_details.clone().unwrap_or_default().detail,
+                completion_label_type_info: completion
+                    .label_details
+                    .unwrap_or_default()
+                    .description,
                 detail: completion.detail,
                 insert_text: completion.insert_text,
                 text_edits: completion
@@ -160,6 +164,8 @@ struct Completions {
     completion_label: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     completion_label_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    completion_label_type_info: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     detail: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

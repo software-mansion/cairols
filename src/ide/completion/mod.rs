@@ -218,8 +218,8 @@ fn compare_items_by_label_and_detail(
             a_description.cmp(&b_description)
         })
         .then_with(|| {
-            let a_description = a.item.detail.clone();
-            let b_description = b.item.detail.clone();
+            let a_description = a.item.label_details.clone().unwrap_or_default().detail;
+            let b_description = b.item.label_details.clone().unwrap_or_default().detail;
             a_description.cmp(&b_description)
         })
 }

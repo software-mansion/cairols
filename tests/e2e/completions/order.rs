@@ -25,19 +25,16 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "AddAssign"
-    completion_label_path = "AddAssign"
 
     [[completions]]
     completion_label = "AddAssignImpl"
-    completion_label_path = "AddAssignImpl"
 
     [[completions]]
     completion_label = "Add"
-    completion_label_path = "Add"
 
     [[completions]]
     completion_label = "AddAssign"
-    completion_label_path = "sub_module::AddAssign"
+    completion_label_path = "(use sub_module::AddAssign)"
     text_edits = ["""
     use sub_module::AddAssign;
 
@@ -45,7 +42,7 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "AddAssign"
-    completion_label_path = "dep::AddAssign"
+    completion_label_path = "(use dep::AddAssign)"
     text_edits = ["""
     use dep::AddAssign;
 
@@ -53,7 +50,7 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "AddAssign"
-    completion_label_path = "core::ops::AddAssign"
+    completion_label_path = "(use core::ops::AddAssign)"
     text_edits = ["""
     use core::ops::AddAssign;
 
@@ -61,7 +58,7 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "AddEq"
-    completion_label_path = "core::traits::AddEq"
+    completion_label_path = "(use core::traits::AddEq)"
     text_edits = ["""
     use core::traits::AddEq;
 
@@ -69,7 +66,7 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "AddInputResult"
-    completion_label_path = "core::circuit::AddInputResult"
+    completion_label_path = "(use core::circuit::AddInputResult)"
     text_edits = ["""
     use core::circuit::AddInputResult;
 
@@ -77,7 +74,7 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "AddInputResultImpl"
-    completion_label_path = "core::circuit::AddInputResultImpl"
+    completion_label_path = "(use core::circuit::AddInputResultImpl)"
     text_edits = ["""
     use core::circuit::AddInputResultImpl;
 
@@ -85,7 +82,7 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "AddMod"
-    completion_label_path = "core::circuit::AddMod"
+    completion_label_path = "(use core::circuit::AddMod)"
     text_edits = ["""
     use core::circuit::AddMod;
 
@@ -93,7 +90,7 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "DivAssign"
-    completion_label_path = "core::ops::DivAssign"
+    completion_label_path = "(use core::ops::DivAssign)"
     text_edits = ["""
     use core::ops::DivAssign;
 
@@ -101,7 +98,7 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "EthAddress"
-    completion_label_path = "starknet::EthAddress"
+    completion_label_path = "(use starknet::EthAddress)"
     text_edits = ["""
     use starknet::EthAddress;
 
@@ -109,7 +106,7 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "MulAssign"
-    completion_label_path = "core::ops::MulAssign"
+    completion_label_path = "(use core::ops::MulAssign)"
     text_edits = ["""
     use core::ops::MulAssign;
 
@@ -117,7 +114,7 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "RemAssign"
-    completion_label_path = "core::ops::RemAssign"
+    completion_label_path = "(use core::ops::RemAssign)"
     text_edits = ["""
     use core::ops::RemAssign;
 
@@ -125,7 +122,7 @@ fn order_with_current_crate_and_core_deps() {
 
     [[completions]]
     completion_label = "SubAssign"
-    completion_label_path = "core::ops::SubAssign"
+    completion_label_path = "(use core::ops::SubAssign)"
     text_edits = ["""
     use core::ops::SubAssign;
 
@@ -156,19 +153,16 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "AddAssign"
-    completion_label_path = "AddAssign"
 
     [[completions]]
     completion_label = "AddAssignImpl"
-    completion_label_path = "AddAssignImpl"
 
     [[completions]]
     completion_label = "Add"
-    completion_label_path = "Add"
 
     [[completions]]
     completion_label = "AddAssign"
-    completion_label_path = "sub_module::AddAssign"
+    completion_label_path = "(use sub_module::AddAssign)"
     text_edits = ["""
     use sub_module::AddAssign;
 
@@ -176,7 +170,7 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "AddAssign"
-    completion_label_path = "dep::AddAssign"
+    completion_label_path = "(use dep::AddAssign)"
     text_edits = ["""
     use dep::AddAssign;
 
@@ -184,7 +178,7 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "AddAssign"
-    completion_label_path = "core::ops::AddAssign"
+    completion_label_path = "(use core::ops::AddAssign)"
     text_edits = ["""
     use core::ops::AddAssign;
 
@@ -192,7 +186,7 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "AddEq"
-    completion_label_path = "core::traits::AddEq"
+    completion_label_path = "(use core::traits::AddEq)"
     text_edits = ["""
     use core::traits::AddEq;
 
@@ -200,7 +194,7 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "AddInputResult"
-    completion_label_path = "core::circuit::AddInputResult"
+    completion_label_path = "(use core::circuit::AddInputResult)"
     text_edits = ["""
     use core::circuit::AddInputResult;
 
@@ -208,7 +202,7 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "AddInputResultImpl"
-    completion_label_path = "core::circuit::AddInputResultImpl"
+    completion_label_path = "(use core::circuit::AddInputResultImpl)"
     text_edits = ["""
     use core::circuit::AddInputResultImpl;
 
@@ -216,7 +210,7 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "AddMod"
-    completion_label_path = "core::circuit::AddMod"
+    completion_label_path = "(use core::circuit::AddMod)"
     text_edits = ["""
     use core::circuit::AddMod;
 
@@ -224,7 +218,7 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "DivAssign"
-    completion_label_path = "core::ops::DivAssign"
+    completion_label_path = "(use core::ops::DivAssign)"
     text_edits = ["""
     use core::ops::DivAssign;
 
@@ -232,7 +226,7 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "EthAddress"
-    completion_label_path = "starknet::EthAddress"
+    completion_label_path = "(use starknet::EthAddress)"
     text_edits = ["""
     use starknet::EthAddress;
 
@@ -240,7 +234,7 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "MulAssign"
-    completion_label_path = "core::ops::MulAssign"
+    completion_label_path = "(use core::ops::MulAssign)"
     text_edits = ["""
     use core::ops::MulAssign;
 
@@ -248,7 +242,7 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "RemAssign"
-    completion_label_path = "core::ops::RemAssign"
+    completion_label_path = "(use core::ops::RemAssign)"
     text_edits = ["""
     use core::ops::RemAssign;
 
@@ -256,7 +250,7 @@ fn order_with_current_crate_and_core_deps_macros() {
 
     [[completions]]
     completion_label = "SubAssign"
-    completion_label_path = "core::ops::SubAssign"
+    completion_label_path = "(use core::ops::SubAssign)"
     text_edits = ["""
     use core::ops::SubAssign;
 
@@ -278,23 +272,19 @@ fn prelude_ordering() {
 
     [[completions]]
     completion_label = "ResultTraitCustom2"
-    completion_label_path = "ResultTraitCustom2"
 
     [[completions]]
     completion_label = "ResultTraitImpl"
-    completion_label_path = "ResultTraitImpl"
 
     [[completions]]
     completion_label = "Result"
-    completion_label_path = "Result"
 
     [[completions]]
     completion_label = "ResultTrait"
-    completion_label_path = "ResultTrait"
 
     [[completions]]
     completion_label = "ResultTraitCustom"
-    completion_label_path = "dep::ResultTraitCustom"
+    completion_label_path = "(use dep::ResultTraitCustom)"
     text_edits = ["""
     use dep::ResultTraitCustom;
 
@@ -302,7 +292,7 @@ fn prelude_ordering() {
 
     [[completions]]
     completion_label = "AddInputResultTrait"
-    completion_label_path = "core::circuit::AddInputResultTrait"
+    completion_label_path = "(use core::circuit::AddInputResultTrait)"
     text_edits = ["""
     use core::circuit::AddInputResultTrait;
 
@@ -310,7 +300,7 @@ fn prelude_ordering() {
 
     [[completions]]
     completion_label = "LoopResult"
-    completion_label_path = "core::internal::LoopResult"
+    completion_label_path = "(use core::internal::LoopResult)"
     text_edits = ["""
     use core::internal::LoopResult;
 
@@ -318,7 +308,7 @@ fn prelude_ordering() {
 
     [[completions]]
     completion_label = "RangeTrait"
-    completion_label_path = "core::ops::RangeTrait"
+    completion_label_path = "(use core::ops::RangeTrait)"
     text_edits = ["""
     use core::ops::RangeTrait;
 
@@ -326,7 +316,7 @@ fn prelude_ordering() {
 
     [[completions]]
     completion_label = "ResourceBounds"
-    completion_label_path = "starknet::ResourceBounds"
+    completion_label_path = "(use starknet::ResourceBounds)"
     text_edits = ["""
     use starknet::ResourceBounds;
 
@@ -334,7 +324,7 @@ fn prelude_ordering() {
 
     [[completions]]
     completion_label = "ResultTraitImpl"
-    completion_label_path = "core::result::ResultTraitImpl"
+    completion_label_path = "(use core::result::ResultTraitImpl)"
     text_edits = ["""
     use core::result::ResultTraitImpl;
 
@@ -342,7 +332,7 @@ fn prelude_ordering() {
 
     [[completions]]
     completion_label = "result"
-    completion_label_path = "core::result"
+    completion_label_path = "(use core::result)"
     text_edits = ["""
     use core::result;
 
