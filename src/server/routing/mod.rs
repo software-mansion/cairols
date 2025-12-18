@@ -29,7 +29,7 @@ use crate::lsp::ext::{
 };
 use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
 use crate::server::panic::cancelled_anyhow;
-use crate::server::schedule::{BackgroundSchedule, Handler, Task};
+use crate::server::schedule::{BackgroundSchedule, Handler, RetryTaskInfo, Task};
 use crate::state::{MetaState, State};
 
 mod handlers;
@@ -163,33 +163,42 @@ fn background_request_task<'a, R: handlers::BackgroundDocumentRequestHandler + '
     schedule: BackgroundSchedule,
 ) -> Result<Task<'a>, LSPError> {
     let (id, params) = cast_request::<R>(request)?;
-    Ok(Task::background(schedule, create_background_fn_builder::<R>(id, params)))
+    Ok(Task::background(
+        schedule,
+        create_background_fn_builder::<R>(id, params, RetryTaskInfo::Background(schedule)),
+    ))
 }
 
 fn background_fmt_task<'a, R: handlers::BackgroundDocumentRequestHandler + 'a>(
     request: Request,
 ) -> Result<Task<'a>, LSPError> {
     let (id, params) = cast_request::<R>(request)?;
-    Ok(Task::fmt(create_background_fn_builder::<R>(id, params)))
+    Ok(Task::fmt(create_background_fn_builder::<R>(id, params, RetryTaskInfo::Fmt)))
 }
 
+#[expect(clippy::only_used_in_recursion)]
 fn create_background_fn_handler_raw<R: handlers::BackgroundDocumentRequestHandler>(
     id: RequestId,
     params: serde_json::Value,
+    retry_info: RetryTaskInfo,
 ) -> impl Handler {
     |state_snapshot, meta_state, notifier, responder| match catch_unwind(AssertUnwindSafe(|| {
         R::run_with_snapshot(
             state_snapshot,
             meta_state,
             notifier,
-            serde_json::from_value(params).unwrap(),
+            serde_json::from_value(params.clone()).unwrap(),
         )
     })) {
         Ok(result) => respond::<R>(id, result, &responder),
         Err(err) => {
             if let Ok(err) = cancelled_anyhow(err, "LSP worker thread was cancelled") {
-                let err = LSPError::new(err, ErrorCode::ServerCancelled);
-                respond::<R>(id, Err(err), &responder)
+                if R::RETRY {
+                    let _handler = create_background_fn_handler_raw::<R>(id, params, retry_info);
+                } else {
+                    let err = LSPError::new(err, ErrorCode::ServerCancelled);
+                    respond::<R>(id, Err(err), &responder)
+                }
             } else {
                 let err = LSPError::new(
                     anyhow!("caught panic in LSP worker thread"),
@@ -204,11 +213,12 @@ fn create_background_fn_handler_raw<R: handlers::BackgroundDocumentRequestHandle
 fn create_background_fn_builder<R: handlers::BackgroundDocumentRequestHandler>(
     id: RequestId,
     params: <R as RequestTrait>::Params,
+    retry_info: RetryTaskInfo,
 ) -> impl FnOnce(&State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> {
     // Clone version of params.
     let params_json = serde_json::to_value(&params).unwrap();
 
-    let handler = create_background_fn_handler_raw::<R>(id, params_json);
+    let handler = create_background_fn_handler_raw::<R>(id, params_json, retry_info);
 
     move |state: &State, meta_state: MetaState| {
         let state_snapshot = state.snapshot();

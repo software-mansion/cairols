@@ -122,3 +122,9 @@ pub trait Handler: FnOnce(StateSnapshot, MetaState, Notifier, Responder) + Send 
 
 impl<T> Handler for T where T: FnOnce(StateSnapshot, MetaState, Notifier, Responder) + Send + 'static
 {}
+
+#[expect(dead_code)]
+pub enum RetryTaskInfo {
+    Fmt,
+    Background(BackgroundSchedule),
+}
