@@ -3,3 +3,4 @@ pub mod completion_kind;
 pub mod formatting;
 pub mod item;
 pub mod snippets;
+pub(crate) mod span;

@@ -4,8 +4,9 @@ use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_syntax::node::ast::Attribute;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use lsp_types::{CompletionItem, CompletionItemKind};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionTextEdit, Range, TextEdit};
 
+use crate::ide::completion::helpers::span::get_resultant_range;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 
@@ -19,7 +20,8 @@ pub fn attribute_completions<'db>(
     // Check if cursor is on attribute name. `#[my_a<cursor>ttr(arg1, args2: 1234)]`
     if let Some(node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
         && let Some(attr) = node.parent_of_type::<Attribute>(db)
-        && let Some(attr_completions) = attribute_completions_ex(db, attr, crate_id)
+        && let Some(span) = get_resultant_range(db, node)
+        && let Some(attr_completions) = attribute_completions_ex(db, attr, span, crate_id)
     {
         return attr_completions;
     }
@@ -30,6 +32,7 @@ pub fn attribute_completions<'db>(
 fn attribute_completions_ex<'db>(
     db: &'db AnalysisDatabase,
     attribute: Attribute<'db>,
+    span: Range,
     crate_id: CrateId<'db>,
 ) -> Option<Vec<CompletionItemOrderable>> {
     let plugins = db.crate_macro_plugins(crate_id);
@@ -44,8 +47,12 @@ fn attribute_completions_ex<'db>(
             .filter(|name| text_matches(name, attr_name))
             .map(|name| CompletionItemOrderable {
                 item: CompletionItem {
-                    label: name,
+                    label: name.clone(),
                     kind: Some(CompletionItemKind::FUNCTION),
+                    text_edit: Some(CompletionTextEdit::Edit(TextEdit {
+                        range: span,
+                        new_text: name,
+                    })),
                     ..Default::default()
                 },
                 relevance: CompletionRelevance::High,
