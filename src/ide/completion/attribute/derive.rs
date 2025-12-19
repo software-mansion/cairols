@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionTextEdit, Range, TextEdit};
 
-use crate::ide::completion::helpers::span::get_resultant_range;
+use crate::ide::completion::helpers::span::{get_empty_arglist_range, get_resultant_range};
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 
@@ -31,7 +31,7 @@ pub fn derive_completions<'db>(
 
     if node.ancestor_of_kind(db, SyntaxKind::Arg).is_none()
         && let Some(attr) = node.ancestor_of_type::<Attribute>(db)
-        && let Some(span) = get_resultant_range(db, node)
+        && let Some(span) = get_empty_arglist_range(db, node)
         && let Some(derive_completions) = derive_completions_ex(db, "", attr, span, crate_id)
     {
         return derive_completions;
