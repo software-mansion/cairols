@@ -20,7 +20,7 @@ fn self_completions_trait() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "fn() -> ()"
+    completion_label_type_info = "fn() -> ()"
     "#);
 }
 
@@ -44,11 +44,11 @@ fn self_completions_impl() {
 
     [[completions]]
     completion_label = "a"
-    detail = "fn() -> T"
+    completion_label_type_info = "fn() -> T"
 
     [[completions]]
     completion_label = "b"
-    detail = "fn(c: T) -> T"
+    completion_label_type_info = "fn(c: T) -> T"
     "#);
 }
 
@@ -68,7 +68,7 @@ fn self_completions_macro() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "fn() -> ()"
+    completion_label_type_info = "fn() -> ()"
     "#);
 }
 

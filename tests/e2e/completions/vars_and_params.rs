@@ -23,11 +23,11 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "baz"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "blake"
@@ -96,11 +96,11 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "baz"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "blake"
@@ -168,7 +168,7 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "blake"
@@ -289,15 +289,15 @@ fn work_with_params() {
 
     [[completions]]
     completion_label = "paxram"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "paxram2"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "paxram3"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "a(...)"
@@ -341,11 +341,11 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "baz"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "blake"
@@ -452,7 +452,7 @@ fn works_in_same_block() {
 
     [[completions]]
     completion_label = "bbb"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
     "#);
 }
 
@@ -478,6 +478,6 @@ fn works_usage_in_block() {
 
     [[completions]]
     completion_label = "bbb"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
     "#);
 }

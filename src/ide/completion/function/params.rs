@@ -3,7 +3,7 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::PathSegment;
 use itertools::Itertools;
-use lsp_types::{CompletionItem, CompletionItemKind};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
@@ -42,11 +42,14 @@ pub fn params_completions<'db>(
             Some(CompletionItemOrderable {
                 item: CompletionItem {
                     label: param_name,
-                    detail: Some(format_type_in_node_context(
-                        db,
-                        param.stable_ptr.0.lookup(db),
-                        &param.ty,
-                    )),
+                    label_details: Some(CompletionItemLabelDetails {
+                        description: Some(format_type_in_node_context(
+                            db,
+                            param.stable_ptr.0.lookup(db),
+                            &param.ty,
+                        )),
+                        detail: None,
+                    }),
                     kind: Some(CompletionItemKind::VARIABLE),
                     ..CompletionItem::default()
                 },

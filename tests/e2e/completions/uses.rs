@@ -34,14 +34,14 @@ fn helper_module() {
 
     [[completions]]
     completion_label = "CONST"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "Trait1"
 
     [[completions]]
     completion_label = "bar"
-    detail = "fn() -> ()"
+    completion_label_type_info = "fn() -> ()"
     "#);
 }
 
@@ -162,11 +162,11 @@ fn in_use_path_multi() {
 
     [[completions]]
     completion_label = "x"
-    detail = "fn() -> ()"
+    completion_label_type_info = "fn() -> ()"
 
     [[completions]]
     completion_label = "y"
-    detail = "fn() -> ()"
+    completion_label_type_info = "fn() -> ()"
     "#);
 }
 
@@ -188,11 +188,11 @@ fn in_use_path_multi_macro() {
 
     [[completions]]
     completion_label = "x"
-    detail = "fn() -> ()"
+    completion_label_type_info = "fn() -> ()"
 
     [[completions]]
     completion_label = "y"
-    detail = "fn() -> ()"
+    completion_label_type_info = "fn() -> ()"
     "#);
 }
 
@@ -213,11 +213,11 @@ fn in_use_path_multi_with_one_in_scope() {
 
     [[completions]]
     completion_label = "x"
-    detail = "fn() -> ()"
+    completion_label_type_info = "fn() -> ()"
 
     [[completions]]
     completion_label = "y"
-    detail = "fn() -> ()"
+    completion_label_type_info = "fn() -> ()"
     "#);
 }
 
@@ -294,7 +294,7 @@ fn nested_enum() {
 
     [[completions]]
     completion_label = "MyAnotherEnum"
-    detail = "hello::modzik::MyAnotherEnum"
+    completion_label_type_info = "hello::modzik::MyAnotherEnum"
     "#);
 }
 
@@ -323,11 +323,11 @@ fn enum_variant() {
 
     [[completions]]
     completion_label = "A"
-    detail = "MyAnotherEnum::A"
+    completion_label_type_info = "MyAnotherEnum::A"
 
     [[completions]]
     completion_label = "B"
-    detail = "MyAnotherEnum::B: MyStruct"
+    completion_label_type_info = "MyAnotherEnum::B: MyStruct"
     "#);
 }
 
@@ -372,11 +372,11 @@ fn nested_externs() {
 
     [[completions]]
     completion_label = "felt256"
-    detail = "hello::extern_module::felt256"
+    completion_label_type_info = "hello::extern_module::felt256"
 
     [[completions]]
     completion_label = "functioner"
-    detail = "fn() -> felt252"
+    completion_label_type_info = "fn() -> felt252"
     "#);
 }
 
@@ -443,11 +443,11 @@ fn no_text_last_segment_in_use_statement() {
 
     [[completions]]
     completion_label = "MY_CONST"
-    detail = "u8"
+    completion_label_type_info = "u8"
 
     [[completions]]
     completion_label = "my_func"
-    detail = "fn() -> ()"
+    completion_label_type_info = "fn() -> ()"
     "#);
 }
 

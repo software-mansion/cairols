@@ -18,7 +18,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::OptionFrom;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use lsp_types::{CompletionItem, CompletionItemKind};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use super::helpers::completion_kind::resolved_generic_item_completion_kind;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
@@ -103,7 +103,14 @@ pub fn path_prefix_completions<'db>(
                     .then(|| CompletionItemOrderable {
                         item: CompletionItem {
                             label: item.name(db).to_string(db),
-                            detail: module_item_completion_detail(db, *item, ctx.module_id),
+                            label_details: Some(CompletionItemLabelDetails {
+                                description: module_item_completion_detail(
+                                    db,
+                                    *item,
+                                    ctx.module_id,
+                                ),
+                                detail: None,
+                            }),
                             kind: Some(resolved_generic_item_completion_kind(resolved_item)),
                             ..CompletionItem::default()
                         },
@@ -136,7 +143,10 @@ pub fn path_prefix_completions<'db>(
                 CompletionItemOrderable {
                     item: CompletionItem {
                         label: name.to_string(db),
-                        detail: signature,
+                        label_details: Some(CompletionItemLabelDetails {
+                            detail: None,
+                            description: signature,
+                        }),
                         kind: Some(CompletionItemKind::FUNCTION),
                         ..CompletionItem::default()
                     },
@@ -167,7 +177,10 @@ pub fn path_prefix_completions<'db>(
                         CompletionItemOrderable {
                             item: CompletionItem {
                                 label: name.to_string(db),
-                                detail: signature,
+                                label_details: Some(CompletionItemLabelDetails {
+                                    description: signature,
+                                    detail: None,
+                                }),
                                 kind: Some(CompletionItemKind::FUNCTION),
                                 ..CompletionItem::default()
                             },
@@ -195,7 +208,10 @@ pub fn path_prefix_completions<'db>(
                     CompletionItemOrderable {
                         item: CompletionItem {
                             label: name.to_string(db),
-                            detail: formatted_enum_variant,
+                            label_details: Some(CompletionItemLabelDetails {
+                                description: formatted_enum_variant,
+                                detail: None,
+                            }),
                             kind: Some(CompletionItemKind::ENUM_MEMBER),
                             ..CompletionItem::default()
                         },

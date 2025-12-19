@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ast::{PathSegment, StatementLet};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
 use itertools::Itertools;
-use lsp_types::{CompletionItem, CompletionItemKind};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
@@ -108,11 +108,14 @@ fn patterns<'db>(
             completions.push(CompletionItemOrderable {
                 item: CompletionItem {
                     label: var.name.to_string(db),
-                    detail: Some(format_type_in_node_context(
-                        db,
-                        var.stable_ptr.0.lookup(db),
-                        &var.var.ty,
-                    )),
+                    label_details: Some(CompletionItemLabelDetails {
+                        detail: None,
+                        description: Some(format_type_in_node_context(
+                            db,
+                            var.stable_ptr.0.lookup(db),
+                            &var.var.ty,
+                        )),
+                    }),
                     kind: Some(CompletionItemKind::VARIABLE),
                     ..CompletionItem::default()
                 },
