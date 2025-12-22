@@ -3,25 +3,20 @@ use std::hash::Hash;
 
 use cairo_lang_defs::ids::{ImportableId, NamedLanguageElementId};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId};
-use cairo_lang_semantic::diagnostic::SemanticDiagnostics;
 use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
 use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
-use cairo_lang_semantic::items::visibility::Visibility;
-use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::{ExprPath, ItemStruct, StatementExpr, StatementLet, TypeClause};
-use itertools::Itertools;
+use cairo_lang_syntax::node::ast::ItemStruct;
 use lsp_types::{CompletionItem, CompletionItemLabelDetails, InsertTextFormat};
 use serde::Serialize;
 
 use crate::ide::completion::helpers::completion_kind::importable_completion_kind;
-use crate::ide::completion::helpers::snippets::snippet_for_function_call;
+use crate::ide::completion::helpers::snippets::TypedSnippet;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importable::{importable_crate_id, importable_syntax_node};
 use crate::lang::importer::new_import_edit;
 use crate::lang::text_matching::text_matches;
-use crate::lang::visibility::peek_visible_in_with_edition;
 
 // Specifies how relevant a completion is relative to the scope of the current cursor position.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Serialize, Debug, Copy)]
@@ -162,18 +157,21 @@ impl ImportableCompletionItem<'_> {
         let is_current_crate = importable_crate == current_crate;
         let is_core = *importable_crate.long(db) == CrateLongId::core(db);
 
-        let (snippet_text, label) = get_snippet_text_and_label(db, ctx, importable, last_segment);
+        let CompletionParams { label, snippet: snippet_text } =
+            CompletionParams::for_importable(db, ctx, importable, last_segment);
 
         Some(ImportableCompletionItem {
             item: CompletionItemOrderable {
                 item: CompletionItem {
-                    label,
-                    insert_text: snippet_text.clone(),
-                    insert_text_format: snippet_text.map(|_| InsertTextFormat::SNIPPET),
+                    label: label.clone(),
+                    insert_text: snippet_text.clone().map(|snippet| snippet.lsp_snippet),
+                    insert_text_format: snippet_text.clone().map(|_| InsertTextFormat::SNIPPET),
                     kind: Some(importable_completion_kind(*importable)),
                     label_details: Some(CompletionItemLabelDetails {
-                        detail: None,
-                        description: Some(path_str.to_string()),
+                        detail: (path_str != label).then(|| format!("(use {path_str})")),
+                        description: snippet_text
+                            .map(|typed_snippet| typed_snippet.type_hint)
+                            .unwrap_or_default(),
                     }),
                     additional_text_edits,
                     ..CompletionItem::default()
@@ -185,92 +183,67 @@ impl ImportableCompletionItem<'_> {
     }
 }
 
-fn get_snippet_text_and_label(
-    db: &AnalysisDatabase,
-    ctx: &AnalysisContext<'_>,
-    importable: &ImportableId<'_>,
-    last_segment: &str,
-) -> (Option<String>, String) {
-    let snippet = match importable {
-        ImportableId::Struct(_) => {
-            importable_syntax_node(db, *importable).and_then(|struct_node| {
-                get_struct_initialization_completion_text(
-                    db,
-                    ctx,
-                    ItemStruct::from_syntax_node(db, struct_node),
-                )
-            })
-        }
-        ImportableId::FreeFunction(id) => db
-            .free_function_signature(*id)
-            .ok()
-            .map(|signature| snippet_for_function_call(db, &id.name(db).to_string(db), signature)),
-        ImportableId::ExternFunction(id) => db
-            .extern_function_signature(*id)
-            .ok()
-            .map(|signature| snippet_for_function_call(db, &id.name(db).to_string(db), signature)),
-        ImportableId::MacroDeclaration(_) => Some(format!("{}!($1)", last_segment)),
-        _ => None,
-    };
-
-    let label = if matches!(importable, ImportableId::MacroDeclaration(_)) {
-        format!("{}!", last_segment)
-    } else {
-        last_segment.to_string()
-    };
-
-    (snippet, label)
+struct CompletionParams {
+    label: String,
+    snippet: Option<TypedSnippet>,
 }
 
-pub fn get_struct_initialization_completion_text<'db>(
-    db: &'db AnalysisDatabase,
-    ctx: &AnalysisContext<'db>,
-    struct_node: ItemStruct<'db>,
-) -> Option<String> {
-    if (ctx.node.ancestor_of_type::<StatementLet>(db).is_none()
-        && ctx.node.ancestor_of_type::<StatementExpr>(db).is_none())
-        || ctx.node.ancestor_of_type::<ExprPath>(db).is_none()
-        || ctx.node.ancestor_of_type::<TypeClause>(db).is_some()
-    {
-        return None;
+impl CompletionParams {
+    fn for_importable(
+        db: &AnalysisDatabase,
+        ctx: &AnalysisContext<'_>,
+        importable: &ImportableId<'_>,
+        last_segment: &str,
+    ) -> CompletionParams {
+        let (snippet, label) = match importable {
+            ImportableId::Struct(_) => {
+                let snippet = importable_syntax_node(db, *importable).and_then(|struct_node| {
+                    TypedSnippet::struct_initialization(
+                        db,
+                        ctx,
+                        ItemStruct::from_syntax_node(db, struct_node),
+                    )
+                });
+                let label = if snippet.is_some() {
+                    format!("{} {{...}}", last_segment)
+                } else {
+                    last_segment.to_string()
+                };
+
+                (snippet, label)
+            }
+            ImportableId::FreeFunction(id) => {
+                let snippet = db.free_function_signature(*id).ok().map(|signature| {
+                    TypedSnippet::function_call(db, &id.name(db).to_string(db), signature, None)
+                });
+
+                let label = if snippet.is_some() {
+                    format!("{}(...)", last_segment)
+                } else {
+                    last_segment.to_string()
+                };
+
+                (snippet, label)
+            }
+            ImportableId::ExternFunction(id) => {
+                let snippet = db.extern_function_signature(*id).ok().map(|signature| {
+                    TypedSnippet::function_call(db, &id.name(db).to_string(db), signature, None)
+                });
+
+                let label = if snippet.is_some() {
+                    format!("{}(...)", last_segment)
+                } else {
+                    last_segment.to_string()
+                };
+
+                (snippet, label)
+            }
+            ImportableId::MacroDeclaration(_) => {
+                (Some(TypedSnippet::macro_call(last_segment)), format!("{}!", last_segment))
+            }
+            _ => (None, last_segment.to_string()),
+        };
+
+        CompletionParams { label, snippet }
     }
-
-    let struct_parent_module_id = db.find_module_containing_node(struct_node.as_syntax_node())?;
-
-    let mut diagnostics = SemanticDiagnostics::default();
-
-    // If any field of the struct is not visible, we should not propose initialization.
-    if !struct_node.members(db).elements(db).all(|member| {
-        peek_visible_in_with_edition(
-            db,
-            Visibility::from_ast(db, &mut diagnostics, &member.visibility(db)),
-            struct_parent_module_id,
-            ctx.module_id,
-        )
-    }) {
-        return None;
-    }
-
-    let struct_name =
-        struct_node.name(db).as_syntax_node().get_text_without_trivia(db).long(db).as_str();
-
-    let args = struct_node
-        .members(db)
-        .elements(db)
-        .enumerate()
-        .map(|(index, member)| {
-            format!(
-                "{}: ${}",
-                member.name(db).as_syntax_node().get_text_without_trivia(db).long(db).as_str(),
-                // We use 1-based indexing for snippet placeholders, as the `0` is reserved for the final cursor position.
-                index + 1,
-            )
-        })
-        .join(", ");
-
-    Some(if args.is_empty() {
-        format!("{} {{}}", struct_name)
-    } else {
-        format!("{} {{ {} }}", struct_name, args)
-    })
 }

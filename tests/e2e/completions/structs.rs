@@ -393,17 +393,18 @@ fn basic_initialization() {
     """
 
     [[completions]]
-    completion_label = "Abc"
-    completion_label_path = "Abc"
+    completion_label = "Abc {...}"
+    completion_label_path = "(use Abc)"
+    completion_label_type_info = "Abc { a: u128, b: u128, c: u128 }"
     insert_text = "Abc { a: $1, b: $2, c: $3 }"
 
     [[completions]]
     completion_label = "AbcDrop"
-    completion_label_path = "AbcDrop"
 
     [[completions]]
-    completion_label = "AccountContractLibraryDispatcherSubPointers"
-    completion_label_path = "starknet::account::AccountContractLibraryDispatcherSubPointers"
+    completion_label = "AccountContractLibraryDispatcherSubPointers {...}"
+    completion_label_path = "(use starknet::account::AccountContractLibraryDispatcherSubPointers)"
+    completion_label_type_info = "AccountContractLibraryDispatcherSubPointers { class_hash: starknet::storage::StoragePointer<starknet::ClassHash> }"
     insert_text = "AccountContractLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointers;
@@ -411,8 +412,12 @@ fn basic_initialization() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractLibraryDispatcherSubPointersMut"
-    completion_label_path = "starknet::account::AccountContractLibraryDispatcherSubPointersMut"
+    completion_label = "AccountContractLibraryDispatcherSubPointersMut {...}"
+    completion_label_path = "(use starknet::account::AccountContractLibraryDispatcherSubPointersMut)"
+    completion_label_type_info = """
+    AccountContractLibraryDispatcherSubPointersMut { class_hash: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<starknet::ClassHash>,
+        > }"""
     insert_text = "AccountContractLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
@@ -420,8 +425,9 @@ fn basic_initialization() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
-    completion_label_path = "starknet::account::AccountContractSafeLibraryDispatcherSubPointers"
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointers {...}"
+    completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcherSubPointers)"
+    completion_label_type_info = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: starknet::storage::StoragePointer<starknet::ClassHash> }"
     insert_text = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
@@ -429,8 +435,12 @@ fn basic_initialization() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
-    completion_label_path = "starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut"
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut {...}"
+    completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut)"
+    completion_label_type_info = """
+    AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<starknet::ClassHash>,
+        > }"""
     insert_text = "AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
@@ -460,8 +470,9 @@ fn initialization_non_imported_struct() {
     """
 
     [[completions]]
-    completion_label = "Abc"
-    completion_label_path = "m::Abc"
+    completion_label = "Abc {...}"
+    completion_label_path = "(use m::Abc)"
+    completion_label_type_info = "Abc { a: u128, b: u128, c: u128 }"
     insert_text = "Abc { a: $1, b: $2, c: $3 }"
     text_edits = ["""
     use m::Abc;
@@ -469,8 +480,9 @@ fn initialization_non_imported_struct() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractLibraryDispatcherSubPointers"
-    completion_label_path = "starknet::account::AccountContractLibraryDispatcherSubPointers"
+    completion_label = "AccountContractLibraryDispatcherSubPointers {...}"
+    completion_label_path = "(use starknet::account::AccountContractLibraryDispatcherSubPointers)"
+    completion_label_type_info = "AccountContractLibraryDispatcherSubPointers { class_hash: starknet::storage::StoragePointer<starknet::ClassHash> }"
     insert_text = "AccountContractLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointers;
@@ -478,8 +490,12 @@ fn initialization_non_imported_struct() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractLibraryDispatcherSubPointersMut"
-    completion_label_path = "starknet::account::AccountContractLibraryDispatcherSubPointersMut"
+    completion_label = "AccountContractLibraryDispatcherSubPointersMut {...}"
+    completion_label_path = "(use starknet::account::AccountContractLibraryDispatcherSubPointersMut)"
+    completion_label_type_info = """
+    AccountContractLibraryDispatcherSubPointersMut { class_hash: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<starknet::ClassHash>,
+        > }"""
     insert_text = "AccountContractLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
@@ -487,8 +503,9 @@ fn initialization_non_imported_struct() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
-    completion_label_path = "starknet::account::AccountContractSafeLibraryDispatcherSubPointers"
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointers {...}"
+    completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcherSubPointers)"
+    completion_label_type_info = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: starknet::storage::StoragePointer<starknet::ClassHash> }"
     insert_text = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
@@ -496,8 +513,12 @@ fn initialization_non_imported_struct() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
-    completion_label_path = "starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut"
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut {...}"
+    completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut)"
+    completion_label_type_info = """
+    AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<starknet::ClassHash>,
+        > }"""
     insert_text = "AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
@@ -526,17 +547,18 @@ fn initialization_with_macro() {
     """
 
     [[completions]]
-    completion_label = "Abc"
-    completion_label_path = "Abc"
+    completion_label = "Abc {...}"
+    completion_label_path = "(use Abc)"
+    completion_label_type_info = "Abc { a: u128, b: u128, c: u128 }"
     insert_text = "Abc { a: $1, b: $2, c: $3 }"
 
     [[completions]]
     completion_label = "AbcDrop"
-    completion_label_path = "AbcDrop"
 
     [[completions]]
-    completion_label = "AccountContractLibraryDispatcherSubPointers"
-    completion_label_path = "starknet::account::AccountContractLibraryDispatcherSubPointers"
+    completion_label = "AccountContractLibraryDispatcherSubPointers {...}"
+    completion_label_path = "(use starknet::account::AccountContractLibraryDispatcherSubPointers)"
+    completion_label_type_info = "AccountContractLibraryDispatcherSubPointers { class_hash: starknet::storage::StoragePointer<starknet::ClassHash> }"
     insert_text = "AccountContractLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointers;
@@ -544,8 +566,12 @@ fn initialization_with_macro() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractLibraryDispatcherSubPointersMut"
-    completion_label_path = "starknet::account::AccountContractLibraryDispatcherSubPointersMut"
+    completion_label = "AccountContractLibraryDispatcherSubPointersMut {...}"
+    completion_label_path = "(use starknet::account::AccountContractLibraryDispatcherSubPointersMut)"
+    completion_label_type_info = """
+    AccountContractLibraryDispatcherSubPointersMut { class_hash: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<starknet::ClassHash>,
+        > }"""
     insert_text = "AccountContractLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
@@ -553,8 +579,9 @@ fn initialization_with_macro() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
-    completion_label_path = "starknet::account::AccountContractSafeLibraryDispatcherSubPointers"
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointers {...}"
+    completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcherSubPointers)"
+    completion_label_type_info = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: starknet::storage::StoragePointer<starknet::ClassHash> }"
     insert_text = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
@@ -562,8 +589,12 @@ fn initialization_with_macro() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
-    completion_label_path = "starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut"
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut {...}"
+    completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut)"
+    completion_label_type_info = """
+    AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<starknet::ClassHash>,
+        > }"""
     insert_text = "AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
@@ -594,8 +625,9 @@ fn initialization_non_imported_struct_with_macro() {
     """
 
     [[completions]]
-    completion_label = "Abc"
-    completion_label_path = "m::Abc"
+    completion_label = "Abc {...}"
+    completion_label_path = "(use m::Abc)"
+    completion_label_type_info = "Abc { a: u128, b: u128, c: u128 }"
     insert_text = "Abc { a: $1, b: $2, c: $3 }"
     text_edits = ["""
     use m::Abc;
@@ -603,8 +635,9 @@ fn initialization_non_imported_struct_with_macro() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractLibraryDispatcherSubPointers"
-    completion_label_path = "starknet::account::AccountContractLibraryDispatcherSubPointers"
+    completion_label = "AccountContractLibraryDispatcherSubPointers {...}"
+    completion_label_path = "(use starknet::account::AccountContractLibraryDispatcherSubPointers)"
+    completion_label_type_info = "AccountContractLibraryDispatcherSubPointers { class_hash: starknet::storage::StoragePointer<starknet::ClassHash> }"
     insert_text = "AccountContractLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointers;
@@ -612,8 +645,12 @@ fn initialization_non_imported_struct_with_macro() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractLibraryDispatcherSubPointersMut"
-    completion_label_path = "starknet::account::AccountContractLibraryDispatcherSubPointersMut"
+    completion_label = "AccountContractLibraryDispatcherSubPointersMut {...}"
+    completion_label_path = "(use starknet::account::AccountContractLibraryDispatcherSubPointersMut)"
+    completion_label_type_info = """
+    AccountContractLibraryDispatcherSubPointersMut { class_hash: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<starknet::ClassHash>,
+        > }"""
     insert_text = "AccountContractLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
@@ -621,8 +658,9 @@ fn initialization_non_imported_struct_with_macro() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
-    completion_label_path = "starknet::account::AccountContractSafeLibraryDispatcherSubPointers"
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointers {...}"
+    completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcherSubPointers)"
+    completion_label_type_info = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: starknet::storage::StoragePointer<starknet::ClassHash> }"
     insert_text = "AccountContractSafeLibraryDispatcherSubPointers { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
@@ -630,8 +668,12 @@ fn initialization_non_imported_struct_with_macro() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
-    completion_label_path = "starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut"
+    completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut {...}"
+    completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut)"
+    completion_label_type_info = """
+    AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: starknet::storage::StoragePointer<
+            starknet::storage::Mutable<starknet::ClassHash>,
+        > }"""
     insert_text = "AccountContractSafeLibraryDispatcherSubPointersMut { class_hash: $1 }"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
@@ -659,11 +701,10 @@ fn no_initialization_completion_for_types_in_closures() {
 
     [[completions]]
     completion_label = "Abc"
-    completion_label_path = "Abc"
 
     [[completions]]
     completion_label = "AccountContractLibraryDispatcherSubPointers"
-    completion_label_path = "starknet::account::AccountContractLibraryDispatcherSubPointers"
+    completion_label_path = "(use starknet::account::AccountContractLibraryDispatcherSubPointers)"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointers;
 
@@ -671,7 +712,7 @@ fn no_initialization_completion_for_types_in_closures() {
 
     [[completions]]
     completion_label = "AccountContractLibraryDispatcherSubPointersMut"
-    completion_label_path = "starknet::account::AccountContractLibraryDispatcherSubPointersMut"
+    completion_label_path = "(use starknet::account::AccountContractLibraryDispatcherSubPointersMut)"
     text_edits = ["""
     use starknet::account::AccountContractLibraryDispatcherSubPointersMut;
 
@@ -679,7 +720,7 @@ fn no_initialization_completion_for_types_in_closures() {
 
     [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcherSubPointers"
-    completion_label_path = "starknet::account::AccountContractSafeLibraryDispatcherSubPointers"
+    completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcherSubPointers)"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointers;
 
@@ -687,7 +728,7 @@ fn no_initialization_completion_for_types_in_closures() {
 
     [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcherSubPointersMut"
-    completion_label_path = "starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut"
+    completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut)"
     text_edits = ["""
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
 
