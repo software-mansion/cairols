@@ -727,3 +727,29 @@ fn impl_parameter_in_function_body() {
     """
     "#)
 }
+
+#[test]
+fn unnecessary_generic_param_enclosure() {
+    test_transform_plain!(Hover, r#"
+    trait TestTrait<T> {}
+
+    trait TestTraitWithoutGenerics {}
+
+    impl TestTraitImp<caret>l<T, impl metadata: TestTraitWithoutGenerics> of TestTrait<T> {}
+    "#, @r#"
+    source_context = """
+    impl TestTraitImp<caret>l<T, impl metadata: TestTraitWithoutGenerics> of TestTrait<T> {}
+    """
+    highlight = """
+    impl <sel>TestTraitImpl</sel><T, impl metadata: TestTraitWithoutGenerics> of TestTrait<T> {}
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    impl TestTraitImpl<T, impl metadata: TestTraitWithoutGenerics> of TestTrait<T>;
+    ```
+    """
+    "#)
+}
