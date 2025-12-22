@@ -8,7 +8,7 @@ use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::ExprStructCtorCall;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
-use lsp_types::{CompletionItem, CompletionItemKind};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::ide::format::types::format_type;
@@ -86,7 +86,10 @@ fn struct_constructor_completions_ex<'db>(
                 Some(CompletionItemOrderable {
                     item: CompletionItem {
                         label: name.to_string(db),
-                        detail: Some(format_type(db, data.ty, &importables, None)),
+                        label_details: Some(CompletionItemLabelDetails {
+                            description: Some(format_type(db, data.ty, &importables, None)),
+                            detail: None,
+                        }),
                         kind: Some(CompletionItemKind::VALUE),
                         ..Default::default()
                     },

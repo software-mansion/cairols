@@ -27,15 +27,15 @@ fn empty() {
 
     [[completions]]
     completion_label = "x"
-    detail = "u32"
+    completion_label_type_info = "u32"
 
     [[completions]]
     completion_label = "y"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "i16"
+    completion_label_type_info = "i16"
     "#);
 }
 
@@ -64,11 +64,11 @@ fn after_prop() {
 
     [[completions]]
     completion_label = "y"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "i16"
+    completion_label_type_info = "i16"
     "#);
 }
 
@@ -98,11 +98,11 @@ fn after_prop_macro() {
 
     [[completions]]
     completion_label = "y"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "i16"
+    completion_label_type_info = "i16"
     "#);
 }
 
@@ -135,11 +135,11 @@ fn after_prop_before_spread() {
 
     [[completions]]
     completion_label = "y"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "i16"
+    completion_label_type_info = "i16"
     "#);
 }
 
@@ -171,11 +171,11 @@ fn after_prop_before_spread_same_line() {
 
     [[completions]]
     completion_label = "y"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "i16"
+    completion_label_type_info = "i16"
     "#);
 }
 
@@ -204,15 +204,15 @@ fn before_spread_same_line() {
 
     [[completions]]
     completion_label = "x"
-    detail = "u32"
+    completion_label_type_info = "u32"
 
     [[completions]]
     completion_label = "y"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "i16"
+    completion_label_type_info = "i16"
     "#);
 }
 
@@ -239,15 +239,15 @@ fn imported_empty() {
 
     [[completions]]
     completion_label = "x"
-    detail = "u32"
+    completion_label_type_info = "u32"
 
     [[completions]]
     completion_label = "y"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "z"
-    detail = "i16"
+    completion_label_type_info = "i16"
     "#);
 }
 
@@ -300,11 +300,11 @@ fn imported_after_prop() {
 
     [[completions]]
     completion_label = "x"
-    detail = "u32"
+    completion_label_type_info = "u32"
 
     [[completions]]
     completion_label = "z"
-    detail = "i16"
+    completion_label_type_info = "i16"
     "#);
 }
 
@@ -331,7 +331,7 @@ fn imported_after_two_prop() {
 
     [[completions]]
     completion_label = "z"
-    detail = "i16"
+    completion_label_type_info = "i16"
     "#);
 }
 
@@ -366,11 +366,11 @@ fn dep_without_visibility_support() {
 
     [[completions]]
     completion_label = "a"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "b"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
     "#);
 }
 

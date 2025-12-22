@@ -14,7 +14,7 @@ use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_syntax::node::ast::Expr;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use itertools::chain;
-use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat};
 use tracing::debug;
 
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
@@ -107,7 +107,10 @@ fn dot_completions_ex<'db>(
                     let completion = CompletionItemOrderable {
                         item: CompletionItem {
                             label: name.to_string(db),
-                            detail: Some(format_type(db, member.ty, &importables, None)),
+                            label_details: Some(CompletionItemLabelDetails {
+                                description: Some(format_type(db, member.ty, &importables, None)),
+                                detail: None,
+                            }),
                             kind: Some(CompletionItemKind::FIELD),
                             ..CompletionItem::default()
                         },
@@ -157,7 +160,10 @@ fn completion_for_method<'db>(
             label: format!("{name}()"),
             insert_text: Some(function_call_snippet.lsp_snippet),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
-            detail: function_call_snippet.type_hint,
+            label_details: Some(CompletionItemLabelDetails {
+                description: function_call_snippet.type_hint,
+                detail: None,
+            }),
             kind: Some(CompletionItemKind::METHOD),
             additional_text_edits: Some(additional_text_edits),
             ..CompletionItem::default()
