@@ -1,6 +1,6 @@
 ---
 source: tests/e2e/macros/procedural/custom/v2/mod.rs
-description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\nfn foo() {\n    let _x = improper_inline_macro_v2!({ valid_syntax_btw = 10 });\n}"
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\nfn foo() {\n    let _x = improper_inline_macro_v2!({ valid_syntax_btw = 10 });\n}"
 expression: report
 ---
 [[expansions]]
@@ -75,6 +75,7 @@ mapped_diagnostics:
           line: 1
           character: 57
       severity: 1
+      code: E2084
       message: Invalid left-hand side of assignment.
       relatedInformation:
       - location:

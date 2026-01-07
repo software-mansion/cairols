@@ -3,7 +3,7 @@ use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::plugin::InlineMacroExprPlugin;
 use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_semantic::diagnostic::NotFoundItemType;
+use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::compute::Environment;
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::macro_declaration::MacroDeclarationSemantic;
@@ -62,7 +62,7 @@ pub fn expand_single_inline_macro_no_context<'db>(
     // We call the resolver with a new diagnostics, since the diagnostics should not be reported
     // if the macro was found as a plugin.
     let user_defined_macro = resolver.resolve_generic_path(
-        &mut Default::default(),
+        &mut SemanticDiagnostics::new(module_id),
         &syntax.path(db),
         NotFoundItemType::Macro,
         ResolutionContext::Statement(&mut Environment::empty()),

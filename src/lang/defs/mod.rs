@@ -2,7 +2,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, ModuleId};
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::SpanInFile;
-use cairo_lang_semantic::diagnostic::NotFoundItemType;
+use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::resolve::{
     ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData,
@@ -302,7 +302,7 @@ fn resolve_macro_call_module<'db>(
     let mut resolver = Resolver::new(db, module_id, inference_id);
 
     match resolver.resolve_generic_path(
-        &mut Default::default(),
+        &mut SemanticDiagnostics::new(module_id),
         &macro_call_path,
         NotFoundItemType::Macro,
         ResolutionContext::Default,

@@ -118,7 +118,7 @@ fn find_concrete_trait_id<'db>(
 ) -> Option<ConcreteTraitId<'db>> {
     let mut resolver = ctx.resolver(db);
 
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(ctx.module_id);
 
     match resolver.resolve_concrete_path(
         &mut diagnostics,

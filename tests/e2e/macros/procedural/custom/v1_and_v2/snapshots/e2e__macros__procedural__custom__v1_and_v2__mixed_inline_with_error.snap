@@ -1,6 +1,6 @@
 ---
 source: tests/e2e/macros/procedural/custom/v1_and_v2/mod.rs
-description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros = { path = \"/scarb_procedural_macros\" }\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\nfn foo() {\n    error_inline_macro!(10 + 10);\n    error_inline_macro_v2!(10 + 10);\n}"
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\ncairols_test_macros = { path = \"/scarb_procedural_macros\" }\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\nfn foo() {\n    error_inline_macro!(10 + 10);\n    error_inline_macro_v2!(10 + 10);\n}"
 expression: report
 ---
 [[expansions]]
@@ -27,6 +27,7 @@ mapped_diagnostics:
           line: 1
           character: 32
       severity: 1
+      code: E2200
       message: 'Plugin diagnostic: Error from procedural macro'
   - related_code: error_inline_macro_v2!(10 + 10)
     diagnostic:
@@ -38,4 +39,5 @@ mapped_diagnostics:
           line: 2
           character: 35
       severity: 1
+      code: E2200
       message: 'Plugin diagnostic: Error from procedural macro'
