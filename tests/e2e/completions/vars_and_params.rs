@@ -23,23 +23,24 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "baz"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "blake"
-    completion_label_path = "core::blake"
+    completion_label_path = "(use core::blake)"
     text_edits = ["""
     use core::blake;
 
     """]
 
     [[completions]]
-    completion_label = "blake2s_compress"
-    completion_label_path = "core::blake::blake2s_compress"
+    completion_label = "blake2s_compress(...)"
+    completion_label_path = "(use core::blake::blake2s_compress)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_compress(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_compress;
@@ -47,8 +48,9 @@ fn all_prefixed() {
     """]
 
     [[completions]]
-    completion_label = "blake2s_finalize"
-    completion_label_path = "core::blake::blake2s_finalize"
+    completion_label = "blake2s_finalize(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
@@ -57,15 +59,16 @@ fn all_prefixed() {
 
     [[completions]]
     completion_label = "byte_array"
-    completion_label_path = "core::byte_array"
+    completion_label_path = "(use core::byte_array)"
     text_edits = ["""
     use core::byte_array;
 
     """]
 
     [[completions]]
-    completion_label = "library_call_syscall"
-    completion_label_path = "starknet::syscalls::library_call_syscall"
+    completion_label = "library_call_syscall(...)"
+    completion_label_path = "(use starknet::syscalls::library_call_syscall)"
+    completion_label_type_info = "fn(class_hash: ClassHash, function_selector: felt252, calldata: Span<felt252>) -> Result<Span<felt252>, Array<felt252>> nopanic"
     insert_text = "library_call_syscall(${1:class_hash}, ${2:function_selector}, ${3:calldata})"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;
@@ -93,23 +96,24 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "baz"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "blake"
-    completion_label_path = "core::blake"
+    completion_label_path = "(use core::blake)"
     text_edits = ["""
     use core::blake;
 
     """]
 
     [[completions]]
-    completion_label = "blake2s_compress"
-    completion_label_path = "core::blake::blake2s_compress"
+    completion_label = "blake2s_compress(...)"
+    completion_label_path = "(use core::blake::blake2s_compress)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_compress(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_compress;
@@ -117,8 +121,9 @@ fn all_prefixed_macro() {
     """]
 
     [[completions]]
-    completion_label = "blake2s_finalize"
-    completion_label_path = "core::blake::blake2s_finalize"
+    completion_label = "blake2s_finalize(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
@@ -127,15 +132,16 @@ fn all_prefixed_macro() {
 
     [[completions]]
     completion_label = "byte_array"
-    completion_label_path = "core::byte_array"
+    completion_label_path = "(use core::byte_array)"
     text_edits = ["""
     use core::byte_array;
 
     """]
 
     [[completions]]
-    completion_label = "library_call_syscall"
-    completion_label_path = "starknet::syscalls::library_call_syscall"
+    completion_label = "library_call_syscall(...)"
+    completion_label_path = "(use starknet::syscalls::library_call_syscall)"
+    completion_label_type_info = "fn(class_hash: ClassHash, function_selector: felt252, calldata: Span<felt252>) -> Result<Span<felt252>, Array<felt252>> nopanic"
     insert_text = "library_call_syscall(${1:class_hash}, ${2:function_selector}, ${3:calldata})"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;
@@ -162,19 +168,20 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "blake"
-    completion_label_path = "core::blake"
+    completion_label_path = "(use core::blake)"
     text_edits = ["""
     use core::blake;
 
     """]
 
     [[completions]]
-    completion_label = "blake2s_compress"
-    completion_label_path = "core::blake::blake2s_compress"
+    completion_label = "blake2s_compress(...)"
+    completion_label_path = "(use core::blake::blake2s_compress)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_compress(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_compress;
@@ -182,8 +189,9 @@ fn only_before_cursor() {
     """]
 
     [[completions]]
-    completion_label = "blake2s_finalize"
-    completion_label_path = "core::blake::blake2s_finalize"
+    completion_label = "blake2s_finalize(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
@@ -192,15 +200,16 @@ fn only_before_cursor() {
 
     [[completions]]
     completion_label = "byte_array"
-    completion_label_path = "core::byte_array"
+    completion_label_path = "(use core::byte_array)"
     text_edits = ["""
     use core::byte_array;
 
     """]
 
     [[completions]]
-    completion_label = "library_call_syscall"
-    completion_label_path = "starknet::syscalls::library_call_syscall"
+    completion_label = "library_call_syscall(...)"
+    completion_label_path = "(use starknet::syscalls::library_call_syscall)"
+    completion_label_type_info = "fn(class_hash: ClassHash, function_selector: felt252, calldata: Span<felt252>) -> Result<Span<felt252>, Array<felt252>> nopanic"
     insert_text = "library_call_syscall(${1:class_hash}, ${2:function_selector}, ${3:calldata})"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;
@@ -226,7 +235,7 @@ fn disallow_recursive_definition() {
 
     [[completions]]
     completion_label = "OverflowingAdd"
-    completion_label_path = "core::num::traits::OverflowingAdd"
+    completion_label_path = "(use core::num::traits::OverflowingAdd)"
     text_edits = ["""
     use core::num::traits::OverflowingAdd;
 
@@ -234,7 +243,7 @@ fn disallow_recursive_definition() {
 
     [[completions]]
     completion_label = "OverflowingMul"
-    completion_label_path = "core::num::traits::OverflowingMul"
+    completion_label_path = "(use core::num::traits::OverflowingMul)"
     text_edits = ["""
     use core::num::traits::OverflowingMul;
 
@@ -242,7 +251,7 @@ fn disallow_recursive_definition() {
 
     [[completions]]
     completion_label = "OverflowingSub"
-    completion_label_path = "core::num::traits::OverflowingSub"
+    completion_label_path = "(use core::num::traits::OverflowingSub)"
     text_edits = ["""
     use core::num::traits::OverflowingSub;
 
@@ -280,19 +289,20 @@ fn work_with_params() {
 
     [[completions]]
     completion_label = "paxram"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "paxram2"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "paxram3"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
-    completion_label = "a"
-    completion_label_path = "a"
+    completion_label = "a(...)"
+    completion_label_path = "(use a)"
+    completion_label_type_info = "fn(paxram: felt252, paxram2: felt252, paxram3: felt252) -> ()"
     insert_text = "a(${1:paxram}, ${2:paxram2}, ${3:paxram3})"
 
     [[completions]]
@@ -300,13 +310,15 @@ fn work_with_params() {
     insert_text = 'panic!("$1")'
 
     [[completions]]
-    completion_label = "panic"
-    completion_label_path = "panic"
+    completion_label = "panic(...)"
+    completion_label_path = "(use panic)"
+    completion_label_type_info = "fn(data: Array<felt252>) -> crate::never"
     insert_text = "panic(${1:data})"
 
     [[completions]]
-    completion_label = "max"
-    completion_label_path = "core::cmp::max"
+    completion_label = "max(...)"
+    completion_label_path = "(use core::cmp::max)"
+    completion_label_type_info = "fn(a: T, b: T) -> T"
     insert_text = "max(${1:a}, ${2:b})"
     text_edits = ["""
     use core::cmp::max;
@@ -329,23 +341,24 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "baz"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "blake"
-    completion_label_path = "core::blake"
+    completion_label_path = "(use core::blake)"
     text_edits = ["""
     use core::blake;
 
     """]
 
     [[completions]]
-    completion_label = "blake2s_compress"
-    completion_label_path = "core::blake::blake2s_compress"
+    completion_label = "blake2s_compress(...)"
+    completion_label_path = "(use core::blake::blake2s_compress)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_compress(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_compress;
@@ -353,8 +366,9 @@ fn mixed_params_vars() {
     """]
 
     [[completions]]
-    completion_label = "blake2s_finalize"
-    completion_label_path = "core::blake::blake2s_finalize"
+    completion_label = "blake2s_finalize(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
@@ -363,15 +377,16 @@ fn mixed_params_vars() {
 
     [[completions]]
     completion_label = "byte_array"
-    completion_label_path = "core::byte_array"
+    completion_label_path = "(use core::byte_array)"
     text_edits = ["""
     use core::byte_array;
 
     """]
 
     [[completions]]
-    completion_label = "library_call_syscall"
-    completion_label_path = "starknet::syscalls::library_call_syscall"
+    completion_label = "library_call_syscall(...)"
+    completion_label_path = "(use starknet::syscalls::library_call_syscall)"
+    completion_label_type_info = "fn(class_hash: ClassHash, function_selector: felt252, calldata: Span<felt252>) -> Result<Span<felt252>, Array<felt252>> nopanic"
     insert_text = "library_call_syscall(${1:class_hash}, ${2:function_selector}, ${3:calldata})"
     text_edits = ["""
     use starknet::syscalls::library_call_syscall;
@@ -437,7 +452,7 @@ fn works_in_same_block() {
 
     [[completions]]
     completion_label = "bbb"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
     "#);
 }
 
@@ -463,6 +478,6 @@ fn works_usage_in_block() {
 
     [[completions]]
     completion_label = "bbb"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
     "#);
 }

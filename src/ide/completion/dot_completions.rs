@@ -14,12 +14,11 @@ use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_syntax::node::ast::Expr;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use itertools::chain;
-use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails, InsertTextFormat};
 use tracing::debug;
 
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
-use crate::ide::completion::helpers::formatting::generate_abbreviated_signature;
-use crate::ide::completion::helpers::snippets::snippet_for_function_call;
+use crate::ide::completion::helpers::snippets::TypedSnippet;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
@@ -108,7 +107,10 @@ fn dot_completions_ex<'db>(
                     let completion = CompletionItemOrderable {
                         item: CompletionItem {
                             label: name.to_string(db),
-                            detail: Some(format_type(db, member.ty, &importables, None)),
+                            label_details: Some(CompletionItemLabelDetails {
+                                description: Some(format_type(db, member.ty, &importables, None)),
+                                detail: None,
+                            }),
                             kind: Some(CompletionItemKind::FIELD),
                             ..CompletionItem::default()
                         },
@@ -145,22 +147,23 @@ fn completion_for_method<'db>(
     let name = trait_function.name(db).to_string(db);
     let signature = db.trait_function_signature(trait_function).ok()?;
 
-    let abbreviated_signature =
-        generate_abbreviated_signature(db, signature, Some(trait_function.trait_id(db)));
-
     let mut additional_text_edits = vec![];
 
     // If the trait is not in scope, add a use statement.
     if let Some(edit) = import_edit_for_trait_if_needed(db, ctx, trait_id) {
         additional_text_edits.push(edit);
     }
+    let function_call_snippet = TypedSnippet::function_call(db, &name, signature, Some(trait_id));
 
     let completion = CompletionItemOrderable {
         item: CompletionItem {
             label: format!("{name}()"),
-            insert_text: Some(snippet_for_function_call(db, &name, signature)),
+            insert_text: Some(function_call_snippet.lsp_snippet),
             insert_text_format: Some(InsertTextFormat::SNIPPET),
-            detail: Some(abbreviated_signature),
+            label_details: Some(CompletionItemLabelDetails {
+                description: function_call_snippet.type_hint,
+                detail: None,
+            }),
             kind: Some(CompletionItemKind::METHOD),
             additional_text_edits: Some(additional_text_edits),
             ..CompletionItem::default()

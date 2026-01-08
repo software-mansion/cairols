@@ -28,21 +28,21 @@ fn simple_struct() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "into()"
-    detail = "fn(self: T) -> S"
+    completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
-    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
@@ -51,7 +51,7 @@ fn simple_struct() {
 
     [[completions]]
     completion_label = "try_into()"
-    detail = "fn(self: T) -> Option<S>"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
     "#);
 }
@@ -79,21 +79,21 @@ fn simple_struct_semicolon() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "into()"
-    detail = "fn(self: T) -> S"
+    completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
-    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
@@ -102,7 +102,7 @@ fn simple_struct_semicolon() {
 
     [[completions]]
     completion_label = "try_into()"
-    detail = "fn(self: T) -> Option<S>"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
     "#);
 }
@@ -144,30 +144,30 @@ fn with_deref() {
 
     [[completions]]
     completion_label = "bar"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "foofoo"
-    detail = "felt252"
+    completion_label_type_info = "felt252"
 
     [[completions]]
     completion_label = "deref()"
-    detail = "fn(self: T) -> Self::Target"
+    completion_label_type_info = "fn(self: T) -> Self::Target"
     insert_text = "deref()"
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "into()"
-    detail = "fn(self: T) -> S"
+    completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
-    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
@@ -176,7 +176,7 @@ fn with_deref() {
 
     [[completions]]
     completion_label = "try_into()"
-    detail = "fn(self: T) -> Option<S>"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
     "#);
 }
@@ -218,25 +218,25 @@ fn with_deref_starknet() {
 
     [[completions]]
     completion_label = "x"
-    detail = "starknet::storage::StorageBase<starknet::storage::Mutable<u8>>"
+    completion_label_type_info = "starknet::storage::StorageBase<starknet::storage::Mutable<u8>>"
 
     [[completions]]
     completion_label = "y"
-    detail = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
+    completion_label_type_info = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
 
     [[completions]]
     completion_label = "clone()"
-    detail = "fn(self: @T) -> T"
+    completion_label_type_info = "fn(self: @T) -> T"
     insert_text = "clone()"
 
     [[completions]]
     completion_label = "deref()"
-    detail = "fn(self: T) -> Self::Target"
+    completion_label_type_info = "fn(self: T) -> Self::Target"
     insert_text = "deref()"
 
     [[completions]]
     completion_label = "deref_mut()"
-    detail = "fn(ref self: T) -> Self::Target"
+    completion_label_type_info = "fn(ref self: T) -> Self::Target"
     insert_text = "deref_mut()"
     text_edits = ["""
     use core::ops::DerefMut;
@@ -245,12 +245,12 @@ fn with_deref_starknet() {
 
     [[completions]]
     completion_label = "destruct()"
-    detail = "fn(self: T) -> () nopanic"
+    completion_label_type_info = "fn(self: T) -> () nopanic"
     insert_text = "destruct()"
 
     [[completions]]
     completion_label = "emit()"
-    detail = "fn(ref self: T, event: S) -> ()"
+    completion_label_type_info = "fn(ref self: T, event: S) -> ()"
     insert_text = "emit(${1:event})"
     text_edits = ["""
     use starknet::event::EventEmitter;
@@ -259,22 +259,22 @@ fn with_deref_starknet() {
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "internal_func()"
-    detail = "fn(ref self: ContractState) -> ()"
+    completion_label_type_info = "fn(ref self: ContractState) -> ()"
     insert_text = "internal_func()"
 
     [[completions]]
     completion_label = "into()"
-    detail = "fn(self: T) -> S"
+    completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
 
     [[completions]]
     completion_label = "new_inputs()"
-    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
@@ -283,12 +283,12 @@ fn with_deref_starknet() {
 
     [[completions]]
     completion_label = "panic_destruct()"
-    detail = "fn(self: T, ref panic: Panic) -> () nopanic"
+    completion_label_type_info = "fn(self: T, ref panic: Panic) -> () nopanic"
     insert_text = "panic_destruct(${1:panic})"
 
     [[completions]]
     completion_label = "storage_mut()"
-    detail = "fn(self: FlattenedStorage<Mutable<T>>) -> Self::BaseType"
+    completion_label_type_info = "fn(self: FlattenedStorage<Mutable<T>>) -> Self::BaseType"
     insert_text = "storage_mut()"
     text_edits = ["""
     use starknet::storage::StorageTraitMut;
@@ -297,7 +297,7 @@ fn with_deref_starknet() {
 
     [[completions]]
     completion_label = "try_into()"
-    detail = "fn(self: T) -> Option<S>"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
     "#);
 }
@@ -343,16 +343,16 @@ fn with_mutable_self() {
 
     [[completions]]
     completion_label = "balance"
-    detail = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
+    completion_label_type_info = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
 
     [[completions]]
     completion_label = "get_balance()"
-    detail = "fn(self: @TContractState) -> felt252"
+    completion_label_type_info = "fn(self: @TContractState) -> felt252"
     insert_text = "get_balance()"
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
     "#);
 }
@@ -392,7 +392,7 @@ fn with_const_parametrized_generic_function() {
 
     [[completions]]
     completion_label = "hehe()"
-    detail = "fn(self: T) -> ConstParamStruct<132172156746238226582224867971537073509>"
+    completion_label_type_info = "fn(self: T) -> ConstParamStruct<132172156746238226582224867971537073509>"
     insert_text = "hehe()"
     "#);
 }
@@ -435,22 +435,22 @@ fn with_not_imported_return_type() {
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "into()"
-    detail = "fn(self: T) -> S"
+    completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
 
     [[completions]]
     completion_label = "make()"
-    detail = "fn(self: T) -> Long"
+    completion_label_type_info = "fn(self: T) -> Long"
     insert_text = "make()"
 
     [[completions]]
     completion_label = "new_inputs()"
-    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
@@ -458,7 +458,7 @@ fn with_not_imported_return_type() {
 
     [[completions]]
     completion_label = "try_into()"
-    detail = "fn(self: T) -> Option<S>"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
     "#);
 }
@@ -491,7 +491,7 @@ fn with_already_typed_parens() {
 
     [[completions]]
     completion_label = "make()"
-    detail = "fn(self: T, a: u32) -> Long"
+    completion_label_type_info = "fn(self: T, a: u32) -> Long"
     insert_text = "make(${1:a})"
     "#);
 }
@@ -524,22 +524,22 @@ fn with_already_typed_parens_and_no_method_chars() {
 
     [[completions]]
     completion_label = "get_descriptor()"
-    detail = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
     insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "into()"
-    detail = "fn(self: T) -> S"
+    completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
 
     [[completions]]
     completion_label = "make()"
-    detail = "fn(self: T, a: u32) -> Long"
+    completion_label_type_info = "fn(self: T, a: u32) -> Long"
     insert_text = "make(${1:a})"
 
     [[completions]]
     completion_label = "new_inputs()"
-    detail = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputs;
@@ -548,7 +548,7 @@ fn with_already_typed_parens_and_no_method_chars() {
 
     [[completions]]
     completion_label = "try_into()"
-    detail = "fn(self: T) -> Option<S>"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
     "#);
 }
@@ -668,7 +668,7 @@ fn with_already_typed_incomplete_parens_and_caret_before() {
 
     [[completions]]
     completion_label = "make()"
-    detail = "fn(self: T, a: u32) -> Long"
+    completion_label_type_info = "fn(self: T, a: u32) -> Long"
     insert_text = "make(${1:a})"
     "#);
 }
@@ -741,7 +741,7 @@ fn with_nested_binary_expressions_and_caret_afterc() {
 
     [[completions]]
     completion_label = "make()"
-    detail = "fn(self: T, a: u32) -> Long"
+    completion_label_type_info = "fn(self: T, a: u32) -> Long"
     insert_text = "make(${1:a})"
     "#);
 }
@@ -775,7 +775,7 @@ fn with_already_typed_parens_with_macro() {
 
     [[completions]]
     completion_label = "make()"
-    detail = "fn(self: T, a: u32) -> Long"
+    completion_label_type_info = "fn(self: T, a: u32) -> Long"
     insert_text = "make(${1:a})"
     "#);
 }
@@ -899,7 +899,7 @@ fn with_already_typed_incomplete_parens_and_caret_before_with_macro() {
 
     [[completions]]
     completion_label = "make()"
-    detail = "fn(self: T, a: u32) -> Long"
+    completion_label_type_info = "fn(self: T, a: u32) -> Long"
     insert_text = "make(${1:a})"
     "#);
 }
@@ -974,7 +974,7 @@ fn with_nested_binary_expressions_and_caret_after_with_macro() {
 
     [[completions]]
     completion_label = "make()"
-    detail = "fn(self: T, a: u32) -> Long"
+    completion_label_type_info = "fn(self: T, a: u32) -> Long"
     insert_text = "make(${1:a})"
     "#);
 }

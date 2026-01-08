@@ -19,29 +19,26 @@ fn single_element_path() {
     """
 
     [[completions]]
-    completion_label = "ByteA_ActuallyNotByteArray"
-    completion_label_path = "ByteA_ActuallyNotByteArray"
+    completion_label = "ByteA_ActuallyNotByteArray {...}"
+    completion_label_path = "(use ByteA_ActuallyNotByteArray)"
+    completion_label_type_info = "ByteA_ActuallyNotByteArray {}"
     insert_text = "ByteA_ActuallyNotByteArray {}"
 
     [[completions]]
     completion_label = "ByteArray"
-    completion_label_path = "ByteArray"
 
     [[completions]]
     completion_label = "ByteArrayTrait"
-    completion_label_path = "ByteArrayTrait"
 
     [[completions]]
     completion_label = "Bytes31Trait"
-    completion_label_path = "Bytes31Trait"
 
     [[completions]]
     completion_label = "System"
-    completion_label_path = "System"
 
     [[completions]]
     completion_label = "BitAnd"
-    completion_label_path = "core::traits::BitAnd"
+    completion_label_path = "(use core::traits::BitAnd)"
     text_edits = ["""
     use core::traits::BitAnd;
 
@@ -49,7 +46,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteArrayImpl"
-    completion_label_path = "core::byte_array::ByteArrayImpl"
+    completion_label_path = "(use core::byte_array::ByteArrayImpl)"
     text_edits = ["""
     use core::byte_array::ByteArrayImpl;
 
@@ -57,7 +54,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteArrayIter"
-    completion_label_path = "core::byte_array::ByteArrayIter"
+    completion_label_path = "(use core::byte_array::ByteArrayIter)"
     text_edits = ["""
     use core::byte_array::ByteArrayIter;
 
@@ -65,7 +62,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteSpan"
-    completion_label_path = "core::byte_array::ByteSpan"
+    completion_label_path = "(use core::byte_array::ByteSpan)"
     text_edits = ["""
     use core::byte_array::ByteSpan;
 
@@ -73,7 +70,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteSpanImpl"
-    completion_label_path = "core::byte_array::ByteSpanImpl"
+    completion_label_path = "(use core::byte_array::ByteSpanImpl)"
     text_edits = ["""
     use core::byte_array::ByteSpanImpl;
 
@@ -81,7 +78,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteSpanIter"
-    completion_label_path = "core::byte_array::ByteSpanIter"
+    completion_label_path = "(use core::byte_array::ByteSpanIter)"
     text_edits = ["""
     use core::byte_array::ByteSpanIter;
 
@@ -89,7 +86,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "ByteSpanTrait"
-    completion_label_path = "core::byte_array::ByteSpanTrait"
+    completion_label_path = "(use core::byte_array::ByteSpanTrait)"
     text_edits = ["""
     use core::byte_array::ByteSpanTrait;
 
@@ -97,7 +94,7 @@ fn single_element_path() {
 
     [[completions]]
     completion_label = "Bytes31Impl"
-    completion_label_path = "core::bytes_31::Bytes31Impl"
+    completion_label_path = "(use core::bytes_31::Bytes31Impl)"
     text_edits = ["""
     use core::bytes_31::Bytes31Impl;
 
@@ -122,8 +119,9 @@ fn multi_segment_path() {
     """
 
     [[completions]]
-    completion_label = "Baz"
-    completion_label_path = "foo::Baz"
+    completion_label = "Baz {...}"
+    completion_label_path = "(use foo::Baz)"
+    completion_label_type_info = "Baz {}"
     insert_text = "Baz {}"
     "#);
 }
@@ -147,8 +145,9 @@ fn multi_segment_path_partial() {
     """
 
     [[completions]]
-    completion_label = "Baz"
-    completion_label_path = "foo::bar::Baz"
+    completion_label = "Baz {...}"
+    completion_label_path = "(use foo::bar::Baz)"
+    completion_label_type_info = "Baz {}"
     insert_text = "Baz {}"
     text_edits = ["""
     use foo::bar;
@@ -177,8 +176,9 @@ fn multi_segment_path_partial_macro() {
     """
 
     [[completions]]
-    completion_label = "Baz"
-    completion_label_path = "foo::bar::Baz"
+    completion_label = "Baz {...}"
+    completion_label_path = "(use foo::bar::Baz)"
+    completion_label_type_info = "Baz {}"
     insert_text = "Baz {}"
     text_edits = ["""
     use foo::bar;
@@ -205,11 +205,11 @@ fn enum_variant() {
 
     [[completions]]
     completion_label = "A"
-    completion_label_path = "Enumik::A"
+    completion_label_path = "(use Enumik::A)"
 
     [[completions]]
     completion_label = "B"
-    completion_label_path = "Enumik::B"
+    completion_label_path = "(use Enumik::B)"
     "#);
 }
 
@@ -231,11 +231,11 @@ fn type_annotation() {
 
     [[completions]]
     completion_label = "felt"
-    completion_label_path = "module::felt"
+    completion_label_path = "(use module::felt)"
 
     [[completions]]
     completion_label = "int"
-    completion_label_path = "module::int"
+    completion_label_path = "(use module::int)"
     "#);
 }
 
@@ -264,19 +264,19 @@ fn type_annotation_with_dangling_path() {
 
     [[completions]]
     completion_label = "CONST"
-    completion_label_path = "module::CONST"
+    completion_label_path = "(use module::CONST)"
 
     [[completions]]
     completion_label = "felt"
-    completion_label_path = "module::felt"
+    completion_label_path = "(use module::felt)"
 
     [[completions]]
     completion_label = "int"
-    completion_label_path = "module::int"
+    completion_label_path = "(use module::int)"
 
     [[completions]]
     completion_label = "nested_module"
-    completion_label_path = "module::nested_module"
+    completion_label_path = "(use module::nested_module)"
     "#);
 }
 
@@ -299,11 +299,11 @@ fn type_annotation_with_trivia() {
 
     [[completions]]
     completion_label = "felt"
-    completion_label_path = "module::felt"
+    completion_label_path = "(use module::felt)"
 
     [[completions]]
     completion_label = "int"
-    completion_label_path = "module::int"
+    completion_label_path = "(use module::int)"
     "#);
 }
 
@@ -325,11 +325,11 @@ fn generic_parameter() {
 
     [[completions]]
     completion_label = "felt"
-    completion_label_path = "module::felt"
+    completion_label_path = "(use module::felt)"
 
     [[completions]]
     completion_label = "int"
-    completion_label_path = "module::int"
+    completion_label_path = "(use module::int)"
     "#);
 }
 
@@ -352,11 +352,11 @@ fn generic_parameter_with_trivia() {
 
     [[completions]]
     completion_label = "felt"
-    completion_label_path = "module::felt"
+    completion_label_path = "(use module::felt)"
 
     [[completions]]
     completion_label = "int"
-    completion_label_path = "module::int"
+    completion_label_path = "(use module::int)"
     "#);
 }
 
@@ -371,7 +371,7 @@ fn function_implicit_parameter() {
 
     [[completions]]
     completion_label = "RangeCheck"
-    completion_label_path = "core::RangeCheck"
+    completion_label_path = "(use core::RangeCheck)"
     "#);
 }
 
@@ -391,8 +391,9 @@ fn simple_completion_without_explicit_path() {
     """
 
     [[completions]]
-    completion_label = "xyz"
-    completion_label_path = "a::xyz"
+    completion_label = "xyz(...)"
+    completion_label_path = "(use a::xyz)"
+    completion_label_type_info = "fn() -> ()"
     insert_text = "xyz()"
     text_edits = ["""
     use a::xyz;
@@ -421,8 +422,9 @@ fn duplicated_completion_without_explicit_path() {
     """
 
     [[completions]]
-    completion_label = "xyz"
-    completion_label_path = "a::xyz"
+    completion_label = "xyz(...)"
+    completion_label_path = "(use a::xyz)"
+    completion_label_type_info = "fn() -> ()"
     insert_text = "xyz()"
     text_edits = ["""
     use a::xyz;
@@ -430,8 +432,9 @@ fn duplicated_completion_without_explicit_path() {
     """]
 
     [[completions]]
-    completion_label = "xyz"
-    completion_label_path = "b::xyz"
+    completion_label = "xyz(...)"
+    completion_label_path = "(use b::xyz)"
+    completion_label_type_info = "fn() -> ()"
     insert_text = "xyz()"
     text_edits = ["""
     use b::xyz;
@@ -475,11 +478,12 @@ fn no_text_last_segment_in_function_context() {
 
     [[completions]]
     completion_label = "MY_CONST"
-    completion_label_path = "my_mod::MY_CONST"
+    completion_label_path = "(use my_mod::MY_CONST)"
 
     [[completions]]
-    completion_label = "my_func"
-    completion_label_path = "my_mod::my_func"
+    completion_label = "my_func(...)"
+    completion_label_path = "(use my_mod::my_func)"
+    completion_label_type_info = "fn() -> ()"
     insert_text = "my_func()"
     "#);
 }
@@ -503,7 +507,7 @@ fn simple_declarative_macro_completion() {
 
     [[completions]]
     completion_label = "my_own_macro!"
-    completion_label_path = "my_own_macro"
+    completion_label_path = "(use my_own_macro)"
     insert_text = "my_own_macro!($1)"
     "#);
 }
@@ -529,11 +533,10 @@ fn declarative_macro_completion_without_explicit_path() {
 
     [[completions]]
     completion_label = "my_mod"
-    completion_label_path = "my_mod"
 
     [[completions]]
     completion_label = "my_own_macro!"
-    completion_label_path = "my_mod::my_own_macro"
+    completion_label_path = "(use my_mod::my_own_macro)"
     insert_text = "my_own_macro!($1)"
     text_edits = ["""
     use my_mod::my_own_macro;

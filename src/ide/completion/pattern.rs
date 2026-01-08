@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::{
     ast::{PatternEnum, PatternIdentifier, PatternStruct, PatternStructParam},
 };
 use itertools::Itertools;
-use lsp_types::{CompletionItem, CompletionItemKind};
+use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use crate::ide::completion::helpers::formatting::format_type_in_node_context;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
@@ -65,14 +65,17 @@ pub fn struct_pattern_completions<'db>(
         .map(|(member_name, member)| CompletionItemOrderable {
             item: CompletionItem {
                 label: member_name.to_string(db),
-                detail: Some(format_type_in_node_context(
-                    db,
-                    typed
-                        .clone()
-                        .map(|typed_pattern| typed_pattern.as_syntax_node())
-                        .unwrap_or(ctx.node),
-                    &member.ty,
-                )),
+                label_details: Some(CompletionItemLabelDetails {
+                    description: Some(format_type_in_node_context(
+                        db,
+                        typed
+                            .clone()
+                            .map(|typed_pattern| typed_pattern.as_syntax_node())
+                            .unwrap_or(ctx.node),
+                        &member.ty,
+                    )),
+                    detail: None,
+                }),
                 kind: Some(CompletionItemKind::VARIABLE),
                 ..CompletionItem::default()
             },
