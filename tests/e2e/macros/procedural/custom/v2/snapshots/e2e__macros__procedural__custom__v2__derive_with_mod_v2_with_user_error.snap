@@ -1,6 +1,6 @@
 ---
 source: tests/e2e/macros/procedural/custom/v2/mod.rs
-description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[derive(ModDeriveMacroV2)]\nstruct MyStruct { a: b, }"
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[derive(ModDeriveMacroV2)]\nstruct MyStruct { a: b, }"
 expression: report
 ---
 [[expansions]]
@@ -31,6 +31,7 @@ mapped_diagnostics:
           line: 0
           character: 25
       severity: 1
+      code: E1000
       message: |-
         Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
         note: this error originates in the derive macro: `mod_derive_macro_v2`
@@ -55,6 +56,7 @@ mapped_diagnostics:
           line: 0
           character: 25
       severity: 1
+      code: E1000
       message: |-
         Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
         note: this error originates in the derive macro: `mod_derive_macro_v2`

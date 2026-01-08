@@ -1,6 +1,6 @@
 ---
 source: tests/e2e/macros/procedural/custom/v2/mod.rs
-description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2024_07\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[derive(ComplexDeriveMacroV2)]\nstruct EmptyStruct { x: u8, x: u8 }"
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\ncairols_test_macros_v2 = { path = \"/scarb_procedural_macros_v2\" }\n\n// → test_package/src/lib.cairo\n#[derive(ComplexDeriveMacroV2)]\nstruct EmptyStruct { x: u8, x: u8 }"
 expression: report
 ---
 [[expansions]]
@@ -39,4 +39,5 @@ mapped_diagnostics:
           line: 1
           character: 33
       severity: 1
-      message: Redefinition of member "x" on struct "test_package::EmptyStruct".
+      code: E2050
+      message: Redefinition of member "x" on struct "EmptyStruct".

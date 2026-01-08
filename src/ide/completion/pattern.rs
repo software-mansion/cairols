@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use cairo_lang_defs::ids::GenericTypeId;
-use cairo_lang_semantic::diagnostic::NotFoundItemType;
+use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::resolve::ResolutionContext;
 use cairo_lang_semantic::resolve::ResolvedGenericItem;
@@ -32,7 +32,7 @@ pub fn struct_pattern_completions<'db>(
         })
         && let Ok(ResolvedGenericItem::GenericType(GenericTypeId::Struct(struct_item))) =
             ctx.resolver(db).resolve_generic_path(
-                &mut Default::default(),
+                &mut SemanticDiagnostics::new(ctx.module_id),
                 &pattern.path(db),
                 NotFoundItemType::Type,
                 ResolutionContext::Default,

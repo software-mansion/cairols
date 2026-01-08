@@ -35,7 +35,7 @@ impl TypedSnippet {
         let struct_parent_module_id =
             db.find_module_containing_node(struct_node.as_syntax_node())?;
 
-        let mut diagnostics = SemanticDiagnostics::default();
+        let mut diagnostics = SemanticDiagnostics::new(ctx.module_id);
 
         // If any field of the struct is not visible, we should not propose initialization.
         if !struct_node.members(db).elements(db).all(|member| {
