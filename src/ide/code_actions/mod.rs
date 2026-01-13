@@ -82,7 +82,7 @@ fn get_code_actions_for_diagnostics(
             Some((code, diagnostic, ctx))
         })
         .flat_map(|(code, diagnostic, ctx)| match code {
-            None => cairo_lint::cairo_lint(db, &ctx, config_registry).unwrap_or_default(),
+            Some("E2200") => cairo_lint::cairo_lint(db, &ctx, config_registry).unwrap_or_default(),
 
             Some("E0001") => rename_unused_variable::rename_unused_variable(
                 db,
@@ -124,6 +124,7 @@ fn get_code_actions_for_diagnostics(
                 debug!("no code actions for diagnostic code: {code}");
                 vec![]
             }
+            None => Default::default(),
         })
         .collect();
 

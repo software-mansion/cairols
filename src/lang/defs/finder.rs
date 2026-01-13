@@ -148,7 +148,7 @@ fn try_trait_or_impl_item_with_self_reference<'db>(
 
         let resolved_self = resolver
             .resolve_concrete_path(
-                &mut SemanticDiagnostics::default(),
+                &mut SemanticDiagnostics::new(module_id),
                 vec![first_segment.clone()],
                 NotFoundItemType::Identifier,
             )
@@ -221,7 +221,7 @@ fn try_impl_item_usages<'db>(
             let mut resolver =
                 Resolver::new(db, module_id, InferenceId::LookupItemDeclaration(lookup_item_id));
 
-            let diags = &mut SemanticDiagnostics::default();
+            let diags = &mut SemanticDiagnostics::new(module_id);
             if let Ok(ResolvedConcreteItem::Impl(impl_id)) = resolver.resolve_concrete_path(
                 diags,
                 impl_prefix_candidate.clone(),
@@ -601,7 +601,7 @@ fn try_concrete_type_or_impl<'db>(
         // Concrete types and type/impl aliases resolve correctly when interpreted as paths.
         let resolved_item = resolver
             .resolve_generic_path_with_args(
-                &mut SemanticDiagnostics::default(),
+                &mut SemanticDiagnostics::new(module_id),
                 type_path_segments,
                 NotFoundItemType::Identifier,
                 ResolutionContext::Default,
@@ -738,7 +738,7 @@ fn try_trait_as_generic_parameter_bound<'db>(
 
         let resolved_item = resolver
             .resolve_generic_path_with_args(
-                &mut SemanticDiagnostics::default(),
+                &mut SemanticDiagnostics::new(module_id),
                 type_path_segments.clone(),
                 NotFoundItemType::Identifier,
                 ResolutionContext::Default,

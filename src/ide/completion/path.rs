@@ -81,7 +81,7 @@ pub fn path_prefix_completions<'db>(
     let is_current_scope = segments.len() == 1;
     let mut resolver = ctx.resolver(db);
 
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(ctx.module_id);
     let item = resolver
         .resolve_concrete_path(&mut diagnostics, segments, NotFoundItemType::Identifier)
         .ok()?;
