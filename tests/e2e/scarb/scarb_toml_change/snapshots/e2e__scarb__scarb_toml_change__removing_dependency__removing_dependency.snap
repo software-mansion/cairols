@@ -97,7 +97,7 @@ analyzed_crates = '''
   "settings": {
     "name": "core",
     "edition": "2025_12",
-    "version": "2.14.0",
+    "version": "2.15.0",
     "cfg_set": [
       [
         "target",
@@ -117,7 +117,7 @@ analyzed_crates = '''
       "negative_impls": true,
       "associated_item_constraints": true,
       "coupons": true,
-      "user_defined_inline_macros": false,
+      "user_defined_inline_macros": true,
       "repr_ptrs": false
     }
   },

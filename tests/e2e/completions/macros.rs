@@ -376,6 +376,16 @@ fn partially_typed_top_level_macro_after_items() {
     use core::sha256::compute_sha256_u32_array;
 
     """]
+
+    [[completions]]
+    completion_label = "compute_sha256_u32_array_safe(...)"
+    completion_label_path = "(use core::sha256::compute_sha256_u32_array_safe)"
+    completion_label_type_info = "fn(input: Array<u32>, last_input_word: u32, last_input_num_bytes: BoundedInt<0, 3>) -> [u32; 8]"
+    insert_text = "compute_sha256_u32_array_safe(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
+    text_edits = ["""
+    use core::sha256::compute_sha256_u32_array_safe;
+
+    """]
     "#);
 }
 

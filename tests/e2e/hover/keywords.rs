@@ -354,8 +354,8 @@ fn kw_loop() {
         let mut i = 0;
         loop {
             if i >= xs.len() { return 0; }
-            let v = *xs.at(i).unwrap();
-            if v > 0 { return v; }
+            let v = *xs.at(i);
+            if v != 0 { return v; }
             i = i + 1;
         }
     }
@@ -725,7 +725,7 @@ fn kw_return() {
     Exits a function, optionally returning a value.
     ### Example
     ```cairo
-    fn clamp01(x: i32) -> u32 {
+    fn clamp01(x: i32) -> i32    {
         if x < 0 { return 0; }
         if x > 1 { return 1; }
         x
@@ -753,7 +753,7 @@ fn kw_break() {
 
     ### The `break` keyword.
 
-    Exits a loop early. Can only be used inside a `loop` expression.
+    Exits a loop early. Can only be used inside `loop`, `while` or `for` loop blocks.
     ### Example
     ```cairo
     fn first_gt(xs: Array<u32>, cmp: u32) -> Option<u32> {
