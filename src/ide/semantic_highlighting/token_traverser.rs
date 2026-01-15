@@ -3,7 +3,9 @@ use cairo_lang_syntax::node::{
     SyntaxNode, TypedSyntaxNode, ast, green::GreenNodeDetails, kind::SyntaxKind,
 };
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use itertools::Itertools;
 use lsp_types::SemanticToken;
+use pulldown_cmark::{BrokenLink, Event, LinkType, Options, Parser as MarkdownParser, Tag, TagEnd};
 
 use super::token_kind::SemanticTokenKind;
 use crate::{
@@ -31,12 +33,17 @@ impl SemanticTokensTraverser {
     ) -> Vec<SemanticToken> {
         let green_node = node.green_node(db);
         match &green_node.details {
-            GreenNodeDetails::Token(text) => self.find_semantic_tokens_for_syntax_token(
-                db,
-                node,
-                &text.to_string(db),
-                green_node.kind,
-            ),
+            GreenNodeDetails::Token(text) => match green_node.kind {
+                SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenSingleLineInnerComment => {
+                    self.encode_single_line_comment_tokens(&text.to_string(db))
+                }
+                _ => self.find_semantic_tokens_for_syntax_token(
+                    db,
+                    node,
+                    &text.to_string(db),
+                    green_node.kind,
+                ),
+            },
             GreenNodeDetails::Node { .. } => {
                 let mut semantic_tokens = vec![];
                 let children = node.get_children(db);
@@ -81,6 +88,64 @@ impl SemanticTokensTraverser {
             self.encoder.skip(width);
             vec![]
         }
+    }
+
+    fn encode_single_line_comment_tokens(&mut self, token_text: &str) -> Vec<SemanticToken> {
+        let mut tokens = Vec::new();
+
+        // skip /// or //!
+        self.encoder.skip(3);
+
+        let content = &token_text[3..];
+
+        // Parse markdown content and collect link ranges relative to content.
+        let mut options = Options::empty();
+        options.insert(Options::ENABLE_TABLES);
+        // Force unresolved reference links to emit `Link` events so we can still parse their ranges.
+        let replacer = |broken_link: BrokenLink<'_>| {
+            if matches!(broken_link.link_type, LinkType::ShortcutUnknown | LinkType::Shortcut) {
+                return Some((broken_link.reference.to_string().into(), "".into()));
+            }
+            None
+        };
+        let parser =
+            MarkdownParser::new_with_broken_link_callback(content, options, Some(replacer));
+
+        let mut link_start: Option<usize> = None;
+        let mut link_ranges: Vec<(usize, usize)> = Vec::new();
+        for (event, range) in parser.into_offset_iter() {
+            match event {
+                Event::Start(Tag::Link { .. }) => {
+                    link_start = Some(range.start);
+                }
+                Event::End(TagEnd::Link) => {
+                    if let Some(s) = link_start.take() {
+                        link_ranges.push((s, range.end));
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Emit `IntraDocLink`s.
+        let mut cursor = 0usize;
+        for (start, end) in link_ranges.into_iter().sorted_by_key(|(s, _)| *s) {
+            if start > cursor {
+                self.encoder.skip((start - cursor) as u32);
+            }
+            // Sanity check - should always be true.
+            assert!(end > start, "Incorrect link range");
+            tokens.push(
+                self.get_semantic_token((end - start) as u32, &SemanticTokenKind::IntraDocLink),
+            );
+            cursor = end;
+        }
+        // Remainder after the last link.
+        if cursor < content.len() {
+            self.encoder.skip((content.len() - cursor) as u32);
+        }
+
+        tokens
     }
 
     /// In case of a multiline token, we need to split it into multiple tokens,
