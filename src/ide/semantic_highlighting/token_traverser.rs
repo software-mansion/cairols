@@ -5,10 +5,10 @@ use cairo_lang_syntax::node::{
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use lsp_types::SemanticToken;
-use pulldown_cmark::{BrokenLink, Event, LinkType, Options, Parser as MarkdownParser, Tag, TagEnd};
 
 use super::token_kind::SemanticTokenKind;
 use crate::{
+    ide::markdown::parse_doc_links,
     ide::semantic_highlighting::encoder::{EncodedToken, TokenEncoder},
     lang::db::AnalysisDatabase,
 };
@@ -98,34 +98,10 @@ impl SemanticTokensTraverser {
 
         let content = &token_text[3..];
 
-        // Parse markdown content and collect link ranges relative to content.
-        let mut options = Options::empty();
-        options.insert(Options::ENABLE_TABLES);
-        // Force unresolved reference links to emit `Link` events so we can still parse their ranges.
-        let replacer = |broken_link: BrokenLink<'_>| {
-            if matches!(broken_link.link_type, LinkType::ShortcutUnknown | LinkType::Shortcut) {
-                return Some((broken_link.reference.to_string().into(), "".into()));
-            }
-            None
-        };
-        let parser =
-            MarkdownParser::new_with_broken_link_callback(content, options, Some(replacer));
-
-        let mut link_start: Option<usize> = None;
-        let mut link_ranges: Vec<(usize, usize)> = Vec::new();
-        for (event, range) in parser.into_offset_iter() {
-            match event {
-                Event::Start(Tag::Link { .. }) => {
-                    link_start = Some(range.start);
-                }
-                Event::End(TagEnd::Link) => {
-                    if let Some(s) = link_start.take() {
-                        link_ranges.push((s, range.end));
-                    }
-                }
-                _ => {}
-            }
-        }
+        let link_ranges: Vec<(usize, usize)> = parse_doc_links(content)
+            .into_iter()
+            .map(|link| (link.range.start, link.range.end))
+            .collect();
 
         // Emit `IntraDocLink`s.
         let mut cursor = 0usize;

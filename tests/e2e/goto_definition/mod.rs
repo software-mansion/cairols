@@ -11,6 +11,7 @@ use crate::support::scarb::scarb_core_path;
 use crate::support::transform::Transformer;
 
 mod consts;
+mod doc_links;
 mod enums;
 mod fns;
 mod generated;
