@@ -20,6 +20,19 @@ fn crate_path_in_doc_link() {
 }
 
 #[test]
+fn doc_link_with_leading_whitespace() {
+    test_transform_plain!(GotoDefinition, r"
+    /// See [`  crate::Structu<caret>re`].
+    fn foo() {}
+    struct Structure {}
+    ", @r"
+    /// See [`  crate::Structure`].
+    fn foo() {}
+    struct <sel>Structure</sel> {}
+    ")
+}
+
+#[test]
 fn super_path_in_doc_link() {
     test_transform_plain!(GotoDefinition, r"
     mod parent {
