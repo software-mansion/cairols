@@ -52,4 +52,4 @@ Enables on disk cache for procedural macros.
 > With Language Server version 2.15 and above, this option has no effect, as the Proc Macro Cache is no longer experimental and is always enabled.
 
 > [!WARNING]
-> Currently the cache is **never** invalidated. If **ANY** of your procedural macro dependencies change - remove the `cairo-language-server/proc_macro.cache` file from your target directory.
+> If you are using any Language Server version **below 2.15.0**, your cache will **NOT** be invalidated. If **ANY** of your procedural macro dependencies change - remove the `cairo-language-server/proc_macro.cache` file from your target directory.
