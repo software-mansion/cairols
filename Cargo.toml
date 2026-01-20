@@ -81,6 +81,7 @@ tracing = "0.1"
 tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 which = "8"
+pulldown-cmark = "0.13.0"
 
 [target.'cfg(target_vendor = "apple")'.dependencies]
 libc = "0.2.178"

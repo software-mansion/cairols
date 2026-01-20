@@ -184,3 +184,80 @@ fn inline_macro_with_same_name_as_trait() {
     }
     ")
 }
+
+#[test]
+fn doc_comment_with_link() {
+    test_transform!(semantic_tokens, r#"
+    //! Doc header comment
+    //! And a one with a [`Link`]
+    //! Plz refer to this external [source](https://zal.pl)
+
+    /// A doc commment over an enum referring to [`Bar`]
+    enum Foo {
+        Bar,
+        Baz,
+    }
+
+    /// A Function which plays with [`Foo`]
+    /// I can also use relative [links](../Cargo.toml) and they will highlight correctly
+    fn main() {
+        let foo = Foo::Bar;
+        let foobar: Foo = foo; /// Inline usage of [`Foo`]
+    }
+
+
+    fn calc(foo: Foo) {}
+
+    /// Something over an attribute referring to [`Foo`]
+    #[cfg(test)]
+    mod rectangle {
+        use super::Foo;
+    }
+
+    mod b {
+        mod a {
+            /// A module inside a module with a [`Foo`] inside
+            mod trick {
+                #[test]
+                struct Foo {}
+            }
+        }
+    }
+    "#, @r"
+    //! Doc header comment
+    //! And a one with a <token=class>[`Link`]</token>
+    //! Plz refer to this external <token=class>[source](https://zal.pl)</token>
+
+    /// A doc commment over an enum referring to <token=class>[`Bar`]</token>
+    <token=keyword>enum</token> <token=enum>Foo</token> {
+        <token=enumMember>Bar</token>,
+        <token=enumMember>Baz</token>,
+    }
+
+    /// A Function which plays with <token=class>[`Foo`]</token>
+    /// I can also use relative <token=class>[links](../Cargo.toml)</token> and they will highlight correctly
+    <token=keyword>fn</token> <token=function>main</token>() {
+        <token=keyword>let</token> <token=variable>foo</token> = <token=type>Foo</token>::<token=enumMember>Bar</token>;
+        <token=keyword>let</token> <token=variable>foobar</token>: <token=type>Foo</token> = <token=variable>foo</token>; /// Inline usage of <token=class>[`Foo`]</token>
+    }
+
+
+    <token=keyword>fn</token> <token=function>calc</token>(<token=parameter>foo</token>: <token=type>Foo</token>) {}
+
+    /// Something over an attribute referring to <token=class>[`Foo`]</token>
+    #[<token=decorator>cfg</token>(<token=decorator>test</token>)]
+    <token=keyword>mod</token> <token=class>rectangle</token> {
+        <token=keyword>use</token> <token=keyword>super</token>::<token=type>Foo</token>;
+    }
+
+    <token=keyword>mod</token> <token=class>b</token> {
+        <token=keyword>mod</token> <token=class>a</token> {
+            /// A module inside a module with a <token=class>[`Foo`]</token> inside
+            <token=keyword>mod</token> <token=class>trick</token> {
+                #[<token=decorator>test</token>]
+                <token=keyword>struct</token> <token=struct>Foo</token> {}
+            }
+        }
+    }
+    ")
+}

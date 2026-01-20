@@ -37,7 +37,9 @@ pub enum SemanticTokenKind {
     Annotation = 18,
     InlineMacro = 19,
     GenericParamImpl = 20,
+    IntraDocLink = 21,
 }
+
 impl SemanticTokenKind {
     pub fn from_syntax_node<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> Option<Self> {
         let node_kind = node.kind(db);
@@ -120,6 +122,7 @@ impl SemanticTokenKind {
             SemanticTokenType::DECORATOR,
             SemanticTokenType::MACRO,
             SemanticTokenType::INTERFACE,
+            SemanticTokenType::CLASS,
         ]
     }
 
