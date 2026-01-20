@@ -8,7 +8,7 @@ use lsp_types::SemanticToken;
 
 use super::token_kind::SemanticTokenKind;
 use crate::{
-    ide::markdown::parse_doc_links,
+    ide::markdown::{COMMENT_TOKEN_PREFIX_LEN, parse_doc_links},
     ide::semantic_highlighting::encoder::{EncodedToken, TokenEncoder},
     lang::db::AnalysisDatabase,
 };
@@ -93,10 +93,9 @@ impl SemanticTokensTraverser {
     fn encode_single_line_comment_tokens(&mut self, token_text: &str) -> Vec<SemanticToken> {
         let mut tokens = Vec::new();
 
-        // skip /// or //!
-        self.encoder.skip(3);
+        self.encoder.skip(COMMENT_TOKEN_PREFIX_LEN as u32);
 
-        let content = &token_text[3..];
+        let content = &token_text[COMMENT_TOKEN_PREFIX_LEN..];
 
         let link_ranges: Vec<(usize, usize)> = parse_doc_links(content)
             .into_iter()

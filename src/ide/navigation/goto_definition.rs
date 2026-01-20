@@ -18,7 +18,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_language_common::CommonGroup;
 use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location};
 
-use crate::ide::markdown::parse_doc_links;
+use crate::ide::markdown::{COMMENT_TOKEN_PREFIX_LEN, parse_doc_links};
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::{NonMacroModuleId, ResolvedItem, SymbolDef, SymbolSearch};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
@@ -68,15 +68,15 @@ fn try_goto_doc_link_def(
 
     // Get the doc-comment content and parse the links it contains
     let doc_token_text = doc_token.text(db)?.to_string(db);
-    let content = &doc_token_text[3..];
+    let content = &doc_token_text[COMMENT_TOKEN_PREFIX_LEN..];
     let links = parse_doc_links(content);
 
     // Convert absolute cursor offset (in file) to an offset relative to the doc-comment (excluding leading /// or //!).
     let doc_relative_cursor_offset = (cursor_offset - doc_token_span.start).as_u32() as usize;
-    if doc_relative_cursor_offset < 3 {
+    if doc_relative_cursor_offset < COMMENT_TOKEN_PREFIX_LEN {
         return None; // We can't have a link before the leading `///` or `//!`
     }
-    let doc_relative_cursor_offset = doc_relative_cursor_offset - 3;
+    let doc_relative_cursor_offset = doc_relative_cursor_offset - COMMENT_TOKEN_PREFIX_LEN;
 
     let link =
         links.into_iter().find(|link| link.label_range.contains(&doc_relative_cursor_offset))?;

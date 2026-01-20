@@ -8,6 +8,8 @@ use pulldown_cmark::{BrokenLink, Event, LinkType, Options, Parser as MarkdownPar
 
 /// Horizontal rule.
 pub const RULE: &str = "---\n";
+/// or //! - both have 3 characters we often want to skip.
+pub const COMMENT_TOKEN_PREFIX_LEN: usize = 3;
 
 /// Surround the given code with `cairo` fenced code block.
 pub fn fenced_code_block(code: &str) -> String {
