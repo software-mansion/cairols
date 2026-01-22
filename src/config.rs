@@ -85,7 +85,7 @@ impl Config {
     /// Reloads the configuration from the language client.
     ///
     /// ## Note
-    /// Contrary to [`Config::reload`], it applies changes to the state appropriate for default
+    /// Contrary to [ `Config::reload` ], it applies changes to the state appropriate for default
     /// config if the client does not support config reloading.
     /// Therefore, this function should be called only once per LS lifetime.
     pub fn reload_on_start(
