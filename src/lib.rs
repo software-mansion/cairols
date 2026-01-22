@@ -405,6 +405,7 @@ impl Backend {
         {
             state.proc_macro_controller.handle_response(
                 &mut state.db,
+                &state.analysis_progress_controller,
                 &state.config,
                 &state.client_capabilities,
                 requester,

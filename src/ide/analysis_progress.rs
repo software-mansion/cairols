@@ -5,7 +5,10 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use crossbeam::channel::{Receiver, Sender};
 
 use crate::config::Config;
-use crate::lsp::ext::{ServerStatus, ServerStatusEvent, ServerStatusParams};
+use crate::lsp::ext::{
+    ProcMacroControllerStatus, ProcMacroControllerStatusEvent, ProcMacroControllerStatusParams,
+    ServerStatus, ServerStatusEvent, ServerStatusParams,
+};
 use crate::server::client::Notifier;
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 
@@ -95,6 +98,14 @@ impl AnalysisProgressController {
         self.send(AnalysisEvent::ProjectLoaded);
     }
 
+    pub fn proc_macro_server_request_start(&self) {
+        self.send(AnalysisEvent::ProcMacroServerRequestStart);
+    }
+
+    pub fn proc_macro_server_request_end(&self) {
+        self.send(AnalysisEvent::ProcMacroServerRequestEnd);
+    }
+
     pub fn server_tracker(&self) -> ProcMacroServerTracker {
         self.server_tracker.clone()
     }
@@ -128,6 +139,8 @@ pub enum AnalysisEvent {
     PMSStatusChange(ProcMacroServerStatus),
     DatabaseSwap,
     ProjectLoaded,
+    ProcMacroServerRequestStart,
+    ProcMacroServerRequestEnd,
 }
 
 struct AnalysisProgressThread {
@@ -227,6 +240,22 @@ impl AnalysisProgressThread {
                 }
                 AnalysisEvent::ProjectLoaded => {
                     project_loaded = true;
+                }
+                AnalysisEvent::ProcMacroServerRequestStart => {
+                    self.notifier.notify::<ProcMacroControllerStatus>(
+                        ProcMacroControllerStatusParams {
+                            event: ProcMacroControllerStatusEvent::MacroBuildingStarted,
+                            idle: false,
+                        },
+                    );
+                }
+                AnalysisEvent::ProcMacroServerRequestEnd => {
+                    self.notifier.notify::<ProcMacroControllerStatus>(
+                        ProcMacroControllerStatusParams {
+                            event: ProcMacroControllerStatusEvent::MacroBuildingFinished,
+                            idle: true,
+                        },
+                    );
                 }
             }
         }
