@@ -973,7 +973,6 @@ dependencies = [
  "memchr",
  "mimalloc",
  "pathdiff",
- "pulldown-cmark",
  "regex",
  "salsa",
  "scarb-metadata",

@@ -1,3 +1,4 @@
+use cairo_lang_doc::db::DocGroup;
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_syntax::node::{
     SyntaxNode, TypedSyntaxNode, ast, green::GreenNodeDetails, kind::SyntaxKind,
@@ -8,7 +9,7 @@ use lsp_types::SemanticToken;
 
 use super::token_kind::SemanticTokenKind;
 use crate::{
-    ide::markdown::{COMMENT_TOKEN_PREFIX_LEN, parse_doc_links},
+    ide::markdown::COMMENT_TOKEN_PREFIX_LEN,
     ide::semantic_highlighting::encoder::{EncodedToken, TokenEncoder},
     lang::db::AnalysisDatabase,
 };
@@ -33,14 +34,14 @@ impl SemanticTokensTraverser {
     ) -> Vec<SemanticToken> {
         let green_node = node.green_node(db);
         match &green_node.details {
-            GreenNodeDetails::Token(text) => match green_node.kind {
+            GreenNodeDetails::Token(_) => match green_node.kind {
                 SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenSingleLineInnerComment => {
-                    self.encode_single_line_comment_tokens(&text.to_string(db))
+                    self.encode_single_line_comment_tokens(db, node)
                 }
                 _ => self.find_semantic_tokens_for_syntax_token(
                     db,
                     node,
-                    &text.to_string(db),
+                    &node.text(db).expect("Node text should be available").to_string(db),
                     green_node.kind,
                 ),
             },
@@ -90,20 +91,32 @@ impl SemanticTokensTraverser {
         }
     }
 
-    fn encode_single_line_comment_tokens(&mut self, token_text: &str) -> Vec<SemanticToken> {
+    fn encode_single_line_comment_tokens<'db>(
+        &mut self,
+        db: &'db AnalysisDatabase,
+        node: SyntaxNode<'db>,
+    ) -> Vec<SemanticToken> {
         let mut tokens = Vec::new();
 
         self.encoder.skip(COMMENT_TOKEN_PREFIX_LEN as u32);
 
+        let token_text = node.text(db).expect("Node text should be available").to_string(db);
         let content = &token_text[COMMENT_TOKEN_PREFIX_LEN..];
 
-        let link_ranges: Vec<(usize, usize)> = parse_doc_links(content)
+        let link_ranges: Vec<(usize, usize)> = db
+            .get_embedded_markdown_links(node)
             .into_iter()
-            .map(|link| (link.range.start, link.range.end))
+            .map(|link| {
+                let base_span = node.span(db);
+                let start = (link.link_span.start - base_span.start).as_u32() as usize;
+                let end = (link.link_span.end - base_span.start).as_u32() as usize;
+
+                (start, end)
+            })
             .collect();
 
-        // Emit `IntraDocLink`s.
-        let mut cursor = 0usize;
+        // Emit `IntraDocLink`s
+        let mut cursor = COMMENT_TOKEN_PREFIX_LEN;
         for (start, end) in link_ranges.into_iter().sorted_by_key(|(s, _)| *s) {
             if start > cursor {
                 self.encoder.skip((start - cursor) as u32);
