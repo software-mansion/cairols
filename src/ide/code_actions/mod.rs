@@ -124,6 +124,9 @@ fn get_code_actions_for_diagnostics(
             Some("E2083") => {
                 make_variable_mutable::make_variable_mutable(db, ctx.node, uri.clone()).to_vec()
             }
+            Some("E2080") => {
+                make_variable_mutable::make_ref_variable_mutable(db, ctx.node, uri.clone()).to_vec()
+            }
             Some(code) => {
                 debug!("no code actions for diagnostic code: {code}");
                 vec![]

@@ -21,32 +21,52 @@ pub fn make_variable_mutable<'db>(
 
         let identifier =
             token.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
-        let definition_location = SymbolSearch::find_definition(db, &identifier)?
-            .def
-            .definition_originating_location(db)?;
-        let definition = db.find_syntax_node_at_offset(
-            definition_location.file_id,
-            definition_location.span.start,
-        )?;
+        get_mutable_variable_action(db, identifier, uri.clone())
+    })
+}
 
-        let span_to_edit = definition
-            .span_without_trivia(db)
-            .position_in_file(db, definition.stable_ptr(db).file_id(db))?;
+pub fn make_ref_variable_mutable<'db>(
+    db: &'db AnalysisDatabase,
+    node: SyntaxNode<'db>,
+    uri: Url,
+) -> Option<CodeAction> {
+    db.get_node_resultants(node)?.iter().find_map(|resultant_node| {
+        let identifier = resultant_node
+            .ancestors_with_self(db)
+            .find_map(|node| TerminalIdentifier::cast(db, node))?;
+        get_mutable_variable_action(db, identifier, uri.clone())
+    })
+}
 
-        let edits = vec![TextEdit {
-            range: span_to_edit.to_lsp(),
-            new_text: format!("mut {}", definition.get_text_without_trivia(db).to_string(db)),
-        }];
+fn get_mutable_variable_action<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: TerminalIdentifier<'db>,
+    uri: Url,
+) -> Option<CodeAction> {
+    let definition_location =
+        SymbolSearch::find_definition(db, &identifier)?.def.definition_originating_location(db)?;
+    let definition =
+        db.find_syntax_node_at_offset(definition_location.file_id, definition_location.span.start)?;
 
-        Some(CodeAction {
-            title: "Change it to be mutable".to_string(),
-            kind: Some(CodeActionKind::QUICKFIX),
-            edit: Some(WorkspaceEdit {
-                changes: Some(HashMap::from([(uri.clone(), edits)])),
-                document_changes: None,
-                change_annotations: None,
-            }),
-            ..Default::default()
-        })
+    let span_to_edit =
+        definition.span_without_trivia(db).position_in_file(db, definition.file_id(db))?;
+
+    let edits = vec![TextEdit {
+        range: span_to_edit.to_lsp(),
+        new_text: format!("mut {}", definition.get_text_without_trivia(db).to_string(db)),
+    }];
+
+    Some(CodeAction {
+        title: format!(
+            "Change \"{}\" to be mutable",
+            definition.get_text_without_trivia(db).to_string(db)
+        ),
+        kind: Some(CodeActionKind::QUICKFIX),
+        edit: Some(WorkspaceEdit {
+            changes: Some(HashMap::from([(uri.clone(), edits)])),
+            document_changes: None,
+            change_annotations: None,
+        }),
+        ..Default::default()
     })
 }
