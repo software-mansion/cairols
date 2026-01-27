@@ -120,6 +120,27 @@ pub struct ServerStatusParams {
 }
 
 #[derive(Debug)]
+pub struct ProcMacroControllerStatus;
+
+impl Notification for ProcMacroControllerStatus {
+    type Params = ProcMacroControllerStatusParams;
+    const METHOD: &'static str = "cairo/procMacroServerStatus";
+}
+
+#[derive(Serialize, Deserialize, PartialEq)]
+pub enum ProcMacroControllerStatusEvent {
+    MacroBuildingStarted,
+    MacroBuildingFinished,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProcMacroControllerStatusParams {
+    pub event: ProcMacroControllerStatusEvent,
+    pub idle: bool,
+}
+
+#[derive(Debug)]
 pub struct ScarbPathMissing {}
 
 impl Notification for ScarbPathMissing {

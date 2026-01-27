@@ -115,7 +115,11 @@ impl ProjectController {
         match project_update {
             ProjectUpdate::Scarb { crates, workspace_dir, workspace_manifest_path } => {
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
-                state.proc_macro_controller.request_defined_macros(db, workspace_manifest_path);
+                state.proc_macro_controller.request_defined_macros(
+                    db,
+                    &state.analysis_progress_controller,
+                    workspace_manifest_path,
+                );
                 state.project_controller.model.load_workspace(
                     db,
                     crates,
