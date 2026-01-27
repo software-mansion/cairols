@@ -20,6 +20,7 @@ mod create_module_file;
 mod expand_macro;
 mod fill_struct_fields;
 mod fill_trait_members;
+mod make_variable_mutable;
 mod missing_import;
 mod rename_unused_variable;
 mod suggest_similar_identifier;
@@ -120,6 +121,12 @@ fn get_code_actions_for_diagnostics(
             }
             Some("E0007") => suggest_similar_member::suggest_similar_member(db, &ctx, uri.clone())
                 .unwrap_or_default(),
+            Some("E2083") => {
+                make_variable_mutable::make_variable_mutable(db, ctx.node, uri.clone()).to_vec()
+            }
+            Some("E2080") => {
+                make_variable_mutable::make_ref_variable_mutable(db, ctx.node, uri.clone()).to_vec()
+            }
             Some(code) => {
                 debug!("no code actions for diagnostic code: {code}");
                 vec![]

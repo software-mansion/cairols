@@ -16,6 +16,7 @@ mod fill_struct_fields;
 mod fill_trait_members;
 mod lint;
 mod macro_expand;
+mod make_variable_mutable;
 mod missing_import;
 mod missing_trait;
 mod rename_unused_variable;
