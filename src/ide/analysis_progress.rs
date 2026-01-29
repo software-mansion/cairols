@@ -48,6 +48,14 @@ impl ProcMacroServerTracker {
         let _ = self.events_sender.send(AnalysisEvent::ApplyResponses { response_count });
     }
 
+    pub fn mark_proc_macros_as_requested(&self) {
+        let _ = self.events_sender.send(AnalysisEvent::DefinedMacrosRequested);
+    }
+
+    pub fn mark_proc_macros_request_as_handled(&self) {
+        let _ = self.events_sender.send(AnalysisEvent::DefinedMacrosResponseReceived);
+    }
+
     pub fn reset_requests_counter(&self) {
         self.procmacro_request_counter.store(0, Ordering::SeqCst)
     }
@@ -98,14 +106,6 @@ impl AnalysisProgressController {
         self.send(AnalysisEvent::ProjectLoaded);
     }
 
-    pub fn proc_macro_server_request_start(&self) {
-        self.send(AnalysisEvent::ProcMacroServerRequestStart);
-    }
-
-    pub fn proc_macro_server_request_end(&self) {
-        self.send(AnalysisEvent::ProcMacroServerRequestEnd);
-    }
-
     pub fn server_tracker(&self) -> ProcMacroServerTracker {
         self.server_tracker.clone()
     }
@@ -139,8 +139,8 @@ pub enum AnalysisEvent {
     PMSStatusChange(ProcMacroServerStatus),
     DatabaseSwap,
     ProjectLoaded,
-    ProcMacroServerRequestStart,
-    ProcMacroServerRequestEnd,
+    DefinedMacrosRequested,
+    DefinedMacrosResponseReceived,
 }
 
 struct AnalysisProgressThread {
@@ -241,18 +241,18 @@ impl AnalysisProgressThread {
                 AnalysisEvent::ProjectLoaded => {
                     project_loaded = true;
                 }
-                AnalysisEvent::ProcMacroServerRequestStart => {
+                AnalysisEvent::DefinedMacrosRequested => {
                     self.notifier.notify::<ProcMacroControllerStatus>(
                         ProcMacroControllerStatusParams {
-                            event: ProcMacroControllerStatusEvent::MacroBuildingStarted,
+                            event: ProcMacroControllerStatusEvent::MacrosBuildingStarted,
                             idle: false,
                         },
                     );
                 }
-                AnalysisEvent::ProcMacroServerRequestEnd => {
+                AnalysisEvent::DefinedMacrosResponseReceived => {
                     self.notifier.notify::<ProcMacroControllerStatus>(
                         ProcMacroControllerStatusParams {
-                            event: ProcMacroControllerStatusEvent::MacroBuildingFinished,
+                            event: ProcMacroControllerStatusEvent::MacrosBuildingFinished,
                             idle: true,
                         },
                     );

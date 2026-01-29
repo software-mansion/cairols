@@ -124,13 +124,13 @@ pub struct ProcMacroControllerStatus;
 
 impl Notification for ProcMacroControllerStatus {
     type Params = ProcMacroControllerStatusParams;
-    const METHOD: &'static str = "cairo/procMacroServerStatus";
+    const METHOD: &'static str = "cairo/procMacroControllerStatus";
 }
 
 #[derive(Serialize, Deserialize, PartialEq)]
 pub enum ProcMacroControllerStatusEvent {
-    MacroBuildingStarted,
-    MacroBuildingFinished,
+    MacrosBuildingStarted,
+    MacrosBuildingFinished,
 }
 
 #[derive(Serialize, Deserialize)]

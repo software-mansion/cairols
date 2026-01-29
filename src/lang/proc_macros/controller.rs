@@ -30,9 +30,7 @@ use super::client::connection::ProcMacroServerConnection;
 use super::client::status::ServerStatus;
 use super::client::{ProcMacroClient, RequestParams};
 use crate::config::Config;
-use crate::ide::analysis_progress::{
-    AnalysisProgressController, ProcMacroServerStatus, ProcMacroServerTracker,
-};
+use crate::ide::analysis_progress::{ProcMacroServerStatus, ProcMacroServerTracker};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::cache::try_load_proc_macro_cache;
 use crate::lang::proc_macros::db::ProcMacroGroup;
@@ -136,7 +134,6 @@ impl ProcMacroClientController {
     pub fn handle_response(
         &mut self,
         db: &mut AnalysisDatabase,
-        analysis_progress_controller: &AnalysisProgressController,
         config: &Config,
         client_capabilities: &ClientCapabilities,
         requester: &mut Requester,
@@ -146,13 +143,7 @@ impl ProcMacroClientController {
             return;
         };
 
-        let result = self.apply_responses(
-            db,
-            analysis_progress_controller,
-            client,
-            client_capabilities,
-            requester,
-        );
+        let result = self.apply_responses(db, client, client_capabilities, requester);
         let Err(error) = result else {
             return;
         };
@@ -167,15 +158,10 @@ impl ProcMacroClientController {
     /// Requests the proc-macro-server to:
     /// - load the workspace with the given `manifest_path`
     /// - respond with all macros available for it.
-    pub fn request_defined_macros(
-        &self,
-        db: &AnalysisDatabase,
-        analysis_progress_controller: &AnalysisProgressController,
-        manifest_path: PathBuf,
-    ) {
+    pub fn request_defined_macros(&self, db: &AnalysisDatabase, manifest_path: PathBuf) {
         if let ServerStatus::Connected(client) = db.proc_macro_input().proc_macro_server_status(db)
         {
-            analysis_progress_controller.proc_macro_server_request_start();
+            self.proc_macro_server_tracker.mark_proc_macros_as_requested();
             client.request_defined_macros(DefinedMacrosParams {
                 workspace: Workspace { manifest_path },
             });
@@ -227,7 +213,6 @@ impl ProcMacroClientController {
     fn apply_responses(
         &mut self,
         db: &mut AnalysisDatabase,
-        analysis_progress_controller: &AnalysisProgressController,
         client: Arc<ProcMacroClient>,
         client_capabilities: &ClientCapabilities,
         requester: &mut Requester,
@@ -249,7 +234,7 @@ impl ProcMacroClientController {
         for (params, response) in available_responses {
             match params {
                 RequestParams::DefinedMacros(params) => {
-                    analysis_progress_controller.proc_macro_server_request_end();
+                    self.proc_macro_server_tracker.mark_proc_macros_request_as_handled();
                     let defined_macros = parse_response::<DefinedMacrosResponse>(response)?;
                     self.apply_defined_macros_response(db, params.workspace, defined_macros);
                     self.try_load_proc_macro_cache(db);
