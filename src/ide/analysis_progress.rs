@@ -45,6 +45,14 @@ impl ProcMacroServerTracker {
         let _ = self.events_sender.send(AnalysisEvent::ApplyResponses { response_count });
     }
 
+    pub fn register_defined_macros_request(&self) {
+        let _ = self.events_sender.send(AnalysisEvent::DefinedMacrosRequested);
+    }
+
+    pub fn register_proc_macros_request_handled(&self) {
+        let _ = self.events_sender.send(AnalysisEvent::DefinedMacrosResponseReceived);
+    }
+
     pub fn reset_requests_counter(&self) {
         self.procmacro_request_counter.store(0, Ordering::SeqCst)
     }
@@ -128,6 +136,8 @@ pub enum AnalysisEvent {
     PMSStatusChange(ProcMacroServerStatus),
     DatabaseSwap,
     ProjectLoaded,
+    DefinedMacrosRequested,
+    DefinedMacrosResponseReceived,
 }
 
 struct AnalysisProgressThread {
@@ -186,7 +196,6 @@ impl AnalysisProgressThread {
                     {
                         self.notifier.notify::<ServerStatus>(ServerStatusParams {
                             event: ServerStatusEvent::AnalysisFinished,
-                            idle: true,
                         });
                         let _ = self.status_sender.send(AnalysisStatus::Finished);
 
@@ -199,7 +208,6 @@ impl AnalysisProgressThread {
                     if project_loaded && !analysis_in_progress {
                         self.notifier.notify::<ServerStatus>(ServerStatusParams {
                             event: ServerStatusEvent::AnalysisStarted,
-                            idle: false,
                         });
                         let _ = self.status_sender.send(AnalysisStatus::Started);
 
@@ -227,6 +235,16 @@ impl AnalysisProgressThread {
                 }
                 AnalysisEvent::ProjectLoaded => {
                     project_loaded = true;
+                }
+                AnalysisEvent::DefinedMacrosRequested => {
+                    self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                        event: ServerStatusEvent::MacrosBuildingStarted,
+                    });
+                }
+                AnalysisEvent::DefinedMacrosResponseReceived => {
+                    self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                        event: ServerStatusEvent::MacrosBuildingFinished,
+                    });
                 }
             }
         }
