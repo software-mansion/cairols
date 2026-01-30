@@ -161,7 +161,7 @@ impl ProcMacroClientController {
     pub fn request_defined_macros(&self, db: &AnalysisDatabase, manifest_path: PathBuf) {
         if let ServerStatus::Connected(client) = db.proc_macro_input().proc_macro_server_status(db)
         {
-            self.proc_macro_server_tracker.mark_proc_macros_as_requested();
+            self.proc_macro_server_tracker.register_defined_macros_request();
             client.request_defined_macros(DefinedMacrosParams {
                 workspace: Workspace { manifest_path },
             });
@@ -234,7 +234,7 @@ impl ProcMacroClientController {
         for (params, response) in available_responses {
             match params {
                 RequestParams::DefinedMacros(params) => {
-                    self.proc_macro_server_tracker.mark_proc_macros_request_as_handled();
+                    self.proc_macro_server_tracker.register_proc_macros_request_handled();
                     let defined_macros = parse_response::<DefinedMacrosResponse>(response)?;
                     self.apply_defined_macros_response(db, params.workspace, defined_macros);
                     self.try_load_proc_macro_cache(db);

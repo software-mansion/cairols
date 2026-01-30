@@ -5,10 +5,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use crossbeam::channel::{Receiver, Sender};
 
 use crate::config::Config;
-use crate::lsp::ext::{
-    ProcMacroControllerStatus, ProcMacroControllerStatusEvent, ProcMacroControllerStatusParams,
-    ServerStatus, ServerStatusEvent, ServerStatusParams,
-};
+use crate::lsp::ext::{ServerStatus, ServerStatusEvent, ServerStatusParams};
 use crate::server::client::Notifier;
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 
@@ -48,11 +45,11 @@ impl ProcMacroServerTracker {
         let _ = self.events_sender.send(AnalysisEvent::ApplyResponses { response_count });
     }
 
-    pub fn mark_proc_macros_as_requested(&self) {
+    pub fn register_defined_macros_request(&self) {
         let _ = self.events_sender.send(AnalysisEvent::DefinedMacrosRequested);
     }
 
-    pub fn mark_proc_macros_request_as_handled(&self) {
+    pub fn register_proc_macros_request_handled(&self) {
         let _ = self.events_sender.send(AnalysisEvent::DefinedMacrosResponseReceived);
     }
 
@@ -199,7 +196,6 @@ impl AnalysisProgressThread {
                     {
                         self.notifier.notify::<ServerStatus>(ServerStatusParams {
                             event: ServerStatusEvent::AnalysisFinished,
-                            idle: true,
                         });
                         let _ = self.status_sender.send(AnalysisStatus::Finished);
 
@@ -212,7 +208,6 @@ impl AnalysisProgressThread {
                     if project_loaded && !analysis_in_progress {
                         self.notifier.notify::<ServerStatus>(ServerStatusParams {
                             event: ServerStatusEvent::AnalysisStarted,
-                            idle: false,
                         });
                         let _ = self.status_sender.send(AnalysisStatus::Started);
 
@@ -242,20 +237,14 @@ impl AnalysisProgressThread {
                     project_loaded = true;
                 }
                 AnalysisEvent::DefinedMacrosRequested => {
-                    self.notifier.notify::<ProcMacroControllerStatus>(
-                        ProcMacroControllerStatusParams {
-                            event: ProcMacroControllerStatusEvent::MacrosBuildingStarted,
-                            idle: false,
-                        },
-                    );
+                    self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                        event: ServerStatusEvent::MacrosBuildingStarted,
+                    });
                 }
                 AnalysisEvent::DefinedMacrosResponseReceived => {
-                    self.notifier.notify::<ProcMacroControllerStatus>(
-                        ProcMacroControllerStatusParams {
-                            event: ProcMacroControllerStatusEvent::MacrosBuildingFinished,
-                            idle: true,
-                        },
-                    );
+                    self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                        event: ServerStatusEvent::MacrosBuildingFinished,
+                    });
                 }
             }
         }

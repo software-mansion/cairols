@@ -110,34 +110,14 @@ impl Notification for ServerStatus {
 pub enum ServerStatusEvent {
     AnalysisStarted,
     AnalysisFinished,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ServerStatusParams {
-    pub event: ServerStatusEvent,
-    pub idle: bool,
-}
-
-#[derive(Debug)]
-pub struct ProcMacroControllerStatus;
-
-impl Notification for ProcMacroControllerStatus {
-    type Params = ProcMacroControllerStatusParams;
-    const METHOD: &'static str = "cairo/procMacroControllerStatus";
-}
-
-#[derive(Serialize, Deserialize, PartialEq)]
-pub enum ProcMacroControllerStatusEvent {
     MacrosBuildingStarted,
     MacrosBuildingFinished,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ProcMacroControllerStatusParams {
-    pub event: ProcMacroControllerStatusEvent,
-    pub idle: bool,
+pub struct ServerStatusParams {
+    pub event: ServerStatusEvent,
 }
 
 #[derive(Debug)]

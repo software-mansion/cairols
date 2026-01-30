@@ -427,6 +427,7 @@ impl MockClient {
                                 ControlFlow::Continue(RemoveFromTrace)
                             }
                         }
+                        _ => ControlFlow::Continue(NoOp),
                     }
                 }
                 "cairo/projectUpdatingFinished" => {
