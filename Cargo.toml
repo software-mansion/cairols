@@ -54,8 +54,8 @@ cairo-lang-test-plugin = "*"
 cairo-lang-utils = "*"
 cairo-language-common = { git = "https://github.com/software-mansion/cairo-language-common", rev = "d3bdb21045f0af465fecdb540f31c98eab0aa0ba" }
 cairo-lint = "*"
-colored = "3.0.0"
-convert_case = "0.10.0"
+colored = "3.1.1"
+convert_case = "0.11.0"
 create-output-dir = "1.0.0"
 crossbeam = "0.8.4"
 governor = { version = "0.8.0", default-features = false, features = ["std", "quanta"] }
@@ -76,7 +76,7 @@ serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9.34"
 tempfile = "3"
-toml = "0.9.10"
+toml = "0.9.11"
 tracing = "0.1"
 tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
@@ -84,12 +84,12 @@ which = "8"
 pulldown-cmark = "0.13.0"
 
 [target.'cfg(target_vendor = "apple")'.dependencies]
-libc = "0.2.178"
+libc = "0.2.180"
 
 [dev-dependencies]
 assert_fs = "1.1"
 cairo-language-server = { path = ".", features = ["testing"] }
-insta = { version = "1.45", features = ["toml", "json", "redactions"] }
+insta = { version = "1.46", features = ["toml", "json", "redactions"] }
 pathdiff = "0.2"
 regex = "1.12.2"
 similar = "2.7"
