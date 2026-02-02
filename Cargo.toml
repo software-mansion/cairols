@@ -131,7 +131,7 @@ cairo-lang-syntax-codegen = { git = "https://github.com/starkware-libs/cairo", r
 cairo-lang-test-plugin = { git = "https://github.com/starkware-libs/cairo", rev = "de768f33024c3092fd31187c86030ba245535668" }
 cairo-lang-test-utils = { git = "https://github.com/starkware-libs/cairo", rev = "de768f33024c3092fd31187c86030ba245535668" }
 cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", rev = "de768f33024c3092fd31187c86030ba245535668" }
-cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "b7ee75d3969bd92063e2d1ec68c14547991706e5" }
+cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "d7ffbc26d218597e9ea8de6cdc3caa29f3e0de32" }
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,
 # while crates in this workspace are built with `dev` profile and full debug info.
