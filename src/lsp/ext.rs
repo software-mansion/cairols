@@ -110,13 +110,14 @@ impl Notification for ServerStatus {
 pub enum ServerStatusEvent {
     AnalysisStarted,
     AnalysisFinished,
+    MacrosBuildingStarted,
+    MacrosBuildingFinished,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerStatusParams {
     pub event: ServerStatusEvent,
-    pub idle: bool,
 }
 
 #[derive(Debug)]
