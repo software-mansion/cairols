@@ -14,6 +14,7 @@ impl<'db, T: TypedSyntaxNode<'db>> SpanSource<'db> for T {
     }
 }
 
+#[derive(Clone)]
 pub struct CallSiteLocation<'db> {
     pub stable_ptr: SyntaxStablePtrId<'db>,
     pub span: TextSpan,
