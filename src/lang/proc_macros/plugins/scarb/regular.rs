@@ -81,6 +81,9 @@ pub fn macro_generate_code<'db>(
     let ctx = AllocationContext::default();
     let (input, body) = parse_attribute(db, Vec::from(defined_attributes), item_ast.clone(), &ctx);
 
+    // All derives to be applied.
+    let derives = parse_derive(db, defined_derives, item_ast.clone());
+
     if let Some(result) = match input {
         AttrExpansionFound::Last(AttrExpansionArgs {
             name,
@@ -103,7 +106,8 @@ pub fn macro_generate_code<'db>(
         expand_attribute(
             db,
             expansion_context.clone(),
-            last,
+            // We also want to mark that this is the last attribute if there are no derives to be applied.
+            last && derives.is_empty(),
             token_stream,
             item_ast.as_syntax_node(),
             AttrExpansionArgs { name, call_site, args, attribute_location, fingerprint },
@@ -117,8 +121,8 @@ pub fn macro_generate_code<'db>(
     if let Some(result) = expand_derives(
         db,
         expansion_context.clone(),
-        defined_derives,
         item_ast.clone(),
+        derives,
         stream_metadata.clone(),
     ) {
         return result;
@@ -687,8 +691,8 @@ fn parse_derive<'db>(
 fn expand_derives<'db>(
     db: &'db dyn Database,
     expansion_context: ProcMacroScope,
-    defined_derives: &[MacroWithHash],
     item_ast: ast::ModuleItem<'db>,
+    derives: Vec<(MacroWithHash, CallSiteLocation<'db>)>,
     stream_metadata: TokenStreamMetadata,
 ) -> Option<PluginResult<'db>> {
     let mut token_stream_builder = TokenStreamBuilder::new(db);
@@ -696,9 +700,6 @@ fn expand_derives<'db>(
     token_stream_builder.with_metadata(stream_metadata.clone());
     let ctx = AllocationContext::default();
     let token_stream = token_stream_builder.build(&ctx);
-
-    // All derives to be applied.
-    let mut derives = parse_derive(db, defined_derives, item_ast.clone());
 
     if derives.is_empty() {
         // No derives found - returning early.
@@ -713,6 +714,7 @@ fn expand_derives<'db>(
     // This may involve multiple proc-macro binaries for a single request.
     // To ensure deterministic results, we sort the derives and combine the
     // fingerprints of each proc-macro. The PMS side uses the same approach.
+    let mut derives = derives;
     derives.sort_by_key(|(m, _)| m.name.clone());
 
     let mut hasher = StableHasher::new();
