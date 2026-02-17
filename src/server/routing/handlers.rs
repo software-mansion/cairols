@@ -33,6 +33,7 @@ use serde_json::{Value, json};
 use tracing::{error, trace};
 
 use crate::ide::code_lens::{CodeLensController, FileChange};
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
@@ -137,6 +138,19 @@ impl SyncRequestHandler for ExecuteCommand {
     }
 }
 
+fn hover_call<F>(f: F, params: HoverParams, db: &AnalysisDatabase) -> Option<Hover>
+where
+    F: FnOnce(HoverParams, &AnalysisDatabase) -> Option<Hover> + std::panic::UnwindSafe,
+{
+    catch_unwind(AssertUnwindSafe(|| f(params, db))).unwrap_or_else(|err| {
+        if is_cancelled(err.as_ref()) {
+            resume_unwind(err);
+        }
+        error!("Hover implementation panicked");
+        None
+    })
+}
+
 impl BackgroundDocumentRequestHandler for HoverRequest {
     const RETRY: bool = false;
 
@@ -147,14 +161,10 @@ impl BackgroundDocumentRequestHandler for HoverRequest {
         _notifier: Notifier,
         params: HoverParams,
     ) -> LSPResult<Option<Hover>> {
-        Ok(catch_unwind(AssertUnwindSafe(|| ide::hover::hover(params, &snapshot.db)))
-            .unwrap_or_else(|err| {
-                if is_cancelled(err.as_ref()) {
-                    resume_unwind(err);
-                }
-                error!("HoverRequest handler panicked");
-                None
-            }))
+        let uri = &params.text_document_position_params.text_document.uri;
+        let hover_impl: fn(HoverParams, &AnalysisDatabase) -> Option<Hover> =
+            if is_scarb_manifest(uri) { ide::scarb_toml::hover::hover } else { ide::hover::hover };
+        Ok(hover_call(hover_impl, params, &snapshot.db))
     }
 }
 
@@ -684,4 +694,8 @@ impl BackgroundDocumentRequestHandler for InlayHintRequest {
 
 pub fn is_cairo_file_path(file_path: &Url) -> bool {
     file_path.path().ends_with(".cairo")
+}
+
+pub fn is_scarb_manifest(uri: &Url) -> bool {
+    uri.path().ends_with("Scarb.toml")
 }
