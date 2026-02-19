@@ -2,22 +2,20 @@ use std::ops::Not;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_doc::db::DocGroup;
-use cairo_lang_filesystem::ids::{
-    FileId, FileKind, FileLongId, SmolStrId, SpanInFile, VirtualFile,
-};
-use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
+use cairo_lang_filesystem::ids::{FileId, FileLongId, SpanInFile};
+use cairo_lang_filesystem::span::{TextPosition, TextSpan};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::{ResolutionContext, Resolver};
-use cairo_lang_syntax::node::ast::{PathSegment, TerminalIdentifier};
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
-use cairo_lang_utils::Intern;
+use cairo_lang_syntax::node::ast::TerminalIdentifier;
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_language_common::CommonGroup;
 use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location};
 
+use crate::ide::doc_links::{DocLinkCursorContext, parse_doc_link_path};
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::{NonMacroModuleId, ResolvedItem, SymbolDef, SymbolSearch};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
@@ -68,10 +66,10 @@ fn try_goto_doc_link_def(
 
     let expr_path = parse_doc_link_path(db, dest_text.as_str())?;
 
-    // We want to resolve the path up to the segment containing the cursor
     // Default to the whole path.
     let segments =
-        doc_link_segments_for_offset(db, &expr_path, &dest_text, link.dest_span?, cursor_offset)
+        DocLinkCursorContext::new(db, &expr_path, link.dest_span?, &dest_text, cursor_offset)
+            .and_then(|cursor_ctx| cursor_ctx.segments_up_to_cursor(db))
             .unwrap_or_else(|| expr_path.segments(db).elements_vec(db));
 
     // Run resolver to retrieve the definition node.
@@ -88,65 +86,6 @@ fn try_goto_doc_link_def(
 
     let resolved_node = ResolvedItem::Generic(resolved_item).definition_node(db)?;
     goto(db, resolved_node)
-}
-
-// Create a virtual file and run the parser on it to get a path to the target symbol.
-// This is needed because we can't parse doc comments directly.
-fn parse_doc_link_path<'db>(
-    db: &'db AnalysisDatabase,
-    dest_text: &str,
-) -> Option<ast::ExprPath<'db>> {
-    let virtual_file = FileLongId::Virtual(VirtualFile {
-        parent: None,
-        name: SmolStrId::from(db, "doc-link"),
-        content: SmolStrId::from(db, dest_text),
-        code_mappings: Default::default(),
-        kind: FileKind::Expr,
-        original_item_removed: false,
-    })
-    .intern(db);
-
-    let expr = match db.file_expr_syntax(virtual_file) {
-        Ok(expr) => expr,
-        Err(_) => return None,
-    };
-    let ast::Expr::Path(expr_path) = expr else {
-        return None;
-    };
-    Some(expr_path)
-}
-
-// Returns path segments up to the one containing `cursor_offset`, or the last segment before it.
-fn doc_link_segments_for_offset<'db>(
-    db: &'db AnalysisDatabase,
-    dest_expr_path: &ast::ExprPath<'db>,
-    dest_text: &str,
-    dest_span: TextSpan,
-    cursor_offset: TextOffset,
-) -> Option<Vec<PathSegment<'db>>> {
-    let absolute_cursor = TextSpan::cursor(cursor_offset);
-    if !dest_span.contains(absolute_cursor) {
-        return None;
-    }
-    let relative_cursor_offset = (cursor_offset - dest_span.start).as_u32();
-    if dest_text.as_bytes().get(relative_cursor_offset as usize) == Some(&b':') {
-        return None;
-    }
-
-    let relative_cursor =
-        TextOffset::START.add_width(TextWidth::new_for_testing(relative_cursor_offset));
-    let relative_cursor_span = TextSpan::cursor(relative_cursor);
-    let segments = dest_expr_path.segments(db).elements_vec(db);
-
-    let mut left_hand_segments = Vec::new();
-    for segment in segments.into_iter() {
-        let span = segment.as_syntax_node().span(db);
-        left_hand_segments.push(segment);
-        if span.contains(relative_cursor_span) {
-            break;
-        }
-    }
-    (!left_hand_segments.is_empty()).then_some(left_hand_segments)
 }
 
 fn goto<'db>(db: &'db AnalysisDatabase, syntax_node: SyntaxNode<'db>) -> Option<Location> {

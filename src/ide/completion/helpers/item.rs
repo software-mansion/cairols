@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::{ImportableId, NamedLanguageElementId};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId};
 use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
 use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
+use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::ItemStruct;
 use lsp_types::{CompletionItem, CompletionItemLabelDetails, InsertTextFormat};
@@ -17,6 +18,69 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::importable::{importable_crate_id, importable_syntax_node};
 use crate::lang::importer::new_import_edit;
 use crate::lang::text_matching::text_matches;
+
+pub struct FirstSegmentCompletionCandidate<'a> {
+    pub path: String,
+    pub completion: ImportableCompletionItem<'a>,
+}
+
+impl FirstSegmentCompletionCandidate<'_> {
+    pub fn into_path_completion(self) -> CompletionItemOrderable {
+        let description = self
+            .completion
+            .item
+            .item
+            .label_details
+            .as_ref()
+            .and_then(|details| details.description.clone());
+
+        CompletionItemOrderable {
+            item: CompletionItem {
+                label: self.path,
+                kind: self.completion.item.item.kind,
+                label_details: description.map(|description| CompletionItemLabelDetails {
+                    detail: None,
+                    description: Some(description),
+                }),
+                ..CompletionItem::default()
+            },
+            relevance: self.completion.item.relevance,
+        }
+    }
+}
+
+pub fn first_segment_completion_candidates<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &'db AnalysisContext<'db>,
+    typed: &str,
+) -> Vec<FirstSegmentCompletionCandidate<'db>> {
+    let Some(importables) = db.visible_importables_from_module(ctx.module_id) else {
+        return Default::default();
+    };
+    let current_crate = ctx.module_id.owning_crate(db);
+    let typed_segment = SmolStrId::from(db, typed);
+
+    importables
+        .iter()
+        .filter_map(|(importable, path)| {
+            if path.split("::").count() != 1 || !text_matches(path, typed) {
+                return None;
+            }
+
+            let completion = ImportableCompletionItem::get_completion_item_for_importable(
+                db,
+                ctx,
+                importable,
+                current_crate,
+                path,
+                vec![],
+                typed_segment,
+            )?;
+
+            Some(FirstSegmentCompletionCandidate { path: path.clone(), completion })
+        })
+        .collect()
+}
 
 // Specifies how relevant a completion is relative to the scope of the current cursor position.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Serialize, Debug, Copy)]
