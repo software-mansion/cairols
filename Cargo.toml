@@ -1,6 +1,6 @@
 [package]
 name = "cairo-language-server"
-version = "2.17.0-rc.0"
+version = "2.17.0-rc.1"
 edition = "2024"
 
 authors = ["Software Mansion <contact@swmansion.com>", "StarkWare <info@starkware.co>"]
@@ -53,7 +53,7 @@ cairo-lang-syntax-codegen = "2.17.0-rc.0"
 cairo-lang-test-plugin = "2.17.0-rc.0"
 cairo-lang-utils = "2.17.0-rc.0"
 cairo-language-common = "2.17.0-rc.0"
-cairo-lint = "2.17.0-rc.0"
+cairo-lint = "2.17.0-rc.1"
 colored = "3.1.1"
 convert_case = "0.11.0"
 create-output-dir = "1.0.0"
