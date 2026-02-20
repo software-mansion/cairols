@@ -123,11 +123,11 @@ fn cursor_in_doc_link_label_has_no_completions() {
         }
     }
 
-    /// See [Stru<caret>cture](docs::nested::Structure).
+    /// See [Stru<caret>](docs::nested::Structure).
     fn foo() {}
     ", @r#"
     caret = """
-    /// See [Stru<caret>cture](docs::nested::Structure).
+    /// See [Stru<caret>](docs::nested::Structure).
     """
     completions = []
     "#);
@@ -142,11 +142,11 @@ fn cursor_outside_markdown_link_has_no_completions() {
         }
     }
 
-    /// See docs::nested::Stru<caret>cture.
+    /// See docs::nested::Stru<caret>
     fn foo() {}
     ", @r#"
     caret = """
-    /// See docs::nested::Stru<caret>cture.
+    /// See docs::nested::Stru<caret>
     """
     completions = []
     "#);
