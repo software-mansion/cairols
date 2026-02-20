@@ -397,6 +397,15 @@ fn no_text_in_use_statement() {
     """
 
     [[completions]]
+    completion_label = "dep"
+
+    [[completions]]
+    completion_label = "hello"
+
+    [[completions]]
+    completion_label = "my_mod"
+
+    [[completions]]
     completion_label = "Option"
 
     [[completions]]
@@ -410,15 +419,6 @@ fn no_text_in_use_statement() {
 
     [[completions]]
     completion_label = "core"
-
-    [[completions]]
-    completion_label = "dep"
-
-    [[completions]]
-    completion_label = "hello"
-
-    [[completions]]
-    completion_label = "my_mod"
 
     [[completions]]
     completion_label = "starknet"
