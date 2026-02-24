@@ -1,6 +1,5 @@
 use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_semantic::items::us::get_use_path_segments;
-use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::{ItemUse, UsePathLeaf, UsePathSingle};
 use cairo_lang_syntax::node::kind::SyntaxKind::{
     UsePathLeaf as UsePathLeafKind, UsePathMulti, UsePathSingle as UsePathSingleKind, UsePathStar,
@@ -9,12 +8,11 @@ use cairo_lang_syntax::node::{
     Token,
     ast::{PathSegment, UsePath},
 };
-use lsp_types::CompletionItem;
 
-use super::{helpers::completion_kind::importable_completion_kind, path::path_prefix_completions};
-use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
+use super::{helpers::item::first_segment_completion_candidates, path::path_prefix_completions};
+use crate::ide::completion::CompletionItemOrderable;
+use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::{analysis_context::AnalysisContext, text_matching::text_matches};
 
 pub fn use_completions<'db>(
     db: &'db AnalysisDatabase,
@@ -86,27 +84,17 @@ fn first_segment<'db>(
     typed: &str,
     ctx: &AnalysisContext<'db>,
 ) -> Option<Vec<CompletionItemOrderable>> {
-    let importables = db.visible_importables_from_module(ctx.module_id)?;
-
     Some(
-        importables
-            .iter()
-            .filter_map(|(importable, path)| {
-                let is_in_scope = path.split("::").count() == 1;
-                match importable {
+        first_segment_completion_candidates(db, ctx, typed)
+            .into_iter()
+            .filter_map(|candidate| {
+                match candidate.completion.importable_id {
                     // Other items can not be non-last segment, ignore them as it makes no sense to import them.
                     ImportableId::Submodule(_) | ImportableId::Crate(_) | ImportableId::Enum(_)
-                    // Take only if this item can be used wihtout prefix path
-                        if is_in_scope && text_matches(path, typed) =>
+                    // Take only if this item can be used without prefix path.
+                        =>
                     {
-                      Some(CompletionItemOrderable {
-                          item: CompletionItem {
-                              label: path.clone(),
-                              kind: Some(importable_completion_kind(*importable)),
-                              ..CompletionItem::default()
-                          },
-                          relevance: CompletionRelevance::High,
-                      })
+                        Some(candidate.into_path_completion())
                     }
                     _ => None,
                 }
