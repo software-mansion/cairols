@@ -280,7 +280,7 @@ pub fn collect_dynamic_registrations(
         registrations.push(create_registration(Formatting::METHOD, registration_options));
     }
 
-    let hoover_text_document_registration_options = TextDocumentRegistrationOptions {
+    let hover_text_document_registration_options = TextDocumentRegistrationOptions {
         document_selector: Some(vec![
             DocumentFilter {
                 language: Some("cairo".to_string()),
@@ -302,7 +302,7 @@ pub fn collect_dynamic_registrations(
 
     if client_capabilities.hover_dynamic_registration() {
         let registration_options = HoverRegistrationOptions {
-            text_document_registration_options: hoover_text_document_registration_options,
+            text_document_registration_options: hover_text_document_registration_options,
             hover_options: Default::default(),
         };
 
