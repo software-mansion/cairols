@@ -7,16 +7,16 @@ use lsp_types::{Hover, HoverContents, HoverParams, MarkupContent, MarkupKind};
 use scarb_manifest_schema::get_shared_traverser;
 use toml_edit::{Document, Item};
 
-use super::utils::lsp_position_to_byte_offset;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::{LsProtoGroup, ToLsp};
+use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
 
 pub(crate) fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
     let uri = &params.text_document_position_params.text_document.uri;
     let file_id = db.file_for_url(uri)?;
     let raw_toml = db.file_content(file_id)?;
-    let position = params.text_document_position_params.position;
-    let offset = lsp_position_to_byte_offset(raw_toml, position);
+
+    let position = params.text_document_position_params.position.to_cairo();
+    let offset = position.offset_in_file(db, file_id)?.as_u32() as usize;
 
     if let Ok((toml_path, location)) = find_at_offset(raw_toml, offset) {
         let traverser = get_shared_traverser();
