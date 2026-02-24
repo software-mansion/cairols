@@ -23,8 +23,13 @@ fn manifest_hover_package_name() {
         highlight = """
         <sel>name</sel> = "my_pkg"
         """
-        popover = '"The package name is a valid Cairo identifier used to refer to the package.\nIt is used when listed as a dependency in another package, and as the default name of targets.\n\nThe name must use only ASCII lowercase alphanumeric characters or _, and cannot be empty. It also must not be a valid Cairo keyword or a wildcard pattern (_).\n- See official documentation at: <https://docs.swmansion.com/scarb/docs/reference/manifest.html#name>"'
-"#)
+        popover = """
+        The package name is a valid Cairo identifier used to refer to the package.
+        It is used when listed as a dependency in another package, and as the default name of targets.
+
+        The name must use only ASCII lowercase alphanumeric characters or _, and cannot be empty. It also must not be a valid Cairo keyword or a wildcard pattern (_).
+        - See official documentation at: <https://docs.swmansion.com/scarb/docs/reference/manifest.html#name>"""
+        "#)
 }
 
 #[test]
@@ -47,8 +52,11 @@ fn manifest_hover_workspace_members() {
             "crates/*",
         ]</sel>
         """
-        popover = '"List of workspace member package paths (relative to the workspace root).\nSupports globs to match multiple paths, using typical filename glob patterns like * and ?.\n- See official documentation at: <https://docs.swmansion.com/scarb/docs/reference/workspaces.html#members>"'
-"#)
+        popover = """
+        List of workspace member package paths (relative to the workspace root).
+        Supports globs to match multiple paths, using typical filename glob patterns like * and ?.
+        - See official documentation at: <https://docs.swmansion.com/scarb/docs/reference/workspaces.html#members>"""
+        "#)
 }
 
 #[test]
@@ -86,6 +94,6 @@ fn manifest_hover_package_edition_workspace() {
         highlight = """
         edition.<sel>workspace</sel> = true
         """
-        popover = '"Allows inheriting keys from a workspace."'
+        popover = "Allows inheriting keys from a workspace."
 "#)
 }

@@ -25,7 +25,8 @@ pub(crate) fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover>
             .traverse(toml_path)
             .unwrap_or_default()
             .get("description")
-            .map(|v: &serde_json::Value| v.to_string());
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned);
 
         let start = TextOffset::START.add_width(TextWidth::at(raw_toml, location.start));
         let end = TextOffset::START.add_width(TextWidth::at(raw_toml, location.end));
