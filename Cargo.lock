@@ -467,7 +467,8 @@ dependencies = [
 [[package]]
 name = "cairo-lang-macro"
 version = "0.2.2"
-source = "git+https://github.com/software-mansion/scarb/?branch=spr%2Fmain%2F986bd66f#62a99f84b2d020b22b3bdb7dd948f6c34025fdf2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "825620f583a897969ef54fe3c5364a6fee01b293720b53428a066049a88d6813"
 dependencies = [
  "bumpalo",
  "cairo-lang-macro-attributes 0.2.1",
@@ -502,7 +503,8 @@ dependencies = [
 [[package]]
 name = "cairo-lang-macro-attributes"
 version = "0.2.1"
-source = "git+https://github.com/software-mansion/scarb/?branch=spr%2Fmain%2F986bd66f#62a99f84b2d020b22b3bdb7dd948f6c34025fdf2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "261c5f0436c8d3e7e0b0c992115d875e2256454b6d0efd769d40dd80509f2d33"
 dependencies = [
  "quote",
  "scarb-stable-hash",
@@ -523,7 +525,8 @@ source = "git+https://github.com/software-mansion/scarb.git?rev=5f11cee9f8c94209
 [[package]]
 name = "cairo-lang-macro-stable"
 version = "2.0.0"
-source = "git+https://github.com/software-mansion/scarb/?branch=spr%2Fmain%2F986bd66f#62a99f84b2d020b22b3bdb7dd948f6c34025fdf2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "414b7ba40b5ec3f26101b5c76df5739190832834b95689a723f3f88ec1695fe3"
 
 [[package]]
 name = "cairo-lang-parser"
@@ -603,7 +606,8 @@ dependencies = [
 [[package]]
 name = "cairo-lang-quote"
 version = "0.2.0"
-source = "git+https://github.com/software-mansion/scarb/?branch=spr%2Fmain%2F986bd66f#62a99f84b2d020b22b3bdb7dd948f6c34025fdf2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0476b3528ba25d371ebeebe6a55816702984b23feea46d4b8751114ef3157779"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2759,20 +2763,20 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
 name = "ra-ap-rustc_lexer"
-version = "0.150.0"
+version = "0.138.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "798846b5bb9cf4e514e5edc27fa897d5f1c839716fe216bd6c2ca172d678c4d0"
+checksum = "2b991347666d7f8334c9d9204914d853720baaa9de0015e08f87c9ba29593338"
 dependencies = [
  "memchr",
- "unicode-ident",
  "unicode-properties",
+ "unicode-xid",
 ]
 
 [[package]]
 name = "ra-ap-rustc_parse_format"
-version = "0.150.0"
+version = "0.138.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3b1c7b61d153d8c7e41f57c707c79fc537ab3756cc9c4d86cf569d1a28ef00f"
+checksum = "3fc97c3250406e0e0af9528325f41fe82492c85e467830418b75aa436d2c2ae9"
 dependencies = [
  "ra-ap-rustc_lexer",
  "rustc-literal-escaper",
@@ -2970,9 +2974,9 @@ checksum = "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
 
 [[package]]
 name = "rustc-literal-escaper"
-version = "0.0.7"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8be87abb9e40db7466e0681dc8ecd9dcfd40360cb10b4c8fe24a7c4c3669b198"
+checksum = "e4ee29da77c5a54f42697493cd4c9b9f31b74df666a6c04dfc4fde77abe0438b"
 
 [[package]]
 name = "rustc_version"
@@ -3063,7 +3067,8 @@ dependencies = [
 [[package]]
 name = "scarb-manifest-schema"
 version = "1.0.0"
-source = "git+https://github.com/software-mansion/scarb/?branch=spr%2Fmain%2F986bd66f#62a99f84b2d020b22b3bdb7dd948f6c34025fdf2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4bc53a61f0afaa1f462b131f12d210e048dfef95263ddc9d46d7252cfc6e72c3"
 dependencies = [
  "anyhow",
  "serde_json",
@@ -4374,8 +4379,3 @@ name = "zmij"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
-
-[[patch.unused]]
-name = "cairo-lang-executable"
-version = "2.15.0"
-source = "git+https://github.com/starkware-libs/cairo?rev=661df684cb9f5e14b24d0cd0a0b78166c92185ab#661df684cb9f5e14b24d0cd0a0b78166c92185ab"
