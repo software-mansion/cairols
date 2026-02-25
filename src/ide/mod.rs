@@ -10,4 +10,5 @@ pub mod introspection;
 pub mod macros;
 mod markdown;
 pub mod navigation;
+pub mod scarb_toml;
 pub mod semantic_highlighting;

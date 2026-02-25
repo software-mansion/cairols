@@ -147,7 +147,11 @@ impl BackgroundDocumentRequestHandler for HoverRequest {
         _notifier: Notifier,
         params: HoverParams,
     ) -> LSPResult<Option<Hover>> {
-        Ok(catch_unwind(AssertUnwindSafe(|| ide::hover::hover(params, &snapshot.db)))
+        let uri = &params.text_document_position_params.text_document.uri;
+        if is_scarb_manifest(uri) {
+            Ok(catch_unwind(AssertUnwindSafe(|| {
+                ide::scarb_toml::hover::hover(params, &snapshot.db)
+            }))
             .unwrap_or_else(|err| {
                 if is_cancelled(err.as_ref()) {
                     resume_unwind(err);
@@ -155,6 +159,16 @@ impl BackgroundDocumentRequestHandler for HoverRequest {
                 error!("HoverRequest handler panicked");
                 None
             }))
+        } else {
+            Ok(catch_unwind(AssertUnwindSafe(|| ide::hover::hover(params, &snapshot.db)))
+                .unwrap_or_else(|err| {
+                    if is_cancelled(err.as_ref()) {
+                        resume_unwind(err);
+                    }
+                    error!("HoverRequest handler panicked");
+                    None
+                }))
+        }
     }
 }
 
@@ -684,4 +698,8 @@ impl BackgroundDocumentRequestHandler for InlayHintRequest {
 
 pub fn is_cairo_file_path(file_path: &Url) -> bool {
     file_path.path().ends_with(".cairo")
+}
+
+pub fn is_scarb_manifest(uri: &Url) -> bool {
+    uri.path().ends_with("Scarb.toml")
 }

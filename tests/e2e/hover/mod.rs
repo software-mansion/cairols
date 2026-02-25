@@ -17,6 +17,7 @@ mod generic_params;
 mod keywords;
 mod literals;
 mod macros;
+mod manifest;
 mod missing_module;
 mod partial;
 mod paths;
@@ -25,7 +26,25 @@ mod traits;
 mod types;
 mod variables;
 
-impl Transformer for Hover {
+trait HoverFile {
+    fn main_file() -> &'static str;
+}
+
+impl HoverFile for Hover {
+    fn main_file() -> &'static str {
+        "src/lib.cairo"
+    }
+}
+
+struct HoverManifest;
+
+impl HoverFile for HoverManifest {
+    fn main_file() -> &'static str {
+        "Scarb.toml"
+    }
+}
+
+impl<T: HoverFile> Transformer for T {
     fn capabilities(base: ClientCapabilities) -> ClientCapabilities {
         ClientCapabilities {
             text_document: base.text_document.or_else(Default::default).map(|it| {
@@ -46,12 +65,13 @@ impl Transformer for Hover {
         cursors: Cursors,
         _config: Option<serde_json::Value>,
     ) -> String {
-        let cairo = ls.fixture.read_file("src/lib.cairo");
+        let main_file = Self::main_file();
+        let cairo = ls.fixture.read_file(main_file);
         let position = cursors.assert_single_caret();
 
         let hover = ls.send_request::<lsp_request!("textDocument/hover")>(HoverParams {
             text_document_position_params: TextDocumentPositionParams {
-                text_document: ls.doc_id("src/lib.cairo"),
+                text_document: ls.doc_id(main_file),
                 position,
             },
             work_done_progress_params: Default::default(),
@@ -66,6 +86,10 @@ impl Transformer for Hover {
             popover: hover.map(render),
         }
         .to_string()
+    }
+
+    fn main_file() -> &'static str {
+        <T as HoverFile>::main_file()
     }
 }
 
