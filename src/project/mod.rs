@@ -10,7 +10,7 @@ use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
-use lsp_types::{MessageType, ShowMessageParams};
+use lsp_types::{MessageType, ShowMessageParams, Url};
 use tracing::{debug, error, warn};
 
 pub use self::crate_data::{Crate, extract_custom_file_stems};
@@ -112,8 +112,10 @@ impl ProjectController {
     #[tracing::instrument(skip_all, fields(project_update))]
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
         let db = &mut state.db;
+        let mut manifest_to_track = None;
         match project_update {
             ProjectUpdate::Scarb { crates, workspace_dir, workspace_manifest_path } => {
+                manifest_to_track = Some(workspace_manifest_path.clone());
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
                 state.proc_macro_controller.request_defined_macros(db, workspace_manifest_path);
                 state.project_controller.model.load_workspace(
@@ -124,7 +126,8 @@ impl ProjectController {
                 );
                 state.analysis_progress_controller.project_model_loaded();
             }
-            ProjectUpdate::ScarbMetadataFailed => {
+            ProjectUpdate::ScarbMetadataFailed { manifest_path } => {
+                manifest_to_track = Some(manifest_path);
                 // Try to set up a corelib at least if it is not in the db already.
                 try_to_init_unmanaged_core_if_not_present(
                     db,
@@ -181,6 +184,14 @@ impl ProjectController {
         // Drop mut ref so we can obtain snapshot.
         let _ = db;
 
+        // Keep discovered workspace manifest in the diagnostics primary set even when
+        // a Cairo source file triggered the refresh and the manifest is not open in the editor.
+        if let Some(manifest_path) = manifest_to_track
+            && let Ok(manifest_uri) = Url::from_file_path(manifest_path)
+        {
+            state.open_files.insert(manifest_uri);
+        }
+
         // Manifest may have changed, update for open files
         state.code_lens_controller.on_did_change(
             state.db.clone(),
@@ -221,7 +232,7 @@ impl ProjectController {
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
 pub enum ProjectUpdate {
     Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf, workspace_manifest_path: PathBuf },
-    ScarbMetadataFailed,
+    ScarbMetadataFailed { manifest_path: PathBuf },
     CairoProjectToml(Box<Option<ProjectConfig>>),
     NoConfig(PathBuf),
 }
@@ -299,7 +310,7 @@ impl ProjectControllerThread {
                             .manifest_path
                             .into_std_path_buf(),
                     })
-                    .unwrap_or(ProjectUpdate::ScarbMetadataFailed)
+                    .unwrap_or(ProjectUpdate::ScarbMetadataFailed { manifest_path })
             }
 
             Some(ProjectManifestPath::CairoProject(config_path)) => {

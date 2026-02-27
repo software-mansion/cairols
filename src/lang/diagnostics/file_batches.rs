@@ -8,6 +8,7 @@ use lsp_types::Url;
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
+use crate::toolchain::scarb::SCARB_TOML;
 
 /// Finds all analyzable on disk files in `db` that are open and need to be analysed ASAP,
 /// thus _primary_.
@@ -19,11 +20,15 @@ pub fn find_primary_files<'db>(
     open_files
         .iter()
         .filter_map(|uri| db.file_for_url(uri))
-        // 1. Filter out files that don't belong to any crate, e.g. removed modules.
-        // 2. We only want to process on disk files.
-        //    Relevant virtual files will be processed as a result of processing on disk files.
+        // We only want to process on disk files.
+        // Relevant virtual files will be processed as a result of processing on disk files.
         .filter(|file_id| {
-            db.file_modules(*file_id).is_ok() && matches!(file_id.long(db), FileLongId::OnDisk(_))
+            let FileLongId::OnDisk(path) = file_id.long(db) else { return false };
+
+            // 1. Process Cairo source files that belong to any crate, excluding removed modules.
+            // 2. Process open Scarb manifests through the dedicated Scarb manifest diagnostics path.
+            db.file_modules(*file_id).is_ok()
+                || path.file_name().and_then(|name| name.to_str()) == Some(SCARB_TOML)
         })
         .collect()
 }

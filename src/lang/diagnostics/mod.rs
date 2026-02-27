@@ -27,6 +27,7 @@ mod file_diagnostics;
 mod lsp;
 mod project_diagnostics;
 mod refresh;
+mod scarb_manifest;
 
 /// Schedules refreshing of diagnostics in a background thread.
 ///

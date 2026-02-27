@@ -10,10 +10,11 @@ use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FilesDiagnostics;
 use crate::lang::diagnostics::project_diagnostics::ProjectDiagnostics;
+use crate::lang::diagnostics::scarb_manifest::collect_scarb_manifest_diagnostics;
 use crate::lang::lsp::LsProtoGroup;
 use crate::project::ConfigsRegistry;
 use crate::server::client::Notifier;
-use crate::toolchain::scarb::ScarbToolchain;
+use crate::toolchain::scarb::{SCARB_TOML, ScarbToolchain};
 
 /// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(skip_all)]
@@ -27,15 +28,25 @@ pub fn refresh_diagnostics<'db>(
     scarb_toolchain: ScarbToolchain,
 ) {
     for file in batch {
-        refresh_file_diagnostics(
-            db,
-            config,
-            config_registry,
-            file,
-            &project_diagnostics,
-            &notifier,
-            &scarb_toolchain,
-        );
+        if let Some(manifest_path) = scarb_manifest_path(db, file) {
+            refresh_scarb_manifest_diagnostics(
+                db,
+                file,
+                manifest_path,
+                &project_diagnostics,
+                &notifier,
+            );
+        } else {
+            refresh_file_diagnostics(
+                db,
+                config,
+                config_registry,
+                file,
+                &project_diagnostics,
+                &notifier,
+                &scarb_toolchain,
+            );
+        }
     }
 }
 
@@ -97,6 +108,41 @@ fn refresh_file_diagnostics<'db>(
             version: None,
         });
     }
+}
+
+fn refresh_scarb_manifest_diagnostics<'db>(
+    db: &'db AnalysisDatabase,
+    root_on_disk_file: FileId<'db>,
+    manifest_path: &'db std::path::Path,
+    project_diagnostics: &ProjectDiagnostics,
+    notifier: &Notifier,
+) {
+    // Scarb manifest diagnostics are intentionally based on saved files only.
+    // Skip updates while this manifest has unsaved in-memory changes.
+    if db.file_overrides().contains_key(&root_on_disk_file) {
+        return;
+    }
+
+    let Some((root_on_disk_file_url, new_diags)) =
+        collect_scarb_manifest_diagnostics(db, root_on_disk_file, manifest_path)
+    else {
+        return;
+    };
+
+    let diags_to_send = project_diagnostics.update(root_on_disk_file_url, new_diags);
+    for (url, diagnostics) in diags_to_send {
+        notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+            uri: url,
+            diagnostics,
+            version: None,
+        });
+    }
+}
+
+fn scarb_manifest_path<'db>(db: &'db AnalysisDatabase, file: FileId<'db>) -> Option<&'db std::path::Path> {
+    let FileLongId::OnDisk(path) = file.long(db) else { return None };
+    (path.file_name().and_then(|name| name.to_str()) == Some(SCARB_TOML))
+        .then_some(path.as_path())
 }
 
 /// For an on disk file - returns a path to it.
