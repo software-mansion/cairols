@@ -179,8 +179,31 @@ pub fn collect_dynamic_registrations(
             pattern: None,
         },
     ]);
+
+    // Relevant documents for text synchronization.
+    // We sync Scarb manifests as well, so manifest diagnostics can be published
+    // immediately on opening `Scarb.toml`.
+    let sync_document_selector = Some(vec![
+        DocumentFilter {
+            language: Some("cairo".to_string()),
+            scheme: Some("file".to_string()),
+            pattern: None,
+        },
+        DocumentFilter {
+            language: Some("cairo".to_string()),
+            scheme: Some("vfs".to_string()),
+            pattern: None,
+        },
+        DocumentFilter {
+            language: None,
+            scheme: Some("file".to_string()),
+            pattern: Some("**/Scarb.toml".into()),
+        },
+    ]);
     let text_document_registration_options =
         TextDocumentRegistrationOptions { document_selector: document_selector.clone() };
+    let text_document_sync_registration_options =
+        TextDocumentRegistrationOptions { document_selector: sync_document_selector.clone() };
 
     if client_capabilities.did_change_watched_files_dynamic_registration() {
         // Register patterns for the client file watcher.
@@ -201,13 +224,13 @@ pub fn collect_dynamic_registrations(
     if client_capabilities.text_document_synchronization_dynamic_registration() {
         registrations.push(create_registration(
             DidOpenTextDocument::METHOD,
-            &text_document_registration_options,
+            &text_document_sync_registration_options,
         ));
 
         registrations.push(create_registration(
             DidChangeTextDocument::METHOD,
             TextDocumentChangeRegistrationOptions {
-                document_selector,
+                document_selector: sync_document_selector.clone(),
                 sync_kind: 1, // TextDocumentSyncKind::FULL
             },
         ));
@@ -216,13 +239,13 @@ pub fn collect_dynamic_registrations(
             DidSaveTextDocument::METHOD,
             TextDocumentSaveRegistrationOptions {
                 include_text: Some(false),
-                text_document_registration_options: text_document_registration_options.clone(),
+                text_document_registration_options: text_document_sync_registration_options.clone(),
             },
         ));
 
         registrations.push(create_registration(
             DidCloseTextDocument::METHOD,
-            &text_document_registration_options,
+            &text_document_sync_registration_options,
         ));
     }
 
