@@ -125,7 +125,8 @@ fn refresh_scarb_manifest_diagnostics<'db>(
         return;
     }
 
-    let Some(scarb_path) = scarb_toolchain.silent().discover() else {
+    let scarb_toolchain = scarb_toolchain.silent();
+    let Some(scarb_path) = scarb_toolchain.discover() else {
         return;
     };
 
