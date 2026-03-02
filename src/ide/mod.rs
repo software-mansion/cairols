@@ -2,7 +2,6 @@ pub mod analysis_progress;
 pub mod code_actions;
 pub mod code_lens;
 pub mod completion;
-mod doc_links;
 pub mod format;
 pub mod hover;
 pub mod inlay_hints;

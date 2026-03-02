@@ -5,14 +5,12 @@ use std::collections::hash_map::Entry;
 use attribute::attribute_completions;
 use attribute::derive::derive_completions;
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::span::TextPosition;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_language_common::CommonGroup;
-use doc_links::doc_link_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
@@ -35,7 +33,6 @@ use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod attribute;
-mod doc_links;
 mod dot_completions;
 mod expr;
 mod function;
@@ -65,6 +62,14 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
         return None;
     }
 
+    if matches!(
+        node.kind(db),
+        SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenSingleLineInnerComment
+    ) {
+        // TODO(#290) doc completions.
+        return None;
+    }
+
     // In case we are on eof go back to last non-trivia non-missing node.
     if node.kind(db) == SyntaxKind::SyntaxFile
         || node.ancestor_of_kind(db, SyntaxKind::TerminalEndOfFile).is_some()
@@ -78,13 +83,9 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     }
 
     // Skip trivia.
-    while (ast::Trivium::is_variant(node.kind(db))
+    while ast::Trivium::is_variant(node.kind(db))
         || node.kind(db) == SyntaxKind::Trivia
-        || node.kind(db).is_token())
-        && !matches!(
-            node.kind(db),
-            SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenSingleLineInnerComment
-        )
+        || node.kind(db).is_token()
     {
         node = node.parent(db).unwrap_or(node);
     }
@@ -95,15 +96,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     let deduplicated_items: Vec<_> = db
         .get_node_resultants(node)?
         .iter()
-        .filter_map(|resultant| {
-            complete_ex(
-                *resultant,
-                trigger_kind,
-                was_node_corrected,
-                text_document_position.position.to_cairo(),
-                db,
-            )
-        })
+        .filter_map(|resultant| complete_ex(*resultant, trigger_kind, was_node_corrected, db))
         .flatten()
         .map(CompletionItemHashable)
         .collect::<OrderedHashSet<_>>()
@@ -132,7 +125,6 @@ fn complete_ex<'db>(
     node: SyntaxNode<'db>,
     trigger_kind: CompletionTriggerKind,
     was_node_corrected: bool,
-    cursor_position: TextPosition,
     db: &'db AnalysisDatabase,
 ) -> Option<Vec<CompletionItemOrderable>> {
     let ctx = AnalysisContext::from_node(db, node)?;
@@ -153,7 +145,6 @@ fn complete_ex<'db>(
     completions.extend(enum_pattern_completions(db, &ctx));
     completions.extend(expr_inline_macro_completions(db, &ctx, was_node_corrected));
     completions.extend(top_level_inline_macro_completions(db, &ctx, was_node_corrected));
-    completions.extend(doc_link_completions(db, &ctx, cursor_position));
 
     if trigger_kind == CompletionTriggerKind::INVOKED
         && ctx.node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
