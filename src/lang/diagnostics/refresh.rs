@@ -35,6 +35,7 @@ pub fn refresh_diagnostics<'db>(
                 manifest_path,
                 &project_diagnostics,
                 &notifier,
+                &scarb_toolchain,
             );
         } else {
             refresh_file_diagnostics(
@@ -116,6 +117,7 @@ fn refresh_scarb_manifest_diagnostics<'db>(
     manifest_path: &'db std::path::Path,
     project_diagnostics: &ProjectDiagnostics,
     notifier: &Notifier,
+    scarb_toolchain: &ScarbToolchain,
 ) {
     // Scarb manifest diagnostics are intentionally based on saved files only.
     // Skip updates while this manifest has unsaved in-memory changes.
@@ -123,8 +125,12 @@ fn refresh_scarb_manifest_diagnostics<'db>(
         return;
     }
 
+    let Some(scarb_path) = scarb_toolchain.silent().discover() else {
+        return;
+    };
+
     let Some((root_on_disk_file_url, new_diags)) =
-        collect_scarb_manifest_diagnostics(db, root_on_disk_file, manifest_path)
+        collect_scarb_manifest_diagnostics(db, root_on_disk_file, manifest_path, scarb_path)
     else {
         return;
     };
@@ -139,10 +145,12 @@ fn refresh_scarb_manifest_diagnostics<'db>(
     }
 }
 
-fn scarb_manifest_path<'db>(db: &'db AnalysisDatabase, file: FileId<'db>) -> Option<&'db std::path::Path> {
+fn scarb_manifest_path<'db>(
+    db: &'db AnalysisDatabase,
+    file: FileId<'db>,
+) -> Option<&'db std::path::Path> {
     let FileLongId::OnDisk(path) = file.long(db) else { return None };
-    (path.file_name().and_then(|name| name.to_str()) == Some(SCARB_TOML))
-        .then_some(path.as_path())
+    (path.file_name().and_then(|name| name.to_str()) == Some(SCARB_TOML)).then_some(path.as_path())
 }
 
 /// For an on disk file - returns a path to it.
