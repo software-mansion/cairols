@@ -254,6 +254,19 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
             }
         }
 
+        // Track changed Scarb manifests for diagnostics, even if they are not open in the editor.
+        // This ensures business-rule diagnostics are still published when filesystem events trigger
+        // project reloads and `scarb metadata` failures.
+        for change in &params.changes {
+            if is_scarb_manifest(&change.uri) {
+                if change.typ == FileChangeType::DELETED {
+                    state.open_files.remove(&change.uri);
+                } else {
+                    state.open_files.insert(change.uri.clone());
+                }
+            }
+        }
+
         // Reload workspace if a config file has changed.
         for change in &params.changes {
             let changed_file_path = change.uri.to_file_path().unwrap_or_default();

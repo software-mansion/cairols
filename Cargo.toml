@@ -72,6 +72,7 @@ scarb-manifest-schema = "1.0.0"
 scarb-metadata = "1.15.1"
 scarb-proc-macro-server-types = "0.5.0"
 scarb-stable-hash = "1"
+scarb-manifest-validator = { git = "https://github.com/software-mansion/scarb", rev = "3147d89d4489f9b0a2ea471b34c4c7d4961a8927" }
 semver = "1"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = "1"
@@ -83,6 +84,7 @@ tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 which = "8"
 toml_edit = "0.23.7"
+camino = "1.2.2"
 
 [target.'cfg(target_vendor = "apple")'.dependencies]
 libc = "0.2.180"
@@ -109,6 +111,7 @@ cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo", rev = "661d
 cairo-lang-diagnostics = { git = "https://github.com/starkware-libs/cairo", rev = "661df684cb9f5e14b24d0cd0a0b78166c92185ab" }
 cairo-lang-doc = { git = "https://github.com/starkware-libs/cairo", rev = "661df684cb9f5e14b24d0cd0a0b78166c92185ab" }
 cairo-lang-eq-solver = { git = "https://github.com/starkware-libs/cairo", rev = "661df684cb9f5e14b24d0cd0a0b78166c92185ab" }
+cairo-lang-executable = { git = "https://github.com/starkware-libs/cairo", rev = "661df684cb9f5e14b24d0cd0a0b78166c92185ab" }
 cairo-lang-executable-plugin = { git = "https://github.com/starkware-libs/cairo", rev = "661df684cb9f5e14b24d0cd0a0b78166c92185ab" }
 cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo", rev = "661df684cb9f5e14b24d0cd0a0b78166c92185ab" }
 cairo-lang-formatter = { git = "https://github.com/starkware-libs/cairo", rev = "661df684cb9f5e14b24d0cd0a0b78166c92185ab" }
