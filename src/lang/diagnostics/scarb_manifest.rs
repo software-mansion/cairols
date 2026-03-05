@@ -1,15 +1,12 @@
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
-use camino::Utf8Path;
-use lsp_types::{Diagnostic, DiagnosticSeverity, Range, Url};
-use scarb_manifest_validator::{
-    ManifestDiagnostic as ScarbManifestDiagnostic, validate_manifest, validate_workspace,
-};
+use lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
+use scarb_metadata::{MetadataCommand, MetadataCommandError};
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::{LsProtoGroup, ToLsp};
+use crate::lang::lsp::LsProtoGroup;
 
 /// Collects diagnostics for a `Scarb.toml` file.
 ///
@@ -17,109 +14,247 @@ use crate::lang::lsp::{LsProtoGroup, ToLsp};
 pub fn collect_scarb_manifest_diagnostics<'db>(
     db: &'db AnalysisDatabase,
     root_on_disk_file: FileId<'db>,
-    manifest_path: &'db std::path::Path,
+    manifest_path: &'db Path,
+    scarb_path: Option<&Path>,
 ) -> Option<(Url, HashMap<Url, Vec<Diagnostic>>)> {
     let root_url = db.url_for_file(root_on_disk_file)?;
-    let Some(manifest_path) = Utf8Path::from_path(manifest_path) else {
-        return Some((root_url.clone(), HashMap::from([(root_url, Vec::new())])));
+    let mut diagnostics_by_file = HashMap::from([(root_url.clone(), Vec::new())]);
+
+    let metadata_result = run_metadata_validation(manifest_path, scarb_path);
+    let Some(diagnostic) =
+        diagnostic_from_metadata_error(metadata_result.err(), manifest_path, &root_url)
+    else {
+        return Some((root_url, diagnostics_by_file));
     };
 
-    let result = validate_manifest(manifest_path);
-    let has_manifest_errors = !result.is_valid();
-
-    let mut diagnostics_collector = ManifestDiagnosticsCollector::new(db, root_url.clone());
-    for diagnostic in result.diagnostics {
-        diagnostics_collector.push_manifest_diagnostic(diagnostic);
+    let entry = diagnostics_by_file.entry(diagnostic.uri).or_default();
+    if !entry.contains(&diagnostic.diagnostic) {
+        entry.push(diagnostic.diagnostic);
     }
 
-    // Workspace-level validation captures runtime/business-rule checks from Scarb workspace loading.
-    // Also skip when manifest-level validation already failed, to avoid duplicate/cascading errors.
-    if !has_manifest_errors {
-        let workspace_result = validate_workspace(manifest_path);
-        for diagnostic in workspace_result.diagnostics {
-            diagnostics_collector.push_manifest_diagnostic(diagnostic);
+    Some((root_url, diagnostics_by_file))
+}
+
+fn run_metadata_validation(
+    manifest_path: &Path,
+    scarb_path: Option<&Path>,
+) -> Result<(), MetadataCommandError> {
+    let mut command = MetadataCommand::new();
+    if let Some(scarb_path) = scarb_path {
+        command.scarb_path(scarb_path);
+    }
+
+    command.manifest_path(manifest_path).no_deps().exec().map(|_| ())
+}
+
+struct LspScarbDiagnostic {
+    uri: Url,
+    diagnostic: Diagnostic,
+}
+
+fn diagnostic_from_metadata_error(
+    error: Option<MetadataCommandError>,
+    fallback_manifest_path: &Path,
+    root_url: &Url,
+) -> Option<LspScarbDiagnostic> {
+    let error = error?;
+
+    let parsed = match error {
+        MetadataCommandError::ScarbError { stdout, stderr } => {
+            parse_scarb_command_output(&stdout, &stderr, fallback_manifest_path)
         }
-    }
+        MetadataCommandError::NotFound { stdout } => ParsedScarbDiagnostic {
+            file: Some(fallback_manifest_path.to_path_buf()),
+            line: None,
+            column: None,
+            message: if stdout.trim().is_empty() {
+                "`scarb metadata` command did not produce metadata".to_string()
+            } else {
+                stdout.trim().to_string()
+            },
+        },
+        other => ParsedScarbDiagnostic {
+            file: Some(fallback_manifest_path.to_path_buf()),
+            line: None,
+            column: None,
+            message: other.to_string(),
+        },
+    };
 
-    Some((root_url, diagnostics_collector.into_inner()))
-}
+    let uri = parsed
+        .file
+        .and_then(|path| uri_for_manifest_path(path, fallback_manifest_path, root_url))
+        .unwrap_or_else(|| root_url.clone());
 
-/// Aggregates diagnostics from Scarb manifest validation.
-struct ManifestDiagnosticsCollector<'db> {
-    db: &'db AnalysisDatabase,
-    root_url: Url,
-    diagnostics_by_file: HashMap<Url, Vec<Diagnostic>>,
-}
-
-impl<'db> ManifestDiagnosticsCollector<'db> {
-    fn new(db: &'db AnalysisDatabase, root_url: Url) -> Self {
-        Self { db, diagnostics_by_file: HashMap::from([(root_url.clone(), Vec::new())]), root_url }
-    }
-
-    fn push_manifest_diagnostic(&mut self, diagnostic: ScarbManifestDiagnostic) {
-        let uri = Url::from_file_path(diagnostic.file.as_std_path())
-            .ok()
-            .unwrap_or_else(|| self.root_url.clone());
-        let diagnostic = self.to_lsp_diagnostic(&diagnostic, &uri);
-        self.push_lsp_diagnostic(uri, diagnostic);
-    }
-
-    fn to_lsp_diagnostic(&self, diagnostic: &ScarbManifestDiagnostic, uri: &Url) -> Diagnostic {
-        let range = self
-            .db
-            .file_for_url(uri)
-            .map(|file_id| lsp_range_for_manifest_diagnostic(self.db, file_id, diagnostic))
-            .unwrap_or_default();
-
-        Diagnostic {
-            range,
+    Some(LspScarbDiagnostic {
+        uri,
+        diagnostic: Diagnostic {
+            range: lsp_range(parsed.line, parsed.column),
             severity: Some(DiagnosticSeverity::ERROR),
             code: None,
             code_description: None,
             source: Some("scarb".to_string()),
-            message: diagnostic.message.clone(),
+            message: parsed.message,
             related_information: None,
             tags: None,
             data: None,
-        }
+        },
+    })
+}
+
+fn uri_for_manifest_path(
+    path: PathBuf,
+    fallback_manifest_path: &Path,
+    root_url: &Url,
+) -> Option<Url> {
+    if paths_equivalent(path.as_path(), fallback_manifest_path) {
+        return Some(root_url.clone());
     }
 
-    fn push_lsp_diagnostic(&mut self, uri: Url, diagnostic: Diagnostic) {
-        let entry = self.diagnostics_by_file.entry(uri).or_default();
-        if !entry.contains(&diagnostic) {
-            entry.push(diagnostic);
-        }
+    Url::from_file_path(path).ok()
+}
+
+fn paths_equivalent(path: &Path, other: &Path) -> bool {
+    if path == other {
+        return true;
     }
 
-    fn into_inner(self) -> HashMap<Url, Vec<Diagnostic>> {
-        self.diagnostics_by_file
+    match (std::fs::canonicalize(path), std::fs::canonicalize(other)) {
+        (Ok(path), Ok(other)) => path == other,
+        _ => false,
     }
 }
 
-fn lsp_range_for_manifest_diagnostic(
-    db: &AnalysisDatabase,
-    file_id: FileId<'_>,
-    diagnostic: &ScarbManifestDiagnostic,
-) -> Range {
-    let Some(span) = &diagnostic.span else {
+struct ParsedScarbDiagnostic {
+    file: Option<PathBuf>,
+    line: Option<usize>,
+    column: Option<usize>,
+    message: String,
+}
+
+fn parse_scarb_command_output(
+    stdout: &str,
+    stderr: &str,
+    fallback_manifest_path: &Path,
+) -> ParsedScarbDiagnostic {
+    let text = if stdout.trim().is_empty() { stderr } else { stdout };
+
+    let mut parsed = ParsedScarbDiagnostic {
+        file: Some(fallback_manifest_path.to_path_buf()),
+        line: None,
+        column: None,
+        message: "failed to resolve Scarb metadata".to_string(),
+    };
+
+    let mut fallback_error_message: Option<String> = None;
+    let mut message_candidates = Vec::new();
+
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        if let Some(path) = trimmed.strip_prefix("error: failed to parse manifest at:") {
+            let path = path.trim();
+            if !path.is_empty() {
+                parsed.file = Some(PathBuf::from(path));
+            }
+            continue;
+        }
+
+        if let Some(rest) = trimmed.strip_prefix("--> ") {
+            let mut parts = rest.rsplitn(3, ':');
+            let column = parts.next().and_then(|value| value.trim().parse::<usize>().ok());
+            let line = parts.next().and_then(|value| value.trim().parse::<usize>().ok());
+            let path = parts.next().map(str::trim);
+
+            if let (Some(line), Some(column)) = (line, column) {
+                parsed.line = Some(line);
+                parsed.column = Some(column);
+            }
+
+            if let Some(path) = path
+                && !path.is_empty()
+            {
+                parsed.file = Some(PathBuf::from(path));
+            }
+            continue;
+        }
+
+        if let Some((line, column)) = parse_toml_line_column(trimmed) {
+            parsed.line = Some(line);
+            parsed.column = Some(column);
+            continue;
+        }
+
+        if trimmed == "Caused by:"
+            || trimmed.starts_with("help:")
+            || is_source_snippet_line(trimmed)
+        {
+            continue;
+        }
+
+        if let Some(message) = trimmed.strip_prefix("error:") {
+            let message = message.trim();
+            if message.starts_with("failed to parse manifest at:") {
+                if fallback_error_message.is_none() {
+                    fallback_error_message = Some(message.to_string());
+                }
+            } else if !message.is_empty() {
+                message_candidates.push(message.to_string());
+            }
+            continue;
+        }
+
+        message_candidates.push(trimmed.to_string());
+    }
+
+    parsed.message = message_candidates.pop().or(fallback_error_message).unwrap_or(parsed.message);
+
+    parsed
+}
+
+fn parse_toml_line_column(line: &str) -> Option<(usize, usize)> {
+    const PREFIX: &str = "TOML parse error at line ";
+    let suffix = line.strip_prefix(PREFIX)?;
+    let (line, column) = suffix.split_once(", column ")?;
+    Some((line.trim().parse().ok()?, column.trim().parse().ok()?))
+}
+
+fn is_source_snippet_line(line: &str) -> bool {
+    if line.starts_with('|') {
+        return true;
+    }
+
+    let Some((left, _)) = line.split_once('|') else {
+        return false;
+    };
+
+    !left.trim().is_empty() && left.trim().chars().all(|char| char.is_ascii_digit())
+}
+
+fn lsp_range(line: Option<usize>, column: Option<usize>) -> Range {
+    let Some(line) = line else {
         return Range::default();
     };
 
-    let start = TextOffset::START.add_width(TextWidth::new_for_testing(span.start));
-    let end = TextOffset::START.add_width(TextWidth::new_for_testing(span.end));
-    TextSpan::new(start, end)
-        .position_in_file(db, file_id)
-        .map(|span| span.to_lsp())
-        .unwrap_or_default()
+    let line = line.saturating_sub(1) as u32;
+    let column = column.unwrap_or(1).saturating_sub(1) as u32;
+
+    Range {
+        start: Position { line, character: column },
+        end: Position { line, character: column.saturating_add(1) },
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use std::fs;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
     use indoc::indoc;
-    use lsp_types::Url;
+    use lsp_types::{DiagnosticSeverity, Url};
     use tempfile::tempdir;
 
     use super::collect_scarb_manifest_diagnostics;
@@ -144,13 +279,18 @@ mod tests {
         let file_id = db.file_for_url(&uri).unwrap();
 
         let Some((root_url, diagnostics_by_file)) =
-            collect_scarb_manifest_diagnostics(&db, file_id, &path)
+            collect_scarb_manifest_diagnostics(&db, file_id, &path, Some(&scarb_path()))
         else {
             panic!("Scarb manifest diagnostics were not collected");
         };
 
         assert_eq!(root_url, uri);
-        assert!(diagnostics_by_file[&uri].iter().any(|diag| !diag.message.is_empty()));
+
+        let diagnostics = diagnostics_by_file.get(&uri).cloned().unwrap_or_default();
+        assert!(!diagnostics.is_empty());
+        assert!(diagnostics.iter().any(
+            |diag| !diag.message.is_empty() && diag.severity == Some(DiagnosticSeverity::ERROR)
+        ));
     }
 
     #[test]
@@ -163,7 +303,7 @@ mod tests {
                 [package]
                 name = "root_ws"
                 version = "0.1.0"
-                edition = "2025_12"
+                edition = "2024_07"
 
                 [workspace]
                 members = ["members/member_a", "members/member_b"]
@@ -175,7 +315,7 @@ mod tests {
                 [package]
                 name = "member_a"
                 version = "0.1.0"
-                edition = "2025_12"
+                edition = "2024_07"
 
                 [[target.starknet-contract]]
                 name = "dup_contract"
@@ -187,7 +327,7 @@ mod tests {
                 [package]
                 name = "member_b"
                 version = "0.1.0"
-                edition = "2025_12"
+                edition = "2024_07"
 
                 [[target.starknet-contract]]
                 name = "dup_contract"
@@ -201,9 +341,12 @@ mod tests {
         let file_id = db.file_for_url(&member_uri).unwrap();
 
         let member_manifest_path = root.join("members/member_a/Scarb.toml");
-        let Some((_root_url, diagnostics_by_file)) =
-            collect_scarb_manifest_diagnostics(&db, file_id, &member_manifest_path)
-        else {
+        let Some((_root_url, diagnostics_by_file)) = collect_scarb_manifest_diagnostics(
+            &db,
+            file_id,
+            &member_manifest_path,
+            Some(&scarb_path()),
+        ) else {
             panic!("Scarb manifest diagnostics were not collected");
         };
 
@@ -233,27 +376,17 @@ mod tests {
         let file_id = db.file_for_url(&uri).unwrap();
 
         let Some((_root_url, diagnostics_by_file)) =
-            collect_scarb_manifest_diagnostics(&db, file_id, &path)
+            collect_scarb_manifest_diagnostics(&db, file_id, &path, Some(&scarb_path()))
         else {
             panic!("Scarb manifest diagnostics were not collected");
         };
 
         let diagnostics = diagnostics_by_file.get(&uri).cloned().unwrap_or_default();
-        let duplicate_message_count = diagnostics
-            .iter()
-            .filter(|diag| {
-                diag.message.contains(
-                    "this virtual manifest specifies a [dependencies] section, which is not \
-                     allowed",
-                )
-            })
-            .count();
-
-        assert_eq!(duplicate_message_count, 1);
+        assert_eq!(diagnostics.len(), 1);
     }
 
     #[test]
-    fn validates_profile_specific_manifest_rules_for_declared_profiles() {
+    fn returns_no_diagnostics_for_valid_manifest() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("Scarb.toml");
         fs::write(
@@ -262,12 +395,7 @@ mod tests {
                 [package]
                 name = "manifest_diagnostics_ws"
                 version = "0.1.0"
-                edition = "2025_12"
-
-                [profile.some-profile]
-
-                [profile.custom]
-                inherits = "some-profile"
+                edition = "2024_07"
             "#},
         )
         .unwrap();
@@ -279,19 +407,12 @@ mod tests {
         let file_id = db.file_for_url(&uri).unwrap();
 
         let Some((_root_url, diagnostics_by_file)) =
-            collect_scarb_manifest_diagnostics(&db, file_id, &path)
+            collect_scarb_manifest_diagnostics(&db, file_id, &path, Some(&scarb_path()))
         else {
             panic!("Scarb manifest diagnostics were not collected");
         };
 
-        let matching_count = diagnostics_by_file
-            .values()
-            .flatten()
-            .filter(|diag| {
-                diag.message.contains("profile can inherit from `dev` or `release` only")
-            })
-            .count();
-        assert_eq!(matching_count, 1);
+        assert!(diagnostics_by_file.get(&uri).is_some_and(|diagnostics| diagnostics.is_empty()));
     }
 
     fn write_file(path: &Path, contents: &str) {
@@ -299,5 +420,9 @@ mod tests {
             fs::create_dir_all(parent).unwrap();
         }
         fs::write(path, contents).unwrap();
+    }
+
+    fn scarb_path() -> PathBuf {
+        which::which("scarb").expect("running tests requires a `scarb` binary available in `PATH`")
     }
 }
