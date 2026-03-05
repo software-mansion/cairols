@@ -1,5 +1,6 @@
 use cairo_language_server::lsp;
 use indoc::indoc;
+use lsp_server::Message;
 use lsp_types::notification::DidChangeWatchedFiles;
 use lsp_types::{DidChangeWatchedFilesParams, FileChangeType, FileEvent};
 
@@ -37,7 +38,13 @@ fn test_invalid_scarb_toml_change() {
     ls.send_notification::<DidChangeWatchedFiles>(DidChangeWatchedFilesParams {
         changes: vec![FileEvent { uri: ls.doc_id("Scarb.toml").uri, typ: FileChangeType::CHANGED }],
     });
-    let analyzed_crates_after_failed_metadata = ls.wait_for_project_update();
+    ls.wait_for_diagnostics_generation();
+    let analyzed_crates_after_failed_metadata = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
     assert_eq!(analyzed_crates, analyzed_crates_after_failed_metadata);
+    assert!(!ls.get_diagnostics_for_file("Scarb.toml").is_empty());
+    assert!(!ls.trace().iter().any(|message| matches!(
+        message,
+        Message::Notification(notification) if notification.method == "window/showMessage"
+    )));
 }

@@ -292,6 +292,7 @@ impl ProjectControllerThread {
 
                 let metadata = self
                     .scarb_toolchain
+                    .silent()
                     .metadata(&manifest_path)
                     .with_context(|| {
                         format!("failed to refresh scarb workspace: {}", manifest_path.display())

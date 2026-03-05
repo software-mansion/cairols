@@ -3,12 +3,14 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
-use lsp_types::{Diagnostic, DiagnosticSeverity, NumberOrString, Position, Range, Url};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use lsp_types::{Diagnostic, DiagnosticSeverity, NumberOrString, Range, Url};
 use serde::Deserialize;
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::LsProtoGroup;
+use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
 /// Collects diagnostics for a `Scarb.toml` file.
 ///
@@ -22,111 +24,150 @@ pub fn collect_scarb_manifest_diagnostics<'db>(
     let root_url = db.url_for_file(root_on_disk_file)?;
 
     let output = Command::new(scarb_path)
-        .arg("metadata")
+        .arg("--json")
         .arg("--manifest-path")
         .arg(manifest_path)
+        .arg("metadata")
         .arg("--format-version")
         .arg("1")
-        .arg("--json")
         .stdout(Stdio::piped())
-        .stderr(Stdio::null())
+        .stderr(Stdio::piped())
         .output()
         .ok()?;
 
     let mut diagnostics_collector = ManifestDiagnosticsCollector::new(root_url.clone());
-    let mut has_manifest_errors = false;
+    let mut manifest_diagnostics = Vec::new();
+    let mut metadata_errors = Vec::new();
 
     for line in BufReader::new(output.stdout.as_slice()).lines().map_while(Result::ok) {
-        if let Some(diagnostic) = parse_metadata_diagnostic_line(&line, manifest_path) {
-            has_manifest_errors = true;
-            diagnostics_collector.push_lsp_diagnostic(diagnostic.uri, diagnostic.diagnostic);
+        let Some(message) = serde_json::from_str::<MetadataMessage>(&line).ok() else {
+            continue;
+        };
+
+        match message {
+            message @ MetadataMessage::ManifestDiagnostic { .. } => {
+                let Some(diagnostic) = message.into_diagnostic(db, manifest_path) else {
+                    continue;
+                };
+                manifest_diagnostics.push(diagnostic);
+            }
+            message @ MetadataMessage::Error { .. } => {
+                if let Some(diagnostic) = message.into_diagnostic(db, manifest_path) {
+                    metadata_errors.push(diagnostic);
+                }
+            }
+            MetadataMessage::Other => {}
         }
     }
 
-    if !output.status.success() && !has_manifest_errors {
-        diagnostics_collector.push_lsp_diagnostic(
-            root_url.clone(),
-            Diagnostic {
-                range: Range::default(),
-                severity: Some(DiagnosticSeverity::ERROR),
-                code: Some(NumberOrString::String("scarb-metadata".into())),
-                code_description: None,
-                source: Some("scarb".to_string()),
-                message: "`scarb metadata` failed. Check if your project builds correctly via `scarb build`.".to_string(),
-                related_information: None,
-                tags: None,
-                data: None,
-            },
-        );
+    if !manifest_diagnostics.is_empty() {
+        for diagnostic in manifest_diagnostics {
+            diagnostics_collector.push_lsp_diagnostic(diagnostic);
+        }
+    } else if !output.status.success() {
+        if metadata_errors.is_empty() {
+            // If metadata failed without any diagnostics, emit stderr as a diagnostic.
+            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+            if let Some(diagnostic) = (!stderr.is_empty())
+                .then_some(MetadataMessage::Error { message: stderr })
+                .and_then(|message| message.into_diagnostic(db, manifest_path))
+            {
+                metadata_errors.push(diagnostic);
+            }
+        }
+
+        for diagnostic in metadata_errors {
+            diagnostics_collector.push_lsp_diagnostic(diagnostic);
+        }
     }
 
-    Some((root_url, diagnostics_collector.into_inner()))
+    Some((root_url, diagnostics_collector.get_diagnostics_by_file()))
 }
 
-struct ParsedMetadataDiagnostic {
+struct ScarbMetadataDiagnostic {
     uri: Url,
     diagnostic: Diagnostic,
 }
 
-fn parse_metadata_diagnostic_line(
-    line: &str,
-    fallback_manifest_path: &Path,
-) -> Option<ParsedMetadataDiagnostic> {
-    let message = serde_json::from_str::<MetadataMessage>(line).ok()?;
-    if message.kind != "error" {
-        return None;
-    }
-
-    let source_path = message.path.or_else(|| Some(fallback_manifest_path.to_path_buf()))?;
-    let uri = Url::from_file_path(source_path).ok()?;
-
-    let range = message
-        .span
-        .map(|span| Range {
-            start: Position { line: span.start.line, character: span.start.col },
-            end: Position { line: span.end.line, character: span.end.col },
-        })
-        .unwrap_or_default();
-
-    Some(ParsedMetadataDiagnostic {
-        uri,
-        diagnostic: Diagnostic {
-            range,
-            severity: Some(DiagnosticSeverity::ERROR),
-            code: message.code.map(NumberOrString::String),
-            code_description: None,
-            source: Some("scarb".to_string()),
-            message: message.message,
-            related_information: None,
-            tags: None,
-            data: None,
-        },
-    })
+#[derive(Deserialize)]
+#[serde(tag = "kind")]
+enum MetadataMessage {
+    #[serde(rename = "manifest_diagnostic")]
+    ManifestDiagnostic {
+        message: String,
+        #[serde(default)]
+        code: Option<String>,
+        #[serde(default)]
+        file: Option<PathBuf>,
+        #[serde(default)]
+        span: Option<MetadataSpan>,
+    },
+    #[serde(rename = "error")]
+    Error { message: String },
+    #[serde(other)]
+    Other,
 }
 
-#[derive(Deserialize)]
-struct MetadataMessage {
-    #[serde(rename = "type")]
-    kind: String,
-    message: String,
-    #[serde(default)]
-    code: Option<String>,
-    #[serde(default)]
-    path: Option<PathBuf>,
-    #[serde(default)]
-    span: Option<MetadataSpan>,
-}
-
-#[derive(Deserialize)]
+#[derive(Clone, Copy, Deserialize)]
 struct MetadataSpan {
-    start: MetadataPosition,
-    end: MetadataPosition,
+    start: u32,
+    end: u32,
 }
 
-#[derive(Deserialize)]
-struct MetadataPosition {
-    line: u32,
-    col: u32,
+impl MetadataMessage {
+    fn into_diagnostic(
+        self,
+        db: &AnalysisDatabase,
+        fallback_manifest_path: &Path,
+    ) -> Option<ScarbMetadataDiagnostic> {
+        match self {
+            Self::ManifestDiagnostic { message, code, file, span } => {
+                let source_path = file.or_else(|| Some(fallback_manifest_path.to_path_buf()))?;
+                let uri = Url::from_file_path(source_path).ok()?;
+                let range = span.and_then(|span| span.to_lsp_range(db, &uri)).unwrap_or_default();
+
+                Some(ScarbMetadataDiagnostic {
+                    uri,
+                    diagnostic: Diagnostic {
+                        range,
+                        severity: Some(DiagnosticSeverity::ERROR),
+                        code: code.map(NumberOrString::String),
+                        code_description: None,
+                        source: Some("scarb".to_string()),
+                        message,
+                        related_information: None,
+                        tags: None,
+                        data: None,
+                    },
+                })
+            }
+            Self::Error { message } => Some(ScarbMetadataDiagnostic {
+                uri: Url::from_file_path(fallback_manifest_path).ok()?,
+                diagnostic: Diagnostic {
+                    range: Range::default(),
+                    severity: Some(DiagnosticSeverity::ERROR),
+                    code: Some(NumberOrString::String("scarb-metadata".into())),
+                    code_description: None,
+                    source: Some("scarb".to_string()),
+                    message,
+                    related_information: None,
+                    tags: None,
+                    data: None,
+                },
+            }),
+            Self::Other => None,
+        }
+    }
+}
+
+impl MetadataSpan {
+    fn to_lsp_range(self, db: &AnalysisDatabase, uri: &Url) -> Option<Range> {
+        let file_id = db.file_for_url(uri)?;
+        let content = db.file_content(file_id)?;
+        let start = TextOffset::START.add_width(TextWidth::at(content, self.start as usize));
+        let end = TextOffset::START.add_width(TextWidth::at(content, self.end as usize));
+        Some(TextSpan::new(start, end).position_in_file(db, file_id)?.to_lsp())
+    }
 }
 
 /// Aggregates diagnostics from Scarb manifest validation.
@@ -139,14 +180,14 @@ impl ManifestDiagnosticsCollector {
         Self { diagnostics_by_file: HashMap::from([(root_url, Vec::new())]) }
     }
 
-    fn push_lsp_diagnostic(&mut self, uri: Url, diagnostic: Diagnostic) {
-        let entry = self.diagnostics_by_file.entry(uri).or_default();
-        if !entry.contains(&diagnostic) {
-            entry.push(diagnostic);
+    fn push_lsp_diagnostic(&mut self, diagnostic: ScarbMetadataDiagnostic) {
+        let entry = self.diagnostics_by_file.entry(diagnostic.uri).or_default();
+        if !entry.contains(&diagnostic.diagnostic) {
+            entry.push(diagnostic.diagnostic);
         }
     }
 
-    fn into_inner(self) -> HashMap<Url, Vec<Diagnostic>> {
+    fn get_diagnostics_by_file(self) -> HashMap<Url, Vec<Diagnostic>> {
         self.diagnostics_by_file
     }
 }
@@ -158,7 +199,7 @@ mod tests {
     use std::path::Path;
 
     use indoc::formatdoc;
-    use lsp_types::Url;
+    use lsp_types::{Position, Url};
     use tempfile::tempdir;
 
     use super::collect_scarb_manifest_diagnostics;
@@ -168,10 +209,11 @@ mod tests {
     fn collects_diagnostics_from_ndjson_stdout() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("Scarb.toml");
-        fs::write(&path, "[package]\nname = \"pkg\"\nversion = \"0.1.0\"\n").unwrap();
+        let manifest = "[package]\nname = \"pkg\"\nversion = \"0.1.0\"\n";
+        fs::write(&path, manifest).unwrap();
         let scarb = fake_scarb(
             dir.path(),
-            r#"echo '{"type":"error","message":"bad manifest","path":"'$1'"}'
+            r#"echo '{"kind":"manifest_diagnostic","message":"bad manifest","file":"'$1'","span":{"start":10,"end":14}}'
 exit 1"#,
         );
 
@@ -186,7 +228,12 @@ exit 1"#,
         };
 
         assert_eq!(root_url, uri);
-        assert!(diagnostics_by_file[&uri].iter().any(|diag| diag.message == "bad manifest"));
+        let diagnostic = diagnostics_by_file[&uri]
+            .iter()
+            .find(|diag| diag.message == "bad manifest")
+            .expect("manifest diagnostic not found");
+        assert_eq!(diagnostic.range.start, Position { line: 1, character: 0 });
+        assert_eq!(diagnostic.range.end, Position { line: 1, character: 4 });
     }
 
     #[test]
@@ -196,7 +243,7 @@ exit 1"#,
         fs::write(&path, "[package]\nname = \"pkg\"\nversion = \"0.1.0\"\n").unwrap();
         let scarb = fake_scarb(
             dir.path(),
-            r#"echo '{"type":"warning","message":"ignore me","path":"'$1'"}'
+            r#"echo '{"kind":"warning","message":"ignore me","path":"'$1'"}'
 exit 0"#,
         );
 
@@ -214,13 +261,14 @@ exit 0"#,
     }
 
     #[test]
-    fn emits_fallback_error_when_metadata_fails_without_ndjson_errors() {
+    fn emits_error_message_from_ndjson_when_metadata_fails_without_manifest_diagnostics() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("Scarb.toml");
         fs::write(&path, "[package]\nname = \"pkg\"\nversion = \"0.1.0\"\n").unwrap();
         let scarb = fake_scarb(
             dir.path(),
-            r#"echo '{"type":"warning","message":"still not an error"}'
+            r#"echo '{"kind":"warning","message":"still not an error"}'
+echo '{"kind":"error","message":"real scarb metadata error"}'
 exit 1"#,
         );
 
@@ -237,8 +285,60 @@ exit 1"#,
         assert!(
             diagnostics_by_file[&uri]
                 .iter()
-                .any(|diag| diag.message.contains("`scarb metadata` failed"))
+                .any(|diag| diag.message == "real scarb metadata error")
         );
+    }
+
+    #[test]
+    fn emits_stderr_message_when_metadata_fails_without_ndjson_error() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("Scarb.toml");
+        fs::write(&path, "[package]\nname = \"pkg\"\nversion = \"0.1.0\"\n").unwrap();
+        let scarb = fake_scarb(
+            dir.path(),
+            r#"echo "stderr metadata failure" >&2
+exit 1"#,
+        );
+
+        let db = AnalysisDatabase::new();
+        let uri = Url::from_file_path(&path).unwrap();
+        let file_id = db.file_for_url(&uri).unwrap();
+
+        let Some((_root_url, diagnostics_by_file)) =
+            collect_scarb_manifest_diagnostics(&db, file_id, &path, &scarb)
+        else {
+            panic!("Scarb manifest diagnostics were not collected");
+        };
+
+        assert!(
+            diagnostics_by_file[&uri].iter().any(|diag| diag.message == "stderr metadata failure")
+        );
+    }
+
+    #[test]
+    fn ignores_terminal_error_summary_when_manifest_diagnostic_is_present() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("Scarb.toml");
+        fs::write(&path, "[package]\nname = \"pkg\"\nversion = \"0.1.0\"\n").unwrap();
+        let scarb = fake_scarb(
+            dir.path(),
+            r#"echo '{"kind":"manifest_diagnostic","message":"bad manifest","file":"'$1'","span":{"start":10,"end":14}}'
+echo '{"kind":"error","message":"summary error"}'
+exit 1"#,
+        );
+
+        let db = AnalysisDatabase::new();
+        let uri = Url::from_file_path(&path).unwrap();
+        let file_id = db.file_for_url(&uri).unwrap();
+
+        let Some((_root_url, diagnostics_by_file)) =
+            collect_scarb_manifest_diagnostics(&db, file_id, &path, &scarb)
+        else {
+            panic!("Scarb manifest diagnostics were not collected");
+        };
+
+        assert_eq!(diagnostics_by_file[&uri].len(), 1);
+        assert_eq!(diagnostics_by_file[&uri][0].message, "bad manifest");
     }
 
     fn fake_scarb(dir: &Path, script_body: &str) -> std::path::PathBuf {
@@ -249,12 +349,29 @@ exit 1"#,
                 r#"
                 #!/usr/bin/env bash
                 set -euo pipefail
+                if [ "$1" != "--json" ]; then
+                  exit 2
+                fi
+                shift
+                if [ "$1" != "--manifest-path" ]; then
+                  exit 2
+                fi
+                shift
+                manifest_path="$1"
+                shift
                 if [ "$1" != "metadata" ]; then
                   exit 2
                 fi
                 shift
-                while [ "$1" != "--manifest-path" ]; do shift; done
+                if [ "$1" != "--format-version" ]; then
+                  exit 2
+                fi
                 shift
+                if [ "$1" != "1" ]; then
+                  exit 2
+                fi
+                shift
+                set -- "$manifest_path" "$@"
                 {script_body}
                 "#
             },
