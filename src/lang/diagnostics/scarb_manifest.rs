@@ -1,9 +1,10 @@
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use cairo_lang_filesystem::ids::FileId;
-use lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
+use lsp_types::{Diagnostic, DiagnosticSeverity, Range, Url};
 use scarb_metadata::{MetadataCommand, MetadataCommandError};
+use serde::Deserialize;
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
@@ -21,9 +22,7 @@ pub fn collect_scarb_manifest_diagnostics<'db>(
     let mut diagnostics_by_file = HashMap::from([(root_url.clone(), Vec::new())]);
 
     let metadata_result = run_metadata_validation(manifest_path, scarb_path);
-    let Some(diagnostic) =
-        diagnostic_from_metadata_error(metadata_result.err(), manifest_path, &root_url)
-    else {
+    let Some(diagnostic) = diagnostic_from_metadata_error(metadata_result.err(), &root_url) else {
         return Some((root_url, diagnostics_by_file));
     };
 
@@ -44,7 +43,7 @@ fn run_metadata_validation(
         command.scarb_path(scarb_path);
     }
 
-    command.manifest_path(manifest_path).no_deps().exec().map(|_| ())
+    command.manifest_path(manifest_path).no_deps().json().exec().map(|_| ())
 }
 
 struct LspScarbDiagnostic {
@@ -54,47 +53,20 @@ struct LspScarbDiagnostic {
 
 fn diagnostic_from_metadata_error(
     error: Option<MetadataCommandError>,
-    fallback_manifest_path: &Path,
     root_url: &Url,
 ) -> Option<LspScarbDiagnostic> {
     let error = error?;
-
-    let parsed = match error {
-        MetadataCommandError::ScarbError { stdout, stderr } => {
-            parse_scarb_command_output(&stdout, &stderr, fallback_manifest_path)
-        }
-        MetadataCommandError::NotFound { stdout } => ParsedScarbDiagnostic {
-            file: Some(fallback_manifest_path.to_path_buf()),
-            line: None,
-            column: None,
-            message: if stdout.trim().is_empty() {
-                "`scarb metadata` command did not produce metadata".to_string()
-            } else {
-                stdout.trim().to_string()
-            },
-        },
-        other => ParsedScarbDiagnostic {
-            file: Some(fallback_manifest_path.to_path_buf()),
-            line: None,
-            column: None,
-            message: other.to_string(),
-        },
-    };
-
-    let uri = parsed
-        .file
-        .and_then(|path| uri_for_manifest_path(path, fallback_manifest_path, root_url))
-        .unwrap_or_else(|| root_url.clone());
+    let message = message_from_metadata_error(error);
 
     Some(LspScarbDiagnostic {
-        uri,
+        uri: root_url.clone(),
         diagnostic: Diagnostic {
-            range: lsp_range(parsed.line, parsed.column),
+            range: Range::default(),
             severity: Some(DiagnosticSeverity::ERROR),
             code: None,
             code_description: None,
             source: Some("scarb".to_string()),
-            message: parsed.message,
+            message,
             related_information: None,
             tags: None,
             data: None,
@@ -102,150 +74,44 @@ fn diagnostic_from_metadata_error(
     })
 }
 
-fn uri_for_manifest_path(
-    path: PathBuf,
-    fallback_manifest_path: &Path,
-    root_url: &Url,
-) -> Option<Url> {
-    if paths_equivalent(path.as_path(), fallback_manifest_path) {
-        return Some(root_url.clone());
-    }
-
-    Url::from_file_path(path).ok()
-}
-
-fn paths_equivalent(path: &Path, other: &Path) -> bool {
-    if path == other {
-        return true;
-    }
-
-    match (std::fs::canonicalize(path), std::fs::canonicalize(other)) {
-        (Ok(path), Ok(other)) => path == other,
-        _ => false,
+fn message_from_metadata_error(error: MetadataCommandError) -> String {
+    match error {
+        MetadataCommandError::ScarbError { stdout, .. } => {
+            first_ndjson_error_message(&stdout).unwrap_or_else(|| stdout.trim().to_string())
+        }
+        MetadataCommandError::NotFound { stdout } => {
+            if stdout.trim().is_empty() {
+                "`scarb metadata` command did not produce metadata".to_string()
+            } else {
+                stdout.trim().to_string()
+            }
+        }
+        other => other.to_string(),
     }
 }
 
-struct ParsedScarbDiagnostic {
-    file: Option<PathBuf>,
-    line: Option<usize>,
-    column: Option<usize>,
-    message: String,
+#[derive(Deserialize)]
+struct ScarbJsonMessage {
+    #[serde(rename = "type")]
+    kind: Option<String>,
+    message: Option<String>,
 }
 
-fn parse_scarb_command_output(
-    stdout: &str,
-    stderr: &str,
-    fallback_manifest_path: &Path,
-) -> ParsedScarbDiagnostic {
-    let text = if stdout.trim().is_empty() { stderr } else { stdout };
-
-    let mut parsed = ParsedScarbDiagnostic {
-        file: Some(fallback_manifest_path.to_path_buf()),
-        line: None,
-        column: None,
-        message: "failed to resolve Scarb metadata".to_string(),
-    };
-
-    let mut fallback_error_message: Option<String> = None;
-    let mut message_candidates = Vec::new();
-
-    for line in text.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
+fn first_ndjson_error_message(stdout: &str) -> Option<String> {
+    for line in stdout.lines().map(str::trim).filter(|line| !line.is_empty()) {
+        let Ok(message) = serde_json::from_str::<ScarbJsonMessage>(line) else {
             continue;
-        }
+        };
 
-        if let Some(path) = trimmed.strip_prefix("error: failed to parse manifest at:") {
-            let path = path.trim();
-            if !path.is_empty() {
-                parsed.file = Some(PathBuf::from(path));
-            }
-            continue;
-        }
-
-        if let Some(rest) = trimmed.strip_prefix("--> ") {
-            let mut parts = rest.rsplitn(3, ':');
-            let column = parts.next().and_then(|value| value.trim().parse::<usize>().ok());
-            let line = parts.next().and_then(|value| value.trim().parse::<usize>().ok());
-            let path = parts.next().map(str::trim);
-
-            if let (Some(line), Some(column)) = (line, column) {
-                parsed.line = Some(line);
-                parsed.column = Some(column);
-            }
-
-            if let Some(path) = path
-                && !path.is_empty()
-            {
-                parsed.file = Some(PathBuf::from(path));
-            }
-            continue;
-        }
-
-        if let Some((line, column)) = parse_toml_line_column(trimmed) {
-            parsed.line = Some(line);
-            parsed.column = Some(column);
-            continue;
-        }
-
-        if trimmed == "Caused by:"
-            || trimmed.starts_with("help:")
-            || is_source_snippet_line(trimmed)
+        if message.kind.as_deref() == Some("error")
+            && let Some(message) = message.message
+            && !message.trim().is_empty()
         {
-            continue;
+            return Some(message);
         }
-
-        if let Some(message) = trimmed.strip_prefix("error:") {
-            let message = message.trim();
-            if message.starts_with("failed to parse manifest at:") {
-                if fallback_error_message.is_none() {
-                    fallback_error_message = Some(message.to_string());
-                }
-            } else if !message.is_empty() {
-                message_candidates.push(message.to_string());
-            }
-            continue;
-        }
-
-        message_candidates.push(trimmed.to_string());
     }
 
-    parsed.message = message_candidates.pop().or(fallback_error_message).unwrap_or(parsed.message);
-
-    parsed
-}
-
-fn parse_toml_line_column(line: &str) -> Option<(usize, usize)> {
-    const PREFIX: &str = "TOML parse error at line ";
-    let suffix = line.strip_prefix(PREFIX)?;
-    let (line, column) = suffix.split_once(", column ")?;
-    Some((line.trim().parse().ok()?, column.trim().parse().ok()?))
-}
-
-fn is_source_snippet_line(line: &str) -> bool {
-    if line.starts_with('|') {
-        return true;
-    }
-
-    let Some((left, _)) = line.split_once('|') else {
-        return false;
-    };
-
-    !left.trim().is_empty() && left.trim().chars().all(|char| char.is_ascii_digit())
-}
-
-fn lsp_range(line: Option<usize>, column: Option<usize>) -> Range {
-    let Some(line) = line else {
-        return Range::default();
-    };
-
-    let line = line.saturating_sub(1) as u32;
-    let column = column.unwrap_or(1).saturating_sub(1) as u32;
-
-    Range {
-        start: Position { line, character: column },
-        end: Position { line, character: column.saturating_add(1) },
-    }
+    None
 }
 
 #[cfg(test)]
