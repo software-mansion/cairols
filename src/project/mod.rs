@@ -9,8 +9,12 @@ use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
+use lsp_types::notification::PublishDiagnostics;
 use lsp_types::notification::ShowMessage;
-use lsp_types::{MessageType, ShowMessageParams, Url};
+use lsp_types::{
+    Diagnostic, DiagnosticSeverity, MessageType, Position, PublishDiagnosticsParams, Range,
+    ShowMessageParams, Url,
+};
 use tracing::{debug, error, warn};
 
 pub use self::crate_data::{Crate, extract_custom_file_stems};
@@ -29,7 +33,9 @@ use crate::server::is_cairo_file_path;
 use crate::server::schedule::thread;
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
 use crate::state::{Snapshot, State};
-use crate::toolchain::scarb::ScarbToolchain;
+use crate::toolchain::scarb::{
+    ScarbMetadataDiagnostic, ScarbMetadataDiagnosticSeverity, ScarbToolchain,
+};
 
 pub mod builtin_plugins;
 mod crate_data;
@@ -112,10 +118,23 @@ impl ProjectController {
     #[tracing::instrument(skip_all, fields(project_update))]
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
         let db = &mut state.db;
-        let mut manifest_to_track = None;
         match project_update {
-            ProjectUpdate::Scarb { crates, workspace_dir, workspace_manifest_path } => {
-                manifest_to_track = Some(workspace_manifest_path.clone());
+            ProjectUpdate::Scarb {
+                crates,
+                workspace_dir,
+                workspace_manifest_path,
+                requested_manifest_path,
+                metadata_diagnostics,
+            } => {
+                publish_scarb_metadata_diagnostics(
+                    &notifier,
+                    &requested_manifest_path,
+                    metadata_diagnostics,
+                );
+                if requested_manifest_path != workspace_manifest_path {
+                    clear_scarb_metadata_diagnostics(&notifier, &workspace_manifest_path);
+                }
+
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
                 state.proc_macro_controller.request_defined_macros(db, workspace_manifest_path);
                 state.project_controller.model.load_workspace(
@@ -126,8 +145,9 @@ impl ProjectController {
                 );
                 state.analysis_progress_controller.project_model_loaded();
             }
-            ProjectUpdate::ScarbMetadataFailed { manifest_path } => {
-                manifest_to_track = Some(manifest_path);
+            ProjectUpdate::ScarbMetadataFailed { manifest_path, metadata_diagnostics } => {
+                publish_scarb_metadata_diagnostics(&notifier, &manifest_path, metadata_diagnostics);
+
                 // Try to set up a corelib at least if it is not in the db already.
                 try_to_init_unmanaged_core_if_not_present(
                     db,
@@ -184,14 +204,6 @@ impl ProjectController {
         // Drop mut ref so we can obtain snapshot.
         let _ = db;
 
-        // Keep discovered workspace manifest in the diagnostics primary set even when
-        // a Cairo source file triggered the refresh and the manifest is not open in the editor.
-        if let Some(manifest_path) = manifest_to_track
-            && let Ok(manifest_uri) = Url::from_file_path(manifest_path)
-        {
-            state.open_files.insert(manifest_uri);
-        }
-
         // Manifest may have changed, update for open files
         state.code_lens_controller.on_did_change(
             state.db.clone(),
@@ -231,8 +243,17 @@ impl ProjectController {
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
 pub enum ProjectUpdate {
-    Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf, workspace_manifest_path: PathBuf },
-    ScarbMetadataFailed { manifest_path: PathBuf },
+    Scarb {
+        crates: Vec<CrateInfo>,
+        workspace_dir: PathBuf,
+        workspace_manifest_path: PathBuf,
+        requested_manifest_path: PathBuf,
+        metadata_diagnostics: Vec<ScarbMetadataDiagnostic>,
+    },
+    ScarbMetadataFailed {
+        manifest_path: PathBuf,
+        metadata_diagnostics: Vec<ScarbMetadataDiagnostic>,
+    },
     CairoProjectToml(Box<Option<ProjectConfig>>),
     NoConfig(PathBuf),
 }
@@ -290,9 +311,9 @@ impl ProjectControllerThread {
                     return None;
                 }
 
-                let metadata = self
-                    .scarb_toolchain
-                    .metadata(&manifest_path)
+                let (metadata, metadata_diagnostics) =
+                    self.scarb_toolchain.metadata_with_diagnostics(&manifest_path);
+                let metadata = metadata
                     .with_context(|| {
                         format!("failed to refresh scarb workspace: {}", manifest_path.display())
                     })
@@ -301,16 +322,21 @@ impl ProjectControllerThread {
                     })
                     .ok();
 
-                metadata
-                    .map(|metadata| ProjectUpdate::Scarb {
+                match metadata {
+                    Some(metadata) => ProjectUpdate::Scarb {
                         crates: extract_crates(&metadata),
                         workspace_dir: metadata.workspace.root.into_std_path_buf(),
                         workspace_manifest_path: metadata
                             .workspace
                             .manifest_path
                             .into_std_path_buf(),
-                    })
-                    .unwrap_or(ProjectUpdate::ScarbMetadataFailed { manifest_path })
+                        requested_manifest_path: manifest_path,
+                        metadata_diagnostics,
+                    },
+                    None => {
+                        ProjectUpdate::ScarbMetadataFailed { manifest_path, metadata_diagnostics }
+                    }
+                }
             }
 
             Some(ProjectManifestPath::CairoProject(config_path)) => {
@@ -367,4 +393,62 @@ fn contains_core_from_scarb_cache(
                 .cache_path()
                 .is_some_and(|scarb_cache_path| core_root.starts_with(scarb_cache_path))
         })
+}
+
+fn publish_scarb_metadata_diagnostics(
+    notifier: &Notifier,
+    manifest_path: &PathBuf,
+    diagnostics: Vec<ScarbMetadataDiagnostic>,
+) {
+    let Ok(uri) = Url::from_file_path(manifest_path) else { return };
+    let diagnostics = diagnostics.into_iter().map(scarb_metadata_diagnostic_to_lsp).collect();
+
+    notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+        uri,
+        diagnostics,
+        version: None,
+    });
+}
+
+fn clear_scarb_metadata_diagnostics(notifier: &Notifier, manifest_path: &PathBuf) {
+    let Ok(uri) = Url::from_file_path(manifest_path) else { return };
+
+    notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+        uri,
+        diagnostics: Vec::new(),
+        version: None,
+    });
+}
+
+fn scarb_metadata_diagnostic_to_lsp(diagnostic: ScarbMetadataDiagnostic) -> Diagnostic {
+    let severity = match diagnostic.severity {
+        ScarbMetadataDiagnosticSeverity::Error => DiagnosticSeverity::ERROR,
+        ScarbMetadataDiagnosticSeverity::Warning => DiagnosticSeverity::WARNING,
+    };
+
+    Diagnostic {
+        range: scarb_metadata_diagnostic_range(&diagnostic),
+        severity: Some(severity),
+        code: None,
+        code_description: None,
+        source: Some("scarb metadata".to_string()),
+        message: diagnostic.message,
+        related_information: None,
+        tags: None,
+        data: None,
+    }
+}
+
+fn scarb_metadata_diagnostic_range(diagnostic: &ScarbMetadataDiagnostic) -> Range {
+    let (Some(line), Some(column)) = (diagnostic.line, diagnostic.column) else {
+        return Range::default();
+    };
+
+    let line = line.saturating_sub(1);
+    let start_character = column.saturating_sub(1);
+
+    Range {
+        start: Position { line, character: start_character },
+        end: Position { line, character: start_character.saturating_add(1) },
+    }
 }
