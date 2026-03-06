@@ -92,16 +92,15 @@ pub fn top_level_inline_macro_completions<'db>(
 
         let typed = path_segment.ident(db).token(db).text(db).to_string(db);
 
-        let declarative_macros =
-            importable_path_suffix_completions(db, ctx, was_node_corrected)
-                .into_iter()
-                .filter_map(|item| {
-                    if let ImportableId::MacroDeclaration(_) = item.importable_id {
-                        Some(item.item)
-                    } else {
-                        None
-                    }
-                });
+        let declarative_macros = importable_path_suffix_completions(db, ctx, was_node_corrected)
+            .into_iter()
+            .filter_map(|item| {
+                if let ImportableId::MacroDeclaration(_) = item.importable_id {
+                    Some(item.item)
+                } else {
+                    None
+                }
+            });
 
         available_top_level_inline_macros
             .into_iter()

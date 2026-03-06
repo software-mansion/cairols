@@ -7,8 +7,8 @@ use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::items::constant::ConstantSemantic;
 use cairo_lang_semantic::items::enm::EnumSemantic;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::items::module::ModuleSemantic;
 use cairo_lang_semantic::items::imp::ImplSemantic;
+use cairo_lang_semantic::items::module::ModuleSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -123,9 +123,23 @@ pub fn path_suffix_completions<'db>(
     if ctx.node.ancestor_of_kind(db, SyntaxKind::ExprBlock).is_some() {
         let last_typed = last_typed_segment.to_string(db);
         if typed_text.is_empty() {
-            suffix_completions_by_name(db, ctx, &importables, &last_typed, current_crate, &mut result);
+            suffix_completions_by_name(
+                db,
+                ctx,
+                &importables,
+                &last_typed,
+                current_crate,
+                &mut result,
+            );
         } else if last_typed.is_empty() {
-            suffix_completions_by_path(db, ctx, &importables, &typed_text, current_crate, &mut result);
+            suffix_completions_by_path(
+                db,
+                ctx,
+                &importables,
+                &typed_text,
+                current_crate,
+                &mut result,
+            );
         }
     }
 
@@ -371,32 +385,23 @@ fn trait_items_prefix_completions<'db>(
             }
         });
 
-    let constants = db
-        .trait_constants(trait_id)
-        .cloned()
-        .unwrap_or_default()
-        .into_iter()
-        .map(|(name, trait_constant_id)| {
-            let description = db
-                .trait_constant_type(trait_constant_id)
-                .ok()
-                .and_then(|ty| {
-                    db.visible_importables_from_module(ctx.module_id)
-                        .map(|importables| format_type(db, ty, &importables, None))
-                });
+    let constants = db.trait_constants(trait_id).cloned().unwrap_or_default().into_iter().map(
+        |(name, trait_constant_id)| {
+            let description = db.trait_constant_type(trait_constant_id).ok().and_then(|ty| {
+                db.visible_importables_from_module(ctx.module_id)
+                    .map(|importables| format_type(db, ty, &importables, None))
+            });
             CompletionItemOrderable {
                 item: CompletionItem {
                     label: name.to_string(db),
-                    label_details: Some(CompletionItemLabelDetails {
-                        detail: None,
-                        description,
-                    }),
+                    label_details: Some(CompletionItemLabelDetails { detail: None, description }),
                     kind: Some(CompletionItemKind::CONSTANT),
                     ..CompletionItem::default()
                 },
                 relevance,
             }
-        });
+        },
+    );
 
     functions.chain(types).chain(constants).collect()
 }
@@ -455,14 +460,12 @@ fn suffix_completions_by_name<'db>(
             }
 
             let full_name = format!("{}::{}", prefix_name, item_name_str);
-            let snippet = db.trait_function_signature(*trait_function_id).ok().map(|sig| {
-                TypedSnippet::function_call(db, &full_name, sig, Some(trait_id))
-            });
-            let label = if snippet.is_some() {
-                format!("{}(...)", full_name)
-            } else {
-                full_name.clone()
-            };
+            let snippet = db
+                .trait_function_signature(*trait_function_id)
+                .ok()
+                .map(|sig| TypedSnippet::function_call(db, &full_name, sig, Some(trait_id)));
+            let label =
+                if snippet.is_some() { format!("{}(...)", full_name) } else { full_name.clone() };
 
             result.push(CompletionItemOrderable {
                 item: CompletionItem {
@@ -520,10 +523,7 @@ fn suffix_completions_by_name<'db>(
             result.push(CompletionItemOrderable {
                 item: CompletionItem {
                     label: format!("{}::{}", prefix_name, item_name_str),
-                    label_details: Some(CompletionItemLabelDetails {
-                        detail: None,
-                        description,
-                    }),
+                    label_details: Some(CompletionItemLabelDetails { detail: None, description }),
                     kind: Some(CompletionItemKind::CONSTANT),
                     additional_text_edits: import_edit.clone().map(|e| vec![e]),
                     ..CompletionItem::default()
@@ -579,9 +579,8 @@ fn suffix_completions_by_path<'db>(
         {
             let item_name_str = item_name.to_string(db);
             let signature = db.trait_function_signature(*trait_function_id).ok();
-            let snippet = signature.map(|sig| {
-                TypedSnippet::function_call(db, &item_name_str, sig, Some(trait_id))
-            });
+            let snippet = signature
+                .map(|sig| TypedSnippet::function_call(db, &item_name_str, sig, Some(trait_id)));
             let label = if snippet.is_some() {
                 format!("{}(...)", item_name_str)
             } else {
@@ -634,10 +633,7 @@ fn suffix_completions_by_path<'db>(
             result.push(CompletionItemOrderable {
                 item: CompletionItem {
                     label: item_name_str,
-                    label_details: Some(CompletionItemLabelDetails {
-                        detail: None,
-                        description,
-                    }),
+                    label_details: Some(CompletionItemLabelDetails { detail: None, description }),
                     kind: Some(CompletionItemKind::CONSTANT),
                     ..CompletionItem::default()
                 },
@@ -646,4 +642,3 @@ fn suffix_completions_by_path<'db>(
         }
     }
 }
-
