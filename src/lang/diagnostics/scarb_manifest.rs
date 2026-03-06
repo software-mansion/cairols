@@ -69,13 +69,13 @@ fn diagnostics_from_metadata_error(
 
             // Fallback to an error message (should always be present) if no manifest diagnostics found.
             first_ndjson_error_message(&stdout)
-                .map(|message| vec![build_diagnostic(root_manifest_path.clone(), message)])
+                .map(|message| vec![build_diagnostic(root_manifest_path, message)])
                 .unwrap_or_default()
         }
         MetadataCommandError::NotFound { stdout } => {
-            vec![build_diagnostic(root_manifest_path.clone(), stdout)]
+            vec![build_diagnostic(root_manifest_path, stdout)]
         }
-        other => vec![build_diagnostic(root_manifest_path.clone(), other.to_string())],
+        other => vec![build_diagnostic(root_manifest_path, other.to_string())],
     }
 }
 
@@ -326,10 +326,7 @@ mod tests {
         "#};
 
         let diagnostics = diagnostics_from_metadata_error(
-            MetadataCommandError::ScarbError {
-                stdout: stdout.to_string(),
-                stderr: String::new(),
-            },
+            MetadataCommandError::ScarbError { stdout: stdout.to_string(), stderr: String::new() },
             &root_path,
         );
 
@@ -344,10 +341,7 @@ mod tests {
         let stdout = r#"{"type":"error","message":"fallback error"}"#;
 
         let diagnostics = diagnostics_from_metadata_error(
-            MetadataCommandError::ScarbError {
-                stdout: stdout.to_string(),
-                stderr: String::new(),
-            },
+            MetadataCommandError::ScarbError { stdout: stdout.to_string(), stderr: String::new() },
             &root_path,
         );
 
