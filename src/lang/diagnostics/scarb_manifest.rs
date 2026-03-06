@@ -1,9 +1,9 @@
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use cairo_lang_filesystem::ids::FileId;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Range, Url};
-use scarb_metadata::{MetadataCommand, MetadataCommandError};
+use scarb_metadata::{Metadata, MetadataCommand, MetadataCommandError};
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -11,21 +11,25 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 
 /// Collects diagnostics for a `Scarb.toml` file.
-///
-/// Caller must ensure `root_on_disk_file` points to a Scarb manifest and provide its on-disk path.
 pub fn collect_scarb_manifest_diagnostics<'db>(
     db: &'db AnalysisDatabase,
-    root_on_disk_file: FileId<'db>,
-    manifest_path: &'db Path,
-    scarb_path: Option<&Path>,
-) -> Option<(Url, HashMap<Url, Vec<Diagnostic>>)> {
-    let root_url = db.url_for_file(root_on_disk_file)?;
-    let mut diagnostics_by_file = HashMap::from([(root_url.clone(), Vec::new())]);
+    manifest_file: FileId<'db>,
+    scarb_path: &Path,
+) -> Option<HashMap<Url, Vec<Diagnostic>>> {
+    let root_manifest_url: Url = db.url_for_file(manifest_file)?;
+    let root_manifest_path_buf: PathBuf = root_manifest_url.to_file_path().ok()?;
+    let root_manifest_path: &Path = root_manifest_path_buf.as_path();
+    let mut diagnostics_by_file = HashMap::from([(root_manifest_url.clone(), Vec::new())]);
 
-    let metadata_result = run_metadata_validation(manifest_path, scarb_path);
-    let diagnostics = diagnostics_from_metadata_error(metadata_result.err(), &root_url);
+    let metadata_result = run_metadata_validation(root_manifest_path, scarb_path);
+    if metadata_result.is_ok() {
+        return None;
+    }
+
+    let diagnostics =
+        diagnostics_from_metadata_error(metadata_result.unwrap_err(), root_manifest_path);
     if diagnostics.is_empty() {
-        return Some((root_url, diagnostics_by_file));
+        return Some(diagnostics_by_file);
     }
 
     for diagnostic in diagnostics {
@@ -35,19 +39,16 @@ pub fn collect_scarb_manifest_diagnostics<'db>(
         }
     }
 
-    Some((root_url, diagnostics_by_file))
+    Some(diagnostics_by_file)
 }
 
 fn run_metadata_validation(
     manifest_path: &Path,
-    scarb_path: Option<&Path>,
-) -> Result<(), MetadataCommandError> {
+    scarb_path: &Path,
+) -> Result<Metadata, MetadataCommandError> {
     let mut command = MetadataCommand::new();
-    if let Some(scarb_path) = scarb_path {
-        command.scarb_path(scarb_path);
-    }
-
-    command.manifest_path(manifest_path).no_deps().json().exec().map(|_| ())
+    command.scarb_path(scarb_path);
+    command.manifest_path(manifest_path).no_deps().json().exec()
 }
 
 struct LspScarbDiagnostic {
@@ -56,90 +57,65 @@ struct LspScarbDiagnostic {
 }
 
 fn diagnostics_from_metadata_error(
-    error: Option<MetadataCommandError>,
-    root_url: &Url,
+    error: MetadataCommandError,
+    root_manifest_path: &Path,
 ) -> Vec<LspScarbDiagnostic> {
-    let Some(error) = error else {
-        return Vec::new();
-    };
-
     match error {
         MetadataCommandError::ScarbError { stdout, .. } => {
-            let diagnostics = extract_manifest_diagnostics_from_ndjson(&stdout, root_url);
+            let diagnostics = extract_manifest_diagnostics_from_ndjson(&stdout);
             if !diagnostics.is_empty() {
                 return diagnostics;
             }
 
+            // Fallback to an error message (should always be present) if no manifest diagnostics found.
             first_ndjson_error_message(&stdout)
-                .or_else(|| non_empty_trimmed(&stdout))
-                .map(|message| vec![build_diagnostic(root_url.clone(), message)])
+                .map(|message| vec![build_diagnostic(root_manifest_path.clone(), message)])
                 .unwrap_or_default()
         }
-        MetadataCommandError::NotFound { stdout } => non_empty_trimmed(&stdout)
-            .map(|message| vec![build_diagnostic(root_url.clone(), message)])
-            .unwrap_or_else(|| {
-                vec![build_diagnostic(
-                    root_url.clone(),
-                    "`scarb metadata` command did not produce metadata".to_string(),
-                )]
-            }),
-        other => vec![build_diagnostic(root_url.clone(), other.to_string())],
+        MetadataCommandError::NotFound { stdout } => {
+            vec![build_diagnostic(root_manifest_path.clone(), stdout)]
+        }
+        other => vec![build_diagnostic(root_manifest_path.clone(), other.to_string())],
     }
 }
 
-fn extract_manifest_diagnostics_from_ndjson(
-    stdout: &str,
-    root_url: &Url,
-) -> Vec<LspScarbDiagnostic> {
+fn extract_manifest_diagnostics_from_ndjson(stdout: &str) -> Vec<LspScarbDiagnostic> {
     ndjson_values(stdout)
-        .filter(|value| is_manifest_diagnostic_kind(value))
+        .filter(is_manifest_diagnostic_kind)
         .filter_map(|value| {
-            let message = value.get("message").and_then(Value::as_str)?.trim().to_string();
+            let message = diagnostic_message(&value)?;
             if message.is_empty() {
                 return None;
             }
 
-            let uri = diagnostic_uri(&value, root_url).unwrap_or_else(|| root_url.clone());
-            Some(build_diagnostic(uri, message))
+            Some(build_diagnostic(diagnostic_path(&value)?, message))
         })
         .collect()
 }
 
 fn is_manifest_diagnostic_kind(value: &Value) -> bool {
-    fn is_manifest_kind(kind: &str) -> bool {
-        let normalized = kind
-            .chars()
-            .filter(|char| char.is_ascii_alphanumeric())
-            .flat_map(char::to_lowercase)
-            .collect::<String>();
-        matches!(normalized.as_str(), "manifest" | "manifestdiagnostic" | "manifestdiagnostics")
-    }
-
-    value.get("kind").and_then(Value::as_str).is_some_and(is_manifest_kind)
-        || value.get("type").and_then(Value::as_str).is_some_and(is_manifest_kind)
+    value
+        .get("kind")
+        .and_then(Value::as_str)
+        .is_some_and(|value: &str| value == "manifest_diagnostic")
 }
 
-fn diagnostic_uri(value: &Value, root_url: &Url) -> Option<Url> {
-    if let Some(uri) = value.get("uri").and_then(Value::as_str)
-        && let Ok(uri) = Url::parse(uri)
-    {
-        return Some(uri);
-    }
-
-    for key in ["file", "path", "manifest_path"] {
-        if let Some(path) = value.get(key).and_then(Value::as_str)
-            && let Ok(uri) = Url::from_file_path(path)
-        {
-            return Some(uri);
-        }
-    }
-
-    Some(root_url.clone())
+fn diagnostic_message(value: &Value) -> Option<String> {
+    let msg = value.get("message").and_then(Value::as_str)?;
+    Some(msg.to_string())
 }
 
-fn build_diagnostic(uri: Url, message: String) -> LspScarbDiagnostic {
+fn diagnostic_path(value: &Value) -> Option<PathBuf> {
+    if let Some(path_str) = value.get("file").and_then(Value::as_str) {
+        return Some(PathBuf::from(path_str));
+    }
+
+    None
+}
+
+fn build_diagnostic(manifest_path: impl AsRef<Path>, message: String) -> LspScarbDiagnostic {
     LspScarbDiagnostic {
-        uri,
+        uri: Url::from_file_path(manifest_path).unwrap(),
         diagnostic: Diagnostic {
             range: Range::default(),
             severity: Some(DiagnosticSeverity::ERROR),
@@ -154,8 +130,9 @@ fn build_diagnostic(uri: Url, message: String) -> LspScarbDiagnostic {
     }
 }
 
+// This is misaligned right now in scarb (manifest diagnostics have a different format)
 #[derive(Deserialize)]
-struct ScarbJsonMessage {
+struct ScarbJsonErrorMessage {
     #[serde(rename = "type")]
     message_type: Option<String>,
     message: Option<String>,
@@ -163,10 +140,9 @@ struct ScarbJsonMessage {
 
 fn first_ndjson_error_message(stdout: &str) -> Option<String> {
     for value in ndjson_values(stdout) {
-        let Ok(message) = serde_json::from_value::<ScarbJsonMessage>(value) else { continue };
+        let Ok(message) = serde_json::from_value::<ScarbJsonErrorMessage>(value) else { continue };
         if message.message_type.as_deref() == Some("error")
             && let Some(message) = message.message
-            && !message.trim().is_empty()
         {
             return Some(message);
         }
@@ -175,17 +151,12 @@ fn first_ndjson_error_message(stdout: &str) -> Option<String> {
     None
 }
 
-fn ndjson_values(stdout: &str) -> impl Iterator<Item = Value> + '_ {
+fn ndjson_values(stdout: &str) -> impl Iterator<Item = Value> {
     stdout
         .lines()
         .map(str::trim)
         .filter(|line| !line.is_empty())
         .filter_map(|line| serde_json::from_str::<Value>(line).ok())
-}
-
-fn non_empty_trimmed(text: &str) -> Option<String> {
-    let text = text.trim();
-    (!text.is_empty()).then(|| text.to_string())
 }
 
 #[cfg(test)]
@@ -219,15 +190,13 @@ mod tests {
         let uri = Url::from_file_path(&path).unwrap();
         let file_id = db.file_for_url(&uri).unwrap();
 
-        let Some((root_url, diagnostics_by_file)) =
-            collect_scarb_manifest_diagnostics(&db, file_id, &path, Some(&scarb_path()))
+        let Some(diagnostics_by_file) =
+            collect_scarb_manifest_diagnostics(&db, file_id, &scarb_path())
         else {
             panic!("Scarb manifest diagnostics were not collected");
         };
 
-        assert_eq!(root_url, uri);
-
-        let diagnostics = diagnostics_by_file.get(&uri).cloned().unwrap_or_default();
+        let diagnostics: Vec<_> = diagnostics_by_file.values().flatten().collect();
         assert!(!diagnostics.is_empty());
         assert!(diagnostics.iter().any(
             |diag| !diag.message.is_empty() && diag.severity == Some(DiagnosticSeverity::ERROR)
@@ -281,13 +250,9 @@ mod tests {
         let member_uri = Url::from_file_path(root.join("members/member_a/Scarb.toml")).unwrap();
         let file_id = db.file_for_url(&member_uri).unwrap();
 
-        let member_manifest_path = root.join("members/member_a/Scarb.toml");
-        let Some((_root_url, diagnostics_by_file)) = collect_scarb_manifest_diagnostics(
-            &db,
-            file_id,
-            &member_manifest_path,
-            Some(&scarb_path()),
-        ) else {
+        let Some(diagnostics_by_file) =
+            collect_scarb_manifest_diagnostics(&db, file_id, &scarb_path())
+        else {
             panic!("Scarb manifest diagnostics were not collected");
         };
 
@@ -316,14 +281,14 @@ mod tests {
         let uri = Url::from_file_path(&path).unwrap();
         let file_id = db.file_for_url(&uri).unwrap();
 
-        let Some((_root_url, diagnostics_by_file)) =
-            collect_scarb_manifest_diagnostics(&db, file_id, &path, Some(&scarb_path()))
+        let Some(diagnostics_by_file) =
+            collect_scarb_manifest_diagnostics(&db, file_id, &scarb_path())
         else {
             panic!("Scarb manifest diagnostics were not collected");
         };
 
-        let diagnostics = diagnostics_by_file.get(&uri).cloned().unwrap_or_default();
-        assert_eq!(diagnostics.len(), 1);
+        let diagnostics_count = diagnostics_by_file.values().flatten().count();
+        assert_eq!(diagnostics_count, 1);
     }
 
     #[test]
@@ -347,30 +312,25 @@ mod tests {
         let uri = Url::from_file_path(&path).unwrap();
         let file_id = db.file_for_url(&uri).unwrap();
 
-        let Some((_root_url, diagnostics_by_file)) =
-            collect_scarb_manifest_diagnostics(&db, file_id, &path, Some(&scarb_path()))
-        else {
-            panic!("Scarb manifest diagnostics were not collected");
-        };
-
-        assert!(diagnostics_by_file.get(&uri).is_some_and(|diagnostics| diagnostics.is_empty()));
+        let diagnostics_by_file = collect_scarb_manifest_diagnostics(&db, file_id, &scarb_path());
+        assert!(diagnostics_by_file.is_none());
     }
 
     #[test]
     fn extracts_all_manifest_diagnostics_from_ndjson() {
-        let root_url = Url::parse("file:///tmp/Scarb.toml").unwrap();
+        let root_path = PathBuf::from("/tmp/Scarb.toml");
         let stdout = indoc! {r#"
-            {"type":"diagnostic","kind":"manifest-diagnostics","message":"first manifest issue"}
-            {"type":"diagnostic","kind":"manifest","message":"second manifest issue"}
+            {"type":"diagnostic","kind":"manifest_diagnostic","file":"/tmp/Scarb.toml","message":"first manifest issue"}
+            {"type":"diagnostic","kind":"manifest_diagnostic","file":"/tmp/Scarb.toml","message":"second manifest issue"}
             {"type":"error","message":"generic failure"}
         "#};
 
         let diagnostics = diagnostics_from_metadata_error(
-            Some(MetadataCommandError::ScarbError {
+            MetadataCommandError::ScarbError {
                 stdout: stdout.to_string(),
                 stderr: String::new(),
-            }),
-            &root_url,
+            },
+            &root_path,
         );
 
         let messages: Vec<_> =
@@ -380,15 +340,15 @@ mod tests {
 
     #[test]
     fn falls_back_to_error_when_no_manifest_diagnostics_found() {
-        let root_url = Url::parse("file:///tmp/Scarb.toml").unwrap();
+        let root_path = PathBuf::from("/tmp/Scarb.toml");
         let stdout = r#"{"type":"error","message":"fallback error"}"#;
 
         let diagnostics = diagnostics_from_metadata_error(
-            Some(MetadataCommandError::ScarbError {
+            MetadataCommandError::ScarbError {
                 stdout: stdout.to_string(),
                 stderr: String::new(),
-            }),
-            &root_url,
+            },
+            &root_path,
         );
 
         assert_eq!(diagnostics.len(), 1);
