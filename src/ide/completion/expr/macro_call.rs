@@ -17,7 +17,7 @@ use lsp_types::{CompletionItem, InsertTextFormat};
 
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
-use crate::ide::completion::path::path_suffix_completions;
+use crate::ide::completion::path::importable_path_suffix_completions;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
@@ -93,13 +93,15 @@ pub fn top_level_inline_macro_completions<'db>(
         let typed = path_segment.ident(db).token(db).text(db).to_string(db);
 
         let declarative_macros =
-            path_suffix_completions(db, ctx, was_node_corrected).into_iter().filter_map(|item| {
-                if let ImportableId::MacroDeclaration(_) = item.importable_id {
-                    Some(item.item)
-                } else {
-                    None
-                }
-            });
+            importable_path_suffix_completions(db, ctx, was_node_corrected)
+                .into_iter()
+                .filter_map(|item| {
+                    if let ImportableId::MacroDeclaration(_) = item.importable_id {
+                        Some(item.item)
+                    } else {
+                        None
+                    }
+                });
 
         available_top_level_inline_macros
             .into_iter()
