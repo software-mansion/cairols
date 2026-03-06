@@ -1,16 +1,22 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+#[cfg(test)]
 use cairo_lang_filesystem::ids::FileId;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Range, Url};
-use scarb_metadata::{Metadata, MetadataCommand, MetadataCommandError};
+#[cfg(test)]
+use scarb_metadata::{Metadata, MetadataCommand};
+use scarb_metadata::MetadataCommandError;
 use serde::Deserialize;
 use serde_json::Value;
 
+#[cfg(test)]
 use crate::lang::db::AnalysisDatabase;
+#[cfg(test)]
 use crate::lang::lsp::LsProtoGroup;
 
 /// Collects diagnostics for a `Scarb.toml` file.
+#[cfg(test)]
 pub fn collect_scarb_manifest_diagnostics<'db>(
     db: &'db AnalysisDatabase,
     manifest_file: FileId<'db>,
@@ -27,7 +33,7 @@ pub fn collect_scarb_manifest_diagnostics<'db>(
     }
 
     let diagnostics =
-        diagnostics_from_metadata_error(metadata_result.unwrap_err(), root_manifest_path);
+        diagnostics_from_metadata_error(&metadata_result.unwrap_err(), root_manifest_path);
     if diagnostics.is_empty() {
         return Some(diagnostics_by_file);
     }
@@ -42,6 +48,27 @@ pub fn collect_scarb_manifest_diagnostics<'db>(
     Some(diagnostics_by_file)
 }
 
+pub fn collect_scarb_manifest_diagnostics_from_metadata_error(
+    root_manifest_path: &Path,
+    error: &MetadataCommandError,
+) -> HashMap<Url, Vec<Diagnostic>> {
+    let root_url = Url::from_file_path(root_manifest_path).unwrap();
+    let diagnostics = diagnostics_from_metadata_error(error, root_manifest_path);
+    if diagnostics.is_empty() {
+        return HashMap::from([(root_url, Vec::new())]);
+    }
+
+    let mut diagnostics_by_file = HashMap::from([(root_url, Vec::new())]);
+    for diagnostic in diagnostics {
+        let entry = diagnostics_by_file.entry(diagnostic.uri).or_default();
+        if !entry.contains(&diagnostic.diagnostic) {
+            entry.push(diagnostic.diagnostic);
+        }
+    }
+    diagnostics_by_file
+}
+
+#[cfg(test)]
 fn run_metadata_validation(
     manifest_path: &Path,
     scarb_path: &Path,
@@ -57,24 +84,22 @@ struct LspScarbDiagnostic {
 }
 
 fn diagnostics_from_metadata_error(
-    error: MetadataCommandError,
+    error: &MetadataCommandError,
     root_manifest_path: &Path,
 ) -> Vec<LspScarbDiagnostic> {
     match error {
         MetadataCommandError::ScarbError { stdout, .. } => {
-            let diagnostics = extract_manifest_diagnostics_from_ndjson(&stdout);
+            let diagnostics = extract_manifest_diagnostics_from_ndjson(stdout);
             if !diagnostics.is_empty() {
                 return diagnostics;
             }
 
             // Fallback to an error message (should always be present) if no manifest diagnostics found.
-            first_ndjson_error_message(&stdout)
+            first_ndjson_error_message(stdout)
                 .map(|message| vec![build_diagnostic(root_manifest_path, message)])
                 .unwrap_or_default()
         }
-        MetadataCommandError::NotFound { stdout } => {
-            vec![build_diagnostic(root_manifest_path, stdout)]
-        }
+        MetadataCommandError::NotFound { stdout } => vec![build_diagnostic(root_manifest_path, stdout.to_string())],
         other => vec![build_diagnostic(root_manifest_path, other.to_string())],
     }
 }
@@ -325,10 +350,9 @@ mod tests {
             {"type":"error","message":"generic failure"}
         "#};
 
-        let diagnostics = diagnostics_from_metadata_error(
-            MetadataCommandError::ScarbError { stdout: stdout.to_string(), stderr: String::new() },
-            &root_path,
-        );
+        let error =
+            MetadataCommandError::ScarbError { stdout: stdout.to_string(), stderr: String::new() };
+        let diagnostics = diagnostics_from_metadata_error(&error, &root_path);
 
         let messages: Vec<_> =
             diagnostics.iter().map(|diag| diag.diagnostic.message.as_str()).collect();
@@ -340,10 +364,9 @@ mod tests {
         let root_path = PathBuf::from("/tmp/Scarb.toml");
         let stdout = r#"{"type":"error","message":"fallback error"}"#;
 
-        let diagnostics = diagnostics_from_metadata_error(
-            MetadataCommandError::ScarbError { stdout: stdout.to_string(), stderr: String::new() },
-            &root_path,
-        );
+        let error =
+            MetadataCommandError::ScarbError { stdout: stdout.to_string(), stderr: String::new() };
+        let diagnostics = diagnostics_from_metadata_error(&error, &root_path);
 
         assert_eq!(diagnostics.len(), 1);
         assert_eq!(diagnostics[0].diagnostic.message, "fallback error");

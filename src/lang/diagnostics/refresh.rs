@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use cairo_lang_filesystem::db::{FilesGroup, ext_as_virtual};
@@ -10,11 +10,10 @@ use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FilesDiagnostics;
 use crate::lang::diagnostics::project_diagnostics::ProjectDiagnostics;
-use crate::lang::diagnostics::scarb_manifest::collect_scarb_manifest_diagnostics;
 use crate::lang::lsp::LsProtoGroup;
 use crate::project::ConfigsRegistry;
 use crate::server::client::Notifier;
-use crate::toolchain::scarb::{SCARB_TOML, ScarbToolchain};
+use crate::toolchain::scarb::ScarbToolchain;
 
 /// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(skip_all)]
@@ -28,25 +27,15 @@ pub fn refresh_diagnostics<'db>(
     scarb_toolchain: ScarbToolchain,
 ) {
     for file in batch {
-        if is_scarb_manifest(db, file) {
-            refresh_scarb_manifest_diagnostics(
-                db,
-                file,
-                &project_diagnostics,
-                &notifier,
-                &scarb_toolchain,
-            );
-        } else {
-            refresh_file_diagnostics(
-                db,
-                config,
-                config_registry,
-                file,
-                &project_diagnostics,
-                &notifier,
-                &scarb_toolchain,
-            );
-        }
+        refresh_file_diagnostics(
+            db,
+            config,
+            config_registry,
+            file,
+            &project_diagnostics,
+            &notifier,
+            &scarb_toolchain,
+        );
     }
 }
 
@@ -108,42 +97,6 @@ fn refresh_file_diagnostics<'db>(
             version: None,
         });
     }
-}
-
-fn refresh_scarb_manifest_diagnostics<'db>(
-    db: &'db AnalysisDatabase,
-    manifest_file: FileId<'db>,
-    project_diagnostics: &ProjectDiagnostics,
-    notifier: &Notifier,
-    scarb_toolchain: &ScarbToolchain,
-) {
-    // Scarb manifest diagnostics are intentionally based on saved files only.
-    // Skip updates while this manifest has unsaved in-memory changes.
-    if db.file_overrides().contains_key(&manifest_file) {
-        return;
-    }
-
-    let Some(scarb) = scarb_toolchain.discover() else {
-        tracing::error!("could not find scarb executable");
-        return;
-    };
-    let Some(new_diags) = collect_scarb_manifest_diagnostics(db, manifest_file, scarb) else {
-        return;
-    };
-
-    for (url, diags) in new_diags {
-        project_diagnostics.update(url.clone(), HashMap::from([(url.clone(), diags.clone())]));
-        notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-            uri: url,
-            diagnostics: diags,
-            version: None,
-        });
-    }
-}
-
-fn is_scarb_manifest<'db>(db: &'db AnalysisDatabase, file: FileId<'db>) -> bool {
-    let FileLongId::OnDisk(path) = file.long(db) else { return false };
-    path.file_name().and_then(|name| name.to_str()) == Some(SCARB_TOML)
 }
 
 /// For an on disk file - returns a path to it.

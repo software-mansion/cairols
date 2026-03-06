@@ -22,6 +22,8 @@ use crate::server::trigger;
 use crate::state::{State, StateSnapshot};
 use crate::toolchain::scarb::ScarbToolchain;
 
+pub(crate) use self::scarb_manifest::collect_scarb_manifest_diagnostics_from_metadata_error;
+
 mod file_batches;
 mod file_diagnostics;
 mod lsp;
