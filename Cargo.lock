@@ -958,7 +958,6 @@ dependencies = [
  "cairo-language-common",
  "cairo-language-server",
  "cairo-lint",
- "camino",
  "colored",
  "convert_case",
  "create-output-dir",

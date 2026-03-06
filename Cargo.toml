@@ -83,7 +83,6 @@ tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 which = "8"
 toml_edit = "0.25.3"
-camino = "1.2.2"
 
 [target.'cfg(target_vendor = "apple")'.dependencies]
 libc = "0.2.180"
