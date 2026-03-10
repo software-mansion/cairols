@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 use anyhow::Context;
@@ -10,12 +10,13 @@ use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
-use lsp_types::{MessageType, ShowMessageParams, Url};
+use lsp_types::{Diagnostic, MessageType, ShowMessageParams, Url};
 use tracing::{debug, error, warn};
 
 pub use self::crate_data::{Crate, extract_custom_file_stems};
 pub use self::model::ConfigsRegistry;
 pub use self::project_manifest_path::*;
+use self::scarb_manifest_diagnostics::collect_scarb_manifest_diagnostics;
 use crate::ide::code_lens::FileChange;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
@@ -36,6 +37,7 @@ mod crate_data;
 mod model;
 mod project_manifest_path;
 mod scarb;
+mod scarb_manifest_diagnostics;
 mod unmanaged_core_crate;
 
 pub struct ProjectController {
@@ -81,6 +83,10 @@ impl ProjectController {
         self.model.configs_registry()
     }
 
+    pub fn tracked_scarb_manifests(&self) -> Snapshot<HashSet<PathBuf>> {
+        self.model.tracked_scarb_manifests()
+    }
+
     pub fn response_receiver(&self) -> Receiver<ProjectUpdate> {
         self.response_receiver.clone()
     }
@@ -97,7 +103,7 @@ impl ProjectController {
 
         self.send_request(ProjectUpdateRequest {
             file_path,
-            loaded_manifests: self.model.loaded_manifests(),
+            tracked_manifests: self.model.tracked_scarb_manifests(),
         })
     }
 
@@ -112,22 +118,43 @@ impl ProjectController {
     #[tracing::instrument(skip_all, fields(project_update))]
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
         let db = &mut state.db;
-        let mut manifest_to_track = None;
         match project_update {
-            ProjectUpdate::Scarb { crates, workspace_dir, workspace_manifest_path } => {
-                manifest_to_track = Some(workspace_manifest_path.clone());
+            ProjectUpdate::Scarb {
+                requested_manifest_path,
+                crates,
+                workspace_dir,
+                workspace_manifest_path,
+            } => {
+                // Clear the diagnostics on successful resolving of the manifest.
+                if let Ok(root_manifest_url) = Url::from_file_path(requested_manifest_path) {
+                    state.diagnostics_controller.publish_scarb_manifest_diagnostics(
+                        root_manifest_url,
+                        Default::default(),
+                        &notifier,
+                    );
+                }
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
-                state.proc_macro_controller.request_defined_macros(db, workspace_manifest_path);
+                state
+                    .proc_macro_controller
+                    .request_defined_macros(db, workspace_manifest_path.clone());
                 state.project_controller.model.load_workspace(
                     db,
                     crates,
                     workspace_dir,
+                    workspace_manifest_path,
                     &state.proc_macro_controller,
                 );
                 state.analysis_progress_controller.project_model_loaded();
             }
-            ProjectUpdate::ScarbMetadataFailed { manifest_path } => {
-                manifest_to_track = Some(manifest_path);
+            ProjectUpdate::ScarbMetadataFailed { manifest_path, diagnostics } => {
+                if let Ok(root_manifest_url) = Url::from_file_path(manifest_path.clone()) {
+                    state.diagnostics_controller.publish_scarb_manifest_diagnostics(
+                        root_manifest_url,
+                        diagnostics,
+                        &notifier,
+                    );
+                }
+                state.project_controller.model.track_scarb_metadata_failure(manifest_path);
                 // Try to set up a corelib at least if it is not in the db already.
                 try_to_init_unmanaged_core_if_not_present(
                     db,
@@ -184,14 +211,6 @@ impl ProjectController {
         // Drop mut ref so we can obtain snapshot.
         let _ = db;
 
-        // Keep discovered workspace manifest in the diagnostics primary set even when
-        // a Cairo source file triggered the refresh and the manifest is not open in the editor.
-        if let Some(manifest_path) = manifest_to_track
-            && let Ok(manifest_uri) = Url::from_file_path(manifest_path)
-        {
-            state.open_files.insert(manifest_uri);
-        }
-
         // Manifest may have changed, update for open files
         state.code_lens_controller.on_did_change(
             state.db.clone(),
@@ -231,8 +250,16 @@ impl ProjectController {
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
 pub enum ProjectUpdate {
-    Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf, workspace_manifest_path: PathBuf },
-    ScarbMetadataFailed { manifest_path: PathBuf },
+    Scarb {
+        requested_manifest_path: PathBuf,
+        crates: Vec<CrateInfo>,
+        workspace_dir: PathBuf,
+        workspace_manifest_path: PathBuf,
+    },
+    ScarbMetadataFailed {
+        manifest_path: PathBuf,
+        diagnostics: HashMap<Url, Vec<Diagnostic>>,
+    },
     CairoProjectToml(Box<Option<ProjectConfig>>),
     NoConfig(PathBuf),
 }
@@ -285,7 +312,7 @@ impl ProjectControllerThread {
             &self.notifier,
         ) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                if project_update_request.loaded_manifests.contains(&manifest_path) {
+                if project_update_request.tracked_manifests.contains(&manifest_path) {
                     debug!("scarb project is already loaded: {}", manifest_path.display());
                     return None;
                 }
@@ -303,6 +330,7 @@ impl ProjectControllerThread {
 
                 metadata
                     .map(|metadata| ProjectUpdate::Scarb {
+                        requested_manifest_path: manifest_path.clone(),
                         crates: extract_crates(&metadata),
                         workspace_dir: metadata.workspace.root.into_std_path_buf(),
                         workspace_manifest_path: metadata
@@ -310,7 +338,17 @@ impl ProjectControllerThread {
                             .manifest_path
                             .into_std_path_buf(),
                     })
-                    .unwrap_or(ProjectUpdate::ScarbMetadataFailed { manifest_path })
+                    .unwrap_or_else(|| {
+                        let diagnostics = self
+                            .scarb_toolchain
+                            .discover()
+                            .and_then(|scarb_path| {
+                                collect_scarb_manifest_diagnostics(&manifest_path, scarb_path)
+                            })
+                            .unwrap_or_default();
+
+                        ProjectUpdate::ScarbMetadataFailed { manifest_path, diagnostics }
+                    })
             }
 
             Some(ProjectManifestPath::CairoProject(config_path)) => {
@@ -350,7 +388,7 @@ impl ProjectControllerThread {
 
 struct ProjectUpdateRequest {
     file_path: PathBuf,
-    loaded_manifests: Snapshot<HashSet<PathBuf>>,
+    tracked_manifests: Snapshot<HashSet<PathBuf>>,
 }
 
 fn contains_core_from_scarb_cache(

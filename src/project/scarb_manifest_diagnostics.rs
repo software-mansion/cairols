@@ -1,33 +1,25 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use cairo_lang_filesystem::ids::FileId;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Range, Url};
 use scarb_metadata::{Metadata, MetadataCommand, MetadataCommandError};
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::LsProtoGroup;
-
-/// Collects diagnostics for a `Scarb.toml` file.
-pub fn collect_scarb_manifest_diagnostics<'db>(
-    db: &'db AnalysisDatabase,
-    manifest_file: FileId<'db>,
+/// Collects diagnostics for a `Scarb.toml` file by re-running metadata validation.
+pub fn collect_scarb_manifest_diagnostics(
+    manifest_path: &Path,
     scarb_path: &Path,
 ) -> Option<HashMap<Url, Vec<Diagnostic>>> {
-    let root_manifest_url: Url = db.url_for_file(manifest_file)?;
-    let root_manifest_path_buf: PathBuf = root_manifest_url.to_file_path().ok()?;
-    let root_manifest_path: &Path = root_manifest_path_buf.as_path();
+    let root_manifest_url = Url::from_file_path(manifest_path).ok()?;
     let mut diagnostics_by_file = HashMap::from([(root_manifest_url.clone(), Vec::new())]);
 
-    let metadata_result = run_metadata_validation(root_manifest_path, scarb_path);
+    let metadata_result = run_metadata_validation(manifest_path, scarb_path);
     if metadata_result.is_ok() {
         return None;
     }
 
-    let diagnostics =
-        diagnostics_from_metadata_error(metadata_result.unwrap_err(), root_manifest_path);
+    let diagnostics = diagnostics_from_metadata_error(metadata_result.unwrap_err(), manifest_path);
     if diagnostics.is_empty() {
         return Some(diagnostics_by_file);
     }
@@ -106,11 +98,7 @@ fn diagnostic_message(value: &Value) -> Option<String> {
 }
 
 fn diagnostic_path(value: &Value) -> Option<PathBuf> {
-    if let Some(path_str) = value.get("file").and_then(Value::as_str) {
-        return Some(PathBuf::from(path_str));
-    }
-
-    None
+    value.get("file").and_then(Value::as_str).map(PathBuf::from)
 }
 
 fn build_diagnostic(manifest_path: impl AsRef<Path>, message: String) -> LspScarbDiagnostic {
@@ -151,7 +139,7 @@ fn first_ndjson_error_message(stdout: &str) -> Option<String> {
     None
 }
 
-fn ndjson_values(stdout: &str) -> impl Iterator<Item = Value> {
+fn ndjson_values(stdout: &str) -> impl Iterator<Item = Value> + '_ {
     stdout
         .lines()
         .map(str::trim)
@@ -165,12 +153,11 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     use indoc::indoc;
-    use lsp_types::{DiagnosticSeverity, Url};
+    use lsp_types::DiagnosticSeverity;
     use scarb_metadata::MetadataCommandError;
     use tempfile::tempdir;
 
     use super::{collect_scarb_manifest_diagnostics, diagnostics_from_metadata_error};
-    use crate::lang::{db::AnalysisDatabase, lsp::LsProtoGroup};
 
     #[test]
     fn collects_diagnostics_for_scarb_manifest() {
@@ -186,12 +173,7 @@ mod tests {
         )
         .unwrap();
 
-        let db = AnalysisDatabase::new();
-        let uri = Url::from_file_path(&path).unwrap();
-        let file_id = db.file_for_url(&uri).unwrap();
-
-        let Some(diagnostics_by_file) =
-            collect_scarb_manifest_diagnostics(&db, file_id, &scarb_path())
+        let Some(diagnostics_by_file) = collect_scarb_manifest_diagnostics(&path, &scarb_path())
         else {
             panic!("Scarb manifest diagnostics were not collected");
         };
@@ -246,13 +228,10 @@ mod tests {
         write_file(&root.join("members/member_a/src/lib.cairo"), "fn main() {}\n");
         write_file(&root.join("members/member_b/src/lib.cairo"), "fn main() {}\n");
 
-        let db = AnalysisDatabase::new();
-        let member_uri = Url::from_file_path(root.join("members/member_a/Scarb.toml")).unwrap();
-        let file_id = db.file_for_url(&member_uri).unwrap();
-
-        let Some(diagnostics_by_file) =
-            collect_scarb_manifest_diagnostics(&db, file_id, &scarb_path())
-        else {
+        let Some(diagnostics_by_file) = collect_scarb_manifest_diagnostics(
+            &root.join("members/member_a/Scarb.toml"),
+            &scarb_path(),
+        ) else {
             panic!("Scarb manifest diagnostics were not collected");
         };
 
@@ -277,12 +256,7 @@ mod tests {
         )
         .unwrap();
 
-        let db = AnalysisDatabase::new();
-        let uri = Url::from_file_path(&path).unwrap();
-        let file_id = db.file_for_url(&uri).unwrap();
-
-        let Some(diagnostics_by_file) =
-            collect_scarb_manifest_diagnostics(&db, file_id, &scarb_path())
+        let Some(diagnostics_by_file) = collect_scarb_manifest_diagnostics(&path, &scarb_path())
         else {
             panic!("Scarb manifest diagnostics were not collected");
         };
@@ -308,11 +282,7 @@ mod tests {
         fs::create_dir_all(dir.path().join("src")).unwrap();
         fs::write(dir.path().join("src/lib.cairo"), "fn main() {}\n").unwrap();
 
-        let db = AnalysisDatabase::new();
-        let uri = Url::from_file_path(&path).unwrap();
-        let file_id = db.file_for_url(&uri).unwrap();
-
-        let diagnostics_by_file = collect_scarb_manifest_diagnostics(&db, file_id, &scarb_path());
+        let diagnostics_by_file = collect_scarb_manifest_diagnostics(&path, &scarb_path());
         assert!(diagnostics_by_file.is_none());
     }
 

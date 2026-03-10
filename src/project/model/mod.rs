@@ -18,15 +18,12 @@ type WorkspaceRoot = PathBuf;
 type ManifestPath = PathBuf;
 
 pub struct ProjectModel {
-    // The two fields below keep exactly the same information;
-    // therefore, their contents should be kept synchronised.
-    // We keep both of them for efficiency and ease of use.
     /// Mapping from a workspace root to crates contained in the dependency graph of that workspace.
     loaded_workspaces: HashMap<WorkspaceRoot, HashMap<CrateInput, Crate>>,
     /// Mapping from a crate to roots of workspaces that contained this crate in their dependency graphs.
     loaded_crates: HashMap<CrateInput, HashSet<WorkspaceRoot>>,
-    /// Used to determine when we can skip calling `scarb metadata` to update a project model.
-    manifests_of_members_from_loaded_workspaces: Owned<HashSet<ManifestPath>>,
+    /// Used to preserve metadata-driven Scarb manifest diagnostics across diagnostics rounds.
+    tracked_scarb_manifests: Owned<HashSet<ManifestPath>>,
     configs_registry: Owned<ConfigsRegistry>,
     /// Used to delay removing of crates from the db until the next workspace is loaded.
     /// It is done to ensure diagnostics are not randomly cleared after a project manifest change/
@@ -39,7 +36,7 @@ impl ProjectModel {
         Self {
             loaded_workspaces: Default::default(),
             loaded_crates: Default::default(),
-            manifests_of_members_from_loaded_workspaces: Default::default(),
+            tracked_scarb_manifests: Default::default(),
             configs_registry: Default::default(),
             remove_crates_from_db_on_next_update: false,
         }
@@ -49,15 +46,15 @@ impl ProjectModel {
         self.configs_registry.snapshot()
     }
 
-    pub fn loaded_manifests(&self) -> Snapshot<HashSet<ManifestPath>> {
-        self.manifests_of_members_from_loaded_workspaces.snapshot()
+    pub fn tracked_scarb_manifests(&self) -> Snapshot<HashSet<ManifestPath>> {
+        self.tracked_scarb_manifests.snapshot()
     }
 
     pub fn clear_loaded_workspaces(&mut self) {
         self.loaded_workspaces.clear();
         self.loaded_crates.clear();
-        self.manifests_of_members_from_loaded_workspaces.clear();
         self.configs_registry.clear();
+        self.tracked_scarb_manifests.clear();
 
         self.remove_crates_from_db_on_next_update = true;
     }
@@ -67,6 +64,7 @@ impl ProjectModel {
         db: &mut AnalysisDatabase,
         workspace_crates: Vec<CrateInfo>,
         workspace_dir: PathBuf,
+        workspace_manifest_path: PathBuf,
         proc_macro_controller: &ProcMacroClientController,
     ) {
         if self.remove_crates_from_db_on_next_update {
@@ -75,12 +73,12 @@ impl ProjectModel {
             files_group_input(db).set_crate_configs(db).to(Some(Default::default()));
         }
 
+        self.tracked_scarb_manifests.insert(workspace_manifest_path);
         let workspace_crates = workspace_crates
             .into_iter()
             .map(|cr_info| {
                 if cr_info.is_member {
-                    self.manifests_of_members_from_loaded_workspaces
-                        .insert(cr_info.manifest_path.clone());
+                    self.tracked_scarb_manifests.insert(cr_info.manifest_path.clone());
                 }
 
                 self.configs_registry.insert(cr_info.manifest_path, cr_info.package_config);
@@ -101,6 +99,10 @@ impl ProjectModel {
         self.add_crates(workspace_crates, &workspace_dir);
 
         self.apply_changes_to_db(db, proc_macro_controller);
+    }
+
+    pub fn track_scarb_metadata_failure(&mut self, manifest_path: PathBuf) {
+        self.tracked_scarb_manifests.insert(manifest_path);
     }
 
     pub fn apply_changes_to_db(
@@ -174,5 +176,23 @@ impl ProjectModel {
         }
 
         self.loaded_workspaces.insert(workspace_dir.to_path_buf(), workspace_crates);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::ProjectModel;
+
+    #[test]
+    fn preserves_tracked_erroring_manifests_across_workspace_clear() {
+        let mut model = ProjectModel::new();
+        let manifest = PathBuf::from("/tmp/Scarb.toml");
+
+        model.track_scarb_metadata_failure(manifest.clone());
+        model.clear_loaded_workspaces();
+
+        assert!(model.tracked_scarb_manifests().contains(&manifest));
     }
 }
