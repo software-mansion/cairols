@@ -15,7 +15,6 @@ use crate::state::{Owned, Snapshot};
 mod configs_registry;
 
 type WorkspaceRoot = PathBuf;
-type ManifestPath = PathBuf;
 
 pub struct ProjectModel {
     // The two fields below keep exactly the same information;
@@ -26,7 +25,7 @@ pub struct ProjectModel {
     /// Mapping from a crate to roots of workspaces that contained this crate in their dependency graphs.
     loaded_crates: HashMap<CrateInput, HashSet<WorkspaceRoot>>,
     /// Used to determine when we can skip calling `scarb metadata` to update a project model.
-    manifests_of_members_from_loaded_workspaces: Owned<HashSet<ManifestPath>>,
+    manifests_of_members_from_loaded_workspaces: Owned<HashSet<PathBuf>>,
     configs_registry: Owned<ConfigsRegistry>,
     /// Used to delay removing of crates from the db until the next workspace is loaded.
     /// It is done to ensure diagnostics are not randomly cleared after a project manifest change/
@@ -49,7 +48,7 @@ impl ProjectModel {
         self.configs_registry.snapshot()
     }
 
-    pub fn loaded_manifests(&self) -> Snapshot<HashSet<ManifestPath>> {
+    pub fn loaded_manifests(&self) -> Snapshot<HashSet<PathBuf>> {
         self.manifests_of_members_from_loaded_workspaces.snapshot()
     }
 
@@ -82,7 +81,6 @@ impl ProjectModel {
                     self.manifests_of_members_from_loaded_workspaces
                         .insert(cr_info.manifest_path.clone());
                 }
-
                 self.configs_registry.insert(cr_info.manifest_path, cr_info.package_config);
 
                 (cr_info.cr.input(), cr_info.cr)
