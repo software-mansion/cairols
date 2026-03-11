@@ -200,11 +200,7 @@ impl ProcMacroClientController {
     /// This is intended for explicit workspace reloads triggered by user edits to project config,
     /// not for automatic recovery from server failures.
     #[tracing::instrument(level = "trace", skip_all)]
-    pub fn force_restart_without_rate_limit(
-        &mut self,
-        db: &mut AnalysisDatabase,
-        config: &Config,
-    ) {
+    pub fn force_restart_without_rate_limit(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         self.force_restart_impl(db, config, Self::try_launch_proc_macro_server_without_rate_limit);
     }
 
