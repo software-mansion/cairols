@@ -265,7 +265,9 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
                 trace!("reloading backend from didChangeWatchedFiles handler");
                 Backend::reload(state, requester)?;
 
-                state.proc_macro_controller.force_restart(&mut state.db, &state.config);
+                state
+                    .proc_macro_controller
+                    .force_restart_without_rate_limit(&mut state.db, &state.config);
             }
         }
 
