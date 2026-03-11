@@ -1,10 +1,11 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::num::NonZero;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use cairo_lang_filesystem::ids::FileId;
 use crossbeam::channel::{Receiver, Sender};
-use lsp_types::Url;
+use lsp_types::notification::PublishDiagnostics;
+use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url};
 use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
@@ -39,6 +40,7 @@ pub struct DiagnosticsController {
     //   JoinHandle will never terminate.
     trigger: trigger::Sender<StateSnapshot>,
     generate_code_complete_receiver: Receiver<()>,
+    project_diagnostics: ProjectDiagnostics,
     _thread: JoinHandle,
 }
 
@@ -52,14 +54,16 @@ impl DiagnosticsController {
         let (generate_code_complete_sender, generate_code_complete_receiver) =
             crossbeam::channel::bounded(1);
         let (trigger, receiver) = trigger::trigger();
+        let project_diagnostics = ProjectDiagnostics::new();
         let (thread, _) = DiagnosticsControllerThread::spawn(
             receiver,
             generate_code_complete_sender,
             notifier,
             analysis_progress_tracker,
             scarb_toolchain,
+            project_diagnostics.clone(),
         );
-        Self { trigger, generate_code_complete_receiver, _thread: thread }
+        Self { trigger, generate_code_complete_receiver, project_diagnostics, _thread: thread }
     }
 
     pub fn generate_code_complete_receiver(&self) -> Receiver<()> {
@@ -69,6 +73,22 @@ impl DiagnosticsController {
     /// Schedules diagnostics refreshing on snapshot(s) of the current state.
     pub fn refresh(&self, state: &State) {
         self.trigger.activate(state.snapshot());
+    }
+
+    pub fn publish_scarb_manifest_diagnostics(
+        &self,
+        root_manifest_url: Url,
+        diagnostics: HashMap<Url, Vec<Diagnostic>>,
+        notifier: &Notifier,
+    ) {
+        let diags_to_send = self.project_diagnostics.update(root_manifest_url, diagnostics);
+        for (url, diagnostics) in diags_to_send {
+            notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+                uri: url,
+                diagnostics,
+                version: None,
+            });
+        }
     }
 }
 
@@ -93,6 +113,7 @@ impl DiagnosticsControllerThread {
         notifier: Notifier,
         analysis_progress_controller: AnalysisProgressController,
         scarb_toolchain: ScarbToolchain,
+        project_diagnostics: ProjectDiagnostics,
     ) -> (JoinHandle, NonZero<usize>) {
         let mut this = Self {
             receiver,
@@ -102,7 +123,7 @@ impl DiagnosticsControllerThread {
             // Above 4 threads we start losing performance
             // due to salsa locking and context switching.
             pool: thread::Pool::new(4, "diagnostic-worker"),
-            project_diagnostics: ProjectDiagnostics::new(),
+            project_diagnostics,
             worker_handles: Vec::new(),
             scarb_toolchain,
         };
@@ -147,7 +168,8 @@ impl DiagnosticsControllerThread {
     /// Runs a single tick of the diagnostics controller's event loop.
     #[tracing::instrument(skip_all)]
     fn diagnostics_controller_tick(&mut self, state: &StateSnapshot) {
-        let primary_set = find_primary_files(&state.db, &state.open_files);
+        let primary_set =
+            find_primary_files(&state.db, &state.open_files, &state.tracked_scarb_manifests);
         let secondary = find_secondary_files(&state.db, &primary_set);
         // Event meaning that all generate_code() calls from this tick were called.
         // This is true because `find_primary_files`/`find_secondary_files` calls `db.file_modules()` and it does all generate_code() calls.
