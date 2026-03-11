@@ -1,17 +1,21 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::num::NonZero;
 use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::Path;
 
 use cairo_lang_filesystem::ids::FileId;
 use crossbeam::channel::{Receiver, Sender};
-use lsp_types::Url;
+use lsp_types::notification::PublishDiagnostics;
+use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url};
 use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
 use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
 use crate::ide::analysis_progress::AnalysisProgressController;
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::lang::lsp::LsProtoGroup;
+use crate::project::{CrateInfo, ScarbMetadataMessage, scarb_metadata_messages_to_diagnostics};
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::thread::task_progress_monitor::{
@@ -28,6 +32,8 @@ mod lsp;
 mod project_diagnostics;
 mod refresh;
 
+type ScarbManifestDiagnostics = HashMap<Url, HashMap<Url, Vec<Diagnostic>>>;
+
 /// Schedules refreshing of diagnostics in a background thread.
 ///
 /// This structure *owns* the worker thread and is responsible for its lifecycle.
@@ -39,6 +45,7 @@ pub struct DiagnosticsController {
     //   JoinHandle will never terminate.
     trigger: trigger::Sender<StateSnapshot>,
     generate_code_complete_receiver: Receiver<()>,
+    scarb_manifest_diagnostics: ScarbManifestDiagnostics,
     _thread: JoinHandle,
 }
 
@@ -52,14 +59,21 @@ impl DiagnosticsController {
         let (generate_code_complete_sender, generate_code_complete_receiver) =
             crossbeam::channel::bounded(1);
         let (trigger, receiver) = trigger::trigger();
+        let project_diagnostics = ProjectDiagnostics::new();
         let (thread, _) = DiagnosticsControllerThread::spawn(
             receiver,
             generate_code_complete_sender,
             notifier,
             analysis_progress_tracker,
             scarb_toolchain,
+            project_diagnostics.clone(),
         );
-        Self { trigger, generate_code_complete_receiver, _thread: thread }
+        Self {
+            trigger,
+            generate_code_complete_receiver,
+            scarb_manifest_diagnostics: Default::default(),
+            _thread: thread,
+        }
     }
 
     pub fn generate_code_complete_receiver(&self) -> Receiver<()> {
@@ -69,6 +83,96 @@ impl DiagnosticsController {
     /// Schedules diagnostics refreshing on snapshot(s) of the current state.
     pub fn refresh(&self, state: &State) {
         self.trigger.activate(state.snapshot());
+    }
+
+    pub fn publish_scarb_manifest_diagnostics(
+        &mut self,
+        root_manifest_path: &Path,
+        diagnostics: Vec<ScarbMetadataMessage>,
+        db: &AnalysisDatabase,
+        notifier: &Notifier,
+    ) {
+        let Some(root_manifest_url) = Url::from_file_path(root_manifest_path).ok() else {
+            return;
+        };
+        let diagnostics =
+            scarb_metadata_messages_to_diagnostics(db, diagnostics, root_manifest_path)
+                .unwrap_or_default();
+        let diags_to_send = self.update_scarb_manifest_diagnostics(root_manifest_url, diagnostics);
+        for (url, diagnostics) in diags_to_send {
+            notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+                uri: url,
+                diagnostics,
+                version: None,
+            });
+        }
+    }
+
+    pub fn clear_scarb_manifest_diagnostics(
+        &mut self,
+        crates: &[CrateInfo],
+        notifier: &Notifier,
+    ) {
+        let manifest_paths = crates
+            .iter()
+            .filter(|crate_info| crate_info.is_member)
+            .map(|crate_info| crate_info.manifest_path.as_path());
+
+        for manifest_path in manifest_paths {
+            self.clear_scarb_manifest_diagnostics_for_path(manifest_path, notifier);
+        }
+    }
+
+    fn update_scarb_manifest_diagnostics(
+        &mut self,
+        root_manifest_url: Url,
+        new_diagnostics: HashMap<Url, Vec<Diagnostic>>,
+    ) -> HashMap<Url, Vec<Diagnostic>> {
+        let old_diagnostics = self
+            .scarb_manifest_diagnostics
+            .insert(root_manifest_url, new_diagnostics.clone())
+            .unwrap_or_default();
+
+        if old_diagnostics == new_diagnostics {
+            return HashMap::new();
+        }
+
+        let mut diagnostics_to_send = HashMap::new();
+
+        for location_url in old_diagnostics.keys() {
+            if !new_diagnostics.contains_key(location_url) {
+                diagnostics_to_send.insert(location_url.clone(), Vec::new());
+            }
+        }
+
+        for (location_url, diagnostics) in new_diagnostics {
+            if old_diagnostics.get(&location_url) != Some(&diagnostics) {
+                diagnostics_to_send.insert(location_url, diagnostics);
+            }
+        }
+
+        diagnostics_to_send
+    }
+
+    fn clear_scarb_manifest_diagnostics_for_path(
+        &mut self,
+        manifest_path: &Path,
+        notifier: &Notifier,
+    ) {
+        let Some(manifest_url) = Url::from_file_path(manifest_path).ok() else {
+            return;
+        };
+        let Some(old_diagnostics) = self.scarb_manifest_diagnostics.remove(&manifest_url) else {
+            return;
+        };
+
+        for url in old_diagnostics.into_keys() {
+            notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+                uri: url,
+                diagnostics: Vec::new(),
+                version: None,
+            });
+        }
     }
 }
 
@@ -93,6 +197,7 @@ impl DiagnosticsControllerThread {
         notifier: Notifier,
         analysis_progress_controller: AnalysisProgressController,
         scarb_toolchain: ScarbToolchain,
+        project_diagnostics: ProjectDiagnostics,
     ) -> (JoinHandle, NonZero<usize>) {
         let mut this = Self {
             receiver,
@@ -102,7 +207,7 @@ impl DiagnosticsControllerThread {
             // Above 4 threads we start losing performance
             // due to salsa locking and context switching.
             pool: thread::Pool::new(4, "diagnostic-worker"),
-            project_diagnostics: ProjectDiagnostics::new(),
+            project_diagnostics,
             worker_handles: Vec::new(),
             scarb_toolchain,
         };
@@ -216,7 +321,10 @@ impl DiagnosticsControllerThread {
         }
     }
 
+    /// Waits until all active workers are done and clears worker list.
     fn join_and_clear_workers(&mut self) -> Vec<TaskResult> {
-        self.worker_handles.drain(..).map(|handle| handle.join()).collect()
+        let results = self.worker_handles.iter().map(TaskHandle::join).collect();
+        self.worker_handles.clear();
+        results
     }
 }
