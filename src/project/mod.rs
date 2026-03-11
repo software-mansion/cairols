@@ -16,7 +16,10 @@ use tracing::{debug, error, warn};
 pub use self::crate_data::{Crate, CrateInfo, extract_custom_file_stems};
 pub use self::model::ConfigsRegistry;
 pub use self::project_manifest_path::*;
-use self::scarb_manifest_diagnostics::collect_scarb_manifests_diagnostics;
+pub use self::scarb_manifest_diagnostics::scarb_metadata_messages_to_diagnostics;
+use self::scarb_manifest_diagnostics::{
+    collect_scarb_manifest_diagnostics, scarb_metadata_messages_contain_only_errors,
+};
 use crate::ide::code_lens::FileChange;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
@@ -321,8 +324,19 @@ impl ProjectControllerThread {
                             .into_std_path_buf(),
                     })
                     .unwrap_or_else(|error| {
-                        let diagnostics =
-                            collect_scarb_manifests_diagnostics(error, &manifest_path);
+                        let metadata_messages = collect_scarb_manifest_diagnostics(error);
+                        let should_show_metadata_failure_notification =
+                            scarb_metadata_messages_contain_only_errors(&metadata_messages);
+
+                        if should_show_metadata_failure_notification {
+                            self.scarb_toolchain.notify_metadata_failed();
+                        }
+
+                        let diagnostics = scarb_metadata_messages_to_diagnostics(
+                            metadata_messages,
+                            &manifest_path,
+                        )
+                        .unwrap_or_default();
 
                         ProjectUpdate::ScarbMetadataFailed { manifest_path, diagnostics }
                     })
