@@ -1,9 +1,15 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_utils::Intern;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Range, Url};
 use scarb_metadata::{Metadata, MetadataCommand, MetadataCommandError};
 use serde_json::Value;
+
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::lsp::ToLsp;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ScarbMetadataMessage {
@@ -22,15 +28,13 @@ pub struct MetadataError {
 pub struct MetadataDiagnostic {
     pub path: PathBuf,
     pub message: String,
+    pub span: Option<MetadataDiagnosticSpan>,
 }
 
-impl ScarbMetadataMessage {
-    fn into_lsp(self, root_manifest_path: &Path) -> Option<LspScarbDiagnostic> {
-        match self {
-            ScarbMetadataMessage::MetadataError(message) => message.into_lsp(root_manifest_path),
-            ScarbMetadataMessage::MetadataDiagnostic(message) => message.into_lsp(),
-        }
-    }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MetadataDiagnosticSpan {
+    pub start: usize,
+    pub end: usize,
 }
 
 fn diagnostics_to_display(all_messages: Vec<ScarbMetadataMessage>) -> Vec<ScarbMetadataMessage> {
@@ -49,6 +53,7 @@ pub fn scarb_metadata_messages_contain_only_errors(messages: &[ScarbMetadataMess
 }
 
 pub fn scarb_metadata_messages_to_diagnostics(
+    db: &AnalysisDatabase,
     messages: Vec<ScarbMetadataMessage>,
     root_manifest_path: &Path,
 ) -> Option<HashMap<Url, Vec<Diagnostic>>> {
@@ -57,7 +62,7 @@ pub fn scarb_metadata_messages_to_diagnostics(
 
     for diagnostic in diagnostics_to_display(messages)
         .into_iter()
-        .filter_map(|message| message.into_lsp(root_manifest_path))
+        .filter_map(|message| scarb_metadata_message_to_diagnostic(db, message, root_manifest_path))
     {
         let entry = diagnostics_by_file.entry(diagnostic.uri).or_default();
         if !entry.contains(&diagnostic.diagnostic) {
@@ -66,22 +71,6 @@ pub fn scarb_metadata_messages_to_diagnostics(
     }
 
     Some(diagnostics_by_file)
-}
-
-impl MetadataError {
-    fn into_lsp(self, root_manifest_path: &Path) -> Option<LspScarbDiagnostic> {
-        Url::from_file_path(root_manifest_path)
-            .ok()
-            .map(|uri| LspScarbDiagnostic { uri, diagnostic: build_diagnostic(self.message) })
-    }
-}
-
-impl MetadataDiagnostic {
-    fn into_lsp(self) -> Option<LspScarbDiagnostic> {
-        Url::from_file_path(self.path)
-            .ok()
-            .map(|uri| LspScarbDiagnostic { uri, diagnostic: build_diagnostic(self.message) })
-    }
 }
 
 impl TryFrom<&Value> for ScarbMetadataMessage {
@@ -106,6 +95,7 @@ impl TryFrom<&Value> for ScarbMetadataMessage {
             return Ok(ScarbMetadataMessage::MetadataDiagnostic(MetadataDiagnostic {
                 path: diagnostic_path(value).ok_or(())?,
                 message,
+                span: diagnostic_span(value),
             }));
         }
 
@@ -176,9 +166,57 @@ fn diagnostic_path(value: &Value) -> Option<PathBuf> {
     value.get("file").and_then(Value::as_str).map(PathBuf::from)
 }
 
-fn build_diagnostic(message: String) -> Diagnostic {
+fn diagnostic_span(value: &Value) -> Option<MetadataDiagnosticSpan> {
+    let span = value.get("span")?;
+    let start = span.get("start")?.as_u64()?;
+    let end = span.get("end")?.as_u64()?;
+
+    Some(MetadataDiagnosticSpan { start: start as usize, end: end as usize })
+}
+
+fn scarb_metadata_message_to_diagnostic(
+    db: &AnalysisDatabase,
+    message: ScarbMetadataMessage,
+    root_manifest_path: &Path,
+) -> Option<LspScarbDiagnostic> {
+    match message {
+        ScarbMetadataMessage::MetadataError(message) => {
+            Url::from_file_path(root_manifest_path).ok().map(|uri| LspScarbDiagnostic {
+                uri,
+                diagnostic: build_diagnostic(message.message, Range::default()),
+            })
+        }
+        ScarbMetadataMessage::MetadataDiagnostic(message) => {
+            let range = manifest_diagnostic_range(db, &message.path, message.span.as_ref());
+            Url::from_file_path(message.path).ok().map(|uri| LspScarbDiagnostic {
+                uri,
+                diagnostic: build_diagnostic(message.message, range),
+            })
+        }
+    }
+}
+
+fn manifest_diagnostic_range(
+    db: &AnalysisDatabase,
+    manifest_path: &Path,
+    span: Option<&MetadataDiagnosticSpan>,
+) -> Range {
+    let Some(span) = span else {
+        return Range::default();
+    };
+
+    let text_span = TextSpan::new(
+        TextOffset::START.add_width(TextWidth::new_for_testing(span.start as u32)),
+        TextOffset::START.add_width(TextWidth::new_for_testing(span.end as u32)),
+    );
+
+    let file = FileLongId::OnDisk(manifest_path.to_path_buf()).intern(db);
+    text_span.position_in_file(db, file).map(|span| span.to_lsp()).unwrap_or_default()
+}
+
+fn build_diagnostic(message: String, range: Range) -> Diagnostic {
     Diagnostic {
-        range: Range::default(),
+        range,
         severity: Some(DiagnosticSeverity::ERROR),
         code: None,
         code_description: None,
@@ -207,8 +245,10 @@ mod tests {
     use lsp_types::DiagnosticSeverity;
     use tempfile::tempdir;
 
+    use crate::lang::db::AnalysisDatabase;
+
     use super::{
-        MetadataDiagnostic, MetadataError, ScarbMetadataMessage,
+        MetadataDiagnostic, MetadataDiagnosticSpan, MetadataError, ScarbMetadataMessage,
         collect_scarb_manifest_diagnostics, metadata_messages_from_ndjson,
         scarb_metadata_messages_contain_only_errors, scarb_metadata_messages_to_diagnostics,
     };
@@ -231,7 +271,9 @@ mod tests {
             panic!("Scarb manifest diagnostics were not collected");
         };
 
-        let diagnostics_by_file = scarb_metadata_messages_to_diagnostics(messages, &path).unwrap();
+        let db = AnalysisDatabase::new();
+        let diagnostics_by_file =
+            scarb_metadata_messages_to_diagnostics(&db, messages, &path).unwrap();
         let diagnostics: Vec<_> = diagnostics_by_file.values().flatten().collect();
         assert!(!diagnostics.is_empty());
         assert!(diagnostics.iter().any(
@@ -289,7 +331,9 @@ mod tests {
             panic!("Scarb manifest diagnostics were not collected");
         };
 
+        let db = AnalysisDatabase::new();
         let diagnostics_by_file = scarb_metadata_messages_to_diagnostics(
+            &db,
             messages,
             &root.join("members/member_a/Scarb.toml"),
         )
@@ -320,7 +364,9 @@ mod tests {
             panic!("Scarb manifest diagnostics were not collected");
         };
 
-        let diagnostics_by_file = scarb_metadata_messages_to_diagnostics(messages, &path).unwrap();
+        let db = AnalysisDatabase::new();
+        let diagnostics_by_file =
+            scarb_metadata_messages_to_diagnostics(&db, messages, &path).unwrap();
         let diagnostics_count = diagnostics_by_file.values().flatten().count();
         assert_eq!(diagnostics_count, 1);
     }
@@ -349,7 +395,7 @@ mod tests {
     #[test]
     fn extracts_all_metadata_messages_from_ndjson() {
         let stdout = indoc! {r#"
-            {"type":"diagnostic","kind":"manifest_diagnostic","file":"/tmp/Scarb.toml","message":"first manifest issue"}
+            {"type":"diagnostic","kind":"manifest_diagnostic","file":"/tmp/Scarb.toml","message":"first manifest issue","span":{"start":10,"end":15}}
             {"type":"diagnostic","kind":"manifest_diagnostic","file":"/tmp/Scarb.toml","message":"second manifest issue"}
             {"type":"error","message":"generic failure"}
         "#};
@@ -362,10 +408,12 @@ mod tests {
                 ScarbMetadataMessage::MetadataDiagnostic(MetadataDiagnostic {
                     path: PathBuf::from("/tmp/Scarb.toml"),
                     message: "first manifest issue".to_string(),
+                    span: Some(MetadataDiagnosticSpan { start: 10, end: 15 }),
                 }),
                 ScarbMetadataMessage::MetadataDiagnostic(MetadataDiagnostic {
                     path: PathBuf::from("/tmp/Scarb.toml"),
                     message: "second manifest issue".to_string(),
+                    span: None,
                 }),
                 ScarbMetadataMessage::MetadataError(MetadataError {
                     message: "generic failure".to_string(),
@@ -398,6 +446,7 @@ mod tests {
             ScarbMetadataMessage::MetadataDiagnostic(MetadataDiagnostic {
                 path: PathBuf::from("/tmp/Scarb.toml"),
                 message: "manifest issue".to_string(),
+                span: None,
             }),
             ScarbMetadataMessage::MetadataError(MetadataError { message: "error".to_string() }),
         ]));
@@ -409,10 +458,12 @@ mod tests {
     fn diagnostics_hide_metadata_errors_when_manifest_diagnostics_exist() {
         let path = PathBuf::from("/tmp/Scarb.toml");
         let diagnostics_by_file = scarb_metadata_messages_to_diagnostics(
+            &AnalysisDatabase::new(),
             vec![
                 ScarbMetadataMessage::MetadataDiagnostic(MetadataDiagnostic {
                     path: path.clone(),
                     message: "manifest issue".to_string(),
+                    span: None,
                 }),
                 ScarbMetadataMessage::MetadataError(MetadataError {
                     message: "generic failure".to_string(),
