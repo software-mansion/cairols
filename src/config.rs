@@ -27,7 +27,7 @@ use crate::server::schedule::Task;
 /// Therefore, holding any references or copies of this struct or its values for
 /// longer periods of time should be avoided, unless the copy will be reactively updated on
 /// `workspace/didChangeConfiguration` requests.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Config {
     /// A user-provided path to the `core` crate source code for use in projects where `core` is
     /// unmanaged by the toolchain.
@@ -225,7 +225,7 @@ impl Config {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub enum TestRunner {
     #[default]
     Auto,
