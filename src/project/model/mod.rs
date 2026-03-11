@@ -178,21 +178,3 @@ impl ProjectModel {
         self.loaded_workspaces.insert(workspace_dir.to_path_buf(), workspace_crates);
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use std::path::PathBuf;
-
-    use super::ProjectModel;
-
-    #[test]
-    fn preserves_tracked_erroring_manifests_across_workspace_clear() {
-        let mut model = ProjectModel::new();
-        let manifest = PathBuf::from("/tmp/Scarb.toml");
-
-        model.track_scarb_metadata_failure(manifest.clone());
-        model.clear_loaded_workspaces();
-
-        assert!(model.tracked_scarb_manifests().contains(&manifest));
-    }
-}

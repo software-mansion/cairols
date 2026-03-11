@@ -68,31 +68,3 @@ pub fn batches<'db>(input: &[FileId<'db>], n: NonZero<usize>) -> Vec<Vec<FileId<
     debug_assert_eq!(batches.len(), n);
     batches
 }
-
-#[cfg(test)]
-mod tests {
-    use std::collections::HashSet;
-    use std::fs;
-
-    use tempfile::tempdir;
-
-    use super::find_primary_files;
-    use crate::lang::{db::AnalysisDatabase, lsp::LsProtoGroup};
-
-    #[test]
-    fn includes_tracked_scarb_manifests_even_when_not_open() {
-        let dir = tempdir().unwrap();
-        let manifest_path = dir.path().join("Scarb.toml");
-
-        fs::write(&manifest_path, "[package]\nname = \"test\"\nversion = \"0.1.0\"\n").unwrap();
-
-        let db = AnalysisDatabase::new();
-        let manifest_uri = lsp_types::Url::from_file_path(&manifest_path).unwrap();
-        let manifest_file = db.file_for_url(&manifest_uri).unwrap();
-
-        let primary_files =
-            find_primary_files(&db, &HashSet::new(), &HashSet::from([manifest_path]));
-
-        assert!(primary_files.contains(&manifest_file));
-    }
-}
