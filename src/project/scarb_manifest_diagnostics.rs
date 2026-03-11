@@ -245,13 +245,12 @@ mod tests {
     use lsp_types::DiagnosticSeverity;
     use tempfile::tempdir;
 
-    use crate::lang::db::AnalysisDatabase;
-
     use super::{
         MetadataDiagnostic, MetadataDiagnosticSpan, MetadataError, ScarbMetadataMessage,
         collect_scarb_manifest_diagnostics, metadata_messages_from_ndjson,
         scarb_metadata_messages_contain_only_errors, scarb_metadata_messages_to_diagnostics,
     };
+    use crate::lang::db::AnalysisDatabase;
 
     #[test]
     fn collects_diagnostics_for_scarb_manifest() {

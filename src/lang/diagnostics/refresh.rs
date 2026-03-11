@@ -1,9 +1,10 @@
+use std::collections::HashSet;
+use std::path::PathBuf;
+
 use cairo_lang_filesystem::db::{FilesGroup, ext_as_virtual};
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
-use std::collections::HashSet;
-use std::path::PathBuf;
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
