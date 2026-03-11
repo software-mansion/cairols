@@ -1,10 +1,12 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::num::NonZero;
 use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::Path;
 
 use cairo_lang_filesystem::ids::FileId;
 use crossbeam::channel::{Receiver, Sender};
-use lsp_types::Url;
+use lsp_types::notification::PublishDiagnostics;
+use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url};
 use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
@@ -12,6 +14,7 @@ use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
 use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::lang::lsp::LsProtoGroup;
+use crate::project::CrateInfo;
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::thread::task_progress_monitor::{
@@ -39,6 +42,7 @@ pub struct DiagnosticsController {
     //   JoinHandle will never terminate.
     trigger: trigger::Sender<StateSnapshot>,
     generate_code_complete_receiver: Receiver<()>,
+    project_diagnostics: ProjectDiagnostics,
     _thread: JoinHandle,
 }
 
@@ -52,14 +56,16 @@ impl DiagnosticsController {
         let (generate_code_complete_sender, generate_code_complete_receiver) =
             crossbeam::channel::bounded(1);
         let (trigger, receiver) = trigger::trigger();
+        let project_diagnostics = ProjectDiagnostics::new();
         let (thread, _) = DiagnosticsControllerThread::spawn(
             receiver,
             generate_code_complete_sender,
             notifier,
             analysis_progress_tracker,
             scarb_toolchain,
+            project_diagnostics.clone(),
         );
-        Self { trigger, generate_code_complete_receiver, _thread: thread }
+        Self { trigger, generate_code_complete_receiver, project_diagnostics, _thread: thread }
     }
 
     pub fn generate_code_complete_receiver(&self) -> Receiver<()> {
@@ -69,6 +75,49 @@ impl DiagnosticsController {
     /// Schedules diagnostics refreshing on snapshot(s) of the current state.
     pub fn refresh(&self, state: &State) {
         self.trigger.activate(state.snapshot());
+    }
+
+    pub fn publish_scarb_manifest_diagnostics(
+        &self,
+        root_manifest_url: Url,
+        diagnostics: HashMap<Url, Vec<Diagnostic>>,
+        notifier: &Notifier,
+    ) {
+        let diags_to_send = self.project_diagnostics.update(root_manifest_url, diagnostics);
+        for (url, diagnostics) in diags_to_send {
+            notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+                uri: url,
+                diagnostics,
+                version: None,
+            });
+        }
+    }
+
+    pub fn clear_scarb_manifest_diagnostics(
+        &self,
+        workspace_manifest_path: &Path,
+        crates: &[CrateInfo],
+        notifier: &Notifier,
+    ) {
+        let manifest_paths = crates
+            .iter()
+            .filter(|crate_info| crate_info.is_member)
+            .map(|crate_info| crate_info.manifest_path.as_path())
+            .chain([workspace_manifest_path]);
+
+        for manifest_path in manifest_paths {
+            let Some(manifest_url) = Url::from_file_path(manifest_path).ok() else {
+                continue;
+            };
+            let diags_to_send = self.project_diagnostics.update(manifest_url, Default::default());
+            for (url, diagnostics) in diags_to_send {
+                notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+                    uri: url,
+                    diagnostics,
+                    version: None,
+                });
+            }
+        }
     }
 }
 
@@ -93,6 +142,7 @@ impl DiagnosticsControllerThread {
         notifier: Notifier,
         analysis_progress_controller: AnalysisProgressController,
         scarb_toolchain: ScarbToolchain,
+        project_diagnostics: ProjectDiagnostics,
     ) -> (JoinHandle, NonZero<usize>) {
         let mut this = Self {
             receiver,
@@ -102,7 +152,7 @@ impl DiagnosticsControllerThread {
             // Above 4 threads we start losing performance
             // due to salsa locking and context switching.
             pool: thread::Pool::new(4, "diagnostic-worker"),
-            project_diagnostics: ProjectDiagnostics::new(),
+            project_diagnostics,
             worker_handles: Vec::new(),
             scarb_toolchain,
         };
@@ -157,10 +207,14 @@ impl DiagnosticsControllerThread {
         self.spawn_refresh_workers(&primary, state);
         self.spawn_refresh_workers(&secondary, state);
 
+        let tracked_scarb_manifests =
+            state.tracked_scarb_manifests.iter().filter_map(|path| Url::from_file_path(path).ok());
+
         let files_to_preserve: HashSet<Url> = primary
             .into_iter()
             .chain(secondary)
             .flat_map(|file| state.db.url_for_file(file))
+            .chain(tracked_scarb_manifests)
             .collect();
 
         self.spawn_worker(move |project_diagnostics, notifier| {
