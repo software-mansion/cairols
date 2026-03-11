@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::num::NonZero;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
@@ -6,15 +6,16 @@ use std::path::Path;
 use cairo_lang_filesystem::ids::FileId;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url};
+use lsp_types::{PublishDiagnosticsParams, Url};
 use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
 use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
 use crate::ide::analysis_progress::AnalysisProgressController;
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::lang::lsp::LsProtoGroup;
-use crate::project::CrateInfo;
+use crate::project::{CrateInfo, ScarbMetadataMessage, scarb_metadata_messages_to_diagnostics};
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::thread::task_progress_monitor::{
@@ -79,10 +80,17 @@ impl DiagnosticsController {
 
     pub fn publish_scarb_manifest_diagnostics(
         &self,
-        root_manifest_url: Url,
-        diagnostics: HashMap<Url, Vec<Diagnostic>>,
+        root_manifest_path: &std::path::Path,
+        diagnostics: Vec<ScarbMetadataMessage>,
+        db: &AnalysisDatabase,
         notifier: &Notifier,
     ) {
+        let Some(root_manifest_url) = Url::from_file_path(root_manifest_path).ok() else {
+            return;
+        };
+        let diagnostics =
+            scarb_metadata_messages_to_diagnostics(db, diagnostics, root_manifest_path)
+                .unwrap_or_default();
         let diags_to_send = self.project_diagnostics.update(root_manifest_url, diagnostics);
         for (url, diagnostics) in diags_to_send {
             notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {

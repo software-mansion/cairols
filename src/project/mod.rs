@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use cairo_lang_compiler::db::validate_corelib;
@@ -9,14 +9,16 @@ use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
-use lsp_types::{Diagnostic, MessageType, ShowMessageParams, Url};
+use lsp_types::{MessageType, ShowMessageParams};
 use scarb_metadata::MetadataCommand;
 use tracing::{debug, error, warn};
 
 pub use self::crate_data::{Crate, CrateInfo, extract_custom_file_stems};
 pub use self::model::ConfigsRegistry;
 pub use self::project_manifest_path::*;
-pub use self::scarb_manifest_diagnostics::scarb_metadata_messages_to_diagnostics;
+pub use self::scarb_manifest_diagnostics::{
+    ScarbMetadataMessage, scarb_metadata_messages_to_diagnostics,
+};
 use self::scarb_manifest_diagnostics::{
     collect_scarb_manifest_diagnostics, scarb_metadata_messages_contain_only_errors,
 };
@@ -119,7 +121,6 @@ impl ProjectController {
     /// and received in the main [`event loop`](crate::Backend::event_loop).
     #[tracing::instrument(skip_all, fields(project_update))]
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
-        let db = &mut state.db;
         match project_update {
             ProjectUpdate::Scarb { crates, workspace_dir, workspace_manifest_path } => {
                 state.diagnostics_controller.clear_scarb_manifest_diagnostics(
@@ -128,6 +129,7 @@ impl ProjectController {
                     &notifier,
                 );
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
+                let db = &mut state.db;
                 state
                     .proc_macro_controller
                     .request_defined_macros(db, workspace_manifest_path.clone());
@@ -140,13 +142,13 @@ impl ProjectController {
                 state.analysis_progress_controller.project_model_loaded();
             }
             ProjectUpdate::ScarbMetadataFailed { manifest_path, diagnostics } => {
-                if let Ok(root_manifest_url) = Url::from_file_path(manifest_path.clone()) {
-                    state.diagnostics_controller.publish_scarb_manifest_diagnostics(
-                        root_manifest_url,
-                        diagnostics,
-                        &notifier,
-                    );
-                }
+                state.diagnostics_controller.publish_scarb_manifest_diagnostics(
+                    &manifest_path,
+                    diagnostics,
+                    &state.db,
+                    &notifier,
+                );
+                let db = &mut state.db;
                 state.project_controller.model.track_scarb_metadata_failure(manifest_path);
                 // Try to set up a corelib at least if it is not in the db already.
                 try_to_init_unmanaged_core_if_not_present(
@@ -156,6 +158,7 @@ impl ProjectController {
                 );
             }
             ProjectUpdate::CairoProjectToml(maybe_project_config) => {
+                let db = &mut state.db;
                 if let Some(project_config) = *maybe_project_config {
                     update_crate_roots_from_project_config(db, &project_config);
 
@@ -184,6 +187,7 @@ impl ProjectController {
                 );
             }
             ProjectUpdate::NoConfig(file_path) => {
+                let db = &mut state.db;
                 try_to_init_unmanaged_core_if_not_present(
                     db,
                     &state.config,
@@ -200,9 +204,6 @@ impl ProjectController {
                 }
             }
         }
-
-        // Drop mut ref so we can obtain snapshot.
-        let _ = db;
 
         // Manifest may have changed, update for open files
         state.code_lens_controller.on_did_change(
@@ -244,7 +245,7 @@ impl ProjectController {
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
 pub enum ProjectUpdate {
     Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf, workspace_manifest_path: PathBuf },
-    ScarbMetadataFailed { manifest_path: PathBuf, diagnostics: HashMap<Url, Vec<Diagnostic>> },
+    ScarbMetadataFailed { manifest_path: PathBuf, diagnostics: Vec<ScarbMetadataMessage> },
     CairoProjectToml(Box<Option<ProjectConfig>>),
     NoConfig(PathBuf),
 }
@@ -332,13 +333,10 @@ impl ProjectControllerThread {
                             self.scarb_toolchain.notify_metadata_failed();
                         }
 
-                        let diagnostics = scarb_metadata_messages_to_diagnostics(
-                            metadata_messages,
-                            &manifest_path,
-                        )
-                        .unwrap_or_default();
-
-                        ProjectUpdate::ScarbMetadataFailed { manifest_path, diagnostics }
+                        ProjectUpdate::ScarbMetadataFailed {
+                            manifest_path,
+                            diagnostics: metadata_messages,
+                        }
                     })
             }
 

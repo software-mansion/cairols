@@ -1,16 +1,28 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_utils::Intern;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Range, Url};
 use scarb_metadata::MetadataCommandError;
 use serde_json::Value;
+
+use crate::lang::db::AnalysisDatabase;
+use crate::lang::lsp::ToLsp;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ScarbMetadataMessage {
     // Represents an "error" kind message from the metadata command.
     MetadataError(String),
     // Represents a "manifest_diagnostic" kind message from the metadata command.
-    MetadataDiagnostic { path: PathBuf, message: String },
+    MetadataDiagnostic { path: PathBuf, message: String, span: Option<MetadataDiagnosticSpan> },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MetadataDiagnosticSpan {
+    pub start: usize,
+    pub end: usize,
 }
 
 fn diagnostics_to_display(all_messages: Vec<ScarbMetadataMessage>) -> Vec<ScarbMetadataMessage> {
@@ -29,6 +41,7 @@ pub fn scarb_metadata_messages_contain_only_errors(messages: &[ScarbMetadataMess
 }
 
 pub fn scarb_metadata_messages_to_diagnostics(
+    db: &AnalysisDatabase,
     messages: Vec<ScarbMetadataMessage>,
     root_manifest_path: &Path,
 ) -> Option<HashMap<Url, Vec<Diagnostic>>> {
@@ -37,7 +50,7 @@ pub fn scarb_metadata_messages_to_diagnostics(
 
     for diagnostic in diagnostics_to_display(messages)
         .into_iter()
-        .filter_map(|message| message.into_lsp(root_manifest_path))
+        .filter_map(|message| scarb_metadata_message_to_diagnostic(db, message, root_manifest_path))
     {
         let entry = diagnostics_by_file.entry(diagnostic.uri).or_default();
         if !entry.contains(&diagnostic.diagnostic) {
@@ -46,19 +59,6 @@ pub fn scarb_metadata_messages_to_diagnostics(
     }
 
     Some(diagnostics_by_file)
-}
-
-impl ScarbMetadataMessage {
-    fn into_lsp(self, root_manifest_path: &Path) -> Option<LspScarbDiagnostic> {
-        match self {
-            ScarbMetadataMessage::MetadataError(message) => Url::from_file_path(root_manifest_path)
-                .ok()
-                .map(|uri| LspScarbDiagnostic { uri, diagnostic: build_diagnostic(message) }),
-            ScarbMetadataMessage::MetadataDiagnostic { message, path } => Url::from_file_path(path)
-                .ok()
-                .map(|uri| LspScarbDiagnostic { uri, diagnostic: build_diagnostic(message) }),
-        }
-    }
 }
 
 impl TryFrom<&Value> for ScarbMetadataMessage {
@@ -83,6 +83,7 @@ impl TryFrom<&Value> for ScarbMetadataMessage {
             return Ok(ScarbMetadataMessage::MetadataDiagnostic {
                 path: diagnostic_path(value).ok_or(())?,
                 message,
+                span: diagnostic_span(value),
             });
         }
 
@@ -138,9 +139,56 @@ fn diagnostic_path(value: &Value) -> Option<PathBuf> {
     value.get("file").and_then(Value::as_str).map(PathBuf::from)
 }
 
-fn build_diagnostic(message: String) -> Diagnostic {
+fn diagnostic_span(value: &Value) -> Option<MetadataDiagnosticSpan> {
+    let span = value.get("span")?;
+    let start = span.get("start")?.as_u64()?;
+    let end = span.get("end")?.as_u64()?;
+
+    Some(MetadataDiagnosticSpan { start: start as usize, end: end as usize })
+}
+
+fn scarb_metadata_message_to_diagnostic(
+    db: &AnalysisDatabase,
+    message: ScarbMetadataMessage,
+    root_manifest_path: &Path,
+) -> Option<LspScarbDiagnostic> {
+    match message {
+        ScarbMetadataMessage::MetadataError(message) => {
+            Url::from_file_path(root_manifest_path).ok().map(|uri| LspScarbDiagnostic {
+                uri,
+                diagnostic: build_diagnostic(message, Range::default()),
+            })
+        }
+        ScarbMetadataMessage::MetadataDiagnostic { path, message, span } => {
+            let range = manifest_diagnostic_range(db, &path, span.as_ref());
+            Url::from_file_path(path)
+                .ok()
+                .map(|uri| LspScarbDiagnostic { uri, diagnostic: build_diagnostic(message, range) })
+        }
+    }
+}
+
+fn manifest_diagnostic_range(
+    db: &AnalysisDatabase,
+    manifest_path: &Path,
+    span: Option<&MetadataDiagnosticSpan>,
+) -> Range {
+    let Some(span) = span else {
+        return Range::default();
+    };
+
+    let text_span = TextSpan::new(
+        TextOffset::START.add_width(TextWidth::new_for_testing(span.start as u32)),
+        TextOffset::START.add_width(TextWidth::new_for_testing(span.end as u32)),
+    );
+
+    let file = FileLongId::OnDisk(manifest_path.to_path_buf()).intern(db);
+    text_span.position_in_file(db, file).map(|span| span.to_lsp()).unwrap_or_default()
+}
+
+fn build_diagnostic(message: String, range: Range) -> Diagnostic {
     Diagnostic {
-        range: Range::default(),
+        range,
         severity: Some(DiagnosticSeverity::ERROR),
         code: None,
         code_description: None,
