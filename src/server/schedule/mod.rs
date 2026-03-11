@@ -12,6 +12,7 @@ use salsa::plumbing::current_revision;
 
 use self::task::BackgroundTaskBuilder;
 use self::thread::{JoinHandle, ThreadPriority};
+use crate::config::Config;
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::ClientSender;
 use crate::server::schedule::task::BackgroundFnBuilder;
@@ -93,10 +94,14 @@ impl<'s> Scheduler<'s> {
                 let notifier = self.client.notifier();
                 let responder = self.client.responder();
                 let old_revision = current_revision(&self.state.db);
-                func(self.state, notifier.clone(), &mut self.client.requester, responder);
-                let new_revision = current_revision(&self.state.db);
+                let old_config: &Config = &self.state.config.snapshot();
 
-                if old_revision != new_revision {
+                func(self.state, notifier.clone(), &mut self.client.requester, responder);
+
+                let new_revision = current_revision(&self.state.db);
+                let new_config: &Config = &self.state.config.snapshot();
+
+                if old_revision != new_revision || old_config != new_config {
                     for hook in &self.sync_mut_task_hooks {
                         hook(self.state, self.meta_state.clone(), notifier.clone());
                     }
