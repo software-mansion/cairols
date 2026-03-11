@@ -3,28 +3,62 @@ use std::path::{Path, PathBuf};
 
 use lsp_types::{Diagnostic, DiagnosticSeverity, Range, Url};
 use scarb_metadata::{Metadata, MetadataCommand, MetadataCommandError};
-use serde::Deserialize;
 use serde_json::Value;
 
-/// Collects diagnostics for a `Scarb.toml` file by re-running metadata validation.
-pub fn collect_scarb_manifest_diagnostics(
-    manifest_path: &Path,
-    scarb_path: &Path,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ScarbMetadataMessage {
+    // Represents an "error" kind message from the metadata command
+    MetadataError(MetadataError),
+    // Represents a "manifest_diagnostic" kind message from the metadata command
+    MetadataDiagnostic(MetadataDiagnostic),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MetadataError {
+    pub message: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MetadataDiagnostic {
+    pub path: PathBuf,
+    pub message: String,
+}
+
+impl ScarbMetadataMessage {
+    fn into_lsp(self, root_manifest_path: &Path) -> Option<LspScarbDiagnostic> {
+        match self {
+            ScarbMetadataMessage::MetadataError(message) => message.into_lsp(root_manifest_path),
+            ScarbMetadataMessage::MetadataDiagnostic(message) => message.into_lsp(),
+        }
+    }
+}
+
+fn diagnostics_to_display(all_messages: Vec<ScarbMetadataMessage>) -> Vec<ScarbMetadataMessage> {
+    let metadata_diagnostics: Vec<ScarbMetadataMessage> = all_messages
+        .iter()
+        .filter(|&message| matches!(message, ScarbMetadataMessage::MetadataDiagnostic(_)))
+        .cloned()
+        .collect();
+
+    if !metadata_diagnostics.is_empty() { metadata_diagnostics } else { all_messages }
+}
+
+pub fn scarb_metadata_messages_contain_only_errors(messages: &[ScarbMetadataMessage]) -> bool {
+    !messages.is_empty()
+        && messages.iter().all(|message| matches!(message, ScarbMetadataMessage::MetadataError(_)))
+}
+
+pub fn scarb_metadata_messages_to_diagnostics(
+    messages: Vec<ScarbMetadataMessage>,
+    root_manifest_path: &Path,
 ) -> Option<HashMap<Url, Vec<Diagnostic>>> {
-    let root_manifest_url = Url::from_file_path(manifest_path).ok()?;
-    let mut diagnostics_by_file = HashMap::from([(root_manifest_url.clone(), Vec::new())]);
+    let root_manifest_url = Url::from_file_path(root_manifest_path).ok()?;
+    let mut diagnostics_by_file = HashMap::from([(root_manifest_url, Vec::new())]);
 
-    let metadata_result = run_metadata_validation(manifest_path, scarb_path);
-    if metadata_result.is_ok() {
-        return None;
-    }
-
-    let diagnostics = diagnostics_from_metadata_error(metadata_result.unwrap_err(), manifest_path);
-    if diagnostics.is_empty() {
-        return Some(diagnostics_by_file);
-    }
-
-    for diagnostic in diagnostics {
+    for diagnostic in diagnostics_to_display(messages)
+        .into_iter()
+        .filter_map(|message| message.into_lsp(root_manifest_path))
+    {
         let entry = diagnostics_by_file.entry(diagnostic.uri).or_default();
         if !entry.contains(&diagnostic.diagnostic) {
             entry.push(diagnostic.diagnostic);
@@ -32,6 +66,64 @@ pub fn collect_scarb_manifest_diagnostics(
     }
 
     Some(diagnostics_by_file)
+}
+
+impl MetadataError {
+    fn into_lsp(self, root_manifest_path: &Path) -> Option<LspScarbDiagnostic> {
+        Url::from_file_path(root_manifest_path)
+            .ok()
+            .map(|uri| LspScarbDiagnostic { uri, diagnostic: build_diagnostic(self.message) })
+    }
+}
+
+impl MetadataDiagnostic {
+    fn into_lsp(self) -> Option<LspScarbDiagnostic> {
+        Url::from_file_path(self.path)
+            .ok()
+            .map(|uri| LspScarbDiagnostic { uri, diagnostic: build_diagnostic(self.message) })
+    }
+}
+
+impl TryFrom<&Value> for ScarbMetadataMessage {
+    type Error = ();
+
+    fn try_from(value: &Value) -> Result<Self, Self::Error> {
+        if is_error_kind(value) {
+            let message = diagnostic_message(value).ok_or(())?;
+            if message.is_empty() {
+                return Err(());
+            }
+
+            return Ok(ScarbMetadataMessage::MetadataError(MetadataError { message }));
+        }
+
+        if is_manifest_diagnostic_kind(value) {
+            let message = diagnostic_message(value).ok_or(())?;
+            if message.is_empty() {
+                return Err(());
+            }
+
+            return Ok(ScarbMetadataMessage::MetadataDiagnostic(MetadataDiagnostic {
+                path: diagnostic_path(value).ok_or(())?,
+                message,
+            }));
+        }
+
+        Err(())
+    }
+}
+
+/// Collects diagnostics for a `Scarb.toml` file by re-running metadata validation.
+pub fn collect_scarb_manifest_diagnostics(
+    manifest_path: &Path,
+    scarb_path: &Path,
+) -> Option<Vec<ScarbMetadataMessage>> {
+    let metadata_result = run_metadata_validation(manifest_path, scarb_path);
+    if metadata_result.is_ok() {
+        return None;
+    }
+
+    Some(metadata_messages_from_error(metadata_result.unwrap_err()))
 }
 
 fn run_metadata_validation(
@@ -48,41 +140,24 @@ struct LspScarbDiagnostic {
     diagnostic: Diagnostic,
 }
 
-fn diagnostics_from_metadata_error(
-    error: MetadataCommandError,
-    root_manifest_path: &Path,
-) -> Vec<LspScarbDiagnostic> {
+fn metadata_messages_from_error(error: MetadataCommandError) -> Vec<ScarbMetadataMessage> {
     match error {
-        MetadataCommandError::ScarbError { stdout, .. } => {
-            let diagnostics = extract_manifest_diagnostics_from_ndjson(&stdout);
-            if !diagnostics.is_empty() {
-                return diagnostics;
-            }
-
-            // Fallback to an error message (should always be present) if no manifest diagnostics found.
-            first_ndjson_error_message(&stdout)
-                .map(|message| vec![build_diagnostic(root_manifest_path, message)])
-                .unwrap_or_default()
-        }
+        MetadataCommandError::ScarbError { stdout, .. } => metadata_messages_from_ndjson(&stdout),
         MetadataCommandError::NotFound { stdout } => {
-            vec![build_diagnostic(root_manifest_path, stdout)]
+            vec![ScarbMetadataMessage::MetadataError(MetadataError { message: stdout })]
         }
-        other => vec![build_diagnostic(root_manifest_path, other.to_string())],
+        other => {
+            vec![ScarbMetadataMessage::MetadataError(MetadataError { message: other.to_string() })]
+        }
     }
 }
 
-fn extract_manifest_diagnostics_from_ndjson(stdout: &str) -> Vec<LspScarbDiagnostic> {
-    ndjson_values(stdout)
-        .filter(is_manifest_diagnostic_kind)
-        .filter_map(|value| {
-            let message = diagnostic_message(&value)?;
-            if message.is_empty() {
-                return None;
-            }
+fn metadata_messages_from_ndjson(stdout: &str) -> Vec<ScarbMetadataMessage> {
+    ndjson_values(stdout).filter_map(|value| ScarbMetadataMessage::try_from(&value).ok()).collect()
+}
 
-            Some(build_diagnostic(diagnostic_path(&value)?, message))
-        })
-        .collect()
+fn is_error_kind(value: &Value) -> bool {
+    value.get("type").and_then(Value::as_str).is_some_and(|value: &str| value == "error")
 }
 
 fn is_manifest_diagnostic_kind(value: &Value) -> bool {
@@ -101,42 +176,18 @@ fn diagnostic_path(value: &Value) -> Option<PathBuf> {
     value.get("file").and_then(Value::as_str).map(PathBuf::from)
 }
 
-fn build_diagnostic(manifest_path: impl AsRef<Path>, message: String) -> LspScarbDiagnostic {
-    LspScarbDiagnostic {
-        uri: Url::from_file_path(manifest_path).unwrap(),
-        diagnostic: Diagnostic {
-            range: Range::default(),
-            severity: Some(DiagnosticSeverity::ERROR),
-            code: None,
-            code_description: None,
-            source: Some("scarb".to_string()),
-            message,
-            related_information: None,
-            tags: None,
-            data: None,
-        },
+fn build_diagnostic(message: String) -> Diagnostic {
+    Diagnostic {
+        range: Range::default(),
+        severity: Some(DiagnosticSeverity::ERROR),
+        code: None,
+        code_description: None,
+        source: Some("scarb".to_string()),
+        message,
+        related_information: None,
+        tags: None,
+        data: None,
     }
-}
-
-// This is misaligned right now in scarb (manifest diagnostics have a different format)
-#[derive(Deserialize)]
-struct ScarbJsonErrorMessage {
-    #[serde(rename = "type")]
-    message_type: Option<String>,
-    message: Option<String>,
-}
-
-fn first_ndjson_error_message(stdout: &str) -> Option<String> {
-    for value in ndjson_values(stdout) {
-        let Ok(message) = serde_json::from_value::<ScarbJsonErrorMessage>(value) else { continue };
-        if message.message_type.as_deref() == Some("error")
-            && let Some(message) = message.message
-        {
-            return Some(message);
-        }
-    }
-
-    None
 }
 
 fn ndjson_values(stdout: &str) -> impl Iterator<Item = Value> + '_ {

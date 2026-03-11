@@ -16,7 +16,9 @@ use tracing::{debug, error, warn};
 pub use self::crate_data::{Crate, extract_custom_file_stems};
 pub use self::model::ConfigsRegistry;
 pub use self::project_manifest_path::*;
-use self::scarb_manifest_diagnostics::collect_scarb_manifest_diagnostics;
+use self::scarb_manifest_diagnostics::{
+    collect_scarb_manifest_diagnostics, scarb_metadata_messages_contain_only_errors,
+};
 use crate::ide::code_lens::FileChange;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
@@ -24,6 +26,7 @@ use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::crate_data::CrateInfo;
 use crate::project::model::ProjectModel;
 use crate::project::scarb::extract_crates;
+use crate::project::scarb_manifest_diagnostics::scarb_metadata_messages_to_diagnostics;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core_if_not_present;
 use crate::server::client::Notifier;
 use crate::server::is_cairo_file_path;
@@ -319,6 +322,7 @@ impl ProjectControllerThread {
 
                 let metadata = self
                     .scarb_toolchain
+                    .silent()
                     .metadata(&manifest_path)
                     .with_context(|| {
                         format!("failed to refresh scarb workspace: {}", manifest_path.display())
@@ -339,11 +343,22 @@ impl ProjectControllerThread {
                             .into_std_path_buf(),
                     })
                     .unwrap_or_else(|| {
-                        let diagnostics = self
-                            .scarb_toolchain
-                            .discover()
-                            .and_then(|scarb_path| {
+                        let metadata_messages =
+                            self.scarb_toolchain.discover().and_then(|scarb_path| {
                                 collect_scarb_manifest_diagnostics(&manifest_path, scarb_path)
+                            });
+                        let should_show_metadata_failure_notification =
+                            metadata_messages.as_ref().is_some_and(|messages| {
+                                scarb_metadata_messages_contain_only_errors(messages)
+                            });
+
+                        if should_show_metadata_failure_notification {
+                            self.scarb_toolchain.notify_metadata_failed();
+                        }
+
+                        let diagnostics = metadata_messages
+                            .and_then(|messages| {
+                                scarb_metadata_messages_to_diagnostics(messages, &manifest_path)
                             })
                             .unwrap_or_default();
 

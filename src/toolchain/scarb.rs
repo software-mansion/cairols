@@ -15,6 +15,8 @@ use crate::lsp::ext::ScarbPathMissing;
 use crate::server::client::Notifier;
 
 pub const SCARB_TOML: &str = "Scarb.toml";
+pub const SCARB_METADATA_FAILED_MESSAGE: &str =
+    "`scarb metadata` failed. Check if your project builds correctly via `scarb build`.";
 
 /// The ultimate object for invoking Scarb.
 ///
@@ -145,15 +147,17 @@ impl ScarbToolchain {
             .context("failed to execute: scarb metadata");
 
         if !self.is_silent && result.is_err() {
-            self.notifier.notify::<ShowMessage>(ShowMessageParams {
-                typ: MessageType::ERROR,
-                message: "`scarb metadata` failed. Check if your project builds correctly via \
-                              `scarb build`."
-                    .to_string(),
-            });
+            self.notify_metadata_failed();
         }
 
         result
+    }
+
+    pub fn notify_metadata_failed(&self) {
+        self.notifier.notify::<ShowMessage>(ShowMessageParams {
+            typ: MessageType::ERROR,
+            message: SCARB_METADATA_FAILED_MESSAGE.to_string(),
+        });
     }
 
     pub fn proc_macro_server(&self, cwd: &Path) -> Result<Child> {
