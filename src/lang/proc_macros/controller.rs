@@ -192,8 +192,26 @@ impl ProcMacroClientController {
     /// except the one in the [`ProcMacroInput`].
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn force_restart(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+        self.force_restart_impl(db, config, Self::try_launch_proc_macro_server);
+    }
+
+    /// Forcibly restarts the proc-macro-server without consuming restart-rate budget.
+    ///
+    /// This is intended for explicit workspace reloads triggered by user edits to project config,
+    /// not for automatic recovery from server failures.
+    #[tracing::instrument(level = "trace", skip_all)]
+    pub fn force_restart_without_rate_limit(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+        self.force_restart_impl(db, config, Self::try_launch_proc_macro_server_without_rate_limit);
+    }
+
+    fn force_restart_impl(
+        &mut self,
+        db: &mut AnalysisDatabase,
+        config: &Config,
+        launch: fn(&mut Self, &mut AnalysisDatabase, &Config),
+    ) {
         self.reset_proc_macro_state(db);
-        self.try_launch_proc_macro_server(db, config);
+        launch(self, db, config);
     }
 
     pub fn proc_macro_plugin_suite_for_crate(&self, id: &CrateInput) -> Option<&PluginSuite> {
@@ -328,6 +346,21 @@ impl ProcMacroClientController {
 
         if self.initialization_retries.check().is_err() {
             self.handle_fatal_error(db, FatalInitializationError::NoMoreRetries);
+            return;
+        }
+
+        self.try_launch_proc_macro_server_without_rate_limit(db, config);
+    }
+
+    /// Tries to launch the proc-macro-server if it is allowed by the config, without checking the
+    /// restart rate limiter.
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn try_launch_proc_macro_server_without_rate_limit(
+        &mut self,
+        db: &mut AnalysisDatabase,
+        config: &Config,
+    ) {
+        if !config.enable_proc_macros {
             return;
         }
 
