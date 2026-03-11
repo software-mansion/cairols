@@ -1,0 +1,25 @@
+---
+source: tests/e2e/scarb/manifest_diagnostics.rs
+description: "// → Scarb.toml\n[package]\nname = \"root_ws\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[workspace]\nmembers = [\"members/member_a\", \"members/member_b\"]\n\n// → members/member_a/Scarb.toml\n[package]\nname = \"member_a\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[[target.starknet-contract]]\nname = \"contract_a\"\n\n// → members/member_a/src/lib.cairo\nfn main() {}\n\n// → members/member_b/Scarb.toml\n[package]\nname = \"member_b\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[[target.starknet-contract]]\nname = \"contract_b\"\n\n// → members/member_b/src/lib.cairo\nfn main() {}"
+expression: "DiagnosticsChangeReport { before_changes, after_changes }"
+---
+before_changes:
+  diagnostics:
+  - url: '[ROOT_URL]members/member_a/Scarb.toml'
+    diagnostics:
+    - related_code: ''
+      diagnostic:
+        range:
+          start:
+            line: 0
+            character: 0
+          end:
+            line: 0
+            character: 0
+        severity: 1
+        source: scarb
+        message: |-
+          workspace contains duplicate target definitions `starknet-contract (contract_a)`
+          help: use different target names to resolve the conflict
+after_changes:
+  diagnostics: []

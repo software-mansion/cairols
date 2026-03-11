@@ -1,0 +1,71 @@
+---
+source: tests/e2e/scarb/manifest_diagnostics.rs
+description: "// → Scarb.toml\n[workspace]\nmembers = [\"app\"]\n\n// → app/Scarb.toml\n[package]\nname = \"app\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\ndep = { path = \"../dep\" }\n\n// → app/src/lib.cairo\nfn main() {}\n\n// → dep/Scarb.toml\n[package]\nname = 1\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n// → dep/src/lib.cairo\nfn main() {}"
+expression: "diagnostics_report(&mut ls,\n&[\"Scarb.toml\", \"app/Scarb.toml\", \"dep/Scarb.toml\"])"
+---
+diagnostics:
+- url: '[ROOT_URL]Scarb.toml'
+  diagnostics:
+  - related_code: ''
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 0
+        end:
+          line: 0
+          character: 0
+      severity: 1
+      source: scarb
+      message: |-
+        failed to parse manifest at: [ROOT]/dep/Scarb.toml
+
+        Caused by:
+            0: failed to parse manifest at: [ROOT]/dep/Scarb.toml
+            1: TOML parse error at line 2, column 8
+                 |
+               2 | name = 1
+                 |        ^
+               invalid type: integer `1`, expected a string
+- url: '[ROOT_URL]app/Scarb.toml'
+  diagnostics:
+  - related_code: ''
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 0
+        end:
+          line: 0
+          character: 0
+      severity: 1
+      source: scarb
+      message: |-
+        failed to parse manifest at: [ROOT]/dep/Scarb.toml
+
+        Caused by:
+            0: failed to parse manifest at: [ROOT]/dep/Scarb.toml
+            1: TOML parse error at line 2, column 8
+                 |
+               2 | name = 1
+                 |        ^
+               invalid type: integer `1`, expected a string
+- url: '[ROOT_URL]dep/Scarb.toml'
+  diagnostics:
+  - related_code: '1'
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 7
+        end:
+          line: 1
+          character: 8
+      severity: 1
+      source: scarb
+      message: |
+        TOML parse error at line 2, column 8
+          |
+        2 | name = 1
+          |        ^
+        invalid type: integer `1`, expected a string

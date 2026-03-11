@@ -1,6 +1,7 @@
 use serde::Serialize;
 
 mod ignore_warnings_from_non_path_deps;
+mod manifest_diagnostics;
 mod opening_multiple_workspaces;
 mod scarb_toml_change;
 mod simple_deps;
