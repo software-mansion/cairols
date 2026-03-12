@@ -2,13 +2,12 @@ use std::ops::Range;
 
 use anyhow::{Result, anyhow};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use lsp_types::{Hover, HoverContents, HoverParams, MarkupContent, MarkupKind};
 use scarb_manifest_schema::get_shared_traverser;
 use toml_edit::{Document, Item};
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
+use crate::lang::lsp::{LsProtoGroup, ToCairo, Utf8Span};
 
 pub(crate) fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
     let uri = &params.text_document_position_params.text_document.uri;
@@ -28,9 +27,7 @@ pub(crate) fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover>
             .and_then(serde_json::Value::as_str)
             .map(str::to_owned);
 
-        let start = TextOffset::START.add_width(TextWidth::at(raw_toml, location.start));
-        let end = TextOffset::START.add_width(TextWidth::at(raw_toml, location.end));
-        let range = TextSpan::new(start, end).position_in_file(db, file_id)?.to_lsp();
+        let range = Utf8Span::from(location).to_lsp_range(db, file_id)?;
 
         return Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
