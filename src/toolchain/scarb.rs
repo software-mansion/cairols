@@ -6,7 +6,7 @@ use std::sync::{Arc, OnceLock};
 use anyhow::{Context, Result, bail, ensure};
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
-use scarb_metadata::{Metadata, MetadataCommand};
+use scarb_metadata::{Metadata, MetadataCommand, MetadataCommandError};
 use tracing::{debug, error, warn};
 use which::which;
 
@@ -15,6 +15,8 @@ use crate::lsp::ext::ScarbPathMissing;
 use crate::server::client::Notifier;
 
 pub const SCARB_TOML: &str = "Scarb.toml";
+pub const SCARB_METADATA_FAILED_MESSAGE: &str =
+    "`scarb metadata` failed. Check if your project builds correctly via `scarb build`.";
 
 /// The ultimate object for invoking Scarb.
 ///
@@ -145,15 +147,33 @@ impl ScarbToolchain {
             .context("failed to execute: scarb metadata");
 
         if !self.is_silent && result.is_err() {
-            self.notifier.notify::<ShowMessage>(ShowMessageParams {
-                typ: MessageType::ERROR,
-                message: "`scarb metadata` failed. Check if your project builds correctly via \
-                              `scarb build`."
-                    .to_string(),
-            });
+            self.notify_metadata_failed();
         }
 
         result
+    }
+
+    pub fn metadata_raw(
+        &self,
+        manifest_path: &Path,
+        scarb_path: &Path,
+    ) -> Result<Metadata, MetadataCommandError> {
+        MetadataCommand::new()
+            .scarb_path(scarb_path)
+            .manifest_path(manifest_path)
+            .json()
+            .inherit_stderr()
+            .exec()
+            .inspect_err(|err| {
+                error!("{err:?}");
+            })
+    }
+
+    pub fn notify_metadata_failed(&self) {
+        self.notifier.notify::<ShowMessage>(ShowMessageParams {
+            typ: MessageType::ERROR,
+            message: SCARB_METADATA_FAILED_MESSAGE.to_string(),
+        });
     }
 
     pub fn proc_macro_server(&self, cwd: &Path) -> Result<Child> {
