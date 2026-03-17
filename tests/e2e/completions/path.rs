@@ -544,3 +544,325 @@ fn declarative_macro_completion_without_explicit_path() {
     """]
     "#);
 }
+
+#[test]
+fn trait_prefix_with_function() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        fn my_func() -> u32;
+    }
+
+    fn test() {
+        MyTrait::<caret>
+    }
+    ",@r#"
+    caret = """
+        MyTrait::<caret>
+    """
+
+    [[completions]]
+    completion_label = "my_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "my_func()"
+    "#);
+}
+
+#[test]
+fn trait_prefix_with_type() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        type MyType;
+    }
+
+    fn test() {
+        MyTrait::<caret>
+    }
+    ",@r#"
+    caret = """
+        MyTrait::<caret>
+    """
+
+    [[completions]]
+    completion_label = "MyType"
+    "#);
+}
+
+#[test]
+fn trait_prefix_with_constant() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        const MY_CONST: u32;
+    }
+
+    fn test() {
+        MyTrait::<caret>
+    }
+    ",@r#"
+    caret = """
+        MyTrait::<caret>
+    """
+
+    [[completions]]
+    completion_label = "MY_CONST"
+    completion_label_type_info = "u32"
+    "#);
+}
+
+#[test]
+fn trait_prefix_with_all_items() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        fn my_func() -> u32;
+        type MyType;
+        const MY_CONST: u32;
+    }
+
+    fn test() {
+        MyTrait::<caret>
+    }
+    ",@r#"
+    caret = """
+        MyTrait::<caret>
+    """
+
+    [[completions]]
+    completion_label = "MY_CONST"
+    completion_label_type_info = "u32"
+
+    [[completions]]
+    completion_label = "MyType"
+
+    [[completions]]
+    completion_label = "my_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "my_func()"
+    "#);
+}
+
+#[test]
+fn impl_prefix_with_all_items() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        fn my_func() -> u32;
+        type MyType;
+        const MY_CONST: u32;
+    }
+
+    impl MyImpl of MyTrait {
+        fn my_func() -> u32 { 0 }
+        type MyType = u32;
+        const MY_CONST: u32 = 5;
+    }
+
+    fn test() {
+        MyImpl::<caret>
+    }
+    ",@r#"
+    caret = """
+        MyImpl::<caret>
+    """
+
+    [[completions]]
+    completion_label = "MY_CONST"
+    completion_label_type_info = "u32"
+
+    [[completions]]
+    completion_label = "MyType"
+
+    [[completions]]
+    completion_label = "my_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "my_func()"
+    "#);
+}
+
+#[test]
+fn impl_item_suffix_by_impl_name() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        fn my_func() -> u32;
+        type MyType;
+        const MY_CONST: u32;
+    }
+
+    impl MyImpl of MyTrait {
+        fn my_func() -> u32 { 0 }
+        type MyType = u32;
+        const MY_CONST: u32 = 5;
+    }
+
+    fn test() {
+        MyImpl<caret>
+    }
+    ",@r#"
+    caret = """
+        MyImpl<caret>
+    """
+
+    [[completions]]
+    completion_label = "MyImpl"
+
+    [[completions]]
+    completion_label = "MyImpl::MY_CONST"
+    completion_label_type_info = "u32"
+
+    [[completions]]
+    completion_label = "MyImpl::MyType"
+
+    [[completions]]
+    completion_label = "MyImpl::my_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "MyImpl::my_func()"
+
+    [[completions]]
+    completion_label = "MyTrait::MyType"
+
+    [[completions]]
+    completion_label = "ArrayImpl"
+    completion_label_path = "(use core::array::ArrayImpl)"
+    text_edits = ["""
+    use core::array::ArrayImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "BoxImpl"
+    completion_label_path = "(use core::box::BoxImpl)"
+    text_edits = ["""
+    use core::box::BoxImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "DebugImpl"
+    completion_label_path = "(use core::fmt::into_felt252_based::DebugImpl)"
+    text_edits = ["""
+    use core::fmt::into_felt252_based::DebugImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "HashImpl"
+    completion_label_path = "(use core::hash::into_felt252_based::HashImpl)"
+    text_edits = ["""
+    use core::hash::into_felt252_based::HashImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "SerdeImpl"
+    completion_label_path = "(use core::serde::into_felt252_based::SerdeImpl)"
+    text_edits = ["""
+    use core::serde::into_felt252_based::SerdeImpl;
+
+    """]
+    "#);
+}
+
+#[test]
+fn trait_item_suffix_by_trait_name() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait UniqueXyzTrait {
+        fn unique_xyz_func() -> u32;
+        type UniqueXyzType;
+        const UNIQUE_XYZ_CONST: u32;
+    }
+
+    fn test() {
+        UniqueXyz<caret>
+    }
+    ",@r#"
+    caret = """
+        UniqueXyz<caret>
+    """
+
+    [[completions]]
+    completion_label = "UniqueXyzTrait"
+
+    [[completions]]
+    completion_label = "UniqueXyzTrait::UNIQUE_XYZ_CONST"
+    completion_label_type_info = "u32"
+
+    [[completions]]
+    completion_label = "UniqueXyzTrait::UniqueXyzType"
+
+    [[completions]]
+    completion_label = "UniqueXyzTrait::unique_xyz_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "UniqueXyzTrait::unique_xyz_func()"
+
+    [[completions]]
+    completion_label = "UnitInt"
+    completion_label_path = "(use core::internal::bounded_int::UnitInt)"
+    text_edits = ["""
+    use core::internal::bounded_int::UnitInt;
+
+    """]
+    "#);
+}
+
+#[test]
+fn trait_item_suffix_by_item_name() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait UniqueXyzTrait {
+        fn unique_xyz_func() -> u32;
+    }
+
+    fn test() {
+        unique_xyz<caret>
+    }
+    ",@r#"
+    caret = """
+        unique_xyz<caret>
+    """
+
+    [[completions]]
+    completion_label = "UniqueXyzTrait::unique_xyz_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "UniqueXyzTrait::unique_xyz_func()"
+    "#);
+}
+
+#[test]
+fn trait_item_suffix_from_other_module() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod my_mod {
+        pub trait UniqueXyzTrait {
+            fn unique_xyz_func() -> u32;
+        }
+    }
+
+    fn test() {
+        UniqueXyz<caret>
+    }
+    ",@r#"
+    caret = """
+        UniqueXyz<caret>
+    """
+
+    [[completions]]
+    completion_label = "UniqueXyzTrait"
+    completion_label_path = "(use my_mod::UniqueXyzTrait)"
+    text_edits = ["""
+    use my_mod::UniqueXyzTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "UniqueXyzTrait::unique_xyz_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "UniqueXyzTrait::unique_xyz_func()"
+    text_edits = ["""
+    use my_mod::UniqueXyzTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "UnitInt"
+    completion_label_path = "(use core::internal::bounded_int::UnitInt)"
+    text_edits = ["""
+    use core::internal::bounded_int::UnitInt;
+
+    """]
+    "#);
+}
