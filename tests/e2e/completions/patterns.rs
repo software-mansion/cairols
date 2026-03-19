@@ -165,10 +165,10 @@ fn struct_unavailable() {
     }
 
     fn a() {
-        let foo:Foo {
+        let foo::Foo {
             qwerty,
             <caret>
-        } = foo:Foo { }
+        } = foo::Foo { }
     }
     ",@r#"
     caret = """

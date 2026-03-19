@@ -443,23 +443,6 @@ fn duplicated_completion_without_explicit_path() {
     "#);
 }
 
-// FIXME(#957)
-#[test]
-fn no_text_in_function_context() {
-    test_transform_plain!(Completion, completion_fixture(), "
-    struct MyStruct {}
-
-    fn a() {
-        <caret>
-    }
-    ",@r#"
-    caret = """
-        <caret>
-    """
-    completions = []
-    "#);
-}
-
 #[test]
 fn no_text_last_segment_in_function_context() {
     test_transform_plain!(Completion, completion_fixture(), "
@@ -544,3 +527,4 @@ fn declarative_macro_completion_without_explicit_path() {
     """]
     "#);
 }
+
