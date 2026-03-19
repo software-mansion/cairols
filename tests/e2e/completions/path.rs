@@ -527,4 +527,3 @@ fn declarative_macro_completion_without_explicit_path() {
     """]
     "#);
 }
-
