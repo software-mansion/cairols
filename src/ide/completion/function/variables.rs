@@ -4,7 +4,7 @@ use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::FunctionBody;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use cairo_lang_syntax::node::ast::{PathSegment, StatementLet};
+use cairo_lang_syntax::node::ast::{self, PathSegment, StatementLet};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
 use itertools::Itertools;
@@ -23,18 +23,30 @@ pub fn variables_completions<'db>(
     ctx: &AnalysisContext<'db>,
     was_node_corrected: bool,
 ) -> Vec<CompletionItemOrderable> {
-    if let Some(path) = expr_selector(db, &ctx.node)
-        && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
+    if dot_expr_rhs(db, &ctx.node, was_node_corrected).is_some() {
+        return Default::default();
+    }
+
+    let Some(lookup_item_id) = ctx.lookup_item_id else { return Default::default() };
+    let Some(function_id) = lookup_item_id.function_with_body() else { return Default::default() };
+    let Ok(body) = db.function_body(function_id) else { return Default::default() };
+
+    let typed_text = if let Some(path) = expr_selector(db, &ctx.node)
         && let [PathSegment::Simple(segment)] =
             path.segments(db).elements(db).take(2).collect_vec().as_slice()
-        && let Some(lookup_item_id) = ctx.lookup_item_id
-        && let Some(function_id) = lookup_item_id.function_with_body()
-        && let Ok(body) = db.function_body(function_id)
     {
-        patterns(body, db, ctx, segment.ident(db).token(db).text(db).to_string(db).as_str())
+        segment.ident(db).token(db).text(db).to_string(db)
+    } else if ctx.node.kind(db) == SyntaxKind::ExprBlock
+        || ast::Statement::is_variant(ctx.node.kind(db))
+        || ctx.node.parent(db).is_some_and(|p| p.kind(db) == SyntaxKind::ExprBlock)
+        || ctx.node.parent(db).is_some_and(|p| ast::Statement::is_variant(p.kind(db)))
+    {
+        String::new()
     } else {
-        Default::default()
-    }
+        return Default::default();
+    };
+
+    patterns(body, db, ctx, typed_text.as_str())
 }
 
 fn patterns<'db>(
