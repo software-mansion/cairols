@@ -14,6 +14,7 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 use crate::project::builtin_plugins::BuiltinPlugin;
 use crate::server::client::Notifier;
+use crate::server::commands::ServerCommand;
 use crate::state::State;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -36,7 +37,7 @@ impl CodeLensInternal for ExecutableLensInternal {
                 range,
                 command: Some(Command {
                     title: String::from("▶ Execute function"),
-                    command: "cairo.executeCodeLens".to_string(),
+                    command: ServerCommand::ExecuteCodeLens.as_str().to_string(),
                     arguments: Some(make_lens_args(self.file_url.clone(), index)),
                 }),
                 data: None,
