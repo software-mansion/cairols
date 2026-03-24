@@ -47,6 +47,7 @@ use serde::Serialize;
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::ext::ViewSyntaxTree;
+use crate::server::commands::ServerCommand;
 
 /// Returns capabilities the server wants to register statically.
 pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCapabilities {
@@ -104,7 +105,10 @@ pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> 
             .execute_command_dynamic_registration()
             .not()
             .then(|| ExecuteCommandOptions {
-                commands: vec!["cairo.reload".to_string(), "cairo.executeCodeLens".to_string()],
+                commands: vec![
+                    ServerCommand::Reload.as_str().to_string(),
+                    ServerCommand::ExecuteCodeLens.as_str().to_string(),
+                ],
                 work_done_progress_options: Default::default(),
             }),
         semantic_tokens_provider: client_capabilities
@@ -258,9 +262,15 @@ pub fn collect_dynamic_registrations(
 
     if client_capabilities.execute_command_dynamic_registration() {
         let registration_options = ExecuteCommandRegistrationOptions {
-            commands: vec!["cairo.reload".to_string(), "cairo.executeCodeLens".to_string()],
+            commands: vec![
+                ServerCommand::Reload.as_str().to_string(),
+                ServerCommand::ExecuteCodeLens.as_str().to_string(),
+            ],
             execute_command_options: ExecuteCommandOptions {
-                commands: vec!["cairo.reload".to_string(), "cairo.executeCodeLens".to_string()],
+                commands: vec![
+                    ServerCommand::Reload.as_str().to_string(),
+                    ServerCommand::ExecuteCodeLens.as_str().to_string(),
+                ],
                 work_done_progress_options: Default::default(),
             },
         };
