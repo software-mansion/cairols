@@ -40,32 +40,17 @@ pub struct TestCodeLens {
 
 impl CodeLensInterface for TestCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
-        let db = &state.db;
-
-        let file = db.file_for_url(&file_url)?;
-        let file_path = file_url.to_file_path().ok()?;
-        let span = TextPositionSpan::offset_in_file(self.lens.range.to_cairo(), db, file)?;
-        // When creating range we have to use [`SyntaxNode::span_without_trivia`] to place lens next to attribute
-        let node = db.widest_node_within_span_without_trivia(file, span)?;
-
         let (full_qualified_path, module_id) =
-            db.get_node_resultants(node).as_ref()?.iter().find_map(|resultant| {
-                let module_item = resultant
-                    .ancestors_with_self(db)
-                    .find_map(|node| ModuleItem::cast(db, node))?;
-                let module_id = db.find_module_containing_node(module_item.as_syntax_node())?;
-                let path = TestFullQualifiedPath::new(db, module_item, module_id)?;
+            get_full_path_and_module_id(&file_url, state, &self.lens, &self.full_path)?;
 
-                // Find resultant that produced this codelens earlier by comparing full paths
-                (sanitize_test_case_name(path.as_ref()) == self.full_path)
-                    .then_some((path, module_id))
-            })?;
-
+        let db = &state.db;
         let command = state.config.test_runner.command(
             full_qualified_path,
             AvailableTestRunners::new(db, module_id.owning_crate(db))?,
             &state.config.run_test_command,
         )?;
+
+        let file_path = file_url.to_file_path().ok()?;
         let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
         send_execute_in_terminal(state, notifier, command, cwd);
         Some(())
@@ -76,29 +61,56 @@ impl CodeLensInterface for TestCodeLens {
     }
 }
 
+pub fn get_full_path_and_module_id<'db>(
+    file_url: &Url,
+    state: &'db State,
+    lens: &CodeLens,
+    full_path: &str,
+) -> Option<(TestFullQualifiedPath, ModuleId<'db>)> {
+    let db = &state.db;
+
+    let file = db.file_for_url(file_url)?;
+    let span = TextPositionSpan::offset_in_file(lens.range.to_cairo(), db, file)?;
+    // When creating range we have to use [`SyntaxNode::span_without_trivia`] to place lens next to attribute
+    let node = db.widest_node_within_span_without_trivia(file, span)?;
+
+    let (full_qualified_path, module_id) =
+        db.get_node_resultants(node).as_ref()?.iter().find_map(|resultant| {
+            let module_item =
+                resultant.ancestors_with_self(db).find_map(|node| ModuleItem::cast(db, node))?;
+            let module_id = db.find_module_containing_node(module_item.as_syntax_node())?;
+            let path = TestFullQualifiedPath::new(db, module_item, module_id)?;
+
+            // Find resultant that produced this codelens earlier by comparing full paths
+            (sanitize_test_case_name(path.as_ref()) == full_path).then_some((path, module_id))
+        })?;
+
+    Some((full_qualified_path, module_id))
+}
+
 pub struct TestCodeLensInternal {
-    full_path: String,
-    title: String,
-    range: Range,
-    file_url: Url,
+    pub full_path: String,
+    pub is_on_mod: bool,
+    pub range: Range,
+    pub file_url: Url,
 }
 
 impl TestCodeLensInternal {
-    fn new(range: Range, full_path: String, file_url: Url, is_plural: bool) -> Self {
-        let mut title = "▶ Run test".to_string();
-
-        if is_plural {
-            title.push('s');
-        }
-
-        Self { full_path: sanitize_test_case_name(&full_path), title, file_url, range }
+    fn new(range: Range, full_path: String, file_url: Url, is_on_mod: bool) -> Self {
+        Self { full_path: sanitize_test_case_name(&full_path), is_on_mod, file_url, range }
     }
 }
 
 impl CodeLensInternal for TestCodeLensInternal {
     fn into_ls_lens(self, index: usize) -> LSCodeLens {
+        let mut title = "▶ Run test".to_string();
+
+        if self.is_on_mod {
+            title.push('s');
+        }
+
         let command = Command {
-            title: self.title,
+            title,
             command: "cairo.executeCodeLens".to_string(),
             arguments: Some(make_lens_args(self.file_url.clone(), index)),
         };
@@ -136,7 +148,7 @@ pub fn get_test_code_lenses(
     Some(file_code_lens)
 }
 
-enum TestFullQualifiedPath {
+pub enum TestFullQualifiedPath {
     Function(String),
     Module(String),
 }
@@ -200,12 +212,12 @@ struct AvailableTestRunners {
 }
 
 impl AvailableTestRunners {
-    pub fn new<'db>(db: &'db AnalysisDatabase, crate_id: CrateId<'db>) -> Option<Self> {
+    fn new<'db>(db: &'db AnalysisDatabase, crate_id: CrateId<'db>) -> Option<Self> {
         let cairo_test = db.crate_macro_plugins(crate_id).iter().any(|plugin_id| {
             plugin_id.long(db).plugin_type_id() == TestPlugin::default().plugin_type_id()
         });
 
-        // This will not work with crate renames in `Scarb.toml`, but there is no better way to do this now.
+        // TODO(software-mansion/scarb#2347): This will not work with crate renames in `Scarb.toml`, but there is no better way to do this now.
         let snforge = db.crate_config(crate_id)?.settings.dependencies.contains_key("snforge_std");
 
         Some(Self { cairo_test, snforge })
@@ -335,7 +347,7 @@ fn maybe_push_code_lens(
 }
 
 // Copied from starknet-foundry
-fn sanitize_test_case_name(name: &str) -> String {
+pub fn sanitize_test_case_name(name: &str) -> String {
     // Test names generated by `#[test]` and `#[fuzzer]` macros contain internal suffixes
     name.replace("__test_generated", "")
         .replace("__fuzzer_generated", "")

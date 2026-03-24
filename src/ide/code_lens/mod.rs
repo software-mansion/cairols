@@ -22,6 +22,7 @@ use lsp_types::{CodeLens, MessageType, ShowMessageParams, Url};
 use serde_json::{Number, Value};
 
 use crate::config::Config;
+use crate::ide::code_lens::debugger::{DebuggerCodeLens, get_debugger_code_lenses};
 use crate::ide::code_lens::executables::{ExecutableCodeLens, get_executable_code_lenses};
 use crate::ide::code_lens::tests::{TestCodeLens, get_test_code_lenses};
 use crate::lang::db::AnalysisDatabase;
@@ -32,6 +33,7 @@ use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
 use crate::server::schedule::{Task, thread};
 use crate::state::State;
 
+mod debugger;
 mod executables;
 mod tests;
 
@@ -48,6 +50,7 @@ trait CodeLensInterface {
 pub enum LSCodeLens {
     Test(TestCodeLens),
     Executable(ExecutableCodeLens),
+    Debugger(DebuggerCodeLens),
 }
 
 impl CodeLensInterface for LSCodeLens {
@@ -57,12 +60,17 @@ impl CodeLensInterface for LSCodeLens {
             LSCodeLens::Executable(executable_code_lens) => {
                 executable_code_lens.execute(file_url, state, notifier)
             }
+            LSCodeLens::Debugger(debugger_code_lens) => {
+                debugger_code_lens.execute(file_url, state, notifier)
+            }
         }
     }
+
     fn lens(&self) -> CodeLens {
         match self {
-            LSCodeLens::Test(test) => test.lens(),
-            LSCodeLens::Executable(executable) => executable.lens(),
+            LSCodeLens::Test(test_code_lens) => test_code_lens.lens(),
+            LSCodeLens::Executable(executable_code_lens) => executable_code_lens.lens(),
+            LSCodeLens::Debugger(debugger_code_lens) => debugger_code_lens.lens(),
         }
     }
 }
@@ -306,10 +314,12 @@ fn calculate_code_lens(url: Url, db: &AnalysisDatabase, config: &Config) -> Opti
     let mut result: FileCodeLens = vec![];
 
     let test_lens = get_test_code_lenses(db, url.clone(), config).unwrap_or_default();
-    let executable_lens = get_executable_code_lenses(db, url).unwrap_or_default();
+    let executable_lens = get_executable_code_lenses(db, url.clone()).unwrap_or_default();
+    let debugger_lens = get_debugger_code_lenses(db, url, &test_lens).unwrap_or_default();
 
     push_lens(&mut result, test_lens);
     push_lens(&mut result, executable_lens);
+    push_lens(&mut result, debugger_lens);
 
     Some(result)
 }
@@ -338,6 +348,7 @@ struct AnnotatedNode<'db> {
     pub full_path: String,
     pub attribute_ptr: SyntaxStablePtrId<'db>,
 }
+
 /// Collects functions with given attributes on them
 /// Returns struct with full path and a pointer to found attribute
 fn collect_functions_with_attrs<'db>(

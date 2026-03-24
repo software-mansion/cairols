@@ -30,7 +30,7 @@ fn only_functions() {
     file_path = "src/lib.cairo"
     index = 2
 
-    [execute_in_terminal]
+    [[execute_in_terminal]]
     command = "some random template ->hello::b<- string"
     cwd = "./"
     "#)
@@ -56,7 +56,7 @@ fn fn_in_mod() {
     file_path = "src/lib.cairo"
     index = 0
 
-    [execute_in_terminal]
+    [[execute_in_terminal]]
     command = "some random template ->hello::b::a<- string"
     cwd = "./"
     "#)
@@ -82,7 +82,7 @@ fn run_for_mod() {
     file_path = "src/lib.cairo"
     index = 0
 
-    [execute_in_terminal]
+    [[execute_in_terminal]]
     command = "some random template ->hello::b<- string"
     cwd = "./"
     "#)

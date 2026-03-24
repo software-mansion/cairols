@@ -142,6 +142,22 @@ impl Notification for ExecuteInTerminal {
     const METHOD: &'static str = "cairo/executeInTerminal";
 }
 
+#[derive(Debug)]
+pub struct LaunchDebugger {}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct LaunchDebuggerParams {
+    pub command: String,
+    pub cwd: PathBuf,
+    pub test_name: String,
+}
+
+impl Notification for LaunchDebugger {
+    type Params = LaunchDebuggerParams;
+    const METHOD: &'static str = "cairo/launchDebugger";
+}
+
 pub struct ShowMemoryUsage;
 
 impl Request for ShowMemoryUsage {
