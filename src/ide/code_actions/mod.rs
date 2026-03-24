@@ -66,7 +66,7 @@ fn get_code_actions_for_diagnostics(
 ) -> Vec<CodeAction> {
     let uri = &params.text_document.uri;
 
-    let mut result: Vec<_> = params
+    let resolved_diagnostics: Vec<_> = params
         .context
         .diagnostics
         .iter()
@@ -82,44 +82,49 @@ fn get_code_actions_for_diagnostics(
 
             Some((code, diagnostic, ctx))
         })
-        .flat_map(|(code, diagnostic, ctx)| match code {
-            Some("E2200") => cairo_lint::cairo_lint(db, &ctx, config_registry).unwrap_or_default(),
+        .collect();
+
+    let mut result = get_lint_code_actions(db, config_registry, &resolved_diagnostics);
+
+    result.extend(resolved_diagnostics.iter().flat_map(|(code, diagnostic, ctx)| {
+        match code {
+            Some("E2200") => vec![],
 
             Some("E0001") => rename_unused_variable::rename_unused_variable(
                 db,
                 &ctx.node,
-                diagnostic.clone(),
+                (*diagnostic).clone(),
                 uri.clone(),
             )
             .to_vec(),
             Some("E0002") => {
-                let fixes = add_missing_trait::add_missing_trait(db, &ctx, uri.clone());
+                let fixes = add_missing_trait::add_missing_trait(db, ctx, uri.clone());
                 if let Some(fixes) = fixes
                     && fixes.is_empty().not()
                 {
                     fixes
                 } else {
-                    suggest_similar_method::suggest_similar_method(db, &ctx, uri.clone())
+                    suggest_similar_method::suggest_similar_method(db, ctx, uri.clone())
                         .unwrap_or_default()
                 }
             }
             Some("E0003") => fill_struct_fields::fill_struct_fields(db, ctx.node, params).to_vec(),
-            Some("E0004") => fill_trait_members::fill_trait_members(db, &ctx, params).to_vec(),
+            Some("E0004") => fill_trait_members::fill_trait_members(db, ctx, params).to_vec(),
             Some("E0005") => {
                 create_module_file::create_module_file(db, ctx.node, uri.clone()).to_vec()
             }
             Some("E0006") => {
-                let fixes = missing_import::missing_import(db, &ctx, uri.clone());
+                let fixes = missing_import::missing_import(db, ctx, uri.clone());
                 if let Some(fixes) = fixes
                     && fixes.is_empty().not()
                 {
                     fixes
                 } else {
-                    suggest_similar_identifier::suggest_similar_identifier(db, &ctx, uri)
+                    suggest_similar_identifier::suggest_similar_identifier(db, ctx, uri)
                         .unwrap_or_default()
                 }
             }
-            Some("E0007") => suggest_similar_member::suggest_similar_member(db, &ctx, uri.clone())
+            Some("E0007") => suggest_similar_member::suggest_similar_member(db, ctx, uri.clone())
                 .unwrap_or_default(),
             Some("E2083") => {
                 make_variable_mutable::make_variable_mutable(db, ctx.node, uri.clone()).to_vec()
@@ -132,8 +137,8 @@ fn get_code_actions_for_diagnostics(
                 vec![]
             }
             None => Default::default(),
-        })
-        .collect();
+        }
+    }));
 
     let changes = result
         .iter()
@@ -160,6 +165,28 @@ fn get_code_actions_for_diagnostics(
     }
 
     result
+}
+
+/// Collects lint code actions for all "E2200" diagnostics, calling `cairo_lint` once per module
+/// to avoid producing duplicate code actions when multiple lint diagnostics have overlapping
+/// spans (e.g., nested if conditions).
+fn get_lint_code_actions(
+    db: &AnalysisDatabase,
+    config_registry: &ConfigsRegistry,
+    resolved_diagnostics: &[(Option<&str>, &Diagnostic, AnalysisContext<'_>)],
+) -> Vec<CodeAction> {
+    resolved_diagnostics
+        .iter()
+        .filter(|(code, ..)| *code == Some("E2200"))
+        .into_group_map_by(|(.., ctx)| ctx.module_id)
+        .into_values()
+        .flat_map(|ctxs| {
+            let nodes: Vec<_> = ctxs.iter().map(|(.., ctx)| ctx.node).collect();
+            let (.., ctx) = ctxs[0];
+            let tool_metadata = cairo_lint::get_tool_metadata(db, ctx.node, config_registry);
+            cairo_lint::cairo_lint(db, ctx.module_id, &nodes, tool_metadata).unwrap_or_default()
+        })
+        .collect()
 }
 
 trait VecExt<T> {
