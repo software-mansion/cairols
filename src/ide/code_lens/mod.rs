@@ -22,12 +22,8 @@ use lsp_types::{CodeLens, MessageType, ShowMessageParams, Url};
 use serde_json::{Number, Value};
 
 use crate::config::Config;
-use crate::ide::code_lens::executables::{
-    ExecutableCodeLens, ExecutableCodeLensConstructionParams, ExecutableCodeLensProvider,
-};
-use crate::ide::code_lens::tests::{
-    TestCodeLens, TestCodeLensConstructionParams, TestCodeLensProvider,
-};
+use crate::ide::code_lens::executables::{ExecutableCodeLens, get_executable_code_lenses};
+use crate::ide::code_lens::tests::{TestCodeLens, get_test_code_lenses};
 use crate::lang::db::AnalysisDatabase;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::ext::{ExecuteInTerminal, ExecuteInTerminalParams};
@@ -39,14 +35,8 @@ use crate::state::State;
 mod executables;
 mod tests;
 
-trait CodeLensBuilder {
-    fn build_lens(self, index: usize) -> LSCodeLens;
-}
-
-trait CodeLensProvider {
-    type ConstructionParams<'a>;
-    type LensBuilder: CodeLensBuilder;
-    fn create_lens(params: Self::ConstructionParams<'_>) -> Vec<Self::LensBuilder>;
+trait CodeLensInternal {
+    fn into_ls_lens(self, index: usize) -> LSCodeLens;
 }
 
 trait CodeLensInterface {
@@ -314,23 +304,19 @@ pub struct FileChange {
 
 fn calculate_code_lens(url: Url, db: &AnalysisDatabase, config: &Config) -> Option<FileCodeLens> {
     let mut result: FileCodeLens = vec![];
-    let test_lens_builders = TestCodeLensProvider::create_lens(TestCodeLensConstructionParams {
-        db,
-        url: url.clone(),
-        config: config.clone(),
-    });
-    let executable_lens_builders =
-        ExecutableCodeLensProvider::create_lens(ExecutableCodeLensConstructionParams { url, db });
 
-    push_lens_builders(&mut result, test_lens_builders);
-    push_lens_builders(&mut result, executable_lens_builders);
+    let test_lens = get_test_code_lenses(db, url.clone(), config).unwrap_or_default();
+    let executable_lens = get_executable_code_lenses(db, url).unwrap_or_default();
+
+    push_lens(&mut result, test_lens);
+    push_lens(&mut result, executable_lens);
 
     Some(result)
 }
 
-fn push_lens_builders<T: CodeLensBuilder>(lens: &mut FileCodeLens, lens_builders: Vec<T>) {
-    for lens_builder in lens_builders {
-        lens.push(lens_builder.build_lens(lens.len()));
+fn push_lens<T: CodeLensInternal>(file_code_lens: &mut FileCodeLens, lens_internal: Vec<T>) {
+    for lens in lens_internal {
+        file_code_lens.push(lens.into_ls_lens(file_code_lens.len()));
     }
 }
 

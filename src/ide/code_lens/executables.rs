@@ -7,9 +7,8 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use lsp_types::{CodeLens, Command, Position, Range, Url};
 
 use crate::ide::code_lens::{
-    AnnotatedNode, CodeLensBuilder, CodeLensInterface, CodeLensProvider, LSCodeLens,
-    collect_functions_with_attrs, get_original_module_item_and_file, make_lens_args,
-    send_execute_in_terminal,
+    AnnotatedNode, CodeLensInterface, CodeLensInternal, LSCodeLens, collect_functions_with_attrs,
+    get_original_module_item_and_file, make_lens_args, send_execute_in_terminal,
 };
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
@@ -23,29 +22,14 @@ pub struct ExecutableCodeLens {
     command: String,
 }
 
-pub struct ExecutableCodeLensConstructionParams<'a> {
-    pub db: &'a AnalysisDatabase,
-    pub url: Url,
-}
-
-pub struct ExecutableCodeLensProvider;
-impl CodeLensProvider for ExecutableCodeLensProvider {
-    type ConstructionParams<'a> = ExecutableCodeLensConstructionParams<'a>;
-    type LensBuilder = ExecutableLensBuilder;
-
-    fn create_lens(params: Self::ConstructionParams<'_>) -> Vec<Self::LensBuilder> {
-        get_executable_code_lenses_builders(params.url, params.db).unwrap_or_default()
-    }
-}
-
-pub struct ExecutableLensBuilder {
+pub struct ExecutableLensInternal {
     position: Position,
     file_url: Url,
     command: String,
 }
 
-impl CodeLensBuilder for ExecutableLensBuilder {
-    fn build_lens(self, index: usize) -> LSCodeLens {
+impl CodeLensInternal for ExecutableLensInternal {
+    fn into_ls_lens(self, index: usize) -> LSCodeLens {
         let range = Range::new(self.position, self.position);
         LSCodeLens::Executable(ExecutableCodeLens {
             lens: CodeLens {
@@ -75,10 +59,10 @@ impl CodeLensInterface for ExecutableCodeLens {
     }
 }
 
-pub fn get_executable_code_lenses_builders(
-    url: Url,
+pub fn get_executable_code_lenses(
     db: &AnalysisDatabase,
-) -> Option<Vec<ExecutableLensBuilder>> {
+    url: Url,
+) -> Option<Vec<ExecutableLensInternal>> {
     let mut file_code_lenses_builders = vec![];
     let file = db.file_for_url(&url)?;
     let main_module = *db.file_modules(file).ok()?.first()?;
@@ -101,14 +85,14 @@ pub fn get_executable_code_lenses_builders(
 }
 
 fn get_executable_lenses_builders_in_mod(
-    file_code_lenses_builders: &mut Vec<ExecutableLensBuilder>,
+    file_code_lenses_builders: &mut Vec<ExecutableLensInternal>,
     db: &AnalysisDatabase,
     module: ModuleId,
     file_url: Url,
 ) {
     for AnnotatedNode { full_path, attribute_ptr } in collect_executable_functions(db, module) {
         if let Some(position) = get_executable_lens_position(db, attribute_ptr) {
-            file_code_lenses_builders.push(ExecutableLensBuilder {
+            file_code_lenses_builders.push(ExecutableLensInternal {
                 position,
                 file_url: file_url.clone(),
                 command: format!("scarb execute --executable-function {full_path}"),

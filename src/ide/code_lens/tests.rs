@@ -21,8 +21,8 @@ use cairo_language_common::CommonGroup;
 use lsp_types::{CodeLens, Command, Range, Url};
 
 use super::{
-    AnnotatedNode, CodeLensBuilder, CodeLensInterface, CodeLensProvider, LSCodeLens,
-    collect_functions_with_attrs, make_lens_args, send_execute_in_terminal,
+    AnnotatedNode, CodeLensInterface, CodeLensInternal, LSCodeLens, collect_functions_with_attrs,
+    make_lens_args, send_execute_in_terminal,
 };
 use crate::config::{Config, TestRunner};
 use crate::lang::db::AnalysisDatabase;
@@ -76,14 +76,14 @@ impl CodeLensInterface for TestCodeLens {
     }
 }
 
-pub struct TestCodeLensBuilder {
+pub struct TestCodeLensInternal {
     full_path: String,
     title: String,
     range: Range,
     file_url: Url,
 }
 
-impl TestCodeLensBuilder {
+impl TestCodeLensInternal {
     fn new(range: Range, full_path: String, file_url: Url, is_plural: bool) -> Self {
         let mut title = "▶ Run test".to_string();
 
@@ -95,8 +95,8 @@ impl TestCodeLensBuilder {
     }
 }
 
-impl CodeLensBuilder for TestCodeLensBuilder {
-    fn build_lens(self, index: usize) -> LSCodeLens {
+impl CodeLensInternal for TestCodeLensInternal {
+    fn into_ls_lens(self, index: usize) -> LSCodeLens {
         let command = Command {
             title: self.title,
             command: "cairo.executeCodeLens".to_string(),
@@ -110,27 +110,11 @@ impl CodeLensBuilder for TestCodeLensBuilder {
     }
 }
 
-pub struct TestCodeLensProvider;
-impl CodeLensProvider for TestCodeLensProvider {
-    type ConstructionParams<'a> = TestCodeLensConstructionParams<'a>;
-    type LensBuilder = TestCodeLensBuilder;
-
-    fn create_lens(params: Self::ConstructionParams<'_>) -> Vec<Self::LensBuilder> {
-        get_test_code_lenses_builders(params.url, params.db, &params.config).unwrap_or_default()
-    }
-}
-
-pub struct TestCodeLensConstructionParams<'a> {
-    pub url: Url,
-    pub db: &'a AnalysisDatabase,
-    pub config: Config,
-}
-
-pub fn get_test_code_lenses_builders(
-    url: Url,
+pub fn get_test_code_lenses(
     db: &AnalysisDatabase,
+    url: Url,
     config: &Config,
-) -> Option<Vec<TestCodeLensBuilder>> {
+) -> Option<Vec<TestCodeLensInternal>> {
     let mut file_code_lens = vec![];
     let file = db.file_for_url(&url)?;
 
@@ -258,7 +242,7 @@ fn collect_test_functions<'db>(
 }
 
 fn collect_test_lenses<'db>(
-    file_code_lens: &mut Vec<TestCodeLensBuilder>,
+    file_code_lens: &mut Vec<TestCodeLensInternal>,
     db: &'db AnalysisDatabase,
     module: ModuleId<'db>,
     file_url: Url,
@@ -267,7 +251,7 @@ fn collect_test_lenses<'db>(
         maybe_push_code_lens(
             db,
             file_code_lens,
-            |range, full_path| TestCodeLensBuilder::new(range, full_path, file_url.clone(), false),
+            |range, full_path| TestCodeLensInternal::new(range, full_path, file_url.clone(), false),
             node,
         );
     }
@@ -302,7 +286,7 @@ fn collect_test_lenses<'db>(
                 db,
                 file_code_lens,
                 |range, full_path| {
-                    TestCodeLensBuilder::new(range, full_path, file_url.clone(), true)
+                    TestCodeLensInternal::new(range, full_path, file_url.clone(), true)
                 },
                 module_node,
             );
@@ -338,8 +322,8 @@ fn get_test_lens_range<'db>(
 
 fn maybe_push_code_lens(
     db: &AnalysisDatabase,
-    file_state: &mut Vec<TestCodeLensBuilder>,
-    make_code_lens: impl FnOnce(Range, String) -> TestCodeLensBuilder,
+    file_state: &mut Vec<TestCodeLensInternal>,
+    make_code_lens: impl FnOnce(Range, String) -> TestCodeLensInternal,
     annotated_function: AnnotatedNode,
 ) {
     let AnnotatedNode { attribute_ptr, full_path } = annotated_function;
