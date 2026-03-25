@@ -22,10 +22,10 @@ use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use super::helpers::completion_kind::resolved_generic_item_completion_kind;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
-use crate::ide::completion::helpers::is_empty_body_context;
 use crate::ide::completion::helpers::formatting::{
     format_enum_variant, generate_abbreviated_signature,
 };
+use crate::ide::completion::helpers::is_empty_body_context;
 use crate::ide::completion::helpers::item::{
     CompletionItemOrderable, ImportableCompletionItem, ImportableCompletionItemHashable,
     get_item_relevance,
