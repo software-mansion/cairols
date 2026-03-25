@@ -13,7 +13,7 @@ use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::{ExprPath, PathSegment, Statement};
+use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::OptionFrom;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -22,6 +22,7 @@ use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use super::helpers::completion_kind::resolved_generic_item_completion_kind;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use crate::ide::completion::helpers::is_empty_body_context;
 use crate::ide::completion::helpers::formatting::{
     format_enum_variant, generate_abbreviated_signature,
 };
@@ -48,10 +49,7 @@ pub fn path_suffix_completions<'db>(
         return Default::default();
     };
 
-    let is_empty_body_context = ctx.node.kind(db) == SyntaxKind::ExprBlock
-        || Statement::is_variant(ctx.node.kind(db))
-        || ctx.node.parent(db).is_some_and(|p| p.kind(db) == SyntaxKind::ExprBlock)
-        || ctx.node.parent(db).is_some_and(|p| Statement::is_variant(p.kind(db)));
+    let is_empty_body_context = is_empty_body_context(db, &ctx.node);
 
     let (typed_text, last_typed_segment) = match get_typed_text_and_last_segment(db, ctx) {
         (Some(typed_text), Some(last_typed_segment)) => (typed_text, last_typed_segment),

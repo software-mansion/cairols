@@ -4,7 +4,7 @@ use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::FunctionBody;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use cairo_lang_syntax::node::ast::{self, PathSegment, StatementLet};
+use cairo_lang_syntax::node::ast::{PathSegment, StatementLet};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Token, TypedSyntaxNode};
 use itertools::Itertools;
@@ -12,6 +12,7 @@ use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
+use crate::ide::completion::helpers::is_empty_body_context;
 use crate::ide::completion::helpers::formatting::format_type_in_node_context;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::analysis_context::AnalysisContext;
@@ -36,10 +37,7 @@ pub fn variables_completions<'db>(
             path.segments(db).elements(db).take(2).collect_vec().as_slice()
     {
         segment.ident(db).token(db).text(db).to_string(db)
-    } else if ctx.node.kind(db) == SyntaxKind::ExprBlock
-        || ast::Statement::is_variant(ctx.node.kind(db))
-        || ctx.node.parent(db).is_some_and(|p| p.kind(db) == SyntaxKind::ExprBlock)
-        || ctx.node.parent(db).is_some_and(|p| ast::Statement::is_variant(p.kind(db)))
+    } else if is_empty_body_context(db, &ctx.node)
     {
         String::new()
     } else {
