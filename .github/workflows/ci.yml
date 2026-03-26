@@ -54,44 +54,8 @@ jobs:
       - name: nextest partition ${{ matrix.partition }}/6
         run: cargo nextest run --profile ci --partition 'count:${{ matrix.partition }}/6' --archive-file 'nextest-archive.tar.zst'
 
-  bench:
-    name: benchmarks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: software-mansion/setup-scarb@v1
-        with:
-          cache: false
-      - uses: Swatinem/rust-cache@v2
-      - name: run benchmarks (smoke test)
-        run: cargo bench --bench lsp --profile ci -- --test
-
-  bench-codspeed:
-    name: benchmarks (CodSpeed)
-    runs-on: ubuntu-latest
-    needs:
-      - bench
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: software-mansion/setup-scarb@v1
-        with:
-          cache: false
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-codspeed
-      - name: build benchmarks for CodSpeed
-        run: cargo codspeed build --bench lsp
-      - name: run CodSpeed benchmarks
-        uses: CodSpeedHQ/action@v4
-        with:
-          mode: simulation
-          run: cargo codspeed run
+  benchmarks:
+    uses: ./.github/workflows/benchmarks.yml
 
   fmt:
     runs-on: ubuntu-latest

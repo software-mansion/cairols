@@ -97,7 +97,39 @@ regex = "1.12.3"
 similar = "2.7"
 
 [[bench]]
-name = "lsp"
+name = "completions"
+harness = false
+
+[[bench]]
+name = "hover"
+harness = false
+
+[[bench]]
+name = "goto_definition"
+harness = false
+
+[[bench]]
+name = "references"
+harness = false
+
+[[bench]]
+name = "document_highlight"
+harness = false
+
+[[bench]]
+name = "formatting"
+harness = false
+
+[[bench]]
+name = "semantic_tokens"
+harness = false
+
+[[bench]]
+name = "inlay_hints"
+harness = false
+
+[[bench]]
+name = "code_actions"
 harness = false
 
 # Here we specify real dependency specifications for Cairo crates *if* currently we want to use
