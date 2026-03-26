@@ -2,6 +2,43 @@ use crate::code_actions::quick_fix_with_linter;
 use crate::support::insta::test_transform;
 
 #[test]
+fn no_duplicate_code_actions_for_nested_conditions() {
+    test_transform!(quick_fix_with_linter, "
+    fn main() {
+        let x = true;
+        let y = true;
+        let z = false;
+        if x || z {
+            if y && z {
+                if <caret>z {
+                }
+            }
+        }
+    }
+    ", @r#"
+    Title: Combine nested ifs into a single condition
+    Add new text: "        if (y && z) && (z) {
+            }
+    "
+    At: Range { start: Position { line: 5, character: 0 }, end: Position { line: 9, character: 0 } }
+    Title: Combine nested ifs into a single condition
+    Add new text: "    if (x || z) && (y && z) {
+            if z {
+            }
+        }
+    "
+    At: Range { start: Position { line: 4, character: 0 }, end: Position { line: 10, character: 0 } }
+    Title: Combine nested ifs into a single condition
+    Add new text: "    if (x || z) && (y && z) {
+            if z {
+            }
+        }
+    "
+    At: Range { start: Position { line: 4, character: 0 }, end: Position { line: 10, character: 0 } }
+    "#);
+}
+
+#[test]
 fn check_for_lint() {
     test_transform!(quick_fix_with_linter, "
     fn main() {

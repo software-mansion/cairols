@@ -13,6 +13,7 @@ use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 use crate::ide::completion::expr::selector::expr_selector;
 use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use crate::ide::completion::helpers::formatting::format_type_in_node_context;
+use crate::ide::completion::helpers::is_empty_body_context;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
@@ -23,18 +24,26 @@ pub fn variables_completions<'db>(
     ctx: &AnalysisContext<'db>,
     was_node_corrected: bool,
 ) -> Vec<CompletionItemOrderable> {
-    if let Some(path) = expr_selector(db, &ctx.node)
-        && dot_expr_rhs(db, &ctx.node, was_node_corrected).is_none()
+    if dot_expr_rhs(db, &ctx.node, was_node_corrected).is_some() {
+        return Default::default();
+    }
+
+    let Some(lookup_item_id) = ctx.lookup_item_id else { return Default::default() };
+    let Some(function_id) = lookup_item_id.function_with_body() else { return Default::default() };
+    let Ok(body) = db.function_body(function_id) else { return Default::default() };
+
+    let typed_text = if let Some(path) = expr_selector(db, &ctx.node)
         && let [PathSegment::Simple(segment)] =
             path.segments(db).elements(db).take(2).collect_vec().as_slice()
-        && let Some(lookup_item_id) = ctx.lookup_item_id
-        && let Some(function_id) = lookup_item_id.function_with_body()
-        && let Ok(body) = db.function_body(function_id)
     {
-        patterns(body, db, ctx, segment.ident(db).token(db).text(db).to_string(db).as_str())
+        segment.ident(db).token(db).text(db).to_string(db)
+    } else if is_empty_body_context(db, &ctx.node) {
+        String::new()
     } else {
-        Default::default()
-    }
+        return Default::default();
+    };
+
+    patterns(body, db, ctx, typed_text.as_str())
 }
 
 fn patterns<'db>(

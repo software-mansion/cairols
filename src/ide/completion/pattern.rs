@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use cairo_lang_defs::ids::GenericTypeId;
+use cairo_lang_defs::ids::{GenericTypeId, LanguageElementId};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::resolve::ResolutionContext;
@@ -16,6 +16,7 @@ use crate::ide::completion::helpers::formatting::format_type_in_node_context;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
+use crate::lang::visibility::peek_visible_in_with_edition;
 use crate::{
     ide::completion::path::path_prefix_completions, lang::analysis_context::AnalysisContext,
 };
@@ -24,7 +25,7 @@ pub fn struct_pattern_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
 ) -> Vec<CompletionItemOrderable> {
-    let (all_members, existing_members, typed) = if let Some(pattern) =
+    let (all_members, existing_members, typed, struct_parent_module) = if let Some(pattern) =
         ctx.node.ancestor_of_type::<PatternStruct>(db)
         && let typed = ctx.node.ancestor_of_type::<PatternIdentifier>(db).filter(|ident| {
             ident.as_syntax_node().parent(db).and_then(|p| p.parent(db))
@@ -39,10 +40,17 @@ pub fn struct_pattern_completions<'db>(
             )
         && let Ok(all_members) = db.struct_members(struct_item)
     {
-        (all_members, pattern.params(db).elements(db), typed)
+        (all_members, pattern.params(db).elements(db), typed, struct_item.parent_module(db))
     } else {
         return Default::default();
     };
+
+    // Don't propose fields if any are not visible from the current module.
+    if !all_members.values().all(|member| {
+        peek_visible_in_with_edition(db, member.visibility, struct_parent_module, ctx.module_id)
+    }) {
+        return Default::default();
+    }
 
     let existing_members: HashSet<_> = existing_members
         .into_iter()

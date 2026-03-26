@@ -1,0 +1,28 @@
+---
+source: tests/e2e/scarb/manifest_diagnostics.rs
+description: "// → Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\ndep = 1\n\n// → src/lib.cairo\nfn main() {}"
+expression: "DiagnosticsChangeReport { before_changes, after_changes }"
+---
+before_changes:
+  diagnostics:
+  - url: '[ROOT_URL]Scarb.toml'
+    diagnostics:
+    - related_code: '1'
+      diagnostic:
+        range:
+          start:
+            line: 6
+            character: 6
+          end:
+            line: 6
+            character: 7
+        severity: 1
+        source: scarb
+        message: |
+          TOML parse error at line 7, column 7
+            |
+          7 | dep = 1
+            |       ^
+          invalid type: integer `1`, expected a string or map
+after_changes:
+  diagnostics: []
