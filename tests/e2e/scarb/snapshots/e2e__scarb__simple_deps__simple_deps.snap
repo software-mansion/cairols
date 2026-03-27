@@ -2,6 +2,7 @@
 source: tests/e2e/scarb/simple_deps.rs
 description: "// → a/Scarb.toml\n[package]\nname = \"a\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\nb = { path = \"../b\" }\n\n// → a/src/lib.cairo\nuse b::Foo;\n\nfn main() {\n    let foo = Foo::Bar;\n    match foo {\n        Foo::Baz => {},\n        _ => {}\n    }\n}\n\n// → b/Scarb.toml\n[package]\nname = \"b\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n// → b/src/lib.cairo\npub enum Foo {\n    Bar,\n    Baz,\n}\n\nmod non_existent;"
 expression: "normalize(&ls, analyzed_crates)"
+snapshot_kind: text
 ---
 # Analyzed Crates
 ---
@@ -96,7 +97,7 @@ expression: "normalize(&ls, analyzed_crates)"
   "settings": {
     "name": "core",
     "edition": "2025_12",
-    "version": "2.16.0",
+    "version": "2.16.1",
     "cfg_set": [
       [
         "target",

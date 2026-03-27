@@ -17,7 +17,7 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
 
     let analyzed_crates = ls.open_and_wait_for_project_update("src/lib.cairo");
 
-    insta::assert_snapshot!(normalize(&ls, analyzed_crates), @r#"
+    insta::assert_snapshot!(normalize(&ls, analyzed_crates), @r##"
     # Analyzed Crates
     ---
     ```json
@@ -29,7 +29,7 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
       "settings": {
         "name": null,
         "edition": "2025_12",
-        "version": "2.16.0",
+        "version": "2.16.1",
         "cfg_set": null,
         "dependencies": {},
         "experimental_features": {
@@ -50,5 +50,5 @@ fn test_unmanaged_core_on_invalid_scarb_toml() {
       }
     }
     ```
-    "#);
+    "##);
 }

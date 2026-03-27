@@ -2,6 +2,7 @@
 source: tests/e2e/analysis.rs
 description: "// → Scarb.toml\n[package]\nname = \"a\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\nassert_macros = \"2\"\n\n// → src/lib.cairo\nfn main() {}"
 expression: "normalize(&ls, output)"
+snapshot_kind: text
 ---
 # Analyzed Crates
 ---
@@ -58,7 +59,7 @@ expression: "normalize(&ls, output)"
   "settings": {
     "name": "core",
     "edition": "2025_12",
-    "version": "2.16.0",
+    "version": "2.16.1",
     "cfg_set": [
       [
         "target",
