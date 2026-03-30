@@ -37,7 +37,17 @@ jobs:
         with:
           tool: cargo-codspeed
       - name: build benchmarks for CodSpeed
-        run: cargo codspeed build
+        run: >
+          cargo codspeed build
+          --bench completions
+          --bench hover
+          --bench goto_definition
+          --bench references
+          --bench document_highlight
+          --bench formatting
+          --bench semantic_tokens
+          --bench inlay_hints
+          --bench code_actions
       - name: run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v4
         with:

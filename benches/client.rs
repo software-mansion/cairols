@@ -1,11 +1,20 @@
 //! Shared LSP bench client used by all benchmark binaries.
+//!
+//! # Why not reuse `MockClient` from the e2e test suite?
+//!
+//! `MockClient` (in `tests/e2e/support/mock_client.rs`) depends on `Fixture`, `RequestIdGenerator`,
+//! diagnostic tracking, and message tracing that live in the test tree. Cargo bench targets are
+//! separate compilation units that cannot import from `tests/`; only items exported through the
+//! library's public API (behind `#[cfg(feature = "testing")]`) are reachable here. The shared
+//! `LspClientConnection` in `cairo_language_server::testing` captures the overlap without
+//! pulling in the test-only infrastructure.
 
 #![allow(dead_code)]
 
 use std::path::PathBuf;
 
-use cairo_language_server::testing::BackendForTesting;
-use lsp_server::{Message, Notification, Request, RequestId, Response};
+use cairo_language_server::testing::{BackendForTesting, LspClientConnection};
+use lsp_server::Message;
 use lsp_types::request::Request as _;
 use lsp_types::{notification, request, *};
 use serde_json::{Value, json};
@@ -17,8 +26,7 @@ use tempfile::TempDir;
 /// (initialize handshake, `workspace/configuration` responses, etc.) so benchmark
 /// functions can focus on the operation being measured.
 pub struct BenchClient {
-    connection: lsp_server::Connection,
-    req_id: i32,
+    conn: LspClientConnection,
     pub main_file_uri: Url,
     // Kept alive to prevent the temp directory from being deleted.
     _dir: TempDir,
@@ -47,17 +55,13 @@ impl BenchClient {
         let cwd_clone = cwd.clone();
         std::thread::spawn(move || init(cwd_clone).run_for_tests().unwrap());
 
-        let mut client = BenchClient { connection, req_id: 0, main_file_uri, _dir: dir };
+        let mut client =
+            BenchClient { conn: LspClientConnection::new(connection), main_file_uri, _dir: dir };
 
         client.initialize(&cwd);
         client.open_file(cairo_code);
         client.wait_for_project_update();
         client
-    }
-
-    fn next_id(&mut self) -> RequestId {
-        self.req_id += 1;
-        RequestId::from(self.req_id)
     }
 
     /// Performs the `initialize` / `initialized` handshake.
@@ -107,7 +111,7 @@ impl BenchClient {
     /// Drains incoming messages until `cairo/projectUpdatingFinished` is received.
     fn wait_for_project_update(&mut self) {
         loop {
-            match self.connection.receiver.recv().unwrap() {
+            match self.conn.connection.receiver.recv().unwrap() {
                 Message::Notification(n) if n.method == "cairo/projectUpdatingFinished" => break,
                 Message::Request(req) => self.handle_server_request(&req),
                 _ => {}
@@ -116,40 +120,22 @@ impl BenchClient {
     }
 
     /// Responds to server-initiated requests (workspace/configuration, registerCapability, …).
-    fn handle_server_request(&mut self, req: &Request) {
+    fn handle_server_request(&mut self, req: &lsp_server::Request) {
         match req.method.as_str() {
             request::WorkspaceConfiguration::METHOD => {
                 let params: ConfigurationParams =
                     serde_json::from_value(req.params.clone()).unwrap();
-                let result: Vec<Value> = params
-                    .items
-                    .iter()
-                    .map(|item| match item.section.as_deref() {
-                        Some("cairo1") => json!({
-                            "enableProcMacros": false,
-                            "enableLinter": false,
-                        }),
-                        _ => json!(null),
-                    })
-                    .collect();
-                self.connection
-                    .sender
-                    .send(Message::Response(Response {
-                        id: req.id.clone(),
-                        result: Some(serde_json::to_value(result).unwrap()),
-                        error: None,
-                    }))
-                    .unwrap();
+                let config = json!({
+                    "cairo1": {
+                        "enableProcMacros": false,
+                        "enableLinter": false
+                    }
+                });
+                let result = LspClientConnection::compute_workspace_configuration(&config, params);
+                self.conn.send_response(req.id.clone(), serde_json::to_value(result).unwrap());
             }
             request::RegisterCapability::METHOD => {
-                self.connection
-                    .sender
-                    .send(Message::Response(Response {
-                        id: req.id.clone(),
-                        result: Some(json!(null)),
-                        error: None,
-                    }))
-                    .unwrap();
+                self.conn.send_response(req.id.clone(), json!(null));
             }
             _ => {}
         }
@@ -157,34 +143,20 @@ impl BenchClient {
 
     /// Sends a typed LSP request and returns the typed result.
     fn send_request<R: request::Request>(&mut self, params: R::Params) -> R::Result {
-        let id = self.next_id();
-        self.connection
-            .sender
-            .send(Message::Request(Request::new(
-                id.clone(),
-                R::METHOD.to_string(),
-                serde_json::to_value(params).unwrap(),
-            )))
-            .unwrap();
+        let id = self.conn.begin_request::<R>(params);
         let value = self.recv_until_response(id).unwrap_or(Value::Null);
         serde_json::from_value(value).unwrap()
     }
 
     /// Sends a typed LSP notification.
     fn send_notification<N: notification::Notification>(&mut self, params: N::Params) {
-        self.connection
-            .sender
-            .send(Message::Notification(Notification::new(
-                N::METHOD.to_string(),
-                serde_json::to_value(params).unwrap(),
-            )))
-            .unwrap();
+        self.conn.send_notification::<N>(params);
     }
 
     /// Receives messages, dispatching server requests, until a `Response` with `id` arrives.
-    fn recv_until_response(&mut self, id: RequestId) -> Option<Value> {
+    fn recv_until_response(&mut self, id: lsp_server::RequestId) -> Option<Value> {
         loop {
-            match self.connection.receiver.recv().unwrap() {
+            match self.conn.connection.receiver.recv().unwrap() {
                 Message::Response(resp) if resp.id == id => return resp.result,
                 Message::Request(req) => self.handle_server_request(&req),
                 _ => {}
