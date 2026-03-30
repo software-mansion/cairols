@@ -8,25 +8,22 @@ before_changes:
   diagnostics:
   - url: '[ROOT_URL]Scarb.toml'
     diagnostics:
-    - related_code: ''
+    - related_code: '1'
       diagnostic:
         range:
           start:
-            line: 0
-            character: 0
+            line: 6
+            character: 6
           end:
-            line: 0
-            character: 0
+            line: 6
+            character: 7
         severity: 1
         source: scarb
-        message: |-
-          failed to parse manifest at: [ROOT]/Scarb.toml
-
-          Caused by:
-              TOML parse error at line 7, column 7
-                |
-              7 | dep = 1
-                |       ^
-              invalid type: integer `1`, expected a string or map
+        message: |
+          TOML parse error at line 7, column 7
+            |
+          7 | dep = 1
+            |       ^
+          invalid type: integer `1`, expected a string or map
 after_changes:
   diagnostics: []
