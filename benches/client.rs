@@ -6,11 +6,10 @@ use std::path::PathBuf;
 
 use cairo_language_server::testing::BackendForTesting;
 use lsp_server::{Message, Notification, Request, RequestId, Response};
-use lsp_types::*;
+use lsp_types::request::Request as _;
+use lsp_types::{notification, request, *};
 use serde_json::{Value, json};
 use tempfile::TempDir;
-
-const TOOL_VERSIONS: &str = include_str!("../.tool-versions");
 
 /// A minimal LSP client for benchmarking.
 ///
@@ -32,7 +31,6 @@ impl BenchClient {
         let dir = TempDir::new().unwrap();
         let root = dir.path();
 
-        std::fs::write(root.join(".tool-versions"), TOOL_VERSIONS).unwrap();
         std::fs::write(
             root.join("cairo_project.toml"),
             "[crate_roots]\nhello = \"src\"\n\n[config.override.hello]\nedition = \"2025_12\"\n",
@@ -65,9 +63,8 @@ impl BenchClient {
     /// Performs the `initialize` / `initialized` handshake.
     fn initialize(&mut self, root: &PathBuf) {
         let root_uri = Url::from_directory_path(root).unwrap();
-        let id = self.next_id();
 
-        let params = InitializeParams {
+        self.send_request::<request::Initialize>(InitializeParams {
             process_id: Some(std::process::id()),
             workspace_folders: Some(vec![WorkspaceFolder {
                 uri: root_uri,
@@ -88,36 +85,23 @@ impl BenchClient {
                 ..Default::default()
             },
             ..InitializeParams::default()
-        };
-
-        self.send_raw(id.clone(), "initialize", serde_json::to_value(params).unwrap());
-        self.recv_until_response(id);
+        });
 
         // Acknowledge the `client/registerCapability` request the server sends before
         // `initialized` can be processed.
-        self.connection
-            .sender
-            .send(Message::Notification(Notification::new("initialized".to_string(), json!({}))))
-            .unwrap();
+        self.send_notification::<notification::Initialized>(InitializedParams {});
     }
 
     /// Sends a `textDocument/didOpen` notification for the main file.
     fn open_file(&mut self, content: &str) {
-        let params = DidOpenTextDocumentParams {
+        self.send_notification::<notification::DidOpenTextDocument>(DidOpenTextDocumentParams {
             text_document: TextDocumentItem {
                 uri: self.main_file_uri.clone(),
                 language_id: "cairo".to_string(),
                 version: 0,
                 text: content.to_string(),
             },
-        };
-        self.connection
-            .sender
-            .send(Message::Notification(Notification::new(
-                "textDocument/didOpen".to_string(),
-                serde_json::to_value(params).unwrap(),
-            )))
-            .unwrap();
+        });
     }
 
     /// Drains incoming messages until `cairo/projectUpdatingFinished` is received.
@@ -134,7 +118,7 @@ impl BenchClient {
     /// Responds to server-initiated requests (workspace/configuration, registerCapability, …).
     fn handle_server_request(&mut self, req: &Request) {
         match req.method.as_str() {
-            "workspace/configuration" => {
+            request::WorkspaceConfiguration::METHOD => {
                 let params: ConfigurationParams =
                     serde_json::from_value(req.params.clone()).unwrap();
                 let result: Vec<Value> = params
@@ -157,7 +141,7 @@ impl BenchClient {
                     }))
                     .unwrap();
             }
-            "client/registerCapability" => {
+            request::RegisterCapability::METHOD => {
                 self.connection
                     .sender
                     .send(Message::Response(Response {
@@ -171,10 +155,29 @@ impl BenchClient {
         }
     }
 
-    fn send_raw(&mut self, id: RequestId, method: &str, params: Value) {
+    /// Sends a typed LSP request and returns the typed result.
+    fn send_request<R: request::Request>(&mut self, params: R::Params) -> R::Result {
+        let id = self.next_id();
         self.connection
             .sender
-            .send(Message::Request(Request::new(id, method.to_string(), params)))
+            .send(Message::Request(Request::new(
+                id.clone(),
+                R::METHOD.to_string(),
+                serde_json::to_value(params).unwrap(),
+            )))
+            .unwrap();
+        let value = self.recv_until_response(id).unwrap_or(Value::Null);
+        serde_json::from_value(value).unwrap()
+    }
+
+    /// Sends a typed LSP notification.
+    fn send_notification<N: notification::Notification>(&mut self, params: N::Params) {
+        self.connection
+            .sender
+            .send(Message::Notification(Notification::new(
+                N::METHOD.to_string(),
+                serde_json::to_value(params).unwrap(),
+            )))
             .unwrap();
     }
 
@@ -190,8 +193,7 @@ impl BenchClient {
     }
 
     pub fn completion(&mut self, line: u32, character: u32) -> Option<CompletionResponse> {
-        let id = self.next_id();
-        let params = CompletionParams {
+        self.send_request::<request::Completion>(CompletionParams {
             text_document_position: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier { uri: self.main_file_uri.clone() },
                 position: Position { line, character },
@@ -199,41 +201,32 @@ impl BenchClient {
             work_done_progress_params: Default::default(),
             partial_result_params: Default::default(),
             context: None,
-        };
-        self.send_raw(id.clone(), "textDocument/completion", serde_json::to_value(params).unwrap());
-        self.recv_until_response(id).map(|v| serde_json::from_value(v).unwrap())
+        })
     }
 
     pub fn hover(&mut self, line: u32, character: u32) -> Option<Hover> {
-        let id = self.next_id();
-        let params = HoverParams {
+        self.send_request::<request::HoverRequest>(HoverParams {
             text_document_position_params: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier { uri: self.main_file_uri.clone() },
                 position: Position { line, character },
             },
             work_done_progress_params: Default::default(),
-        };
-        self.send_raw(id.clone(), "textDocument/hover", serde_json::to_value(params).unwrap());
-        self.recv_until_response(id).and_then(|v| serde_json::from_value(v).ok())
+        })
     }
 
     pub fn goto_definition(&mut self, line: u32, character: u32) -> Option<GotoDefinitionResponse> {
-        let id = self.next_id();
-        let params = GotoDefinitionParams {
+        self.send_request::<request::GotoDefinition>(GotoDefinitionParams {
             text_document_position_params: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier { uri: self.main_file_uri.clone() },
                 position: Position { line, character },
             },
             work_done_progress_params: Default::default(),
             partial_result_params: Default::default(),
-        };
-        self.send_raw(id.clone(), "textDocument/definition", serde_json::to_value(params).unwrap());
-        self.recv_until_response(id).and_then(|v| serde_json::from_value(v).ok())
+        })
     }
 
     pub fn references(&mut self, line: u32, character: u32) -> Option<Vec<Location>> {
-        let id = self.next_id();
-        let params = ReferenceParams {
+        self.send_request::<request::References>(ReferenceParams {
             text_document_position: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier { uri: self.main_file_uri.clone() },
                 position: Position { line, character },
@@ -241,9 +234,7 @@ impl BenchClient {
             context: ReferenceContext { include_declaration: true },
             work_done_progress_params: Default::default(),
             partial_result_params: Default::default(),
-        };
-        self.send_raw(id.clone(), "textDocument/references", serde_json::to_value(params).unwrap());
-        self.recv_until_response(id).and_then(|v| serde_json::from_value(v).ok())
+        })
     }
 
     pub fn document_highlight(
@@ -251,71 +242,48 @@ impl BenchClient {
         line: u32,
         character: u32,
     ) -> Option<Vec<DocumentHighlight>> {
-        let id = self.next_id();
-        let params = DocumentHighlightParams {
+        self.send_request::<request::DocumentHighlightRequest>(DocumentHighlightParams {
             text_document_position_params: TextDocumentPositionParams {
                 text_document: TextDocumentIdentifier { uri: self.main_file_uri.clone() },
                 position: Position { line, character },
             },
             work_done_progress_params: Default::default(),
             partial_result_params: Default::default(),
-        };
-        self.send_raw(
-            id.clone(),
-            "textDocument/documentHighlight",
-            serde_json::to_value(params).unwrap(),
-        );
-        self.recv_until_response(id).and_then(|v| serde_json::from_value(v).ok())
+        })
     }
 
     pub fn formatting(&mut self) -> Option<Vec<TextEdit>> {
-        let id = self.next_id();
-        let params = DocumentFormattingParams {
+        self.send_request::<request::Formatting>(DocumentFormattingParams {
             text_document: TextDocumentIdentifier { uri: self.main_file_uri.clone() },
             options: FormattingOptions::default(),
             work_done_progress_params: Default::default(),
-        };
-        self.send_raw(id.clone(), "textDocument/formatting", serde_json::to_value(params).unwrap());
-        self.recv_until_response(id).and_then(|v| serde_json::from_value(v).ok())
+        })
     }
 
     pub fn semantic_tokens(&mut self) -> Option<SemanticTokensResult> {
-        let id = self.next_id();
-        let params = SemanticTokensParams {
+        self.send_request::<request::SemanticTokensFullRequest>(SemanticTokensParams {
             text_document: TextDocumentIdentifier { uri: self.main_file_uri.clone() },
             work_done_progress_params: Default::default(),
             partial_result_params: Default::default(),
-        };
-        self.send_raw(
-            id.clone(),
-            "textDocument/semanticTokens/full",
-            serde_json::to_value(params).unwrap(),
-        );
-        self.recv_until_response(id).and_then(|v| serde_json::from_value(v).ok())
+        })
     }
 
     pub fn inlay_hints(&mut self, range: Range) -> Option<Vec<InlayHint>> {
-        let id = self.next_id();
-        let params = InlayHintParams {
+        self.send_request::<request::InlayHintRequest>(InlayHintParams {
             text_document: TextDocumentIdentifier { uri: self.main_file_uri.clone() },
             range,
             work_done_progress_params: Default::default(),
-        };
-        self.send_raw(id.clone(), "textDocument/inlayHint", serde_json::to_value(params).unwrap());
-        self.recv_until_response(id).and_then(|v| serde_json::from_value(v).ok())
+        })
     }
 
     pub fn code_actions(&mut self, line: u32, character: u32) -> Option<CodeActionResponse> {
-        let id = self.next_id();
         let pos = Position { line, character };
-        let params = CodeActionParams {
+        self.send_request::<request::CodeActionRequest>(CodeActionParams {
             text_document: TextDocumentIdentifier { uri: self.main_file_uri.clone() },
             range: Range { start: pos, end: pos },
             context: CodeActionContext { diagnostics: vec![], only: None, trigger_kind: None },
             work_done_progress_params: Default::default(),
             partial_result_params: Default::default(),
-        };
-        self.send_raw(id.clone(), "textDocument/codeAction", serde_json::to_value(params).unwrap());
-        self.recv_until_response(id).and_then(|v| serde_json::from_value(v).ok())
+        })
     }
 }

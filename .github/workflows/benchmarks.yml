@@ -16,18 +16,7 @@ jobs:
           cache: false
       - uses: Swatinem/rust-cache@v2
       - name: run benchmarks (smoke test)
-        run: >
-          cargo bench --profile ci
-          --bench completions
-          --bench hover
-          --bench goto_definition
-          --bench references
-          --bench document_highlight
-          --bench formatting
-          --bench semantic_tokens
-          --bench inlay_hints
-          --bench code_actions
-          -- --test
+        run: cargo bench -- --test
 
   bench-codspeed:
     name: benchmarks (CodSpeed)
@@ -48,17 +37,7 @@ jobs:
         with:
           tool: cargo-codspeed
       - name: build benchmarks for CodSpeed
-        run: >
-          cargo codspeed build
-          --bench completions
-          --bench hover
-          --bench goto_definition
-          --bench references
-          --bench document_highlight
-          --bench formatting
-          --bench semantic_tokens
-          --bench inlay_hints
-          --bench code_actions
+        run: cargo codspeed build
       - name: run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v4
         with:

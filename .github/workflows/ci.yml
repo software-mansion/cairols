@@ -56,6 +56,9 @@ jobs:
 
   benchmarks:
     uses: ./.github/workflows/benchmarks.yml
+    permissions:
+      contents: read
+      id-token: write
 
   fmt:
     runs-on: ubuntu-latest
