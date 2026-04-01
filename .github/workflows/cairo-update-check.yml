@@ -79,7 +79,7 @@ jobs:
     needs: [ build-test, test ]
     steps:
       - name: Notify the team about workflow failure
-        uses: slackapi/slack-github-action@v2.1.1
+        uses: slackapi/slack-github-action@v3.0.1
         with:
           webhook: ${{ secrets.SLACK_CAIRO_UPDATE_CHECK_FAILURE_WEBHOOK_URL }}
           webhook-type: webhook-trigger
