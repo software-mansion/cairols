@@ -91,7 +91,6 @@ libc = "0.2.180"
 assert_fs = "1.1"
 cairo-language-server = { path = ".", features = ["testing"] }
 criterion = { package = "codspeed-criterion-compat", version = "4", features = ["html_reports"] }
-insta = { version = "1.46", features = ["toml", "json", "redactions"] }
 insta = { version = "1.47", features = ["toml", "json", "redactions"] }
 pathdiff = "0.2"
 regex = "1.12.3"
