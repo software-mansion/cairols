@@ -8,12 +8,17 @@ use lsp_types::notification::{
     DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
     Notification as LspNotification,
 };
-use lsp_types::request::{Completion, GotoDefinition, HoverRequest, References, RegisterCapability, Request as LspRequest};
+use lsp_types::request::{
+    Completion, GotoDefinition, HoverRequest, References, RegisterCapability, Request as LspRequest,
+    SemanticTokensFullRequest,
+};
 use lsp_types::{
     ClientCapabilities, CompletionClientCapabilities, CompletionParams, Diagnostic,
     DidChangeTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
     HoverClientCapabilities, HoverParams, Position, PublishDiagnosticsParams,
     ReferenceClientCapabilities, ReferenceContext, ReferenceParams,
+    SemanticTokensClientCapabilities, SemanticTokensClientCapabilitiesRequests,
+    SemanticTokensFullOptions, SemanticTokensParams, SemanticTokensResult,
     TextDocumentClientCapabilities, TextDocumentContentChangeEvent, TextDocumentIdentifier,
     TextDocumentItem, TextDocumentPositionParams, Url, WorkspaceClientCapabilities,
     WorkspaceFolder, lsp_notification, lsp_request,
@@ -287,6 +292,20 @@ impl BenchmarkClient {
             work_done_progress_params: Default::default(),
             partial_result_params: Default::default(),
             context: ReferenceContext { include_declaration: true },
+        })
+    }
+
+    pub fn request_semantic_tokens(
+        &mut self,
+        path: impl AsRef<Path>,
+    ) -> Option<SemanticTokensResult> {
+        self.send_request::<SemanticTokensFullRequest>(SemanticTokensParams {
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+            text_document: TextDocumentIdentifier {
+                uri: Url::from_file_path(absolutize(&self.project_root, path.as_ref()))
+                    .expect("path must be valid file path"),
+            },
         })
     }
 
@@ -567,6 +586,13 @@ fn benchmark_capabilities() -> ClientCapabilities {
             completion: Some(CompletionClientCapabilities::default()),
             references: Some(ReferenceClientCapabilities::default()),
             definition: Some(lsp_types::GotoCapability::default()),
+            semantic_tokens: Some(SemanticTokensClientCapabilities {
+                requests: SemanticTokensClientCapabilitiesRequests {
+                    full: Some(SemanticTokensFullOptions::Bool(true)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
             synchronization: Some(lsp_types::TextDocumentSyncClientCapabilities {
                 did_save: Some(true),
                 ..Default::default()

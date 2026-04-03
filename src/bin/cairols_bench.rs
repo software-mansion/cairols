@@ -140,7 +140,12 @@ fn run_target(config: &Config, target: BenchmarkTarget) -> Result<ProjectBenchma
     ));
 
     eprintln!("  mixed loop");
-    let mixed_loop = run_mixed_loop(&mut client, &representative_files, config.mixed_rounds);
+    let mixed_loop = run_mixed_loop(
+        &mut client,
+        &representative_files,
+        config.mixed_rounds,
+        config.include_semantic_tokens,
+    );
     checkpoints.push(snapshot(
         "afterMixedLoop",
         &client.dump_benchmark_snapshot("afterMixedLoop").memory,
@@ -206,6 +211,7 @@ fn run_mixed_loop(
     client: &mut BenchmarkClient,
     files: &[PathBuf],
     rounds: usize,
+    include_semantic_tokens: bool,
 ) -> MixedPhaseMetrics {
     let mut timings = BTreeMap::new();
     let total_started = Instant::now();
@@ -232,6 +238,12 @@ fn run_mixed_loop(
             eprintln!("      request references");
             let _ = client.request_references(file, position);
         });
+        if include_semantic_tokens {
+            time_request(&mut timings, "semanticTokens", || {
+                eprintln!("      request semanticTokens");
+                let _ = client.request_semantic_tokens(file);
+            });
+        }
     }
 
     MixedPhaseMetrics {
@@ -504,6 +516,7 @@ struct Config {
     edit_files: usize,
     edit_iterations: usize,
     mixed_rounds: usize,
+    include_semantic_tokens: bool,
     idle_duration_ms: u64,
     #[serde(skip_serializing)]
     idle_duration: Duration,
@@ -518,6 +531,7 @@ impl Config {
         let mut edit_files = 3;
         let mut edit_iterations = 20;
         let mut mixed_rounds = 8;
+        let mut include_semantic_tokens = false;
         let mut idle_duration_ms = 1_000;
 
         let mut iter = args.into_iter();
@@ -557,6 +571,9 @@ impl Config {
                 "--mixed-rounds" => {
                     mixed_rounds = iter.next().ok_or("missing value for --mixed-rounds")?.parse()?;
                 }
+                "--include-semantic-tokens" => {
+                    include_semantic_tokens = true;
+                }
                 "--idle-ms" => {
                     idle_duration_ms = iter.next().ok_or("missing value for --idle-ms")?.parse()?;
                 }
@@ -572,13 +589,14 @@ impl Config {
             edit_files,
             edit_iterations,
             mixed_rounds,
+            include_semantic_tokens,
             idle_duration_ms,
             idle_duration: Duration::from_millis(idle_duration_ms),
         })
     }
 
     fn child_args_for(&self, target: &BenchmarkTarget) -> Vec<String> {
-        let args = vec![
+        let mut args = vec![
             "--child-project-name".to_string(),
             target.project_name.clone(),
             "--child-root".to_string(),
@@ -598,6 +616,10 @@ impl Config {
             "--idle-ms".to_string(),
             self.idle_duration_ms.to_string(),
         ];
+
+        if self.include_semantic_tokens {
+            args.push("--include-semantic-tokens".to_string());
+        }
 
         args
     }
