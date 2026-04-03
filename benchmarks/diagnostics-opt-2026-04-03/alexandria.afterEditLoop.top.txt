@@ -1,0 +1,29 @@
+alexandria afterEditLoop
+
+[before]
+topStructs	other	SyntaxNodeData	450.5 MB	count=4217551
+topQueries	parser	alloc::vec::Vec<cairo_lang_syntax::node::SyntaxNode<'_>>	323.8 MB	count=2535426
+topStructs	other	get_children::interned_arguments	174.1 MB	count=2535426
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::function_with_body::FunctionBodyData<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	77.3 MB	count=2491
+topStructs	other	GreenId	44.4 MB	count=394986
+topStructs	other	LocationId	34.6 MB	count=264504
+topQueries	parser	cairo_lang_parser::db::SyntaxData<'_>	23.9 MB	count=11735
+topStructs	other	TypeId	21.6 MB	count=149041
+topQueries	semantic	core::result::Result<cairo_lang_semantic::expr::inference::solver::SolutionSet<'_, cairo_lang_semantic::expr::inference::canonic::CanonicalImpl<'_>>, cairo_lang_semantic::expr::inference::InferenceError<'_>>	19.9 MB	count=32748
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::function_with_body::FunctionBodyData<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	19.2 MB	count=2500
+topStructs	other	ImplVarId	13.1 MB	count=131949
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::functions::Signature<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	12.8 MB	count=67494
+
+[after]
+topStructs	other	SyntaxNodeData	108.5 MB	count=1016073
+topQueries	parser	alloc::vec::Vec<cairo_lang_syntax::node::SyntaxNode<'_>>	76.7 MB	count=596990
+topStructs	other	get_children::interned_arguments	41.0 MB	count=596990
+topStructs	other	GreenId	30.9 MB	count=271503
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::function_with_body::FunctionBodyData<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	23.0 MB	count=747
+topQueries	parser	cairo_lang_parser::db::SyntaxData<'_>	8.7 MB	count=2869
+topStructs	other	LocationId	7.3 MB	count=55376
+topStructs	other	TypeId	5.6 MB	count=38834
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::functions::Signature<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	3.4 MB	count=18046
+topStructs	other	ImplVarId	3.3 MB	count=33668
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::functions::Signature<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	3.3 MB	count=17544
+topStructs	other	ConcreteTraitId	2.7 MB	count=26570

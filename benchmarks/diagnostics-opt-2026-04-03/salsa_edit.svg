@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320">
+<style>text{font-family:Menlo,monospace;font-size:12px} .title{font-size:16px;font-weight:bold}</style>
+<text class="title" x="60" y="30">Salsa After Edit Loop (MB)</text>
+<line x1="60" y1="260" x2="840" y2="260" stroke="black"/>
+<line x1="60" y1="60" x2="60" y2="260" stroke="black"/>
+<line x1="56" y1="260.0" x2="840" y2="260.0" stroke="#ddd"/>
+<text x="8" y="264.0">0</text>
+<line x1="56" y1="220.0" x2="840" y2="220.0" stroke="#ddd"/>
+<text x="8" y="224.0">557</text>
+<line x1="56" y1="180.0" x2="840" y2="180.0" stroke="#ddd"/>
+<text x="8" y="184.0">1114</text>
+<line x1="56" y1="140.0" x2="840" y2="140.0" stroke="#ddd"/>
+<text x="8" y="144.0">1671</text>
+<line x1="56" y1="100.0" x2="840" y2="100.0" stroke="#ddd"/>
+<text x="8" y="104.0">2228</text>
+<line x1="56" y1="60.0" x2="840" y2="60.0" stroke="#ddd"/>
+<text x="8" y="64.0">2786</text>
+<rect x="60" y="156.5" width="70" height="103.5" fill="#c44"/>
+<text x="68" y="150.5">1441</text>
+<text x="68" y="278">before</text>
+<rect x="150" y="233.1" width="70" height="26.9" fill="#2a7"/>
+<text x="158" y="227.1">375</text>
+<text x="158" y="278">after</text>
+<text x="80" y="302">alexandria</text>
+<rect x="280" y="78.2" width="70" height="181.8" fill="#c44"/>
+<text x="288" y="72.2">2532</text>
+<text x="288" y="278">before</text>
+<rect x="370" y="169.7" width="70" height="90.3" fill="#2a7"/>
+<text x="378" y="163.7">1258</text>
+<text x="378" y="278">after</text>
+<text x="300" y="302">openzeppelin</text>
+</svg>

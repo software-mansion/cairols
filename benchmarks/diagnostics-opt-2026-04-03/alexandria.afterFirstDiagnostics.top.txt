@@ -1,0 +1,29 @@
+alexandria afterFirstDiagnostics
+
+[before]
+topStructs	other	SyntaxNodeData	442.4 MB	count=4141534
+topQueries	parser	alloc::vec::Vec<cairo_lang_syntax::node::SyntaxNode<'_>>	316.5 MB	count=2472473
+topStructs	other	get_children::interned_arguments	169.8 MB	count=2472473
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::function_with_body::FunctionBodyData<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	69.9 MB	count=2295
+topStructs	other	GreenId	44.4 MB	count=394977
+topStructs	other	LocationId	34.3 MB	count=261959
+topQueries	parser	cairo_lang_parser::db::SyntaxData<'_>	23.9 MB	count=11735
+topStructs	other	TypeId	20.4 MB	count=140199
+topQueries	semantic	core::result::Result<cairo_lang_semantic::expr::inference::solver::SolutionSet<'_, cairo_lang_semantic::expr::inference::canonic::CanonicalImpl<'_>>, cairo_lang_semantic::expr::inference::InferenceError<'_>>	19.9 MB	count=32748
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::function_with_body::FunctionBodyData<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	19.2 MB	count=2500
+topStructs	other	ImplVarId	12.1 MB	count=122289
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::functions::Signature<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	11.9 MB	count=62621
+
+[after]
+topStructs	other	SyntaxNodeData	77.8 MB	count=728373
+topQueries	parser	alloc::vec::Vec<cairo_lang_syntax::node::SyntaxNode<'_>>	52.7 MB	count=401430
+topStructs	other	GreenId	29.8 MB	count=262074
+topStructs	other	get_children::interned_arguments	27.6 MB	count=401430
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::function_with_body::FunctionBodyData<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	10.9 MB	count=419
+topQueries	parser	cairo_lang_parser::db::SyntaxData<'_>	7.5 MB	count=2160
+topStructs	other	LocationId	4.9 MB	count=37930
+topStructs	other	TypeId	3.1 MB	count=21517
+topStructs	other	SmolStrId	2.1 MB	count=27131
+topQueries	semantic	core::result::Result<cairo_lang_semantic::expr::inference::solver::SolutionSet<'_, cairo_lang_semantic::expr::inference::canonic::CanonicalImpl<'_>>, cairo_lang_semantic::expr::inference::InferenceError<'_>>	1.9 MB	count=3489
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::functions::Signature<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	1.8 MB	count=9366
+topQueries	parser	cairo_lang_utils::deque::Deque<cairo_lang_parser::lexer::LexerTerminal<'_>>	1.8 MB	count=2911

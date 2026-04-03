@@ -1,0 +1,29 @@
+openzeppelin afterEditLoop
+
+[before]
+topStructs	other	SyntaxNodeData	821.0 MB	count=7686329
+topQueries	parser	alloc::vec::Vec<cairo_lang_syntax::node::SyntaxNode<'_>>	561.7 MB	count=4281311
+topStructs	other	get_children::interned_arguments	294.0 MB	count=4281311
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::function_with_body::FunctionBodyData<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	93.6 MB	count=3922
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::function_with_body::FunctionBodyData<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	63.8 MB	count=11267
+topQueries	defs	alloc::sync::Arc<alloc::vec::Vec<(cairo_lang_defs::ids::ImportableId<'_>, alloc::string::String)>>	49.6 MB	count=955
+topStructs	other	GreenId	49.2 MB	count=430483
+topStructs	other	LocationId	39.4 MB	count=302552
+topQueries	parser	cairo_lang_parser::db::SyntaxData<'_>	36.3 MB	count=18429
+topQueries	semantic	core::result::Result<cairo_lang_semantic::expr::inference::solver::SolutionSet<'_, cairo_lang_semantic::expr::inference::canonic::CanonicalImpl<'_>>, cairo_lang_semantic::expr::inference::InferenceError<'_>>	29.9 MB	count=58509
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::imp::ImplFunctionDeclarationData<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	24.7 MB	count=11267
+topStructs	other	TypeId	23.7 MB	count=163521
+
+[after]
+topStructs	other	SyntaxNodeData	424.0 MB	count=3969148
+topQueries	parser	alloc::vec::Vec<cairo_lang_syntax::node::SyntaxNode<'_>>	288.2 MB	count=2194269
+topStructs	other	get_children::interned_arguments	150.7 MB	count=2194269
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::function_with_body::FunctionBodyData<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	65.1 MB	count=2249
+topStructs	other	GreenId	46.3 MB	count=403619
+topQueries	parser	cairo_lang_parser::db::SyntaxData<'_>	29.3 MB	count=11766
+topStructs	other	LocationId	11.5 MB	count=87765
+topStructs	other	TypeId	10.6 MB	count=73006
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::function_with_body::FunctionBodyData<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	10.4 MB	count=1751
+topQueries	defs	core::result::Result<cairo_lang_defs::db::PrivModuleSubFiles<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	9.8 MB	count=4344
+topStructs	other	ImplVarId	9.3 MB	count=94201
+topQueries	semantic	core::result::Result<cairo_lang_semantic::items::functions::Signature<'_>, cairo_lang_diagnostics::diagnostics::DiagnosticAdded>	8.7 MB	count=44681

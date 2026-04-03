@@ -1,0 +1,92 @@
+benchmarking open-zeppelin at /Users/jsmolka/Work/cairo-projects/ecosystem/open-zeppelin/Scarb.toml
+  cold open
+    waiting for project update notification
+    project update notification received
+  first diagnostics
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+  edit loop
+    edit iteration 1 on /Users/jsmolka/Work/cairo-projects/ecosystem/open-zeppelin/packages/token/src/tests/erc4626/test_erc4626.cairo
+      applying edit
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+      restoring original content
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+    edit iteration 2 on /Users/jsmolka/Work/cairo-projects/ecosystem/open-zeppelin/packages/governance/src/tests/governor/timestamp/test_governor.cairo
+      applying edit
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+      restoring original content
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+    edit iteration 3 on /Users/jsmolka/Work/cairo-projects/ecosystem/open-zeppelin/packages/token/src/tests/erc4626/test_erc4626.cairo
+      applying edit
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+      restoring original content
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+    edit iteration 4 on /Users/jsmolka/Work/cairo-projects/ecosystem/open-zeppelin/packages/governance/src/tests/governor/timestamp/test_governor.cairo
+      applying edit
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+      restoring original content
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+  mixed loop
+    mixed round 1 on /Users/jsmolka/Work/cairo-projects/ecosystem/open-zeppelin/packages/token/src/tests/erc4626/test_erc4626.cairo
+      request hover
+      request gotoDefinition
+      request completion
+      request references
+    mixed round 2 on /Users/jsmolka/Work/cairo-projects/ecosystem/open-zeppelin/packages/governance/src/tests/governor/timestamp/test_governor.cairo
+      request hover
+      request gotoDefinition
+      request completion
+      request references
+  forced swap
+    waiting for database swapped notification
+    database swapped notification received: forced by benchmark or test request
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached

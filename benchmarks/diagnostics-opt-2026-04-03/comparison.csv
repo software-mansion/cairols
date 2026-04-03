@@ -1,0 +1,5 @@
+project,variant,cold_open_ms,first_diagnostics_ms,edit_loop_ms,mixed_loop_ms,force_swap_ms,after_first_rss_mb,after_edit_rss_mb,after_mixed_rss_mb,after_forced_swap_rss_mb,after_first_salsa_mb,after_edit_salsa_mb,after_mixed_salsa_mb,after_forced_swap_salsa_mb
+alexandria,before,253,45012,28878,270,54060,3812.0,3561.7,3731.8,4963.4,1401.2,1441.5,1443.2,1401.2
+alexandria,after,262,14120,31992,299,16442,789.4,1214.7,1395.3,1504.4,264.0,375.1,377.0,334.9
+openzeppelin,before,367,70240,111833,824,77100,5508.9,6892.9,6783.7,6249.3,2467.7,2532.4,2535.6,2467.7
+openzeppelin,after,219,39109,82529,899,48337,2026.1,4179.8,4301.6,4133.2,785.9,1258.3,1264.4,1193.6
