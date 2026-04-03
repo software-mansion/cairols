@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="420" viewBox="0 0 760 420">
+<style>text{font-family:Arial,sans-serif;font-size:12px} .label{font-size:14px;font-weight:bold}</style>
+<rect x="0" y="0" width="760" height="420" fill="white"/>
+<text x="380.0" y="18" text-anchor="middle" class="label">Aggregate vs granular file-content updates</text>
+<line x1="70" y1="370.0" x2="740" y2="370.0" stroke="#e0e0e0"/>
+<text x="62" y="374.0" text-anchor="end">0</text>
+<line x1="70" y1="285.0" x2="740" y2="285.0" stroke="#e0e0e0"/>
+<text x="62" y="289.0" text-anchor="end">218</text>
+<line x1="70" y1="200.0" x2="740" y2="200.0" stroke="#e0e0e0"/>
+<text x="62" y="204.0" text-anchor="end">436</text>
+<line x1="70" y1="115.0" x2="740" y2="115.0" stroke="#e0e0e0"/>
+<text x="62" y="119.0" text-anchor="end">653</text>
+<line x1="70" y1="30.0" x2="740" y2="30.0" stroke="#e0e0e0"/>
+<text x="62" y="34.0" text-anchor="end">871</text>
+<line x1="70.0" y1="30" x2="70.0" y2="370" stroke="#f0f0f0"/>
+<text x="70.0" y="390" text-anchor="middle">1</text>
+<line x1="251.1" y1="30" x2="251.1" y2="370" stroke="#f0f0f0"/>
+<text x="251.1" y="390" text-anchor="middle">10</text>
+<line x1="432.3" y1="30" x2="432.3" y2="370" stroke="#f0f0f0"/>
+<text x="432.3" y="390" text-anchor="middle">100</text>
+<line x1="613.4" y1="30" x2="613.4" y2="370" stroke="#f0f0f0"/>
+<text x="613.4" y="390" text-anchor="middle">1000</text>
+<line x1="740.0" y1="30" x2="740.0" y2="370" stroke="#f0f0f0"/>
+<text x="740.0" y="390" text-anchor="middle">5000</text>
+<line x1="70" y1="370" x2="740" y2="370" stroke="#333"/>
+<line x1="70" y1="30" x2="70" y2="370" stroke="#333"/>
+<polyline fill="none" stroke="#c0392b" stroke-width="2.5" points="70.0,362.2 251.1,361.4 432.3,354.9 613.4,293.6 740.0,30.0"/>
+<circle cx="70.0" cy="362.2" r="3.5" fill="#c0392b"/>
+<circle cx="251.1" cy="361.4" r="3.5" fill="#c0392b"/>
+<circle cx="432.3" cy="354.9" r="3.5" fill="#c0392b"/>
+<circle cx="613.4" cy="293.6" r="3.5" fill="#c0392b"/>
+<circle cx="740.0" cy="30.0" r="3.5" fill="#c0392b"/>
+<polyline fill="none" stroke="#1f77b4" stroke-width="2.5" points="70.0,358.0 251.1,358.5 432.3,358.4 613.4,358.2 740.0,357.9"/>
+<circle cx="70.0" cy="358.0" r="3.5" fill="#1f77b4"/>
+<circle cx="251.1" cy="358.5" r="3.5" fill="#1f77b4"/>
+<circle cx="432.3" cy="358.4" r="3.5" fill="#1f77b4"/>
+<circle cx="613.4" cy="358.2" r="3.5" fill="#1f77b4"/>
+<circle cx="740.0" cy="357.9" r="3.5" fill="#1f77b4"/>
+<polyline fill="none" stroke="#2ca02c" stroke-width="2.5" points="70.0,358.0 251.1,358.4 432.3,358.3 613.4,358.1 740.0,358.1"/>
+<circle cx="70.0" cy="358.0" r="3.5" fill="#2ca02c"/>
+<circle cx="251.1" cy="358.4" r="3.5" fill="#2ca02c"/>
+<circle cx="432.3" cy="358.3" r="3.5" fill="#2ca02c"/>
+<circle cx="613.4" cy="358.1" r="3.5" fill="#2ca02c"/>
+<circle cx="740.0" cy="358.1" r="3.5" fill="#2ca02c"/>
+<line x1="470" y1="55" x2="494" y2="55" stroke="#c0392b" stroke-width="2.5"/>
+<text x="500" y="59">Aggregate update</text>
+<line x1="470" y1="77" x2="494" y2="77" stroke="#1f77b4" stroke-width="2.5"/>
+<text x="500" y="81">Granular editor update</text>
+<line x1="470" y1="99" x2="494" y2="99" stroke="#2ca02c" stroke-width="2.5"/>
+<text x="500" y="103">Granular generated update</text>
+<text x="380.0" y="412" text-anchor="middle">Existing overridden files (log scale)</text>
+<text x="18" y="210.0" transform="rotate(-90 18 210.0)" text-anchor="middle">Median update time (µs)</text>
+</svg>

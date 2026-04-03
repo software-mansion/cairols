@@ -1,0 +1,6 @@
+existing_files,aggregate_insert_ns,aggregate_update_ns,granular_editor_insert_ns,granular_editor_update_ns,granular_generated_insert_ns,granular_generated_update_ns
+1,25500,20084,30833,30625,30708,30792
+10,23167,22125,29583,29459,29708,29625
+100,38708,38750,30000,29791,29459,29875
+1000,195375,195625,30209,30209,30125,30541
+5000,861167,871000,30792,31042,30458,30416

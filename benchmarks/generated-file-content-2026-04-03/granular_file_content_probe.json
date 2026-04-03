@@ -1,0 +1,50 @@
+{
+  "repetitions": 25,
+  "results": [
+    {
+      "existing_files": 1,
+      "aggregate_insert_ns": 25500,
+      "aggregate_update_ns": 20084,
+      "granular_editor_insert_ns": 30833,
+      "granular_editor_update_ns": 30625,
+      "granular_generated_insert_ns": 30708,
+      "granular_generated_update_ns": 30792
+    },
+    {
+      "existing_files": 10,
+      "aggregate_insert_ns": 23167,
+      "aggregate_update_ns": 22125,
+      "granular_editor_insert_ns": 29583,
+      "granular_editor_update_ns": 29459,
+      "granular_generated_insert_ns": 29708,
+      "granular_generated_update_ns": 29625
+    },
+    {
+      "existing_files": 100,
+      "aggregate_insert_ns": 38708,
+      "aggregate_update_ns": 38750,
+      "granular_editor_insert_ns": 30000,
+      "granular_editor_update_ns": 29791,
+      "granular_generated_insert_ns": 29459,
+      "granular_generated_update_ns": 29875
+    },
+    {
+      "existing_files": 1000,
+      "aggregate_insert_ns": 195375,
+      "aggregate_update_ns": 195625,
+      "granular_editor_insert_ns": 30209,
+      "granular_editor_update_ns": 30209,
+      "granular_generated_insert_ns": 30125,
+      "granular_generated_update_ns": 30541
+    },
+    {
+      "existing_files": 5000,
+      "aggregate_insert_ns": 861167,
+      "aggregate_update_ns": 871000,
+      "granular_editor_insert_ns": 30792,
+      "granular_editor_update_ns": 31042,
+      "granular_generated_insert_ns": 30458,
+      "granular_generated_update_ns": 30416
+    }
+  ]
+}
