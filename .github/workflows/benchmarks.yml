@@ -21,7 +21,7 @@ jobs:
   bench-codspeed:
     name: benchmarks (CodSpeed)
     if: github.event_name != 'merge_group'
-    runs-on: ubuntu-latest
+    runs-on: codspeed-runner
     needs:
       - bench
     permissions:
@@ -52,5 +52,4 @@ jobs:
       - name: run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v4
         with:
-          mode: simulation
           run: cargo codspeed run
