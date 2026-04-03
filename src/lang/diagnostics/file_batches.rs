@@ -35,7 +35,18 @@ pub fn find_secondary_files<'db>(
     primary_files: &HashSet<FileId<'db>>,
 ) -> Vec<FileId<'db>> {
     let mut result = HashSet::new();
-    for crate_id in db.crates() {
+    let target_crates = if primary_files.is_empty() {
+        db.crates().to_vec()
+    } else {
+        let crates = primary_files
+            .iter()
+            .filter_map(|file_id| db.file_modules(*file_id).ok())
+            .flat_map(|modules| modules.iter().map(|module_id| module_id.owning_crate(db)))
+            .collect::<HashSet<_>>();
+        if crates.is_empty() { db.crates().to_vec() } else { crates.into_iter().collect() }
+    };
+
+    for crate_id in &target_crates {
         for module_id in db.crate_modules(*crate_id).iter() {
             // Schedule only on disk module main files for refreshing.
             // All other related files will be refreshed along with it in a single job.
@@ -46,6 +57,14 @@ pub fn find_secondary_files<'db>(
                 result.insert(file);
             }
         }
+    }
+    if std::env::var_os("CAIRO_LS_TRACE_PROJECT_RELOADS").is_some() {
+        eprintln!(
+            "diagnostics_batches: primary_files={} target_crates={} secondary_files={}",
+            primary_files.len(),
+            target_crates.len(),
+            result.len()
+        );
     }
     result.into_iter().collect()
 }

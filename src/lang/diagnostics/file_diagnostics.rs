@@ -3,7 +3,7 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_diagnostics::{Diagnostics, PluginFileDiagnosticNotes};
+use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, PluginFileDiagnosticNotes};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -62,9 +62,9 @@ impl<'db> FilesDiagnostics<'db> {
         let mut files_notes: PluginFileDiagnosticNotes = OrderedHashMap::default();
         let root_on_disk_file_url = db.url_for_file(root_on_disk_file)?;
 
-        let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
-        let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
-        let mut parser_file_diagnostics: Vec<ParserDiagnostic> = vec![];
+        let mut semantic_diagnostics = DiagnosticsBuilder::default();
+        let mut lowering_diagnostics = DiagnosticsBuilder::default();
+        let mut parser_diagnostics = DiagnosticsBuilder::default();
 
         let root_path_string = root_on_disk_file.full_path(db);
         let root_path = Path::new(root_path_string.as_str());
@@ -92,18 +92,14 @@ impl<'db> FilesDiagnostics<'db> {
             }
 
             let semantic_started = Instant::now();
-            semantic_file_diagnostics.extend(
-                info_span!("db.module_semantic_diagnostics").in_scope(|| {
-                    db.module_semantic_diagnostics(module_id).unwrap_or_default().get_all()
-                }),
-            );
+            info_span!("db.module_semantic_diagnostics").in_scope(|| {
+                semantic_diagnostics.extend(db.module_semantic_diagnostics(module_id).unwrap_or_default());
+            });
             semantic_elapsed += semantic_started.elapsed();
             let lowering_started = Instant::now();
-            lowering_file_diagnostics.extend(
-                info_span!("db.module_lowering_diagnostics").in_scope(|| {
-                    db.module_lowering_diagnostics(module_id).unwrap_or_default().get_all()
-                }),
-            );
+            info_span!("db.module_lowering_diagnostics").in_scope(|| {
+                lowering_diagnostics.extend(db.module_lowering_diagnostics(module_id).unwrap_or_default());
+            });
             lowering_elapsed += lowering_started.elapsed();
 
             // Here we check for 2 things:
@@ -111,24 +107,24 @@ impl<'db> FilesDiagnostics<'db> {
             // 2. If the file comes from the scarb cache. (A heuristic to avoid linting deps)
             if config.enable_linter && !scarb_toolchain.is_from_scarb_cache(root_path) {
                 let linter_started = Instant::now();
-                semantic_file_diagnostics.extend(info_span!("db.linter_diagnostics").in_scope(
-                    || {
+                semantic_diagnostics.extend(info_span!("db.linter_diagnostics").in_scope(|| {
+                    Diagnostics::from_iter(
                         db.linter_diagnostics(linter_params.clone(), module_id).iter().map(|diag| {
                             SemanticDiagnostic::new(
                                 StableLocation::new(diag.stable_ptr),
                                 SemanticDiagnosticKind::PluginDiagnostic(diag.clone()),
                                 module_id,
                             )
-                        })
-                    },
-                ));
+                        }),
+                    )
+                }));
                 linter_elapsed += linter_started.elapsed();
             }
         }
 
         for file_id in files_to_process.iter() {
             let parser_started = Instant::now();
-            parser_file_diagnostics.extend(db.file_syntax_diagnostics(*file_id).get_all());
+            parser_diagnostics.extend(db.file_syntax_diagnostics(*file_id).clone());
             parser_elapsed += parser_started.elapsed();
         }
 
@@ -149,9 +145,9 @@ impl<'db> FilesDiagnostics<'db> {
 
         Some(FilesDiagnostics {
             root_on_disk_file: (root_on_disk_file_url, root_on_disk_file),
-            parser: Diagnostics::from_iter(parser_file_diagnostics),
-            semantic: Diagnostics::from_iter(semantic_file_diagnostics),
-            lowering: Diagnostics::from_iter(lowering_file_diagnostics),
+            parser: parser_diagnostics.build(),
+            semantic: semantic_diagnostics.build(),
+            lowering: lowering_diagnostics.build(),
             files_notes,
         })
     }
