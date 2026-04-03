@@ -1,10 +1,11 @@
 use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FreeFunctionLongId,
-    ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId, ImplItemId,
-    LanguageElementId, LookupItemId, MacroDeclarationLongId, ModuleId, ModuleItemId,
-    ModuleTypeAliasLongId, StructLongId, TraitConstantLongId, TraitFunctionLongId, TraitImplLongId,
-    TraitItemId, TraitLongId, TraitTypeLongId, UseLongId, VarId,
+    ImplAliasLongId, ImplConstantDefLongId, ImplDefLongId, ImplFunctionLongId, ImplImplDefLongId,
+    ImplItemId, ImplTypeDefLongId, LanguageElementId, LookupItemId, MacroDeclarationLongId,
+    ModuleId, ModuleItemId, ModuleTypeAliasLongId, StructLongId, TraitConstantLongId,
+    TraitFunctionLongId, TraitImplLongId, TraitItemId, TraitLongId, TraitTypeLongId, UseLongId,
+    VarId,
 };
 use cairo_lang_filesystem::db::{get_parent_and_mapping, translate_location};
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
@@ -360,20 +361,44 @@ fn lookup_item_from_ast<'db>(
                 })
                 .collect()
         }
-        SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
-            ModuleTypeAliasLongId(
-                module_id,
-                ast::ItemTypeAlias::from_syntax_node(db, node).stable_ptr(db),
-            )
-            .intern(db),
-        ))],
-        SyntaxKind::ItemImplAlias => vec![LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
-            ImplAliasLongId(
-                module_id,
-                ast::ItemImplAlias::from_syntax_node(db, node).stable_ptr(db),
-            )
-            .intern(db),
-        ))],
+        SyntaxKind::ItemTypeAlias => {
+            if is_in_impl {
+                vec![LookupItemId::ImplItem(ImplItemId::Type(
+                    ImplTypeDefLongId(
+                        module_id,
+                        ast::ItemTypeAlias::from_syntax_node(db, node).stable_ptr(db),
+                    )
+                    .intern(db),
+                ))]
+            } else {
+                vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
+                    ModuleTypeAliasLongId(
+                        module_id,
+                        ast::ItemTypeAlias::from_syntax_node(db, node).stable_ptr(db),
+                    )
+                    .intern(db),
+                ))]
+            }
+        }
+        SyntaxKind::ItemImplAlias => {
+            if is_in_impl {
+                vec![LookupItemId::ImplItem(ImplItemId::Impl(
+                    ImplImplDefLongId(
+                        module_id,
+                        ast::ItemImplAlias::from_syntax_node(db, node).stable_ptr(db),
+                    )
+                    .intern(db),
+                ))]
+            } else {
+                vec![LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
+                    ImplAliasLongId(
+                        module_id,
+                        ast::ItemImplAlias::from_syntax_node(db, node).stable_ptr(db),
+                    )
+                    .intern(db),
+                ))]
+            }
+        }
         SyntaxKind::ItemMacroDeclaration => {
             vec![LookupItemId::ModuleItem(ModuleItemId::MacroDeclaration(
                 MacroDeclarationLongId(
