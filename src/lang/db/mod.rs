@@ -2,7 +2,13 @@ use std::collections::{HashMap, HashSet};
 use std::ops::Not;
 use std::sync::{Arc, RwLock};
 
-use cairo_lang_defs::db::{DefsGroup, defs_group_input, init_defs_group, init_external_files};
+use cairo_lang_defs::db::{
+    GranularInlineMacroPluginOverride, GranularInlineMacroPluginOverrideStorage,
+    GranularInlineMacroPluginOverrideView, GranularMacroPluginOverride,
+    GranularMacroPluginOverrideStorage, GranularMacroPluginOverrideView, defs_group_input,
+    init_defs_group, init_external_files, register_granular_inline_macro_plugin_override_view,
+    register_granular_macro_plugin_override_view,
+};
 use cairo_lang_defs::ids::{InlineMacroExprPluginLongId, MacroPluginLongId};
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_executable_plugin::executable_plugin_suite;
@@ -18,7 +24,9 @@ use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::db::{
-    PluginSuiteInput, SemanticGroup, init_semantic_group, semantic_group_input,
+    GranularAnalyzerPluginOverride, GranularAnalyzerPluginOverrideStorage,
+    GranularAnalyzerPluginOverrideView, PluginSuiteInput, init_semantic_group,
+    register_granular_analyzer_plugin_override_view, semantic_group_input,
 };
 use cairo_lang_semantic::ids::AnalyzerPluginLongId;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
@@ -48,8 +56,103 @@ pub(crate) use self::memory_report::build_memory_usage_report;
 pub struct AnalysisDatabase {
     storage: salsa::Storage<Self>,
     current_granular_crate_configs: Arc<RwLock<OrderedHashMap<CrateInput, CrateConfigurationInput>>>,
+    current_granular_crate_plugin_suites:
+        Arc<RwLock<OrderedHashMap<CrateInput, CratePluginSuiteInputs>>>,
+    current_granular_crate_plugin_suite_fingerprints:
+        Arc<RwLock<OrderedHashMap<CrateInput, CratePluginSuiteFingerprint>>>,
     granular_crate_configs: Arc<RwLock<HashMap<CrateInput, GranularCrateConfig>>>,
     granular_file_contents: Arc<RwLock<HashMap<FileInput, GranularFileContents>>>,
+    granular_macro_plugin_overrides: GranularMacroPluginOverrideStorage,
+    granular_inline_macro_plugin_overrides: GranularInlineMacroPluginOverrideStorage,
+    granular_analyzer_plugin_overrides: GranularAnalyzerPluginOverrideStorage,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct CratePluginSuiteInputs {
+    macro_plugins: Arc<[MacroPluginLongId]>,
+    analyzer_plugins: Arc<[AnalyzerPluginLongId]>,
+    inline_macro_plugins: Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>,
+}
+
+impl From<PluginSuite> for CratePluginSuiteInputs {
+    fn from(value: PluginSuite) -> Self {
+        Self {
+            macro_plugins: Arc::from(
+                value.plugins.into_iter().map(MacroPluginLongId).collect::<Vec<_>>(),
+            ),
+            analyzer_plugins: Arc::from(
+                value.analyzer_plugins.into_iter().map(AnalyzerPluginLongId).collect::<Vec<_>>(),
+            ),
+            inline_macro_plugins: Arc::new(
+                value
+                    .inline_macro_plugins
+                    .into_iter()
+                    .map(|(key, value)| (key, InlineMacroExprPluginLongId(value)))
+                    .collect(),
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct CratePluginSuiteFingerprint {
+    macro_plugins: Arc<[usize]>,
+    analyzer_plugins: Arc<[usize]>,
+    inline_macro_plugins: Arc<OrderedHashMap<String, usize>>,
+}
+
+impl CratePluginSuiteFingerprint {
+    fn from_plugin_suite(value: &PluginSuite) -> Self {
+        Self {
+            macro_plugins: Arc::from(
+                value.plugins.iter().map(|plugin| plugin_identity(plugin)).collect::<Vec<_>>(),
+            ),
+            analyzer_plugins: Arc::from(
+                value
+                    .analyzer_plugins
+                    .iter()
+                    .map(|plugin| plugin_identity(plugin))
+                    .collect::<Vec<_>>(),
+            ),
+            inline_macro_plugins: Arc::new(
+                value
+                    .inline_macro_plugins
+                    .iter()
+                    .map(|(name, plugin)| (name.clone(), plugin_identity(plugin)))
+                    .collect(),
+            ),
+        }
+    }
+
+    fn from_inputs(value: &CratePluginSuiteInputs) -> Self {
+        Self {
+            macro_plugins: Arc::from(
+                value
+                    .macro_plugins
+                    .iter()
+                    .map(|plugin| plugin_identity(&plugin.0))
+                    .collect::<Vec<_>>(),
+            ),
+            analyzer_plugins: Arc::from(
+                value
+                    .analyzer_plugins
+                    .iter()
+                    .map(|plugin| plugin_identity(&plugin.0))
+                    .collect::<Vec<_>>(),
+            ),
+            inline_macro_plugins: Arc::new(
+                value
+                    .inline_macro_plugins
+                    .iter()
+                    .map(|(name, plugin)| (name.clone(), plugin_identity(&plugin.0)))
+                    .collect(),
+            ),
+        }
+    }
+}
+
+fn plugin_identity<T: ?Sized>(plugin: &Arc<T>) -> usize {
+    Arc::as_ptr(plugin) as *const () as usize
 }
 
 impl AnalysisDatabase {
@@ -58,12 +161,20 @@ impl AnalysisDatabase {
         let mut db = Self {
             storage: Default::default(),
             current_granular_crate_configs: Default::default(),
+            current_granular_crate_plugin_suites: Default::default(),
+            current_granular_crate_plugin_suite_fingerprints: Default::default(),
             granular_crate_configs: Default::default(),
             granular_file_contents: Default::default(),
+            granular_macro_plugin_overrides: Default::default(),
+            granular_inline_macro_plugin_overrides: Default::default(),
+            granular_analyzer_plugin_overrides: Default::default(),
         };
 
         register_files_group_view(&db);
         register_granular_crate_config_view(&db);
+        register_granular_macro_plugin_override_view(&db);
+        register_granular_inline_macro_plugin_override_view(&db);
+        register_granular_analyzer_plugin_override_view(&db);
         init_external_files(&mut db);
         init_files_group(&mut db);
         init_defs_group(&mut db);
@@ -324,6 +435,134 @@ impl AnalysisDatabase {
         }
     }
 
+    fn granular_macro_plugin_override_handle(
+        &self,
+        crate_input: &CrateInput,
+    ) -> Option<GranularMacroPluginOverride> {
+        self.granular_macro_plugin_overrides.read().unwrap().get(crate_input).copied()
+    }
+
+    fn granular_inline_macro_plugin_override_handle(
+        &self,
+        crate_input: &CrateInput,
+    ) -> Option<GranularInlineMacroPluginOverride> {
+        self.granular_inline_macro_plugin_overrides.read().unwrap().get(crate_input).copied()
+    }
+
+    fn granular_analyzer_plugin_override_handle(
+        &self,
+        crate_input: &CrateInput,
+    ) -> Option<GranularAnalyzerPluginOverride> {
+        self.granular_analyzer_plugin_overrides.read().unwrap().get(crate_input).copied()
+    }
+
+    fn ensure_granular_macro_plugin_override_handle(
+        &mut self,
+        crate_input: CrateInput,
+    ) -> GranularMacroPluginOverride {
+        if let Some(handle) = self.granular_macro_plugin_override_handle(&crate_input) {
+            return handle;
+        }
+
+        let handle = GranularMacroPluginOverride::new(self, None);
+        self.granular_macro_plugin_overrides.write().unwrap().insert(crate_input, handle);
+        let next =
+            defs_group_input(self).granular_macro_plugin_overrides_revision(self).saturating_add(1);
+        defs_group_input(self)
+            .set_granular_macro_plugin_overrides_revision(self)
+            .with_durability(Durability::HIGH)
+            .to(next);
+        handle
+    }
+
+    fn ensure_granular_inline_macro_plugin_override_handle(
+        &mut self,
+        crate_input: CrateInput,
+    ) -> GranularInlineMacroPluginOverride {
+        if let Some(handle) = self.granular_inline_macro_plugin_override_handle(&crate_input) {
+            return handle;
+        }
+
+        let handle = GranularInlineMacroPluginOverride::new(self, None);
+        self.granular_inline_macro_plugin_overrides.write().unwrap().insert(crate_input, handle);
+        let next = defs_group_input(self)
+            .granular_inline_macro_plugin_overrides_revision(self)
+            .saturating_add(1);
+        defs_group_input(self)
+            .set_granular_inline_macro_plugin_overrides_revision(self)
+            .with_durability(Durability::HIGH)
+            .to(next);
+        handle
+    }
+
+    fn ensure_granular_analyzer_plugin_override_handle(
+        &mut self,
+        crate_input: CrateInput,
+    ) -> GranularAnalyzerPluginOverride {
+        if let Some(handle) = self.granular_analyzer_plugin_override_handle(&crate_input) {
+            return handle;
+        }
+
+        let handle = GranularAnalyzerPluginOverride::new(self, None);
+        self.granular_analyzer_plugin_overrides.write().unwrap().insert(crate_input, handle);
+        let next = semantic_group_input(self)
+            .granular_analyzer_plugin_overrides_revision(self)
+            .saturating_add(1);
+        semantic_group_input(self)
+            .set_granular_analyzer_plugin_overrides_revision(self)
+            .with_durability(Durability::HIGH)
+            .to(next);
+        handle
+    }
+
+    fn apply_granular_crate_plugin_suite_for_input(
+        &mut self,
+        crate_input: CrateInput,
+        suite: Option<CratePluginSuiteInputs>,
+    ) {
+        match suite {
+            Some(suite) => {
+                assert!(
+                    suite.macro_plugins.first().is_none_or(
+                        |id| id.plugin_type_id() == ConfigPlugin::default().plugin_type_id()
+                    ),
+                    "cfg plugin must be the first macro plugin"
+                );
+
+                self.ensure_granular_macro_plugin_override_handle(crate_input.clone())
+                    .set_plugins(self)
+                    .with_durability(Durability::HIGH)
+                    .to(Some(suite.macro_plugins.clone()));
+                self.ensure_granular_inline_macro_plugin_override_handle(crate_input.clone())
+                    .set_plugins(self)
+                    .with_durability(Durability::HIGH)
+                    .to(Some(suite.inline_macro_plugins.clone()));
+                self.ensure_granular_analyzer_plugin_override_handle(crate_input)
+                    .set_plugins(self)
+                    .with_durability(Durability::HIGH)
+                    .to(Some(suite.analyzer_plugins.clone()));
+            }
+            None => {
+                if let Some(handle) = self.granular_macro_plugin_override_handle(&crate_input) {
+                    handle.set_plugins(self).with_durability(Durability::HIGH).to(None);
+                }
+                if let Some(handle) =
+                    self.granular_inline_macro_plugin_override_handle(&crate_input)
+                {
+                    handle.set_plugins(self).with_durability(Durability::HIGH).to(None);
+                }
+                if let Some(handle) = self.granular_analyzer_plugin_override_handle(&crate_input) {
+                    handle.set_plugins(self).with_durability(Durability::HIGH).to(None);
+                }
+            }
+        }
+    }
+
+    fn has_loaded_crate(&self, crate_input: &CrateInput) -> bool {
+        let crate_id = crate_input.clone().into_crate_long_id(self).intern(self);
+        self.crate_configs().contains_key(&crate_id)
+    }
+
     pub fn set_override_crate_plugins_from_suite(
         &mut self,
         crate_input: CrateInput,
@@ -336,19 +575,89 @@ impl AnalysisDatabase {
         &mut self,
         suites: impl IntoIterator<Item = (CrateInput, PluginSuite)>,
     ) {
-        self.with_plugin_overrides_batch(
-            suites,
-            |plugins, macro_plugins, analyzer_plugins, inline_macro_plugins| {
-                *macro_plugins = plugins.plugins.into_iter().map(MacroPluginLongId).collect();
-                *analyzer_plugins =
-                    plugins.analyzer_plugins.into_iter().map(AnalyzerPluginLongId).collect();
-                *inline_macro_plugins = plugins
-                    .inline_macro_plugins
-                    .into_iter()
-                    .map(|(key, value)| (key, InlineMacroExprPluginLongId(value)))
-                    .collect();
-            },
-        );
+        for (crate_input, plugins) in suites {
+            let suite_inputs = CratePluginSuiteInputs::from(plugins);
+            let fingerprint = CratePluginSuiteFingerprint::from_inputs(&suite_inputs);
+            if self
+                .current_granular_crate_plugin_suite_fingerprints
+                .read()
+                .unwrap()
+                .get(&crate_input)
+                == Some(&fingerprint)
+            {
+                continue;
+            }
+            self.current_granular_crate_plugin_suites
+                .write()
+                .unwrap()
+                .insert(crate_input.clone(), suite_inputs.clone());
+            self.current_granular_crate_plugin_suite_fingerprints
+                .write()
+                .unwrap()
+                .insert(crate_input.clone(), fingerprint);
+            self.apply_granular_crate_plugin_suite_for_input(crate_input, Some(suite_inputs));
+        }
+    }
+
+    pub fn clear_override_crate_plugins(&mut self, crate_input: CrateInput) {
+        self.current_granular_crate_plugin_suites.write().unwrap().swap_remove(&crate_input);
+        self.current_granular_crate_plugin_suite_fingerprints
+            .write()
+            .unwrap()
+            .swap_remove(&crate_input);
+        self.apply_granular_crate_plugin_suite_for_input(crate_input, None);
+    }
+
+    pub fn sync_granular_crate_plugin_suites(
+        &mut self,
+        suites: impl IntoIterator<Item = (CrateInput, PluginSuite)>,
+    ) {
+        let (changed, removed) = {
+            let mut current_fingerprints =
+                self.current_granular_crate_plugin_suite_fingerprints.write().unwrap();
+            let mut current = self.current_granular_crate_plugin_suites.write().unwrap();
+
+            let mut seen = HashSet::<CrateInput>::default();
+            let mut changed = Vec::new();
+
+            for (crate_input, suite) in suites {
+                seen.insert(crate_input.clone());
+                let fingerprint = CratePluginSuiteFingerprint::from_plugin_suite(&suite);
+                if current_fingerprints.get(&crate_input) == Some(&fingerprint) {
+                    continue;
+                }
+
+                let suite_inputs = CratePluginSuiteInputs::from(suite);
+                current_fingerprints.insert(crate_input.clone(), fingerprint);
+                current.insert(crate_input.clone(), suite_inputs.clone());
+                changed.push((crate_input, suite_inputs));
+            }
+
+            let removed = current_fingerprints
+                .keys()
+                .filter(|crate_input| !seen.contains(*crate_input))
+                .cloned()
+                .collect_vec();
+
+            if changed.is_empty() && removed.is_empty() {
+                return;
+            }
+
+            for crate_input in &removed {
+                current_fingerprints.swap_remove(crate_input);
+                current.swap_remove(crate_input);
+            }
+
+            (changed, removed)
+        };
+
+        for (crate_input, suite) in changed {
+            self.apply_granular_crate_plugin_suite_for_input(crate_input, Some(suite));
+        }
+
+        for crate_input in removed {
+            self.apply_granular_crate_plugin_suite_for_input(crate_input, None);
+        }
     }
 
     /// Returns the [`CfgSet`] that should be assumed in the initial database state
@@ -382,24 +691,67 @@ impl AnalysisDatabase {
         &mut self,
         suites: impl IntoIterator<Item = (CrateInput, PluginSuite)>,
     ) {
-        self.with_plugin_overrides_batch(
-            suites,
-            |plugins, macro_plugins, analyzer_plugins, inline_macro_plugins| {
-                let macro_plugins_set: HashSet<_> =
-                    plugins.plugins.into_iter().map(MacroPluginLongId).collect();
-                let analyzer_plugins_set: HashSet<_> =
-                    plugins.analyzer_plugins.into_iter().map(AnalyzerPluginLongId).collect();
-                let inline_macro_plugin_set: HashSet<_> = plugins
-                    .inline_macro_plugins
-                    .into_iter()
-                    .map(|(_, arc)| InlineMacroExprPluginLongId(arc))
-                    .collect();
+        for (crate_input, plugins) in suites {
+            let Some(current) = self
+                .current_granular_crate_plugin_suites
+                .read()
+                .unwrap()
+                .get(&crate_input)
+                .cloned()
+            else {
+                continue;
+            };
 
-                macro_plugins.retain(|plugin| !macro_plugins_set.contains(plugin));
-                analyzer_plugins.retain(|plugin| !analyzer_plugins_set.contains(plugin));
-                inline_macro_plugins.retain(|_, plugin| !inline_macro_plugin_set.contains(plugin));
-            },
-        )
+            let macro_plugins_set: HashSet<_> =
+                plugins.plugins.into_iter().map(MacroPluginLongId).collect();
+            let analyzer_plugins_set: HashSet<_> =
+                plugins.analyzer_plugins.into_iter().map(AnalyzerPluginLongId).collect();
+            let inline_macro_plugin_set: HashSet<_> = plugins
+                .inline_macro_plugins
+                .into_iter()
+                .map(|(_, arc)| InlineMacroExprPluginLongId(arc))
+                .collect();
+
+            let next_suite = CratePluginSuiteInputs {
+                macro_plugins: Arc::from(
+                    current
+                        .macro_plugins
+                        .iter()
+                        .filter(|plugin| !macro_plugins_set.contains(*plugin))
+                        .cloned()
+                        .collect::<Vec<_>>(),
+                ),
+                analyzer_plugins: Arc::from(
+                    current
+                        .analyzer_plugins
+                        .iter()
+                        .filter(|plugin| !analyzer_plugins_set.contains(*plugin))
+                        .cloned()
+                        .collect::<Vec<_>>(),
+                ),
+                inline_macro_plugins: Arc::new(
+                    current
+                        .inline_macro_plugins
+                        .iter()
+                        .filter(|(_, plugin)| !inline_macro_plugin_set.contains(*plugin))
+                        .map(|(name, plugin)| (name.clone(), plugin.clone()))
+                        .collect(),
+                ),
+            };
+
+            self.current_granular_crate_plugin_suites
+                .write()
+                .unwrap()
+                .insert(crate_input.clone(), next_suite.clone());
+            self.current_granular_crate_plugin_suite_fingerprints
+                .write()
+                .unwrap()
+                .insert(
+                    crate_input.clone(),
+                    CratePluginSuiteFingerprint::from_inputs(&next_suite),
+                );
+            self.apply_granular_crate_plugin_suite_for_input(crate_input, Some(next_suite));
+        }
     }
 
     /// Adds proc macro plugin suite to the database for a crate with [`CrateInput`] if this
@@ -410,100 +762,61 @@ impl AnalysisDatabase {
     /// It is done to make sure proc macros are resolved first, just like in
     /// [`crate::project::Crate::apply`].
     pub fn add_proc_macro_plugin_suite(&mut self, crate_input: CrateInput, plugins: PluginSuite) {
-        self.with_plugin_overrides_batch(
-            std::iter::once((crate_input, plugins)),
-            move |plugins, macro_plugins, analyzer_plugins, inline_macro_plugins| {
-                let maybe_cfg_plugin =
-                    macro_plugins.is_empty().not().then(|| macro_plugins.remove(0));
-                *macro_plugins = maybe_cfg_plugin
-                    .into_iter()
-                    .chain(plugins.plugins.into_iter().map(MacroPluginLongId))
-                    .chain(macro_plugins.iter().cloned())
-                    .collect();
-
-                *analyzer_plugins = plugins
-                    .analyzer_plugins
-                    .into_iter()
-                    .map(AnalyzerPluginLongId)
-                    .chain(analyzer_plugins.iter().cloned())
-                    .collect();
-
-                *inline_macro_plugins = plugins
-                    .inline_macro_plugins
-                    .into_iter()
-                    .map(|(key, arc)| (key, InlineMacroExprPluginLongId(arc)))
-                    .chain(inline_macro_plugins.iter().map(|(s, id)| (s.clone(), id.clone())))
-                    .collect();
-            },
-        )
-    }
-
-    fn with_plugin_overrides_batch(
-        &mut self,
-        suites: impl IntoIterator<Item = (CrateInput, PluginSuite)>,
-        action: impl Fn(
-            PluginSuite,
-            &mut Vec<MacroPluginLongId>,
-            &mut Vec<AnalyzerPluginLongId>,
-            &mut OrderedHashMap<String, InlineMacroExprPluginLongId>,
-        ),
-    ) {
-        let suites = suites.into_iter().collect_vec();
-
-        let crate_ids = self.crate_configs().keys().copied().collect::<HashSet<_>>();
-        let mut macro_plugin_overrides_input = self.macro_plugin_overrides_input().clone();
-        let mut analyzer_plugin_overrides_input = self.analyzer_plugin_overrides_input().clone();
-        let mut inline_macro_plugin_overrides_input =
-            self.inline_macro_plugin_overrides_input().clone();
-
-        for (crate_input, plugins) in suites {
-            let crate_id = crate_input.clone().into_crate_long_id(self).intern(self);
-            if !crate_ids.contains(&crate_id) {
-                continue;
-            }
-
-            let mut macro_plugins = macro_plugin_overrides_input
-                .get(&crate_input)
-                .map(|a| a.to_vec())
-                .unwrap_or_default();
-            let mut analyzer_plugins = analyzer_plugin_overrides_input
-                .get(&crate_input)
-                .map(|a| a.to_vec())
-                .unwrap_or_default();
-            let mut inline_macro_plugins = inline_macro_plugin_overrides_input
-                .get(&crate_input)
-                .map(|a| (**a).clone())
-                .unwrap_or_default();
-
-            action(
-                plugins.clone(),
-                &mut macro_plugins,
-                &mut analyzer_plugins,
-                &mut inline_macro_plugins,
-            );
-
-            assert!(
-                macro_plugins
-                    .first()
-                    .is_none_or(|id| id.plugin_type_id() == ConfigPlugin::default().plugin_type_id()),
-                "cfg plugin must be the first macro plugin"
-            );
-
-            macro_plugin_overrides_input.insert(crate_input.clone(), macro_plugins.into());
-            analyzer_plugin_overrides_input.insert(crate_input.clone(), analyzer_plugins.into());
-            inline_macro_plugin_overrides_input
-                .insert(crate_input.clone(), inline_macro_plugins.into());
+        if !self.has_loaded_crate(&crate_input) {
+            return;
         }
 
-        defs_group_input(self)
-            .set_macro_plugin_overrides(self)
-            .to(Some(macro_plugin_overrides_input));
-        defs_group_input(self)
-            .set_inline_macro_plugin_overrides(self)
-            .to(Some(inline_macro_plugin_overrides_input));
-        semantic_group_input(self)
-            .set_analyzer_plugin_overrides(self)
-            .to(Some(analyzer_plugin_overrides_input));
+        let mut current = self
+            .current_granular_crate_plugin_suites
+            .read()
+            .unwrap()
+            .get(&crate_input)
+            .cloned()
+            .unwrap_or_default();
+
+        let mut macro_plugins = current.macro_plugins.iter().cloned().collect_vec();
+        let maybe_cfg_plugin = macro_plugins.is_empty().not().then(|| macro_plugins.remove(0));
+        current.macro_plugins = Arc::from(
+            maybe_cfg_plugin
+                .into_iter()
+                .chain(plugins.plugins.into_iter().map(MacroPluginLongId))
+                .chain(macro_plugins)
+                .collect::<Vec<_>>(),
+        );
+        current.analyzer_plugins = Arc::from(
+            plugins
+                .analyzer_plugins
+                .into_iter()
+                .map(AnalyzerPluginLongId)
+                .chain(current.analyzer_plugins.iter().cloned())
+                .collect::<Vec<_>>(),
+        );
+        current.inline_macro_plugins = Arc::new(
+            plugins
+                .inline_macro_plugins
+                .into_iter()
+                .map(|(key, arc)| (key, InlineMacroExprPluginLongId(arc)))
+                .chain(
+                    current
+                        .inline_macro_plugins
+                        .iter()
+                        .map(|(name, id)| (name.clone(), id.clone())),
+                )
+                .collect(),
+        );
+
+        self.current_granular_crate_plugin_suites
+            .write()
+            .unwrap()
+            .insert(crate_input.clone(), current.clone());
+        self.current_granular_crate_plugin_suite_fingerprints
+            .write()
+            .unwrap()
+            .insert(
+                crate_input.clone(),
+                CratePluginSuiteFingerprint::from_inputs(&current),
+            );
+        self.apply_granular_crate_plugin_suite_for_input(crate_input, Some(current));
     }
 
     fn default_global_plugin_suite() -> PluginSuite {
@@ -571,6 +884,28 @@ impl GranularCrateConfigView for AnalysisDatabase {
         crate_input: &CrateInput,
     ) -> Option<&'db CrateConfigurationInput> {
         self.granular_crate_config_handle(crate_input)?.config(self).as_ref()
+    }
+}
+
+impl GranularMacroPluginOverrideView for AnalysisDatabase {
+    fn granular_macro_plugin_override_storage(&self) -> Option<&GranularMacroPluginOverrideStorage> {
+        Some(&self.granular_macro_plugin_overrides)
+    }
+}
+
+impl GranularInlineMacroPluginOverrideView for AnalysisDatabase {
+    fn granular_inline_macro_plugin_override_storage(
+        &self,
+    ) -> Option<&GranularInlineMacroPluginOverrideStorage> {
+        Some(&self.granular_inline_macro_plugin_overrides)
+    }
+}
+
+impl GranularAnalyzerPluginOverrideView for AnalysisDatabase {
+    fn granular_analyzer_plugin_override_storage(
+        &self,
+    ) -> Option<&GranularAnalyzerPluginOverrideStorage> {
+        Some(&self.granular_analyzer_plugin_overrides)
     }
 }
 

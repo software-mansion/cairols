@@ -11,9 +11,10 @@ use cairo_lang_filesystem::ids::{CrateId, CrateInput, Directory, DirectoryInput}
 use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Intern;
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
-use itertools::chain;
+use itertools::{Itertools, chain};
 
 use super::builtin_plugins::BuiltinPlugin;
 use crate::lang::db::AnalysisDatabase;
@@ -27,6 +28,14 @@ pub struct CrateInfo {
     pub manifest_path: PathBuf,
     /// If the crate is a workspace member in the context of the loaded workspace.
     pub is_member: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginSuiteFingerprint {
+    builtin_plugins: Vec<BuiltinPlugin>,
+    proc_macro_macro_plugins: Arc<[usize]>,
+    proc_macro_analyzer_plugins: Arc<[usize]>,
+    proc_macro_inline_macro_plugins: Arc<OrderedHashMap<String, usize>>,
 }
 
 impl CrateInfo {
@@ -84,7 +93,12 @@ impl Crate {
             plugins: vec![Arc::new(ConfigPlugin::default())],
             ..Default::default()
         });
-        let builtin = self.builtin_plugins.iter().map(BuiltinPlugin::suite);
+        let builtin = self
+            .builtin_plugins
+            .iter()
+            .copied()
+            .sorted()
+            .map(|builtin| builtin.suite());
         let base = Some(get_default_plugin_suite());
         let lint_allow = Some(cairo_lint_allow_plugin_suite());
         // Keep the order the same as in Scarb.
@@ -97,7 +111,40 @@ impl Crate {
         )
     }
 
+    pub fn plugin_suite_fingerprint(
+        &self,
+        proc_macro_plugin_suite: Option<&PluginSuite>,
+    ) -> PluginSuiteFingerprint {
+        PluginSuiteFingerprint {
+            builtin_plugins: self.builtin_plugins.iter().copied().sorted().collect(),
+            proc_macro_macro_plugins: Arc::from(
+                proc_macro_plugin_suite
+                    .into_iter()
+                    .flat_map(|suite| suite.plugins.iter().map(plugin_identity))
+                    .collect::<Vec<_>>(),
+            ),
+            proc_macro_analyzer_plugins: Arc::from(
+                proc_macro_plugin_suite
+                    .into_iter()
+                    .flat_map(|suite| suite.analyzer_plugins.iter().map(plugin_identity))
+                    .collect::<Vec<_>>(),
+            ),
+            proc_macro_inline_macro_plugins: Arc::new(
+                proc_macro_plugin_suite
+                    .into_iter()
+                    .flat_map(|suite| {
+                        suite
+                            .inline_macro_plugins
+                            .iter()
+                            .map(|(name, plugin)| (name.clone(), plugin_identity(plugin)))
+                    })
+                    .collect(),
+            ),
+        }
+    }
+
     /// Applies this crate to the [`AnalysisDatabase`].
+    #[cfg_attr(not(test), allow(dead_code))]
     pub fn apply(&self, db: &mut AnalysisDatabase, proc_macro_plugin_suite: Option<PluginSuite>) {
         let crate_input =
             CrateInput::Real { name: self.name.clone(), discriminator: self.discriminator.clone() };
@@ -115,6 +162,10 @@ impl Crate {
     pub fn input(&self) -> CrateInput {
         CrateInput::Real { name: self.name.clone(), discriminator: self.discriminator.clone() }
     }
+}
+
+fn plugin_identity<T: ?Sized>(plugin: &Arc<T>) -> usize {
+    Arc::as_ptr(plugin) as *const () as usize
 }
 
 /// Generate a wrapper lib file for a compilation unit without a root `lib.cairo`.
