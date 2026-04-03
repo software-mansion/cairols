@@ -1,0 +1,50 @@
+{
+  "repetitions": 25,
+  "results": [
+    {
+      "existing_crates": 1,
+      "aggregate_insert_ns": 23208,
+      "aggregate_update_ns": 18667,
+      "granular_set_insert_ns": 48583,
+      "granular_set_update_ns": 45917,
+      "granular_sync_insert_ns": 50958,
+      "granular_sync_update_ns": 49584
+    },
+    {
+      "existing_crates": 10,
+      "aggregate_insert_ns": 21542,
+      "aggregate_update_ns": 21250,
+      "granular_set_insert_ns": 46334,
+      "granular_set_update_ns": 44625,
+      "granular_sync_insert_ns": 65875,
+      "granular_sync_update_ns": 60083
+    },
+    {
+      "existing_crates": 100,
+      "aggregate_insert_ns": 48500,
+      "aggregate_update_ns": 48834,
+      "granular_set_insert_ns": 47459,
+      "granular_set_update_ns": 49375,
+      "granular_sync_insert_ns": 246333,
+      "granular_sync_update_ns": 178291
+    },
+    {
+      "existing_crates": 1000,
+      "aggregate_insert_ns": 321042,
+      "aggregate_update_ns": 318792,
+      "granular_set_insert_ns": 68041,
+      "granular_set_update_ns": 65959,
+      "granular_sync_insert_ns": 2109042,
+      "granular_sync_update_ns": 1452250
+    },
+    {
+      "existing_crates": 5000,
+      "aggregate_insert_ns": 1550500,
+      "aggregate_update_ns": 1552416,
+      "granular_set_insert_ns": 152791,
+      "granular_set_update_ns": 160792,
+      "granular_sync_insert_ns": 10501542,
+      "granular_sync_update_ns": 7130250
+    }
+  ]
+}

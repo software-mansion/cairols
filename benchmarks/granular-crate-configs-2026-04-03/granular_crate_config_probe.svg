@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="360" viewBox="0 0 900 360">
+<style>text{font-family:Menlo,monospace;font-size:12px} .label{fill:#333} .agg{fill:#d95f02} .gran{fill:#1b9e77} .axis{stroke:#555;stroke-width:1}</style>
+<rect width="900" height="360" fill="white"/>
+<line class="axis" x1="60" y1="300" x2="840" y2="300"/>
+<line class="axis" x1="60" y1="60" x2="60" y2="300"/>
+<line x1="60" y1="300.0" x2="840" y2="300.0" stroke="#eee"/>
+<text class="label" x="8" y="304.0">0us</text>
+<line x1="60" y1="252.0" x2="840" y2="252.0" stroke="#eee"/>
+<text class="label" x="8" y="256.0">1568us</text>
+<line x1="60" y1="204.0" x2="840" y2="204.0" stroke="#eee"/>
+<text class="label" x="8" y="208.0">3137us</text>
+<line x1="60" y1="156.0" x2="840" y2="156.0" stroke="#eee"/>
+<text class="label" x="8" y="160.0">4705us</text>
+<line x1="60" y1="108.0" x2="840" y2="108.0" stroke="#eee"/>
+<text class="label" x="8" y="112.0">6274us</text>
+<line x1="60" y1="60.0" x2="840" y2="60.0" stroke="#eee"/>
+<text class="label" x="8" y="64.0">7843us</text>
+<rect class="agg" x="90.3" y="299.4" width="43.7" height="0.6"/>
+<rect class="gran" x="142.0" y="298.5" width="43.7" height="1.5"/>
+<text class="label" x="120.0" y="318">1</text>
+<rect class="agg" x="246.3" y="299.3" width="43.7" height="0.7"/>
+<rect class="gran" x="298.0" y="298.2" width="43.7" height="1.8"/>
+<text class="label" x="276.0" y="318">10</text>
+<rect class="agg" x="402.3" y="298.5" width="43.7" height="1.5"/>
+<rect class="gran" x="454.0" y="294.5" width="43.7" height="5.5"/>
+<text class="label" x="432.0" y="318">100</text>
+<rect class="agg" x="558.3" y="290.2" width="43.7" height="9.8"/>
+<rect class="gran" x="610.0" y="255.6" width="43.7" height="44.4"/>
+<text class="label" x="588.0" y="318">1000</text>
+<rect class="agg" x="714.3" y="252.5" width="43.7" height="47.5"/>
+<rect class="gran" x="766.0" y="81.8" width="43.7" height="218.2"/>
+<text class="label" x="744.0" y="318">5000</text>
+<text class="label" x="330" y="24">Aggregate update vs granular sync update (median nanoseconds)</text>
+<rect class="agg" x="640" y="14" width="12" height="12"/><text class="label" x="658" y="24">aggregate update</text>
+<rect class="gran" x="770" y="14" width="12" height="12"/><text class="label" x="788" y="24">granular sync update</text>
+</svg>
