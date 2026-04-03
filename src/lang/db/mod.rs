@@ -1,18 +1,20 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::ops::Not;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use cairo_lang_defs::db::{DefsGroup, defs_group_input, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::{InlineMacroExprPluginLongId, MacroPluginLongId};
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_executable_plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
-use cairo_lang_filesystem::db::{FilesGroup, files_group_input, init_files_group};
-use cairo_lang_filesystem::ids::{CrateInput, CrateLongId};
+use cairo_lang_filesystem::db::{
+    FilesGroup, GranularFileContentView, GranularFileContents, files_group_input, init_files_group,
+    register_files_group_view,
+};
+use cairo_lang_filesystem::ids::{ArcStr, CrateInput, CrateLongId, FileId, FileInput};
 use cairo_lang_lowering::db::init_lowering_group;
 use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
-use cairo_lang_parser::db::configure_parser_lru;
 use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::db::{
     PluginSuiteInput, SemanticGroup, init_semantic_group, semantic_group_input,
@@ -44,13 +46,16 @@ pub(crate) use self::memory_report::build_memory_usage_report;
 #[derive(Clone)]
 pub struct AnalysisDatabase {
     storage: salsa::Storage<Self>,
+    granular_file_contents: Arc<RwLock<HashMap<FileInput, GranularFileContents>>>,
 }
 
 impl AnalysisDatabase {
     /// Creates a new instance of the database.
     pub fn new() -> Self {
-        let mut db = Self { storage: Default::default() };
+        let mut db =
+            Self { storage: Default::default(), granular_file_contents: Default::default() };
 
+        register_files_group_view(&db);
         init_external_files(&mut db);
         init_files_group(&mut db);
         init_defs_group(&mut db);
@@ -60,7 +65,6 @@ impl AnalysisDatabase {
             Optimizations::enabled_with_default_movable_functions(InliningStrategy::Default),
             None,
         );
-        configure_parser_lru(&mut db);
         files_group_input(&db).set_cfg_set(&mut db).to(Some(Self::initial_cfg_set()));
 
         // Those plugins are relevant for projects with `cairo_project.toml` (e.g. our tests).
@@ -75,6 +79,113 @@ impl AnalysisDatabase {
         );
 
         db
+    }
+
+    fn granular_file_contents_handle(
+        &self,
+        file_input: &FileInput,
+    ) -> Option<GranularFileContents> {
+        self.granular_file_contents.read().unwrap().get(file_input).copied()
+    }
+
+    fn granular_file_contents_handle_for_file<'db>(
+        &'db self,
+        file_id: FileId<'db>,
+    ) -> Option<GranularFileContents> {
+        let file_input = self.file_input(file_id).clone();
+        self.granular_file_contents_handle(&file_input)
+    }
+
+    fn bump_granular_file_contents_revision(&mut self) {
+        let next_revision =
+            files_group_input(self).granular_file_contents_revision(self).saturating_add(1);
+        files_group_input(self)
+            .set_granular_file_contents_revision(self)
+            .with_durability(Durability::HIGH)
+            .to(next_revision);
+    }
+    fn ensure_granular_file_contents_handle_for_input(
+        &mut self,
+        file_input: FileInput,
+    ) -> GranularFileContents {
+        if let Some(handle) = self.granular_file_contents_handle(&file_input) {
+            return handle;
+        }
+
+        let handle = GranularFileContents::new(self, None, None);
+        self.granular_file_contents.write().unwrap().insert(file_input, handle);
+        self.bump_granular_file_contents_revision();
+        handle
+    }
+
+    pub fn set_editor_file_content<'db>(
+        &'db mut self,
+        file_id: FileId<'db>,
+        content: Option<Arc<str>>,
+    ) {
+        let file_input = self.file_input(file_id).clone();
+        self.set_editor_file_content_for_input(file_input, content);
+    }
+
+    pub fn set_editor_file_content_for_input(
+        &mut self,
+        file_input: FileInput,
+        content: Option<Arc<str>>,
+    ) {
+        let handle = self.ensure_granular_file_contents_handle_for_input(file_input);
+        handle
+            .set_editor_content(self)
+            .with_durability(Durability::LOW)
+            .to(content.map(ArcStr::new));
+    }
+
+    pub fn set_generated_file_content<'db>(
+        &'db mut self,
+        file_id: FileId<'db>,
+        content: Option<Arc<str>>,
+    ) {
+        let file_input = self.file_input(file_id).clone();
+        self.set_generated_file_content_for_input(file_input, content);
+    }
+
+    pub fn set_generated_file_content_for_input(
+        &mut self,
+        file_input: FileInput,
+        content: Option<Arc<str>>,
+    ) {
+        let handle = self.ensure_granular_file_contents_handle_for_input(file_input);
+        handle
+            .set_generated_content(self)
+            .with_durability(Durability::HIGH)
+            .to(content.map(ArcStr::new));
+    }
+
+    pub fn clear_generated_file_contents(&mut self) {
+        let handles =
+            self.granular_file_contents.read().unwrap().values().copied().collect::<Vec<_>>();
+        for handle in handles {
+            handle.set_generated_content(self).with_durability(Durability::HIGH).to(None);
+        }
+    }
+
+    pub fn collect_open_file_overrides(
+        &self,
+        files: impl IntoIterator<Item = FileInput>,
+    ) -> OrderedHashMap<FileInput, Arc<str>> {
+        files
+            .into_iter()
+            .filter_map(|file_input| {
+                let handle = self.granular_file_contents_handle(&file_input)?;
+                let content = handle.editor_content(self).as_ref()?;
+                Some((file_input, (**content).clone()))
+            })
+            .collect()
+    }
+
+    pub fn restore_open_file_overrides(&mut self, overrides: OrderedHashMap<FileInput, Arc<str>>) {
+        for (file_input, content) in overrides {
+            self.set_editor_file_content_for_input(file_input, Some(content));
+        }
     }
 
     pub fn set_override_crate_plugins_from_suite(
@@ -280,4 +391,92 @@ impl AnalysisDatabase {
     }
 }
 
+impl GranularFileContentView for AnalysisDatabase {
+    fn granular_file_contents<'db>(
+        &'db self,
+        file_id: FileId<'db>,
+    ) -> Option<GranularFileContents> {
+        self.granular_file_contents_handle_for_file(file_id)
+    }
+
+    fn editor_file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db ArcStr> {
+        self.granular_file_contents_handle_for_file(file_id)?.editor_content(self).as_ref()
+    }
+
+    fn generated_file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db ArcStr> {
+        self.granular_file_contents_handle_for_file(file_id)?.generated_content(self).as_ref()
+    }
+}
+
 impl salsa::Database for AnalysisDatabase {}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use cairo_lang_defs::db::DefsGroup;
+    use cairo_lang_defs::ids::ModuleId;
+    use cairo_lang_filesystem::db::{CrateSettings, FilesGroup};
+    use cairo_lang_filesystem::ids::{FileId, FileInput};
+    use cairo_lang_utils::Intern;
+    use tempfile::tempdir;
+
+    use super::AnalysisDatabase;
+    use crate::project::Crate;
+
+    #[test]
+    fn grouped_integration_test_crate_maps_module_file() {
+        let workspace = tempdir().expect("failed to create tempdir");
+        let tests_root = workspace.path().join("tests");
+        fs::create_dir_all(&tests_root).expect("failed to create tests dir");
+        fs::write(tests_root.join("test.cairo"), "fn probe() {}")
+            .expect("failed to write integration test file");
+
+        let mut db = AnalysisDatabase::new();
+        let crate_data = Crate {
+            name: "hello_integrationtest".into(),
+            discriminator: Some("disc".into()),
+            root: tests_root.clone(),
+            custom_main_file_stems: Some(vec!["test".into()]),
+            settings: CrateSettings {
+                cfg_set: Some(AnalysisDatabase::initial_cfg_set()),
+                ..Default::default()
+            },
+            builtin_plugins: Default::default(),
+        };
+        crate_data.apply(&mut db, None);
+
+        let crate_id = crate_data.input().into_crate_long_id(&db).intern(&db);
+        let root_module = ModuleId::CrateRoot(crate_id);
+        let submodule_id = *db
+            .module_submodules_ids(root_module)
+            .expect("failed to read root submodules")
+            .first()
+            .expect("expected integration test wrapper to expose submodule");
+        let submodule = ModuleId::Submodule(submodule_id);
+        let test_file = FileId::new_on_disk(&db, tests_root.join("test.cairo"));
+
+        assert_eq!(db.module_main_file(submodule).unwrap(), test_file);
+        assert_eq!(db.file_modules(test_file).unwrap(), &vec![submodule]);
+
+        let wrapper_input: FileInput;
+        let wrapper_path = tests_root.join("lib.cairo");
+        {
+            let wrapper_file = FileId::new_on_disk(&db, wrapper_path.clone());
+            wrapper_input = db.file_input(wrapper_file).clone();
+            let wrapper_text = db.file_content(wrapper_file).expect("wrapper content should exist");
+            assert_eq!(wrapper_text, "mod test;");
+        }
+
+        db.clear_generated_file_contents();
+        let wrapper_file = FileId::new_on_disk(&db, wrapper_path.clone());
+        assert!(
+            db.file_content(wrapper_file).is_none(),
+            "generated content should disappear when cleared"
+        );
+
+        db.set_generated_file_content_for_input(wrapper_input, Some("mod test;".into()));
+        let wrapper_file = FileId::new_on_disk(&db, wrapper_path);
+        assert_eq!(db.file_content(wrapper_file), Some("mod test;"));
+    }
+}

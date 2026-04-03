@@ -8,7 +8,7 @@ use cairo_lang_filesystem::db::{
     CORELIB_CRATE_NAME, CrateConfiguration, CrateSettings, FilesGroup,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, Directory};
-use cairo_lang_filesystem::{override_file_content, set_crate_config};
+use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
@@ -129,13 +129,15 @@ fn inject_virtual_wrapper_lib(
     file_stems: &[String],
 ) {
     let module_id = ModuleId::CrateRoot(crate_input.into_crate_long_id(db).intern(db));
-    let file_id = db.module_main_file(module_id).unwrap();
+    let file_input = {
+        let file_id = db.module_main_file(module_id).unwrap();
+        db.file_input(file_id).clone()
+    };
 
     let file_content =
         file_stems.iter().map(|stem| format!("mod {stem};")).collect::<Vec<_>>().join("\n");
 
-    // Inject virtual lib file wrapper.
-    override_file_content!(db, file_id, Some(file_content.into()));
+    db.set_generated_file_content_for_input(file_input, Some(file_content.into()));
 }
 
 /// The inverse of [`inject_virtual_wrapper_lib`],

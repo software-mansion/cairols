@@ -106,6 +106,8 @@ impl ProjectModel {
         db: &mut AnalysisDatabase,
         proc_macro_controller: &ProcMacroClientController,
     ) {
+        db.clear_generated_file_contents();
+
         for (cr, workspaces) in &self.loaded_crates {
             let same_crates: Vec<_> = workspaces
                 .iter()

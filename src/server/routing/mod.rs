@@ -24,12 +24,12 @@ use lsp_types::request::{
 use tracing::{error, trace, warn};
 
 use super::client::{Notifier, Responder};
+#[cfg(feature = "testing")]
+use crate::lsp::ext::testing_requests::{DumpBenchmarkSnapshot, ForceDatabaseSwap};
 use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ShowMemoryUsage, ToolchainInfo, ViewAnalyzedCrates,
     ViewSyntaxTree,
 };
-#[cfg(feature = "testing")]
-use crate::lsp::ext::testing_requests::{DumpBenchmarkSnapshot, ForceDatabaseSwap};
 use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::{BackgroundSchedule, Handler, RetryTaskInfo, Task};
@@ -272,13 +272,13 @@ fn create_background_fn_builder<R: handlers::BackgroundDocumentRequestHandler>(
     params: <R as RequestTrait>::Params,
     retry_info: RetryTaskInfo,
     retry_sender: Sender<(RetryTaskInfo, Box<dyn Handler>)>,
-) -> impl FnOnce(&State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> {
+) -> impl FnOnce(&mut State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> {
     // Clone version of params.
     let params_json = serde_json::to_value(&params).unwrap();
 
     let handler = create_background_fn_handler_raw::<R>(id, params_json, retry_info, retry_sender);
 
-    move |state: &State, meta_state: MetaState| {
+    move |state: &mut State, meta_state: MetaState| {
         let state_snapshot = state.snapshot();
         Box::new(move |notifier, responder| {
             handler(state_snapshot, meta_state, notifier, responder);

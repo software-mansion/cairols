@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::env;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -8,10 +7,6 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use cairo_language_server::lsp::ext::ShowMemoryUsageResponse;
 use cairo_language_server::testing::benchmark::BenchmarkClient;
-use cairo_lang_parser::db::FILE_SYNTAX_DATA_LRU_ENV;
-use cairo_lang_semantic::expr::inference::solver::CANONIC_TRAIT_SOLUTIONS_LRU_ENV;
-use cairo_lang_semantic::items::free_function::FREE_FUNCTION_BODY_LRU_ENV;
-use cairo_lang_semantic::items::imp::IMPL_FUNCTION_BODY_LRU_ENV;
 use lsp_types::Position;
 use serde::Serialize;
 
@@ -97,11 +92,6 @@ fn run_target(config: &Config, target: BenchmarkTarget) -> Result<ProjectBenchma
         .take(config.edit_files.min(representative_files.len()))
         .cloned()
         .collect::<Vec<_>>();
-
-    set_optional_env(FILE_SYNTAX_DATA_LRU_ENV, config.file_syntax_data_lru);
-    set_optional_env(FREE_FUNCTION_BODY_LRU_ENV, config.free_function_body_lru);
-    set_optional_env(IMPL_FUNCTION_BODY_LRU_ENV, config.impl_function_body_lru);
-    set_optional_env(CANONIC_TRAIT_SOLUTIONS_LRU_ENV, config.canonic_trait_solutions_lru);
 
     let mut client = BenchmarkClient::start(target.root.clone(), None);
     let startup_memory = client.memory_usage();
@@ -363,14 +353,6 @@ fn snapshot(label: &str, memory: &ShowMemoryUsageResponse, rss: RssMetrics) -> C
     Checkpoint { label: label.to_string(), rss, memory: memory.clone() }
 }
 
-fn set_optional_env(name: &str, value: Option<usize>) {
-    if let Some(value) = value {
-        unsafe { env::set_var(name, value.to_string()) };
-    } else {
-        unsafe { env::remove_var(name) };
-    }
-}
-
 fn rss_metrics() -> RssMetrics {
     RssMetrics { current_rss_bytes: current_rss_bytes(), peak_rss_bytes: peak_rss_bytes() }
 }
@@ -522,10 +504,6 @@ struct Config {
     edit_files: usize,
     edit_iterations: usize,
     mixed_rounds: usize,
-    file_syntax_data_lru: Option<usize>,
-    free_function_body_lru: Option<usize>,
-    impl_function_body_lru: Option<usize>,
-    canonic_trait_solutions_lru: Option<usize>,
     idle_duration_ms: u64,
     #[serde(skip_serializing)]
     idle_duration: Duration,
@@ -540,10 +518,6 @@ impl Config {
         let mut edit_files = 3;
         let mut edit_iterations = 20;
         let mut mixed_rounds = 8;
-        let mut file_syntax_data_lru = Some(0);
-        let mut free_function_body_lru = Some(0);
-        let mut impl_function_body_lru = Some(0);
-        let mut canonic_trait_solutions_lru = Some(0);
         let mut idle_duration_ms = 1_000;
 
         let mut iter = args.into_iter();
@@ -583,34 +557,6 @@ impl Config {
                 "--mixed-rounds" => {
                     mixed_rounds = iter.next().ok_or("missing value for --mixed-rounds")?.parse()?;
                 }
-                "--file-syntax-data-lru" => {
-                    file_syntax_data_lru = Some(
-                        iter.next()
-                            .ok_or("missing value for --file-syntax-data-lru")?
-                            .parse()?,
-                    );
-                }
-                "--free-function-body-lru" => {
-                    free_function_body_lru = Some(
-                        iter.next()
-                            .ok_or("missing value for --free-function-body-lru")?
-                            .parse()?,
-                    );
-                }
-                "--impl-function-body-lru" => {
-                    impl_function_body_lru = Some(
-                        iter.next()
-                            .ok_or("missing value for --impl-function-body-lru")?
-                            .parse()?,
-                    );
-                }
-                "--canonic-trait-solutions-lru" => {
-                    canonic_trait_solutions_lru = Some(
-                        iter.next()
-                            .ok_or("missing value for --canonic-trait-solutions-lru")?
-                            .parse()?,
-                    );
-                }
                 "--idle-ms" => {
                     idle_duration_ms = iter.next().ok_or("missing value for --idle-ms")?.parse()?;
                 }
@@ -626,17 +572,13 @@ impl Config {
             edit_files,
             edit_iterations,
             mixed_rounds,
-            file_syntax_data_lru,
-            free_function_body_lru,
-            impl_function_body_lru,
-            canonic_trait_solutions_lru,
             idle_duration_ms,
             idle_duration: Duration::from_millis(idle_duration_ms),
         })
     }
 
     fn child_args_for(&self, target: &BenchmarkTarget) -> Vec<String> {
-        let mut args = vec![
+        let args = vec![
             "--child-project-name".to_string(),
             target.project_name.clone(),
             "--child-root".to_string(),
@@ -656,23 +598,6 @@ impl Config {
             "--idle-ms".to_string(),
             self.idle_duration_ms.to_string(),
         ];
-
-        if let Some(capacity) = self.file_syntax_data_lru {
-            args.push("--file-syntax-data-lru".to_string());
-            args.push(capacity.to_string());
-        }
-        if let Some(capacity) = self.free_function_body_lru {
-            args.push("--free-function-body-lru".to_string());
-            args.push(capacity.to_string());
-        }
-        if let Some(capacity) = self.impl_function_body_lru {
-            args.push("--impl-function-body-lru".to_string());
-            args.push(capacity.to_string());
-        }
-        if let Some(capacity) = self.canonic_trait_solutions_lru {
-            args.push("--canonic-trait-solutions-lru".to_string());
-            args.push(capacity.to_string());
-        }
 
         args
     }

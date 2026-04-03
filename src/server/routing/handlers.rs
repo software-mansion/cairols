@@ -8,7 +8,6 @@
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::override_file_content;
 use lsp_types::notification::{
     DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
     DidOpenTextDocument, DidSaveTextDocument, Notification,
@@ -26,19 +25,21 @@ use lsp_types::{
     DocumentHighlightParams, ExecuteCommandParams, FileChangeType, GotoDefinitionParams,
     GotoDefinitionResponse, Hover, HoverParams, InlayHint, InlayHintParams, ReferenceParams,
     RenameFilesParams, RenameParams, SemanticTokensParams, SemanticTokensResult,
-    TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
+    TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
 use salsa::Database;
 use serde_json::Value;
 use tracing::{error, trace};
 
 use crate::ide::code_lens::{CodeLensController, FileChange};
-use crate::lang::db::{build_memory_usage_report, swap_database};
+use crate::lang::db::build_memory_usage_report;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
     ShowMemoryUsage, ToolchainInfo, ToolchainInfoResponse, ViewAnalyzedCrates, ViewSyntaxTree,
 };
+#[cfg(feature = "testing")]
+use crate::lang::db::swap_database;
 #[cfg(feature = "testing")]
 use crate::lsp::ext::testing_requests::{
     DatabaseSwapped, DatabaseSwappedParams,
@@ -205,19 +206,7 @@ impl SyncNotificationHandler for DidChangeTextDocument {
         _requester: &mut Requester<'_>,
         params: DidChangeTextDocumentParams,
     ) -> LSPResult<()> {
-        let text = if let Ok([TextDocumentContentChangeEvent { text, .. }]) =
-            TryInto::<[_; 1]>::try_into(params.content_changes)
-        {
-            text
-        } else {
-            error!("unexpected format of document change");
-            return Ok(());
-        };
-
-        let db = &mut state.db;
-        if let Some(file) = db.file_for_url(&params.text_document.uri) {
-            override_file_content!(db, file, Some(text.into()));
-        };
+        state.apply_open_file_changes(params.text_document.uri.clone(), params.content_changes);
 
         state.code_lens_controller.on_did_change(
             state.db.clone(),
@@ -305,13 +294,7 @@ impl SyncNotificationHandler for DidCloseTextDocument {
         _requester: &mut Requester<'_>,
         params: DidCloseTextDocumentParams,
     ) -> LSPResult<()> {
-        let db = &mut state.db;
-        state.open_files.remove(&params.text_document.uri);
-        if let Some(file) = db.file_for_url(&params.text_document.uri)
-            && db.file_overrides().contains_key(&file)
-        {
-            override_file_content!(db, file, None);
-        }
+        state.clear_open_file(&params.text_document.uri);
 
         Ok(())
     }
@@ -337,23 +320,15 @@ impl SyncNotificationHandler for DidOpenTextDocument {
 
             state.project_controller.request_updating_project_for_file(path);
         }
-        let db = &mut state.db;
-        if let Some(file_id) = db.file_for_url(&uri) {
-            state.open_files.insert(uri.clone());
-            if let Some(content) = db.file_content(file_id)
-                && content != params.text_document.text.as_str()
-            {
-                override_file_content!(db, file_id, Some(params.text_document.text.into()));
-            }
+        state.apply_open_file_text(uri.clone(), params.text_document.text.into());
 
-            state.code_lens_controller.on_did_change(
-                state.db.clone(),
-                state.config.clone(),
-                is_cairo_file_path(&uri)
-                    .then_some(FileChange { url: uri, was_deleted: false })
-                    .into_iter(),
-            );
-        }
+        state.code_lens_controller.on_did_change(
+            state.db.clone(),
+            state.config.clone(),
+            is_cairo_file_path(&uri)
+                .then_some(FileChange { url: uri, was_deleted: false })
+                .into_iter(),
+        );
 
         Ok(())
     }
@@ -371,12 +346,9 @@ impl SyncNotificationHandler for DidSaveTextDocument {
         _requester: &mut Requester<'_>,
         params: DidSaveTextDocumentParams,
     ) -> LSPResult<()> {
-        let db = &mut state.db;
-        if let Some(file) = db.file_for_url(&params.text_document.uri) {
-            override_file_content!(db, file, None);
-
-            // In perfect scenario we would do this only for `file` but there is no way to make it more granulary.
-            state.db.cancel_all();
+        // Keep the in-memory editor content authoritative while the document remains open.
+        if let Some(text) = params.text {
+            state.apply_open_file_text(params.text_document.uri, text.into());
         }
 
         Ok(())
@@ -463,10 +435,16 @@ impl BackgroundDocumentRequestHandler for ProvideVirtualFile {
         params: ProvideVirtualFileRequest,
     ) -> LSPResult<ProvideVirtualFileResponse> {
         let content = snapshot
-            .db
-            .file_for_url(&params.uri)
-            .and_then(|file_id| snapshot.db.file_content(file_id))
-            .map(|content| content.to_string());
+            .open_file_texts
+            .get(&params.uri)
+            .map(|content| content.to_string())
+            .or_else(|| {
+                snapshot
+                    .db
+                    .file_for_url(&params.uri)
+                    .and_then(|file_id| snapshot.db.file_content(file_id))
+                    .map(|content| content.to_string())
+            });
 
         Ok(ProvideVirtualFileResponse { content })
     }

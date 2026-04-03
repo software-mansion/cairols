@@ -62,6 +62,8 @@ mod state;
 pub mod testing;
 mod toolchain;
 
+pub use crate::lang::db::AnalysisDatabase;
+
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
@@ -440,7 +442,7 @@ impl Backend {
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, meta_state: MetaState, notifier: Notifier) {
+    fn maybe_swap_database(state: &mut State, meta_state: MetaState, _notifier: Notifier) {
         let reason = meta_state
             .lock()
             .expect("should be able to acquire the MetaState")
@@ -452,17 +454,22 @@ impl Backend {
                 &state.proc_macro_controller,
             );
 
+        if reason.is_some() {
+            state.reconcile_open_file_overrides_in_db();
+            state.apply_pending_open_file_overrides();
+        }
+
         #[cfg(feature = "testing")]
         if let Some(reason) = reason {
-            notifier.notify::<DatabaseSwapped>(DatabaseSwappedParams {
-                reason: reason.to_string(),
-            });
+            _notifier
+                .notify::<DatabaseSwapped>(DatabaseSwappedParams { reason: reason.to_string() });
         }
     }
 
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
     fn refresh_diagnostics(state: &mut State, _meta_state: MetaState, _notifier: Notifier) {
-        state.diagnostics_controller.refresh(state);
+        let snapshot = state.snapshot();
+        state.diagnostics_controller.refresh(snapshot);
     }
 
     /// Reload config and update project model for all open files.

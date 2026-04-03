@@ -81,7 +81,7 @@ impl<'s> Scheduler<'s> {
     /// Dispatches a `task` by either running it as a blocking function or
     /// executing it on a background thread pool.
     pub fn dispatch(&mut self, task: Task<'s>) {
-        let build_task_fn = |func: BackgroundFnBuilder| {
+        let mut build_task_fn = |func: BackgroundFnBuilder| {
             let static_func = func(self.state, self.meta_state.clone());
             let notifier = self.client.notifier();
             let responder = self.client.responder();

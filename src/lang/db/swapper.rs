@@ -5,9 +5,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::time::{Duration, SystemTime};
 
 use cairo_lang_defs::db::{DefsGroup, defs_group_input};
-use cairo_lang_filesystem::db::{FilesGroup, files_group_input};
 use cairo_lang_semantic::db::{SemanticGroup, semantic_group_input};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use crossbeam::channel::Sender;
 use lsp_types::Url;
 use salsa::Setter;
@@ -191,21 +189,12 @@ impl AnalysisDatabaseSwapper {
         old_db: &AnalysisDatabase,
         open_files: &HashSet<Url>,
     ) {
-        let overrides = old_db.file_overrides();
-        let mut new_overrides: OrderedHashMap<_, _> = Default::default();
-        for uri in open_files {
-            let Some(file_id) = old_db.file_for_url(uri) else {
-                // This branch is hit for open files that have never been seen by the old db.
-                // This is a strange condition, but it is OK to just not think about such files
-                // here.
-                continue;
-            };
-            let file_input = file_id.long(old_db).into_file_input(old_db);
-            if let Some(content) = overrides.get(&file_id) {
-                new_overrides.insert(file_input, content.to_string().into());
-            }
-        }
-        files_group_input(new_db).set_file_overrides(new_db).to(Some(new_overrides));
+        let overrides_to_restore =
+            old_db.collect_open_file_overrides(open_files.iter().filter_map(|uri| {
+                let file_id = old_db.file_for_url(uri)?;
+                Some(file_id.long(old_db).into_file_input(old_db))
+            }));
+        new_db.restore_open_file_overrides(overrides_to_restore);
     }
 }
 

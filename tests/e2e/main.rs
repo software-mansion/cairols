@@ -16,4 +16,5 @@ mod rename;
 mod scarb;
 mod semantic_tokens;
 mod support;
+mod test_targets;
 mod workspace_configuration;
