@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
+use std::time::Instant;
 
 use cairo_lang_filesystem::db::{FilesGroup, ext_as_virtual};
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
@@ -54,17 +55,23 @@ fn refresh_file_diagnostics<'db>(
     notifier: &Notifier,
     scarb_toolchain: &ScarbToolchain,
 ) {
+    let trace_timing = std::env::var_os("CAIRO_LS_TRACE_DIAGNOSTICS_TIMING").is_some();
+    let refresh_started = Instant::now();
     let Some(new_files_diagnostics) =
         FilesDiagnostics::collect(db, config, config_registry, scarb_toolchain, root_on_disk_file)
     else {
         return;
     };
+    let collect_elapsed = refresh_started.elapsed();
 
     // IMPORTANT: DO NOT change the order of operations here. `to_lsp` may panic, so it has to come
     // before `update`. It is to make sure that if `update` succeeds, `notify` executes as well.
+    let to_lsp_started = Instant::now();
     let (root_on_disk_file_url, new_diags) =
         new_files_diagnostics.to_lsp(db, config.trace_macro_diagnostics);
+    let to_lsp_elapsed = to_lsp_started.elapsed();
 
+    let filter_started = Instant::now();
     let new_diags = new_diags
         .into_iter()
         .filter_map(|((url, file_id), mut diagnostics)| {
@@ -88,14 +95,28 @@ fn refresh_file_diagnostics<'db>(
             Some((url, diagnostics))
         })
         .collect();
+    let filter_elapsed = filter_started.elapsed();
 
+    let update_started = Instant::now();
     let diags_to_send = project_diagnostics.update(root_on_disk_file_url, new_diags);
+    let update_elapsed = update_started.elapsed();
     for (url, diagnostics) in diags_to_send {
         notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
             uri: url,
             diagnostics,
             version: None,
         });
+    }
+    if trace_timing {
+        eprintln!(
+            "diagnostics_refresh root={} collect_ms={} to_lsp_ms={} filter_ms={} update_ms={} total_ms={}",
+            tracing_file_url(db, root_on_disk_file),
+            collect_elapsed.as_millis(),
+            to_lsp_elapsed.as_millis(),
+            filter_elapsed.as_millis(),
+            update_elapsed.as_millis(),
+            refresh_started.elapsed().as_millis(),
+        );
     }
 }
 

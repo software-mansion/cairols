@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::Path;
+use std::time::{Duration, Instant};
 
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, PluginFileDiagnosticNotes};
@@ -56,6 +57,8 @@ impl<'db> FilesDiagnostics<'db> {
         scarb_toolchain: &ScarbToolchain,
         root_on_disk_file: FileId<'db>,
     ) -> Option<Self> {
+        let trace_timing = std::env::var_os("CAIRO_LS_TRACE_DIAGNOSTICS_TIMING").is_some();
+        let total_started = Instant::now();
         let mut files_notes: PluginFileDiagnosticNotes = OrderedHashMap::default();
         let root_on_disk_file_url = db.url_for_file(root_on_disk_file)?;
 
@@ -74,29 +77,40 @@ impl<'db> FilesDiagnostics<'db> {
 
         // Don't include inline macro files as these are expanded in semantic.
         // Diagnostics will be included with `db.module_semantic_diagnostics()`.
+        let discovery_started = Instant::now();
         let (files_to_process, modules_to_process) =
             db.file_and_subfiles_with_corresponding_modules_without_inline(root_on_disk_file)?;
+        let discovery_elapsed = discovery_started.elapsed();
+        let mut semantic_elapsed = Duration::ZERO;
+        let mut lowering_elapsed = Duration::ZERO;
+        let mut parser_elapsed = Duration::ZERO;
+        let mut linter_elapsed = Duration::ZERO;
 
         for module_id in modules_to_process.iter().copied() {
             if let Ok(notes) = module_id.module_data(db).map(|data| data.diagnostics_notes(db)) {
                 files_notes.extend(notes.clone());
             }
 
+            let semantic_started = Instant::now();
             semantic_file_diagnostics.extend(
                 info_span!("db.module_semantic_diagnostics").in_scope(|| {
                     db.module_semantic_diagnostics(module_id).unwrap_or_default().get_all()
                 }),
             );
+            semantic_elapsed += semantic_started.elapsed();
+            let lowering_started = Instant::now();
             lowering_file_diagnostics.extend(
                 info_span!("db.module_lowering_diagnostics").in_scope(|| {
                     db.module_lowering_diagnostics(module_id).unwrap_or_default().get_all()
                 }),
             );
+            lowering_elapsed += lowering_started.elapsed();
 
             // Here we check for 2 things:
             // 1. If the linter is enabled in the extension config.
             // 2. If the file comes from the scarb cache. (A heuristic to avoid linting deps)
             if config.enable_linter && !scarb_toolchain.is_from_scarb_cache(root_path) {
+                let linter_started = Instant::now();
                 semantic_file_diagnostics.extend(info_span!("db.linter_diagnostics").in_scope(
                     || {
                         db.linter_diagnostics(linter_params.clone(), module_id).iter().map(|diag| {
@@ -108,11 +122,29 @@ impl<'db> FilesDiagnostics<'db> {
                         })
                     },
                 ));
+                linter_elapsed += linter_started.elapsed();
             }
         }
 
         for file_id in files_to_process.iter() {
+            let parser_started = Instant::now();
             parser_file_diagnostics.extend(db.file_syntax_diagnostics(*file_id).get_all());
+            parser_elapsed += parser_started.elapsed();
+        }
+
+        if trace_timing {
+            eprintln!(
+                "diagnostics_collect root={} files={} modules={} discover_ms={} semantic_ms={} lowering_ms={} parser_ms={} linter_ms={} total_ms={}",
+                root_path_string,
+                files_to_process.len(),
+                modules_to_process.len(),
+                discovery_elapsed.as_millis(),
+                semantic_elapsed.as_millis(),
+                lowering_elapsed.as_millis(),
+                parser_elapsed.as_millis(),
+                linter_elapsed.as_millis(),
+                total_started.elapsed().as_millis(),
+            );
         }
 
         Some(FilesDiagnostics {
