@@ -501,6 +501,11 @@ impl SyncRequestHandler for ForceDatabaseSwap {
         )
         .is_some()
         {
+            state.reconcile_open_file_overrides_in_db();
+            state.apply_pending_open_file_overrides();
+            let snapshot = state.snapshot();
+            state.diagnostics_controller.refresh(snapshot);
+            state.analysis_progress_controller.mutation();
             "forced by benchmark or test request".to_string()
         } else {
             "forced swap failed".to_string()
