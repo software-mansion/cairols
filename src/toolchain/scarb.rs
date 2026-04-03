@@ -66,10 +66,13 @@ impl ScarbToolchain {
                 // While running tests, we do not have SCARB env set,
                 // but we expect `scarb` binary to be in the PATH.
                 if cfg!(feature = "testing") {
-                    return Some(
-                        which("scarb")
-                            .expect("running tests requires a `scarb` binary available in `PATH`"),
-                    );
+                    return env_config::scarb_path().or_else(|| {
+                        Some(
+                            which("scarb").expect(
+                                "running tests requires either SCARB env or a `scarb` binary available in `PATH`",
+                            ),
+                        )
+                    });
                 }
 
                 let path = env_config::scarb_path();

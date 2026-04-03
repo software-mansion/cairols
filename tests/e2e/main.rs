@@ -1,4 +1,5 @@
 mod analysis;
+mod benchmarking;
 mod code_actions;
 mod code_lens;
 mod completions;

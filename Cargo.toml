@@ -14,6 +14,11 @@ members = ["xtask", "tests/scarb_procedural_macros", "tests/scarb_procedural_mac
 [features]
 testing = []
 
+[[bin]]
+name = "cairols-bench"
+path = "src/bin/cairols_bench.rs"
+required-features = ["testing"]
+
 # Managing dependencies on crates from starkware-libs/cairo repository:
 #
 # The Cairo compiler is made of a bunch of crates that inter-depend on each other and have

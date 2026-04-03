@@ -7,6 +7,8 @@ pub use crate::ide::semantic_highlighting::token_kind::SemanticTokenKind;
 use crate::server::connection::ConnectionInitializer;
 use crate::server::schedule::thread::JoinHandle;
 
+pub mod benchmark;
+
 /// Special object to run the language server in end-to-end tests.
 pub struct BackendForTesting(Backend);
 
