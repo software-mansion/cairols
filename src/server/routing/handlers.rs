@@ -28,15 +28,22 @@ use lsp_types::{
     RenameFilesParams, RenameParams, SemanticTokensParams, SemanticTokensResult,
     TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
-use salsa::{Database, IngredientInfo};
-use serde_json::{Value, json};
+use salsa::Database;
+use serde_json::Value;
 use tracing::{error, trace};
 
 use crate::ide::code_lens::{CodeLensController, FileChange};
+use crate::lang::db::{build_memory_usage_report, swap_database};
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
     ShowMemoryUsage, ToolchainInfo, ToolchainInfoResponse, ViewAnalyzedCrates, ViewSyntaxTree,
+};
+#[cfg(feature = "testing")]
+use crate::lsp::ext::testing_requests::{
+    DatabaseSwapped, DatabaseSwappedParams,
+    DumpBenchmarkSnapshot, DumpBenchmarkSnapshotParams, DumpBenchmarkSnapshotResponse,
+    ForceDatabaseSwap, ForceDatabaseSwapResponse,
 };
 use crate::lsp::result::{LSPError, LSPResult};
 use crate::server::client::{Notifier, Requester};
@@ -493,31 +500,53 @@ impl BackgroundDocumentRequestHandler for ShowMemoryUsage {
         _meta_state: MetaState,
         _notifier: Notifier,
         _params: (),
-    ) -> LSPResult<serde_json::Value> {
+    ) -> LSPResult<<ShowMemoryUsage as Request>::Result> {
         let db: &dyn Database = &snapshot.db;
-        let memory_usage = db.memory_usage();
+        Ok(build_memory_usage_report(db))
+    }
+}
 
-        let to_value = |info: IngredientInfo| {
-            json!({
-                "debug_name": info.debug_name(),
-                "count": info.count(),
-                "size_of_metadata": info.size_of_metadata(),
-                "size_of_fields": info.size_of_fields(),
-                "heap_size_of_fields": info.heap_size_of_fields(),
-            })
+#[cfg(feature = "testing")]
+impl SyncRequestHandler for ForceDatabaseSwap {
+    #[tracing::instrument(name = "cairo/testing/forceDatabaseSwap", skip_all)]
+    fn run(
+        state: &mut State,
+        notifier: Notifier,
+        _requester: &mut Requester<'_>,
+        _params: (),
+    ) -> LSPResult<ForceDatabaseSwapResponse> {
+        let reason = if swap_database(
+            &mut state.db,
+            &state.open_files,
+            &mut state.project_controller,
+            &state.proc_macro_controller,
+        )
+        .is_some()
+        {
+            "forced by benchmark or test request".to_string()
+        } else {
+            "forced swap failed".to_string()
         };
+        notifier.notify::<DatabaseSwapped>(DatabaseSwappedParams { reason: reason.clone() });
+        Ok(ForceDatabaseSwapResponse { reason })
+    }
+}
 
-        let structs = memory_usage.structs.into_iter().map(to_value).collect::<Vec<_>>();
-        let queries = memory_usage
-            .queries
-            .into_iter()
-            .map(|(key, value)| json!({ key: to_value(value) }))
-            .collect::<Vec<_>>();
+#[cfg(feature = "testing")]
+impl BackgroundDocumentRequestHandler for DumpBenchmarkSnapshot {
+    const RETRY: bool = false;
 
-        Ok(json!({
-            "structs": structs,
-            "queries": queries,
-        }))
+    #[tracing::instrument(name = "cairo/testing/dumpBenchmarkSnapshot", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _meta_state: MetaState,
+        _notifier: Notifier,
+        params: DumpBenchmarkSnapshotParams,
+    ) -> LSPResult<DumpBenchmarkSnapshotResponse> {
+        Ok(DumpBenchmarkSnapshotResponse {
+            label: params.label,
+            memory: build_memory_usage_report(&snapshot.db),
+        })
     }
 }
 

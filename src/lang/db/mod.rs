@@ -12,6 +12,7 @@ use cairo_lang_filesystem::ids::{CrateInput, CrateLongId};
 use cairo_lang_lowering::db::init_lowering_group;
 use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
+use cairo_lang_parser::db::configure_parser_lru;
 use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::db::{
     PluginSuiteInput, SemanticGroup, init_semantic_group, semantic_group_input,
@@ -31,9 +32,12 @@ pub use self::semantic::*;
 pub use self::swapper::*;
 pub use self::syntax::*;
 
+mod memory_report;
 mod semantic;
 mod swapper;
 mod syntax;
+
+pub(crate) use self::memory_report::build_memory_usage_report;
 
 /// The Cairo compiler Salsa database tailored for language server usage.
 #[salsa::db]
@@ -56,6 +60,7 @@ impl AnalysisDatabase {
             Optimizations::enabled_with_default_movable_functions(InliningStrategy::Default),
             None,
         );
+        configure_parser_lru(&mut db);
         files_group_input(&db).set_cfg_set(&mut db).to(Some(Self::initial_cfg_set()));
 
         // Those plugins are relevant for projects with `cairo_project.toml` (e.g. our tests).

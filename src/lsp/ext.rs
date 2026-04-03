@@ -144,8 +144,114 @@ impl Notification for ExecuteInTerminal {
 
 pub struct ShowMemoryUsage;
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryUsageEntry {
+    pub debug_name: String,
+    pub layer: String,
+    pub count: usize,
+    pub size_of_metadata: usize,
+    pub size_of_fields: usize,
+    pub heap_size_of_fields: usize,
+    pub total_size: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryUsageTotals {
+    pub count: usize,
+    pub size_of_metadata: usize,
+    pub size_of_fields: usize,
+    pub heap_size_of_fields: usize,
+    pub total_size: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryUsageSummary {
+    pub totals: MemoryUsageTotals,
+    pub by_layer: Vec<MemoryUsageLayerSummary>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryUsageLayerSummary {
+    pub layer: String,
+    pub totals: MemoryUsageTotals,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ShowMemoryUsageResponse {
+    pub summary: MemoryUsageSummary,
+    pub structs: Vec<MemoryUsageEntry>,
+    pub queries: Vec<MemoryUsageEntry>,
+    pub top_structs: Vec<MemoryUsageEntry>,
+    pub top_queries: Vec<MemoryUsageEntry>,
+}
+
 impl Request for ShowMemoryUsage {
     type Params = ();
-    type Result = serde_json::Value;
+    type Result = ShowMemoryUsageResponse;
     const METHOD: &'static str = "cairo/showMemoryUsage";
+}
+
+#[cfg(feature = "testing")]
+pub mod testing_requests {
+    use lsp_types::notification::Notification;
+    use lsp_types::request::Request;
+    use serde::{Deserialize, Serialize};
+
+    use crate::lsp::ext::ShowMemoryUsageResponse;
+
+    #[derive(Debug)]
+    pub struct ForceDatabaseSwap;
+
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+    #[serde(rename_all = "camelCase")]
+    pub struct ForceDatabaseSwapResponse {
+        pub reason: String,
+    }
+
+    impl Request for ForceDatabaseSwap {
+        type Params = ();
+        type Result = ForceDatabaseSwapResponse;
+        const METHOD: &'static str = "cairo/testing/forceDatabaseSwap";
+    }
+
+    #[derive(Debug)]
+    pub struct DatabaseSwapped;
+
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DatabaseSwappedParams {
+        pub reason: String,
+    }
+
+    impl Notification for DatabaseSwapped {
+        type Params = DatabaseSwappedParams;
+        const METHOD: &'static str = "cairo/testing/databaseSwapped";
+    }
+
+    #[derive(Debug)]
+    pub struct DumpBenchmarkSnapshot;
+
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DumpBenchmarkSnapshotParams {
+        pub label: String,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DumpBenchmarkSnapshotResponse {
+        pub label: String,
+        pub memory: ShowMemoryUsageResponse,
+    }
+
+    impl Request for DumpBenchmarkSnapshot {
+        type Params = DumpBenchmarkSnapshotParams;
+        type Result = DumpBenchmarkSnapshotResponse;
+        const METHOD: &'static str = "cairo/testing/dumpBenchmarkSnapshot";
+    }
 }

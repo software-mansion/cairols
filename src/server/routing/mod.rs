@@ -28,6 +28,8 @@ use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ShowMemoryUsage, ToolchainInfo, ViewAnalyzedCrates,
     ViewSyntaxTree,
 };
+#[cfg(feature = "testing")]
+use crate::lsp::ext::testing_requests::{DumpBenchmarkSnapshot, ForceDatabaseSwap};
 use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::{BackgroundSchedule, Handler, RetryTaskInfo, Task};
@@ -119,6 +121,14 @@ pub fn request<'a>(
             BackgroundSchedule::Worker,
             retry_sender,
         ),
+        #[cfg(feature = "testing")]
+        DumpBenchmarkSnapshot::METHOD => background_request_task::<DumpBenchmarkSnapshot>(
+            request,
+            BackgroundSchedule::Worker,
+            retry_sender,
+        ),
+        #[cfg(feature = "testing")]
+        ForceDatabaseSwap::METHOD => local_request_task::<ForceDatabaseSwap>(request),
         WillRenameFiles::METHOD => background_request_task::<WillRenameFiles>(
             request,
             BackgroundSchedule::LatencySensitive,

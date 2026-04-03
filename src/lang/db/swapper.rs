@@ -103,11 +103,23 @@ impl AnalysisDatabaseSwapper {
     ) -> Option<SwapReason> {
         let reason = self.check_for_swap()?;
 
+        self.finish_swap(reason, db, open_files, project_controller, proc_macro_client_controller)
+    }
+
+    fn finish_swap(
+        &mut self,
+        reason: SwapReason,
+        db: &mut AnalysisDatabase,
+        open_files: &HashSet<Url>,
+        project_controller: &mut ProjectController,
+        proc_macro_client_controller: &ProcMacroClientController,
+    ) -> Option<SwapReason> {
+
         if let Err(err) = self.analysis_event_sender.send(AnalysisEvent::DatabaseSwap) {
             error!("Could not send swap status: {err:?}");
         };
 
-        self.swap(db, open_files, project_controller, proc_macro_client_controller);
+        swap_database(db, open_files, project_controller, proc_macro_client_controller)?;
 
         self.mutations_since_last_replace = 0;
         self.stopwatch.reset();
@@ -129,33 +141,6 @@ impl AnalysisDatabaseSwapper {
         } else {
             None
         }
-    }
-
-    /// Swaps the database.
-    #[tracing::instrument(skip_all)]
-    fn swap(
-        &self,
-        db: &mut AnalysisDatabase,
-        open_files: &HashSet<Url>,
-        project_controller: &mut ProjectController,
-        proc_macro_client_controller: &ProcMacroClientController,
-    ) {
-        let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
-            let mut new_db = AnalysisDatabase::new();
-
-            self.migrate_default_plugins(&mut new_db, db);
-            self.migrate_proc_macro_state(&mut new_db, db);
-            self.migrate_file_overrides(&mut new_db, db, open_files);
-
-            project_controller.migrate_crates_to_new_db(&mut new_db, proc_macro_client_controller);
-
-            new_db
-        })) else {
-            error!("caught panic when preparing new db for swap");
-            return;
-        };
-
-        *db = new_db;
     }
 
     /// Copies current default macro plugins into new db.
@@ -222,6 +207,35 @@ impl AnalysisDatabaseSwapper {
         }
         files_group_input(new_db).set_file_overrides(new_db).to(Some(new_overrides));
     }
+}
+
+/// Swaps the database with a fresh instance while preserving the active project and open-file
+/// state needed by CairoLS.
+#[tracing::instrument(skip_all)]
+pub fn swap_database(
+    db: &mut AnalysisDatabase,
+    open_files: &HashSet<Url>,
+    project_controller: &mut ProjectController,
+    proc_macro_client_controller: &ProcMacroClientController,
+) -> Option<()> {
+    let swapper = AnalysisDatabaseSwapper::new(crossbeam::channel::unbounded().0);
+    let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
+        let mut new_db = AnalysisDatabase::new();
+
+        swapper.migrate_default_plugins(&mut new_db, db);
+        swapper.migrate_proc_macro_state(&mut new_db, db);
+        swapper.migrate_file_overrides(&mut new_db, db, open_files);
+
+        project_controller.migrate_crates_to_new_db(&mut new_db, proc_macro_client_controller);
+
+        new_db
+    })) else {
+        error!("caught panic when preparing new db for swap");
+        return None;
+    };
+
+    *db = new_db;
+    Some(())
 }
 
 #[derive(Default)]

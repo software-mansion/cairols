@@ -39,6 +39,8 @@ use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
 };
+#[cfg(feature = "testing")]
+use crate::lsp::ext::testing_requests::{DatabaseSwapped, DatabaseSwappedParams};
 use crate::lsp::result::LSPResult;
 use crate::project::{ProjectController, ProjectUpdate};
 use crate::server::client::{Notifier, Requester, Responder};
@@ -438,13 +440,24 @@ impl Backend {
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, meta_state: MetaState, _notifier: Notifier) {
-        meta_state.lock().expect("should be able to acquire the MetaState").db_swapper.maybe_swap(
-            &mut state.db,
-            &state.open_files,
-            &mut state.project_controller,
-            &state.proc_macro_controller,
-        );
+    fn maybe_swap_database(state: &mut State, meta_state: MetaState, notifier: Notifier) {
+        let reason = meta_state
+            .lock()
+            .expect("should be able to acquire the MetaState")
+            .db_swapper
+            .maybe_swap(
+                &mut state.db,
+                &state.open_files,
+                &mut state.project_controller,
+                &state.proc_macro_controller,
+            );
+
+        #[cfg(feature = "testing")]
+        if let Some(reason) = reason {
+            notifier.notify::<DatabaseSwapped>(DatabaseSwappedParams {
+                reason: reason.to_string(),
+            });
+        }
     }
 
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
