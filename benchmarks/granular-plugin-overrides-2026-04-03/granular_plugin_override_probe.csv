@@ -1,0 +1,6 @@
+existing_crates,aggregate_insert_us,aggregate_update_us,granular_set_insert_us,granular_set_update_us,granular_sync_insert_us,granular_sync_update_us,set_update_speedup_vs_aggregate,sync_update_slowdown_vs_aggregate
+1,102.834,82.291,133.375,126.5,208.833,168.958,0.65,2.05
+10,90.167,95.625,127.5,124.542,946.667,683.875,0.77,7.15
+100,139.791,140.5,128.041,132.5,8260.084,5931.292,1.06,42.22
+1000,660.375,667.666,132.167,135.667,82848.959,58964.333,4.92,88.31
+5000,2986.292,2996.208,161.167,168.25,419955.709,300325.167,17.81,100.24

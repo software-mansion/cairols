@@ -1,0 +1,45 @@
+   Compiling cairo-language-server v2.16.0 (/Users/jsmolka/Work/cairo-language/cairols)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.17s
+     Running `target/debug/cairols-bench --child-project-name alexandria --child-root /Users/jsmolka/Work/cairo-projects/ecosystem/alexandria --child-manifest /Users/jsmolka/Work/cairo-projects/ecosystem/alexandria/Scarb.toml --package-manifests 1 --hot-files 2 --edit-files 1 --edit-iterations 1 --mixed-rounds 1 --idle-ms 100`
+benchmarking alexandria at /Users/jsmolka/Work/cairo-projects/ecosystem/alexandria/Scarb.toml
+  cold open
+    waiting for project update notification
+    project update notification received
+  first diagnostics
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+  edit loop
+    edit iteration 1 on /Users/jsmolka/Work/cairo-projects/ecosystem/alexandria/packages/btc/tests/address_tests.cairo
+      applying edit
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+      restoring original content
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
+  mixed loop
+    mixed round 1 on /Users/jsmolka/Work/cairo-projects/ecosystem/alexandria/packages/btc/tests/address_tests.cairo
+      request hover
+      request gotoDefinition
+      request completion
+      request references
+  forced swap
+    waiting for database swapped notification
+    database swapped notification received: forced by benchmark or test request
+    waiting for analysis finished
+      awaiting cairo/serverStatus AnalysisFinished
+      received cairo/serverStatus AnalysisFinished
+    analysis finished received, waiting for diagnostics quiescence
+      settle ended: idle timeout after 0 messages
+    diagnostics quiescence reached
