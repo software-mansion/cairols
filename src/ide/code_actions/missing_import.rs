@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::ast::ExprPath;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
+use cairo_language_common::CommonGroup;
 use lsp_types::{CodeAction, CodeActionKind, Url, WorkspaceEdit};
 
 use crate::lang::analysis_context::AnalysisContext;
@@ -14,7 +16,12 @@ pub fn missing_import<'db>(
     ctx: &AnalysisContext<'db>,
     uri: Url,
 ) -> Option<Vec<CodeAction>> {
-    let typed_path_generic = ctx.node.ancestor_of_type::<ExprPath>(db)?;
+    let typed_path_generic = ctx.node.ancestor_of_type::<ExprPath>(db).or_else(|| {
+        let resultants = db.get_node_resultants(ctx.node)?;
+        resultants
+            .iter()
+            .find_map(|resultant: &SyntaxNode<'db>| resultant.ancestor_of_type::<ExprPath>(db))
+    })?;
 
     // Remove generic args.
     let typed_path_segments: Vec<_> = typed_path_generic
