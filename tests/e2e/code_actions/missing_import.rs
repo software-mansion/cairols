@@ -217,3 +217,28 @@ fn in_proc_macro_controlled_code() {
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
     "#);
 }
+
+#[test]
+fn in_inline_macro() {
+    test_transform!(quick_fix, "
+    mod aa {
+        pub fn cc() -> u32 { 1 }
+    }
+
+    fn test() {
+        assert_eq!(c<caret>c(), 1_u32)
+    }
+    ", @r#"
+    Title: Import `aa::cc`
+    Add new text: "use aa::cc;
+
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Fix All
+    Add new text: "use aa::cc;
+
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Expand macro recursively at caret
+    "#);
+}
