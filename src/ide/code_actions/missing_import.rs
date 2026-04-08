@@ -16,12 +16,11 @@ pub fn missing_import<'db>(
     ctx: &AnalysisContext<'db>,
     uri: Url,
 ) -> Option<Vec<CodeAction>> {
-    let typed_path_generic = ctx.node.ancestor_of_type::<ExprPath>(db).or_else(|| {
-        let resultants = db.get_node_resultants(ctx.node)?;
-        resultants
-            .iter()
-            .find_map(|resultant: &SyntaxNode<'db>| resultant.ancestor_of_type::<ExprPath>(db))
-    })?;
+    let resultants = db.get_node_resultants(ctx.node)?;
+    let typed_path_generic = resultants
+        .iter()
+        .find_map(|resultant: &SyntaxNode<'db>| resultant.ancestor_of_type::<ExprPath>(db))
+        .or_else(|| ctx.node.ancestor_of_type::<ExprPath>(db))?;
 
     // Remove generic args.
     let typed_path_segments: Vec<_> = typed_path_generic
