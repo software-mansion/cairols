@@ -348,6 +348,11 @@ fn lookup_item_from_ast<'db>(
                     .intern(db),
             ))]
         }
+        SyntaxKind::UsePathLeaf => {
+            let leaf = ast::UsePathLeaf::from_syntax_node(syntax_db, node);
+            let use_long_id = UseLongId(module_id, leaf.stable_ptr(syntax_db));
+            vec![LookupItemId::ModuleItem(ModuleItemId::Use(use_long_id.intern(db)))]
+        }
         SyntaxKind::ItemUse => {
             // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
             // items.
