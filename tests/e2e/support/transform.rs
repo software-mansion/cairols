@@ -57,11 +57,7 @@ pub fn conduct_transformation<T: Transformer>(
         workspace_configuration = workspace_config;
     };
 
-    if with_macros {
-        ls.open_all_and_wait_for_diagnostics_generation();
-    } else {
-        ls.open_all_cairo_files_and_wait_for_project_update();
-    }
+    ls.open_all_and_wait_for_diagnostics_generation();
 
     T::transform(ls, cursors, config)
 }
