@@ -4,11 +4,9 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use cairo_language_server::AnalysisDatabase;
-use cairo_lang_defs::db::{defs_group_input, init_defs_group};
 use cairo_lang_defs::ids::{InlineMacroExprPluginLongId, MacroPluginLongId};
 use cairo_lang_executable_plugin::executable_plugin_suite;
 use cairo_lang_plugins::plugins::ConfigPlugin;
-use cairo_lang_semantic::db::{init_semantic_group, semantic_group_input};
 use cairo_lang_semantic::ids::AnalyzerPluginLongId;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
@@ -18,28 +16,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
 use itertools::Itertools;
 use serde::Serialize;
-use salsa::Setter;
 
 const DEFAULT_COUNTS: [usize; 5] = [1, 10, 100, 1000, 5000];
 const DEFAULT_REPETITIONS: usize = 25;
-
-#[salsa::db]
-#[derive(Clone, Default)]
-struct AggregatePluginDatabase {
-    storage: salsa::Storage<Self>,
-}
-
-#[salsa::db]
-impl salsa::Database for AggregatePluginDatabase {}
-
-impl AggregatePluginDatabase {
-    fn new() -> Self {
-        let mut db = Self::default();
-        init_defs_group(&mut db);
-        init_semantic_group(&mut db);
-        db
-    }
-}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output = std::env::args().nth(1).map(PathBuf::from);
@@ -67,40 +46,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn measure_for_existing_crates(existing_crates: usize, repetitions: usize) -> ProbeResult {
     let aggregate_insert = median_of(repetitions, || {
-        let mut db = AggregatePluginDatabase::new();
-        prepopulate_aggregate(&mut db, existing_crates);
+        let (mut macro_overrides, mut inline_overrides, mut analyzer_overrides) =
+            build_plugin_override_maps(existing_crates);
         let started = Instant::now();
-        let mut macro_overrides = defs_group_input(&db).macro_plugin_overrides(&db).clone().unwrap();
-        let mut inline_overrides =
-            defs_group_input(&db).inline_macro_plugin_overrides(&db).clone().unwrap();
-        let mut analyzer_overrides =
-            semantic_group_input(&db).analyzer_plugin_overrides(&db).clone().unwrap();
         let suite = plugin_suite_inputs(existing_crates + 1);
         macro_overrides.insert(crate_input(existing_crates + 1), suite.macro_plugins);
         inline_overrides.insert(crate_input(existing_crates + 1), suite.inline_macro_plugins);
         analyzer_overrides.insert(crate_input(existing_crates + 1), suite.analyzer_plugins);
-        defs_group_input(&db).set_macro_plugin_overrides(&mut db).to(Some(macro_overrides));
-        defs_group_input(&db).set_inline_macro_plugin_overrides(&mut db).to(Some(inline_overrides));
-        semantic_group_input(&db).set_analyzer_plugin_overrides(&mut db).to(Some(analyzer_overrides));
         started.elapsed().as_nanos() as u64
     });
 
     let aggregate_update = median_of(repetitions, || {
-        let mut db = AggregatePluginDatabase::new();
-        prepopulate_aggregate(&mut db, existing_crates.max(1));
+        let (mut macro_overrides, mut inline_overrides, mut analyzer_overrides) =
+            build_plugin_override_maps(existing_crates.max(1));
         let started = Instant::now();
-        let mut macro_overrides = defs_group_input(&db).macro_plugin_overrides(&db).clone().unwrap();
-        let mut inline_overrides =
-            defs_group_input(&db).inline_macro_plugin_overrides(&db).clone().unwrap();
-        let mut analyzer_overrides =
-            semantic_group_input(&db).analyzer_plugin_overrides(&db).clone().unwrap();
         let suite = plugin_suite_inputs(existing_crates.max(1) + 10_000);
         macro_overrides.insert(crate_input(existing_crates.max(1)), suite.macro_plugins);
         inline_overrides.insert(crate_input(existing_crates.max(1)), suite.inline_macro_plugins);
         analyzer_overrides.insert(crate_input(existing_crates.max(1)), suite.analyzer_plugins);
-        defs_group_input(&db).set_macro_plugin_overrides(&mut db).to(Some(macro_overrides));
-        defs_group_input(&db).set_inline_macro_plugin_overrides(&mut db).to(Some(inline_overrides));
-        semantic_group_input(&db).set_analyzer_plugin_overrides(&mut db).to(Some(analyzer_overrides));
         started.elapsed().as_nanos() as u64
     });
 
@@ -158,31 +121,26 @@ fn measure_for_existing_crates(existing_crates: usize, repetitions: usize) -> Pr
     }
 }
 
-fn prepopulate_aggregate(db: &mut AggregatePluginDatabase, count: usize) {
-    defs_group_input(db).set_macro_plugin_overrides(db).to(Some(
-        (0..count)
-            .map(|index| {
-                let suite = plugin_suite_inputs(index);
-                (crate_input(index), suite.macro_plugins)
-            })
-            .collect(),
-    ));
-    defs_group_input(db).set_inline_macro_plugin_overrides(db).to(Some(
-        (0..count)
-            .map(|index| {
-                let suite = plugin_suite_inputs(index);
-                (crate_input(index), suite.inline_macro_plugins)
-            })
-            .collect(),
-    ));
-    semantic_group_input(db).set_analyzer_plugin_overrides(db).to(Some(
-        (0..count)
-            .map(|index| {
-                let suite = plugin_suite_inputs(index);
-                (crate_input(index), suite.analyzer_plugins)
-            })
-            .collect(),
-    ));
+fn build_plugin_override_maps(
+    count: usize,
+) -> (
+    OrderedHashMap<cairo_lang_filesystem::ids::CrateInput, Arc<[MacroPluginLongId]>>,
+    OrderedHashMap<
+        cairo_lang_filesystem::ids::CrateInput,
+        Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>,
+    >,
+    OrderedHashMap<cairo_lang_filesystem::ids::CrateInput, Arc<[AnalyzerPluginLongId]>>,
+) {
+    let mut macro_overrides = OrderedHashMap::default();
+    let mut inline_overrides = OrderedHashMap::default();
+    let mut analyzer_overrides = OrderedHashMap::default();
+    for index in 0..count {
+        let suite = plugin_suite_inputs(index);
+        macro_overrides.insert(crate_input(index), suite.macro_plugins);
+        inline_overrides.insert(crate_input(index), suite.inline_macro_plugins);
+        analyzer_overrides.insert(crate_input(index), suite.analyzer_plugins);
+    }
+    (macro_overrides, inline_overrides, analyzer_overrides)
 }
 
 fn prepopulate_granular(db: &mut AnalysisDatabase, count: usize) {
