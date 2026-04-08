@@ -415,12 +415,20 @@ impl ProcMacroClientController {
             // Make the db drop the strong reference to the proc macro client.
             self.set_proc_macro_server_status(db, ServerStatus::Pending);
 
-            let client = Arc::try_unwrap(client)
-                .expect("only one strong reference to client is expected at this point");
-
-            // This has to be done *before* clearing channels, so we don't receive a response signal
-            // from the old proc macro server when we come back to the main event loop.
-            client.kill_proc_macro_server();
+            match Arc::try_unwrap(client) {
+                Ok(client) => {
+                    // This has to be done *before* clearing channels, so we don't receive a
+                    // response signal from the old proc macro server when we come back to the
+                    // main event loop.
+                    client.kill_proc_macro_server();
+                }
+                Err(client) => {
+                    tracing::warn!(
+                        strong_refs = Arc::strong_count(&client),
+                        "proc macro client still had outstanding references during cleanup"
+                    );
+                }
+            }
         }
 
         // Otherwise we can get messages from the old client after an initialization of the new one.

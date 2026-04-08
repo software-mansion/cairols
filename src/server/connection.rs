@@ -118,10 +118,7 @@ impl Connection {
     /// we close the only active channels to these threads prior
     /// to joining them.
     pub fn close(self) -> Result<()> {
-        drop(
-            Arc::into_inner(self.sender)
-                .expect("the client sender shouldn't have more than one strong reference"),
-        );
+        drop(self.sender);
         drop(self.receiver);
 
         if let Some(threads) = self.threads {
@@ -152,5 +149,25 @@ impl ClientSender {
     /// Creates a mock `ClientSender` that swallows all messages.
     pub fn black_hole() -> Self {
         Self { weak_sender: Default::default() }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crossbeam::channel::unbounded;
+    use lsp_server::{Message, Notification};
+
+    use super::*;
+
+    #[test]
+    fn close_tolerates_live_sender_clone() {
+        let (sender, receiver) = unbounded();
+        let connection = Connection { sender: Arc::new(sender), receiver, threads: None };
+        let client_sender = connection.make_sender();
+
+        connection.close().unwrap();
+
+        let msg = Message::Notification(Notification::new("test".to_string(), serde_json::json!({})));
+        assert!(client_sender.send(msg).is_err());
     }
 }
