@@ -48,12 +48,32 @@ fn all_prefixed() {
     """]
 
     [[completions]]
+    completion_label = "blake2s_compress_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_compress_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_compress_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_compress_guarantees;
+
+    """]
+
+    [[completions]]
     completion_label = "blake2s_finalize(...)"
     completion_label_path = "(use core::blake::blake2s_finalize)"
     completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_finalize_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_finalize_guarantees;
 
     """]
 
@@ -121,12 +141,32 @@ fn all_prefixed_macro() {
     """]
 
     [[completions]]
+    completion_label = "blake2s_compress_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_compress_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_compress_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_compress_guarantees;
+
+    """]
+
+    [[completions]]
     completion_label = "blake2s_finalize(...)"
     completion_label_path = "(use core::blake::blake2s_finalize)"
     completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_finalize_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_finalize_guarantees;
 
     """]
 
@@ -189,12 +229,32 @@ fn only_before_cursor() {
     """]
 
     [[completions]]
+    completion_label = "blake2s_compress_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_compress_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_compress_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_compress_guarantees;
+
+    """]
+
+    [[completions]]
     completion_label = "blake2s_finalize(...)"
     completion_label_path = "(use core::blake::blake2s_finalize)"
     completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_finalize_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_finalize_guarantees;
 
     """]
 
@@ -366,12 +426,32 @@ fn mixed_params_vars() {
     """]
 
     [[completions]]
+    completion_label = "blake2s_compress_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_compress_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_compress_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_compress_guarantees;
+
+    """]
+
+    [[completions]]
     completion_label = "blake2s_finalize(...)"
     completion_label_path = "(use core::blake::blake2s_finalize)"
     completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_finalize_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_finalize_guarantees;
 
     """]
 
