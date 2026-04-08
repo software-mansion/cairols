@@ -4,10 +4,9 @@ use std::{fs, path};
 
 use anyhow::Context;
 use cairo_lang_filesystem::db::{
-    CORELIB_CRATE_NAME, CORELIB_VERSION, FilesGroup, init_dev_corelib,
+    CORELIB_CRATE_NAME, CORELIB_VERSION, FilesGroup, init_dev_corelib, set_crate_config_for_input,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
-use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_utils::Intern;
 use indoc::indoc;
 use semver::Version;
@@ -33,14 +32,17 @@ pub fn try_to_init_unmanaged_core_if_not_present(
         // Initialize with default config.
         init_dev_corelib(db, path);
 
-        let core_id = CrateLongId::core(db).intern(db);
-
         // Override the config with the correct version.
-        let mut crate_configs = db.crate_config(core_id).unwrap().clone();
+        let core_input = {
+            let core_id = CrateLongId::core(db).intern(db);
+            db.crate_input(core_id).clone()
+        };
+        let mut crate_configs = db.crate_config(CrateId::core(db)).unwrap().clone();
 
         crate_configs.settings.version = Some(version);
+        let config = crate_configs.into_crate_configuration_input(db);
 
-        set_crate_config!(db, core_id, Some(crate_configs));
+        set_crate_config_for_input(db, core_input, Some(config));
     } else {
         warn!("failed to find unmanaged core crate")
     }
