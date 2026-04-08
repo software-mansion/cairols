@@ -196,7 +196,6 @@ fn in_use_path_multi_macro() {
     "#);
 }
 
-// FIXME(#673)
 #[test]
 fn in_use_path_multi_with_one_in_scope() {
     test_transform_plain!(Completion, completion_fixture(), "
@@ -210,10 +209,6 @@ fn in_use_path_multi_with_one_in_scope() {
     caret = """
     use module::{x,<caret>
     """
-
-    [[completions]]
-    completion_label = "x"
-    completion_label_type_info = "fn() -> ()"
 
     [[completions]]
     completion_label = "y"

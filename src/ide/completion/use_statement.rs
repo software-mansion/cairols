@@ -1,11 +1,14 @@
+use std::collections::HashSet;
+
 use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_semantic::items::us::get_use_path_segments;
-use cairo_lang_syntax::node::ast::{ItemUse, UsePathLeaf, UsePathSingle};
+use cairo_lang_syntax::node::ast::{ItemUse, UsePathLeaf, UsePathMulti, UsePathSingle};
 use cairo_lang_syntax::node::kind::SyntaxKind::{
-    UsePathLeaf as UsePathLeafKind, UsePathMulti, UsePathSingle as UsePathSingleKind, UsePathStar,
+    UsePathLeaf as UsePathLeafKind, UsePathMulti as UsePathMultiKind,
+    UsePathSingle as UsePathSingleKind, UsePathStar,
 };
 use cairo_lang_syntax::node::{
-    Token,
+    Token, TypedSyntaxNode,
     ast::{PathSegment, UsePath},
 };
 
@@ -35,7 +38,7 @@ pub fn use_completions<'db>(
     // If nothing was typed after use i.e. `use <caret>`.
     if ctx
         .node
-        .ancestor_of_kinds(db, &[UsePathSingleKind, UsePathLeafKind, UsePathMulti, UsePathStar])
+        .ancestor_of_kinds(db, &[UsePathSingleKind, UsePathLeafKind, UsePathMultiKind, UsePathStar])
         .is_none()
         && ctx.node.ancestor_of_type::<ItemUse>(db).is_some()
         && let Some(use_completions) = first_segment(db, "", ctx)
@@ -51,9 +54,41 @@ fn use_statement<'db>(
     use_path_single: UsePathSingle<'db>,
     ctx: &AnalysisContext<'db>,
 ) -> Option<Vec<CompletionItemOrderable>> {
+    let excluded = already_imported_in_multi(db, ctx);
     get_use_path_segments(db, UsePath::Single(use_path_single))
         .ok()
         .and_then(|segments| path_prefix_completions(db, ctx, segments.segments))
+        .map(|items| {
+            items.into_iter().filter(|item| !excluded.contains(&item.item.label)).collect()
+        })
+}
+
+/// Collects the names of items already listed as siblings in the enclosing [`UsePathMulti`],
+/// excluding the leaf node currently being typed (so partial completions still work).
+fn already_imported_in_multi<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+) -> HashSet<String> {
+    let Some(multi) = ctx.node.ancestor_of_type::<UsePathMulti>(db) else {
+        return HashSet::new();
+    };
+    let current_leaf_ptr =
+        ctx.node.ancestor_of_type::<UsePathLeaf>(db).map(|leaf| leaf.stable_ptr(db));
+    multi
+        .use_paths(db)
+        .elements(db)
+        .filter_map(|use_path| {
+            let UsePath::Leaf(leaf) = use_path else { return None };
+            if Some(leaf.stable_ptr(db)) == current_leaf_ptr {
+                return None;
+            }
+            if let PathSegment::Simple(simple) = leaf.ident(db) {
+                Some(simple.ident(db).token(db).text(db).to_string(db).to_string())
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 /// Invariant: `use_path_leaf` is the first and only one element of the use path.
