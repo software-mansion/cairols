@@ -21,7 +21,7 @@ jobs:
   bench-codspeed:
     name: benchmarks (CodSpeed)
     if: github.event_name != 'merge_group'
-    runs-on: codspeed-macro
+    runs-on: ubuntu-latest
     needs:
       - bench
     permissions:
