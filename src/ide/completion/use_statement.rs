@@ -54,16 +54,16 @@ fn use_statement<'db>(
     use_path_single: UsePathSingle<'db>,
     ctx: &AnalysisContext<'db>,
 ) -> Option<Vec<CompletionItemOrderable>> {
-    let excluded = already_imported_in_multi(db, ctx);
     get_use_path_segments(db, UsePath::Single(use_path_single))
         .ok()
         .and_then(|segments| path_prefix_completions(db, ctx, segments.segments))
         .map(|items| {
+            let excluded = already_imported_in_multi(db, ctx);
             items.into_iter().filter(|item| !excluded.contains(&item.item.label)).collect()
         })
 }
 
-/// Collects the names of items already listed as siblings in the enclosing [`UsePathMulti`],
+/// Collects the names of items already listed in the enclosing [`UsePathMulti`],
 /// excluding the leaf node currently being typed (so partial completions still work).
 fn already_imported_in_multi<'db>(
     db: &'db AnalysisDatabase,
@@ -82,11 +82,8 @@ fn already_imported_in_multi<'db>(
             if Some(leaf.stable_ptr(db)) == current_leaf_ptr {
                 return None;
             }
-            if let PathSegment::Simple(simple) = leaf.ident(db) {
-                Some(simple.ident(db).token(db).text(db).to_string(db))
-            } else {
-                None
-            }
+            let PathSegment::Simple(simple) = leaf.ident(db) else { return None };
+            Some(simple.ident(db).token(db).text(db).to_string(db))
         })
         .collect()
 }
