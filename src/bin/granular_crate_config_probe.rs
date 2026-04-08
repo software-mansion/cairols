@@ -3,13 +3,10 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use cairo_language_server::AnalysisDatabase;
-use cairo_lang_filesystem::db::{
-    CrateConfigurationInput, CrateSettings, files_group_input,
-};
+use cairo_lang_filesystem::db::{CrateConfigurationInput, CrateSettings};
 use cairo_lang_filesystem::ids::{CrateInput, DirectoryInput};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::Serialize;
-use salsa::Setter;
 
 const DEFAULT_COUNTS: [usize; 5] = [1, 10, 100, 1000, 5000];
 const DEFAULT_REPETITIONS: usize = 25;
@@ -40,25 +37,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn measure_for_existing_crates(existing_crates: usize, repetitions: usize) -> ProbeResult {
     let aggregate_insert = median_of(repetitions, || {
-        let mut db = AnalysisDatabase::new();
-        prepopulate_aggregate(&mut db, existing_crates);
+        let configs = build_crate_config_map(existing_crates);
         let started = Instant::now();
-        let mut configs = files_group_input(&db).crate_configs(&db).clone().unwrap();
+        let mut configs = configs.clone();
         configs.insert(crate_input(existing_crates + 1), crate_config_input(existing_crates + 1));
-        files_group_input(&db).set_crate_configs(&mut db).to(Some(configs));
         started.elapsed().as_nanos() as u64
     });
 
     let aggregate_update = median_of(repetitions, || {
-        let mut db = AnalysisDatabase::new();
-        prepopulate_aggregate(&mut db, existing_crates.max(1));
+        let configs = build_crate_config_map(existing_crates.max(1));
         let started = Instant::now();
-        let mut configs = files_group_input(&db).crate_configs(&db).clone().unwrap();
+        let mut configs = configs.clone();
         configs.insert(
             crate_input(existing_crates.max(1)),
             crate_config_input(existing_crates.max(1) + 10_000),
         );
-        files_group_input(&db).set_crate_configs(&mut db).to(Some(configs));
         started.elapsed().as_nanos() as u64
     });
 
@@ -114,10 +107,6 @@ fn measure_for_existing_crates(existing_crates: usize, repetitions: usize) -> Pr
         granular_sync_insert_ns: granular_sync_insert,
         granular_sync_update_ns: granular_sync_update,
     }
-}
-
-fn prepopulate_aggregate(db: &mut AnalysisDatabase, count: usize) {
-    files_group_input(db).set_crate_configs(db).to(Some(build_crate_config_map(count)));
 }
 
 fn prepopulate_granular(db: &mut AnalysisDatabase, count: usize) {
