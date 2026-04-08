@@ -83,7 +83,7 @@ fn already_imported_in_multi<'db>(
                 return None;
             }
             if let PathSegment::Simple(simple) = leaf.ident(db) {
-                Some(simple.ident(db).token(db).text(db).to_string(db).to_string())
+                Some(simple.ident(db).token(db).text(db).to_string(db))
             } else {
                 None
             }
