@@ -3,9 +3,8 @@ use std::path::PathBuf;
 
 use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_filesystem::db::{CrateIdentifier, FilesGroup};
+use cairo_lang_filesystem::db::{CrateIdentifier, FilesGroup, set_crate_config_for_input};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::ShowMessage;
@@ -153,9 +152,12 @@ impl ProjectController {
 
                         // Make sure cfg(test) is not set if the core crate comes from the Scarb cache.
                         if contains_core_from_scarb_cache(&project_config, &state.scarb_toolchain) {
-                            let core_id = CrateId::core(db);
-
-                            let mut core_settings = db.crate_config(core_id).unwrap().clone();
+                            let core_input = {
+                                let core_id = CrateId::core(db);
+                                db.crate_input(core_id).clone()
+                            };
+                            let mut core_settings =
+                                db.crate_config(CrateId::core(db)).unwrap().clone();
                             core_settings.settings.cfg_set = Some(
                                 core_settings
                                     .settings
@@ -163,7 +165,8 @@ impl ProjectController {
                                     .unwrap_or_default()
                                     .union(&AnalysisDatabase::initial_cfg_set_for_deps()),
                             );
-                            set_crate_config!(db, core_id, Some(core_settings));
+                            let config = core_settings.into_crate_configuration_input(db);
+                            set_crate_config_for_input(db, core_input, Some(config));
                         }
 
                         state.analysis_progress_controller.project_model_loaded();

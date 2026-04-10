@@ -1,9 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
-use cairo_lang_filesystem::db::files_group_input;
+use cairo_lang_filesystem::db::CrateConfigurationInput;
 use cairo_lang_filesystem::ids::CrateInput;
-use salsa::Setter;
 
 pub use self::configs_registry::{ConfigsRegistry, PackageConfig};
 use crate::lang::db::AnalysisDatabase;
@@ -70,8 +69,7 @@ impl ProjectModel {
     ) {
         if self.remove_crates_from_db_on_next_update {
             self.remove_crates_from_db_on_next_update = false;
-
-            files_group_input(db).set_crate_configs(db).to(Some(Default::default()));
+            db.sync_crate_configs(Default::default());
         }
 
         let workspace_crates = workspace_crates
@@ -107,51 +105,65 @@ impl ProjectModel {
         proc_macro_controller: &ProcMacroClientController,
     ) {
         db.clear_generated_file_contents();
+        let merged_crates = self.merged_loaded_crates();
+        let crate_configs: HashMap<CrateInput, CrateConfigurationInput> =
+            merged_crates.iter().map(|cr| (cr.input(), cr.configuration_input())).collect();
+        db.sync_crate_configs(crate_configs.into_iter().collect());
 
-        for (cr, workspaces) in &self.loaded_crates {
-            let same_crates: Vec<_> = workspaces
-                .iter()
-                .map(|ws| {
-                    self.loaded_workspaces
-                        .get(ws)
-                        .expect("loaded_crates and loaded_workspaces are expected to be synchronised at this point")
-                        .get(cr)
-                        .expect("loaded_crates and loaded_workspaces are expected to be synchronised at this point")
-                })
-                .collect();
-
-            let merged_builtin_plugins = same_crates
-                .iter()
-                .map(|cr| cr.builtin_plugins.clone())
-                .reduce(|mut x, y| {
-                    x.extend(y);
-                    x
-                })
-                .expect("same_crates cannot be empty")
-                .clone();
-            let merged_settings = same_crates
-                .iter()
-                .map(|cr| cr.settings.clone())
-                .reduce(|mut x, y| {
-                    x.cfg_set =
-                        x.cfg_set.map(|cfg_set| cfg_set.union(&y.cfg_set.unwrap_or_default()));
-                    x.dependencies.extend(y.dependencies);
-                    x
-                })
-                .expect("same_crates cannot be empty");
-            let cr = Crate {
-                settings: merged_settings,
-                builtin_plugins: merged_builtin_plugins,
-                ..same_crates.into_iter().next().expect("same_crates cannot be empty").clone()
-            };
-
+        let mut plugin_suites = Vec::with_capacity(merged_crates.len());
+        for cr in merged_crates {
             let cr_input = cr.input();
-
             let proc_macro_plugin_suite =
                 proc_macro_controller.proc_macro_plugin_suite_for_crate(&cr_input);
-
-            cr.apply(db, proc_macro_plugin_suite.cloned());
+            if let Some(file_stems) = &cr.custom_main_file_stems {
+                super::crate_data::inject_virtual_wrapper_lib(db, cr_input.clone(), file_stems);
+            }
+            plugin_suites.push((cr_input, cr.plugin_suite(proc_macro_plugin_suite.cloned())));
         }
+        db.set_override_crate_plugins_from_suites(plugin_suites);
+    }
+
+    fn merged_loaded_crates(&self) -> Vec<Crate> {
+        self.loaded_crates
+            .iter()
+            .map(|(cr, workspaces)| {
+                let same_crates: Vec<_> = workspaces
+                    .iter()
+                    .map(|ws| {
+                        self.loaded_workspaces
+                            .get(ws)
+                            .expect("loaded_crates and loaded_workspaces are expected to be synchronised at this point")
+                            .get(cr)
+                            .expect("loaded_crates and loaded_workspaces are expected to be synchronised at this point")
+                    })
+                    .collect();
+
+                let merged_builtin_plugins = same_crates
+                    .iter()
+                    .map(|cr| cr.builtin_plugins.clone())
+                    .reduce(|mut x, y| {
+                        x.extend(y);
+                        x
+                    })
+                    .expect("same_crates cannot be empty")
+                    .clone();
+                let merged_settings = same_crates
+                    .iter()
+                    .map(|cr| cr.settings.clone())
+                    .reduce(|mut x, y| {
+                        x.cfg_set =
+                            x.cfg_set.map(|cfg_set| cfg_set.union(&y.cfg_set.unwrap_or_default()));
+                        x.dependencies.extend(y.dependencies);
+                        x
+                    })
+                    .expect("same_crates cannot be empty");
+                Crate {
+                    settings: merged_settings,
+                    builtin_plugins: merged_builtin_plugins,
+                    ..same_crates.into_iter().next().expect("same_crates cannot be empty").clone()
+                }
+            })
+            .collect()
     }
 
     fn remove_crates(
