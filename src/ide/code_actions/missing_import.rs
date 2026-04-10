@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
-use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::ast::ExprPath;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_language_common::CommonGroup;
@@ -17,67 +16,67 @@ pub fn missing_import<'db>(
     uri: Url,
 ) -> Option<Vec<CodeAction>> {
     let resultants = db.get_node_resultants(ctx.node)?;
-    let typed_path_generic = resultants
-        .iter()
-        .find_map(|resultant: &SyntaxNode<'db>| resultant.ancestor_of_type::<ExprPath>(db))
-        .or_else(|| ctx.node.ancestor_of_type::<ExprPath>(db))?;
 
-    // Remove generic args.
-    let typed_path_segments: Vec<_> = typed_path_generic
-        .segments(db)
-        .elements(db)
-        .map(|e| e.identifier(db).to_string(db))
-        .rev()
-        .collect();
+    resultants.iter().chain(std::iter::once(&ctx.node)).find_map(|node| {
+        let typed_path_generic = node.ancestor_of_type::<ExprPath>(db)?;
 
-    let items = db.visible_importables_from_module(ctx.module_id)?;
+        // Remove generic args.
+        let typed_path_segments: Vec<_> = typed_path_generic
+            .segments(db)
+            .elements(db)
+            .map(|e| e.identifier(db).to_string(db))
+            .rev()
+            .collect();
 
-    let items: Vec<_> = items
-        .iter()
-        .filter_map(|(_item, proposed_path)| {
-            let mut proposed_path_segments: Vec<_> = proposed_path.split("::").collect();
+        let items = db.visible_importables_from_module(ctx.module_id)?;
 
-            // We exclude items that are already in scope (commonly prelude).
-            // These items can NOT generate E0006.
-            // This prevents cases like derive with same name as trait, that is broken and generates code with E0006 error inside.
-            if proposed_path_segments.len() == 1 {
-                return None;
-            }
+        let items: Vec<_> = items
+            .iter()
+            .filter_map(|(_item, proposed_path)| {
+                let mut proposed_path_segments: Vec<_> = proposed_path.split("::").collect();
 
-            let mut last_path_segment = None;
-
-            for typed_path_segment in &typed_path_segments {
-                last_path_segment = proposed_path_segments.pop();
-
-                if typed_path_segment != last_path_segment? {
+                // We exclude items that are already in scope (commonly prelude).
+                // These items can NOT generate E0006.
+                // This prevents cases like derive with same name as trait, that is broken and generates code with E0006 error inside.
+                if proposed_path_segments.len() == 1 {
                     return None;
                 }
-            }
 
-            proposed_path_segments.extend(last_path_segment);
+                let mut last_path_segment = None;
 
-            Some(proposed_path_segments.join("::"))
-        })
-        .collect();
+                for typed_path_segment in &typed_path_segments {
+                    last_path_segment = proposed_path_segments.pop();
 
-    let is_preferred = is_preferred(&items);
+                    if typed_path_segment != last_path_segment? {
+                        return None;
+                    }
+                }
 
-    Some(
-        items
-            .into_iter()
-            .map(|path| CodeAction {
-                title: format!("Import `{path}`"),
-                kind: Some(CodeActionKind::QUICKFIX),
-                is_preferred,
-                edit: Some(WorkspaceEdit {
-                    changes: new_import_edit(db, ctx, path)
-                        .map(|edit| HashMap::from_iter([(uri.clone(), vec![edit])])),
-                    ..Default::default()
-                }),
-                ..Default::default()
+                proposed_path_segments.extend(last_path_segment);
+
+                Some(proposed_path_segments.join("::"))
             })
-            .collect(),
-    )
+            .collect();
+
+        let is_preferred = is_preferred(&items);
+
+        Some(
+            items
+                .into_iter()
+                .map(|path| CodeAction {
+                    title: format!("Import `{path}`"),
+                    kind: Some(CodeActionKind::QUICKFIX),
+                    is_preferred,
+                    edit: Some(WorkspaceEdit {
+                        changes: new_import_edit(db, ctx, path)
+                            .map(|edit| HashMap::from_iter([(uri.clone(), vec![edit])])),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                })
+                .collect(),
+        )
+    })
 }
 
 pub fn is_preferred<T>(items: &[T]) -> Option<bool> {
