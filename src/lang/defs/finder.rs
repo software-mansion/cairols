@@ -2,7 +2,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumLongId, GenericTypeId, ImplDefLongId, ImplItemId, LanguageElementId, LookupItemId,
     MacroCallLongId, MemberId, ModuleId, NamedLanguageElementId, StructLongId, SubmoduleLongId,
-    TraitItemId, VarId,
+    TraitItemId, UseId, UseLongId, VarId,
 };
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_parser::db::ParserGroup;
@@ -60,6 +60,10 @@ pub enum ResolvedItem<'db> {
     ImplItem(ImplItemId<'db>),
     PluginInlineMacro(SmolStrId<'db>),
     GenericParam(GenericParam<'db>),
+    /// A `use` path leaf with an explicit alias clause (e.g., `use xyz::A as B`).
+    /// The alias name (e.g., `B`) is treated as its own symbol rather than being transparent to
+    /// the underlying item.
+    UseAlias(UseId<'db>),
 }
 
 pub fn find_definition<'db>(
@@ -68,7 +72,8 @@ pub fn find_definition<'db>(
     lookup_items: &[LookupItemId<'db>],
     resolver_data: &mut Option<ResolverData<'db>>,
 ) -> Option<ResolvedItem<'db>> {
-    try_plugin_inline_macro(db, identifier, lookup_items)
+    try_use_alias_identifier(db, identifier)
+        .or_else(|| try_plugin_inline_macro(db, identifier, lookup_items))
         .or_else(|| try_top_level_declarative_inline_macro(db, identifier))
         .or_else(|| try_submodule_name(db, identifier))
         .or_else(|| try_member(db, identifier, lookup_items))
@@ -78,10 +83,16 @@ pub fn find_definition<'db>(
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
         .or_else(|| try_impl_item_usages(db, identifier, lookup_items))
         .or_else(|| try_trait_or_impl_item_with_self_reference(db, identifier, lookup_items))
-        .or_else(|| try_concrete_type_or_impl(db, identifier, lookup_items))
+        .or_else(|| {
+            let result = try_concrete_type_or_impl(db, identifier, lookup_items)?;
+            Some(redirect_to_use_alias_if_needed(db, identifier, result))
+        })
         .or_else(|| try_trait_as_generic_parameter_bound(db, identifier, lookup_items))
         .or_else(|| try_generic_arg(db, identifier, lookup_items))
-        .or_else(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))
+        .or_else(|| {
+            let result = lookup_resolved_items(db, identifier, lookup_items, resolver_data)?;
+            Some(redirect_to_use_alias_if_needed(db, identifier, result))
+        })
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
 }
 
@@ -756,6 +767,78 @@ fn try_trait_as_generic_parameter_bound<'db>(
     None
 }
 
+/// Tries to resolve an identifier that is the alias name in a `use ... as Alias` statement.
+///
+/// When the cursor is on `B` in `use xyz::A as B`, this returns a [`ResolvedItem::UseAlias`]
+/// pointing to the use path leaf rather than following the alias to the underlying item `A`.
+fn try_use_alias_identifier<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+) -> Option<ResolvedItem<'db>> {
+    let alias_clause = identifier.as_syntax_node().parent(db)?;
+    if alias_clause.kind(db) != SyntaxKind::AliasClause {
+        return None;
+    }
+    let use_path_leaf_node = alias_clause.parent(db)?;
+    if use_path_leaf_node.kind(db) != SyntaxKind::UsePathLeaf {
+        return None;
+    }
+    let use_path_leaf = ast::UsePathLeaf::from_syntax_node(db, use_path_leaf_node);
+    let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
+    let use_long_id = UseLongId(module_id, use_path_leaf.stable_ptr(db));
+    Some(ResolvedItem::UseAlias(use_long_id.intern(db)))
+}
+
+/// If the resolved item's name differs from the identifier text, the identifier is an alias usage
+/// (e.g., `B` in `let _x: B = 5` where `use xyz::A as B`). In this case, redirect to the
+/// [`ResolvedItem::UseAlias`] for the alias, so that find-references and rename treat `B` as its
+/// own symbol rather than being transparent to `A`.
+fn redirect_to_use_alias_if_needed<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    resolved: ResolvedItem<'db>,
+) -> ResolvedItem<'db> {
+    let identifier_text = identifier.text(db);
+
+    // Get the name identifier node of the resolved item to compare names.
+    let resolved_name = resolved
+        .definition_node(db)
+        .and_then(|node| TerminalIdentifier::cast(db, node))
+        .map(|ident| ident.text(db));
+
+    // If the resolved item has no accessible name, or the names already match, no redirect needed.
+    let Some(resolved_name) = resolved_name else { return resolved };
+    if resolved_name == identifier_text {
+        return resolved;
+    }
+
+    // The identifier text differs from the resolved item's name: this must be an alias usage.
+    // Find the use alias for this identifier in the containing module.
+    find_use_alias_in_module(db, identifier, identifier_text).unwrap_or(resolved)
+}
+
+/// Searches the module containing `identifier` for a `use ... as <alias_name>` declaration,
+/// and returns a [`ResolvedItem::UseAlias`] if found.
+fn find_use_alias_in_module<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    alias_name: SmolStrId<'db>,
+) -> Option<ResolvedItem<'db>> {
+    let module_id = db.find_module_containing_node(identifier.as_syntax_node())?;
+    let use_ids = db.module_uses_ids(module_id).ok()?;
+
+    for &use_id in use_ids.iter() {
+        let Ok(use_leaf) = db.module_use_by_id(use_id) else { continue };
+        // Only consider use paths with an explicit alias clause (`use xyz::A as B`, not `use xyz::A`)
+        if matches!(use_leaf.alias_clause(db), ast::OptionAliasClause::AliasClause(_))
+            && use_id.name(db) == alias_name
+        {
+            return Some(ResolvedItem::UseAlias(use_id));
+        }
+    }
+    None
+}
+
 /// Lookups for the identifier in compiler's `lookup_resolved_*_item_by_ptr` queries.
 fn lookup_resolved_items<'db>(
     db: &'db AnalysisDatabase,
@@ -996,6 +1079,11 @@ impl<'db> ResolvedItem<'db> {
             ResolvedItem::GenericParam(generic_param) => generic_param.stable_ptr(db).untyped(),
 
             ResolvedItem::PluginInlineMacro(_) => return None,
+
+            ResolvedItem::UseAlias(use_id) => {
+                let use_leaf = db.module_use_by_id(*use_id).ok()?;
+                use_leaf.name(db).stable_ptr(db).untyped()
+            }
         };
         Some(stable_ptr)
     }
