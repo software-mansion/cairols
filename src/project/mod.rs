@@ -116,82 +116,85 @@ impl ProjectController {
     /// and received in the main [`event loop`](crate::Backend::event_loop).
     #[tracing::instrument(skip_all, fields(project_update))]
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
-        let db = &mut state.db;
-        match project_update {
-            ProjectUpdate::Scarb { crates, workspace_dir, workspace_manifest_path } => {
-                state.diagnostics_controller.clear_scarb_manifest_diagnostics(&crates, &notifier);
-                debug!("updating crate roots from scarb metadata: {crates:#?}");
-                state.proc_macro_controller.request_defined_macros(db, workspace_manifest_path);
-                state.project_controller.model.load_workspace(
-                    db,
-                    crates,
-                    workspace_dir,
-                    &state.proc_macro_controller,
-                );
-                state.analysis_progress_controller.project_model_loaded();
-            }
-            ProjectUpdate::ScarbMetadataFailed { manifest_path, diagnostics } => {
-                state.diagnostics_controller.publish_scarb_manifest_diagnostics(
-                    &manifest_path,
-                    diagnostics,
-                    db,
-                    &notifier,
-                );
-                // Try to set up a corelib at least if it is not in the db already.
-                try_to_init_unmanaged_core_if_not_present(
-                    db,
-                    &state.config,
-                    &state.scarb_toolchain,
-                );
-            }
-            ProjectUpdate::CairoProjectToml(maybe_project_config) => {
-                if let Some(project_config) = *maybe_project_config {
-                    update_crate_roots_from_project_config(db, &project_config);
+        {
+            let db = &mut state.db;
+            match project_update {
+                ProjectUpdate::Scarb { crates, workspace_dir, workspace_manifest_path } => {
+                    state
+                        .diagnostics_controller
+                        .clear_scarb_manifest_diagnostics(&crates, &notifier);
+                    debug!("updating crate roots from scarb metadata: {crates:#?}");
+                    state.proc_macro_controller.request_defined_macros(db, workspace_manifest_path);
+                    state.project_controller.model.load_workspace(
+                        db,
+                        crates,
+                        workspace_dir,
+                        &state.proc_macro_controller,
+                    );
+                    state.analysis_progress_controller.project_model_loaded();
+                }
+                ProjectUpdate::ScarbMetadataFailed { manifest_path, diagnostics } => {
+                    state.diagnostics_controller.publish_scarb_manifest_diagnostics(
+                        &manifest_path,
+                        diagnostics,
+                        db,
+                        &notifier,
+                    );
+                    // Try to set up a corelib at least if it is not in the db already.
+                    try_to_init_unmanaged_core_if_not_present(
+                        db,
+                        &state.config,
+                        &state.scarb_toolchain,
+                    );
+                }
+                ProjectUpdate::CairoProjectToml(maybe_project_config) => {
+                    if let Some(project_config) = *maybe_project_config {
+                        update_crate_roots_from_project_config(db, &project_config);
 
-                    // Make sure cfg(test) is not set if the core crate comes from the Scarb cache.
-                    if contains_core_from_scarb_cache(&project_config, &state.scarb_toolchain) {
-                        let core_id = CrateId::core(db);
+                        // Make sure cfg(test) is not set if the core crate comes from the Scarb cache.
+                        if contains_core_from_scarb_cache(&project_config, &state.scarb_toolchain) {
+                            let core_id = CrateId::core(db);
 
-                        let mut core_settings = db.crate_config(core_id).unwrap().clone();
-                        core_settings.settings.cfg_set = Some(
-                            core_settings
-                                .settings
-                                .cfg_set
-                                .unwrap_or_default()
-                                .union(&AnalysisDatabase::initial_cfg_set_for_deps()),
-                        );
-                        set_crate_config!(db, core_id, Some(core_settings));
+                            let mut core_settings = db.crate_config(core_id).unwrap().clone();
+                            core_settings.settings.cfg_set = Some(
+                                core_settings
+                                    .settings
+                                    .cfg_set
+                                    .unwrap_or_default()
+                                    .union(&AnalysisDatabase::initial_cfg_set_for_deps()),
+                            );
+                            set_crate_config!(db, core_id, Some(core_settings));
+                        }
+
+                        state.analysis_progress_controller.project_model_loaded();
                     }
 
-                    state.analysis_progress_controller.project_model_loaded();
-                }
-
-                try_to_init_unmanaged_core_if_not_present(
-                    db,
-                    &state.config,
-                    &state.scarb_toolchain,
-                );
-            }
-            ProjectUpdate::NoConfig(file_path) => {
-                try_to_init_unmanaged_core_if_not_present(
-                    db,
-                    &state.config,
-                    &state.scarb_toolchain,
-                );
-
-                if let Err(err) = setup_project(&mut *db, &file_path) {
-                    error!(
-                        "error loading file {} as a single crate: {err}",
-                        file_path.to_string_lossy()
+                    try_to_init_unmanaged_core_if_not_present(
+                        db,
+                        &state.config,
+                        &state.scarb_toolchain,
                     );
-                } else {
-                    state.analysis_progress_controller.project_model_loaded();
                 }
-            }
+                ProjectUpdate::NoConfig(file_path) => {
+                    try_to_init_unmanaged_core_if_not_present(
+                        db,
+                        &state.config,
+                        &state.scarb_toolchain,
+                    );
+
+                    if let Err(err) = setup_project(&mut *db, &file_path) {
+                        error!(
+                            "error loading file {} as a single crate: {err}",
+                            file_path.to_string_lossy()
+                        );
+                    } else {
+                        state.analysis_progress_controller.project_model_loaded();
+                    }
+                }
+            };
         }
 
-        // Drop mut ref so we can obtain snapshot.
-        let _ = db;
+        state.apply_pending_open_file_overrides();
 
         // Manifest may have changed, update for open files
         state.code_lens_controller.on_did_change(

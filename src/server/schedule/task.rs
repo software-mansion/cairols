@@ -18,7 +18,7 @@ type LocalFn<'s> = Box<dyn FnOnce(&State, MetaState, Notifier, &mut Requester<'_
 
 type BackgroundFn = Box<dyn FnOnce(Notifier, Responder) + Send + 'static>;
 
-pub type BackgroundFnBuilder<'s> = Box<dyn FnOnce(&State, MetaState) -> BackgroundFn + 's>;
+pub type BackgroundFnBuilder<'s> = Box<dyn FnOnce(&mut State, MetaState) -> BackgroundFn + 's>;
 
 /// Describes how the task should be run.
 #[derive(Clone, Copy, Debug, Default)]
@@ -71,7 +71,10 @@ pub struct SyncTask<'s> {
 impl<'s> Task<'s> {
     /// Creates a new fmt task.
     pub fn fmt(
-        func: impl FnOnce(&State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static>
+        func: impl FnOnce(
+            &mut State,
+            MetaState,
+        ) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static>
         + 's,
     ) -> Self {
         Self::Fmt(Box::new(func))
@@ -80,7 +83,10 @@ impl<'s> Task<'s> {
     /// Creates a new background task.
     pub fn background(
         schedule: BackgroundSchedule,
-        func: impl FnOnce(&State, MetaState) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static>
+        func: impl FnOnce(
+            &mut State,
+            MetaState,
+        ) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static>
         + 's,
     ) -> Self {
         Self::Background(BackgroundTaskBuilder { schedule, builder: Box::new(func) })
@@ -131,7 +137,7 @@ pub enum RetryTaskInfo {
 
 impl RetryTaskInfo {
     pub fn task(self, request_handler: impl Handler) -> Task<'static> {
-        let builder: BackgroundFnBuilder = Box::new(|state: &State, meta_state| {
+        let builder: BackgroundFnBuilder = Box::new(|state: &mut State, meta_state| {
             let state_snapshot = state.snapshot();
             Box::new(|notifier, responder| {
                 request_handler(state_snapshot, meta_state, notifier, responder)

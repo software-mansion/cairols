@@ -23,7 +23,7 @@ use crate::server::schedule::thread::task_progress_monitor::{
 };
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 use crate::server::trigger;
-use crate::state::{State, StateSnapshot};
+use crate::state::StateSnapshot;
 use crate::toolchain::scarb::ScarbToolchain;
 
 mod file_batches;
@@ -79,8 +79,8 @@ impl DiagnosticsController {
     }
 
     /// Schedules diagnostics refreshing on snapshot(s) of the current state.
-    pub fn refresh(&self, state: &State) {
-        self.trigger.activate(state.snapshot());
+    pub fn refresh(&self, snapshot: StateSnapshot) {
+        self.trigger.activate(snapshot);
     }
 
     pub fn publish_scarb_manifest_diagnostics(
