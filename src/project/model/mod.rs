@@ -1,14 +1,16 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use cairo_lang_filesystem::db::CrateConfigurationInput;
 use cairo_lang_filesystem::ids::CrateInput;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 pub use self::configs_registry::{ConfigsRegistry, PackageConfig};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::project::Crate;
-use crate::project::crate_data::CrateInfo;
+use crate::project::crate_data::{CrateInfo, PluginSuiteFingerprint};
 use crate::state::{Owned, Snapshot};
 
 mod configs_registry;
@@ -26,6 +28,7 @@ pub struct ProjectModel {
     /// Used to determine when we can skip calling `scarb metadata` to update a project model.
     manifests_of_members_from_loaded_workspaces: Owned<HashSet<PathBuf>>,
     configs_registry: Owned<ConfigsRegistry>,
+    applied_plugin_suite_fingerprints: Owned<OrderedHashMap<CrateInput, PluginSuiteFingerprint>>,
     /// Used to delay removing of crates from the db until the next workspace is loaded.
     /// It is done to ensure diagnostics are not randomly cleared after a project manifest change/
     /// db swap/reload workspace command.
@@ -39,6 +42,7 @@ impl ProjectModel {
             loaded_crates: Default::default(),
             manifests_of_members_from_loaded_workspaces: Default::default(),
             configs_registry: Default::default(),
+            applied_plugin_suite_fingerprints: Default::default(),
             remove_crates_from_db_on_next_update: false,
         }
     }
@@ -100,7 +104,7 @@ impl ProjectModel {
     }
 
     pub fn apply_changes_to_db(
-        &self,
+        &mut self,
         db: &mut AnalysisDatabase,
         proc_macro_controller: &ProcMacroClientController,
     ) {
@@ -110,7 +114,8 @@ impl ProjectModel {
             merged_crates.iter().map(|cr| (cr.input(), cr.configuration_input())).collect();
         db.sync_crate_configs(crate_configs.into_iter().collect());
 
-        let mut plugin_suites = Vec::with_capacity(merged_crates.len());
+        let previous_plugin_suite_fingerprints = self.applied_plugin_suite_fingerprints.snapshot();
+        let mut next_plugin_suite_fingerprints = OrderedHashMap::default();
         for cr in merged_crates {
             let cr_input = cr.input();
             let proc_macro_plugin_suite =
@@ -118,9 +123,24 @@ impl ProjectModel {
             if let Some(file_stems) = &cr.custom_main_file_stems {
                 super::crate_data::inject_virtual_wrapper_lib(db, cr_input.clone(), file_stems);
             }
-            plugin_suites.push((cr_input, cr.plugin_suite(proc_macro_plugin_suite.cloned())));
+            let fingerprint = cr.plugin_suite_fingerprint(proc_macro_plugin_suite);
+            let changed = previous_plugin_suite_fingerprints.get(&cr_input) != Some(&fingerprint);
+            next_plugin_suite_fingerprints.insert(cr_input.clone(), fingerprint);
+            if changed {
+                db.set_override_crate_plugins_from_suite(
+                    cr_input,
+                    cr.plugin_suite(proc_macro_plugin_suite.cloned()),
+                );
+            }
         }
-        db.set_override_crate_plugins_from_suites(plugin_suites);
+
+        for crate_input in previous_plugin_suite_fingerprints.keys() {
+            if !next_plugin_suite_fingerprints.contains_key(crate_input) {
+                db.clear_override_crate_plugins(crate_input.clone());
+            }
+        }
+        self.applied_plugin_suite_fingerprints =
+            Owned::new(Arc::new(next_plugin_suite_fingerprints));
     }
 
     fn merged_loaded_crates(&self) -> Vec<Crate> {

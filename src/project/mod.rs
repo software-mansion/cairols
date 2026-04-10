@@ -220,7 +220,7 @@ impl ProjectController {
     }
 
     pub fn migrate_crates_to_new_db(
-        &self,
+        &mut self,
         new_db: &mut AnalysisDatabase,
         proc_macro_controller: &ProcMacroClientController,
     ) {
