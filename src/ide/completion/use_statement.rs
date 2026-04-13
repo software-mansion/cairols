@@ -70,7 +70,7 @@ fn already_imported_in_multi<'db>(
     ctx: &AnalysisContext<'db>,
 ) -> HashSet<String> {
     let Some(multi) = ctx.node.ancestor_of_type::<UsePathMulti>(db) else {
-        return HashSet::new();
+        return HashSet::default();
     };
     let current_leaf_ptr =
         ctx.node.ancestor_of_type::<UsePathLeaf>(db).map(|leaf| leaf.stable_ptr(db));
