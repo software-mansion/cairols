@@ -103,9 +103,12 @@ pub fn path_suffix_completions<'db>(
         return Default::default();
     };
 
-    let (Some(typed_text), Some(last_typed_segment)) = get_typed_text_and_last_segment(db, ctx)
-    else {
-        return Default::default();
+    let is_empty_body_context = is_empty_body_context(db, &ctx.node);
+
+    let (typed_text, last_typed_segment) = match get_typed_text_and_last_segment(db, ctx) {
+        (Some(typed_text), Some(last_typed_segment)) => (typed_text, last_typed_segment),
+        _ if is_empty_body_context => (vec![], SmolStrId::from(db, "")),
+        _ => return Default::default(),
     };
 
     let current_crate = ctx.module_id.owning_crate(db);
