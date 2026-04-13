@@ -364,6 +364,68 @@ fn fuzzer_with_test_case() {
     "#)
 }
 
+/// Regression test for https://github.com/software-mansion/cairols/issues/1245
+/// A function with both `#[fuzzer]` and `#[test_case]` should have:
+/// - only `▶ Run test` next to `#[test]` (the fuzzer entry point — no debug lens)
+/// - both `▶ Run test` and `▶ Debug test` next to each `#[test_case]`
+#[test]
+fn fuzzer_with_test_case_has_debug_lens_on_test_cases() {
+    test_transform!(test_code_lens_snforge, r#"
+    #[test]<caret>
+    #[fuzzer]
+    #[test_case(1)]
+    #[test_case(2)]
+    #[test_case(3)]
+    fn a(_a: felt252) {}
+    "#, @r#"
+    [[lenses]]
+    line = 0
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 0
+
+    [[lenses]]
+    line = 2
+    command = "▶ Debug test"
+    file_path = "src/lib.cairo"
+    index = 4
+
+    [[lenses]]
+    line = 2
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 1
+
+    [[lenses]]
+    line = 3
+    command = "▶ Debug test"
+    file_path = "src/lib.cairo"
+    index = 5
+
+    [[lenses]]
+    line = 3
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 2
+
+    [[lenses]]
+    line = 4
+    command = "▶ Debug test"
+    file_path = "src/lib.cairo"
+    index = 6
+
+    [[lenses]]
+    line = 4
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 3
+
+    [[execute_in_terminal]]
+    command = "snforge test hello::a --exact"
+    cwd = "./"
+    "#)
+}
+
 #[test]
 fn fuzzer_without_test_case() {
     test_transform!(test_code_lens_snforge, r#"

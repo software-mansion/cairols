@@ -384,24 +384,16 @@ fn is_fuzzer_test(db: &AnalysisDatabase, ptr: SyntaxStablePtrId) -> bool {
         return false;
     };
 
-    // We do not want to skip test cases.
-    // `#[test_case]` generates a new test with `#[snforge_internal_test_executable]`
-    // directly so it is okay to test for it as an ancestor.
-    if original_node
-        .ancestor_of_type::<Attribute>(db)
-        .map(|attr| {
-            attr.attr(db).as_syntax_node().get_text_without_trivia(db)
-                == SmolStrId::from(db, TEST_CASE_ATTR)
-        })
-        .unwrap_or(false)
-    {
-        return false;
-    }
-
+    // A function with `#[test_case]` should never be treated as a fuzzer, even if it also has
+    // `#[fuzzer]`. Check the module item directly rather than relying on `get_originating_location`
+    // mapping back to a `#[test_case]` attribute node, which broke after a Cairo bump.
     original_node
         .ancestors_with_self(db)
         .find_map(|n| ModuleItem::cast(db, n))
-        .map(|module_item| module_item.find_attr(db, FUZZER_ATTR).is_some())
+        .map(|module_item| {
+            module_item.find_attr(db, FUZZER_ATTR).is_some()
+                && module_item.find_attr(db, TEST_CASE_ATTR).is_none()
+        })
         .unwrap_or(false)
 }
 
