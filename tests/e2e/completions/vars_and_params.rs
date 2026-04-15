@@ -30,24 +30,6 @@ fn all_prefixed() {
     completion_label_type_info = "felt252"
 
     [[completions]]
-    completion_label = "BitAnd::bitand(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitAnd::bitand(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitAnd;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubAssign::sub_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "SubAssign::sub_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::SubAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "blake"
     completion_label_path = "(use core::blake)"
     text_edits = ["""
@@ -121,24 +103,6 @@ fn all_prefixed_macro() {
     completion_label_type_info = "felt252"
 
     [[completions]]
-    completion_label = "BitAnd::bitand(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitAnd::bitand(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitAnd;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubAssign::sub_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "SubAssign::sub_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::SubAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "blake"
     completion_label_path = "(use core::blake)"
     text_edits = ["""
@@ -207,24 +171,6 @@ fn only_before_cursor() {
     completion_label_type_info = "felt252"
 
     [[completions]]
-    completion_label = "BitAnd::bitand(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitAnd::bitand(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitAnd;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubAssign::sub_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "SubAssign::sub_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::SubAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "blake"
     completion_label_path = "(use core::blake)"
     text_edits = ["""
@@ -288,50 +234,8 @@ fn disallow_recursive_definition() {
     insert_text = 'format!("$1")'
 
     [[completions]]
-    completion_label = "FromIterator::from_iter(...)"
-    completion_label_type_info = "fn(iter: I) -> T"
-    insert_text = "FromIterator::from_iter(${1:iter})"
-
-    [[completions]]
-    completion_label = "Iterator::fold(...)"
-    completion_label_type_info = "fn(self: T, init: B, f: F) -> B"
-    insert_text = "Iterator::fold(${1:init}, ${2:f})"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref_or_else(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, f: F) -> T"
-    insert_text = "NullableTrait::deref_or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "FormatAsByteArray::format_as_byte_array(...)"
-    completion_label_type_info = "fn(self: @T, base: NonZero<T>) -> ByteArray"
-    insert_text = "FormatAsByteArray::format_as_byte_array(${1:base})"
-    text_edits = ["""
-    use core::to_byte_array::FormatAsByteArray;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref_or_else(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, f: F) -> T"
-    insert_text = "NullableImpl::deref_or_else(${1:f})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "OverflowingAdd"
     completion_label_path = "(use core::num::traits::OverflowingAdd)"
-    text_edits = ["""
-    use core::num::traits::OverflowingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "OverflowingAdd::overflowing_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingAdd::overflowing_add(${1:v})"
     text_edits = ["""
     use core::num::traits::OverflowingAdd;
 
@@ -346,26 +250,8 @@ fn disallow_recursive_definition() {
     """]
 
     [[completions]]
-    completion_label = "OverflowingMul::overflowing_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingMul::overflowing_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::OverflowingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "OverflowingSub"
     completion_label_path = "(use core::num::traits::OverflowingSub)"
-    text_edits = ["""
-    use core::num::traits::OverflowingSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "OverflowingSub::overflowing_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingSub::overflowing_sub(${1:v})"
     text_edits = ["""
     use core::num::traits::OverflowingSub;
 
@@ -430,24 +316,6 @@ fn work_with_params() {
     insert_text = "panic(${1:data})"
 
     [[completions]]
-    completion_label = "BoundedInt::max(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "BoundedInt::max()"
-    text_edits = ["""
-    use core::integer::BoundedInt;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorePacking::pack(...)"
-    completion_label_type_info = "fn(value: T) -> PackedT"
-    insert_text = "StorePacking::pack(${1:value})"
-    text_edits = ["""
-    use starknet::storage_access::StorePacking;
-
-    """]
-
-    [[completions]]
     completion_label = "max(...)"
     completion_label_path = "(use core::cmp::max)"
     completion_label_type_info = "fn(a: T, b: T) -> T"
@@ -478,24 +346,6 @@ fn mixed_params_vars() {
     [[completions]]
     completion_label = "baz"
     completion_label_type_info = "felt252"
-
-    [[completions]]
-    completion_label = "BitAnd::bitand(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitAnd::bitand(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitAnd;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubAssign::sub_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "SubAssign::sub_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::SubAssign;
-
-    """]
 
     [[completions]]
     completion_label = "blake"

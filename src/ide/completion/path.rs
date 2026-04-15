@@ -35,8 +35,6 @@ use crate::ide::completion::helpers::snippets::TypedSnippet;
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::importer::new_import_edit;
-use crate::lang::text_matching::text_matches;
 use crate::lang::visibility::peek_visible_in_with_edition;
 
 /// Proposes importable items whose full path ends with the typed text.
@@ -88,66 +86,39 @@ pub(crate) fn importable_path_suffix_completions<'db>(
 ///   against the end of known importable paths, surfacing items that can be imported and prefixed
 ///   to it. "Suffix" means the typed text is a suffix of a full importable path.
 ///
-/// - **Trait/impl item expansion** (expression blocks only): the typed text is treated as a
-///   prefix that identifies a trait or impl, then proposes the items that follow `::`.
-///   - Single-segment (`Name<caret>`): proposes `TraitName::item` / `ImplName::item`.
-///   - Multi-segment ending in `::` (`MyTrait::<caret>`): proposes bare `item_name`.
+/// - **Trait/impl item expansion** (expression blocks only): when the cursor is after `::`,
+///   e.g. `MyTrait::<caret>`, proposes bare `item_name` completions for items of matching traits
+///   and impls.
 pub fn path_suffix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &'db AnalysisContext<'db>,
     was_node_corrected: bool,
 ) -> Vec<CompletionItemOrderable> {
-    let Some(importables) =
-        get_importables_for_path_suffix_completions(db, ctx, was_node_corrected)
-    else {
-        return Default::default();
-    };
+    let mut result: Vec<CompletionItemOrderable> =
+        importable_path_suffix_completions(db, ctx, was_node_corrected)
+            .into_iter()
+            .map(|item| item.item)
+            .collect();
 
-    let is_empty_body_context = is_empty_body_context(db, &ctx.node);
-
-    let (typed_text, last_typed_segment) = match get_typed_text_and_last_segment(db, ctx) {
-        (Some(typed_text), Some(last_typed_segment)) => (typed_text, last_typed_segment),
-        _ if is_empty_body_context => (vec![], SmolStrId::from(db, "")),
-        _ => return Default::default(),
-    };
-
-    let current_crate = ctx.module_id.owning_crate(db);
-
-    let mut result: Vec<CompletionItemOrderable> = importables
-        .iter()
-        .filter_map(|(importable, path_str)| {
-            ImportableCompletionItem::get_completion_item_for_importable(
-                db,
-                ctx,
-                importable,
-                current_crate,
-                path_str,
-                typed_text.clone(),
-                last_typed_segment,
-            )
-        })
-        .unique_by(|completion| ImportableCompletionItemHashable(completion.clone()))
-        .map(|item| item.item)
-        .collect();
-
-    // Trait/impl item suffix completions — only meaningful inside expression blocks.
+    // When the cursor is after `::` inside an expression block, additionally propose bare
+    // item names from matching traits/impls.
     if ctx.node.ancestor_of_kind(db, SyntaxKind::ExprBlock).is_some() {
-        let last_typed_segment = last_typed_segment.to_string(db);
-        if typed_text.is_empty() {
-            suffix_completions_by_name(
-                db,
-                ctx,
-                &importables,
-                &last_typed_segment,
-                current_crate,
-                &mut result,
-            );
-        } else if last_typed_segment.is_empty() {
+        let (Some(typed_segments), Some(last_typed)) = get_typed_text_and_last_segment(db, ctx)
+        else {
+            return result;
+        };
+        if !typed_segments.is_empty() && last_typed.to_string(db).is_empty() {
+            let Some(importables) =
+                get_importables_for_path_suffix_completions(db, ctx, was_node_corrected)
+            else {
+                return result;
+            };
+            let current_crate = ctx.module_id.owning_crate(db);
             suffix_completions_by_path(
                 db,
                 ctx,
                 &importables,
-                &typed_text,
+                &typed_segments,
                 current_crate,
                 &mut result,
             );
@@ -419,127 +390,6 @@ fn trait_items_prefix_completions<'db>(
     );
 
     functions.chain(types).chain(constants).collect()
-}
-
-/// Handles the single-segment suffix case: typing `Name<caret>` proposes
-/// `TraitName::item_name` or `ImplName::item_name` completions for items
-/// (functions, types, constants) of matching traits and impls.
-fn suffix_completions_by_name<'db>(
-    db: &'db AnalysisDatabase,
-    ctx: &'db AnalysisContext<'db>,
-    importables: &OrderedHashMap<ImportableId<'db>, String>,
-    last_typed_segment: &str,
-    current_crate: CrateId<'db>,
-    result: &mut Vec<CompletionItemOrderable>,
-) {
-    for (importable, item_path) in importables.iter() {
-        let (prefix_name, trait_id, crate_id) = match importable {
-            ImportableId::Trait(trait_id) => {
-                let name = trait_id.name(db).to_string(db);
-                let crate_id = trait_id.parent_module(db).owning_crate(db);
-                (name, *trait_id, crate_id)
-            }
-            ImportableId::Impl(impl_id) => {
-                let name = impl_id.name(db).to_string(db);
-                let crate_id = impl_id.parent_module(db).owning_crate(db);
-                let Some(trait_id) = db.impl_def_trait(*impl_id).ok() else { continue };
-                (name, trait_id, crate_id)
-            }
-            _ => continue,
-        };
-
-        let is_core = *crate_id.long(db) == CrateLongId::core(db);
-
-        let needs_import = item_path.contains("::");
-        let import_edit =
-            if needs_import { new_import_edit(db, ctx, item_path.clone()) } else { None };
-
-        let relevance = get_item_relevance(!needs_import, crate_id == current_crate, is_core);
-
-        let prefix_name_matches = text_matches(&prefix_name, last_typed_segment);
-
-        // Functions
-        for (item_name, trait_function_id) in
-            db.trait_functions(trait_id).cloned().unwrap_or_default().iter()
-        {
-            let item_name_str = item_name.to_string(db);
-            if !prefix_name_matches && !text_matches(&item_name_str, last_typed_segment) {
-                continue;
-            }
-
-            let full_name = format!("{}::{}", prefix_name, item_name_str);
-            let snippet = db
-                .trait_function_signature(*trait_function_id)
-                .ok()
-                .map(|sig| TypedSnippet::function_call(db, &full_name, sig, Some(trait_id)));
-            let label =
-                if snippet.is_some() { format!("{}(...)", full_name) } else { full_name.clone() };
-
-            result.push(CompletionItemOrderable {
-                item: CompletionItem {
-                    label,
-                    insert_text: snippet.clone().map(|s| s.lsp_snippet),
-                    insert_text_format: snippet.clone().map(|_| InsertTextFormat::SNIPPET),
-                    label_details: Some(CompletionItemLabelDetails {
-                        detail: None,
-                        description: snippet.and_then(|s| s.type_hint),
-                    }),
-                    kind: Some(CompletionItemKind::FUNCTION),
-                    additional_text_edits: import_edit.clone().map(|e| vec![e]),
-                    ..CompletionItem::default()
-                },
-                relevance,
-            });
-        }
-
-        // Types
-        for (item_name, _) in db.trait_types(trait_id).cloned().unwrap_or_default().iter() {
-            let item_name_str = item_name.to_string(db);
-            if !prefix_name_matches && !text_matches(&item_name_str, last_typed_segment) {
-                continue;
-            }
-
-            result.push(CompletionItemOrderable {
-                item: CompletionItem {
-                    label: format!("{}::{}", prefix_name, item_name_str),
-                    label_details: Some(CompletionItemLabelDetails {
-                        detail: None,
-                        description: None,
-                    }),
-                    kind: Some(CompletionItemKind::CLASS),
-                    additional_text_edits: import_edit.clone().map(|e| vec![e]),
-                    ..CompletionItem::default()
-                },
-                relevance,
-            });
-        }
-
-        // Constants
-        for (item_name, trait_constant_id) in
-            db.trait_constants(trait_id).cloned().unwrap_or_default().iter()
-        {
-            let item_name_str = item_name.to_string(db);
-            if !prefix_name_matches && !text_matches(&item_name_str, last_typed_segment) {
-                continue;
-            }
-
-            let description = db.trait_constant_type(*trait_constant_id).ok().and_then(|ty| {
-                db.visible_importables_from_module(ctx.module_id)
-                    .map(|importables| format_type(db, ty, &importables, None))
-            });
-
-            result.push(CompletionItemOrderable {
-                item: CompletionItem {
-                    label: format!("{}::{}", prefix_name, item_name_str),
-                    label_details: Some(CompletionItemLabelDetails { detail: None, description }),
-                    kind: Some(CompletionItemKind::CONSTANT),
-                    additional_text_edits: import_edit.clone().map(|e| vec![e]),
-                    ..CompletionItem::default()
-                },
-                relevance,
-            });
-        }
-    }
 }
 
 /// Handles the multi-segment suffix case: typing `MyTrait::<caret>` or `MyImpl::<caret>` proposes

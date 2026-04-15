@@ -34,65 +34,10 @@ fn no_text_in_function_context() {
     completion_label = "Add"
 
     [[completions]]
-    completion_label = "Add::add(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Add::add(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Array"
 
     [[completions]]
     completion_label = "ArrayTrait"
-
-    [[completions]]
-    completion_label = "ArrayTrait::append(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, value: T) -> () nopanic"
-    insert_text = "ArrayTrait::append(${1:value})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::append_span(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, span: Span<T>) -> ()"
-    insert_text = "ArrayTrait::append_span(${1:span})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::at(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> @T"
-    insert_text = "ArrayTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::get(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "ArrayTrait::get(${1:index})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> bool"
-    insert_text = "ArrayTrait::is_empty()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::len(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> u32"
-    insert_text = "ArrayTrait::len()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::new(...)"
-    completion_label_type_info = "fn() -> Array<T> nopanic"
-    insert_text = "ArrayTrait::new()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Array<T>) -> Option<T> nopanic"
-    insert_text = "ArrayTrait::pop_front()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::pop_front_consume(...)"
-    completion_label_type_info = "fn(self: Array<T>) -> Option<(Array<T>, T)> nopanic"
-    insert_text = "ArrayTrait::pop_front_consume()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::span(...)"
-    completion_label_type_info = "fn(snapshot: @Array<T>) -> Span<T>"
-    insert_text = "ArrayTrait::span(${1:snapshot})"
 
     [[completions]]
     completion_label = "Box"
@@ -101,81 +46,16 @@ fn no_text_in_function_context() {
     completion_label = "BoxTrait"
 
     [[completions]]
-    completion_label = "BoxTrait::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Box<T>) -> Box<@T> nopanic"
-    insert_text = "BoxTrait::as_snapshot()"
-
-    [[completions]]
-    completion_label = "BoxTrait::new(...)"
-    completion_label_type_info = "fn(value: T) -> Box<T> nopanic"
-    insert_text = "BoxTrait::new(${1:value})"
-
-    [[completions]]
-    completion_label = "BoxTrait::unbox(...)"
-    completion_label_type_info = "fn(self: Box<T>) -> T nopanic"
-    insert_text = "BoxTrait::unbox()"
-
-    [[completions]]
     completion_label = "ByteArray"
 
     [[completions]]
     completion_label = "ByteArrayTrait"
 
     [[completions]]
-    completion_label = "ByteArrayTrait::append(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, other: @ByteArray) -> ()"
-    insert_text = "ByteArrayTrait::append(${1:other})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_byte(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, byte: u8) -> ()"
-    insert_text = "ByteArrayTrait::append_byte(${1:byte})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_word(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayTrait::append_word(${1:word}, ${2:len})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_word_rev(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayTrait::append_word_rev(${1:word}, ${2:len})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::at(...)"
-    completion_label_type_info = "fn(self: @ByteArray, index: u32) -> Option<u8>"
-    insert_text = "ByteArrayTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::concat(...)"
-    completion_label_type_info = "fn(left: @ByteArray, right: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayTrait::concat(${1:left}, ${2:right})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::len(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> u32"
-    insert_text = "ByteArrayTrait::len()"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::rev(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayTrait::rev()"
-
-    [[completions]]
     completion_label = "Bytes31Trait"
 
     [[completions]]
-    completion_label = "Bytes31Trait::at(...)"
-    completion_label_type_info = "fn(self: @bytes31, index: u32) -> u8"
-    insert_text = "Bytes31Trait::at(${1:index})"
-
-    [[completions]]
     completion_label = "Clone"
-
-    [[completions]]
-    completion_label = "Clone::clone(...)"
-    completion_label_type_info = "fn(self: @T) -> T"
-    insert_text = "Clone::clone()"
 
     [[completions]]
     completion_label = "Copy"
@@ -184,44 +64,16 @@ fn no_text_in_function_context() {
     completion_label = "Default"
 
     [[completions]]
-    completion_label = "Default::default(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "Default::default()"
-
-    [[completions]]
     completion_label = "Deref"
-
-    [[completions]]
-    completion_label = "Deref::Target"
-
-    [[completions]]
-    completion_label = "Deref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "Deref::deref()"
 
     [[completions]]
     completion_label = "Destruct"
 
     [[completions]]
-    completion_label = "Destruct::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "Destruct::destruct()"
-
-    [[completions]]
     completion_label = "Div"
 
     [[completions]]
-    completion_label = "Div::div(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Div::div(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "DivRem"
-
-    [[completions]]
-    completion_label = "DivRem::div_rem(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: NonZero<T>) -> (T, T)"
-    insert_text = "DivRem::div_rem(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "Drop"
@@ -233,176 +85,25 @@ fn no_text_in_function_context() {
     completion_label = "Felt252DictTrait"
 
     [[completions]]
-    completion_label = "Felt252DictTrait::entry(...)"
-    completion_label_type_info = "fn(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic"
-    insert_text = "Felt252DictTrait::entry(${1:key})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::get(...)"
-    completion_label_type_info = "fn(ref self: Felt252Dict<T>, key: felt252) -> T"
-    insert_text = "Felt252DictTrait::get(${1:key})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::insert(...)"
-    completion_label_type_info = "fn(ref self: Felt252Dict<T>, key: felt252, value: T) -> ()"
-    insert_text = "Felt252DictTrait::insert(${1:key}, ${2:value})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::squash(...)"
-    completion_label_type_info = "fn(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic"
-    insert_text = "Felt252DictTrait::squash()"
-
-    [[completions]]
     completion_label = "Felt252DictValue"
-
-    [[completions]]
-    completion_label = "Felt252DictValue::zero_default(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "Felt252DictValue::zero_default()"
 
     [[completions]]
     completion_label = "FromIterator"
 
     [[completions]]
-    completion_label = "FromIterator::from_iter(...)"
-    completion_label_type_info = "fn(iter: I) -> T"
-    insert_text = "FromIterator::from_iter(${1:iter})"
-
-    [[completions]]
     completion_label = "Into"
-
-    [[completions]]
-    completion_label = "Into::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "Into::into()"
 
     [[completions]]
     completion_label = "IntoIterator"
 
     [[completions]]
-    completion_label = "IntoIterator::IntoIter"
-
-    [[completions]]
-    completion_label = "IntoIterator::into_iter(...)"
-    completion_label_type_info = "fn(self: T) -> Self::IntoIter"
-    insert_text = "IntoIterator::into_iter()"
-
-    [[completions]]
     completion_label = "Iterator"
-
-    [[completions]]
-    completion_label = "Iterator::Item"
-
-    [[completions]]
-    completion_label = "Iterator::advance_by(...)"
-    completion_label_type_info = "fn(ref self: T, n: u32) -> Result<(), NonZero<u32>>"
-    insert_text = "Iterator::advance_by(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::all(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> bool"
-    insert_text = "Iterator::all(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::any(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> bool"
-    insert_text = "Iterator::any(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::chain(...)"
-    completion_label_type_info = "fn(self: T, other: U) -> Chain<T, IntoIterU::IntoIter>"
-    insert_text = "Iterator::chain(${1:other})"
-
-    [[completions]]
-    completion_label = "Iterator::collect(...)"
-    completion_label_type_info = "fn(self: T) -> B"
-    insert_text = "Iterator::collect()"
-
-    [[completions]]
-    completion_label = "Iterator::count(...)"
-    completion_label_type_info = "fn(self: T) -> u32"
-    insert_text = "Iterator::count()"
-
-    [[completions]]
-    completion_label = "Iterator::enumerate(...)"
-    completion_label_type_info = "fn(self: T) -> Enumerate<T>"
-    insert_text = "Iterator::enumerate()"
-
-    [[completions]]
-    completion_label = "Iterator::filter(...)"
-    completion_label_type_info = "fn(self: T, predicate: P) -> Filter<T, P>"
-    insert_text = "Iterator::filter(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::find(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> Option<Self::Item>"
-    insert_text = "Iterator::find(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::fold(...)"
-    completion_label_type_info = "fn(self: T, init: B, f: F) -> B"
-    insert_text = "Iterator::fold(${1:init}, ${2:f})"
-
-    [[completions]]
-    completion_label = "Iterator::last(...)"
-    completion_label_type_info = "fn(self: T) -> Option<Self::Item>"
-    insert_text = "Iterator::last()"
-
-    [[completions]]
-    completion_label = "Iterator::map(...)"
-    completion_label_type_info = "fn(self: T, f: F) -> Map<T, F>"
-    insert_text = "Iterator::map(${1:f})"
-
-    [[completions]]
-    completion_label = "Iterator::next(...)"
-    completion_label_type_info = "fn(ref self: T) -> Option<Self::Item>"
-    insert_text = "Iterator::next()"
-
-    [[completions]]
-    completion_label = "Iterator::nth(...)"
-    completion_label_type_info = "fn(ref self: T, n: u32) -> Option<Self::Item>"
-    insert_text = "Iterator::nth(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::peekable(...)"
-    completion_label_type_info = "fn(self: T) -> Peekable<T, Self::Item>"
-    insert_text = "Iterator::peekable()"
-
-    [[completions]]
-    completion_label = "Iterator::product(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Item"
-    insert_text = "Iterator::product()"
-
-    [[completions]]
-    completion_label = "Iterator::sum(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Item"
-    insert_text = "Iterator::sum()"
-
-    [[completions]]
-    completion_label = "Iterator::take(...)"
-    completion_label_type_info = "fn(self: T, n: u32) -> Take<T>"
-    insert_text = "Iterator::take(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::zip(...)"
-    completion_label_type_info = "fn(self: T, other: U) -> Zip<T, UIntoIter::IntoIter>"
-    insert_text = "Iterator::zip(${1:other})"
 
     [[completions]]
     completion_label = "Mul"
 
     [[completions]]
-    completion_label = "Mul::mul(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Mul::mul(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Neg"
-
-    [[completions]]
-    completion_label = "Neg::neg(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "Neg::neg(${1:a})"
 
     [[completions]]
     completion_label = "NonZero"
@@ -414,45 +115,10 @@ fn no_text_in_function_context() {
     completion_label = "Not"
 
     [[completions]]
-    completion_label = "Not::not(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "Not::not(${1:a})"
-
-    [[completions]]
     completion_label = "Nullable"
 
     [[completions]]
     completion_label = "NullableTrait"
-
-    [[completions]]
-    completion_label = "NullableTrait::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> Nullable<@T> nopanic"
-    insert_text = "NullableTrait::as_snapshot()"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref(...)"
-    completion_label_type_info = "fn(nullable: Nullable<T>) -> T"
-    insert_text = "NullableTrait::deref(${1:nullable})"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref_or(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, default: T) -> T"
-    insert_text = "NullableTrait::deref_or(${1:default})"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref_or_else(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, f: F) -> T"
-    insert_text = "NullableTrait::deref_or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "NullableTrait::is_null(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> bool"
-    insert_text = "NullableTrait::is_null()"
-
-    [[completions]]
-    completion_label = "NullableTrait::new(...)"
-    completion_label_type_info = "fn(value: T) -> Nullable<T>"
-    insert_text = "NullableTrait::new(${1:value})"
 
     [[completions]]
     completion_label = "Ok"
@@ -464,125 +130,10 @@ fn no_text_in_function_context() {
     completion_label = "OptionTrait"
 
     [[completions]]
-    completion_label = "OptionTrait::and(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<U>) -> Option<U>"
-    insert_text = "OptionTrait::and(${1:optb})"
-
-    [[completions]]
-    completion_label = "OptionTrait::and_then(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTrait::and_then(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::expect(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: felt252) -> T"
-    insert_text = "OptionTrait::expect(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::filter(...)"
-    completion_label_type_info = "fn(self: Option<T>, predicate: P) -> Option<T>"
-    insert_text = "OptionTrait::filter(${1:predicate})"
-
-    [[completions]]
-    completion_label = "OptionTrait::flatten(...)"
-    completion_label_type_info = "fn(self: Option<Option<T>>) -> Option<T>"
-    insert_text = "OptionTrait::flatten()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_none(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTrait::is_none()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_none_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTrait::is_none_or(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_some(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTrait::is_some()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_some_and(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTrait::is_some_and(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTrait::map(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: U, f: F) -> U"
-    insert_text = "OptionTrait::map_or(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: D, f: F) -> U"
-    insert_text = "OptionTrait::map_or_else(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::ok_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: E) -> Result<T, E>"
-    insert_text = "OptionTrait::ok_or(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::ok_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: F) -> Result<T, E>"
-    insert_text = "OptionTrait::ok_or_else(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::or(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::or(${1:optb})"
-
-    [[completions]]
-    completion_label = "OptionTrait::or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<T>"
-    insert_text = "OptionTrait::or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::take(...)"
-    completion_label_type_info = "fn(ref self: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::take()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTrait::unwrap()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: T) -> T"
-    insert_text = "OptionTrait::unwrap_or(${1:default})"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTrait::unwrap_or_default()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> T"
-    insert_text = "OptionTrait::unwrap_or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::xor(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::xor(${1:optb})"
-
-    [[completions]]
     completion_label = "Panic"
 
     [[completions]]
     completion_label = "PanicDestruct"
-
-    [[completions]]
-    completion_label = "PanicDestruct::panic_destruct(...)"
-    completion_label_type_info = "fn(self: T, ref panic: Panic) -> () nopanic"
-    insert_text = "PanicDestruct::panic_destruct(${1:panic})"
 
     [[completions]]
     completion_label = "PanicResult"
@@ -591,45 +142,10 @@ fn no_text_in_function_context() {
     completion_label = "PartialEq"
 
     [[completions]]
-    completion_label = "PartialEq::eq(...)"
-    completion_label_type_info = "fn(lhs: @T, rhs: @T) -> bool"
-    insert_text = "PartialEq::eq(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialEq::ne(...)"
-    completion_label_type_info = "fn(lhs: @T, rhs: @T) -> bool"
-    insert_text = "PartialEq::ne(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "PartialOrd"
 
     [[completions]]
-    completion_label = "PartialOrd::ge(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::ge(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::gt(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::gt(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::le(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::le(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::lt(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::lt(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Rem"
-
-    [[completions]]
-    completion_label = "Rem::rem(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Rem::rem(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "Result"
@@ -638,122 +154,7 @@ fn no_text_in_function_context() {
     completion_label = "ResultTrait"
 
     [[completions]]
-    completion_label = "ResultTrait::and(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<U, E>) -> Result<U, E>"
-    insert_text = "ResultTrait::and(${1:other})"
-
-    [[completions]]
-    completion_label = "ResultTrait::and_then(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: F) -> Result<U, E>"
-    insert_text = "ResultTrait::and_then(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<E>"
-    insert_text = "ResultTrait::err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::expect(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> T"
-    insert_text = "ResultTrait::expect(${1:err})"
-
-    [[completions]]
-    completion_label = "ResultTrait::expect_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> E"
-    insert_text = "ResultTrait::expect_err(${1:err})"
-
-    [[completions]]
-    completion_label = "ResultTrait::into_is_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTrait::into_is_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::into_is_ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTrait::into_is_ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::is_err(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTrait::is_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::is_ok(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTrait::is_ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::map(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> Result<U, E>"
-    insert_text = "ResultTrait::map(${1:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTrait::map_err(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: U, f: F) -> U"
-    insert_text = "ResultTrait::map_or(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: D, f: F) -> U"
-    insert_text = "ResultTrait::map_or_else(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<T>"
-    insert_text = "ResultTrait::ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<T, F>) -> Result<T, F>"
-    insert_text = "ResultTrait::or(${1:other})"
-
-    [[completions]]
-    completion_label = "ResultTrait::or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTrait::or_else(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTrait::unwrap()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> E"
-    insert_text = "ResultTrait::unwrap_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: T) -> T"
-    insert_text = "ResultTrait::unwrap_or(${1:default})"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTrait::unwrap_or_default()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> T"
-    insert_text = "ResultTrait::unwrap_or_else(${1:f})"
-
-    [[completions]]
     completion_label = "Serde"
-
-    [[completions]]
-    completion_label = "Serde::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "Serde::deserialize(${1:serialized})"
-
-    [[completions]]
-    completion_label = "Serde::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "Serde::serialize(${1:output})"
 
     [[completions]]
     completion_label = "Some"
@@ -765,57 +166,7 @@ fn no_text_in_function_context() {
     completion_label = "SpanTrait"
 
     [[completions]]
-    completion_label = "SpanTrait::at(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> @T"
-    insert_text = "SpanTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "SpanTrait::get(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "SpanTrait::get(${1:index})"
-
-    [[completions]]
-    completion_label = "SpanTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> bool"
-    insert_text = "SpanTrait::is_empty()"
-
-    [[completions]]
-    completion_label = "SpanTrait::len(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> u32"
-    insert_text = "SpanTrait::len()"
-
-    [[completions]]
-    completion_label = "SpanTrait::multi_pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanTrait::multi_pop_back()"
-
-    [[completions]]
-    completion_label = "SpanTrait::multi_pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanTrait::multi_pop_front()"
-
-    [[completions]]
-    completion_label = "SpanTrait::pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T>"
-    insert_text = "SpanTrait::pop_back()"
-
-    [[completions]]
-    completion_label = "SpanTrait::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T> nopanic"
-    insert_text = "SpanTrait::pop_front()"
-
-    [[completions]]
-    completion_label = "SpanTrait::slice(...)"
-    completion_label_type_info = "fn(self: Span<T>, start: u32, length: u32) -> Span<T>"
-    insert_text = "SpanTrait::slice(${1:start}, ${2:length})"
-
-    [[completions]]
     completion_label = "Sub"
-
-    [[completions]]
-    completion_label = "Sub::sub(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Sub::sub(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "System"
@@ -824,17 +175,7 @@ fn no_text_in_function_context() {
     completion_label = "ToSpanTrait"
 
     [[completions]]
-    completion_label = "ToSpanTrait::span(...)"
-    completion_label_type_info = "fn(self: @C) -> Span<T>"
-    insert_text = "ToSpanTrait::span()"
-
-    [[completions]]
     completion_label = "TryInto"
-
-    [[completions]]
-    completion_label = "TryInto::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "TryInto::try_into()"
 
     [[completions]]
     completion_label = "assert(...)"
@@ -924,33 +265,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "AccountContract::__execute__(...)"
-    completion_label_type_info = "fn(ref self: TContractState, calls: Array<Call>) -> Array<Span<felt252>>"
-    insert_text = "AccountContract::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContract::__validate__(...)"
-    completion_label_type_info = "fn(ref self: TContractState, calls: Array<Call>) -> felt252"
-    insert_text = "AccountContract::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContract::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: @TContractState, class_hash: felt252) -> felt252"
-    insert_text = "AccountContract::__validate_declare__(${1:class_hash})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
     completion_label = "AccountContractDispatcher"
     completion_label_path = "(use starknet::account::AccountContractDispatcher)"
     text_edits = ["""
@@ -977,33 +291,6 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "AccountContractDispatcherTrait"
     completion_label_path = "(use starknet::account::AccountContractDispatcherTrait)"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__execute__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Array<Span<felt252>>"
-    insert_text = "AccountContractDispatcherTrait::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__validate__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> felt252"
-    insert_text = "AccountContractDispatcherTrait::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: T, class_hash: felt252) -> felt252"
-    insert_text = "AccountContractDispatcherTrait::__validate_declare__(${1:class_hash})"
     text_edits = ["""
     use starknet::account::AccountContractDispatcherTrait;
 
@@ -1066,33 +353,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__execute__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Result<Array<Span<felt252>>, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__validate__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Result<felt252, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: T, class_hash: felt252) -> Result<felt252, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__validate_declare__(${1:class_hash})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcher"
     completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcher)"
     text_edits = ["""
@@ -1125,15 +385,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "AddAssign::add_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "AddAssign::add_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::AddAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "AddEq"
     completion_label_path = "(use core::traits::AddEq)"
     text_edits = ["""
@@ -1142,24 +393,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "AddEq::add_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "AddEq::add_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::AddEq;
-
-    """]
-
-    [[completions]]
     completion_label = "AddHelper"
     completion_label_path = "(use core::internal::bounded_int::AddHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::AddHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddHelper::Result"
     text_edits = ["""
     use core::internal::bounded_int::AddHelper;
 
@@ -1182,44 +417,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "AddInputResultImpl::done(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>) -> CircuitData<C>"
-    insert_text = "AddInputResultImpl::done()"
-    text_edits = ["""
-    use core::circuit::AddInputResultImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultImpl::next(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>, value: Value) -> AddInputResult<C>"
-    insert_text = "AddInputResultImpl::next(${1:value})"
-    text_edits = ["""
-    use core::circuit::AddInputResultImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "AddInputResultTrait"
     completion_label_path = "(use core::circuit::AddInputResultTrait)"
-    text_edits = ["""
-    use core::circuit::AddInputResultTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultTrait::done(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>) -> CircuitData<C>"
-    insert_text = "AddInputResultTrait::done()"
-    text_edits = ["""
-    use core::circuit::AddInputResultTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultTrait::next(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>, value: Value) -> AddInputResult<C>"
-    insert_text = "AddInputResultTrait::next(${1:value})"
     text_edits = ["""
     use core::circuit::AddInputResultTrait;
 
@@ -1242,107 +441,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "AppendFormattedToByteArray::append_formatted_to_byte_array(...)"
-    completion_label_type_info = "fn(self: @T, ref byte_array: ByteArray, base: NonZero<T>) -> ()"
-    insert_text = "AppendFormattedToByteArray::append_formatted_to_byte_array(${1:byte_array}, ${2:base})"
-    text_edits = ["""
-    use core::to_byte_array::AppendFormattedToByteArray;
-
-    """]
-
-    [[completions]]
     completion_label = "ArrayImpl"
     completion_label_path = "(use core::array::ArrayImpl)"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::append(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, value: T) -> () nopanic"
-    insert_text = "ArrayImpl::append(${1:value})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::append_span(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, span: Span<T>) -> ()"
-    insert_text = "ArrayImpl::append_span(${1:span})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::at(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> @T"
-    insert_text = "ArrayImpl::at(${1:index})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::get(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "ArrayImpl::get(${1:index})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> bool"
-    insert_text = "ArrayImpl::is_empty()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::len(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> u32"
-    insert_text = "ArrayImpl::len()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::new(...)"
-    completion_label_type_info = "fn() -> Array<T> nopanic"
-    insert_text = "ArrayImpl::new()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Array<T>) -> Option<T> nopanic"
-    insert_text = "ArrayImpl::pop_front()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::pop_front_consume(...)"
-    completion_label_type_info = "fn(self: Array<T>) -> Option<(Array<T>, T)> nopanic"
-    insert_text = "ArrayImpl::pop_front_consume()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::span(...)"
-    completion_label_type_info = "fn(snapshot: @Array<T>) -> Span<T>"
-    insert_text = "ArrayImpl::span(${1:snapshot})"
     text_edits = ["""
     use core::array::ArrayImpl;
 
@@ -1381,26 +481,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "BitAnd::bitand(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitAnd::bitand(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitAnd;
-
-    """]
-
-    [[completions]]
     completion_label = "BitNot"
     completion_label_path = "(use core::traits::BitNot)"
-    text_edits = ["""
-    use core::traits::BitNot;
-
-    """]
-
-    [[completions]]
-    completion_label = "BitNot::bitnot(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "BitNot::bitnot(${1:a})"
     text_edits = ["""
     use core::traits::BitNot;
 
@@ -1415,15 +497,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "BitOr::bitor(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitOr::bitor(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitOr;
-
-    """]
-
-    [[completions]]
     completion_label = "BitSize"
     completion_label_path = "(use core::num::traits::BitSize)"
     text_edits = ["""
@@ -1432,26 +505,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "BitSize::bits(...)"
-    completion_label_type_info = "fn() -> u32"
-    insert_text = "BitSize::bits()"
-    text_edits = ["""
-    use core::num::traits::BitSize;
-
-    """]
-
-    [[completions]]
     completion_label = "BitXor"
     completion_label_path = "(use core::traits::BitXor)"
-    text_edits = ["""
-    use core::traits::BitXor;
-
-    """]
-
-    [[completions]]
-    completion_label = "BitXor::bitxor(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitXor::bitxor(${1:lhs}, ${2:rhs})"
     text_edits = ["""
     use core::traits::BitXor;
 
@@ -1482,26 +537,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "BoolImpl::then_some(...)"
-    completion_label_type_info = "fn(self: bool, t: T) -> Option<T> nopanic"
-    insert_text = "BoolImpl::then_some(${1:t})"
-    text_edits = ["""
-    use core::boolean::BoolImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "BoolTrait"
     completion_label_path = "(use core::boolean::BoolTrait)"
-    text_edits = ["""
-    use core::boolean::BoolTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoolTrait::then_some(...)"
-    completion_label_type_info = "fn(self: bool, t: T) -> Option<T> nopanic"
-    insert_text = "BoolTrait::then_some(${1:t})"
     text_edits = ["""
     use core::boolean::BoolTrait;
 
@@ -1516,22 +553,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Bounded::MAX"
-    completion_label_type_info = "T"
-    text_edits = ["""
-    use core::num::traits::Bounded;
-
-    """]
-
-    [[completions]]
-    completion_label = "Bounded::MIN"
-    completion_label_type_info = "T"
-    text_edits = ["""
-    use core::num::traits::Bounded;
-
-    """]
-
-    [[completions]]
     completion_label = "BoundedInt"
     completion_label_path = "(use core::integer::BoundedInt)"
     text_edits = ["""
@@ -1540,53 +561,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "BoundedInt::max(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "BoundedInt::max()"
-    text_edits = ["""
-    use core::integer::BoundedInt;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoundedInt::min(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "BoundedInt::min()"
-    text_edits = ["""
-    use core::integer::BoundedInt;
-
-    """]
-
-    [[completions]]
     completion_label = "BoxImpl"
     completion_label_path = "(use core::box::BoxImpl)"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Box<T>) -> Box<@T> nopanic"
-    insert_text = "BoxImpl::as_snapshot()"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::new(...)"
-    completion_label_type_info = "fn(value: T) -> Box<T> nopanic"
-    insert_text = "BoxImpl::new(${1:value})"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::unbox(...)"
-    completion_label_type_info = "fn(self: Box<T>) -> T nopanic"
-    insert_text = "BoxImpl::unbox()"
     text_edits = ["""
     use core::box::BoxImpl;
 
@@ -1603,78 +579,6 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "ByteArrayImpl"
     completion_label_path = "(use core::byte_array::ByteArrayImpl)"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, other: @ByteArray) -> ()"
-    insert_text = "ByteArrayImpl::append(${1:other})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_byte(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, byte: u8) -> ()"
-    insert_text = "ByteArrayImpl::append_byte(${1:byte})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_word(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayImpl::append_word(${1:word}, ${2:len})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_word_rev(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayImpl::append_word_rev(${1:word}, ${2:len})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::at(...)"
-    completion_label_type_info = "fn(self: @ByteArray, index: u32) -> Option<u8>"
-    insert_text = "ByteArrayImpl::at(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::concat(...)"
-    completion_label_type_info = "fn(left: @ByteArray, right: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayImpl::concat(${1:left}, ${2:right})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::len(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> u32"
-    insert_text = "ByteArrayImpl::len()"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::rev(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayImpl::rev()"
     text_edits = ["""
     use core::byte_array::ByteArrayImpl;
 
@@ -1705,42 +609,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "ByteSpanImpl::get(...)"
-    completion_label_type_info = "fn(self: @ByteSpan, index: I) -> Option<TGet::Output>"
-    insert_text = "ByteSpanImpl::get(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> bool"
-    insert_text = "ByteSpanImpl::is_empty()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::len(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> u32"
-    insert_text = "ByteSpanImpl::len()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::to_byte_array(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> ByteArray"
-    insert_text = "ByteSpanImpl::to_byte_array()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "ByteSpanIter"
     completion_label_path = "(use core::byte_array::ByteSpanIter)"
     text_edits = ["""
@@ -1757,53 +625,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "ByteSpanTrait::get(...)"
-    completion_label_type_info = "fn(self: @ByteSpan, index: I) -> Option<TGet::Output>"
-    insert_text = "ByteSpanTrait::get(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> bool"
-    insert_text = "ByteSpanTrait::is_empty()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::len(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> u32"
-    insert_text = "ByteSpanTrait::len()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::to_byte_array(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> ByteArray"
-    insert_text = "ByteSpanTrait::to_byte_array()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Bytes31Impl"
     completion_label_path = "(use core::bytes_31::Bytes31Impl)"
-    text_edits = ["""
-    use core::bytes_31::Bytes31Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Bytes31Impl::at(...)"
-    completion_label_type_info = "fn(self: @bytes31, index: u32) -> u8"
-    insert_text = "Bytes31Impl::at(${1:index})"
     text_edits = ["""
     use core::bytes_31::Bytes31Impl;
 
@@ -1826,15 +649,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "CheckedAdd::checked_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedAdd::checked_add(${1:v})"
-    text_edits = ["""
-    use core::num::traits::CheckedAdd;
-
-    """]
-
-    [[completions]]
     completion_label = "CheckedMul"
     completion_label_path = "(use core::num::traits::CheckedMul)"
     text_edits = ["""
@@ -1843,26 +657,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "CheckedMul::checked_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedMul::checked_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::CheckedMul;
-
-    """]
-
-    [[completions]]
     completion_label = "CheckedSub"
     completion_label_path = "(use core::num::traits::CheckedSub)"
-    text_edits = ["""
-    use core::num::traits::CheckedSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "CheckedSub::checked_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedSub::checked_sub(${1:v})"
     text_edits = ["""
     use core::num::traits::CheckedSub;
 
@@ -1879,13 +675,6 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "CircuitDefinition"
     completion_label_path = "(use core::circuit::CircuitDefinition)"
-    text_edits = ["""
-    use core::circuit::CircuitDefinition;
-
-    """]
-
-    [[completions]]
-    completion_label = "CircuitDefinition::CircuitType"
     text_edits = ["""
     use core::circuit::CircuitDefinition;
 
@@ -1940,26 +729,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "CircuitInputs::new_inputs(...)"
-    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
-    insert_text = "CircuitInputs::new_inputs()"
-    text_edits = ["""
-    use core::circuit::CircuitInputs;
-
-    """]
-
-    [[completions]]
     completion_label = "CircuitInputsImpl"
     completion_label_path = "(use core::circuit::CircuitInputsImpl)"
-    text_edits = ["""
-    use core::circuit::CircuitInputsImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "CircuitInputsImpl::new_inputs(...)"
-    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
-    insert_text = "CircuitInputsImpl::new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputsImpl;
 
@@ -1982,15 +753,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "CircuitOutputsTrait::get_output(...)"
-    completion_label_type_info = "fn(self: Outputs, output: OutputElement) -> u384"
-    insert_text = "CircuitOutputsTrait::get_output(${1:output})"
-    text_edits = ["""
-    use core::circuit::CircuitOutputsTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "ClassHash"
     completion_label_path = "(use starknet::ClassHash)"
     text_edits = ["""
@@ -2001,15 +763,6 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "ClassHashIntoFelt252"
     completion_label_path = "(use starknet::class_hash::ClassHashIntoFelt252)"
-    text_edits = ["""
-    use starknet::class_hash::ClassHashIntoFelt252;
-
-    """]
-
-    [[completions]]
-    completion_label = "ClassHashIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "ClassHashIntoFelt252::into()"
     text_edits = ["""
     use starknet::class_hash::ClassHashIntoFelt252;
 
@@ -2048,20 +801,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "ConstrainHelper::HighT"
-    text_edits = ["""
-    use core::internal::bounded_int::ConstrainHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "ConstrainHelper::LowT"
-    text_edits = ["""
-    use core::internal::bounded_int::ConstrainHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "ContractAddress"
     completion_label_path = "(use starknet::ContractAddress)"
     text_edits = ["""
@@ -2072,15 +811,6 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "ContractAddressIntoFelt252"
     completion_label_path = "(use starknet::contract_address::ContractAddressIntoFelt252)"
-    text_edits = ["""
-    use starknet::contract_address::ContractAddressIntoFelt252;
-
-    """]
-
-    [[completions]]
-    completion_label = "ContractAddressIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "ContractAddressIntoFelt252::into()"
     text_edits = ["""
     use starknet::contract_address::ContractAddressIntoFelt252;
 
@@ -2103,26 +833,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Debug::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "Debug::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::Debug;
-
-    """]
-
-    [[completions]]
     completion_label = "DebugImpl"
     completion_label_path = "(use core::fmt::into_felt252_based::DebugImpl)"
-    text_edits = ["""
-    use core::fmt::into_felt252_based::DebugImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "DebugImpl::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "DebugImpl::fmt(${1:f})"
     text_edits = ["""
     use core::fmt::into_felt252_based::DebugImpl;
 
@@ -2145,22 +857,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "DerefMut::Target"
-    text_edits = ["""
-    use core::ops::DerefMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "DerefMut::deref_mut(...)"
-    completion_label_type_info = "fn(ref self: T) -> Self::Target"
-    insert_text = "DerefMut::deref_mut()"
-    text_edits = ["""
-    use core::ops::DerefMut;
-
-    """]
-
-    [[completions]]
     completion_label = "DestructFailureGuarantee"
     completion_label_path = "(use core::circuit::DestructFailureGuarantee)"
     text_edits = ["""
@@ -2169,26 +865,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "DestructFailureGuarantee::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "DestructFailureGuarantee::destruct()"
-    text_edits = ["""
-    use core::circuit::DestructFailureGuarantee;
-
-    """]
-
-    [[completions]]
     completion_label = "DestructOption"
     completion_label_path = "(use core::option::DestructOption)"
-    text_edits = ["""
-    use core::option::DestructOption;
-
-    """]
-
-    [[completions]]
-    completion_label = "DestructOption::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "DestructOption::destruct()"
     text_edits = ["""
     use core::option::DestructOption;
 
@@ -2211,26 +889,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Display::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "Display::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::Display;
-
-    """]
-
-    [[completions]]
     completion_label = "DivAssign"
     completion_label_path = "(use core::ops::DivAssign)"
-    text_edits = ["""
-    use core::ops::DivAssign;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivAssign::div_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "DivAssign::div_assign(${1:rhs})"
     text_edits = ["""
     use core::ops::DivAssign;
 
@@ -2245,15 +905,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "DivEq::div_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "DivEq::div_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::DivEq;
-
-    """]
-
-    [[completions]]
     completion_label = "DivRem"
     completion_label_path = "(use core::num::traits::DivRem)"
     text_edits = ["""
@@ -2262,45 +913,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "DivRem::Quotient"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRem::Remainder"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRem::div_rem(...)"
-    completion_label_type_info = "fn(self: T, other: NonZero<U>) -> (Self::Quotient, Self::Remainder)"
-    insert_text = "DivRem::div_rem(${1:other})"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
     completion_label = "DivRemHelper"
     completion_label_path = "(use core::internal::bounded_int::DivRemHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::DivRemHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRemHelper::DivT"
-    text_edits = ["""
-    use core::internal::bounded_int::DivRemHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRemHelper::RemT"
     text_edits = ["""
     use core::internal::bounded_int::DivRemHelper;
 
@@ -2355,152 +969,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "EcPointImpl::coordinates(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> (felt252, felt252)"
-    insert_text = "EcPointImpl::coordinates()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::mul(...)"
-    completion_label_type_info = "fn(self: EcPoint, scalar: felt252) -> EcPoint"
-    insert_text = "EcPointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointImpl::new(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointImpl::new_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_nz(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointImpl::new_nz(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_nz_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointImpl::new_nz_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::x(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointImpl::x()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::y(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointImpl::y()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EcPointTrait"
     completion_label_path = "(use core::ec::EcPointTrait)"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::coordinates(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> (felt252, felt252)"
-    insert_text = "EcPointTrait::coordinates()"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::mul(...)"
-    completion_label_type_info = "fn(self: EcPoint, scalar: felt252) -> EcPoint"
-    insert_text = "EcPointTrait::mul(${1:scalar})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointTrait::new(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointTrait::new_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_nz(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointTrait::new_nz(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_nz_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointTrait::new_nz_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::x(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointTrait::x()"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::y(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointTrait::y()"
     text_edits = ["""
     use core::ec::EcPointTrait;
 
@@ -2523,116 +993,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "EcStateImpl::add(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateImpl::add(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::add_mul(...)"
-    completion_label_type_info = "fn(ref self: EcState, scalar: felt252, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateImpl::add_mul(${1:scalar}, ${2:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::finalize(...)"
-    completion_label_type_info = "fn(self: EcState) -> EcPoint"
-    insert_text = "EcStateImpl::finalize()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::finalize_nz(...)"
-    completion_label_type_info = "fn(self: EcState) -> Option<NonZero<EcPoint>> nopanic"
-    insert_text = "EcStateImpl::finalize_nz()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::init(...)"
-    completion_label_type_info = "fn() -> EcState nopanic"
-    insert_text = "EcStateImpl::init()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::sub(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> ()"
-    insert_text = "EcStateImpl::sub(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EcStateTrait"
     completion_label_path = "(use core::ec::EcStateTrait)"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::add(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateTrait::add(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::add_mul(...)"
-    completion_label_type_info = "fn(ref self: EcState, scalar: felt252, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateTrait::add_mul(${1:scalar}, ${2:p})"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::finalize(...)"
-    completion_label_type_info = "fn(self: EcState) -> EcPoint"
-    insert_text = "EcStateTrait::finalize()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::finalize_nz(...)"
-    completion_label_type_info = "fn(self: EcState) -> Option<NonZero<EcPoint>> nopanic"
-    insert_text = "EcStateTrait::finalize_nz()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::init(...)"
-    completion_label_type_info = "fn() -> EcState nopanic"
-    insert_text = "EcStateTrait::init()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::sub(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> ()"
-    insert_text = "EcStateTrait::sub(${1:p})"
     text_edits = ["""
     use core::ec::EcStateTrait;
 
@@ -2671,15 +1033,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "EthAddressIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "EthAddressIntoFelt252::into()"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressIntoFelt252;
-
-    """]
-
-    [[completions]]
     completion_label = "EthAddressPrintImpl"
     completion_label_path = "(use starknet::eth_address::EthAddressPrintImpl)"
     text_edits = ["""
@@ -2688,35 +1041,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "EthAddressPrintImpl::print(...)"
-    completion_label_type_info = "fn(self: T) -> ()"
-    insert_text = "EthAddressPrintImpl::print()"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressPrintImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EthAddressSerde"
     completion_label_path = "(use starknet::eth_address::EthAddressSerde)"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressSerde;
-
-    """]
-
-    [[completions]]
-    completion_label = "EthAddressSerde::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "EthAddressSerde::deserialize(${1:serialized})"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressSerde;
-
-    """]
-
-    [[completions]]
-    completion_label = "EthAddressSerde::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "EthAddressSerde::serialize(${1:output})"
     text_edits = ["""
     use starknet::eth_address::EthAddressSerde;
 
@@ -2739,44 +1065,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "EvalCircuitImpl::eval(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitImpl::eval(${1:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitImpl::eval_ex(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitImpl::eval_ex(${1:descriptor}, ${2:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EvalCircuitTrait"
     completion_label_path = "(use core::circuit::EvalCircuitTrait)"
-    text_edits = ["""
-    use core::circuit::EvalCircuitTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitTrait::eval(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitTrait::eval(${1:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitTrait::eval_ex(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitTrait::eval_ex(${1:descriptor}, ${2:modulus})"
     text_edits = ["""
     use core::circuit::EvalCircuitTrait;
 
@@ -2791,35 +1081,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Event::append_keys_and_data(...)"
-    completion_label_type_info = "fn(self: @T, ref keys: Array<felt252>, ref data: Array<felt252>) -> ()"
-    insert_text = "Event::append_keys_and_data(${1:keys}, ${2:data})"
-    text_edits = ["""
-    use starknet::Event;
-
-    """]
-
-    [[completions]]
-    completion_label = "Event::deserialize(...)"
-    completion_label_type_info = "fn(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<T>"
-    insert_text = "Event::deserialize(${1:keys}, ${2:data})"
-    text_edits = ["""
-    use starknet::Event;
-
-    """]
-
-    [[completions]]
     completion_label = "EventEmitter"
     completion_label_path = "(use starknet::event::EventEmitter)"
-    text_edits = ["""
-    use starknet::event::EventEmitter;
-
-    """]
-
-    [[completions]]
-    completion_label = "EventEmitter::emit(...)"
-    completion_label_type_info = "fn(ref self: T, event: S) -> ()"
-    insert_text = "EventEmitter::emit(${1:event})"
     text_edits = ["""
     use starknet::event::EventEmitter;
 
@@ -2836,15 +1099,6 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "Extend"
     completion_label_path = "(use core::iter::Extend)"
-    text_edits = ["""
-    use core::iter::Extend;
-
-    """]
-
-    [[completions]]
-    completion_label = "Extend::extend(...)"
-    completion_label_type_info = "fn(ref self: T, iter: I) -> ()"
-    insert_text = "Extend::extend(${1:iter})"
     text_edits = ["""
     use core::iter::Extend;
 
@@ -2883,26 +1137,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Felt252DictEntryTrait::finalize(...)"
-    completion_label_type_info = "fn(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>"
-    insert_text = "Felt252DictEntryTrait::finalize(${1:new_value})"
-    text_edits = ["""
-    use core::dict::Felt252DictEntryTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Felt252TryIntoClassHash"
     completion_label_path = "(use starknet::class_hash::Felt252TryIntoClassHash)"
-    text_edits = ["""
-    use starknet::class_hash::Felt252TryIntoClassHash;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoClassHash::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoClassHash::try_into()"
     text_edits = ["""
     use starknet::class_hash::Felt252TryIntoClassHash;
 
@@ -2917,26 +1153,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Felt252TryIntoContractAddress::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoContractAddress::try_into()"
-    text_edits = ["""
-    use starknet::contract_address::Felt252TryIntoContractAddress;
-
-    """]
-
-    [[completions]]
     completion_label = "Felt252TryIntoEthAddress"
     completion_label_path = "(use starknet::eth_address::Felt252TryIntoEthAddress)"
-    text_edits = ["""
-    use starknet::eth_address::Felt252TryIntoEthAddress;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoEthAddress::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoEthAddress::try_into()"
     text_edits = ["""
     use starknet::eth_address::Felt252TryIntoEthAddress;
 
@@ -2959,22 +1177,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Fn::Output"
-    text_edits = ["""
-    use core::ops::Fn;
-
-    """]
-
-    [[completions]]
-    completion_label = "Fn::call(...)"
-    completion_label_type_info = "fn(self: @T, args: Args) -> Self::Output"
-    insert_text = "Fn::call(${1:args})"
-    text_edits = ["""
-    use core::ops::Fn;
-
-    """]
-
-    [[completions]]
     completion_label = "FnOnce"
     completion_label_path = "(use core::ops::FnOnce)"
     text_edits = ["""
@@ -2983,33 +1185,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "FnOnce::Output"
-    text_edits = ["""
-    use core::ops::FnOnce;
-
-    """]
-
-    [[completions]]
-    completion_label = "FnOnce::call(...)"
-    completion_label_type_info = "fn(self: T, args: Args) -> Self::Output"
-    insert_text = "FnOnce::call(${1:args})"
-    text_edits = ["""
-    use core::ops::FnOnce;
-
-    """]
-
-    [[completions]]
     completion_label = "FormatAsByteArray"
     completion_label_path = "(use core::to_byte_array::FormatAsByteArray)"
-    text_edits = ["""
-    use core::to_byte_array::FormatAsByteArray;
-
-    """]
-
-    [[completions]]
-    completion_label = "FormatAsByteArray::format_as_byte_array(...)"
-    completion_label_type_info = "fn(self: @T, base: NonZero<T>) -> ByteArray"
-    insert_text = "FormatAsByteArray::format_as_byte_array(${1:base})"
     text_edits = ["""
     use core::to_byte_array::FormatAsByteArray;
 
@@ -3072,22 +1249,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Get::Output"
-    text_edits = ["""
-    use core::ops::Get;
-
-    """]
-
-    [[completions]]
-    completion_label = "Get::get(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> Option<Self::Output>"
-    insert_text = "Get::get(${1:index})"
-    text_edits = ["""
-    use core::ops::Get;
-
-    """]
-
-    [[completions]]
     completion_label = "Hash"
     completion_label_path = "(use core::hash::Hash)"
     text_edits = ["""
@@ -3096,26 +1257,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Hash::update_state(...)"
-    completion_label_type_info = "fn(state: S, value: T) -> S"
-    insert_text = "Hash::update_state(${1:state}, ${2:value})"
-    text_edits = ["""
-    use core::hash::Hash;
-
-    """]
-
-    [[completions]]
     completion_label = "HashImpl"
     completion_label_path = "(use core::hash::into_felt252_based::HashImpl)"
-    text_edits = ["""
-    use core::hash::into_felt252_based::HashImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashImpl::update_state(...)"
-    completion_label_type_info = "fn(state: S, value: T) -> S"
-    insert_text = "HashImpl::update_state(${1:state}, ${2:value})"
     text_edits = ["""
     use core::hash::into_felt252_based::HashImpl;
 
@@ -3146,35 +1289,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "HashStateExTrait::update_with(...)"
-    completion_label_type_info = "fn(self: S, value: T) -> S"
-    insert_text = "HashStateExTrait::update_with(${1:value})"
-    text_edits = ["""
-    use core::hash::HashStateExTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "HashStateTrait"
     completion_label_path = "(use core::hash::HashStateTrait)"
-    text_edits = ["""
-    use core::hash::HashStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashStateTrait::finalize(...)"
-    completion_label_type_info = "fn(self: S) -> felt252"
-    insert_text = "HashStateTrait::finalize()"
-    text_edits = ["""
-    use core::hash::HashStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashStateTrait::update(...)"
-    completion_label_type_info = "fn(self: S, value: felt252) -> S"
-    insert_text = "HashStateTrait::update(${1:value})"
     text_edits = ["""
     use core::hash::HashStateTrait;
 
@@ -3197,31 +1313,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Index::Target"
-    text_edits = ["""
-    use core::ops::Index;
-
-    """]
-
-    [[completions]]
-    completion_label = "Index::index(...)"
-    completion_label_type_info = "fn(ref self: C, index: I) -> Self::Target"
-    insert_text = "Index::index(${1:index})"
-    text_edits = ["""
-    use core::ops::Index;
-
-    """]
-
-    [[completions]]
-    completion_label = "Index::index(...)"
-    completion_label_type_info = "fn(ref self: C, index: I) -> V"
-    insert_text = "Index::index(${1:index})"
-    text_edits = ["""
-    use core::traits::Index;
-
-    """]
-
-    [[completions]]
     completion_label = "IndexView"
     completion_label_path = "(use core::ops::IndexView)"
     text_edits = ["""
@@ -3232,31 +1323,6 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "IndexView"
     completion_label_path = "(use core::traits::IndexView)"
-    text_edits = ["""
-    use core::traits::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::Target"
-    text_edits = ["""
-    use core::ops::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> Self::Target"
-    insert_text = "IndexView::index(${1:index})"
-    text_edits = ["""
-    use core::ops::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> V"
-    insert_text = "IndexView::index(${1:index})"
     text_edits = ["""
     use core::traits::IndexView;
 
@@ -3287,42 +1353,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "IntoIterRange::IntoIter"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
-    completion_label = "IntoIterRange::into_iter_full_range(...)"
-    completion_label_type_info = "fn(self: T) -> Self::IntoIter"
-    insert_text = "IntoIterRange::into_iter_full_range()"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
-    completion_label = "IntoIterRange::into_iter_range(...)"
-    completion_label_type_info = "fn(self: T, range: crate::ops::Range<u64>) -> Self::IntoIter"
-    insert_text = "IntoIterRange::into_iter_range(${1:range})"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
     completion_label = "LegacyHash"
     completion_label_path = "(use core::hash::LegacyHash)"
-    text_edits = ["""
-    use core::hash::LegacyHash;
-
-    """]
-
-    [[completions]]
-    completion_label = "LegacyHash::hash(...)"
-    completion_label_type_info = "fn(state: felt252, value: T) -> felt252"
-    insert_text = "LegacyHash::hash(${1:state}, ${2:value})"
     text_edits = ["""
     use core::hash::LegacyHash;
 
@@ -3345,26 +1377,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "LowerHex::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "LowerHex::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::LowerHex;
-
-    """]
-
-    [[completions]]
     completion_label = "LowerHexImpl"
     completion_label_path = "(use core::fmt::into_felt252_based::LowerHexImpl)"
-    text_edits = ["""
-    use core::fmt::into_felt252_based::LowerHexImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "LowerHexImpl::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "LowerHexImpl::fmt(${1:f})"
     text_edits = ["""
     use core::fmt::into_felt252_based::LowerHexImpl;
 
@@ -3395,15 +1409,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "MulAssign::mul_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "MulAssign::mul_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::MulAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "MulEq"
     completion_label_path = "(use core::traits::MulEq)"
     text_edits = ["""
@@ -3412,24 +1417,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "MulEq::mul_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "MulEq::mul_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::MulEq;
-
-    """]
-
-    [[completions]]
     completion_label = "MulHelper"
     completion_label_path = "(use core::internal::bounded_int::MulHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::MulHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "MulHelper::Result"
     text_edits = ["""
     use core::internal::bounded_int::MulHelper;
 
@@ -3460,94 +1449,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "MutableVecTrait::ElementType"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::allocate(...)"
-    completion_label_type_info = "fn(self: T) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::allocate()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::append(...)"
-    completion_label_type_info = "fn(self: T) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::append()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::at(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::at(${1:index})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::get(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> Option<StoragePath<Mutable<Self::ElementType>>>"
-    insert_text = "MutableVecTrait::get(${1:index})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::len(...)"
-    completion_label_type_info = "fn(self: T) -> u64"
-    insert_text = "MutableVecTrait::len()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::pop(...)"
-    completion_label_type_info = "fn(self: T) -> Option<Self::ElementType>"
-    insert_text = "MutableVecTrait::pop()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::push(...)"
-    completion_label_type_info = "fn(self: T, value: Self::ElementType) -> ()"
-    insert_text = "MutableVecTrait::push(${1:value})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "NegateHelper"
     completion_label_path = "(use core::internal::bounded_int::NegateHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::NegateHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "NegateHelper::Result"
-    text_edits = ["""
-    use core::internal::bounded_int::NegateHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "NegateHelper::negate(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Result"
-    insert_text = "NegateHelper::negate()"
     text_edits = ["""
     use core::internal::bounded_int::NegateHelper;
 
@@ -3602,60 +1505,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "NullableImpl::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> Nullable<@T> nopanic"
-    insert_text = "NullableImpl::as_snapshot()"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref(...)"
-    completion_label_type_info = "fn(nullable: Nullable<T>) -> T"
-    insert_text = "NullableImpl::deref(${1:nullable})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref_or(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, default: T) -> T"
-    insert_text = "NullableImpl::deref_or(${1:default})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref_or_else(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, f: F) -> T"
-    insert_text = "NullableImpl::deref_or_else(${1:f})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::is_null(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> bool"
-    insert_text = "NullableImpl::is_null()"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::new(...)"
-    completion_label_type_info = "fn(value: T) -> Nullable<T>"
-    insert_text = "NullableImpl::new(${1:value})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "NumericLiteral"
     completion_label_path = "(use core::integer::NumericLiteral)"
     text_edits = ["""
@@ -3688,33 +1537,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "One::is_non_one(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "One::is_non_one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
-    completion_label = "One::is_one(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "One::is_one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
-    completion_label = "One::one(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "One::one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
     completion_label = "OptionIter"
     completion_label_path = "(use core::option::OptionIter)"
     text_edits = ["""
@@ -3739,215 +1561,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "OptionTraitImpl::and(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<U>) -> Option<U>"
-    insert_text = "OptionTraitImpl::and(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::and_then(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTraitImpl::and_then(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::expect(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: felt252) -> T"
-    insert_text = "OptionTraitImpl::expect(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::filter(...)"
-    completion_label_type_info = "fn(self: Option<T>, predicate: P) -> Option<T>"
-    insert_text = "OptionTraitImpl::filter(${1:predicate})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::flatten(...)"
-    completion_label_type_info = "fn(self: Option<Option<T>>) -> Option<T>"
-    insert_text = "OptionTraitImpl::flatten()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_none(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTraitImpl::is_none()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_none_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTraitImpl::is_none_or(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_some(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTraitImpl::is_some()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_some_and(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTraitImpl::is_some_and(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTraitImpl::map(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: U, f: F) -> U"
-    insert_text = "OptionTraitImpl::map_or(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: D, f: F) -> U"
-    insert_text = "OptionTraitImpl::map_or_else(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::ok_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: E) -> Result<T, E>"
-    insert_text = "OptionTraitImpl::ok_or(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::ok_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: F) -> Result<T, E>"
-    insert_text = "OptionTraitImpl::ok_or_else(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::or(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::or(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<T>"
-    insert_text = "OptionTraitImpl::or_else(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::take(...)"
-    completion_label_type_info = "fn(ref self: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::take()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTraitImpl::unwrap()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: T) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or(${1:default})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or_default()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or_else(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::xor(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::xor(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "OverflowingAdd"
     completion_label_path = "(use core::num::traits::OverflowingAdd)"
-    text_edits = ["""
-    use core::num::traits::OverflowingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "OverflowingAdd::overflowing_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingAdd::overflowing_add(${1:v})"
     text_edits = ["""
     use core::num::traits::OverflowingAdd;
 
@@ -3962,26 +1577,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "OverflowingMul::overflowing_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingMul::overflowing_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::OverflowingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "OverflowingSub"
     completion_label_path = "(use core::num::traits::OverflowingSub)"
-    text_edits = ["""
-    use core::num::traits::OverflowingSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "OverflowingSub::overflowing_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingSub::overflowing_sub(${1:v})"
     text_edits = ["""
     use core::num::traits::OverflowingSub;
 
@@ -4004,15 +1601,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "PedersenImpl::new(...)"
-    completion_label_type_info = "fn(base: felt252) -> HashState"
-    insert_text = "PedersenImpl::new(${1:base})"
-    text_edits = ["""
-    use core::pedersen::PedersenImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "PedersenTrait"
     completion_label_path = "(use core::pedersen::PedersenTrait)"
     text_edits = ["""
@@ -4021,26 +1609,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "PedersenTrait::new(...)"
-    completion_label_type_info = "fn(base: felt252) -> HashState"
-    insert_text = "PedersenTrait::new(${1:base})"
-    text_edits = ["""
-    use core::pedersen::PedersenTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "PeekableTrait"
     completion_label_path = "(use core::iter::PeekableTrait)"
-    text_edits = ["""
-    use core::iter::PeekableTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "PeekableTrait::peek(...)"
-    completion_label_type_info = "fn(ref self: Peekable<I, IterI::Item>) -> Option<IterI::Item>"
-    insert_text = "PeekableTrait::peek()"
     text_edits = ["""
     use core::iter::PeekableTrait;
 
@@ -4063,15 +1633,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "PendingStoragePathTrait::new(...)"
-    completion_label_type_info = "fn(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T>"
-    insert_text = "PendingStoragePathTrait::new(${1:storage_path}, ${2:pending_key})"
-    text_edits = ["""
-    use starknet::storage::PendingStoragePathTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Poseidon"
     completion_label_path = "(use core::poseidon::Poseidon)"
     text_edits = ["""
@@ -4088,26 +1649,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "PoseidonImpl::new(...)"
-    completion_label_type_info = "fn() -> HashState"
-    insert_text = "PoseidonImpl::new()"
-    text_edits = ["""
-    use core::poseidon::PoseidonImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "PoseidonTrait"
     completion_label_path = "(use core::poseidon::PoseidonTrait)"
-    text_edits = ["""
-    use core::poseidon::PoseidonTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "PoseidonTrait::new(...)"
-    completion_label_type_info = "fn() -> HashState"
-    insert_text = "PoseidonTrait::new()"
     text_edits = ["""
     use core::poseidon::PoseidonTrait;
 
@@ -4122,22 +1665,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Pow::Output"
-    text_edits = ["""
-    use core::num::traits::Pow;
-
-    """]
-
-    [[completions]]
-    completion_label = "Pow::pow(...)"
-    completion_label_type_info = "fn(self: Base, exp: Exp) -> Self::Output"
-    insert_text = "Pow::pow(${1:exp})"
-    text_edits = ["""
-    use core::num::traits::Pow;
-
-    """]
-
-    [[completions]]
     completion_label = "Product"
     completion_label_path = "(use core::iter::Product)"
     text_edits = ["""
@@ -4146,35 +1673,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Product::product(...)"
-    completion_label_type_info = "fn(iter: I) -> A"
-    insert_text = "Product::product(${1:iter})"
-    text_edits = ["""
-    use core::iter::Product;
-
-    """]
-
-    [[completions]]
     completion_label = "QM31Trait"
     completion_label_path = "(use core::qm31::QM31Trait)"
-    text_edits = ["""
-    use core::qm31::QM31Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "QM31Trait::new(...)"
-    completion_label_type_info = "fn(w0: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w1: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w2: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w3: crate::internal::bounded_int::BoundedInt<0, 2147483646>) -> qm31"
-    insert_text = "QM31Trait::new(${1:w0}, ${2:w1}, ${3:w2}, ${4:w3})"
-    text_edits = ["""
-    use core::qm31::QM31Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "QM31Trait::unpack(...)"
-    completion_label_type_info = "fn(self: qm31) -> [crate::internal::bounded_int::BoundedInt<0, 2147483646>; 4]"
-    insert_text = "QM31Trait::unpack()"
     text_edits = ["""
     use core::qm31::QM31Trait;
 
@@ -4229,24 +1729,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "RangeInclusiveTrait::contains(...)"
-    completion_label_type_info = "fn(self: @RangeInclusive<T>, item: @T) -> bool"
-    insert_text = "RangeInclusiveTrait::contains(${1:item})"
-    text_edits = ["""
-    use core::ops::RangeInclusiveTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "RangeInclusiveTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @RangeInclusive<T>) -> bool"
-    insert_text = "RangeInclusiveTrait::is_empty()"
-    text_edits = ["""
-    use core::ops::RangeInclusiveTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "RangeIterator"
     completion_label_path = "(use core::ops::RangeIterator)"
     text_edits = ["""
@@ -4263,24 +1745,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "RangeTrait::contains(...)"
-    completion_label_type_info = "fn(self: @Range<T>, item: @T) -> bool"
-    insert_text = "RangeTrait::contains(${1:item})"
-    text_edits = ["""
-    use core::ops::RangeTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "RangeTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @Range<T>) -> bool"
-    insert_text = "RangeTrait::is_empty()"
-    text_edits = ["""
-    use core::ops::RangeTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "RemAssign"
     completion_label_path = "(use core::ops::RemAssign)"
     text_edits = ["""
@@ -4289,26 +1753,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "RemAssign::rem_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "RemAssign::rem_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::RemAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "RemEq"
     completion_label_path = "(use core::traits::RemEq)"
-    text_edits = ["""
-    use core::traits::RemEq;
-
-    """]
-
-    [[completions]]
-    completion_label = "RemEq::rem_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "RemEq::rem_eq(${1:other})"
     text_edits = ["""
     use core::traits::RemEq;
 
@@ -4331,206 +1777,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "ResultTraitImpl::and(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<U, E>) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::and(${1:other})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::and_then(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: F) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::and_then(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<E>"
-    insert_text = "ResultTraitImpl::err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::expect(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> T"
-    insert_text = "ResultTraitImpl::expect(${1:err})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::expect_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> E"
-    insert_text = "ResultTraitImpl::expect_err(${1:err})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::into_is_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::into_is_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::into_is_ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::into_is_ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::is_err(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::is_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::is_ok(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::is_ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::map(${1:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::map_err(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: U, f: F) -> U"
-    insert_text = "ResultTraitImpl::map_or(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: D, f: F) -> U"
-    insert_text = "ResultTraitImpl::map_or_else(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<T>"
-    insert_text = "ResultTraitImpl::ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<T, F>) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::or(${1:other})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::or_else(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTraitImpl::unwrap()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> E"
-    insert_text = "ResultTraitImpl::unwrap_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: T) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or(${1:default})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or_default()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or_else(${1:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SaturatingAdd"
     completion_label_path = "(use core::num::traits::SaturatingAdd)"
-    text_edits = ["""
-    use core::num::traits::SaturatingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "SaturatingAdd::saturating_add(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingAdd::saturating_add(${1:other})"
     text_edits = ["""
     use core::num::traits::SaturatingAdd;
 
@@ -4545,26 +1793,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "SaturatingMul::saturating_mul(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingMul::saturating_mul(${1:other})"
-    text_edits = ["""
-    use core::num::traits::SaturatingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "SaturatingSub"
     completion_label_path = "(use core::num::traits::SaturatingSub)"
-    text_edits = ["""
-    use core::num::traits::SaturatingSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "SaturatingSub::saturating_sub(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingSub::saturating_sub(${1:other})"
     text_edits = ["""
     use core::num::traits::SaturatingSub;
 
@@ -4579,33 +1809,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Secp256PointTrait::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256PointTrait::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256PointTrait::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256PointTrait::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256PointTrait::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256PointTrait::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256Trait"
     completion_label_path = "(use starknet::secp256_trait::Secp256Trait)"
     text_edits = ["""
@@ -4614,80 +1817,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Secp256Trait::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256Trait::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256Trait::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256Trait::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256Trait::secp256_ec_new_syscall(${1:x}, ${2:y})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256k1Impl"
     completion_label_path = "(use starknet::secp256k1::Secp256k1Impl)"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256k1Impl::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256k1Impl::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256k1Impl::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256k1Impl::secp256_ec_new_syscall(${1:x}, ${2:y})"
     text_edits = ["""
     use starknet::secp256k1::Secp256k1Impl;
 
@@ -4710,71 +1841,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Secp256k1PointImpl::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1PointImpl::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1PointImpl::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256r1Impl"
     completion_label_path = "(use starknet::secp256r1::Secp256r1Impl)"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256r1Impl::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256r1Impl::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256r1Impl::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256r1Impl::secp256_ec_new_syscall(${1:x}, ${2:y})"
     text_edits = ["""
     use starknet::secp256r1::Secp256r1Impl;
 
@@ -4797,33 +1865,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Secp256r1PointImpl::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1PointImpl::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1PointImpl::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SegmentArena"
     completion_label_path = "(use core::SegmentArena)"
     text_edits = ["""
@@ -4834,24 +1875,6 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "SerdeImpl"
     completion_label_path = "(use core::serde::into_felt252_based::SerdeImpl)"
-    text_edits = ["""
-    use core::serde::into_felt252_based::SerdeImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SerdeImpl::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "SerdeImpl::deserialize(${1:serialized})"
-    text_edits = ["""
-    use core::serde::into_felt252_based::SerdeImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SerdeImpl::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "SerdeImpl::serialize(${1:output})"
     text_edits = ["""
     use core::serde::into_felt252_based::SerdeImpl;
 
@@ -4882,98 +1905,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "SpanImpl::at(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> @T"
-    insert_text = "SpanImpl::at(${1:index})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::get(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "SpanImpl::get(${1:index})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> bool"
-    insert_text = "SpanImpl::is_empty()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::len(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> u32"
-    insert_text = "SpanImpl::len()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::multi_pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanImpl::multi_pop_back()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::multi_pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanImpl::multi_pop_front()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T>"
-    insert_text = "SpanImpl::pop_back()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T> nopanic"
-    insert_text = "SpanImpl::pop_front()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::slice(...)"
-    completion_label_type_info = "fn(self: Span<T>, start: u32, length: u32) -> Span<T>"
-    insert_text = "SpanImpl::slice(${1:start}, ${2:length})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SpanIndex"
     completion_label_path = "(use core::array::SpanIndex)"
-    text_edits = ["""
-    use core::array::SpanIndex;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanIndex::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> V"
-    insert_text = "SpanIndex::index(${1:index})"
     text_edits = ["""
     use core::array::SpanIndex;
 
@@ -4996,22 +1929,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Sqrt::Target"
-    text_edits = ["""
-    use core::num::traits::Sqrt;
-
-    """]
-
-    [[completions]]
-    completion_label = "Sqrt::sqrt(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "Sqrt::sqrt()"
-    text_edits = ["""
-    use core::num::traits::Sqrt;
-
-    """]
-
-    [[completions]]
     completion_label = "SquashedFelt252Dict"
     completion_label_path = "(use core::dict::SquashedFelt252Dict)"
     text_edits = ["""
@@ -5028,15 +1945,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "SquashedFelt252DictImpl::into_entries(...)"
-    completion_label_type_info = "fn(self: SquashedFelt252Dict<T>) -> Array<(felt252, T, T)>"
-    insert_text = "SquashedFelt252DictImpl::into_entries()"
-    text_edits = ["""
-    use core::dict::SquashedFelt252DictImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SquashedFelt252DictTrait"
     completion_label_path = "(use core::dict::SquashedFelt252DictTrait)"
     text_edits = ["""
@@ -5045,33 +1953,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "SquashedFelt252DictTrait::into_entries(...)"
-    completion_label_type_info = "fn(self: SquashedFelt252Dict<T>) -> Array<(felt252, T, T)>"
-    insert_text = "SquashedFelt252DictTrait::into_entries()"
-    text_edits = ["""
-    use core::dict::SquashedFelt252DictTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "StorableStoragePointerReadAccess"
     completion_label_path = "(use starknet::storage::StorableStoragePointerReadAccess)"
-    text_edits = ["""
-    use starknet::storage::StorableStoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorableStoragePointerReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorableStoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorableStoragePointerReadAccess::read(...)"
-    completion_label_type_info = "fn(self: @T) -> Self::Value"
-    insert_text = "StorableStoragePointerReadAccess::read()"
     text_edits = ["""
     use starknet::storage::StorableStoragePointerReadAccess;
 
@@ -5094,40 +1977,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "StorageAsPath::Value"
-    text_edits = ["""
-    use starknet::storage::StorageAsPath;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPath::as_path(...)"
-    completion_label_type_info = "fn(self: @TMemberState) -> StoragePath<Self::Value>"
-    insert_text = "StorageAsPath::as_path()"
-    text_edits = ["""
-    use starknet::storage::StorageAsPath;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageAsPointer"
     completion_label_path = "(use starknet::storage::StorageAsPointer)"
-    text_edits = ["""
-    use starknet::storage::StorageAsPointer;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPointer::Value"
-    text_edits = ["""
-    use starknet::storage::StorageAsPointer;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPointer::as_ptr(...)"
-    completion_label_type_info = "fn(self: @TMemberState) -> StoragePointer0Offset<Self::Value>"
-    insert_text = "StorageAsPointer::as_ptr()"
     text_edits = ["""
     use starknet::storage::StorageAsPointer;
 
@@ -5158,54 +2009,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "StorageMapReadAccess::Key"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapReadAccess::read(...)"
-    completion_label_type_info = "fn(self: TMemberState, key: Self::Key) -> Self::Value"
-    insert_text = "StorageMapReadAccess::read(${1:key})"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageMapWriteAccess"
     completion_label_path = "(use starknet::storage::StorageMapWriteAccess)"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::Key"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::write(...)"
-    completion_label_type_info = "fn(self: TMemberState, key: Self::Key, value: Self::Value) -> ()"
-    insert_text = "StorageMapWriteAccess::write(${1:key}, ${2:value})"
     text_edits = ["""
     use starknet::storage::StorageMapWriteAccess;
 
@@ -5220,40 +2025,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "StorageNode::NodeType"
-    text_edits = ["""
-    use starknet::storage::StorageNode;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNode::storage_node(...)"
-    completion_label_type_info = "fn(self: StoragePath<T>) -> Self::NodeType"
-    insert_text = "StorageNode::storage_node()"
-    text_edits = ["""
-    use starknet::storage::StorageNode;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageNodeDeref"
     completion_label_path = "(use starknet::storage::StorageNodeDeref)"
-    text_edits = ["""
-    use starknet::storage::StorageNodeDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeDeref::Target"
-    text_edits = ["""
-    use starknet::storage::StorageNodeDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "StorageNodeDeref::deref()"
     text_edits = ["""
     use starknet::storage::StorageNodeDeref;
 
@@ -5268,40 +2041,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "StorageNodeMut::NodeType"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMut::storage_node_mut(...)"
-    completion_label_type_info = "fn(self: StoragePath<Mutable<T>>) -> Self::NodeType"
-    insert_text = "StorageNodeMut::storage_node_mut()"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMut;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageNodeMutDeref"
     completion_label_path = "(use starknet::storage::StorageNodeMutDeref)"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMutDeref::Target"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMutDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "StorageNodeMutDeref::deref()"
     text_edits = ["""
     use starknet::storage::StorageNodeMutDeref;
 
@@ -5324,40 +2065,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "StoragePathEntry::Key"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathEntry::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathEntry::entry(...)"
-    completion_label_type_info = "fn(self: C, key: Self::Key) -> StoragePath<Self::Value>"
-    insert_text = "StoragePathEntry::entry(${1:key})"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
     completion_label = "StoragePathMutableConversion"
     completion_label_path = "(use starknet::storage::StoragePathMutableConversion)"
-    text_edits = ["""
-    use starknet::storage::StoragePathMutableConversion;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathMutableConversion::as_non_mut(...)"
-    completion_label_type_info = "fn(self: StoragePath<Mutable<T>>) -> StoragePath<T>"
-    insert_text = "StoragePathMutableConversion::as_non_mut()"
     text_edits = ["""
     use starknet::storage::StoragePathMutableConversion;
 
@@ -5388,40 +2097,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "StoragePointerReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerReadAccess::read(...)"
-    completion_label_type_info = "fn(self: @T) -> Self::Value"
-    insert_text = "StoragePointerReadAccess::read()"
-    text_edits = ["""
-    use starknet::storage::StoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
     completion_label = "StoragePointerWriteAccess"
     completion_label_path = "(use starknet::storage::StoragePointerWriteAccess)"
-    text_edits = ["""
-    use starknet::storage::StoragePointerWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerWriteAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePointerWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerWriteAccess::write(...)"
-    completion_label_type_info = "fn(self: T, value: Self::Value) -> ()"
-    insert_text = "StoragePointerWriteAccess::write(${1:value})"
     text_edits = ["""
     use starknet::storage::StoragePointerWriteAccess;
 
@@ -5436,40 +2113,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "StorageTrait::BaseType"
-    text_edits = ["""
-    use starknet::storage::StorageTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTrait::storage(...)"
-    completion_label_type_info = "fn(self: FlattenedStorage<T>) -> Self::BaseType"
-    insert_text = "StorageTrait::storage()"
-    text_edits = ["""
-    use starknet::storage::StorageTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageTraitMut"
     completion_label_path = "(use starknet::storage::StorageTraitMut)"
-    text_edits = ["""
-    use starknet::storage::StorageTraitMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTraitMut::BaseType"
-    text_edits = ["""
-    use starknet::storage::StorageTraitMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTraitMut::storage_mut(...)"
-    completion_label_type_info = "fn(self: FlattenedStorage<Mutable<T>>) -> Self::BaseType"
-    insert_text = "StorageTraitMut::storage_mut()"
     text_edits = ["""
     use starknet::storage::StorageTraitMut;
 
@@ -5484,80 +2129,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "Store::read(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress) -> Result<T, Array<felt252>>"
-    insert_text = "Store::read(${1:address_domain}, ${2:base})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::read_at_offset(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8) -> Result<T, Array<felt252>>"
-    insert_text = "Store::read_at_offset(${1:address_domain}, ${2:base}, ${3:offset})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::scrub(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8) -> Result<(), Array<felt252>>"
-    insert_text = "Store::scrub(${1:address_domain}, ${2:base}, ${3:offset})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::size(...)"
-    completion_label_type_info = "fn() -> u8"
-    insert_text = "Store::size()"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::write(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, value: T) -> Result<(), Array<felt252>>"
-    insert_text = "Store::write(${1:address_domain}, ${2:base}, ${3:value})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::write_at_offset(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8, value: T) -> Result<(), Array<felt252>>"
-    insert_text = "Store::write_at_offset(${1:address_domain}, ${2:base}, ${3:offset}, ${4:value})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
     completion_label = "StorePacking"
     completion_label_path = "(use starknet::storage_access::StorePacking)"
-    text_edits = ["""
-    use starknet::storage_access::StorePacking;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorePacking::pack(...)"
-    completion_label_type_info = "fn(value: T) -> PackedT"
-    insert_text = "StorePacking::pack(${1:value})"
-    text_edits = ["""
-    use starknet::storage_access::StorePacking;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorePacking::unpack(...)"
-    completion_label_type_info = "fn(value: PackedT) -> T"
-    insert_text = "StorePacking::unpack(${1:value})"
     text_edits = ["""
     use starknet::storage_access::StorePacking;
 
@@ -5580,26 +2153,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "SubAssign::sub_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "SubAssign::sub_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::SubAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "SubEq"
     completion_label_path = "(use core::traits::SubEq)"
-    text_edits = ["""
-    use core::traits::SubEq;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubEq::sub_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "SubEq::sub_eq(${1:other})"
     text_edits = ["""
     use core::traits::SubEq;
 
@@ -5614,31 +2169,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "SubHelper::Result"
-    text_edits = ["""
-    use core::internal::bounded_int::SubHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointers"
     completion_label_path = "(use starknet::storage::SubPointers)"
-    text_edits = ["""
-    use starknet::storage::SubPointers;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointers::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointers;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointers::sub_pointers(...)"
-    completion_label_type_info = "fn(self: StoragePointer<T>) -> Self::SubPointersType"
-    insert_text = "SubPointers::sub_pointers()"
     text_edits = ["""
     use starknet::storage::SubPointers;
 
@@ -5653,40 +2185,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersDeref::Target"
-    text_edits = ["""
-    use starknet::storage::SubPointersDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "SubPointersDeref::deref()"
-    text_edits = ["""
-    use starknet::storage::SubPointersDeref;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointersForward"
     completion_label_path = "(use starknet::storage::SubPointersForward)"
-    text_edits = ["""
-    use starknet::storage::SubPointersForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersForward::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersForward::sub_pointers(...)"
-    completion_label_type_info = "fn(self: T) -> Self::SubPointersType"
-    insert_text = "SubPointersForward::sub_pointers()"
     text_edits = ["""
     use starknet::storage::SubPointersForward;
 
@@ -5701,40 +2201,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersMut::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMut::sub_pointers_mut(...)"
-    completion_label_type_info = "fn(self: StoragePointer<Mutable<T>>) -> Self::SubPointersType"
-    insert_text = "SubPointersMut::sub_pointers_mut()"
-    text_edits = ["""
-    use starknet::storage::SubPointersMut;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointersMutDeref"
     completion_label_path = "(use starknet::storage::SubPointersMutDeref)"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutDeref::Target"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "SubPointersMutDeref::deref()"
     text_edits = ["""
     use starknet::storage::SubPointersMutDeref;
 
@@ -5749,33 +2217,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersMutForward::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutForward::sub_pointers_mut(...)"
-    completion_label_type_info = "fn(self: T) -> Self::SubPointersType"
-    insert_text = "SubPointersMutForward::sub_pointers_mut()"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutForward;
-
-    """]
-
-    [[completions]]
     completion_label = "Sum"
     completion_label_path = "(use core::iter::Sum)"
-    text_edits = ["""
-    use core::iter::Sum;
-
-    """]
-
-    [[completions]]
-    completion_label = "Sum::sum(...)"
-    completion_label_type_info = "fn(iter: I) -> A"
-    insert_text = "Sum::sum(${1:iter})"
     text_edits = ["""
     use core::iter::Sum;
 
@@ -5798,26 +2241,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "SyscallResultTrait::unwrap_syscall(...)"
-    completion_label_type_info = "fn(self: Result<T, Array<felt252>>) -> T"
-    insert_text = "SyscallResultTrait::unwrap_syscall()"
-    text_edits = ["""
-    use starknet::SyscallResultTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "ToByteSpanTrait"
     completion_label_path = "(use core::byte_array::ToByteSpanTrait)"
-    text_edits = ["""
-    use core::byte_array::ToByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ToByteSpanTrait::span(...)"
-    completion_label_type_info = "fn(self: @C) -> ByteSpan"
-    insert_text = "ToByteSpanTrait::span()"
     text_edits = ["""
     use core::byte_array::ToByteSpanTrait;
 
@@ -5832,22 +2257,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "TrimMaxHelper::Target"
-    text_edits = ["""
-    use core::internal::bounded_int::TrimMaxHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "TrimMinHelper"
     completion_label_path = "(use core::internal::bounded_int::TrimMinHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::TrimMinHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "TrimMinHelper::Target"
     text_edits = ["""
     use core::internal::bounded_int::TrimMinHelper;
 
@@ -5888,15 +2299,6 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "U256IntoEthAddress"
     completion_label_path = "(use starknet::eth_address::U256IntoEthAddress)"
-    text_edits = ["""
-    use starknet::eth_address::U256IntoEthAddress;
-
-    """]
-
-    [[completions]]
-    completion_label = "U256IntoEthAddress::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "U256IntoEthAddress::into()"
     text_edits = ["""
     use starknet::eth_address::U256IntoEthAddress;
 
@@ -5951,58 +2353,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "VecTrait::ElementType"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::at(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> StoragePath<Self::ElementType>"
-    insert_text = "VecTrait::at(${1:index})"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::get(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> Option<StoragePath<Self::ElementType>>"
-    insert_text = "VecTrait::get(${1:index})"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::len(...)"
-    completion_label_type_info = "fn(self: T) -> u64"
-    insert_text = "VecTrait::len()"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "WideMul"
     completion_label_path = "(use core::num::traits::WideMul)"
-    text_edits = ["""
-    use core::num::traits::WideMul;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideMul::Target"
-    text_edits = ["""
-    use core::num::traits::WideMul;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideMul::wide_mul(...)"
-    completion_label_type_info = "fn(self: Lhs, other: Rhs) -> Self::Target"
-    insert_text = "WideMul::wide_mul(${1:other})"
     text_edits = ["""
     use core::num::traits::WideMul;
 
@@ -6017,33 +2369,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "WideSquare::Target"
-    text_edits = ["""
-    use core::num::traits::WideSquare;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideSquare::wide_square(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "WideSquare::wide_square()"
-    text_edits = ["""
-    use core::num::traits::WideSquare;
-
-    """]
-
-    [[completions]]
     completion_label = "WrappingAdd"
     completion_label_path = "(use core::num::traits::WrappingAdd)"
-    text_edits = ["""
-    use core::num::traits::WrappingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "WrappingAdd::wrapping_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingAdd::wrapping_add(${1:v})"
     text_edits = ["""
     use core::num::traits::WrappingAdd;
 
@@ -6058,15 +2385,6 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "WrappingMul::wrapping_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingMul::wrapping_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::WrappingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "WrappingSub"
     completion_label_path = "(use core::num::traits::WrappingSub)"
     text_edits = ["""
@@ -6075,44 +2393,8 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
-    completion_label = "WrappingSub::wrapping_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingSub::wrapping_sub(${1:v})"
-    text_edits = ["""
-    use core::num::traits::WrappingSub;
-
-    """]
-
-    [[completions]]
     completion_label = "Zero"
     completion_label_path = "(use core::num::traits::Zero)"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::is_non_zero(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "Zero::is_non_zero()"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::is_zero(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "Zero::is_zero()"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::zero(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "Zero::zero()"
     text_edits = ["""
     use core::num::traits::Zero;
 
@@ -8516,65 +4798,10 @@ fn no_text_after_semicolon() {
     completion_label = "Add"
 
     [[completions]]
-    completion_label = "Add::add(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Add::add(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Array"
 
     [[completions]]
     completion_label = "ArrayTrait"
-
-    [[completions]]
-    completion_label = "ArrayTrait::append(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, value: T) -> () nopanic"
-    insert_text = "ArrayTrait::append(${1:value})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::append_span(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, span: Span<T>) -> ()"
-    insert_text = "ArrayTrait::append_span(${1:span})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::at(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> @T"
-    insert_text = "ArrayTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::get(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "ArrayTrait::get(${1:index})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> bool"
-    insert_text = "ArrayTrait::is_empty()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::len(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> u32"
-    insert_text = "ArrayTrait::len()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::new(...)"
-    completion_label_type_info = "fn() -> Array<T> nopanic"
-    insert_text = "ArrayTrait::new()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Array<T>) -> Option<T> nopanic"
-    insert_text = "ArrayTrait::pop_front()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::pop_front_consume(...)"
-    completion_label_type_info = "fn(self: Array<T>) -> Option<(Array<T>, T)> nopanic"
-    insert_text = "ArrayTrait::pop_front_consume()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::span(...)"
-    completion_label_type_info = "fn(snapshot: @Array<T>) -> Span<T>"
-    insert_text = "ArrayTrait::span(${1:snapshot})"
 
     [[completions]]
     completion_label = "Box"
@@ -8583,81 +4810,16 @@ fn no_text_after_semicolon() {
     completion_label = "BoxTrait"
 
     [[completions]]
-    completion_label = "BoxTrait::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Box<T>) -> Box<@T> nopanic"
-    insert_text = "BoxTrait::as_snapshot()"
-
-    [[completions]]
-    completion_label = "BoxTrait::new(...)"
-    completion_label_type_info = "fn(value: T) -> Box<T> nopanic"
-    insert_text = "BoxTrait::new(${1:value})"
-
-    [[completions]]
-    completion_label = "BoxTrait::unbox(...)"
-    completion_label_type_info = "fn(self: Box<T>) -> T nopanic"
-    insert_text = "BoxTrait::unbox()"
-
-    [[completions]]
     completion_label = "ByteArray"
 
     [[completions]]
     completion_label = "ByteArrayTrait"
 
     [[completions]]
-    completion_label = "ByteArrayTrait::append(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, other: @ByteArray) -> ()"
-    insert_text = "ByteArrayTrait::append(${1:other})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_byte(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, byte: u8) -> ()"
-    insert_text = "ByteArrayTrait::append_byte(${1:byte})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_word(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayTrait::append_word(${1:word}, ${2:len})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_word_rev(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayTrait::append_word_rev(${1:word}, ${2:len})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::at(...)"
-    completion_label_type_info = "fn(self: @ByteArray, index: u32) -> Option<u8>"
-    insert_text = "ByteArrayTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::concat(...)"
-    completion_label_type_info = "fn(left: @ByteArray, right: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayTrait::concat(${1:left}, ${2:right})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::len(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> u32"
-    insert_text = "ByteArrayTrait::len()"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::rev(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayTrait::rev()"
-
-    [[completions]]
     completion_label = "Bytes31Trait"
 
     [[completions]]
-    completion_label = "Bytes31Trait::at(...)"
-    completion_label_type_info = "fn(self: @bytes31, index: u32) -> u8"
-    insert_text = "Bytes31Trait::at(${1:index})"
-
-    [[completions]]
     completion_label = "Clone"
-
-    [[completions]]
-    completion_label = "Clone::clone(...)"
-    completion_label_type_info = "fn(self: @T) -> T"
-    insert_text = "Clone::clone()"
 
     [[completions]]
     completion_label = "Copy"
@@ -8666,44 +4828,16 @@ fn no_text_after_semicolon() {
     completion_label = "Default"
 
     [[completions]]
-    completion_label = "Default::default(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "Default::default()"
-
-    [[completions]]
     completion_label = "Deref"
-
-    [[completions]]
-    completion_label = "Deref::Target"
-
-    [[completions]]
-    completion_label = "Deref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "Deref::deref()"
 
     [[completions]]
     completion_label = "Destruct"
 
     [[completions]]
-    completion_label = "Destruct::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "Destruct::destruct()"
-
-    [[completions]]
     completion_label = "Div"
 
     [[completions]]
-    completion_label = "Div::div(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Div::div(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "DivRem"
-
-    [[completions]]
-    completion_label = "DivRem::div_rem(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: NonZero<T>) -> (T, T)"
-    insert_text = "DivRem::div_rem(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "Drop"
@@ -8715,176 +4849,25 @@ fn no_text_after_semicolon() {
     completion_label = "Felt252DictTrait"
 
     [[completions]]
-    completion_label = "Felt252DictTrait::entry(...)"
-    completion_label_type_info = "fn(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic"
-    insert_text = "Felt252DictTrait::entry(${1:key})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::get(...)"
-    completion_label_type_info = "fn(ref self: Felt252Dict<T>, key: felt252) -> T"
-    insert_text = "Felt252DictTrait::get(${1:key})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::insert(...)"
-    completion_label_type_info = "fn(ref self: Felt252Dict<T>, key: felt252, value: T) -> ()"
-    insert_text = "Felt252DictTrait::insert(${1:key}, ${2:value})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::squash(...)"
-    completion_label_type_info = "fn(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic"
-    insert_text = "Felt252DictTrait::squash()"
-
-    [[completions]]
     completion_label = "Felt252DictValue"
-
-    [[completions]]
-    completion_label = "Felt252DictValue::zero_default(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "Felt252DictValue::zero_default()"
 
     [[completions]]
     completion_label = "FromIterator"
 
     [[completions]]
-    completion_label = "FromIterator::from_iter(...)"
-    completion_label_type_info = "fn(iter: I) -> T"
-    insert_text = "FromIterator::from_iter(${1:iter})"
-
-    [[completions]]
     completion_label = "Into"
-
-    [[completions]]
-    completion_label = "Into::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "Into::into()"
 
     [[completions]]
     completion_label = "IntoIterator"
 
     [[completions]]
-    completion_label = "IntoIterator::IntoIter"
-
-    [[completions]]
-    completion_label = "IntoIterator::into_iter(...)"
-    completion_label_type_info = "fn(self: T) -> Self::IntoIter"
-    insert_text = "IntoIterator::into_iter()"
-
-    [[completions]]
     completion_label = "Iterator"
-
-    [[completions]]
-    completion_label = "Iterator::Item"
-
-    [[completions]]
-    completion_label = "Iterator::advance_by(...)"
-    completion_label_type_info = "fn(ref self: T, n: u32) -> Result<(), NonZero<u32>>"
-    insert_text = "Iterator::advance_by(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::all(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> bool"
-    insert_text = "Iterator::all(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::any(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> bool"
-    insert_text = "Iterator::any(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::chain(...)"
-    completion_label_type_info = "fn(self: T, other: U) -> Chain<T, IntoIterU::IntoIter>"
-    insert_text = "Iterator::chain(${1:other})"
-
-    [[completions]]
-    completion_label = "Iterator::collect(...)"
-    completion_label_type_info = "fn(self: T) -> B"
-    insert_text = "Iterator::collect()"
-
-    [[completions]]
-    completion_label = "Iterator::count(...)"
-    completion_label_type_info = "fn(self: T) -> u32"
-    insert_text = "Iterator::count()"
-
-    [[completions]]
-    completion_label = "Iterator::enumerate(...)"
-    completion_label_type_info = "fn(self: T) -> Enumerate<T>"
-    insert_text = "Iterator::enumerate()"
-
-    [[completions]]
-    completion_label = "Iterator::filter(...)"
-    completion_label_type_info = "fn(self: T, predicate: P) -> Filter<T, P>"
-    insert_text = "Iterator::filter(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::find(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> Option<Self::Item>"
-    insert_text = "Iterator::find(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::fold(...)"
-    completion_label_type_info = "fn(self: T, init: B, f: F) -> B"
-    insert_text = "Iterator::fold(${1:init}, ${2:f})"
-
-    [[completions]]
-    completion_label = "Iterator::last(...)"
-    completion_label_type_info = "fn(self: T) -> Option<Self::Item>"
-    insert_text = "Iterator::last()"
-
-    [[completions]]
-    completion_label = "Iterator::map(...)"
-    completion_label_type_info = "fn(self: T, f: F) -> Map<T, F>"
-    insert_text = "Iterator::map(${1:f})"
-
-    [[completions]]
-    completion_label = "Iterator::next(...)"
-    completion_label_type_info = "fn(ref self: T) -> Option<Self::Item>"
-    insert_text = "Iterator::next()"
-
-    [[completions]]
-    completion_label = "Iterator::nth(...)"
-    completion_label_type_info = "fn(ref self: T, n: u32) -> Option<Self::Item>"
-    insert_text = "Iterator::nth(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::peekable(...)"
-    completion_label_type_info = "fn(self: T) -> Peekable<T, Self::Item>"
-    insert_text = "Iterator::peekable()"
-
-    [[completions]]
-    completion_label = "Iterator::product(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Item"
-    insert_text = "Iterator::product()"
-
-    [[completions]]
-    completion_label = "Iterator::sum(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Item"
-    insert_text = "Iterator::sum()"
-
-    [[completions]]
-    completion_label = "Iterator::take(...)"
-    completion_label_type_info = "fn(self: T, n: u32) -> Take<T>"
-    insert_text = "Iterator::take(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::zip(...)"
-    completion_label_type_info = "fn(self: T, other: U) -> Zip<T, UIntoIter::IntoIter>"
-    insert_text = "Iterator::zip(${1:other})"
 
     [[completions]]
     completion_label = "Mul"
 
     [[completions]]
-    completion_label = "Mul::mul(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Mul::mul(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Neg"
-
-    [[completions]]
-    completion_label = "Neg::neg(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "Neg::neg(${1:a})"
 
     [[completions]]
     completion_label = "NonZero"
@@ -8896,45 +4879,10 @@ fn no_text_after_semicolon() {
     completion_label = "Not"
 
     [[completions]]
-    completion_label = "Not::not(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "Not::not(${1:a})"
-
-    [[completions]]
     completion_label = "Nullable"
 
     [[completions]]
     completion_label = "NullableTrait"
-
-    [[completions]]
-    completion_label = "NullableTrait::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> Nullable<@T> nopanic"
-    insert_text = "NullableTrait::as_snapshot()"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref(...)"
-    completion_label_type_info = "fn(nullable: Nullable<T>) -> T"
-    insert_text = "NullableTrait::deref(${1:nullable})"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref_or(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, default: T) -> T"
-    insert_text = "NullableTrait::deref_or(${1:default})"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref_or_else(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, f: F) -> T"
-    insert_text = "NullableTrait::deref_or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "NullableTrait::is_null(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> bool"
-    insert_text = "NullableTrait::is_null()"
-
-    [[completions]]
-    completion_label = "NullableTrait::new(...)"
-    completion_label_type_info = "fn(value: T) -> Nullable<T>"
-    insert_text = "NullableTrait::new(${1:value})"
 
     [[completions]]
     completion_label = "Ok"
@@ -8946,125 +4894,10 @@ fn no_text_after_semicolon() {
     completion_label = "OptionTrait"
 
     [[completions]]
-    completion_label = "OptionTrait::and(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<U>) -> Option<U>"
-    insert_text = "OptionTrait::and(${1:optb})"
-
-    [[completions]]
-    completion_label = "OptionTrait::and_then(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTrait::and_then(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::expect(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: felt252) -> T"
-    insert_text = "OptionTrait::expect(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::filter(...)"
-    completion_label_type_info = "fn(self: Option<T>, predicate: P) -> Option<T>"
-    insert_text = "OptionTrait::filter(${1:predicate})"
-
-    [[completions]]
-    completion_label = "OptionTrait::flatten(...)"
-    completion_label_type_info = "fn(self: Option<Option<T>>) -> Option<T>"
-    insert_text = "OptionTrait::flatten()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_none(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTrait::is_none()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_none_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTrait::is_none_or(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_some(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTrait::is_some()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_some_and(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTrait::is_some_and(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTrait::map(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: U, f: F) -> U"
-    insert_text = "OptionTrait::map_or(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: D, f: F) -> U"
-    insert_text = "OptionTrait::map_or_else(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::ok_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: E) -> Result<T, E>"
-    insert_text = "OptionTrait::ok_or(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::ok_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: F) -> Result<T, E>"
-    insert_text = "OptionTrait::ok_or_else(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::or(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::or(${1:optb})"
-
-    [[completions]]
-    completion_label = "OptionTrait::or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<T>"
-    insert_text = "OptionTrait::or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::take(...)"
-    completion_label_type_info = "fn(ref self: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::take()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTrait::unwrap()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: T) -> T"
-    insert_text = "OptionTrait::unwrap_or(${1:default})"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTrait::unwrap_or_default()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> T"
-    insert_text = "OptionTrait::unwrap_or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::xor(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::xor(${1:optb})"
-
-    [[completions]]
     completion_label = "Panic"
 
     [[completions]]
     completion_label = "PanicDestruct"
-
-    [[completions]]
-    completion_label = "PanicDestruct::panic_destruct(...)"
-    completion_label_type_info = "fn(self: T, ref panic: Panic) -> () nopanic"
-    insert_text = "PanicDestruct::panic_destruct(${1:panic})"
 
     [[completions]]
     completion_label = "PanicResult"
@@ -9073,45 +4906,10 @@ fn no_text_after_semicolon() {
     completion_label = "PartialEq"
 
     [[completions]]
-    completion_label = "PartialEq::eq(...)"
-    completion_label_type_info = "fn(lhs: @T, rhs: @T) -> bool"
-    insert_text = "PartialEq::eq(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialEq::ne(...)"
-    completion_label_type_info = "fn(lhs: @T, rhs: @T) -> bool"
-    insert_text = "PartialEq::ne(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "PartialOrd"
 
     [[completions]]
-    completion_label = "PartialOrd::ge(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::ge(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::gt(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::gt(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::le(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::le(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::lt(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::lt(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Rem"
-
-    [[completions]]
-    completion_label = "Rem::rem(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Rem::rem(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "Result"
@@ -9120,122 +4918,7 @@ fn no_text_after_semicolon() {
     completion_label = "ResultTrait"
 
     [[completions]]
-    completion_label = "ResultTrait::and(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<U, E>) -> Result<U, E>"
-    insert_text = "ResultTrait::and(${1:other})"
-
-    [[completions]]
-    completion_label = "ResultTrait::and_then(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: F) -> Result<U, E>"
-    insert_text = "ResultTrait::and_then(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<E>"
-    insert_text = "ResultTrait::err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::expect(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> T"
-    insert_text = "ResultTrait::expect(${1:err})"
-
-    [[completions]]
-    completion_label = "ResultTrait::expect_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> E"
-    insert_text = "ResultTrait::expect_err(${1:err})"
-
-    [[completions]]
-    completion_label = "ResultTrait::into_is_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTrait::into_is_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::into_is_ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTrait::into_is_ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::is_err(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTrait::is_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::is_ok(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTrait::is_ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::map(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> Result<U, E>"
-    insert_text = "ResultTrait::map(${1:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTrait::map_err(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: U, f: F) -> U"
-    insert_text = "ResultTrait::map_or(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: D, f: F) -> U"
-    insert_text = "ResultTrait::map_or_else(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<T>"
-    insert_text = "ResultTrait::ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<T, F>) -> Result<T, F>"
-    insert_text = "ResultTrait::or(${1:other})"
-
-    [[completions]]
-    completion_label = "ResultTrait::or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTrait::or_else(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTrait::unwrap()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> E"
-    insert_text = "ResultTrait::unwrap_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: T) -> T"
-    insert_text = "ResultTrait::unwrap_or(${1:default})"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTrait::unwrap_or_default()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> T"
-    insert_text = "ResultTrait::unwrap_or_else(${1:f})"
-
-    [[completions]]
     completion_label = "Serde"
-
-    [[completions]]
-    completion_label = "Serde::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "Serde::deserialize(${1:serialized})"
-
-    [[completions]]
-    completion_label = "Serde::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "Serde::serialize(${1:output})"
 
     [[completions]]
     completion_label = "Some"
@@ -9247,57 +4930,7 @@ fn no_text_after_semicolon() {
     completion_label = "SpanTrait"
 
     [[completions]]
-    completion_label = "SpanTrait::at(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> @T"
-    insert_text = "SpanTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "SpanTrait::get(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "SpanTrait::get(${1:index})"
-
-    [[completions]]
-    completion_label = "SpanTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> bool"
-    insert_text = "SpanTrait::is_empty()"
-
-    [[completions]]
-    completion_label = "SpanTrait::len(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> u32"
-    insert_text = "SpanTrait::len()"
-
-    [[completions]]
-    completion_label = "SpanTrait::multi_pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanTrait::multi_pop_back()"
-
-    [[completions]]
-    completion_label = "SpanTrait::multi_pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanTrait::multi_pop_front()"
-
-    [[completions]]
-    completion_label = "SpanTrait::pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T>"
-    insert_text = "SpanTrait::pop_back()"
-
-    [[completions]]
-    completion_label = "SpanTrait::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T> nopanic"
-    insert_text = "SpanTrait::pop_front()"
-
-    [[completions]]
-    completion_label = "SpanTrait::slice(...)"
-    completion_label_type_info = "fn(self: Span<T>, start: u32, length: u32) -> Span<T>"
-    insert_text = "SpanTrait::slice(${1:start}, ${2:length})"
-
-    [[completions]]
     completion_label = "Sub"
-
-    [[completions]]
-    completion_label = "Sub::sub(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Sub::sub(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "System"
@@ -9306,17 +4939,7 @@ fn no_text_after_semicolon() {
     completion_label = "ToSpanTrait"
 
     [[completions]]
-    completion_label = "ToSpanTrait::span(...)"
-    completion_label_type_info = "fn(self: @C) -> Span<T>"
-    insert_text = "ToSpanTrait::span()"
-
-    [[completions]]
     completion_label = "TryInto"
-
-    [[completions]]
-    completion_label = "TryInto::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "TryInto::try_into()"
 
     [[completions]]
     completion_label = "assert(...)"
@@ -9406,33 +5029,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "AccountContract::__execute__(...)"
-    completion_label_type_info = "fn(ref self: TContractState, calls: Array<Call>) -> Array<Span<felt252>>"
-    insert_text = "AccountContract::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContract::__validate__(...)"
-    completion_label_type_info = "fn(ref self: TContractState, calls: Array<Call>) -> felt252"
-    insert_text = "AccountContract::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContract::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: @TContractState, class_hash: felt252) -> felt252"
-    insert_text = "AccountContract::__validate_declare__(${1:class_hash})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
     completion_label = "AccountContractDispatcher"
     completion_label_path = "(use starknet::account::AccountContractDispatcher)"
     text_edits = ["""
@@ -9459,33 +5055,6 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "AccountContractDispatcherTrait"
     completion_label_path = "(use starknet::account::AccountContractDispatcherTrait)"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__execute__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Array<Span<felt252>>"
-    insert_text = "AccountContractDispatcherTrait::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__validate__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> felt252"
-    insert_text = "AccountContractDispatcherTrait::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: T, class_hash: felt252) -> felt252"
-    insert_text = "AccountContractDispatcherTrait::__validate_declare__(${1:class_hash})"
     text_edits = ["""
     use starknet::account::AccountContractDispatcherTrait;
 
@@ -9548,33 +5117,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__execute__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Result<Array<Span<felt252>>, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__validate__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Result<felt252, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: T, class_hash: felt252) -> Result<felt252, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__validate_declare__(${1:class_hash})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcher"
     completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcher)"
     text_edits = ["""
@@ -9607,15 +5149,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "AddAssign::add_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "AddAssign::add_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::AddAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "AddEq"
     completion_label_path = "(use core::traits::AddEq)"
     text_edits = ["""
@@ -9624,24 +5157,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "AddEq::add_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "AddEq::add_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::AddEq;
-
-    """]
-
-    [[completions]]
     completion_label = "AddHelper"
     completion_label_path = "(use core::internal::bounded_int::AddHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::AddHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddHelper::Result"
     text_edits = ["""
     use core::internal::bounded_int::AddHelper;
 
@@ -9664,44 +5181,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "AddInputResultImpl::done(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>) -> CircuitData<C>"
-    insert_text = "AddInputResultImpl::done()"
-    text_edits = ["""
-    use core::circuit::AddInputResultImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultImpl::next(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>, value: Value) -> AddInputResult<C>"
-    insert_text = "AddInputResultImpl::next(${1:value})"
-    text_edits = ["""
-    use core::circuit::AddInputResultImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "AddInputResultTrait"
     completion_label_path = "(use core::circuit::AddInputResultTrait)"
-    text_edits = ["""
-    use core::circuit::AddInputResultTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultTrait::done(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>) -> CircuitData<C>"
-    insert_text = "AddInputResultTrait::done()"
-    text_edits = ["""
-    use core::circuit::AddInputResultTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultTrait::next(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>, value: Value) -> AddInputResult<C>"
-    insert_text = "AddInputResultTrait::next(${1:value})"
     text_edits = ["""
     use core::circuit::AddInputResultTrait;
 
@@ -9724,107 +5205,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "AppendFormattedToByteArray::append_formatted_to_byte_array(...)"
-    completion_label_type_info = "fn(self: @T, ref byte_array: ByteArray, base: NonZero<T>) -> ()"
-    insert_text = "AppendFormattedToByteArray::append_formatted_to_byte_array(${1:byte_array}, ${2:base})"
-    text_edits = ["""
-    use core::to_byte_array::AppendFormattedToByteArray;
-
-    """]
-
-    [[completions]]
     completion_label = "ArrayImpl"
     completion_label_path = "(use core::array::ArrayImpl)"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::append(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, value: T) -> () nopanic"
-    insert_text = "ArrayImpl::append(${1:value})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::append_span(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, span: Span<T>) -> ()"
-    insert_text = "ArrayImpl::append_span(${1:span})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::at(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> @T"
-    insert_text = "ArrayImpl::at(${1:index})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::get(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "ArrayImpl::get(${1:index})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> bool"
-    insert_text = "ArrayImpl::is_empty()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::len(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> u32"
-    insert_text = "ArrayImpl::len()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::new(...)"
-    completion_label_type_info = "fn() -> Array<T> nopanic"
-    insert_text = "ArrayImpl::new()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Array<T>) -> Option<T> nopanic"
-    insert_text = "ArrayImpl::pop_front()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::pop_front_consume(...)"
-    completion_label_type_info = "fn(self: Array<T>) -> Option<(Array<T>, T)> nopanic"
-    insert_text = "ArrayImpl::pop_front_consume()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::span(...)"
-    completion_label_type_info = "fn(snapshot: @Array<T>) -> Span<T>"
-    insert_text = "ArrayImpl::span(${1:snapshot})"
     text_edits = ["""
     use core::array::ArrayImpl;
 
@@ -9863,26 +5245,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "BitAnd::bitand(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitAnd::bitand(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitAnd;
-
-    """]
-
-    [[completions]]
     completion_label = "BitNot"
     completion_label_path = "(use core::traits::BitNot)"
-    text_edits = ["""
-    use core::traits::BitNot;
-
-    """]
-
-    [[completions]]
-    completion_label = "BitNot::bitnot(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "BitNot::bitnot(${1:a})"
     text_edits = ["""
     use core::traits::BitNot;
 
@@ -9897,15 +5261,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "BitOr::bitor(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitOr::bitor(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitOr;
-
-    """]
-
-    [[completions]]
     completion_label = "BitSize"
     completion_label_path = "(use core::num::traits::BitSize)"
     text_edits = ["""
@@ -9914,26 +5269,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "BitSize::bits(...)"
-    completion_label_type_info = "fn() -> u32"
-    insert_text = "BitSize::bits()"
-    text_edits = ["""
-    use core::num::traits::BitSize;
-
-    """]
-
-    [[completions]]
     completion_label = "BitXor"
     completion_label_path = "(use core::traits::BitXor)"
-    text_edits = ["""
-    use core::traits::BitXor;
-
-    """]
-
-    [[completions]]
-    completion_label = "BitXor::bitxor(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitXor::bitxor(${1:lhs}, ${2:rhs})"
     text_edits = ["""
     use core::traits::BitXor;
 
@@ -9964,26 +5301,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "BoolImpl::then_some(...)"
-    completion_label_type_info = "fn(self: bool, t: T) -> Option<T> nopanic"
-    insert_text = "BoolImpl::then_some(${1:t})"
-    text_edits = ["""
-    use core::boolean::BoolImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "BoolTrait"
     completion_label_path = "(use core::boolean::BoolTrait)"
-    text_edits = ["""
-    use core::boolean::BoolTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoolTrait::then_some(...)"
-    completion_label_type_info = "fn(self: bool, t: T) -> Option<T> nopanic"
-    insert_text = "BoolTrait::then_some(${1:t})"
     text_edits = ["""
     use core::boolean::BoolTrait;
 
@@ -9998,22 +5317,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Bounded::MAX"
-    completion_label_type_info = "T"
-    text_edits = ["""
-    use core::num::traits::Bounded;
-
-    """]
-
-    [[completions]]
-    completion_label = "Bounded::MIN"
-    completion_label_type_info = "T"
-    text_edits = ["""
-    use core::num::traits::Bounded;
-
-    """]
-
-    [[completions]]
     completion_label = "BoundedInt"
     completion_label_path = "(use core::integer::BoundedInt)"
     text_edits = ["""
@@ -10022,53 +5325,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "BoundedInt::max(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "BoundedInt::max()"
-    text_edits = ["""
-    use core::integer::BoundedInt;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoundedInt::min(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "BoundedInt::min()"
-    text_edits = ["""
-    use core::integer::BoundedInt;
-
-    """]
-
-    [[completions]]
     completion_label = "BoxImpl"
     completion_label_path = "(use core::box::BoxImpl)"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Box<T>) -> Box<@T> nopanic"
-    insert_text = "BoxImpl::as_snapshot()"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::new(...)"
-    completion_label_type_info = "fn(value: T) -> Box<T> nopanic"
-    insert_text = "BoxImpl::new(${1:value})"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::unbox(...)"
-    completion_label_type_info = "fn(self: Box<T>) -> T nopanic"
-    insert_text = "BoxImpl::unbox()"
     text_edits = ["""
     use core::box::BoxImpl;
 
@@ -10085,78 +5343,6 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "ByteArrayImpl"
     completion_label_path = "(use core::byte_array::ByteArrayImpl)"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, other: @ByteArray) -> ()"
-    insert_text = "ByteArrayImpl::append(${1:other})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_byte(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, byte: u8) -> ()"
-    insert_text = "ByteArrayImpl::append_byte(${1:byte})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_word(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayImpl::append_word(${1:word}, ${2:len})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_word_rev(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayImpl::append_word_rev(${1:word}, ${2:len})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::at(...)"
-    completion_label_type_info = "fn(self: @ByteArray, index: u32) -> Option<u8>"
-    insert_text = "ByteArrayImpl::at(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::concat(...)"
-    completion_label_type_info = "fn(left: @ByteArray, right: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayImpl::concat(${1:left}, ${2:right})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::len(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> u32"
-    insert_text = "ByteArrayImpl::len()"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::rev(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayImpl::rev()"
     text_edits = ["""
     use core::byte_array::ByteArrayImpl;
 
@@ -10187,42 +5373,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "ByteSpanImpl::get(...)"
-    completion_label_type_info = "fn(self: @ByteSpan, index: I) -> Option<TGet::Output>"
-    insert_text = "ByteSpanImpl::get(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> bool"
-    insert_text = "ByteSpanImpl::is_empty()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::len(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> u32"
-    insert_text = "ByteSpanImpl::len()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::to_byte_array(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> ByteArray"
-    insert_text = "ByteSpanImpl::to_byte_array()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "ByteSpanIter"
     completion_label_path = "(use core::byte_array::ByteSpanIter)"
     text_edits = ["""
@@ -10239,53 +5389,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "ByteSpanTrait::get(...)"
-    completion_label_type_info = "fn(self: @ByteSpan, index: I) -> Option<TGet::Output>"
-    insert_text = "ByteSpanTrait::get(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> bool"
-    insert_text = "ByteSpanTrait::is_empty()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::len(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> u32"
-    insert_text = "ByteSpanTrait::len()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::to_byte_array(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> ByteArray"
-    insert_text = "ByteSpanTrait::to_byte_array()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Bytes31Impl"
     completion_label_path = "(use core::bytes_31::Bytes31Impl)"
-    text_edits = ["""
-    use core::bytes_31::Bytes31Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Bytes31Impl::at(...)"
-    completion_label_type_info = "fn(self: @bytes31, index: u32) -> u8"
-    insert_text = "Bytes31Impl::at(${1:index})"
     text_edits = ["""
     use core::bytes_31::Bytes31Impl;
 
@@ -10308,15 +5413,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "CheckedAdd::checked_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedAdd::checked_add(${1:v})"
-    text_edits = ["""
-    use core::num::traits::CheckedAdd;
-
-    """]
-
-    [[completions]]
     completion_label = "CheckedMul"
     completion_label_path = "(use core::num::traits::CheckedMul)"
     text_edits = ["""
@@ -10325,26 +5421,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "CheckedMul::checked_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedMul::checked_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::CheckedMul;
-
-    """]
-
-    [[completions]]
     completion_label = "CheckedSub"
     completion_label_path = "(use core::num::traits::CheckedSub)"
-    text_edits = ["""
-    use core::num::traits::CheckedSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "CheckedSub::checked_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedSub::checked_sub(${1:v})"
     text_edits = ["""
     use core::num::traits::CheckedSub;
 
@@ -10361,13 +5439,6 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "CircuitDefinition"
     completion_label_path = "(use core::circuit::CircuitDefinition)"
-    text_edits = ["""
-    use core::circuit::CircuitDefinition;
-
-    """]
-
-    [[completions]]
-    completion_label = "CircuitDefinition::CircuitType"
     text_edits = ["""
     use core::circuit::CircuitDefinition;
 
@@ -10422,26 +5493,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "CircuitInputs::new_inputs(...)"
-    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
-    insert_text = "CircuitInputs::new_inputs()"
-    text_edits = ["""
-    use core::circuit::CircuitInputs;
-
-    """]
-
-    [[completions]]
     completion_label = "CircuitInputsImpl"
     completion_label_path = "(use core::circuit::CircuitInputsImpl)"
-    text_edits = ["""
-    use core::circuit::CircuitInputsImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "CircuitInputsImpl::new_inputs(...)"
-    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
-    insert_text = "CircuitInputsImpl::new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputsImpl;
 
@@ -10464,15 +5517,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "CircuitOutputsTrait::get_output(...)"
-    completion_label_type_info = "fn(self: Outputs, output: OutputElement) -> u384"
-    insert_text = "CircuitOutputsTrait::get_output(${1:output})"
-    text_edits = ["""
-    use core::circuit::CircuitOutputsTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "ClassHash"
     completion_label_path = "(use starknet::ClassHash)"
     text_edits = ["""
@@ -10483,15 +5527,6 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "ClassHashIntoFelt252"
     completion_label_path = "(use starknet::class_hash::ClassHashIntoFelt252)"
-    text_edits = ["""
-    use starknet::class_hash::ClassHashIntoFelt252;
-
-    """]
-
-    [[completions]]
-    completion_label = "ClassHashIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "ClassHashIntoFelt252::into()"
     text_edits = ["""
     use starknet::class_hash::ClassHashIntoFelt252;
 
@@ -10530,20 +5565,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "ConstrainHelper::HighT"
-    text_edits = ["""
-    use core::internal::bounded_int::ConstrainHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "ConstrainHelper::LowT"
-    text_edits = ["""
-    use core::internal::bounded_int::ConstrainHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "ContractAddress"
     completion_label_path = "(use starknet::ContractAddress)"
     text_edits = ["""
@@ -10554,15 +5575,6 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "ContractAddressIntoFelt252"
     completion_label_path = "(use starknet::contract_address::ContractAddressIntoFelt252)"
-    text_edits = ["""
-    use starknet::contract_address::ContractAddressIntoFelt252;
-
-    """]
-
-    [[completions]]
-    completion_label = "ContractAddressIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "ContractAddressIntoFelt252::into()"
     text_edits = ["""
     use starknet::contract_address::ContractAddressIntoFelt252;
 
@@ -10585,26 +5597,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Debug::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "Debug::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::Debug;
-
-    """]
-
-    [[completions]]
     completion_label = "DebugImpl"
     completion_label_path = "(use core::fmt::into_felt252_based::DebugImpl)"
-    text_edits = ["""
-    use core::fmt::into_felt252_based::DebugImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "DebugImpl::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "DebugImpl::fmt(${1:f})"
     text_edits = ["""
     use core::fmt::into_felt252_based::DebugImpl;
 
@@ -10627,22 +5621,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "DerefMut::Target"
-    text_edits = ["""
-    use core::ops::DerefMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "DerefMut::deref_mut(...)"
-    completion_label_type_info = "fn(ref self: T) -> Self::Target"
-    insert_text = "DerefMut::deref_mut()"
-    text_edits = ["""
-    use core::ops::DerefMut;
-
-    """]
-
-    [[completions]]
     completion_label = "DestructFailureGuarantee"
     completion_label_path = "(use core::circuit::DestructFailureGuarantee)"
     text_edits = ["""
@@ -10651,26 +5629,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "DestructFailureGuarantee::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "DestructFailureGuarantee::destruct()"
-    text_edits = ["""
-    use core::circuit::DestructFailureGuarantee;
-
-    """]
-
-    [[completions]]
     completion_label = "DestructOption"
     completion_label_path = "(use core::option::DestructOption)"
-    text_edits = ["""
-    use core::option::DestructOption;
-
-    """]
-
-    [[completions]]
-    completion_label = "DestructOption::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "DestructOption::destruct()"
     text_edits = ["""
     use core::option::DestructOption;
 
@@ -10693,26 +5653,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Display::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "Display::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::Display;
-
-    """]
-
-    [[completions]]
     completion_label = "DivAssign"
     completion_label_path = "(use core::ops::DivAssign)"
-    text_edits = ["""
-    use core::ops::DivAssign;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivAssign::div_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "DivAssign::div_assign(${1:rhs})"
     text_edits = ["""
     use core::ops::DivAssign;
 
@@ -10727,15 +5669,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "DivEq::div_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "DivEq::div_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::DivEq;
-
-    """]
-
-    [[completions]]
     completion_label = "DivRem"
     completion_label_path = "(use core::num::traits::DivRem)"
     text_edits = ["""
@@ -10744,45 +5677,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "DivRem::Quotient"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRem::Remainder"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRem::div_rem(...)"
-    completion_label_type_info = "fn(self: T, other: NonZero<U>) -> (Self::Quotient, Self::Remainder)"
-    insert_text = "DivRem::div_rem(${1:other})"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
     completion_label = "DivRemHelper"
     completion_label_path = "(use core::internal::bounded_int::DivRemHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::DivRemHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRemHelper::DivT"
-    text_edits = ["""
-    use core::internal::bounded_int::DivRemHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRemHelper::RemT"
     text_edits = ["""
     use core::internal::bounded_int::DivRemHelper;
 
@@ -10837,152 +5733,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "EcPointImpl::coordinates(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> (felt252, felt252)"
-    insert_text = "EcPointImpl::coordinates()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::mul(...)"
-    completion_label_type_info = "fn(self: EcPoint, scalar: felt252) -> EcPoint"
-    insert_text = "EcPointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointImpl::new(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointImpl::new_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_nz(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointImpl::new_nz(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_nz_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointImpl::new_nz_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::x(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointImpl::x()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::y(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointImpl::y()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EcPointTrait"
     completion_label_path = "(use core::ec::EcPointTrait)"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::coordinates(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> (felt252, felt252)"
-    insert_text = "EcPointTrait::coordinates()"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::mul(...)"
-    completion_label_type_info = "fn(self: EcPoint, scalar: felt252) -> EcPoint"
-    insert_text = "EcPointTrait::mul(${1:scalar})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointTrait::new(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointTrait::new_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_nz(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointTrait::new_nz(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_nz_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointTrait::new_nz_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::x(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointTrait::x()"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::y(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointTrait::y()"
     text_edits = ["""
     use core::ec::EcPointTrait;
 
@@ -11005,116 +5757,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "EcStateImpl::add(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateImpl::add(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::add_mul(...)"
-    completion_label_type_info = "fn(ref self: EcState, scalar: felt252, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateImpl::add_mul(${1:scalar}, ${2:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::finalize(...)"
-    completion_label_type_info = "fn(self: EcState) -> EcPoint"
-    insert_text = "EcStateImpl::finalize()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::finalize_nz(...)"
-    completion_label_type_info = "fn(self: EcState) -> Option<NonZero<EcPoint>> nopanic"
-    insert_text = "EcStateImpl::finalize_nz()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::init(...)"
-    completion_label_type_info = "fn() -> EcState nopanic"
-    insert_text = "EcStateImpl::init()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::sub(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> ()"
-    insert_text = "EcStateImpl::sub(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EcStateTrait"
     completion_label_path = "(use core::ec::EcStateTrait)"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::add(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateTrait::add(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::add_mul(...)"
-    completion_label_type_info = "fn(ref self: EcState, scalar: felt252, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateTrait::add_mul(${1:scalar}, ${2:p})"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::finalize(...)"
-    completion_label_type_info = "fn(self: EcState) -> EcPoint"
-    insert_text = "EcStateTrait::finalize()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::finalize_nz(...)"
-    completion_label_type_info = "fn(self: EcState) -> Option<NonZero<EcPoint>> nopanic"
-    insert_text = "EcStateTrait::finalize_nz()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::init(...)"
-    completion_label_type_info = "fn() -> EcState nopanic"
-    insert_text = "EcStateTrait::init()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::sub(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> ()"
-    insert_text = "EcStateTrait::sub(${1:p})"
     text_edits = ["""
     use core::ec::EcStateTrait;
 
@@ -11153,15 +5797,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "EthAddressIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "EthAddressIntoFelt252::into()"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressIntoFelt252;
-
-    """]
-
-    [[completions]]
     completion_label = "EthAddressPrintImpl"
     completion_label_path = "(use starknet::eth_address::EthAddressPrintImpl)"
     text_edits = ["""
@@ -11170,35 +5805,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "EthAddressPrintImpl::print(...)"
-    completion_label_type_info = "fn(self: T) -> ()"
-    insert_text = "EthAddressPrintImpl::print()"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressPrintImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EthAddressSerde"
     completion_label_path = "(use starknet::eth_address::EthAddressSerde)"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressSerde;
-
-    """]
-
-    [[completions]]
-    completion_label = "EthAddressSerde::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "EthAddressSerde::deserialize(${1:serialized})"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressSerde;
-
-    """]
-
-    [[completions]]
-    completion_label = "EthAddressSerde::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "EthAddressSerde::serialize(${1:output})"
     text_edits = ["""
     use starknet::eth_address::EthAddressSerde;
 
@@ -11221,44 +5829,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "EvalCircuitImpl::eval(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitImpl::eval(${1:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitImpl::eval_ex(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitImpl::eval_ex(${1:descriptor}, ${2:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EvalCircuitTrait"
     completion_label_path = "(use core::circuit::EvalCircuitTrait)"
-    text_edits = ["""
-    use core::circuit::EvalCircuitTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitTrait::eval(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitTrait::eval(${1:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitTrait::eval_ex(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitTrait::eval_ex(${1:descriptor}, ${2:modulus})"
     text_edits = ["""
     use core::circuit::EvalCircuitTrait;
 
@@ -11273,35 +5845,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Event::append_keys_and_data(...)"
-    completion_label_type_info = "fn(self: @T, ref keys: Array<felt252>, ref data: Array<felt252>) -> ()"
-    insert_text = "Event::append_keys_and_data(${1:keys}, ${2:data})"
-    text_edits = ["""
-    use starknet::Event;
-
-    """]
-
-    [[completions]]
-    completion_label = "Event::deserialize(...)"
-    completion_label_type_info = "fn(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<T>"
-    insert_text = "Event::deserialize(${1:keys}, ${2:data})"
-    text_edits = ["""
-    use starknet::Event;
-
-    """]
-
-    [[completions]]
     completion_label = "EventEmitter"
     completion_label_path = "(use starknet::event::EventEmitter)"
-    text_edits = ["""
-    use starknet::event::EventEmitter;
-
-    """]
-
-    [[completions]]
-    completion_label = "EventEmitter::emit(...)"
-    completion_label_type_info = "fn(ref self: T, event: S) -> ()"
-    insert_text = "EventEmitter::emit(${1:event})"
     text_edits = ["""
     use starknet::event::EventEmitter;
 
@@ -11318,15 +5863,6 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "Extend"
     completion_label_path = "(use core::iter::Extend)"
-    text_edits = ["""
-    use core::iter::Extend;
-
-    """]
-
-    [[completions]]
-    completion_label = "Extend::extend(...)"
-    completion_label_type_info = "fn(ref self: T, iter: I) -> ()"
-    insert_text = "Extend::extend(${1:iter})"
     text_edits = ["""
     use core::iter::Extend;
 
@@ -11365,26 +5901,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Felt252DictEntryTrait::finalize(...)"
-    completion_label_type_info = "fn(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>"
-    insert_text = "Felt252DictEntryTrait::finalize(${1:new_value})"
-    text_edits = ["""
-    use core::dict::Felt252DictEntryTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Felt252TryIntoClassHash"
     completion_label_path = "(use starknet::class_hash::Felt252TryIntoClassHash)"
-    text_edits = ["""
-    use starknet::class_hash::Felt252TryIntoClassHash;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoClassHash::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoClassHash::try_into()"
     text_edits = ["""
     use starknet::class_hash::Felt252TryIntoClassHash;
 
@@ -11399,26 +5917,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Felt252TryIntoContractAddress::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoContractAddress::try_into()"
-    text_edits = ["""
-    use starknet::contract_address::Felt252TryIntoContractAddress;
-
-    """]
-
-    [[completions]]
     completion_label = "Felt252TryIntoEthAddress"
     completion_label_path = "(use starknet::eth_address::Felt252TryIntoEthAddress)"
-    text_edits = ["""
-    use starknet::eth_address::Felt252TryIntoEthAddress;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoEthAddress::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoEthAddress::try_into()"
     text_edits = ["""
     use starknet::eth_address::Felt252TryIntoEthAddress;
 
@@ -11441,22 +5941,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Fn::Output"
-    text_edits = ["""
-    use core::ops::Fn;
-
-    """]
-
-    [[completions]]
-    completion_label = "Fn::call(...)"
-    completion_label_type_info = "fn(self: @T, args: Args) -> Self::Output"
-    insert_text = "Fn::call(${1:args})"
-    text_edits = ["""
-    use core::ops::Fn;
-
-    """]
-
-    [[completions]]
     completion_label = "FnOnce"
     completion_label_path = "(use core::ops::FnOnce)"
     text_edits = ["""
@@ -11465,33 +5949,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "FnOnce::Output"
-    text_edits = ["""
-    use core::ops::FnOnce;
-
-    """]
-
-    [[completions]]
-    completion_label = "FnOnce::call(...)"
-    completion_label_type_info = "fn(self: T, args: Args) -> Self::Output"
-    insert_text = "FnOnce::call(${1:args})"
-    text_edits = ["""
-    use core::ops::FnOnce;
-
-    """]
-
-    [[completions]]
     completion_label = "FormatAsByteArray"
     completion_label_path = "(use core::to_byte_array::FormatAsByteArray)"
-    text_edits = ["""
-    use core::to_byte_array::FormatAsByteArray;
-
-    """]
-
-    [[completions]]
-    completion_label = "FormatAsByteArray::format_as_byte_array(...)"
-    completion_label_type_info = "fn(self: @T, base: NonZero<T>) -> ByteArray"
-    insert_text = "FormatAsByteArray::format_as_byte_array(${1:base})"
     text_edits = ["""
     use core::to_byte_array::FormatAsByteArray;
 
@@ -11554,22 +6013,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Get::Output"
-    text_edits = ["""
-    use core::ops::Get;
-
-    """]
-
-    [[completions]]
-    completion_label = "Get::get(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> Option<Self::Output>"
-    insert_text = "Get::get(${1:index})"
-    text_edits = ["""
-    use core::ops::Get;
-
-    """]
-
-    [[completions]]
     completion_label = "Hash"
     completion_label_path = "(use core::hash::Hash)"
     text_edits = ["""
@@ -11578,26 +6021,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Hash::update_state(...)"
-    completion_label_type_info = "fn(state: S, value: T) -> S"
-    insert_text = "Hash::update_state(${1:state}, ${2:value})"
-    text_edits = ["""
-    use core::hash::Hash;
-
-    """]
-
-    [[completions]]
     completion_label = "HashImpl"
     completion_label_path = "(use core::hash::into_felt252_based::HashImpl)"
-    text_edits = ["""
-    use core::hash::into_felt252_based::HashImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashImpl::update_state(...)"
-    completion_label_type_info = "fn(state: S, value: T) -> S"
-    insert_text = "HashImpl::update_state(${1:state}, ${2:value})"
     text_edits = ["""
     use core::hash::into_felt252_based::HashImpl;
 
@@ -11628,35 +6053,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "HashStateExTrait::update_with(...)"
-    completion_label_type_info = "fn(self: S, value: T) -> S"
-    insert_text = "HashStateExTrait::update_with(${1:value})"
-    text_edits = ["""
-    use core::hash::HashStateExTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "HashStateTrait"
     completion_label_path = "(use core::hash::HashStateTrait)"
-    text_edits = ["""
-    use core::hash::HashStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashStateTrait::finalize(...)"
-    completion_label_type_info = "fn(self: S) -> felt252"
-    insert_text = "HashStateTrait::finalize()"
-    text_edits = ["""
-    use core::hash::HashStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashStateTrait::update(...)"
-    completion_label_type_info = "fn(self: S, value: felt252) -> S"
-    insert_text = "HashStateTrait::update(${1:value})"
     text_edits = ["""
     use core::hash::HashStateTrait;
 
@@ -11679,31 +6077,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Index::Target"
-    text_edits = ["""
-    use core::ops::Index;
-
-    """]
-
-    [[completions]]
-    completion_label = "Index::index(...)"
-    completion_label_type_info = "fn(ref self: C, index: I) -> Self::Target"
-    insert_text = "Index::index(${1:index})"
-    text_edits = ["""
-    use core::ops::Index;
-
-    """]
-
-    [[completions]]
-    completion_label = "Index::index(...)"
-    completion_label_type_info = "fn(ref self: C, index: I) -> V"
-    insert_text = "Index::index(${1:index})"
-    text_edits = ["""
-    use core::traits::Index;
-
-    """]
-
-    [[completions]]
     completion_label = "IndexView"
     completion_label_path = "(use core::ops::IndexView)"
     text_edits = ["""
@@ -11714,31 +6087,6 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "IndexView"
     completion_label_path = "(use core::traits::IndexView)"
-    text_edits = ["""
-    use core::traits::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::Target"
-    text_edits = ["""
-    use core::ops::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> Self::Target"
-    insert_text = "IndexView::index(${1:index})"
-    text_edits = ["""
-    use core::ops::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> V"
-    insert_text = "IndexView::index(${1:index})"
     text_edits = ["""
     use core::traits::IndexView;
 
@@ -11769,42 +6117,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "IntoIterRange::IntoIter"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
-    completion_label = "IntoIterRange::into_iter_full_range(...)"
-    completion_label_type_info = "fn(self: T) -> Self::IntoIter"
-    insert_text = "IntoIterRange::into_iter_full_range()"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
-    completion_label = "IntoIterRange::into_iter_range(...)"
-    completion_label_type_info = "fn(self: T, range: crate::ops::Range<u64>) -> Self::IntoIter"
-    insert_text = "IntoIterRange::into_iter_range(${1:range})"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
     completion_label = "LegacyHash"
     completion_label_path = "(use core::hash::LegacyHash)"
-    text_edits = ["""
-    use core::hash::LegacyHash;
-
-    """]
-
-    [[completions]]
-    completion_label = "LegacyHash::hash(...)"
-    completion_label_type_info = "fn(state: felt252, value: T) -> felt252"
-    insert_text = "LegacyHash::hash(${1:state}, ${2:value})"
     text_edits = ["""
     use core::hash::LegacyHash;
 
@@ -11827,26 +6141,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "LowerHex::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "LowerHex::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::LowerHex;
-
-    """]
-
-    [[completions]]
     completion_label = "LowerHexImpl"
     completion_label_path = "(use core::fmt::into_felt252_based::LowerHexImpl)"
-    text_edits = ["""
-    use core::fmt::into_felt252_based::LowerHexImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "LowerHexImpl::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "LowerHexImpl::fmt(${1:f})"
     text_edits = ["""
     use core::fmt::into_felt252_based::LowerHexImpl;
 
@@ -11877,15 +6173,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "MulAssign::mul_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "MulAssign::mul_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::MulAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "MulEq"
     completion_label_path = "(use core::traits::MulEq)"
     text_edits = ["""
@@ -11894,24 +6181,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "MulEq::mul_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "MulEq::mul_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::MulEq;
-
-    """]
-
-    [[completions]]
     completion_label = "MulHelper"
     completion_label_path = "(use core::internal::bounded_int::MulHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::MulHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "MulHelper::Result"
     text_edits = ["""
     use core::internal::bounded_int::MulHelper;
 
@@ -11942,94 +6213,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "MutableVecTrait::ElementType"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::allocate(...)"
-    completion_label_type_info = "fn(self: T) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::allocate()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::append(...)"
-    completion_label_type_info = "fn(self: T) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::append()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::at(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::at(${1:index})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::get(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> Option<StoragePath<Mutable<Self::ElementType>>>"
-    insert_text = "MutableVecTrait::get(${1:index})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::len(...)"
-    completion_label_type_info = "fn(self: T) -> u64"
-    insert_text = "MutableVecTrait::len()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::pop(...)"
-    completion_label_type_info = "fn(self: T) -> Option<Self::ElementType>"
-    insert_text = "MutableVecTrait::pop()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::push(...)"
-    completion_label_type_info = "fn(self: T, value: Self::ElementType) -> ()"
-    insert_text = "MutableVecTrait::push(${1:value})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "NegateHelper"
     completion_label_path = "(use core::internal::bounded_int::NegateHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::NegateHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "NegateHelper::Result"
-    text_edits = ["""
-    use core::internal::bounded_int::NegateHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "NegateHelper::negate(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Result"
-    insert_text = "NegateHelper::negate()"
     text_edits = ["""
     use core::internal::bounded_int::NegateHelper;
 
@@ -12084,60 +6269,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "NullableImpl::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> Nullable<@T> nopanic"
-    insert_text = "NullableImpl::as_snapshot()"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref(...)"
-    completion_label_type_info = "fn(nullable: Nullable<T>) -> T"
-    insert_text = "NullableImpl::deref(${1:nullable})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref_or(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, default: T) -> T"
-    insert_text = "NullableImpl::deref_or(${1:default})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref_or_else(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, f: F) -> T"
-    insert_text = "NullableImpl::deref_or_else(${1:f})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::is_null(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> bool"
-    insert_text = "NullableImpl::is_null()"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::new(...)"
-    completion_label_type_info = "fn(value: T) -> Nullable<T>"
-    insert_text = "NullableImpl::new(${1:value})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "NumericLiteral"
     completion_label_path = "(use core::integer::NumericLiteral)"
     text_edits = ["""
@@ -12170,33 +6301,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "One::is_non_one(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "One::is_non_one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
-    completion_label = "One::is_one(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "One::is_one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
-    completion_label = "One::one(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "One::one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
     completion_label = "OptionIter"
     completion_label_path = "(use core::option::OptionIter)"
     text_edits = ["""
@@ -12221,215 +6325,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "OptionTraitImpl::and(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<U>) -> Option<U>"
-    insert_text = "OptionTraitImpl::and(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::and_then(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTraitImpl::and_then(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::expect(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: felt252) -> T"
-    insert_text = "OptionTraitImpl::expect(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::filter(...)"
-    completion_label_type_info = "fn(self: Option<T>, predicate: P) -> Option<T>"
-    insert_text = "OptionTraitImpl::filter(${1:predicate})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::flatten(...)"
-    completion_label_type_info = "fn(self: Option<Option<T>>) -> Option<T>"
-    insert_text = "OptionTraitImpl::flatten()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_none(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTraitImpl::is_none()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_none_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTraitImpl::is_none_or(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_some(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTraitImpl::is_some()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_some_and(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTraitImpl::is_some_and(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTraitImpl::map(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: U, f: F) -> U"
-    insert_text = "OptionTraitImpl::map_or(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: D, f: F) -> U"
-    insert_text = "OptionTraitImpl::map_or_else(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::ok_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: E) -> Result<T, E>"
-    insert_text = "OptionTraitImpl::ok_or(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::ok_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: F) -> Result<T, E>"
-    insert_text = "OptionTraitImpl::ok_or_else(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::or(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::or(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<T>"
-    insert_text = "OptionTraitImpl::or_else(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::take(...)"
-    completion_label_type_info = "fn(ref self: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::take()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTraitImpl::unwrap()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: T) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or(${1:default})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or_default()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or_else(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::xor(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::xor(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "OverflowingAdd"
     completion_label_path = "(use core::num::traits::OverflowingAdd)"
-    text_edits = ["""
-    use core::num::traits::OverflowingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "OverflowingAdd::overflowing_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingAdd::overflowing_add(${1:v})"
     text_edits = ["""
     use core::num::traits::OverflowingAdd;
 
@@ -12444,26 +6341,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "OverflowingMul::overflowing_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingMul::overflowing_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::OverflowingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "OverflowingSub"
     completion_label_path = "(use core::num::traits::OverflowingSub)"
-    text_edits = ["""
-    use core::num::traits::OverflowingSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "OverflowingSub::overflowing_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingSub::overflowing_sub(${1:v})"
     text_edits = ["""
     use core::num::traits::OverflowingSub;
 
@@ -12486,15 +6365,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "PedersenImpl::new(...)"
-    completion_label_type_info = "fn(base: felt252) -> HashState"
-    insert_text = "PedersenImpl::new(${1:base})"
-    text_edits = ["""
-    use core::pedersen::PedersenImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "PedersenTrait"
     completion_label_path = "(use core::pedersen::PedersenTrait)"
     text_edits = ["""
@@ -12503,26 +6373,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "PedersenTrait::new(...)"
-    completion_label_type_info = "fn(base: felt252) -> HashState"
-    insert_text = "PedersenTrait::new(${1:base})"
-    text_edits = ["""
-    use core::pedersen::PedersenTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "PeekableTrait"
     completion_label_path = "(use core::iter::PeekableTrait)"
-    text_edits = ["""
-    use core::iter::PeekableTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "PeekableTrait::peek(...)"
-    completion_label_type_info = "fn(ref self: Peekable<I, IterI::Item>) -> Option<IterI::Item>"
-    insert_text = "PeekableTrait::peek()"
     text_edits = ["""
     use core::iter::PeekableTrait;
 
@@ -12545,15 +6397,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "PendingStoragePathTrait::new(...)"
-    completion_label_type_info = "fn(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T>"
-    insert_text = "PendingStoragePathTrait::new(${1:storage_path}, ${2:pending_key})"
-    text_edits = ["""
-    use starknet::storage::PendingStoragePathTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Poseidon"
     completion_label_path = "(use core::poseidon::Poseidon)"
     text_edits = ["""
@@ -12570,26 +6413,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "PoseidonImpl::new(...)"
-    completion_label_type_info = "fn() -> HashState"
-    insert_text = "PoseidonImpl::new()"
-    text_edits = ["""
-    use core::poseidon::PoseidonImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "PoseidonTrait"
     completion_label_path = "(use core::poseidon::PoseidonTrait)"
-    text_edits = ["""
-    use core::poseidon::PoseidonTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "PoseidonTrait::new(...)"
-    completion_label_type_info = "fn() -> HashState"
-    insert_text = "PoseidonTrait::new()"
     text_edits = ["""
     use core::poseidon::PoseidonTrait;
 
@@ -12604,22 +6429,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Pow::Output"
-    text_edits = ["""
-    use core::num::traits::Pow;
-
-    """]
-
-    [[completions]]
-    completion_label = "Pow::pow(...)"
-    completion_label_type_info = "fn(self: Base, exp: Exp) -> Self::Output"
-    insert_text = "Pow::pow(${1:exp})"
-    text_edits = ["""
-    use core::num::traits::Pow;
-
-    """]
-
-    [[completions]]
     completion_label = "Product"
     completion_label_path = "(use core::iter::Product)"
     text_edits = ["""
@@ -12628,35 +6437,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Product::product(...)"
-    completion_label_type_info = "fn(iter: I) -> A"
-    insert_text = "Product::product(${1:iter})"
-    text_edits = ["""
-    use core::iter::Product;
-
-    """]
-
-    [[completions]]
     completion_label = "QM31Trait"
     completion_label_path = "(use core::qm31::QM31Trait)"
-    text_edits = ["""
-    use core::qm31::QM31Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "QM31Trait::new(...)"
-    completion_label_type_info = "fn(w0: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w1: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w2: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w3: crate::internal::bounded_int::BoundedInt<0, 2147483646>) -> qm31"
-    insert_text = "QM31Trait::new(${1:w0}, ${2:w1}, ${3:w2}, ${4:w3})"
-    text_edits = ["""
-    use core::qm31::QM31Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "QM31Trait::unpack(...)"
-    completion_label_type_info = "fn(self: qm31) -> [crate::internal::bounded_int::BoundedInt<0, 2147483646>; 4]"
-    insert_text = "QM31Trait::unpack()"
     text_edits = ["""
     use core::qm31::QM31Trait;
 
@@ -12711,24 +6493,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "RangeInclusiveTrait::contains(...)"
-    completion_label_type_info = "fn(self: @RangeInclusive<T>, item: @T) -> bool"
-    insert_text = "RangeInclusiveTrait::contains(${1:item})"
-    text_edits = ["""
-    use core::ops::RangeInclusiveTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "RangeInclusiveTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @RangeInclusive<T>) -> bool"
-    insert_text = "RangeInclusiveTrait::is_empty()"
-    text_edits = ["""
-    use core::ops::RangeInclusiveTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "RangeIterator"
     completion_label_path = "(use core::ops::RangeIterator)"
     text_edits = ["""
@@ -12745,24 +6509,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "RangeTrait::contains(...)"
-    completion_label_type_info = "fn(self: @Range<T>, item: @T) -> bool"
-    insert_text = "RangeTrait::contains(${1:item})"
-    text_edits = ["""
-    use core::ops::RangeTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "RangeTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @Range<T>) -> bool"
-    insert_text = "RangeTrait::is_empty()"
-    text_edits = ["""
-    use core::ops::RangeTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "RemAssign"
     completion_label_path = "(use core::ops::RemAssign)"
     text_edits = ["""
@@ -12771,26 +6517,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "RemAssign::rem_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "RemAssign::rem_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::RemAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "RemEq"
     completion_label_path = "(use core::traits::RemEq)"
-    text_edits = ["""
-    use core::traits::RemEq;
-
-    """]
-
-    [[completions]]
-    completion_label = "RemEq::rem_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "RemEq::rem_eq(${1:other})"
     text_edits = ["""
     use core::traits::RemEq;
 
@@ -12813,206 +6541,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "ResultTraitImpl::and(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<U, E>) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::and(${1:other})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::and_then(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: F) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::and_then(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<E>"
-    insert_text = "ResultTraitImpl::err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::expect(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> T"
-    insert_text = "ResultTraitImpl::expect(${1:err})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::expect_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> E"
-    insert_text = "ResultTraitImpl::expect_err(${1:err})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::into_is_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::into_is_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::into_is_ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::into_is_ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::is_err(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::is_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::is_ok(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::is_ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::map(${1:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::map_err(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: U, f: F) -> U"
-    insert_text = "ResultTraitImpl::map_or(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: D, f: F) -> U"
-    insert_text = "ResultTraitImpl::map_or_else(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<T>"
-    insert_text = "ResultTraitImpl::ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<T, F>) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::or(${1:other})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::or_else(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTraitImpl::unwrap()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> E"
-    insert_text = "ResultTraitImpl::unwrap_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: T) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or(${1:default})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or_default()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or_else(${1:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SaturatingAdd"
     completion_label_path = "(use core::num::traits::SaturatingAdd)"
-    text_edits = ["""
-    use core::num::traits::SaturatingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "SaturatingAdd::saturating_add(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingAdd::saturating_add(${1:other})"
     text_edits = ["""
     use core::num::traits::SaturatingAdd;
 
@@ -13027,26 +6557,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "SaturatingMul::saturating_mul(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingMul::saturating_mul(${1:other})"
-    text_edits = ["""
-    use core::num::traits::SaturatingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "SaturatingSub"
     completion_label_path = "(use core::num::traits::SaturatingSub)"
-    text_edits = ["""
-    use core::num::traits::SaturatingSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "SaturatingSub::saturating_sub(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingSub::saturating_sub(${1:other})"
     text_edits = ["""
     use core::num::traits::SaturatingSub;
 
@@ -13061,33 +6573,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Secp256PointTrait::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256PointTrait::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256PointTrait::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256PointTrait::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256PointTrait::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256PointTrait::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256Trait"
     completion_label_path = "(use starknet::secp256_trait::Secp256Trait)"
     text_edits = ["""
@@ -13096,80 +6581,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Secp256Trait::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256Trait::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256Trait::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256Trait::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256Trait::secp256_ec_new_syscall(${1:x}, ${2:y})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256k1Impl"
     completion_label_path = "(use starknet::secp256k1::Secp256k1Impl)"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256k1Impl::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256k1Impl::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256k1Impl::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256k1Impl::secp256_ec_new_syscall(${1:x}, ${2:y})"
     text_edits = ["""
     use starknet::secp256k1::Secp256k1Impl;
 
@@ -13192,71 +6605,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Secp256k1PointImpl::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1PointImpl::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1PointImpl::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256r1Impl"
     completion_label_path = "(use starknet::secp256r1::Secp256r1Impl)"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256r1Impl::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256r1Impl::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256r1Impl::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256r1Impl::secp256_ec_new_syscall(${1:x}, ${2:y})"
     text_edits = ["""
     use starknet::secp256r1::Secp256r1Impl;
 
@@ -13279,33 +6629,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Secp256r1PointImpl::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1PointImpl::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1PointImpl::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SegmentArena"
     completion_label_path = "(use core::SegmentArena)"
     text_edits = ["""
@@ -13316,24 +6639,6 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "SerdeImpl"
     completion_label_path = "(use core::serde::into_felt252_based::SerdeImpl)"
-    text_edits = ["""
-    use core::serde::into_felt252_based::SerdeImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SerdeImpl::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "SerdeImpl::deserialize(${1:serialized})"
-    text_edits = ["""
-    use core::serde::into_felt252_based::SerdeImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SerdeImpl::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "SerdeImpl::serialize(${1:output})"
     text_edits = ["""
     use core::serde::into_felt252_based::SerdeImpl;
 
@@ -13364,98 +6669,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "SpanImpl::at(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> @T"
-    insert_text = "SpanImpl::at(${1:index})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::get(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "SpanImpl::get(${1:index})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> bool"
-    insert_text = "SpanImpl::is_empty()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::len(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> u32"
-    insert_text = "SpanImpl::len()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::multi_pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanImpl::multi_pop_back()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::multi_pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanImpl::multi_pop_front()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T>"
-    insert_text = "SpanImpl::pop_back()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T> nopanic"
-    insert_text = "SpanImpl::pop_front()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::slice(...)"
-    completion_label_type_info = "fn(self: Span<T>, start: u32, length: u32) -> Span<T>"
-    insert_text = "SpanImpl::slice(${1:start}, ${2:length})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SpanIndex"
     completion_label_path = "(use core::array::SpanIndex)"
-    text_edits = ["""
-    use core::array::SpanIndex;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanIndex::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> V"
-    insert_text = "SpanIndex::index(${1:index})"
     text_edits = ["""
     use core::array::SpanIndex;
 
@@ -13478,22 +6693,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Sqrt::Target"
-    text_edits = ["""
-    use core::num::traits::Sqrt;
-
-    """]
-
-    [[completions]]
-    completion_label = "Sqrt::sqrt(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "Sqrt::sqrt()"
-    text_edits = ["""
-    use core::num::traits::Sqrt;
-
-    """]
-
-    [[completions]]
     completion_label = "SquashedFelt252Dict"
     completion_label_path = "(use core::dict::SquashedFelt252Dict)"
     text_edits = ["""
@@ -13510,15 +6709,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "SquashedFelt252DictImpl::into_entries(...)"
-    completion_label_type_info = "fn(self: SquashedFelt252Dict<T>) -> Array<(felt252, T, T)>"
-    insert_text = "SquashedFelt252DictImpl::into_entries()"
-    text_edits = ["""
-    use core::dict::SquashedFelt252DictImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SquashedFelt252DictTrait"
     completion_label_path = "(use core::dict::SquashedFelt252DictTrait)"
     text_edits = ["""
@@ -13527,33 +6717,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "SquashedFelt252DictTrait::into_entries(...)"
-    completion_label_type_info = "fn(self: SquashedFelt252Dict<T>) -> Array<(felt252, T, T)>"
-    insert_text = "SquashedFelt252DictTrait::into_entries()"
-    text_edits = ["""
-    use core::dict::SquashedFelt252DictTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "StorableStoragePointerReadAccess"
     completion_label_path = "(use starknet::storage::StorableStoragePointerReadAccess)"
-    text_edits = ["""
-    use starknet::storage::StorableStoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorableStoragePointerReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorableStoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorableStoragePointerReadAccess::read(...)"
-    completion_label_type_info = "fn(self: @T) -> Self::Value"
-    insert_text = "StorableStoragePointerReadAccess::read()"
     text_edits = ["""
     use starknet::storage::StorableStoragePointerReadAccess;
 
@@ -13576,40 +6741,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "StorageAsPath::Value"
-    text_edits = ["""
-    use starknet::storage::StorageAsPath;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPath::as_path(...)"
-    completion_label_type_info = "fn(self: @TMemberState) -> StoragePath<Self::Value>"
-    insert_text = "StorageAsPath::as_path()"
-    text_edits = ["""
-    use starknet::storage::StorageAsPath;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageAsPointer"
     completion_label_path = "(use starknet::storage::StorageAsPointer)"
-    text_edits = ["""
-    use starknet::storage::StorageAsPointer;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPointer::Value"
-    text_edits = ["""
-    use starknet::storage::StorageAsPointer;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPointer::as_ptr(...)"
-    completion_label_type_info = "fn(self: @TMemberState) -> StoragePointer0Offset<Self::Value>"
-    insert_text = "StorageAsPointer::as_ptr()"
     text_edits = ["""
     use starknet::storage::StorageAsPointer;
 
@@ -13640,54 +6773,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "StorageMapReadAccess::Key"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapReadAccess::read(...)"
-    completion_label_type_info = "fn(self: TMemberState, key: Self::Key) -> Self::Value"
-    insert_text = "StorageMapReadAccess::read(${1:key})"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageMapWriteAccess"
     completion_label_path = "(use starknet::storage::StorageMapWriteAccess)"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::Key"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::write(...)"
-    completion_label_type_info = "fn(self: TMemberState, key: Self::Key, value: Self::Value) -> ()"
-    insert_text = "StorageMapWriteAccess::write(${1:key}, ${2:value})"
     text_edits = ["""
     use starknet::storage::StorageMapWriteAccess;
 
@@ -13702,40 +6789,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "StorageNode::NodeType"
-    text_edits = ["""
-    use starknet::storage::StorageNode;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNode::storage_node(...)"
-    completion_label_type_info = "fn(self: StoragePath<T>) -> Self::NodeType"
-    insert_text = "StorageNode::storage_node()"
-    text_edits = ["""
-    use starknet::storage::StorageNode;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageNodeDeref"
     completion_label_path = "(use starknet::storage::StorageNodeDeref)"
-    text_edits = ["""
-    use starknet::storage::StorageNodeDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeDeref::Target"
-    text_edits = ["""
-    use starknet::storage::StorageNodeDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "StorageNodeDeref::deref()"
     text_edits = ["""
     use starknet::storage::StorageNodeDeref;
 
@@ -13750,40 +6805,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "StorageNodeMut::NodeType"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMut::storage_node_mut(...)"
-    completion_label_type_info = "fn(self: StoragePath<Mutable<T>>) -> Self::NodeType"
-    insert_text = "StorageNodeMut::storage_node_mut()"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMut;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageNodeMutDeref"
     completion_label_path = "(use starknet::storage::StorageNodeMutDeref)"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMutDeref::Target"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMutDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "StorageNodeMutDeref::deref()"
     text_edits = ["""
     use starknet::storage::StorageNodeMutDeref;
 
@@ -13806,40 +6829,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "StoragePathEntry::Key"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathEntry::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathEntry::entry(...)"
-    completion_label_type_info = "fn(self: C, key: Self::Key) -> StoragePath<Self::Value>"
-    insert_text = "StoragePathEntry::entry(${1:key})"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
     completion_label = "StoragePathMutableConversion"
     completion_label_path = "(use starknet::storage::StoragePathMutableConversion)"
-    text_edits = ["""
-    use starknet::storage::StoragePathMutableConversion;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathMutableConversion::as_non_mut(...)"
-    completion_label_type_info = "fn(self: StoragePath<Mutable<T>>) -> StoragePath<T>"
-    insert_text = "StoragePathMutableConversion::as_non_mut()"
     text_edits = ["""
     use starknet::storage::StoragePathMutableConversion;
 
@@ -13870,40 +6861,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "StoragePointerReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerReadAccess::read(...)"
-    completion_label_type_info = "fn(self: @T) -> Self::Value"
-    insert_text = "StoragePointerReadAccess::read()"
-    text_edits = ["""
-    use starknet::storage::StoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
     completion_label = "StoragePointerWriteAccess"
     completion_label_path = "(use starknet::storage::StoragePointerWriteAccess)"
-    text_edits = ["""
-    use starknet::storage::StoragePointerWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerWriteAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePointerWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerWriteAccess::write(...)"
-    completion_label_type_info = "fn(self: T, value: Self::Value) -> ()"
-    insert_text = "StoragePointerWriteAccess::write(${1:value})"
     text_edits = ["""
     use starknet::storage::StoragePointerWriteAccess;
 
@@ -13918,40 +6877,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "StorageTrait::BaseType"
-    text_edits = ["""
-    use starknet::storage::StorageTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTrait::storage(...)"
-    completion_label_type_info = "fn(self: FlattenedStorage<T>) -> Self::BaseType"
-    insert_text = "StorageTrait::storage()"
-    text_edits = ["""
-    use starknet::storage::StorageTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageTraitMut"
     completion_label_path = "(use starknet::storage::StorageTraitMut)"
-    text_edits = ["""
-    use starknet::storage::StorageTraitMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTraitMut::BaseType"
-    text_edits = ["""
-    use starknet::storage::StorageTraitMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTraitMut::storage_mut(...)"
-    completion_label_type_info = "fn(self: FlattenedStorage<Mutable<T>>) -> Self::BaseType"
-    insert_text = "StorageTraitMut::storage_mut()"
     text_edits = ["""
     use starknet::storage::StorageTraitMut;
 
@@ -13966,80 +6893,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "Store::read(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress) -> Result<T, Array<felt252>>"
-    insert_text = "Store::read(${1:address_domain}, ${2:base})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::read_at_offset(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8) -> Result<T, Array<felt252>>"
-    insert_text = "Store::read_at_offset(${1:address_domain}, ${2:base}, ${3:offset})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::scrub(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8) -> Result<(), Array<felt252>>"
-    insert_text = "Store::scrub(${1:address_domain}, ${2:base}, ${3:offset})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::size(...)"
-    completion_label_type_info = "fn() -> u8"
-    insert_text = "Store::size()"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::write(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, value: T) -> Result<(), Array<felt252>>"
-    insert_text = "Store::write(${1:address_domain}, ${2:base}, ${3:value})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::write_at_offset(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8, value: T) -> Result<(), Array<felt252>>"
-    insert_text = "Store::write_at_offset(${1:address_domain}, ${2:base}, ${3:offset}, ${4:value})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
     completion_label = "StorePacking"
     completion_label_path = "(use starknet::storage_access::StorePacking)"
-    text_edits = ["""
-    use starknet::storage_access::StorePacking;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorePacking::pack(...)"
-    completion_label_type_info = "fn(value: T) -> PackedT"
-    insert_text = "StorePacking::pack(${1:value})"
-    text_edits = ["""
-    use starknet::storage_access::StorePacking;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorePacking::unpack(...)"
-    completion_label_type_info = "fn(value: PackedT) -> T"
-    insert_text = "StorePacking::unpack(${1:value})"
     text_edits = ["""
     use starknet::storage_access::StorePacking;
 
@@ -14062,26 +6917,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "SubAssign::sub_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "SubAssign::sub_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::SubAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "SubEq"
     completion_label_path = "(use core::traits::SubEq)"
-    text_edits = ["""
-    use core::traits::SubEq;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubEq::sub_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "SubEq::sub_eq(${1:other})"
     text_edits = ["""
     use core::traits::SubEq;
 
@@ -14096,31 +6933,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "SubHelper::Result"
-    text_edits = ["""
-    use core::internal::bounded_int::SubHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointers"
     completion_label_path = "(use starknet::storage::SubPointers)"
-    text_edits = ["""
-    use starknet::storage::SubPointers;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointers::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointers;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointers::sub_pointers(...)"
-    completion_label_type_info = "fn(self: StoragePointer<T>) -> Self::SubPointersType"
-    insert_text = "SubPointers::sub_pointers()"
     text_edits = ["""
     use starknet::storage::SubPointers;
 
@@ -14135,40 +6949,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersDeref::Target"
-    text_edits = ["""
-    use starknet::storage::SubPointersDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "SubPointersDeref::deref()"
-    text_edits = ["""
-    use starknet::storage::SubPointersDeref;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointersForward"
     completion_label_path = "(use starknet::storage::SubPointersForward)"
-    text_edits = ["""
-    use starknet::storage::SubPointersForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersForward::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersForward::sub_pointers(...)"
-    completion_label_type_info = "fn(self: T) -> Self::SubPointersType"
-    insert_text = "SubPointersForward::sub_pointers()"
     text_edits = ["""
     use starknet::storage::SubPointersForward;
 
@@ -14183,40 +6965,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersMut::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMut::sub_pointers_mut(...)"
-    completion_label_type_info = "fn(self: StoragePointer<Mutable<T>>) -> Self::SubPointersType"
-    insert_text = "SubPointersMut::sub_pointers_mut()"
-    text_edits = ["""
-    use starknet::storage::SubPointersMut;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointersMutDeref"
     completion_label_path = "(use starknet::storage::SubPointersMutDeref)"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutDeref::Target"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "SubPointersMutDeref::deref()"
     text_edits = ["""
     use starknet::storage::SubPointersMutDeref;
 
@@ -14231,33 +6981,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersMutForward::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutForward::sub_pointers_mut(...)"
-    completion_label_type_info = "fn(self: T) -> Self::SubPointersType"
-    insert_text = "SubPointersMutForward::sub_pointers_mut()"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutForward;
-
-    """]
-
-    [[completions]]
     completion_label = "Sum"
     completion_label_path = "(use core::iter::Sum)"
-    text_edits = ["""
-    use core::iter::Sum;
-
-    """]
-
-    [[completions]]
-    completion_label = "Sum::sum(...)"
-    completion_label_type_info = "fn(iter: I) -> A"
-    insert_text = "Sum::sum(${1:iter})"
     text_edits = ["""
     use core::iter::Sum;
 
@@ -14280,26 +7005,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "SyscallResultTrait::unwrap_syscall(...)"
-    completion_label_type_info = "fn(self: Result<T, Array<felt252>>) -> T"
-    insert_text = "SyscallResultTrait::unwrap_syscall()"
-    text_edits = ["""
-    use starknet::SyscallResultTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "ToByteSpanTrait"
     completion_label_path = "(use core::byte_array::ToByteSpanTrait)"
-    text_edits = ["""
-    use core::byte_array::ToByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ToByteSpanTrait::span(...)"
-    completion_label_type_info = "fn(self: @C) -> ByteSpan"
-    insert_text = "ToByteSpanTrait::span()"
     text_edits = ["""
     use core::byte_array::ToByteSpanTrait;
 
@@ -14314,22 +7021,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "TrimMaxHelper::Target"
-    text_edits = ["""
-    use core::internal::bounded_int::TrimMaxHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "TrimMinHelper"
     completion_label_path = "(use core::internal::bounded_int::TrimMinHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::TrimMinHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "TrimMinHelper::Target"
     text_edits = ["""
     use core::internal::bounded_int::TrimMinHelper;
 
@@ -14370,15 +7063,6 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "U256IntoEthAddress"
     completion_label_path = "(use starknet::eth_address::U256IntoEthAddress)"
-    text_edits = ["""
-    use starknet::eth_address::U256IntoEthAddress;
-
-    """]
-
-    [[completions]]
-    completion_label = "U256IntoEthAddress::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "U256IntoEthAddress::into()"
     text_edits = ["""
     use starknet::eth_address::U256IntoEthAddress;
 
@@ -14433,58 +7117,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "VecTrait::ElementType"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::at(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> StoragePath<Self::ElementType>"
-    insert_text = "VecTrait::at(${1:index})"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::get(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> Option<StoragePath<Self::ElementType>>"
-    insert_text = "VecTrait::get(${1:index})"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::len(...)"
-    completion_label_type_info = "fn(self: T) -> u64"
-    insert_text = "VecTrait::len()"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "WideMul"
     completion_label_path = "(use core::num::traits::WideMul)"
-    text_edits = ["""
-    use core::num::traits::WideMul;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideMul::Target"
-    text_edits = ["""
-    use core::num::traits::WideMul;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideMul::wide_mul(...)"
-    completion_label_type_info = "fn(self: Lhs, other: Rhs) -> Self::Target"
-    insert_text = "WideMul::wide_mul(${1:other})"
     text_edits = ["""
     use core::num::traits::WideMul;
 
@@ -14499,33 +7133,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "WideSquare::Target"
-    text_edits = ["""
-    use core::num::traits::WideSquare;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideSquare::wide_square(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "WideSquare::wide_square()"
-    text_edits = ["""
-    use core::num::traits::WideSquare;
-
-    """]
-
-    [[completions]]
     completion_label = "WrappingAdd"
     completion_label_path = "(use core::num::traits::WrappingAdd)"
-    text_edits = ["""
-    use core::num::traits::WrappingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "WrappingAdd::wrapping_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingAdd::wrapping_add(${1:v})"
     text_edits = ["""
     use core::num::traits::WrappingAdd;
 
@@ -14540,15 +7149,6 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "WrappingMul::wrapping_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingMul::wrapping_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::WrappingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "WrappingSub"
     completion_label_path = "(use core::num::traits::WrappingSub)"
     text_edits = ["""
@@ -14557,44 +7157,8 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
-    completion_label = "WrappingSub::wrapping_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingSub::wrapping_sub(${1:v})"
-    text_edits = ["""
-    use core::num::traits::WrappingSub;
-
-    """]
-
-    [[completions]]
     completion_label = "Zero"
     completion_label_path = "(use core::num::traits::Zero)"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::is_non_zero(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "Zero::is_non_zero()"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::is_zero(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "Zero::is_zero()"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::zero(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "Zero::zero()"
     text_edits = ["""
     use core::num::traits::Zero;
 
@@ -16998,65 +9562,10 @@ fn no_text_before_statement() {
     completion_label = "Add"
 
     [[completions]]
-    completion_label = "Add::add(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Add::add(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Array"
 
     [[completions]]
     completion_label = "ArrayTrait"
-
-    [[completions]]
-    completion_label = "ArrayTrait::append(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, value: T) -> () nopanic"
-    insert_text = "ArrayTrait::append(${1:value})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::append_span(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, span: Span<T>) -> ()"
-    insert_text = "ArrayTrait::append_span(${1:span})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::at(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> @T"
-    insert_text = "ArrayTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::get(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "ArrayTrait::get(${1:index})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> bool"
-    insert_text = "ArrayTrait::is_empty()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::len(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> u32"
-    insert_text = "ArrayTrait::len()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::new(...)"
-    completion_label_type_info = "fn() -> Array<T> nopanic"
-    insert_text = "ArrayTrait::new()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Array<T>) -> Option<T> nopanic"
-    insert_text = "ArrayTrait::pop_front()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::pop_front_consume(...)"
-    completion_label_type_info = "fn(self: Array<T>) -> Option<(Array<T>, T)> nopanic"
-    insert_text = "ArrayTrait::pop_front_consume()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::span(...)"
-    completion_label_type_info = "fn(snapshot: @Array<T>) -> Span<T>"
-    insert_text = "ArrayTrait::span(${1:snapshot})"
 
     [[completions]]
     completion_label = "Box"
@@ -17065,81 +9574,16 @@ fn no_text_before_statement() {
     completion_label = "BoxTrait"
 
     [[completions]]
-    completion_label = "BoxTrait::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Box<T>) -> Box<@T> nopanic"
-    insert_text = "BoxTrait::as_snapshot()"
-
-    [[completions]]
-    completion_label = "BoxTrait::new(...)"
-    completion_label_type_info = "fn(value: T) -> Box<T> nopanic"
-    insert_text = "BoxTrait::new(${1:value})"
-
-    [[completions]]
-    completion_label = "BoxTrait::unbox(...)"
-    completion_label_type_info = "fn(self: Box<T>) -> T nopanic"
-    insert_text = "BoxTrait::unbox()"
-
-    [[completions]]
     completion_label = "ByteArray"
 
     [[completions]]
     completion_label = "ByteArrayTrait"
 
     [[completions]]
-    completion_label = "ByteArrayTrait::append(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, other: @ByteArray) -> ()"
-    insert_text = "ByteArrayTrait::append(${1:other})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_byte(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, byte: u8) -> ()"
-    insert_text = "ByteArrayTrait::append_byte(${1:byte})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_word(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayTrait::append_word(${1:word}, ${2:len})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_word_rev(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayTrait::append_word_rev(${1:word}, ${2:len})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::at(...)"
-    completion_label_type_info = "fn(self: @ByteArray, index: u32) -> Option<u8>"
-    insert_text = "ByteArrayTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::concat(...)"
-    completion_label_type_info = "fn(left: @ByteArray, right: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayTrait::concat(${1:left}, ${2:right})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::len(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> u32"
-    insert_text = "ByteArrayTrait::len()"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::rev(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayTrait::rev()"
-
-    [[completions]]
     completion_label = "Bytes31Trait"
 
     [[completions]]
-    completion_label = "Bytes31Trait::at(...)"
-    completion_label_type_info = "fn(self: @bytes31, index: u32) -> u8"
-    insert_text = "Bytes31Trait::at(${1:index})"
-
-    [[completions]]
     completion_label = "Clone"
-
-    [[completions]]
-    completion_label = "Clone::clone(...)"
-    completion_label_type_info = "fn(self: @T) -> T"
-    insert_text = "Clone::clone()"
 
     [[completions]]
     completion_label = "Copy"
@@ -17148,44 +9592,16 @@ fn no_text_before_statement() {
     completion_label = "Default"
 
     [[completions]]
-    completion_label = "Default::default(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "Default::default()"
-
-    [[completions]]
     completion_label = "Deref"
-
-    [[completions]]
-    completion_label = "Deref::Target"
-
-    [[completions]]
-    completion_label = "Deref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "Deref::deref()"
 
     [[completions]]
     completion_label = "Destruct"
 
     [[completions]]
-    completion_label = "Destruct::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "Destruct::destruct()"
-
-    [[completions]]
     completion_label = "Div"
 
     [[completions]]
-    completion_label = "Div::div(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Div::div(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "DivRem"
-
-    [[completions]]
-    completion_label = "DivRem::div_rem(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: NonZero<T>) -> (T, T)"
-    insert_text = "DivRem::div_rem(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "Drop"
@@ -17197,176 +9613,25 @@ fn no_text_before_statement() {
     completion_label = "Felt252DictTrait"
 
     [[completions]]
-    completion_label = "Felt252DictTrait::entry(...)"
-    completion_label_type_info = "fn(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic"
-    insert_text = "Felt252DictTrait::entry(${1:key})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::get(...)"
-    completion_label_type_info = "fn(ref self: Felt252Dict<T>, key: felt252) -> T"
-    insert_text = "Felt252DictTrait::get(${1:key})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::insert(...)"
-    completion_label_type_info = "fn(ref self: Felt252Dict<T>, key: felt252, value: T) -> ()"
-    insert_text = "Felt252DictTrait::insert(${1:key}, ${2:value})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::squash(...)"
-    completion_label_type_info = "fn(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic"
-    insert_text = "Felt252DictTrait::squash()"
-
-    [[completions]]
     completion_label = "Felt252DictValue"
-
-    [[completions]]
-    completion_label = "Felt252DictValue::zero_default(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "Felt252DictValue::zero_default()"
 
     [[completions]]
     completion_label = "FromIterator"
 
     [[completions]]
-    completion_label = "FromIterator::from_iter(...)"
-    completion_label_type_info = "fn(iter: I) -> T"
-    insert_text = "FromIterator::from_iter(${1:iter})"
-
-    [[completions]]
     completion_label = "Into"
-
-    [[completions]]
-    completion_label = "Into::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "Into::into()"
 
     [[completions]]
     completion_label = "IntoIterator"
 
     [[completions]]
-    completion_label = "IntoIterator::IntoIter"
-
-    [[completions]]
-    completion_label = "IntoIterator::into_iter(...)"
-    completion_label_type_info = "fn(self: T) -> Self::IntoIter"
-    insert_text = "IntoIterator::into_iter()"
-
-    [[completions]]
     completion_label = "Iterator"
-
-    [[completions]]
-    completion_label = "Iterator::Item"
-
-    [[completions]]
-    completion_label = "Iterator::advance_by(...)"
-    completion_label_type_info = "fn(ref self: T, n: u32) -> Result<(), NonZero<u32>>"
-    insert_text = "Iterator::advance_by(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::all(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> bool"
-    insert_text = "Iterator::all(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::any(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> bool"
-    insert_text = "Iterator::any(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::chain(...)"
-    completion_label_type_info = "fn(self: T, other: U) -> Chain<T, IntoIterU::IntoIter>"
-    insert_text = "Iterator::chain(${1:other})"
-
-    [[completions]]
-    completion_label = "Iterator::collect(...)"
-    completion_label_type_info = "fn(self: T) -> B"
-    insert_text = "Iterator::collect()"
-
-    [[completions]]
-    completion_label = "Iterator::count(...)"
-    completion_label_type_info = "fn(self: T) -> u32"
-    insert_text = "Iterator::count()"
-
-    [[completions]]
-    completion_label = "Iterator::enumerate(...)"
-    completion_label_type_info = "fn(self: T) -> Enumerate<T>"
-    insert_text = "Iterator::enumerate()"
-
-    [[completions]]
-    completion_label = "Iterator::filter(...)"
-    completion_label_type_info = "fn(self: T, predicate: P) -> Filter<T, P>"
-    insert_text = "Iterator::filter(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::find(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> Option<Self::Item>"
-    insert_text = "Iterator::find(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::fold(...)"
-    completion_label_type_info = "fn(self: T, init: B, f: F) -> B"
-    insert_text = "Iterator::fold(${1:init}, ${2:f})"
-
-    [[completions]]
-    completion_label = "Iterator::last(...)"
-    completion_label_type_info = "fn(self: T) -> Option<Self::Item>"
-    insert_text = "Iterator::last()"
-
-    [[completions]]
-    completion_label = "Iterator::map(...)"
-    completion_label_type_info = "fn(self: T, f: F) -> Map<T, F>"
-    insert_text = "Iterator::map(${1:f})"
-
-    [[completions]]
-    completion_label = "Iterator::next(...)"
-    completion_label_type_info = "fn(ref self: T) -> Option<Self::Item>"
-    insert_text = "Iterator::next()"
-
-    [[completions]]
-    completion_label = "Iterator::nth(...)"
-    completion_label_type_info = "fn(ref self: T, n: u32) -> Option<Self::Item>"
-    insert_text = "Iterator::nth(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::peekable(...)"
-    completion_label_type_info = "fn(self: T) -> Peekable<T, Self::Item>"
-    insert_text = "Iterator::peekable()"
-
-    [[completions]]
-    completion_label = "Iterator::product(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Item"
-    insert_text = "Iterator::product()"
-
-    [[completions]]
-    completion_label = "Iterator::sum(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Item"
-    insert_text = "Iterator::sum()"
-
-    [[completions]]
-    completion_label = "Iterator::take(...)"
-    completion_label_type_info = "fn(self: T, n: u32) -> Take<T>"
-    insert_text = "Iterator::take(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::zip(...)"
-    completion_label_type_info = "fn(self: T, other: U) -> Zip<T, UIntoIter::IntoIter>"
-    insert_text = "Iterator::zip(${1:other})"
 
     [[completions]]
     completion_label = "Mul"
 
     [[completions]]
-    completion_label = "Mul::mul(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Mul::mul(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Neg"
-
-    [[completions]]
-    completion_label = "Neg::neg(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "Neg::neg(${1:a})"
 
     [[completions]]
     completion_label = "NonZero"
@@ -17378,45 +9643,10 @@ fn no_text_before_statement() {
     completion_label = "Not"
 
     [[completions]]
-    completion_label = "Not::not(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "Not::not(${1:a})"
-
-    [[completions]]
     completion_label = "Nullable"
 
     [[completions]]
     completion_label = "NullableTrait"
-
-    [[completions]]
-    completion_label = "NullableTrait::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> Nullable<@T> nopanic"
-    insert_text = "NullableTrait::as_snapshot()"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref(...)"
-    completion_label_type_info = "fn(nullable: Nullable<T>) -> T"
-    insert_text = "NullableTrait::deref(${1:nullable})"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref_or(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, default: T) -> T"
-    insert_text = "NullableTrait::deref_or(${1:default})"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref_or_else(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, f: F) -> T"
-    insert_text = "NullableTrait::deref_or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "NullableTrait::is_null(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> bool"
-    insert_text = "NullableTrait::is_null()"
-
-    [[completions]]
-    completion_label = "NullableTrait::new(...)"
-    completion_label_type_info = "fn(value: T) -> Nullable<T>"
-    insert_text = "NullableTrait::new(${1:value})"
 
     [[completions]]
     completion_label = "Ok"
@@ -17428,125 +9658,10 @@ fn no_text_before_statement() {
     completion_label = "OptionTrait"
 
     [[completions]]
-    completion_label = "OptionTrait::and(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<U>) -> Option<U>"
-    insert_text = "OptionTrait::and(${1:optb})"
-
-    [[completions]]
-    completion_label = "OptionTrait::and_then(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTrait::and_then(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::expect(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: felt252) -> T"
-    insert_text = "OptionTrait::expect(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::filter(...)"
-    completion_label_type_info = "fn(self: Option<T>, predicate: P) -> Option<T>"
-    insert_text = "OptionTrait::filter(${1:predicate})"
-
-    [[completions]]
-    completion_label = "OptionTrait::flatten(...)"
-    completion_label_type_info = "fn(self: Option<Option<T>>) -> Option<T>"
-    insert_text = "OptionTrait::flatten()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_none(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTrait::is_none()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_none_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTrait::is_none_or(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_some(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTrait::is_some()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_some_and(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTrait::is_some_and(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTrait::map(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: U, f: F) -> U"
-    insert_text = "OptionTrait::map_or(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: D, f: F) -> U"
-    insert_text = "OptionTrait::map_or_else(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::ok_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: E) -> Result<T, E>"
-    insert_text = "OptionTrait::ok_or(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::ok_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: F) -> Result<T, E>"
-    insert_text = "OptionTrait::ok_or_else(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::or(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::or(${1:optb})"
-
-    [[completions]]
-    completion_label = "OptionTrait::or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<T>"
-    insert_text = "OptionTrait::or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::take(...)"
-    completion_label_type_info = "fn(ref self: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::take()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTrait::unwrap()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: T) -> T"
-    insert_text = "OptionTrait::unwrap_or(${1:default})"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTrait::unwrap_or_default()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> T"
-    insert_text = "OptionTrait::unwrap_or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::xor(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::xor(${1:optb})"
-
-    [[completions]]
     completion_label = "Panic"
 
     [[completions]]
     completion_label = "PanicDestruct"
-
-    [[completions]]
-    completion_label = "PanicDestruct::panic_destruct(...)"
-    completion_label_type_info = "fn(self: T, ref panic: Panic) -> () nopanic"
-    insert_text = "PanicDestruct::panic_destruct(${1:panic})"
 
     [[completions]]
     completion_label = "PanicResult"
@@ -17555,45 +9670,10 @@ fn no_text_before_statement() {
     completion_label = "PartialEq"
 
     [[completions]]
-    completion_label = "PartialEq::eq(...)"
-    completion_label_type_info = "fn(lhs: @T, rhs: @T) -> bool"
-    insert_text = "PartialEq::eq(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialEq::ne(...)"
-    completion_label_type_info = "fn(lhs: @T, rhs: @T) -> bool"
-    insert_text = "PartialEq::ne(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "PartialOrd"
 
     [[completions]]
-    completion_label = "PartialOrd::ge(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::ge(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::gt(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::gt(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::le(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::le(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::lt(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::lt(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Rem"
-
-    [[completions]]
-    completion_label = "Rem::rem(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Rem::rem(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "Result"
@@ -17602,122 +9682,7 @@ fn no_text_before_statement() {
     completion_label = "ResultTrait"
 
     [[completions]]
-    completion_label = "ResultTrait::and(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<U, E>) -> Result<U, E>"
-    insert_text = "ResultTrait::and(${1:other})"
-
-    [[completions]]
-    completion_label = "ResultTrait::and_then(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: F) -> Result<U, E>"
-    insert_text = "ResultTrait::and_then(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<E>"
-    insert_text = "ResultTrait::err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::expect(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> T"
-    insert_text = "ResultTrait::expect(${1:err})"
-
-    [[completions]]
-    completion_label = "ResultTrait::expect_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> E"
-    insert_text = "ResultTrait::expect_err(${1:err})"
-
-    [[completions]]
-    completion_label = "ResultTrait::into_is_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTrait::into_is_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::into_is_ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTrait::into_is_ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::is_err(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTrait::is_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::is_ok(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTrait::is_ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::map(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> Result<U, E>"
-    insert_text = "ResultTrait::map(${1:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTrait::map_err(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: U, f: F) -> U"
-    insert_text = "ResultTrait::map_or(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: D, f: F) -> U"
-    insert_text = "ResultTrait::map_or_else(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<T>"
-    insert_text = "ResultTrait::ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<T, F>) -> Result<T, F>"
-    insert_text = "ResultTrait::or(${1:other})"
-
-    [[completions]]
-    completion_label = "ResultTrait::or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTrait::or_else(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTrait::unwrap()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> E"
-    insert_text = "ResultTrait::unwrap_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: T) -> T"
-    insert_text = "ResultTrait::unwrap_or(${1:default})"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTrait::unwrap_or_default()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> T"
-    insert_text = "ResultTrait::unwrap_or_else(${1:f})"
-
-    [[completions]]
     completion_label = "Serde"
-
-    [[completions]]
-    completion_label = "Serde::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "Serde::deserialize(${1:serialized})"
-
-    [[completions]]
-    completion_label = "Serde::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "Serde::serialize(${1:output})"
 
     [[completions]]
     completion_label = "Some"
@@ -17729,57 +9694,7 @@ fn no_text_before_statement() {
     completion_label = "SpanTrait"
 
     [[completions]]
-    completion_label = "SpanTrait::at(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> @T"
-    insert_text = "SpanTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "SpanTrait::get(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "SpanTrait::get(${1:index})"
-
-    [[completions]]
-    completion_label = "SpanTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> bool"
-    insert_text = "SpanTrait::is_empty()"
-
-    [[completions]]
-    completion_label = "SpanTrait::len(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> u32"
-    insert_text = "SpanTrait::len()"
-
-    [[completions]]
-    completion_label = "SpanTrait::multi_pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanTrait::multi_pop_back()"
-
-    [[completions]]
-    completion_label = "SpanTrait::multi_pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanTrait::multi_pop_front()"
-
-    [[completions]]
-    completion_label = "SpanTrait::pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T>"
-    insert_text = "SpanTrait::pop_back()"
-
-    [[completions]]
-    completion_label = "SpanTrait::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T> nopanic"
-    insert_text = "SpanTrait::pop_front()"
-
-    [[completions]]
-    completion_label = "SpanTrait::slice(...)"
-    completion_label_type_info = "fn(self: Span<T>, start: u32, length: u32) -> Span<T>"
-    insert_text = "SpanTrait::slice(${1:start}, ${2:length})"
-
-    [[completions]]
     completion_label = "Sub"
-
-    [[completions]]
-    completion_label = "Sub::sub(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Sub::sub(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "System"
@@ -17788,17 +9703,7 @@ fn no_text_before_statement() {
     completion_label = "ToSpanTrait"
 
     [[completions]]
-    completion_label = "ToSpanTrait::span(...)"
-    completion_label_type_info = "fn(self: @C) -> Span<T>"
-    insert_text = "ToSpanTrait::span()"
-
-    [[completions]]
     completion_label = "TryInto"
-
-    [[completions]]
-    completion_label = "TryInto::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "TryInto::try_into()"
 
     [[completions]]
     completion_label = "assert(...)"
@@ -17888,33 +9793,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "AccountContract::__execute__(...)"
-    completion_label_type_info = "fn(ref self: TContractState, calls: Array<Call>) -> Array<Span<felt252>>"
-    insert_text = "AccountContract::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContract::__validate__(...)"
-    completion_label_type_info = "fn(ref self: TContractState, calls: Array<Call>) -> felt252"
-    insert_text = "AccountContract::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContract::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: @TContractState, class_hash: felt252) -> felt252"
-    insert_text = "AccountContract::__validate_declare__(${1:class_hash})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
     completion_label = "AccountContractDispatcher"
     completion_label_path = "(use starknet::account::AccountContractDispatcher)"
     text_edits = ["""
@@ -17941,33 +9819,6 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "AccountContractDispatcherTrait"
     completion_label_path = "(use starknet::account::AccountContractDispatcherTrait)"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__execute__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Array<Span<felt252>>"
-    insert_text = "AccountContractDispatcherTrait::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__validate__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> felt252"
-    insert_text = "AccountContractDispatcherTrait::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: T, class_hash: felt252) -> felt252"
-    insert_text = "AccountContractDispatcherTrait::__validate_declare__(${1:class_hash})"
     text_edits = ["""
     use starknet::account::AccountContractDispatcherTrait;
 
@@ -18030,33 +9881,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__execute__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Result<Array<Span<felt252>>, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__validate__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Result<felt252, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: T, class_hash: felt252) -> Result<felt252, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__validate_declare__(${1:class_hash})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcher"
     completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcher)"
     text_edits = ["""
@@ -18089,15 +9913,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "AddAssign::add_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "AddAssign::add_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::AddAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "AddEq"
     completion_label_path = "(use core::traits::AddEq)"
     text_edits = ["""
@@ -18106,24 +9921,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "AddEq::add_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "AddEq::add_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::AddEq;
-
-    """]
-
-    [[completions]]
     completion_label = "AddHelper"
     completion_label_path = "(use core::internal::bounded_int::AddHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::AddHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddHelper::Result"
     text_edits = ["""
     use core::internal::bounded_int::AddHelper;
 
@@ -18146,44 +9945,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "AddInputResultImpl::done(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>) -> CircuitData<C>"
-    insert_text = "AddInputResultImpl::done()"
-    text_edits = ["""
-    use core::circuit::AddInputResultImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultImpl::next(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>, value: Value) -> AddInputResult<C>"
-    insert_text = "AddInputResultImpl::next(${1:value})"
-    text_edits = ["""
-    use core::circuit::AddInputResultImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "AddInputResultTrait"
     completion_label_path = "(use core::circuit::AddInputResultTrait)"
-    text_edits = ["""
-    use core::circuit::AddInputResultTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultTrait::done(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>) -> CircuitData<C>"
-    insert_text = "AddInputResultTrait::done()"
-    text_edits = ["""
-    use core::circuit::AddInputResultTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultTrait::next(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>, value: Value) -> AddInputResult<C>"
-    insert_text = "AddInputResultTrait::next(${1:value})"
     text_edits = ["""
     use core::circuit::AddInputResultTrait;
 
@@ -18206,107 +9969,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "AppendFormattedToByteArray::append_formatted_to_byte_array(...)"
-    completion_label_type_info = "fn(self: @T, ref byte_array: ByteArray, base: NonZero<T>) -> ()"
-    insert_text = "AppendFormattedToByteArray::append_formatted_to_byte_array(${1:byte_array}, ${2:base})"
-    text_edits = ["""
-    use core::to_byte_array::AppendFormattedToByteArray;
-
-    """]
-
-    [[completions]]
     completion_label = "ArrayImpl"
     completion_label_path = "(use core::array::ArrayImpl)"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::append(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, value: T) -> () nopanic"
-    insert_text = "ArrayImpl::append(${1:value})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::append_span(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, span: Span<T>) -> ()"
-    insert_text = "ArrayImpl::append_span(${1:span})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::at(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> @T"
-    insert_text = "ArrayImpl::at(${1:index})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::get(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "ArrayImpl::get(${1:index})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> bool"
-    insert_text = "ArrayImpl::is_empty()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::len(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> u32"
-    insert_text = "ArrayImpl::len()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::new(...)"
-    completion_label_type_info = "fn() -> Array<T> nopanic"
-    insert_text = "ArrayImpl::new()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Array<T>) -> Option<T> nopanic"
-    insert_text = "ArrayImpl::pop_front()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::pop_front_consume(...)"
-    completion_label_type_info = "fn(self: Array<T>) -> Option<(Array<T>, T)> nopanic"
-    insert_text = "ArrayImpl::pop_front_consume()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::span(...)"
-    completion_label_type_info = "fn(snapshot: @Array<T>) -> Span<T>"
-    insert_text = "ArrayImpl::span(${1:snapshot})"
     text_edits = ["""
     use core::array::ArrayImpl;
 
@@ -18345,26 +10009,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "BitAnd::bitand(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitAnd::bitand(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitAnd;
-
-    """]
-
-    [[completions]]
     completion_label = "BitNot"
     completion_label_path = "(use core::traits::BitNot)"
-    text_edits = ["""
-    use core::traits::BitNot;
-
-    """]
-
-    [[completions]]
-    completion_label = "BitNot::bitnot(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "BitNot::bitnot(${1:a})"
     text_edits = ["""
     use core::traits::BitNot;
 
@@ -18379,15 +10025,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "BitOr::bitor(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitOr::bitor(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitOr;
-
-    """]
-
-    [[completions]]
     completion_label = "BitSize"
     completion_label_path = "(use core::num::traits::BitSize)"
     text_edits = ["""
@@ -18396,26 +10033,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "BitSize::bits(...)"
-    completion_label_type_info = "fn() -> u32"
-    insert_text = "BitSize::bits()"
-    text_edits = ["""
-    use core::num::traits::BitSize;
-
-    """]
-
-    [[completions]]
     completion_label = "BitXor"
     completion_label_path = "(use core::traits::BitXor)"
-    text_edits = ["""
-    use core::traits::BitXor;
-
-    """]
-
-    [[completions]]
-    completion_label = "BitXor::bitxor(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitXor::bitxor(${1:lhs}, ${2:rhs})"
     text_edits = ["""
     use core::traits::BitXor;
 
@@ -18446,26 +10065,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "BoolImpl::then_some(...)"
-    completion_label_type_info = "fn(self: bool, t: T) -> Option<T> nopanic"
-    insert_text = "BoolImpl::then_some(${1:t})"
-    text_edits = ["""
-    use core::boolean::BoolImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "BoolTrait"
     completion_label_path = "(use core::boolean::BoolTrait)"
-    text_edits = ["""
-    use core::boolean::BoolTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoolTrait::then_some(...)"
-    completion_label_type_info = "fn(self: bool, t: T) -> Option<T> nopanic"
-    insert_text = "BoolTrait::then_some(${1:t})"
     text_edits = ["""
     use core::boolean::BoolTrait;
 
@@ -18480,22 +10081,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Bounded::MAX"
-    completion_label_type_info = "T"
-    text_edits = ["""
-    use core::num::traits::Bounded;
-
-    """]
-
-    [[completions]]
-    completion_label = "Bounded::MIN"
-    completion_label_type_info = "T"
-    text_edits = ["""
-    use core::num::traits::Bounded;
-
-    """]
-
-    [[completions]]
     completion_label = "BoundedInt"
     completion_label_path = "(use core::integer::BoundedInt)"
     text_edits = ["""
@@ -18504,53 +10089,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "BoundedInt::max(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "BoundedInt::max()"
-    text_edits = ["""
-    use core::integer::BoundedInt;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoundedInt::min(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "BoundedInt::min()"
-    text_edits = ["""
-    use core::integer::BoundedInt;
-
-    """]
-
-    [[completions]]
     completion_label = "BoxImpl"
     completion_label_path = "(use core::box::BoxImpl)"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Box<T>) -> Box<@T> nopanic"
-    insert_text = "BoxImpl::as_snapshot()"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::new(...)"
-    completion_label_type_info = "fn(value: T) -> Box<T> nopanic"
-    insert_text = "BoxImpl::new(${1:value})"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::unbox(...)"
-    completion_label_type_info = "fn(self: Box<T>) -> T nopanic"
-    insert_text = "BoxImpl::unbox()"
     text_edits = ["""
     use core::box::BoxImpl;
 
@@ -18567,78 +10107,6 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "ByteArrayImpl"
     completion_label_path = "(use core::byte_array::ByteArrayImpl)"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, other: @ByteArray) -> ()"
-    insert_text = "ByteArrayImpl::append(${1:other})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_byte(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, byte: u8) -> ()"
-    insert_text = "ByteArrayImpl::append_byte(${1:byte})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_word(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayImpl::append_word(${1:word}, ${2:len})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_word_rev(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayImpl::append_word_rev(${1:word}, ${2:len})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::at(...)"
-    completion_label_type_info = "fn(self: @ByteArray, index: u32) -> Option<u8>"
-    insert_text = "ByteArrayImpl::at(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::concat(...)"
-    completion_label_type_info = "fn(left: @ByteArray, right: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayImpl::concat(${1:left}, ${2:right})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::len(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> u32"
-    insert_text = "ByteArrayImpl::len()"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::rev(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayImpl::rev()"
     text_edits = ["""
     use core::byte_array::ByteArrayImpl;
 
@@ -18669,42 +10137,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "ByteSpanImpl::get(...)"
-    completion_label_type_info = "fn(self: @ByteSpan, index: I) -> Option<TGet::Output>"
-    insert_text = "ByteSpanImpl::get(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> bool"
-    insert_text = "ByteSpanImpl::is_empty()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::len(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> u32"
-    insert_text = "ByteSpanImpl::len()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::to_byte_array(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> ByteArray"
-    insert_text = "ByteSpanImpl::to_byte_array()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "ByteSpanIter"
     completion_label_path = "(use core::byte_array::ByteSpanIter)"
     text_edits = ["""
@@ -18721,53 +10153,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "ByteSpanTrait::get(...)"
-    completion_label_type_info = "fn(self: @ByteSpan, index: I) -> Option<TGet::Output>"
-    insert_text = "ByteSpanTrait::get(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> bool"
-    insert_text = "ByteSpanTrait::is_empty()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::len(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> u32"
-    insert_text = "ByteSpanTrait::len()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::to_byte_array(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> ByteArray"
-    insert_text = "ByteSpanTrait::to_byte_array()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Bytes31Impl"
     completion_label_path = "(use core::bytes_31::Bytes31Impl)"
-    text_edits = ["""
-    use core::bytes_31::Bytes31Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Bytes31Impl::at(...)"
-    completion_label_type_info = "fn(self: @bytes31, index: u32) -> u8"
-    insert_text = "Bytes31Impl::at(${1:index})"
     text_edits = ["""
     use core::bytes_31::Bytes31Impl;
 
@@ -18790,15 +10177,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "CheckedAdd::checked_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedAdd::checked_add(${1:v})"
-    text_edits = ["""
-    use core::num::traits::CheckedAdd;
-
-    """]
-
-    [[completions]]
     completion_label = "CheckedMul"
     completion_label_path = "(use core::num::traits::CheckedMul)"
     text_edits = ["""
@@ -18807,26 +10185,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "CheckedMul::checked_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedMul::checked_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::CheckedMul;
-
-    """]
-
-    [[completions]]
     completion_label = "CheckedSub"
     completion_label_path = "(use core::num::traits::CheckedSub)"
-    text_edits = ["""
-    use core::num::traits::CheckedSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "CheckedSub::checked_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedSub::checked_sub(${1:v})"
     text_edits = ["""
     use core::num::traits::CheckedSub;
 
@@ -18843,13 +10203,6 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "CircuitDefinition"
     completion_label_path = "(use core::circuit::CircuitDefinition)"
-    text_edits = ["""
-    use core::circuit::CircuitDefinition;
-
-    """]
-
-    [[completions]]
-    completion_label = "CircuitDefinition::CircuitType"
     text_edits = ["""
     use core::circuit::CircuitDefinition;
 
@@ -18904,26 +10257,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "CircuitInputs::new_inputs(...)"
-    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
-    insert_text = "CircuitInputs::new_inputs()"
-    text_edits = ["""
-    use core::circuit::CircuitInputs;
-
-    """]
-
-    [[completions]]
     completion_label = "CircuitInputsImpl"
     completion_label_path = "(use core::circuit::CircuitInputsImpl)"
-    text_edits = ["""
-    use core::circuit::CircuitInputsImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "CircuitInputsImpl::new_inputs(...)"
-    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
-    insert_text = "CircuitInputsImpl::new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputsImpl;
 
@@ -18946,15 +10281,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "CircuitOutputsTrait::get_output(...)"
-    completion_label_type_info = "fn(self: Outputs, output: OutputElement) -> u384"
-    insert_text = "CircuitOutputsTrait::get_output(${1:output})"
-    text_edits = ["""
-    use core::circuit::CircuitOutputsTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "ClassHash"
     completion_label_path = "(use starknet::ClassHash)"
     text_edits = ["""
@@ -18965,15 +10291,6 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "ClassHashIntoFelt252"
     completion_label_path = "(use starknet::class_hash::ClassHashIntoFelt252)"
-    text_edits = ["""
-    use starknet::class_hash::ClassHashIntoFelt252;
-
-    """]
-
-    [[completions]]
-    completion_label = "ClassHashIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "ClassHashIntoFelt252::into()"
     text_edits = ["""
     use starknet::class_hash::ClassHashIntoFelt252;
 
@@ -19012,20 +10329,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "ConstrainHelper::HighT"
-    text_edits = ["""
-    use core::internal::bounded_int::ConstrainHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "ConstrainHelper::LowT"
-    text_edits = ["""
-    use core::internal::bounded_int::ConstrainHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "ContractAddress"
     completion_label_path = "(use starknet::ContractAddress)"
     text_edits = ["""
@@ -19036,15 +10339,6 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "ContractAddressIntoFelt252"
     completion_label_path = "(use starknet::contract_address::ContractAddressIntoFelt252)"
-    text_edits = ["""
-    use starknet::contract_address::ContractAddressIntoFelt252;
-
-    """]
-
-    [[completions]]
-    completion_label = "ContractAddressIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "ContractAddressIntoFelt252::into()"
     text_edits = ["""
     use starknet::contract_address::ContractAddressIntoFelt252;
 
@@ -19067,26 +10361,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Debug::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "Debug::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::Debug;
-
-    """]
-
-    [[completions]]
     completion_label = "DebugImpl"
     completion_label_path = "(use core::fmt::into_felt252_based::DebugImpl)"
-    text_edits = ["""
-    use core::fmt::into_felt252_based::DebugImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "DebugImpl::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "DebugImpl::fmt(${1:f})"
     text_edits = ["""
     use core::fmt::into_felt252_based::DebugImpl;
 
@@ -19109,22 +10385,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "DerefMut::Target"
-    text_edits = ["""
-    use core::ops::DerefMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "DerefMut::deref_mut(...)"
-    completion_label_type_info = "fn(ref self: T) -> Self::Target"
-    insert_text = "DerefMut::deref_mut()"
-    text_edits = ["""
-    use core::ops::DerefMut;
-
-    """]
-
-    [[completions]]
     completion_label = "DestructFailureGuarantee"
     completion_label_path = "(use core::circuit::DestructFailureGuarantee)"
     text_edits = ["""
@@ -19133,26 +10393,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "DestructFailureGuarantee::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "DestructFailureGuarantee::destruct()"
-    text_edits = ["""
-    use core::circuit::DestructFailureGuarantee;
-
-    """]
-
-    [[completions]]
     completion_label = "DestructOption"
     completion_label_path = "(use core::option::DestructOption)"
-    text_edits = ["""
-    use core::option::DestructOption;
-
-    """]
-
-    [[completions]]
-    completion_label = "DestructOption::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "DestructOption::destruct()"
     text_edits = ["""
     use core::option::DestructOption;
 
@@ -19175,26 +10417,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Display::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "Display::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::Display;
-
-    """]
-
-    [[completions]]
     completion_label = "DivAssign"
     completion_label_path = "(use core::ops::DivAssign)"
-    text_edits = ["""
-    use core::ops::DivAssign;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivAssign::div_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "DivAssign::div_assign(${1:rhs})"
     text_edits = ["""
     use core::ops::DivAssign;
 
@@ -19209,15 +10433,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "DivEq::div_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "DivEq::div_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::DivEq;
-
-    """]
-
-    [[completions]]
     completion_label = "DivRem"
     completion_label_path = "(use core::num::traits::DivRem)"
     text_edits = ["""
@@ -19226,45 +10441,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "DivRem::Quotient"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRem::Remainder"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRem::div_rem(...)"
-    completion_label_type_info = "fn(self: T, other: NonZero<U>) -> (Self::Quotient, Self::Remainder)"
-    insert_text = "DivRem::div_rem(${1:other})"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
     completion_label = "DivRemHelper"
     completion_label_path = "(use core::internal::bounded_int::DivRemHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::DivRemHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRemHelper::DivT"
-    text_edits = ["""
-    use core::internal::bounded_int::DivRemHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRemHelper::RemT"
     text_edits = ["""
     use core::internal::bounded_int::DivRemHelper;
 
@@ -19319,152 +10497,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "EcPointImpl::coordinates(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> (felt252, felt252)"
-    insert_text = "EcPointImpl::coordinates()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::mul(...)"
-    completion_label_type_info = "fn(self: EcPoint, scalar: felt252) -> EcPoint"
-    insert_text = "EcPointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointImpl::new(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointImpl::new_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_nz(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointImpl::new_nz(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_nz_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointImpl::new_nz_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::x(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointImpl::x()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::y(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointImpl::y()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EcPointTrait"
     completion_label_path = "(use core::ec::EcPointTrait)"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::coordinates(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> (felt252, felt252)"
-    insert_text = "EcPointTrait::coordinates()"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::mul(...)"
-    completion_label_type_info = "fn(self: EcPoint, scalar: felt252) -> EcPoint"
-    insert_text = "EcPointTrait::mul(${1:scalar})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointTrait::new(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointTrait::new_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_nz(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointTrait::new_nz(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_nz_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointTrait::new_nz_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::x(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointTrait::x()"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::y(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointTrait::y()"
     text_edits = ["""
     use core::ec::EcPointTrait;
 
@@ -19487,116 +10521,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "EcStateImpl::add(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateImpl::add(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::add_mul(...)"
-    completion_label_type_info = "fn(ref self: EcState, scalar: felt252, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateImpl::add_mul(${1:scalar}, ${2:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::finalize(...)"
-    completion_label_type_info = "fn(self: EcState) -> EcPoint"
-    insert_text = "EcStateImpl::finalize()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::finalize_nz(...)"
-    completion_label_type_info = "fn(self: EcState) -> Option<NonZero<EcPoint>> nopanic"
-    insert_text = "EcStateImpl::finalize_nz()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::init(...)"
-    completion_label_type_info = "fn() -> EcState nopanic"
-    insert_text = "EcStateImpl::init()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::sub(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> ()"
-    insert_text = "EcStateImpl::sub(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EcStateTrait"
     completion_label_path = "(use core::ec::EcStateTrait)"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::add(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateTrait::add(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::add_mul(...)"
-    completion_label_type_info = "fn(ref self: EcState, scalar: felt252, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateTrait::add_mul(${1:scalar}, ${2:p})"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::finalize(...)"
-    completion_label_type_info = "fn(self: EcState) -> EcPoint"
-    insert_text = "EcStateTrait::finalize()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::finalize_nz(...)"
-    completion_label_type_info = "fn(self: EcState) -> Option<NonZero<EcPoint>> nopanic"
-    insert_text = "EcStateTrait::finalize_nz()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::init(...)"
-    completion_label_type_info = "fn() -> EcState nopanic"
-    insert_text = "EcStateTrait::init()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::sub(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> ()"
-    insert_text = "EcStateTrait::sub(${1:p})"
     text_edits = ["""
     use core::ec::EcStateTrait;
 
@@ -19635,15 +10561,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "EthAddressIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "EthAddressIntoFelt252::into()"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressIntoFelt252;
-
-    """]
-
-    [[completions]]
     completion_label = "EthAddressPrintImpl"
     completion_label_path = "(use starknet::eth_address::EthAddressPrintImpl)"
     text_edits = ["""
@@ -19652,35 +10569,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "EthAddressPrintImpl::print(...)"
-    completion_label_type_info = "fn(self: T) -> ()"
-    insert_text = "EthAddressPrintImpl::print()"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressPrintImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EthAddressSerde"
     completion_label_path = "(use starknet::eth_address::EthAddressSerde)"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressSerde;
-
-    """]
-
-    [[completions]]
-    completion_label = "EthAddressSerde::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "EthAddressSerde::deserialize(${1:serialized})"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressSerde;
-
-    """]
-
-    [[completions]]
-    completion_label = "EthAddressSerde::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "EthAddressSerde::serialize(${1:output})"
     text_edits = ["""
     use starknet::eth_address::EthAddressSerde;
 
@@ -19703,44 +10593,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "EvalCircuitImpl::eval(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitImpl::eval(${1:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitImpl::eval_ex(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitImpl::eval_ex(${1:descriptor}, ${2:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EvalCircuitTrait"
     completion_label_path = "(use core::circuit::EvalCircuitTrait)"
-    text_edits = ["""
-    use core::circuit::EvalCircuitTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitTrait::eval(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitTrait::eval(${1:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitTrait::eval_ex(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitTrait::eval_ex(${1:descriptor}, ${2:modulus})"
     text_edits = ["""
     use core::circuit::EvalCircuitTrait;
 
@@ -19755,35 +10609,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Event::append_keys_and_data(...)"
-    completion_label_type_info = "fn(self: @T, ref keys: Array<felt252>, ref data: Array<felt252>) -> ()"
-    insert_text = "Event::append_keys_and_data(${1:keys}, ${2:data})"
-    text_edits = ["""
-    use starknet::Event;
-
-    """]
-
-    [[completions]]
-    completion_label = "Event::deserialize(...)"
-    completion_label_type_info = "fn(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<T>"
-    insert_text = "Event::deserialize(${1:keys}, ${2:data})"
-    text_edits = ["""
-    use starknet::Event;
-
-    """]
-
-    [[completions]]
     completion_label = "EventEmitter"
     completion_label_path = "(use starknet::event::EventEmitter)"
-    text_edits = ["""
-    use starknet::event::EventEmitter;
-
-    """]
-
-    [[completions]]
-    completion_label = "EventEmitter::emit(...)"
-    completion_label_type_info = "fn(ref self: T, event: S) -> ()"
-    insert_text = "EventEmitter::emit(${1:event})"
     text_edits = ["""
     use starknet::event::EventEmitter;
 
@@ -19800,15 +10627,6 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "Extend"
     completion_label_path = "(use core::iter::Extend)"
-    text_edits = ["""
-    use core::iter::Extend;
-
-    """]
-
-    [[completions]]
-    completion_label = "Extend::extend(...)"
-    completion_label_type_info = "fn(ref self: T, iter: I) -> ()"
-    insert_text = "Extend::extend(${1:iter})"
     text_edits = ["""
     use core::iter::Extend;
 
@@ -19847,26 +10665,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Felt252DictEntryTrait::finalize(...)"
-    completion_label_type_info = "fn(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>"
-    insert_text = "Felt252DictEntryTrait::finalize(${1:new_value})"
-    text_edits = ["""
-    use core::dict::Felt252DictEntryTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Felt252TryIntoClassHash"
     completion_label_path = "(use starknet::class_hash::Felt252TryIntoClassHash)"
-    text_edits = ["""
-    use starknet::class_hash::Felt252TryIntoClassHash;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoClassHash::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoClassHash::try_into()"
     text_edits = ["""
     use starknet::class_hash::Felt252TryIntoClassHash;
 
@@ -19881,26 +10681,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Felt252TryIntoContractAddress::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoContractAddress::try_into()"
-    text_edits = ["""
-    use starknet::contract_address::Felt252TryIntoContractAddress;
-
-    """]
-
-    [[completions]]
     completion_label = "Felt252TryIntoEthAddress"
     completion_label_path = "(use starknet::eth_address::Felt252TryIntoEthAddress)"
-    text_edits = ["""
-    use starknet::eth_address::Felt252TryIntoEthAddress;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoEthAddress::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoEthAddress::try_into()"
     text_edits = ["""
     use starknet::eth_address::Felt252TryIntoEthAddress;
 
@@ -19923,22 +10705,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Fn::Output"
-    text_edits = ["""
-    use core::ops::Fn;
-
-    """]
-
-    [[completions]]
-    completion_label = "Fn::call(...)"
-    completion_label_type_info = "fn(self: @T, args: Args) -> Self::Output"
-    insert_text = "Fn::call(${1:args})"
-    text_edits = ["""
-    use core::ops::Fn;
-
-    """]
-
-    [[completions]]
     completion_label = "FnOnce"
     completion_label_path = "(use core::ops::FnOnce)"
     text_edits = ["""
@@ -19947,33 +10713,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "FnOnce::Output"
-    text_edits = ["""
-    use core::ops::FnOnce;
-
-    """]
-
-    [[completions]]
-    completion_label = "FnOnce::call(...)"
-    completion_label_type_info = "fn(self: T, args: Args) -> Self::Output"
-    insert_text = "FnOnce::call(${1:args})"
-    text_edits = ["""
-    use core::ops::FnOnce;
-
-    """]
-
-    [[completions]]
     completion_label = "FormatAsByteArray"
     completion_label_path = "(use core::to_byte_array::FormatAsByteArray)"
-    text_edits = ["""
-    use core::to_byte_array::FormatAsByteArray;
-
-    """]
-
-    [[completions]]
-    completion_label = "FormatAsByteArray::format_as_byte_array(...)"
-    completion_label_type_info = "fn(self: @T, base: NonZero<T>) -> ByteArray"
-    insert_text = "FormatAsByteArray::format_as_byte_array(${1:base})"
     text_edits = ["""
     use core::to_byte_array::FormatAsByteArray;
 
@@ -20036,22 +10777,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Get::Output"
-    text_edits = ["""
-    use core::ops::Get;
-
-    """]
-
-    [[completions]]
-    completion_label = "Get::get(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> Option<Self::Output>"
-    insert_text = "Get::get(${1:index})"
-    text_edits = ["""
-    use core::ops::Get;
-
-    """]
-
-    [[completions]]
     completion_label = "Hash"
     completion_label_path = "(use core::hash::Hash)"
     text_edits = ["""
@@ -20060,26 +10785,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Hash::update_state(...)"
-    completion_label_type_info = "fn(state: S, value: T) -> S"
-    insert_text = "Hash::update_state(${1:state}, ${2:value})"
-    text_edits = ["""
-    use core::hash::Hash;
-
-    """]
-
-    [[completions]]
     completion_label = "HashImpl"
     completion_label_path = "(use core::hash::into_felt252_based::HashImpl)"
-    text_edits = ["""
-    use core::hash::into_felt252_based::HashImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashImpl::update_state(...)"
-    completion_label_type_info = "fn(state: S, value: T) -> S"
-    insert_text = "HashImpl::update_state(${1:state}, ${2:value})"
     text_edits = ["""
     use core::hash::into_felt252_based::HashImpl;
 
@@ -20110,35 +10817,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "HashStateExTrait::update_with(...)"
-    completion_label_type_info = "fn(self: S, value: T) -> S"
-    insert_text = "HashStateExTrait::update_with(${1:value})"
-    text_edits = ["""
-    use core::hash::HashStateExTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "HashStateTrait"
     completion_label_path = "(use core::hash::HashStateTrait)"
-    text_edits = ["""
-    use core::hash::HashStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashStateTrait::finalize(...)"
-    completion_label_type_info = "fn(self: S) -> felt252"
-    insert_text = "HashStateTrait::finalize()"
-    text_edits = ["""
-    use core::hash::HashStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashStateTrait::update(...)"
-    completion_label_type_info = "fn(self: S, value: felt252) -> S"
-    insert_text = "HashStateTrait::update(${1:value})"
     text_edits = ["""
     use core::hash::HashStateTrait;
 
@@ -20161,31 +10841,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Index::Target"
-    text_edits = ["""
-    use core::ops::Index;
-
-    """]
-
-    [[completions]]
-    completion_label = "Index::index(...)"
-    completion_label_type_info = "fn(ref self: C, index: I) -> Self::Target"
-    insert_text = "Index::index(${1:index})"
-    text_edits = ["""
-    use core::ops::Index;
-
-    """]
-
-    [[completions]]
-    completion_label = "Index::index(...)"
-    completion_label_type_info = "fn(ref self: C, index: I) -> V"
-    insert_text = "Index::index(${1:index})"
-    text_edits = ["""
-    use core::traits::Index;
-
-    """]
-
-    [[completions]]
     completion_label = "IndexView"
     completion_label_path = "(use core::ops::IndexView)"
     text_edits = ["""
@@ -20196,31 +10851,6 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "IndexView"
     completion_label_path = "(use core::traits::IndexView)"
-    text_edits = ["""
-    use core::traits::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::Target"
-    text_edits = ["""
-    use core::ops::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> Self::Target"
-    insert_text = "IndexView::index(${1:index})"
-    text_edits = ["""
-    use core::ops::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> V"
-    insert_text = "IndexView::index(${1:index})"
     text_edits = ["""
     use core::traits::IndexView;
 
@@ -20251,42 +10881,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "IntoIterRange::IntoIter"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
-    completion_label = "IntoIterRange::into_iter_full_range(...)"
-    completion_label_type_info = "fn(self: T) -> Self::IntoIter"
-    insert_text = "IntoIterRange::into_iter_full_range()"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
-    completion_label = "IntoIterRange::into_iter_range(...)"
-    completion_label_type_info = "fn(self: T, range: crate::ops::Range<u64>) -> Self::IntoIter"
-    insert_text = "IntoIterRange::into_iter_range(${1:range})"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
     completion_label = "LegacyHash"
     completion_label_path = "(use core::hash::LegacyHash)"
-    text_edits = ["""
-    use core::hash::LegacyHash;
-
-    """]
-
-    [[completions]]
-    completion_label = "LegacyHash::hash(...)"
-    completion_label_type_info = "fn(state: felt252, value: T) -> felt252"
-    insert_text = "LegacyHash::hash(${1:state}, ${2:value})"
     text_edits = ["""
     use core::hash::LegacyHash;
 
@@ -20309,26 +10905,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "LowerHex::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "LowerHex::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::LowerHex;
-
-    """]
-
-    [[completions]]
     completion_label = "LowerHexImpl"
     completion_label_path = "(use core::fmt::into_felt252_based::LowerHexImpl)"
-    text_edits = ["""
-    use core::fmt::into_felt252_based::LowerHexImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "LowerHexImpl::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "LowerHexImpl::fmt(${1:f})"
     text_edits = ["""
     use core::fmt::into_felt252_based::LowerHexImpl;
 
@@ -20359,15 +10937,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "MulAssign::mul_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "MulAssign::mul_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::MulAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "MulEq"
     completion_label_path = "(use core::traits::MulEq)"
     text_edits = ["""
@@ -20376,24 +10945,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "MulEq::mul_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "MulEq::mul_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::MulEq;
-
-    """]
-
-    [[completions]]
     completion_label = "MulHelper"
     completion_label_path = "(use core::internal::bounded_int::MulHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::MulHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "MulHelper::Result"
     text_edits = ["""
     use core::internal::bounded_int::MulHelper;
 
@@ -20424,94 +10977,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "MutableVecTrait::ElementType"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::allocate(...)"
-    completion_label_type_info = "fn(self: T) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::allocate()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::append(...)"
-    completion_label_type_info = "fn(self: T) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::append()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::at(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::at(${1:index})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::get(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> Option<StoragePath<Mutable<Self::ElementType>>>"
-    insert_text = "MutableVecTrait::get(${1:index})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::len(...)"
-    completion_label_type_info = "fn(self: T) -> u64"
-    insert_text = "MutableVecTrait::len()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::pop(...)"
-    completion_label_type_info = "fn(self: T) -> Option<Self::ElementType>"
-    insert_text = "MutableVecTrait::pop()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::push(...)"
-    completion_label_type_info = "fn(self: T, value: Self::ElementType) -> ()"
-    insert_text = "MutableVecTrait::push(${1:value})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "NegateHelper"
     completion_label_path = "(use core::internal::bounded_int::NegateHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::NegateHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "NegateHelper::Result"
-    text_edits = ["""
-    use core::internal::bounded_int::NegateHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "NegateHelper::negate(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Result"
-    insert_text = "NegateHelper::negate()"
     text_edits = ["""
     use core::internal::bounded_int::NegateHelper;
 
@@ -20566,60 +11033,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "NullableImpl::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> Nullable<@T> nopanic"
-    insert_text = "NullableImpl::as_snapshot()"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref(...)"
-    completion_label_type_info = "fn(nullable: Nullable<T>) -> T"
-    insert_text = "NullableImpl::deref(${1:nullable})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref_or(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, default: T) -> T"
-    insert_text = "NullableImpl::deref_or(${1:default})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref_or_else(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, f: F) -> T"
-    insert_text = "NullableImpl::deref_or_else(${1:f})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::is_null(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> bool"
-    insert_text = "NullableImpl::is_null()"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::new(...)"
-    completion_label_type_info = "fn(value: T) -> Nullable<T>"
-    insert_text = "NullableImpl::new(${1:value})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "NumericLiteral"
     completion_label_path = "(use core::integer::NumericLiteral)"
     text_edits = ["""
@@ -20652,33 +11065,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "One::is_non_one(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "One::is_non_one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
-    completion_label = "One::is_one(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "One::is_one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
-    completion_label = "One::one(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "One::one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
     completion_label = "OptionIter"
     completion_label_path = "(use core::option::OptionIter)"
     text_edits = ["""
@@ -20703,215 +11089,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "OptionTraitImpl::and(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<U>) -> Option<U>"
-    insert_text = "OptionTraitImpl::and(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::and_then(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTraitImpl::and_then(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::expect(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: felt252) -> T"
-    insert_text = "OptionTraitImpl::expect(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::filter(...)"
-    completion_label_type_info = "fn(self: Option<T>, predicate: P) -> Option<T>"
-    insert_text = "OptionTraitImpl::filter(${1:predicate})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::flatten(...)"
-    completion_label_type_info = "fn(self: Option<Option<T>>) -> Option<T>"
-    insert_text = "OptionTraitImpl::flatten()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_none(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTraitImpl::is_none()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_none_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTraitImpl::is_none_or(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_some(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTraitImpl::is_some()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_some_and(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTraitImpl::is_some_and(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTraitImpl::map(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: U, f: F) -> U"
-    insert_text = "OptionTraitImpl::map_or(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: D, f: F) -> U"
-    insert_text = "OptionTraitImpl::map_or_else(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::ok_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: E) -> Result<T, E>"
-    insert_text = "OptionTraitImpl::ok_or(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::ok_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: F) -> Result<T, E>"
-    insert_text = "OptionTraitImpl::ok_or_else(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::or(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::or(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<T>"
-    insert_text = "OptionTraitImpl::or_else(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::take(...)"
-    completion_label_type_info = "fn(ref self: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::take()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTraitImpl::unwrap()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: T) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or(${1:default})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or_default()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or_else(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::xor(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::xor(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "OverflowingAdd"
     completion_label_path = "(use core::num::traits::OverflowingAdd)"
-    text_edits = ["""
-    use core::num::traits::OverflowingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "OverflowingAdd::overflowing_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingAdd::overflowing_add(${1:v})"
     text_edits = ["""
     use core::num::traits::OverflowingAdd;
 
@@ -20926,26 +11105,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "OverflowingMul::overflowing_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingMul::overflowing_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::OverflowingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "OverflowingSub"
     completion_label_path = "(use core::num::traits::OverflowingSub)"
-    text_edits = ["""
-    use core::num::traits::OverflowingSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "OverflowingSub::overflowing_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingSub::overflowing_sub(${1:v})"
     text_edits = ["""
     use core::num::traits::OverflowingSub;
 
@@ -20968,15 +11129,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "PedersenImpl::new(...)"
-    completion_label_type_info = "fn(base: felt252) -> HashState"
-    insert_text = "PedersenImpl::new(${1:base})"
-    text_edits = ["""
-    use core::pedersen::PedersenImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "PedersenTrait"
     completion_label_path = "(use core::pedersen::PedersenTrait)"
     text_edits = ["""
@@ -20985,26 +11137,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "PedersenTrait::new(...)"
-    completion_label_type_info = "fn(base: felt252) -> HashState"
-    insert_text = "PedersenTrait::new(${1:base})"
-    text_edits = ["""
-    use core::pedersen::PedersenTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "PeekableTrait"
     completion_label_path = "(use core::iter::PeekableTrait)"
-    text_edits = ["""
-    use core::iter::PeekableTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "PeekableTrait::peek(...)"
-    completion_label_type_info = "fn(ref self: Peekable<I, IterI::Item>) -> Option<IterI::Item>"
-    insert_text = "PeekableTrait::peek()"
     text_edits = ["""
     use core::iter::PeekableTrait;
 
@@ -21027,15 +11161,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "PendingStoragePathTrait::new(...)"
-    completion_label_type_info = "fn(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T>"
-    insert_text = "PendingStoragePathTrait::new(${1:storage_path}, ${2:pending_key})"
-    text_edits = ["""
-    use starknet::storage::PendingStoragePathTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Poseidon"
     completion_label_path = "(use core::poseidon::Poseidon)"
     text_edits = ["""
@@ -21052,26 +11177,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "PoseidonImpl::new(...)"
-    completion_label_type_info = "fn() -> HashState"
-    insert_text = "PoseidonImpl::new()"
-    text_edits = ["""
-    use core::poseidon::PoseidonImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "PoseidonTrait"
     completion_label_path = "(use core::poseidon::PoseidonTrait)"
-    text_edits = ["""
-    use core::poseidon::PoseidonTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "PoseidonTrait::new(...)"
-    completion_label_type_info = "fn() -> HashState"
-    insert_text = "PoseidonTrait::new()"
     text_edits = ["""
     use core::poseidon::PoseidonTrait;
 
@@ -21086,22 +11193,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Pow::Output"
-    text_edits = ["""
-    use core::num::traits::Pow;
-
-    """]
-
-    [[completions]]
-    completion_label = "Pow::pow(...)"
-    completion_label_type_info = "fn(self: Base, exp: Exp) -> Self::Output"
-    insert_text = "Pow::pow(${1:exp})"
-    text_edits = ["""
-    use core::num::traits::Pow;
-
-    """]
-
-    [[completions]]
     completion_label = "Product"
     completion_label_path = "(use core::iter::Product)"
     text_edits = ["""
@@ -21110,35 +11201,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Product::product(...)"
-    completion_label_type_info = "fn(iter: I) -> A"
-    insert_text = "Product::product(${1:iter})"
-    text_edits = ["""
-    use core::iter::Product;
-
-    """]
-
-    [[completions]]
     completion_label = "QM31Trait"
     completion_label_path = "(use core::qm31::QM31Trait)"
-    text_edits = ["""
-    use core::qm31::QM31Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "QM31Trait::new(...)"
-    completion_label_type_info = "fn(w0: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w1: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w2: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w3: crate::internal::bounded_int::BoundedInt<0, 2147483646>) -> qm31"
-    insert_text = "QM31Trait::new(${1:w0}, ${2:w1}, ${3:w2}, ${4:w3})"
-    text_edits = ["""
-    use core::qm31::QM31Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "QM31Trait::unpack(...)"
-    completion_label_type_info = "fn(self: qm31) -> [crate::internal::bounded_int::BoundedInt<0, 2147483646>; 4]"
-    insert_text = "QM31Trait::unpack()"
     text_edits = ["""
     use core::qm31::QM31Trait;
 
@@ -21193,24 +11257,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "RangeInclusiveTrait::contains(...)"
-    completion_label_type_info = "fn(self: @RangeInclusive<T>, item: @T) -> bool"
-    insert_text = "RangeInclusiveTrait::contains(${1:item})"
-    text_edits = ["""
-    use core::ops::RangeInclusiveTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "RangeInclusiveTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @RangeInclusive<T>) -> bool"
-    insert_text = "RangeInclusiveTrait::is_empty()"
-    text_edits = ["""
-    use core::ops::RangeInclusiveTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "RangeIterator"
     completion_label_path = "(use core::ops::RangeIterator)"
     text_edits = ["""
@@ -21227,24 +11273,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "RangeTrait::contains(...)"
-    completion_label_type_info = "fn(self: @Range<T>, item: @T) -> bool"
-    insert_text = "RangeTrait::contains(${1:item})"
-    text_edits = ["""
-    use core::ops::RangeTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "RangeTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @Range<T>) -> bool"
-    insert_text = "RangeTrait::is_empty()"
-    text_edits = ["""
-    use core::ops::RangeTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "RemAssign"
     completion_label_path = "(use core::ops::RemAssign)"
     text_edits = ["""
@@ -21253,26 +11281,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "RemAssign::rem_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "RemAssign::rem_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::RemAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "RemEq"
     completion_label_path = "(use core::traits::RemEq)"
-    text_edits = ["""
-    use core::traits::RemEq;
-
-    """]
-
-    [[completions]]
-    completion_label = "RemEq::rem_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "RemEq::rem_eq(${1:other})"
     text_edits = ["""
     use core::traits::RemEq;
 
@@ -21295,206 +11305,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "ResultTraitImpl::and(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<U, E>) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::and(${1:other})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::and_then(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: F) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::and_then(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<E>"
-    insert_text = "ResultTraitImpl::err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::expect(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> T"
-    insert_text = "ResultTraitImpl::expect(${1:err})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::expect_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> E"
-    insert_text = "ResultTraitImpl::expect_err(${1:err})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::into_is_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::into_is_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::into_is_ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::into_is_ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::is_err(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::is_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::is_ok(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::is_ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::map(${1:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::map_err(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: U, f: F) -> U"
-    insert_text = "ResultTraitImpl::map_or(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: D, f: F) -> U"
-    insert_text = "ResultTraitImpl::map_or_else(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<T>"
-    insert_text = "ResultTraitImpl::ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<T, F>) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::or(${1:other})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::or_else(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTraitImpl::unwrap()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> E"
-    insert_text = "ResultTraitImpl::unwrap_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: T) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or(${1:default})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or_default()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or_else(${1:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SaturatingAdd"
     completion_label_path = "(use core::num::traits::SaturatingAdd)"
-    text_edits = ["""
-    use core::num::traits::SaturatingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "SaturatingAdd::saturating_add(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingAdd::saturating_add(${1:other})"
     text_edits = ["""
     use core::num::traits::SaturatingAdd;
 
@@ -21509,26 +11321,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "SaturatingMul::saturating_mul(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingMul::saturating_mul(${1:other})"
-    text_edits = ["""
-    use core::num::traits::SaturatingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "SaturatingSub"
     completion_label_path = "(use core::num::traits::SaturatingSub)"
-    text_edits = ["""
-    use core::num::traits::SaturatingSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "SaturatingSub::saturating_sub(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingSub::saturating_sub(${1:other})"
     text_edits = ["""
     use core::num::traits::SaturatingSub;
 
@@ -21543,33 +11337,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Secp256PointTrait::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256PointTrait::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256PointTrait::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256PointTrait::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256PointTrait::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256PointTrait::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256Trait"
     completion_label_path = "(use starknet::secp256_trait::Secp256Trait)"
     text_edits = ["""
@@ -21578,80 +11345,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Secp256Trait::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256Trait::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256Trait::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256Trait::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256Trait::secp256_ec_new_syscall(${1:x}, ${2:y})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256k1Impl"
     completion_label_path = "(use starknet::secp256k1::Secp256k1Impl)"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256k1Impl::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256k1Impl::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256k1Impl::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256k1Impl::secp256_ec_new_syscall(${1:x}, ${2:y})"
     text_edits = ["""
     use starknet::secp256k1::Secp256k1Impl;
 
@@ -21674,71 +11369,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Secp256k1PointImpl::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1PointImpl::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1PointImpl::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256r1Impl"
     completion_label_path = "(use starknet::secp256r1::Secp256r1Impl)"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256r1Impl::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256r1Impl::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256r1Impl::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256r1Impl::secp256_ec_new_syscall(${1:x}, ${2:y})"
     text_edits = ["""
     use starknet::secp256r1::Secp256r1Impl;
 
@@ -21761,33 +11393,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Secp256r1PointImpl::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1PointImpl::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1PointImpl::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SegmentArena"
     completion_label_path = "(use core::SegmentArena)"
     text_edits = ["""
@@ -21798,24 +11403,6 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "SerdeImpl"
     completion_label_path = "(use core::serde::into_felt252_based::SerdeImpl)"
-    text_edits = ["""
-    use core::serde::into_felt252_based::SerdeImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SerdeImpl::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "SerdeImpl::deserialize(${1:serialized})"
-    text_edits = ["""
-    use core::serde::into_felt252_based::SerdeImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SerdeImpl::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "SerdeImpl::serialize(${1:output})"
     text_edits = ["""
     use core::serde::into_felt252_based::SerdeImpl;
 
@@ -21846,98 +11433,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "SpanImpl::at(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> @T"
-    insert_text = "SpanImpl::at(${1:index})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::get(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "SpanImpl::get(${1:index})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> bool"
-    insert_text = "SpanImpl::is_empty()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::len(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> u32"
-    insert_text = "SpanImpl::len()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::multi_pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanImpl::multi_pop_back()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::multi_pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanImpl::multi_pop_front()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T>"
-    insert_text = "SpanImpl::pop_back()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T> nopanic"
-    insert_text = "SpanImpl::pop_front()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::slice(...)"
-    completion_label_type_info = "fn(self: Span<T>, start: u32, length: u32) -> Span<T>"
-    insert_text = "SpanImpl::slice(${1:start}, ${2:length})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SpanIndex"
     completion_label_path = "(use core::array::SpanIndex)"
-    text_edits = ["""
-    use core::array::SpanIndex;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanIndex::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> V"
-    insert_text = "SpanIndex::index(${1:index})"
     text_edits = ["""
     use core::array::SpanIndex;
 
@@ -21960,22 +11457,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Sqrt::Target"
-    text_edits = ["""
-    use core::num::traits::Sqrt;
-
-    """]
-
-    [[completions]]
-    completion_label = "Sqrt::sqrt(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "Sqrt::sqrt()"
-    text_edits = ["""
-    use core::num::traits::Sqrt;
-
-    """]
-
-    [[completions]]
     completion_label = "SquashedFelt252Dict"
     completion_label_path = "(use core::dict::SquashedFelt252Dict)"
     text_edits = ["""
@@ -21992,15 +11473,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "SquashedFelt252DictImpl::into_entries(...)"
-    completion_label_type_info = "fn(self: SquashedFelt252Dict<T>) -> Array<(felt252, T, T)>"
-    insert_text = "SquashedFelt252DictImpl::into_entries()"
-    text_edits = ["""
-    use core::dict::SquashedFelt252DictImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SquashedFelt252DictTrait"
     completion_label_path = "(use core::dict::SquashedFelt252DictTrait)"
     text_edits = ["""
@@ -22009,33 +11481,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "SquashedFelt252DictTrait::into_entries(...)"
-    completion_label_type_info = "fn(self: SquashedFelt252Dict<T>) -> Array<(felt252, T, T)>"
-    insert_text = "SquashedFelt252DictTrait::into_entries()"
-    text_edits = ["""
-    use core::dict::SquashedFelt252DictTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "StorableStoragePointerReadAccess"
     completion_label_path = "(use starknet::storage::StorableStoragePointerReadAccess)"
-    text_edits = ["""
-    use starknet::storage::StorableStoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorableStoragePointerReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorableStoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorableStoragePointerReadAccess::read(...)"
-    completion_label_type_info = "fn(self: @T) -> Self::Value"
-    insert_text = "StorableStoragePointerReadAccess::read()"
     text_edits = ["""
     use starknet::storage::StorableStoragePointerReadAccess;
 
@@ -22058,40 +11505,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "StorageAsPath::Value"
-    text_edits = ["""
-    use starknet::storage::StorageAsPath;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPath::as_path(...)"
-    completion_label_type_info = "fn(self: @TMemberState) -> StoragePath<Self::Value>"
-    insert_text = "StorageAsPath::as_path()"
-    text_edits = ["""
-    use starknet::storage::StorageAsPath;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageAsPointer"
     completion_label_path = "(use starknet::storage::StorageAsPointer)"
-    text_edits = ["""
-    use starknet::storage::StorageAsPointer;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPointer::Value"
-    text_edits = ["""
-    use starknet::storage::StorageAsPointer;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPointer::as_ptr(...)"
-    completion_label_type_info = "fn(self: @TMemberState) -> StoragePointer0Offset<Self::Value>"
-    insert_text = "StorageAsPointer::as_ptr()"
     text_edits = ["""
     use starknet::storage::StorageAsPointer;
 
@@ -22122,54 +11537,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "StorageMapReadAccess::Key"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapReadAccess::read(...)"
-    completion_label_type_info = "fn(self: TMemberState, key: Self::Key) -> Self::Value"
-    insert_text = "StorageMapReadAccess::read(${1:key})"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageMapWriteAccess"
     completion_label_path = "(use starknet::storage::StorageMapWriteAccess)"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::Key"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::write(...)"
-    completion_label_type_info = "fn(self: TMemberState, key: Self::Key, value: Self::Value) -> ()"
-    insert_text = "StorageMapWriteAccess::write(${1:key}, ${2:value})"
     text_edits = ["""
     use starknet::storage::StorageMapWriteAccess;
 
@@ -22184,40 +11553,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "StorageNode::NodeType"
-    text_edits = ["""
-    use starknet::storage::StorageNode;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNode::storage_node(...)"
-    completion_label_type_info = "fn(self: StoragePath<T>) -> Self::NodeType"
-    insert_text = "StorageNode::storage_node()"
-    text_edits = ["""
-    use starknet::storage::StorageNode;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageNodeDeref"
     completion_label_path = "(use starknet::storage::StorageNodeDeref)"
-    text_edits = ["""
-    use starknet::storage::StorageNodeDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeDeref::Target"
-    text_edits = ["""
-    use starknet::storage::StorageNodeDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "StorageNodeDeref::deref()"
     text_edits = ["""
     use starknet::storage::StorageNodeDeref;
 
@@ -22232,40 +11569,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "StorageNodeMut::NodeType"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMut::storage_node_mut(...)"
-    completion_label_type_info = "fn(self: StoragePath<Mutable<T>>) -> Self::NodeType"
-    insert_text = "StorageNodeMut::storage_node_mut()"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMut;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageNodeMutDeref"
     completion_label_path = "(use starknet::storage::StorageNodeMutDeref)"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMutDeref::Target"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMutDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "StorageNodeMutDeref::deref()"
     text_edits = ["""
     use starknet::storage::StorageNodeMutDeref;
 
@@ -22288,40 +11593,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "StoragePathEntry::Key"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathEntry::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathEntry::entry(...)"
-    completion_label_type_info = "fn(self: C, key: Self::Key) -> StoragePath<Self::Value>"
-    insert_text = "StoragePathEntry::entry(${1:key})"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
     completion_label = "StoragePathMutableConversion"
     completion_label_path = "(use starknet::storage::StoragePathMutableConversion)"
-    text_edits = ["""
-    use starknet::storage::StoragePathMutableConversion;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathMutableConversion::as_non_mut(...)"
-    completion_label_type_info = "fn(self: StoragePath<Mutable<T>>) -> StoragePath<T>"
-    insert_text = "StoragePathMutableConversion::as_non_mut()"
     text_edits = ["""
     use starknet::storage::StoragePathMutableConversion;
 
@@ -22352,40 +11625,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "StoragePointerReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerReadAccess::read(...)"
-    completion_label_type_info = "fn(self: @T) -> Self::Value"
-    insert_text = "StoragePointerReadAccess::read()"
-    text_edits = ["""
-    use starknet::storage::StoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
     completion_label = "StoragePointerWriteAccess"
     completion_label_path = "(use starknet::storage::StoragePointerWriteAccess)"
-    text_edits = ["""
-    use starknet::storage::StoragePointerWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerWriteAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePointerWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerWriteAccess::write(...)"
-    completion_label_type_info = "fn(self: T, value: Self::Value) -> ()"
-    insert_text = "StoragePointerWriteAccess::write(${1:value})"
     text_edits = ["""
     use starknet::storage::StoragePointerWriteAccess;
 
@@ -22400,40 +11641,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "StorageTrait::BaseType"
-    text_edits = ["""
-    use starknet::storage::StorageTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTrait::storage(...)"
-    completion_label_type_info = "fn(self: FlattenedStorage<T>) -> Self::BaseType"
-    insert_text = "StorageTrait::storage()"
-    text_edits = ["""
-    use starknet::storage::StorageTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageTraitMut"
     completion_label_path = "(use starknet::storage::StorageTraitMut)"
-    text_edits = ["""
-    use starknet::storage::StorageTraitMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTraitMut::BaseType"
-    text_edits = ["""
-    use starknet::storage::StorageTraitMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTraitMut::storage_mut(...)"
-    completion_label_type_info = "fn(self: FlattenedStorage<Mutable<T>>) -> Self::BaseType"
-    insert_text = "StorageTraitMut::storage_mut()"
     text_edits = ["""
     use starknet::storage::StorageTraitMut;
 
@@ -22448,80 +11657,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "Store::read(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress) -> Result<T, Array<felt252>>"
-    insert_text = "Store::read(${1:address_domain}, ${2:base})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::read_at_offset(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8) -> Result<T, Array<felt252>>"
-    insert_text = "Store::read_at_offset(${1:address_domain}, ${2:base}, ${3:offset})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::scrub(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8) -> Result<(), Array<felt252>>"
-    insert_text = "Store::scrub(${1:address_domain}, ${2:base}, ${3:offset})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::size(...)"
-    completion_label_type_info = "fn() -> u8"
-    insert_text = "Store::size()"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::write(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, value: T) -> Result<(), Array<felt252>>"
-    insert_text = "Store::write(${1:address_domain}, ${2:base}, ${3:value})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::write_at_offset(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8, value: T) -> Result<(), Array<felt252>>"
-    insert_text = "Store::write_at_offset(${1:address_domain}, ${2:base}, ${3:offset}, ${4:value})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
     completion_label = "StorePacking"
     completion_label_path = "(use starknet::storage_access::StorePacking)"
-    text_edits = ["""
-    use starknet::storage_access::StorePacking;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorePacking::pack(...)"
-    completion_label_type_info = "fn(value: T) -> PackedT"
-    insert_text = "StorePacking::pack(${1:value})"
-    text_edits = ["""
-    use starknet::storage_access::StorePacking;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorePacking::unpack(...)"
-    completion_label_type_info = "fn(value: PackedT) -> T"
-    insert_text = "StorePacking::unpack(${1:value})"
     text_edits = ["""
     use starknet::storage_access::StorePacking;
 
@@ -22544,26 +11681,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "SubAssign::sub_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "SubAssign::sub_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::SubAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "SubEq"
     completion_label_path = "(use core::traits::SubEq)"
-    text_edits = ["""
-    use core::traits::SubEq;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubEq::sub_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "SubEq::sub_eq(${1:other})"
     text_edits = ["""
     use core::traits::SubEq;
 
@@ -22578,31 +11697,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "SubHelper::Result"
-    text_edits = ["""
-    use core::internal::bounded_int::SubHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointers"
     completion_label_path = "(use starknet::storage::SubPointers)"
-    text_edits = ["""
-    use starknet::storage::SubPointers;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointers::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointers;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointers::sub_pointers(...)"
-    completion_label_type_info = "fn(self: StoragePointer<T>) -> Self::SubPointersType"
-    insert_text = "SubPointers::sub_pointers()"
     text_edits = ["""
     use starknet::storage::SubPointers;
 
@@ -22617,40 +11713,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersDeref::Target"
-    text_edits = ["""
-    use starknet::storage::SubPointersDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "SubPointersDeref::deref()"
-    text_edits = ["""
-    use starknet::storage::SubPointersDeref;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointersForward"
     completion_label_path = "(use starknet::storage::SubPointersForward)"
-    text_edits = ["""
-    use starknet::storage::SubPointersForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersForward::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersForward::sub_pointers(...)"
-    completion_label_type_info = "fn(self: T) -> Self::SubPointersType"
-    insert_text = "SubPointersForward::sub_pointers()"
     text_edits = ["""
     use starknet::storage::SubPointersForward;
 
@@ -22665,40 +11729,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersMut::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMut::sub_pointers_mut(...)"
-    completion_label_type_info = "fn(self: StoragePointer<Mutable<T>>) -> Self::SubPointersType"
-    insert_text = "SubPointersMut::sub_pointers_mut()"
-    text_edits = ["""
-    use starknet::storage::SubPointersMut;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointersMutDeref"
     completion_label_path = "(use starknet::storage::SubPointersMutDeref)"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutDeref::Target"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "SubPointersMutDeref::deref()"
     text_edits = ["""
     use starknet::storage::SubPointersMutDeref;
 
@@ -22713,33 +11745,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersMutForward::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutForward::sub_pointers_mut(...)"
-    completion_label_type_info = "fn(self: T) -> Self::SubPointersType"
-    insert_text = "SubPointersMutForward::sub_pointers_mut()"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutForward;
-
-    """]
-
-    [[completions]]
     completion_label = "Sum"
     completion_label_path = "(use core::iter::Sum)"
-    text_edits = ["""
-    use core::iter::Sum;
-
-    """]
-
-    [[completions]]
-    completion_label = "Sum::sum(...)"
-    completion_label_type_info = "fn(iter: I) -> A"
-    insert_text = "Sum::sum(${1:iter})"
     text_edits = ["""
     use core::iter::Sum;
 
@@ -22762,26 +11769,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "SyscallResultTrait::unwrap_syscall(...)"
-    completion_label_type_info = "fn(self: Result<T, Array<felt252>>) -> T"
-    insert_text = "SyscallResultTrait::unwrap_syscall()"
-    text_edits = ["""
-    use starknet::SyscallResultTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "ToByteSpanTrait"
     completion_label_path = "(use core::byte_array::ToByteSpanTrait)"
-    text_edits = ["""
-    use core::byte_array::ToByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ToByteSpanTrait::span(...)"
-    completion_label_type_info = "fn(self: @C) -> ByteSpan"
-    insert_text = "ToByteSpanTrait::span()"
     text_edits = ["""
     use core::byte_array::ToByteSpanTrait;
 
@@ -22796,22 +11785,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "TrimMaxHelper::Target"
-    text_edits = ["""
-    use core::internal::bounded_int::TrimMaxHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "TrimMinHelper"
     completion_label_path = "(use core::internal::bounded_int::TrimMinHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::TrimMinHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "TrimMinHelper::Target"
     text_edits = ["""
     use core::internal::bounded_int::TrimMinHelper;
 
@@ -22852,15 +11827,6 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "U256IntoEthAddress"
     completion_label_path = "(use starknet::eth_address::U256IntoEthAddress)"
-    text_edits = ["""
-    use starknet::eth_address::U256IntoEthAddress;
-
-    """]
-
-    [[completions]]
-    completion_label = "U256IntoEthAddress::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "U256IntoEthAddress::into()"
     text_edits = ["""
     use starknet::eth_address::U256IntoEthAddress;
 
@@ -22915,58 +11881,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "VecTrait::ElementType"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::at(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> StoragePath<Self::ElementType>"
-    insert_text = "VecTrait::at(${1:index})"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::get(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> Option<StoragePath<Self::ElementType>>"
-    insert_text = "VecTrait::get(${1:index})"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::len(...)"
-    completion_label_type_info = "fn(self: T) -> u64"
-    insert_text = "VecTrait::len()"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "WideMul"
     completion_label_path = "(use core::num::traits::WideMul)"
-    text_edits = ["""
-    use core::num::traits::WideMul;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideMul::Target"
-    text_edits = ["""
-    use core::num::traits::WideMul;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideMul::wide_mul(...)"
-    completion_label_type_info = "fn(self: Lhs, other: Rhs) -> Self::Target"
-    insert_text = "WideMul::wide_mul(${1:other})"
     text_edits = ["""
     use core::num::traits::WideMul;
 
@@ -22981,33 +11897,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "WideSquare::Target"
-    text_edits = ["""
-    use core::num::traits::WideSquare;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideSquare::wide_square(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "WideSquare::wide_square()"
-    text_edits = ["""
-    use core::num::traits::WideSquare;
-
-    """]
-
-    [[completions]]
     completion_label = "WrappingAdd"
     completion_label_path = "(use core::num::traits::WrappingAdd)"
-    text_edits = ["""
-    use core::num::traits::WrappingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "WrappingAdd::wrapping_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingAdd::wrapping_add(${1:v})"
     text_edits = ["""
     use core::num::traits::WrappingAdd;
 
@@ -23022,15 +11913,6 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "WrappingMul::wrapping_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingMul::wrapping_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::WrappingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "WrappingSub"
     completion_label_path = "(use core::num::traits::WrappingSub)"
     text_edits = ["""
@@ -23039,44 +11921,8 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
-    completion_label = "WrappingSub::wrapping_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingSub::wrapping_sub(${1:v})"
-    text_edits = ["""
-    use core::num::traits::WrappingSub;
-
-    """]
-
-    [[completions]]
     completion_label = "Zero"
     completion_label_path = "(use core::num::traits::Zero)"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::is_non_zero(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "Zero::is_non_zero()"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::is_zero(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "Zero::is_zero()"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::zero(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "Zero::zero()"
     text_edits = ["""
     use core::num::traits::Zero;
 
@@ -25486,65 +14332,10 @@ fn no_text_after_statement() {
     completion_label = "Add"
 
     [[completions]]
-    completion_label = "Add::add(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Add::add(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Array"
 
     [[completions]]
     completion_label = "ArrayTrait"
-
-    [[completions]]
-    completion_label = "ArrayTrait::append(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, value: T) -> () nopanic"
-    insert_text = "ArrayTrait::append(${1:value})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::append_span(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, span: Span<T>) -> ()"
-    insert_text = "ArrayTrait::append_span(${1:span})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::at(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> @T"
-    insert_text = "ArrayTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::get(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "ArrayTrait::get(${1:index})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> bool"
-    insert_text = "ArrayTrait::is_empty()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::len(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> u32"
-    insert_text = "ArrayTrait::len()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::new(...)"
-    completion_label_type_info = "fn() -> Array<T> nopanic"
-    insert_text = "ArrayTrait::new()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Array<T>) -> Option<T> nopanic"
-    insert_text = "ArrayTrait::pop_front()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::pop_front_consume(...)"
-    completion_label_type_info = "fn(self: Array<T>) -> Option<(Array<T>, T)> nopanic"
-    insert_text = "ArrayTrait::pop_front_consume()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::span(...)"
-    completion_label_type_info = "fn(snapshot: @Array<T>) -> Span<T>"
-    insert_text = "ArrayTrait::span(${1:snapshot})"
 
     [[completions]]
     completion_label = "Box"
@@ -25553,81 +14344,16 @@ fn no_text_after_statement() {
     completion_label = "BoxTrait"
 
     [[completions]]
-    completion_label = "BoxTrait::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Box<T>) -> Box<@T> nopanic"
-    insert_text = "BoxTrait::as_snapshot()"
-
-    [[completions]]
-    completion_label = "BoxTrait::new(...)"
-    completion_label_type_info = "fn(value: T) -> Box<T> nopanic"
-    insert_text = "BoxTrait::new(${1:value})"
-
-    [[completions]]
-    completion_label = "BoxTrait::unbox(...)"
-    completion_label_type_info = "fn(self: Box<T>) -> T nopanic"
-    insert_text = "BoxTrait::unbox()"
-
-    [[completions]]
     completion_label = "ByteArray"
 
     [[completions]]
     completion_label = "ByteArrayTrait"
 
     [[completions]]
-    completion_label = "ByteArrayTrait::append(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, other: @ByteArray) -> ()"
-    insert_text = "ByteArrayTrait::append(${1:other})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_byte(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, byte: u8) -> ()"
-    insert_text = "ByteArrayTrait::append_byte(${1:byte})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_word(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayTrait::append_word(${1:word}, ${2:len})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::append_word_rev(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayTrait::append_word_rev(${1:word}, ${2:len})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::at(...)"
-    completion_label_type_info = "fn(self: @ByteArray, index: u32) -> Option<u8>"
-    insert_text = "ByteArrayTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::concat(...)"
-    completion_label_type_info = "fn(left: @ByteArray, right: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayTrait::concat(${1:left}, ${2:right})"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::len(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> u32"
-    insert_text = "ByteArrayTrait::len()"
-
-    [[completions]]
-    completion_label = "ByteArrayTrait::rev(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayTrait::rev()"
-
-    [[completions]]
     completion_label = "Bytes31Trait"
 
     [[completions]]
-    completion_label = "Bytes31Trait::at(...)"
-    completion_label_type_info = "fn(self: @bytes31, index: u32) -> u8"
-    insert_text = "Bytes31Trait::at(${1:index})"
-
-    [[completions]]
     completion_label = "Clone"
-
-    [[completions]]
-    completion_label = "Clone::clone(...)"
-    completion_label_type_info = "fn(self: @T) -> T"
-    insert_text = "Clone::clone()"
 
     [[completions]]
     completion_label = "Copy"
@@ -25636,44 +14362,16 @@ fn no_text_after_statement() {
     completion_label = "Default"
 
     [[completions]]
-    completion_label = "Default::default(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "Default::default()"
-
-    [[completions]]
     completion_label = "Deref"
-
-    [[completions]]
-    completion_label = "Deref::Target"
-
-    [[completions]]
-    completion_label = "Deref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "Deref::deref()"
 
     [[completions]]
     completion_label = "Destruct"
 
     [[completions]]
-    completion_label = "Destruct::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "Destruct::destruct()"
-
-    [[completions]]
     completion_label = "Div"
 
     [[completions]]
-    completion_label = "Div::div(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Div::div(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "DivRem"
-
-    [[completions]]
-    completion_label = "DivRem::div_rem(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: NonZero<T>) -> (T, T)"
-    insert_text = "DivRem::div_rem(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "Drop"
@@ -25685,176 +14383,25 @@ fn no_text_after_statement() {
     completion_label = "Felt252DictTrait"
 
     [[completions]]
-    completion_label = "Felt252DictTrait::entry(...)"
-    completion_label_type_info = "fn(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic"
-    insert_text = "Felt252DictTrait::entry(${1:key})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::get(...)"
-    completion_label_type_info = "fn(ref self: Felt252Dict<T>, key: felt252) -> T"
-    insert_text = "Felt252DictTrait::get(${1:key})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::insert(...)"
-    completion_label_type_info = "fn(ref self: Felt252Dict<T>, key: felt252, value: T) -> ()"
-    insert_text = "Felt252DictTrait::insert(${1:key}, ${2:value})"
-
-    [[completions]]
-    completion_label = "Felt252DictTrait::squash(...)"
-    completion_label_type_info = "fn(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic"
-    insert_text = "Felt252DictTrait::squash()"
-
-    [[completions]]
     completion_label = "Felt252DictValue"
-
-    [[completions]]
-    completion_label = "Felt252DictValue::zero_default(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "Felt252DictValue::zero_default()"
 
     [[completions]]
     completion_label = "FromIterator"
 
     [[completions]]
-    completion_label = "FromIterator::from_iter(...)"
-    completion_label_type_info = "fn(iter: I) -> T"
-    insert_text = "FromIterator::from_iter(${1:iter})"
-
-    [[completions]]
     completion_label = "Into"
-
-    [[completions]]
-    completion_label = "Into::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "Into::into()"
 
     [[completions]]
     completion_label = "IntoIterator"
 
     [[completions]]
-    completion_label = "IntoIterator::IntoIter"
-
-    [[completions]]
-    completion_label = "IntoIterator::into_iter(...)"
-    completion_label_type_info = "fn(self: T) -> Self::IntoIter"
-    insert_text = "IntoIterator::into_iter()"
-
-    [[completions]]
     completion_label = "Iterator"
-
-    [[completions]]
-    completion_label = "Iterator::Item"
-
-    [[completions]]
-    completion_label = "Iterator::advance_by(...)"
-    completion_label_type_info = "fn(ref self: T, n: u32) -> Result<(), NonZero<u32>>"
-    insert_text = "Iterator::advance_by(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::all(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> bool"
-    insert_text = "Iterator::all(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::any(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> bool"
-    insert_text = "Iterator::any(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::chain(...)"
-    completion_label_type_info = "fn(self: T, other: U) -> Chain<T, IntoIterU::IntoIter>"
-    insert_text = "Iterator::chain(${1:other})"
-
-    [[completions]]
-    completion_label = "Iterator::collect(...)"
-    completion_label_type_info = "fn(self: T) -> B"
-    insert_text = "Iterator::collect()"
-
-    [[completions]]
-    completion_label = "Iterator::count(...)"
-    completion_label_type_info = "fn(self: T) -> u32"
-    insert_text = "Iterator::count()"
-
-    [[completions]]
-    completion_label = "Iterator::enumerate(...)"
-    completion_label_type_info = "fn(self: T) -> Enumerate<T>"
-    insert_text = "Iterator::enumerate()"
-
-    [[completions]]
-    completion_label = "Iterator::filter(...)"
-    completion_label_type_info = "fn(self: T, predicate: P) -> Filter<T, P>"
-    insert_text = "Iterator::filter(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::find(...)"
-    completion_label_type_info = "fn(ref self: T, predicate: P) -> Option<Self::Item>"
-    insert_text = "Iterator::find(${1:predicate})"
-
-    [[completions]]
-    completion_label = "Iterator::fold(...)"
-    completion_label_type_info = "fn(self: T, init: B, f: F) -> B"
-    insert_text = "Iterator::fold(${1:init}, ${2:f})"
-
-    [[completions]]
-    completion_label = "Iterator::last(...)"
-    completion_label_type_info = "fn(self: T) -> Option<Self::Item>"
-    insert_text = "Iterator::last()"
-
-    [[completions]]
-    completion_label = "Iterator::map(...)"
-    completion_label_type_info = "fn(self: T, f: F) -> Map<T, F>"
-    insert_text = "Iterator::map(${1:f})"
-
-    [[completions]]
-    completion_label = "Iterator::next(...)"
-    completion_label_type_info = "fn(ref self: T) -> Option<Self::Item>"
-    insert_text = "Iterator::next()"
-
-    [[completions]]
-    completion_label = "Iterator::nth(...)"
-    completion_label_type_info = "fn(ref self: T, n: u32) -> Option<Self::Item>"
-    insert_text = "Iterator::nth(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::peekable(...)"
-    completion_label_type_info = "fn(self: T) -> Peekable<T, Self::Item>"
-    insert_text = "Iterator::peekable()"
-
-    [[completions]]
-    completion_label = "Iterator::product(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Item"
-    insert_text = "Iterator::product()"
-
-    [[completions]]
-    completion_label = "Iterator::sum(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Item"
-    insert_text = "Iterator::sum()"
-
-    [[completions]]
-    completion_label = "Iterator::take(...)"
-    completion_label_type_info = "fn(self: T, n: u32) -> Take<T>"
-    insert_text = "Iterator::take(${1:n})"
-
-    [[completions]]
-    completion_label = "Iterator::zip(...)"
-    completion_label_type_info = "fn(self: T, other: U) -> Zip<T, UIntoIter::IntoIter>"
-    insert_text = "Iterator::zip(${1:other})"
 
     [[completions]]
     completion_label = "Mul"
 
     [[completions]]
-    completion_label = "Mul::mul(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Mul::mul(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Neg"
-
-    [[completions]]
-    completion_label = "Neg::neg(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "Neg::neg(${1:a})"
 
     [[completions]]
     completion_label = "NonZero"
@@ -25866,45 +14413,10 @@ fn no_text_after_statement() {
     completion_label = "Not"
 
     [[completions]]
-    completion_label = "Not::not(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "Not::not(${1:a})"
-
-    [[completions]]
     completion_label = "Nullable"
 
     [[completions]]
     completion_label = "NullableTrait"
-
-    [[completions]]
-    completion_label = "NullableTrait::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> Nullable<@T> nopanic"
-    insert_text = "NullableTrait::as_snapshot()"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref(...)"
-    completion_label_type_info = "fn(nullable: Nullable<T>) -> T"
-    insert_text = "NullableTrait::deref(${1:nullable})"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref_or(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, default: T) -> T"
-    insert_text = "NullableTrait::deref_or(${1:default})"
-
-    [[completions]]
-    completion_label = "NullableTrait::deref_or_else(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, f: F) -> T"
-    insert_text = "NullableTrait::deref_or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "NullableTrait::is_null(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> bool"
-    insert_text = "NullableTrait::is_null()"
-
-    [[completions]]
-    completion_label = "NullableTrait::new(...)"
-    completion_label_type_info = "fn(value: T) -> Nullable<T>"
-    insert_text = "NullableTrait::new(${1:value})"
 
     [[completions]]
     completion_label = "Ok"
@@ -25916,125 +14428,10 @@ fn no_text_after_statement() {
     completion_label = "OptionTrait"
 
     [[completions]]
-    completion_label = "OptionTrait::and(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<U>) -> Option<U>"
-    insert_text = "OptionTrait::and(${1:optb})"
-
-    [[completions]]
-    completion_label = "OptionTrait::and_then(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTrait::and_then(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::expect(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: felt252) -> T"
-    insert_text = "OptionTrait::expect(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::filter(...)"
-    completion_label_type_info = "fn(self: Option<T>, predicate: P) -> Option<T>"
-    insert_text = "OptionTrait::filter(${1:predicate})"
-
-    [[completions]]
-    completion_label = "OptionTrait::flatten(...)"
-    completion_label_type_info = "fn(self: Option<Option<T>>) -> Option<T>"
-    insert_text = "OptionTrait::flatten()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_none(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTrait::is_none()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_none_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTrait::is_none_or(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_some(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTrait::is_some()"
-
-    [[completions]]
-    completion_label = "OptionTrait::is_some_and(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTrait::is_some_and(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTrait::map(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: U, f: F) -> U"
-    insert_text = "OptionTrait::map_or(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::map_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: D, f: F) -> U"
-    insert_text = "OptionTrait::map_or_else(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::ok_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: E) -> Result<T, E>"
-    insert_text = "OptionTrait::ok_or(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::ok_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: F) -> Result<T, E>"
-    insert_text = "OptionTrait::ok_or_else(${1:err})"
-
-    [[completions]]
-    completion_label = "OptionTrait::or(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::or(${1:optb})"
-
-    [[completions]]
-    completion_label = "OptionTrait::or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<T>"
-    insert_text = "OptionTrait::or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::take(...)"
-    completion_label_type_info = "fn(ref self: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::take()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTrait::unwrap()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: T) -> T"
-    insert_text = "OptionTrait::unwrap_or(${1:default})"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTrait::unwrap_or_default()"
-
-    [[completions]]
-    completion_label = "OptionTrait::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> T"
-    insert_text = "OptionTrait::unwrap_or_else(${1:f})"
-
-    [[completions]]
-    completion_label = "OptionTrait::xor(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTrait::xor(${1:optb})"
-
-    [[completions]]
     completion_label = "Panic"
 
     [[completions]]
     completion_label = "PanicDestruct"
-
-    [[completions]]
-    completion_label = "PanicDestruct::panic_destruct(...)"
-    completion_label_type_info = "fn(self: T, ref panic: Panic) -> () nopanic"
-    insert_text = "PanicDestruct::panic_destruct(${1:panic})"
 
     [[completions]]
     completion_label = "PanicResult"
@@ -26043,45 +14440,10 @@ fn no_text_after_statement() {
     completion_label = "PartialEq"
 
     [[completions]]
-    completion_label = "PartialEq::eq(...)"
-    completion_label_type_info = "fn(lhs: @T, rhs: @T) -> bool"
-    insert_text = "PartialEq::eq(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialEq::ne(...)"
-    completion_label_type_info = "fn(lhs: @T, rhs: @T) -> bool"
-    insert_text = "PartialEq::ne(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "PartialOrd"
 
     [[completions]]
-    completion_label = "PartialOrd::ge(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::ge(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::gt(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::gt(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::le(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::le(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
-    completion_label = "PartialOrd::lt(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> bool"
-    insert_text = "PartialOrd::lt(${1:lhs}, ${2:rhs})"
-
-    [[completions]]
     completion_label = "Rem"
-
-    [[completions]]
-    completion_label = "Rem::rem(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Rem::rem(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "Result"
@@ -26090,122 +14452,7 @@ fn no_text_after_statement() {
     completion_label = "ResultTrait"
 
     [[completions]]
-    completion_label = "ResultTrait::and(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<U, E>) -> Result<U, E>"
-    insert_text = "ResultTrait::and(${1:other})"
-
-    [[completions]]
-    completion_label = "ResultTrait::and_then(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: F) -> Result<U, E>"
-    insert_text = "ResultTrait::and_then(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<E>"
-    insert_text = "ResultTrait::err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::expect(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> T"
-    insert_text = "ResultTrait::expect(${1:err})"
-
-    [[completions]]
-    completion_label = "ResultTrait::expect_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> E"
-    insert_text = "ResultTrait::expect_err(${1:err})"
-
-    [[completions]]
-    completion_label = "ResultTrait::into_is_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTrait::into_is_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::into_is_ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTrait::into_is_ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::is_err(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTrait::is_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::is_ok(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTrait::is_ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::map(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> Result<U, E>"
-    insert_text = "ResultTrait::map(${1:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTrait::map_err(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: U, f: F) -> U"
-    insert_text = "ResultTrait::map_or(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::map_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: D, f: F) -> U"
-    insert_text = "ResultTrait::map_or_else(${1:default}, ${2:f})"
-
-    [[completions]]
-    completion_label = "ResultTrait::ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<T>"
-    insert_text = "ResultTrait::ok()"
-
-    [[completions]]
-    completion_label = "ResultTrait::or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<T, F>) -> Result<T, F>"
-    insert_text = "ResultTrait::or(${1:other})"
-
-    [[completions]]
-    completion_label = "ResultTrait::or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTrait::or_else(${1:op})"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTrait::unwrap()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> E"
-    insert_text = "ResultTrait::unwrap_err()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: T) -> T"
-    insert_text = "ResultTrait::unwrap_or(${1:default})"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTrait::unwrap_or_default()"
-
-    [[completions]]
-    completion_label = "ResultTrait::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> T"
-    insert_text = "ResultTrait::unwrap_or_else(${1:f})"
-
-    [[completions]]
     completion_label = "Serde"
-
-    [[completions]]
-    completion_label = "Serde::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "Serde::deserialize(${1:serialized})"
-
-    [[completions]]
-    completion_label = "Serde::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "Serde::serialize(${1:output})"
 
     [[completions]]
     completion_label = "Some"
@@ -26217,57 +14464,7 @@ fn no_text_after_statement() {
     completion_label = "SpanTrait"
 
     [[completions]]
-    completion_label = "SpanTrait::at(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> @T"
-    insert_text = "SpanTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "SpanTrait::get(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "SpanTrait::get(${1:index})"
-
-    [[completions]]
-    completion_label = "SpanTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> bool"
-    insert_text = "SpanTrait::is_empty()"
-
-    [[completions]]
-    completion_label = "SpanTrait::len(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> u32"
-    insert_text = "SpanTrait::len()"
-
-    [[completions]]
-    completion_label = "SpanTrait::multi_pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanTrait::multi_pop_back()"
-
-    [[completions]]
-    completion_label = "SpanTrait::multi_pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanTrait::multi_pop_front()"
-
-    [[completions]]
-    completion_label = "SpanTrait::pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T>"
-    insert_text = "SpanTrait::pop_back()"
-
-    [[completions]]
-    completion_label = "SpanTrait::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T> nopanic"
-    insert_text = "SpanTrait::pop_front()"
-
-    [[completions]]
-    completion_label = "SpanTrait::slice(...)"
-    completion_label_type_info = "fn(self: Span<T>, start: u32, length: u32) -> Span<T>"
-    insert_text = "SpanTrait::slice(${1:start}, ${2:length})"
-
-    [[completions]]
     completion_label = "Sub"
-
-    [[completions]]
-    completion_label = "Sub::sub(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "Sub::sub(${1:lhs}, ${2:rhs})"
 
     [[completions]]
     completion_label = "System"
@@ -26276,17 +14473,7 @@ fn no_text_after_statement() {
     completion_label = "ToSpanTrait"
 
     [[completions]]
-    completion_label = "ToSpanTrait::span(...)"
-    completion_label_type_info = "fn(self: @C) -> Span<T>"
-    insert_text = "ToSpanTrait::span()"
-
-    [[completions]]
     completion_label = "TryInto"
-
-    [[completions]]
-    completion_label = "TryInto::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "TryInto::try_into()"
 
     [[completions]]
     completion_label = "assert(...)"
@@ -26376,33 +14563,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "AccountContract::__execute__(...)"
-    completion_label_type_info = "fn(ref self: TContractState, calls: Array<Call>) -> Array<Span<felt252>>"
-    insert_text = "AccountContract::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContract::__validate__(...)"
-    completion_label_type_info = "fn(ref self: TContractState, calls: Array<Call>) -> felt252"
-    insert_text = "AccountContract::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContract::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: @TContractState, class_hash: felt252) -> felt252"
-    insert_text = "AccountContract::__validate_declare__(${1:class_hash})"
-    text_edits = ["""
-    use starknet::AccountContract;
-
-    """]
-
-    [[completions]]
     completion_label = "AccountContractDispatcher"
     completion_label_path = "(use starknet::account::AccountContractDispatcher)"
     text_edits = ["""
@@ -26429,33 +14589,6 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "AccountContractDispatcherTrait"
     completion_label_path = "(use starknet::account::AccountContractDispatcherTrait)"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__execute__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Array<Span<felt252>>"
-    insert_text = "AccountContractDispatcherTrait::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__validate__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> felt252"
-    insert_text = "AccountContractDispatcherTrait::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractDispatcherTrait::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: T, class_hash: felt252) -> felt252"
-    insert_text = "AccountContractDispatcherTrait::__validate_declare__(${1:class_hash})"
     text_edits = ["""
     use starknet::account::AccountContractDispatcherTrait;
 
@@ -26518,33 +14651,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__execute__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Result<Array<Span<felt252>>, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__execute__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__validate__(...)"
-    completion_label_type_info = "fn(self: T, calls: Array<Call>) -> Result<felt252, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__validate__(${1:calls})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AccountContractSafeDispatcherTrait::__validate_declare__(...)"
-    completion_label_type_info = "fn(self: T, class_hash: felt252) -> Result<felt252, Array<felt252>>"
-    insert_text = "AccountContractSafeDispatcherTrait::__validate_declare__(${1:class_hash})"
-    text_edits = ["""
-    use starknet::account::AccountContractSafeDispatcherTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcher"
     completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcher)"
     text_edits = ["""
@@ -26577,15 +14683,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "AddAssign::add_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "AddAssign::add_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::AddAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "AddEq"
     completion_label_path = "(use core::traits::AddEq)"
     text_edits = ["""
@@ -26594,24 +14691,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "AddEq::add_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "AddEq::add_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::AddEq;
-
-    """]
-
-    [[completions]]
     completion_label = "AddHelper"
     completion_label_path = "(use core::internal::bounded_int::AddHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::AddHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddHelper::Result"
     text_edits = ["""
     use core::internal::bounded_int::AddHelper;
 
@@ -26634,44 +14715,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "AddInputResultImpl::done(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>) -> CircuitData<C>"
-    insert_text = "AddInputResultImpl::done()"
-    text_edits = ["""
-    use core::circuit::AddInputResultImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultImpl::next(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>, value: Value) -> AddInputResult<C>"
-    insert_text = "AddInputResultImpl::next(${1:value})"
-    text_edits = ["""
-    use core::circuit::AddInputResultImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "AddInputResultTrait"
     completion_label_path = "(use core::circuit::AddInputResultTrait)"
-    text_edits = ["""
-    use core::circuit::AddInputResultTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultTrait::done(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>) -> CircuitData<C>"
-    insert_text = "AddInputResultTrait::done()"
-    text_edits = ["""
-    use core::circuit::AddInputResultTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "AddInputResultTrait::next(...)"
-    completion_label_type_info = "fn(self: AddInputResult<C>, value: Value) -> AddInputResult<C>"
-    insert_text = "AddInputResultTrait::next(${1:value})"
     text_edits = ["""
     use core::circuit::AddInputResultTrait;
 
@@ -26694,107 +14739,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "AppendFormattedToByteArray::append_formatted_to_byte_array(...)"
-    completion_label_type_info = "fn(self: @T, ref byte_array: ByteArray, base: NonZero<T>) -> ()"
-    insert_text = "AppendFormattedToByteArray::append_formatted_to_byte_array(${1:byte_array}, ${2:base})"
-    text_edits = ["""
-    use core::to_byte_array::AppendFormattedToByteArray;
-
-    """]
-
-    [[completions]]
     completion_label = "ArrayImpl"
     completion_label_path = "(use core::array::ArrayImpl)"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::append(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, value: T) -> () nopanic"
-    insert_text = "ArrayImpl::append(${1:value})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::append_span(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, span: Span<T>) -> ()"
-    insert_text = "ArrayImpl::append_span(${1:span})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::at(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> @T"
-    insert_text = "ArrayImpl::at(${1:index})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::get(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "ArrayImpl::get(${1:index})"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> bool"
-    insert_text = "ArrayImpl::is_empty()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::len(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> u32"
-    insert_text = "ArrayImpl::len()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::new(...)"
-    completion_label_type_info = "fn() -> Array<T> nopanic"
-    insert_text = "ArrayImpl::new()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Array<T>) -> Option<T> nopanic"
-    insert_text = "ArrayImpl::pop_front()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::pop_front_consume(...)"
-    completion_label_type_info = "fn(self: Array<T>) -> Option<(Array<T>, T)> nopanic"
-    insert_text = "ArrayImpl::pop_front_consume()"
-    text_edits = ["""
-    use core::array::ArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ArrayImpl::span(...)"
-    completion_label_type_info = "fn(snapshot: @Array<T>) -> Span<T>"
-    insert_text = "ArrayImpl::span(${1:snapshot})"
     text_edits = ["""
     use core::array::ArrayImpl;
 
@@ -26833,26 +14779,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "BitAnd::bitand(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitAnd::bitand(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitAnd;
-
-    """]
-
-    [[completions]]
     completion_label = "BitNot"
     completion_label_path = "(use core::traits::BitNot)"
-    text_edits = ["""
-    use core::traits::BitNot;
-
-    """]
-
-    [[completions]]
-    completion_label = "BitNot::bitnot(...)"
-    completion_label_type_info = "fn(a: T) -> T"
-    insert_text = "BitNot::bitnot(${1:a})"
     text_edits = ["""
     use core::traits::BitNot;
 
@@ -26867,15 +14795,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "BitOr::bitor(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitOr::bitor(${1:lhs}, ${2:rhs})"
-    text_edits = ["""
-    use core::traits::BitOr;
-
-    """]
-
-    [[completions]]
     completion_label = "BitSize"
     completion_label_path = "(use core::num::traits::BitSize)"
     text_edits = ["""
@@ -26884,26 +14803,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "BitSize::bits(...)"
-    completion_label_type_info = "fn() -> u32"
-    insert_text = "BitSize::bits()"
-    text_edits = ["""
-    use core::num::traits::BitSize;
-
-    """]
-
-    [[completions]]
     completion_label = "BitXor"
     completion_label_path = "(use core::traits::BitXor)"
-    text_edits = ["""
-    use core::traits::BitXor;
-
-    """]
-
-    [[completions]]
-    completion_label = "BitXor::bitxor(...)"
-    completion_label_type_info = "fn(lhs: T, rhs: T) -> T"
-    insert_text = "BitXor::bitxor(${1:lhs}, ${2:rhs})"
     text_edits = ["""
     use core::traits::BitXor;
 
@@ -26934,26 +14835,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "BoolImpl::then_some(...)"
-    completion_label_type_info = "fn(self: bool, t: T) -> Option<T> nopanic"
-    insert_text = "BoolImpl::then_some(${1:t})"
-    text_edits = ["""
-    use core::boolean::BoolImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "BoolTrait"
     completion_label_path = "(use core::boolean::BoolTrait)"
-    text_edits = ["""
-    use core::boolean::BoolTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoolTrait::then_some(...)"
-    completion_label_type_info = "fn(self: bool, t: T) -> Option<T> nopanic"
-    insert_text = "BoolTrait::then_some(${1:t})"
     text_edits = ["""
     use core::boolean::BoolTrait;
 
@@ -26968,22 +14851,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Bounded::MAX"
-    completion_label_type_info = "T"
-    text_edits = ["""
-    use core::num::traits::Bounded;
-
-    """]
-
-    [[completions]]
-    completion_label = "Bounded::MIN"
-    completion_label_type_info = "T"
-    text_edits = ["""
-    use core::num::traits::Bounded;
-
-    """]
-
-    [[completions]]
     completion_label = "BoundedInt"
     completion_label_path = "(use core::integer::BoundedInt)"
     text_edits = ["""
@@ -26992,53 +14859,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "BoundedInt::max(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "BoundedInt::max()"
-    text_edits = ["""
-    use core::integer::BoundedInt;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoundedInt::min(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "BoundedInt::min()"
-    text_edits = ["""
-    use core::integer::BoundedInt;
-
-    """]
-
-    [[completions]]
     completion_label = "BoxImpl"
     completion_label_path = "(use core::box::BoxImpl)"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Box<T>) -> Box<@T> nopanic"
-    insert_text = "BoxImpl::as_snapshot()"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::new(...)"
-    completion_label_type_info = "fn(value: T) -> Box<T> nopanic"
-    insert_text = "BoxImpl::new(${1:value})"
-    text_edits = ["""
-    use core::box::BoxImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "BoxImpl::unbox(...)"
-    completion_label_type_info = "fn(self: Box<T>) -> T nopanic"
-    insert_text = "BoxImpl::unbox()"
     text_edits = ["""
     use core::box::BoxImpl;
 
@@ -27055,78 +14877,6 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "ByteArrayImpl"
     completion_label_path = "(use core::byte_array::ByteArrayImpl)"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, other: @ByteArray) -> ()"
-    insert_text = "ByteArrayImpl::append(${1:other})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_byte(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, byte: u8) -> ()"
-    insert_text = "ByteArrayImpl::append_byte(${1:byte})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_word(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayImpl::append_word(${1:word}, ${2:len})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::append_word_rev(...)"
-    completion_label_type_info = "fn(ref self: ByteArray, word: felt252, len: u32) -> ()"
-    insert_text = "ByteArrayImpl::append_word_rev(${1:word}, ${2:len})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::at(...)"
-    completion_label_type_info = "fn(self: @ByteArray, index: u32) -> Option<u8>"
-    insert_text = "ByteArrayImpl::at(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::concat(...)"
-    completion_label_type_info = "fn(left: @ByteArray, right: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayImpl::concat(${1:left}, ${2:right})"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::len(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> u32"
-    insert_text = "ByteArrayImpl::len()"
-    text_edits = ["""
-    use core::byte_array::ByteArrayImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteArrayImpl::rev(...)"
-    completion_label_type_info = "fn(self: @ByteArray) -> ByteArray"
-    insert_text = "ByteArrayImpl::rev()"
     text_edits = ["""
     use core::byte_array::ByteArrayImpl;
 
@@ -27157,42 +14907,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "ByteSpanImpl::get(...)"
-    completion_label_type_info = "fn(self: @ByteSpan, index: I) -> Option<TGet::Output>"
-    insert_text = "ByteSpanImpl::get(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> bool"
-    insert_text = "ByteSpanImpl::is_empty()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::len(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> u32"
-    insert_text = "ByteSpanImpl::len()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanImpl::to_byte_array(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> ByteArray"
-    insert_text = "ByteSpanImpl::to_byte_array()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "ByteSpanIter"
     completion_label_path = "(use core::byte_array::ByteSpanIter)"
     text_edits = ["""
@@ -27209,53 +14923,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "ByteSpanTrait::get(...)"
-    completion_label_type_info = "fn(self: @ByteSpan, index: I) -> Option<TGet::Output>"
-    insert_text = "ByteSpanTrait::get(${1:index})"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> bool"
-    insert_text = "ByteSpanTrait::is_empty()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::len(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> u32"
-    insert_text = "ByteSpanTrait::len()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ByteSpanTrait::to_byte_array(...)"
-    completion_label_type_info = "fn(self: ByteSpan) -> ByteArray"
-    insert_text = "ByteSpanTrait::to_byte_array()"
-    text_edits = ["""
-    use core::byte_array::ByteSpanTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Bytes31Impl"
     completion_label_path = "(use core::bytes_31::Bytes31Impl)"
-    text_edits = ["""
-    use core::bytes_31::Bytes31Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Bytes31Impl::at(...)"
-    completion_label_type_info = "fn(self: @bytes31, index: u32) -> u8"
-    insert_text = "Bytes31Impl::at(${1:index})"
     text_edits = ["""
     use core::bytes_31::Bytes31Impl;
 
@@ -27278,15 +14947,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "CheckedAdd::checked_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedAdd::checked_add(${1:v})"
-    text_edits = ["""
-    use core::num::traits::CheckedAdd;
-
-    """]
-
-    [[completions]]
     completion_label = "CheckedMul"
     completion_label_path = "(use core::num::traits::CheckedMul)"
     text_edits = ["""
@@ -27295,26 +14955,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "CheckedMul::checked_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedMul::checked_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::CheckedMul;
-
-    """]
-
-    [[completions]]
     completion_label = "CheckedSub"
     completion_label_path = "(use core::num::traits::CheckedSub)"
-    text_edits = ["""
-    use core::num::traits::CheckedSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "CheckedSub::checked_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> Option<T>"
-    insert_text = "CheckedSub::checked_sub(${1:v})"
     text_edits = ["""
     use core::num::traits::CheckedSub;
 
@@ -27331,13 +14973,6 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "CircuitDefinition"
     completion_label_path = "(use core::circuit::CircuitDefinition)"
-    text_edits = ["""
-    use core::circuit::CircuitDefinition;
-
-    """]
-
-    [[completions]]
-    completion_label = "CircuitDefinition::CircuitType"
     text_edits = ["""
     use core::circuit::CircuitDefinition;
 
@@ -27392,26 +15027,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "CircuitInputs::new_inputs(...)"
-    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
-    insert_text = "CircuitInputs::new_inputs()"
-    text_edits = ["""
-    use core::circuit::CircuitInputs;
-
-    """]
-
-    [[completions]]
     completion_label = "CircuitInputsImpl"
     completion_label_path = "(use core::circuit::CircuitInputsImpl)"
-    text_edits = ["""
-    use core::circuit::CircuitInputsImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "CircuitInputsImpl::new_inputs(...)"
-    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
-    insert_text = "CircuitInputsImpl::new_inputs()"
     text_edits = ["""
     use core::circuit::CircuitInputsImpl;
 
@@ -27434,15 +15051,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "CircuitOutputsTrait::get_output(...)"
-    completion_label_type_info = "fn(self: Outputs, output: OutputElement) -> u384"
-    insert_text = "CircuitOutputsTrait::get_output(${1:output})"
-    text_edits = ["""
-    use core::circuit::CircuitOutputsTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "ClassHash"
     completion_label_path = "(use starknet::ClassHash)"
     text_edits = ["""
@@ -27453,15 +15061,6 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "ClassHashIntoFelt252"
     completion_label_path = "(use starknet::class_hash::ClassHashIntoFelt252)"
-    text_edits = ["""
-    use starknet::class_hash::ClassHashIntoFelt252;
-
-    """]
-
-    [[completions]]
-    completion_label = "ClassHashIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "ClassHashIntoFelt252::into()"
     text_edits = ["""
     use starknet::class_hash::ClassHashIntoFelt252;
 
@@ -27500,20 +15099,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "ConstrainHelper::HighT"
-    text_edits = ["""
-    use core::internal::bounded_int::ConstrainHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "ConstrainHelper::LowT"
-    text_edits = ["""
-    use core::internal::bounded_int::ConstrainHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "ContractAddress"
     completion_label_path = "(use starknet::ContractAddress)"
     text_edits = ["""
@@ -27524,15 +15109,6 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "ContractAddressIntoFelt252"
     completion_label_path = "(use starknet::contract_address::ContractAddressIntoFelt252)"
-    text_edits = ["""
-    use starknet::contract_address::ContractAddressIntoFelt252;
-
-    """]
-
-    [[completions]]
-    completion_label = "ContractAddressIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "ContractAddressIntoFelt252::into()"
     text_edits = ["""
     use starknet::contract_address::ContractAddressIntoFelt252;
 
@@ -27555,26 +15131,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Debug::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "Debug::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::Debug;
-
-    """]
-
-    [[completions]]
     completion_label = "DebugImpl"
     completion_label_path = "(use core::fmt::into_felt252_based::DebugImpl)"
-    text_edits = ["""
-    use core::fmt::into_felt252_based::DebugImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "DebugImpl::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "DebugImpl::fmt(${1:f})"
     text_edits = ["""
     use core::fmt::into_felt252_based::DebugImpl;
 
@@ -27597,22 +15155,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "DerefMut::Target"
-    text_edits = ["""
-    use core::ops::DerefMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "DerefMut::deref_mut(...)"
-    completion_label_type_info = "fn(ref self: T) -> Self::Target"
-    insert_text = "DerefMut::deref_mut()"
-    text_edits = ["""
-    use core::ops::DerefMut;
-
-    """]
-
-    [[completions]]
     completion_label = "DestructFailureGuarantee"
     completion_label_path = "(use core::circuit::DestructFailureGuarantee)"
     text_edits = ["""
@@ -27621,26 +15163,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "DestructFailureGuarantee::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "DestructFailureGuarantee::destruct()"
-    text_edits = ["""
-    use core::circuit::DestructFailureGuarantee;
-
-    """]
-
-    [[completions]]
     completion_label = "DestructOption"
     completion_label_path = "(use core::option::DestructOption)"
-    text_edits = ["""
-    use core::option::DestructOption;
-
-    """]
-
-    [[completions]]
-    completion_label = "DestructOption::destruct(...)"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "DestructOption::destruct()"
     text_edits = ["""
     use core::option::DestructOption;
 
@@ -27663,26 +15187,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Display::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "Display::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::Display;
-
-    """]
-
-    [[completions]]
     completion_label = "DivAssign"
     completion_label_path = "(use core::ops::DivAssign)"
-    text_edits = ["""
-    use core::ops::DivAssign;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivAssign::div_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "DivAssign::div_assign(${1:rhs})"
     text_edits = ["""
     use core::ops::DivAssign;
 
@@ -27697,15 +15203,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "DivEq::div_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "DivEq::div_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::DivEq;
-
-    """]
-
-    [[completions]]
     completion_label = "DivRem"
     completion_label_path = "(use core::num::traits::DivRem)"
     text_edits = ["""
@@ -27714,45 +15211,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "DivRem::Quotient"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRem::Remainder"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRem::div_rem(...)"
-    completion_label_type_info = "fn(self: T, other: NonZero<U>) -> (Self::Quotient, Self::Remainder)"
-    insert_text = "DivRem::div_rem(${1:other})"
-    text_edits = ["""
-    use core::num::traits::DivRem;
-
-    """]
-
-    [[completions]]
     completion_label = "DivRemHelper"
     completion_label_path = "(use core::internal::bounded_int::DivRemHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::DivRemHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRemHelper::DivT"
-    text_edits = ["""
-    use core::internal::bounded_int::DivRemHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "DivRemHelper::RemT"
     text_edits = ["""
     use core::internal::bounded_int::DivRemHelper;
 
@@ -27807,152 +15267,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "EcPointImpl::coordinates(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> (felt252, felt252)"
-    insert_text = "EcPointImpl::coordinates()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::mul(...)"
-    completion_label_type_info = "fn(self: EcPoint, scalar: felt252) -> EcPoint"
-    insert_text = "EcPointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointImpl::new(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointImpl::new_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_nz(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointImpl::new_nz(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::new_nz_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointImpl::new_nz_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::x(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointImpl::x()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointImpl::y(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointImpl::y()"
-    text_edits = ["""
-    use core::ec::EcPointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EcPointTrait"
     completion_label_path = "(use core::ec::EcPointTrait)"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::coordinates(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> (felt252, felt252)"
-    insert_text = "EcPointTrait::coordinates()"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::mul(...)"
-    completion_label_type_info = "fn(self: EcPoint, scalar: felt252) -> EcPoint"
-    insert_text = "EcPointTrait::mul(${1:scalar})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointTrait::new(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<EcPoint>"
-    insert_text = "EcPointTrait::new_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_nz(...)"
-    completion_label_type_info = "fn(x: felt252, y: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointTrait::new_nz(${1:x}, ${2:y})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::new_nz_from_x(...)"
-    completion_label_type_info = "fn(x: felt252) -> Option<NonZero<EcPoint>>"
-    insert_text = "EcPointTrait::new_nz_from_x(${1:x})"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::x(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointTrait::x()"
-    text_edits = ["""
-    use core::ec::EcPointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcPointTrait::y(...)"
-    completion_label_type_info = "fn(self: NonZero<EcPoint>) -> felt252"
-    insert_text = "EcPointTrait::y()"
     text_edits = ["""
     use core::ec::EcPointTrait;
 
@@ -27975,116 +15291,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "EcStateImpl::add(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateImpl::add(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::add_mul(...)"
-    completion_label_type_info = "fn(ref self: EcState, scalar: felt252, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateImpl::add_mul(${1:scalar}, ${2:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::finalize(...)"
-    completion_label_type_info = "fn(self: EcState) -> EcPoint"
-    insert_text = "EcStateImpl::finalize()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::finalize_nz(...)"
-    completion_label_type_info = "fn(self: EcState) -> Option<NonZero<EcPoint>> nopanic"
-    insert_text = "EcStateImpl::finalize_nz()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::init(...)"
-    completion_label_type_info = "fn() -> EcState nopanic"
-    insert_text = "EcStateImpl::init()"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateImpl::sub(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> ()"
-    insert_text = "EcStateImpl::sub(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EcStateTrait"
     completion_label_path = "(use core::ec::EcStateTrait)"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::add(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateTrait::add(${1:p})"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::add_mul(...)"
-    completion_label_type_info = "fn(ref self: EcState, scalar: felt252, p: NonZero<EcPoint>) -> () nopanic"
-    insert_text = "EcStateTrait::add_mul(${1:scalar}, ${2:p})"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::finalize(...)"
-    completion_label_type_info = "fn(self: EcState) -> EcPoint"
-    insert_text = "EcStateTrait::finalize()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::finalize_nz(...)"
-    completion_label_type_info = "fn(self: EcState) -> Option<NonZero<EcPoint>> nopanic"
-    insert_text = "EcStateTrait::finalize_nz()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::init(...)"
-    completion_label_type_info = "fn() -> EcState nopanic"
-    insert_text = "EcStateTrait::init()"
-    text_edits = ["""
-    use core::ec::EcStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EcStateTrait::sub(...)"
-    completion_label_type_info = "fn(ref self: EcState, p: NonZero<EcPoint>) -> ()"
-    insert_text = "EcStateTrait::sub(${1:p})"
     text_edits = ["""
     use core::ec::EcStateTrait;
 
@@ -28123,15 +15331,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "EthAddressIntoFelt252::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "EthAddressIntoFelt252::into()"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressIntoFelt252;
-
-    """]
-
-    [[completions]]
     completion_label = "EthAddressPrintImpl"
     completion_label_path = "(use starknet::eth_address::EthAddressPrintImpl)"
     text_edits = ["""
@@ -28140,35 +15339,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "EthAddressPrintImpl::print(...)"
-    completion_label_type_info = "fn(self: T) -> ()"
-    insert_text = "EthAddressPrintImpl::print()"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressPrintImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EthAddressSerde"
     completion_label_path = "(use starknet::eth_address::EthAddressSerde)"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressSerde;
-
-    """]
-
-    [[completions]]
-    completion_label = "EthAddressSerde::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "EthAddressSerde::deserialize(${1:serialized})"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressSerde;
-
-    """]
-
-    [[completions]]
-    completion_label = "EthAddressSerde::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "EthAddressSerde::serialize(${1:output})"
     text_edits = ["""
     use starknet::eth_address::EthAddressSerde;
 
@@ -28191,44 +15363,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "EvalCircuitImpl::eval(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitImpl::eval(${1:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitImpl::eval_ex(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitImpl::eval_ex(${1:descriptor}, ${2:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "EvalCircuitTrait"
     completion_label_path = "(use core::circuit::EvalCircuitTrait)"
-    text_edits = ["""
-    use core::circuit::EvalCircuitTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitTrait::eval(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitTrait::eval(${1:modulus})"
-    text_edits = ["""
-    use core::circuit::EvalCircuitTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "EvalCircuitTrait::eval_ex(...)"
-    completion_label_type_info = "fn(self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus) -> Result<CircuitOutputs<C>, (CircuitPartialOutputs<C>, CircuitFailureGuarantee)>"
-    insert_text = "EvalCircuitTrait::eval_ex(${1:descriptor}, ${2:modulus})"
     text_edits = ["""
     use core::circuit::EvalCircuitTrait;
 
@@ -28243,35 +15379,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Event::append_keys_and_data(...)"
-    completion_label_type_info = "fn(self: @T, ref keys: Array<felt252>, ref data: Array<felt252>) -> ()"
-    insert_text = "Event::append_keys_and_data(${1:keys}, ${2:data})"
-    text_edits = ["""
-    use starknet::Event;
-
-    """]
-
-    [[completions]]
-    completion_label = "Event::deserialize(...)"
-    completion_label_type_info = "fn(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<T>"
-    insert_text = "Event::deserialize(${1:keys}, ${2:data})"
-    text_edits = ["""
-    use starknet::Event;
-
-    """]
-
-    [[completions]]
     completion_label = "EventEmitter"
     completion_label_path = "(use starknet::event::EventEmitter)"
-    text_edits = ["""
-    use starknet::event::EventEmitter;
-
-    """]
-
-    [[completions]]
-    completion_label = "EventEmitter::emit(...)"
-    completion_label_type_info = "fn(ref self: T, event: S) -> ()"
-    insert_text = "EventEmitter::emit(${1:event})"
     text_edits = ["""
     use starknet::event::EventEmitter;
 
@@ -28288,15 +15397,6 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "Extend"
     completion_label_path = "(use core::iter::Extend)"
-    text_edits = ["""
-    use core::iter::Extend;
-
-    """]
-
-    [[completions]]
-    completion_label = "Extend::extend(...)"
-    completion_label_type_info = "fn(ref self: T, iter: I) -> ()"
-    insert_text = "Extend::extend(${1:iter})"
     text_edits = ["""
     use core::iter::Extend;
 
@@ -28335,26 +15435,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Felt252DictEntryTrait::finalize(...)"
-    completion_label_type_info = "fn(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>"
-    insert_text = "Felt252DictEntryTrait::finalize(${1:new_value})"
-    text_edits = ["""
-    use core::dict::Felt252DictEntryTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Felt252TryIntoClassHash"
     completion_label_path = "(use starknet::class_hash::Felt252TryIntoClassHash)"
-    text_edits = ["""
-    use starknet::class_hash::Felt252TryIntoClassHash;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoClassHash::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoClassHash::try_into()"
     text_edits = ["""
     use starknet::class_hash::Felt252TryIntoClassHash;
 
@@ -28369,26 +15451,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Felt252TryIntoContractAddress::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoContractAddress::try_into()"
-    text_edits = ["""
-    use starknet::contract_address::Felt252TryIntoContractAddress;
-
-    """]
-
-    [[completions]]
     completion_label = "Felt252TryIntoEthAddress"
     completion_label_path = "(use starknet::eth_address::Felt252TryIntoEthAddress)"
-    text_edits = ["""
-    use starknet::eth_address::Felt252TryIntoEthAddress;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoEthAddress::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoEthAddress::try_into()"
     text_edits = ["""
     use starknet::eth_address::Felt252TryIntoEthAddress;
 
@@ -28411,22 +15475,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Fn::Output"
-    text_edits = ["""
-    use core::ops::Fn;
-
-    """]
-
-    [[completions]]
-    completion_label = "Fn::call(...)"
-    completion_label_type_info = "fn(self: @T, args: Args) -> Self::Output"
-    insert_text = "Fn::call(${1:args})"
-    text_edits = ["""
-    use core::ops::Fn;
-
-    """]
-
-    [[completions]]
     completion_label = "FnOnce"
     completion_label_path = "(use core::ops::FnOnce)"
     text_edits = ["""
@@ -28435,33 +15483,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "FnOnce::Output"
-    text_edits = ["""
-    use core::ops::FnOnce;
-
-    """]
-
-    [[completions]]
-    completion_label = "FnOnce::call(...)"
-    completion_label_type_info = "fn(self: T, args: Args) -> Self::Output"
-    insert_text = "FnOnce::call(${1:args})"
-    text_edits = ["""
-    use core::ops::FnOnce;
-
-    """]
-
-    [[completions]]
     completion_label = "FormatAsByteArray"
     completion_label_path = "(use core::to_byte_array::FormatAsByteArray)"
-    text_edits = ["""
-    use core::to_byte_array::FormatAsByteArray;
-
-    """]
-
-    [[completions]]
-    completion_label = "FormatAsByteArray::format_as_byte_array(...)"
-    completion_label_type_info = "fn(self: @T, base: NonZero<T>) -> ByteArray"
-    insert_text = "FormatAsByteArray::format_as_byte_array(${1:base})"
     text_edits = ["""
     use core::to_byte_array::FormatAsByteArray;
 
@@ -28524,22 +15547,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Get::Output"
-    text_edits = ["""
-    use core::ops::Get;
-
-    """]
-
-    [[completions]]
-    completion_label = "Get::get(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> Option<Self::Output>"
-    insert_text = "Get::get(${1:index})"
-    text_edits = ["""
-    use core::ops::Get;
-
-    """]
-
-    [[completions]]
     completion_label = "Hash"
     completion_label_path = "(use core::hash::Hash)"
     text_edits = ["""
@@ -28548,26 +15555,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Hash::update_state(...)"
-    completion_label_type_info = "fn(state: S, value: T) -> S"
-    insert_text = "Hash::update_state(${1:state}, ${2:value})"
-    text_edits = ["""
-    use core::hash::Hash;
-
-    """]
-
-    [[completions]]
     completion_label = "HashImpl"
     completion_label_path = "(use core::hash::into_felt252_based::HashImpl)"
-    text_edits = ["""
-    use core::hash::into_felt252_based::HashImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashImpl::update_state(...)"
-    completion_label_type_info = "fn(state: S, value: T) -> S"
-    insert_text = "HashImpl::update_state(${1:state}, ${2:value})"
     text_edits = ["""
     use core::hash::into_felt252_based::HashImpl;
 
@@ -28598,35 +15587,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "HashStateExTrait::update_with(...)"
-    completion_label_type_info = "fn(self: S, value: T) -> S"
-    insert_text = "HashStateExTrait::update_with(${1:value})"
-    text_edits = ["""
-    use core::hash::HashStateExTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "HashStateTrait"
     completion_label_path = "(use core::hash::HashStateTrait)"
-    text_edits = ["""
-    use core::hash::HashStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashStateTrait::finalize(...)"
-    completion_label_type_info = "fn(self: S) -> felt252"
-    insert_text = "HashStateTrait::finalize()"
-    text_edits = ["""
-    use core::hash::HashStateTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "HashStateTrait::update(...)"
-    completion_label_type_info = "fn(self: S, value: felt252) -> S"
-    insert_text = "HashStateTrait::update(${1:value})"
     text_edits = ["""
     use core::hash::HashStateTrait;
 
@@ -28649,31 +15611,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Index::Target"
-    text_edits = ["""
-    use core::ops::Index;
-
-    """]
-
-    [[completions]]
-    completion_label = "Index::index(...)"
-    completion_label_type_info = "fn(ref self: C, index: I) -> Self::Target"
-    insert_text = "Index::index(${1:index})"
-    text_edits = ["""
-    use core::ops::Index;
-
-    """]
-
-    [[completions]]
-    completion_label = "Index::index(...)"
-    completion_label_type_info = "fn(ref self: C, index: I) -> V"
-    insert_text = "Index::index(${1:index})"
-    text_edits = ["""
-    use core::traits::Index;
-
-    """]
-
-    [[completions]]
     completion_label = "IndexView"
     completion_label_path = "(use core::ops::IndexView)"
     text_edits = ["""
@@ -28684,31 +15621,6 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "IndexView"
     completion_label_path = "(use core::traits::IndexView)"
-    text_edits = ["""
-    use core::traits::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::Target"
-    text_edits = ["""
-    use core::ops::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> Self::Target"
-    insert_text = "IndexView::index(${1:index})"
-    text_edits = ["""
-    use core::ops::IndexView;
-
-    """]
-
-    [[completions]]
-    completion_label = "IndexView::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> V"
-    insert_text = "IndexView::index(${1:index})"
     text_edits = ["""
     use core::traits::IndexView;
 
@@ -28739,42 +15651,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "IntoIterRange::IntoIter"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
-    completion_label = "IntoIterRange::into_iter_full_range(...)"
-    completion_label_type_info = "fn(self: T) -> Self::IntoIter"
-    insert_text = "IntoIterRange::into_iter_full_range()"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
-    completion_label = "IntoIterRange::into_iter_range(...)"
-    completion_label_type_info = "fn(self: T, range: crate::ops::Range<u64>) -> Self::IntoIter"
-    insert_text = "IntoIterRange::into_iter_range(${1:range})"
-    text_edits = ["""
-    use starknet::storage::IntoIterRange;
-
-    """]
-
-    [[completions]]
     completion_label = "LegacyHash"
     completion_label_path = "(use core::hash::LegacyHash)"
-    text_edits = ["""
-    use core::hash::LegacyHash;
-
-    """]
-
-    [[completions]]
-    completion_label = "LegacyHash::hash(...)"
-    completion_label_type_info = "fn(state: felt252, value: T) -> felt252"
-    insert_text = "LegacyHash::hash(${1:state}, ${2:value})"
     text_edits = ["""
     use core::hash::LegacyHash;
 
@@ -28797,26 +15675,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "LowerHex::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "LowerHex::fmt(${1:f})"
-    text_edits = ["""
-    use core::fmt::LowerHex;
-
-    """]
-
-    [[completions]]
     completion_label = "LowerHexImpl"
     completion_label_path = "(use core::fmt::into_felt252_based::LowerHexImpl)"
-    text_edits = ["""
-    use core::fmt::into_felt252_based::LowerHexImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "LowerHexImpl::fmt(...)"
-    completion_label_type_info = "fn(self: @T, ref f: Formatter) -> Result<(), Error>"
-    insert_text = "LowerHexImpl::fmt(${1:f})"
     text_edits = ["""
     use core::fmt::into_felt252_based::LowerHexImpl;
 
@@ -28847,15 +15707,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "MulAssign::mul_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "MulAssign::mul_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::MulAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "MulEq"
     completion_label_path = "(use core::traits::MulEq)"
     text_edits = ["""
@@ -28864,24 +15715,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "MulEq::mul_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "MulEq::mul_eq(${1:other})"
-    text_edits = ["""
-    use core::traits::MulEq;
-
-    """]
-
-    [[completions]]
     completion_label = "MulHelper"
     completion_label_path = "(use core::internal::bounded_int::MulHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::MulHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "MulHelper::Result"
     text_edits = ["""
     use core::internal::bounded_int::MulHelper;
 
@@ -28912,94 +15747,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "MutableVecTrait::ElementType"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::allocate(...)"
-    completion_label_type_info = "fn(self: T) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::allocate()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::append(...)"
-    completion_label_type_info = "fn(self: T) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::append()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::at(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> StoragePath<Mutable<Self::ElementType>>"
-    insert_text = "MutableVecTrait::at(${1:index})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::get(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> Option<StoragePath<Mutable<Self::ElementType>>>"
-    insert_text = "MutableVecTrait::get(${1:index})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::len(...)"
-    completion_label_type_info = "fn(self: T) -> u64"
-    insert_text = "MutableVecTrait::len()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::pop(...)"
-    completion_label_type_info = "fn(self: T) -> Option<Self::ElementType>"
-    insert_text = "MutableVecTrait::pop()"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "MutableVecTrait::push(...)"
-    completion_label_type_info = "fn(self: T, value: Self::ElementType) -> ()"
-    insert_text = "MutableVecTrait::push(${1:value})"
-    text_edits = ["""
-    use starknet::storage::MutableVecTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "NegateHelper"
     completion_label_path = "(use core::internal::bounded_int::NegateHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::NegateHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "NegateHelper::Result"
-    text_edits = ["""
-    use core::internal::bounded_int::NegateHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "NegateHelper::negate(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Result"
-    insert_text = "NegateHelper::negate()"
     text_edits = ["""
     use core::internal::bounded_int::NegateHelper;
 
@@ -29054,60 +15803,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "NullableImpl::as_snapshot(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> Nullable<@T> nopanic"
-    insert_text = "NullableImpl::as_snapshot()"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref(...)"
-    completion_label_type_info = "fn(nullable: Nullable<T>) -> T"
-    insert_text = "NullableImpl::deref(${1:nullable})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref_or(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, default: T) -> T"
-    insert_text = "NullableImpl::deref_or(${1:default})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::deref_or_else(...)"
-    completion_label_type_info = "fn(self: Nullable<T>, f: F) -> T"
-    insert_text = "NullableImpl::deref_or_else(${1:f})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::is_null(...)"
-    completion_label_type_info = "fn(self: @Nullable<T>) -> bool"
-    insert_text = "NullableImpl::is_null()"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "NullableImpl::new(...)"
-    completion_label_type_info = "fn(value: T) -> Nullable<T>"
-    insert_text = "NullableImpl::new(${1:value})"
-    text_edits = ["""
-    use core::nullable::NullableImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "NumericLiteral"
     completion_label_path = "(use core::integer::NumericLiteral)"
     text_edits = ["""
@@ -29140,33 +15835,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "One::is_non_one(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "One::is_non_one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
-    completion_label = "One::is_one(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "One::is_one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
-    completion_label = "One::one(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "One::one()"
-    text_edits = ["""
-    use core::num::traits::One;
-
-    """]
-
-    [[completions]]
     completion_label = "OptionIter"
     completion_label_path = "(use core::option::OptionIter)"
     text_edits = ["""
@@ -29191,215 +15859,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "OptionTraitImpl::and(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<U>) -> Option<U>"
-    insert_text = "OptionTraitImpl::and(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::and_then(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTraitImpl::and_then(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::expect(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: felt252) -> T"
-    insert_text = "OptionTraitImpl::expect(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::filter(...)"
-    completion_label_type_info = "fn(self: Option<T>, predicate: P) -> Option<T>"
-    insert_text = "OptionTraitImpl::filter(${1:predicate})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::flatten(...)"
-    completion_label_type_info = "fn(self: Option<Option<T>>) -> Option<T>"
-    insert_text = "OptionTraitImpl::flatten()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_none(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTraitImpl::is_none()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_none_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTraitImpl::is_none_or(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_some(...)"
-    completion_label_type_info = "fn(self: @Option<T>) -> bool"
-    insert_text = "OptionTraitImpl::is_some()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::is_some_and(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> bool"
-    insert_text = "OptionTraitImpl::is_some_and(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<U>"
-    insert_text = "OptionTraitImpl::map(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: U, f: F) -> U"
-    insert_text = "OptionTraitImpl::map_or(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::map_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: D, f: F) -> U"
-    insert_text = "OptionTraitImpl::map_or_else(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::ok_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: E) -> Result<T, E>"
-    insert_text = "OptionTraitImpl::ok_or(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::ok_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, err: F) -> Result<T, E>"
-    insert_text = "OptionTraitImpl::ok_or_else(${1:err})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::or(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::or(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> Option<T>"
-    insert_text = "OptionTraitImpl::or_else(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::take(...)"
-    completion_label_type_info = "fn(ref self: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::take()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTraitImpl::unwrap()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Option<T>, default: T) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or(${1:default})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Option<T>) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or_default()"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Option<T>, f: F) -> T"
-    insert_text = "OptionTraitImpl::unwrap_or_else(${1:f})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "OptionTraitImpl::xor(...)"
-    completion_label_type_info = "fn(self: Option<T>, optb: Option<T>) -> Option<T>"
-    insert_text = "OptionTraitImpl::xor(${1:optb})"
-    text_edits = ["""
-    use core::option::OptionTraitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "OverflowingAdd"
     completion_label_path = "(use core::num::traits::OverflowingAdd)"
-    text_edits = ["""
-    use core::num::traits::OverflowingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "OverflowingAdd::overflowing_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingAdd::overflowing_add(${1:v})"
     text_edits = ["""
     use core::num::traits::OverflowingAdd;
 
@@ -29414,26 +15875,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "OverflowingMul::overflowing_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingMul::overflowing_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::OverflowingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "OverflowingSub"
     completion_label_path = "(use core::num::traits::OverflowingSub)"
-    text_edits = ["""
-    use core::num::traits::OverflowingSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "OverflowingSub::overflowing_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> (T, bool)"
-    insert_text = "OverflowingSub::overflowing_sub(${1:v})"
     text_edits = ["""
     use core::num::traits::OverflowingSub;
 
@@ -29456,15 +15899,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "PedersenImpl::new(...)"
-    completion_label_type_info = "fn(base: felt252) -> HashState"
-    insert_text = "PedersenImpl::new(${1:base})"
-    text_edits = ["""
-    use core::pedersen::PedersenImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "PedersenTrait"
     completion_label_path = "(use core::pedersen::PedersenTrait)"
     text_edits = ["""
@@ -29473,26 +15907,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "PedersenTrait::new(...)"
-    completion_label_type_info = "fn(base: felt252) -> HashState"
-    insert_text = "PedersenTrait::new(${1:base})"
-    text_edits = ["""
-    use core::pedersen::PedersenTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "PeekableTrait"
     completion_label_path = "(use core::iter::PeekableTrait)"
-    text_edits = ["""
-    use core::iter::PeekableTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "PeekableTrait::peek(...)"
-    completion_label_type_info = "fn(ref self: Peekable<I, IterI::Item>) -> Option<IterI::Item>"
-    insert_text = "PeekableTrait::peek()"
     text_edits = ["""
     use core::iter::PeekableTrait;
 
@@ -29515,15 +15931,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "PendingStoragePathTrait::new(...)"
-    completion_label_type_info = "fn(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T>"
-    insert_text = "PendingStoragePathTrait::new(${1:storage_path}, ${2:pending_key})"
-    text_edits = ["""
-    use starknet::storage::PendingStoragePathTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Poseidon"
     completion_label_path = "(use core::poseidon::Poseidon)"
     text_edits = ["""
@@ -29540,26 +15947,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "PoseidonImpl::new(...)"
-    completion_label_type_info = "fn() -> HashState"
-    insert_text = "PoseidonImpl::new()"
-    text_edits = ["""
-    use core::poseidon::PoseidonImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "PoseidonTrait"
     completion_label_path = "(use core::poseidon::PoseidonTrait)"
-    text_edits = ["""
-    use core::poseidon::PoseidonTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "PoseidonTrait::new(...)"
-    completion_label_type_info = "fn() -> HashState"
-    insert_text = "PoseidonTrait::new()"
     text_edits = ["""
     use core::poseidon::PoseidonTrait;
 
@@ -29574,22 +15963,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Pow::Output"
-    text_edits = ["""
-    use core::num::traits::Pow;
-
-    """]
-
-    [[completions]]
-    completion_label = "Pow::pow(...)"
-    completion_label_type_info = "fn(self: Base, exp: Exp) -> Self::Output"
-    insert_text = "Pow::pow(${1:exp})"
-    text_edits = ["""
-    use core::num::traits::Pow;
-
-    """]
-
-    [[completions]]
     completion_label = "Product"
     completion_label_path = "(use core::iter::Product)"
     text_edits = ["""
@@ -29598,35 +15971,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Product::product(...)"
-    completion_label_type_info = "fn(iter: I) -> A"
-    insert_text = "Product::product(${1:iter})"
-    text_edits = ["""
-    use core::iter::Product;
-
-    """]
-
-    [[completions]]
     completion_label = "QM31Trait"
     completion_label_path = "(use core::qm31::QM31Trait)"
-    text_edits = ["""
-    use core::qm31::QM31Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "QM31Trait::new(...)"
-    completion_label_type_info = "fn(w0: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w1: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w2: crate::internal::bounded_int::BoundedInt<0, 2147483646>, w3: crate::internal::bounded_int::BoundedInt<0, 2147483646>) -> qm31"
-    insert_text = "QM31Trait::new(${1:w0}, ${2:w1}, ${3:w2}, ${4:w3})"
-    text_edits = ["""
-    use core::qm31::QM31Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "QM31Trait::unpack(...)"
-    completion_label_type_info = "fn(self: qm31) -> [crate::internal::bounded_int::BoundedInt<0, 2147483646>; 4]"
-    insert_text = "QM31Trait::unpack()"
     text_edits = ["""
     use core::qm31::QM31Trait;
 
@@ -29681,24 +16027,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "RangeInclusiveTrait::contains(...)"
-    completion_label_type_info = "fn(self: @RangeInclusive<T>, item: @T) -> bool"
-    insert_text = "RangeInclusiveTrait::contains(${1:item})"
-    text_edits = ["""
-    use core::ops::RangeInclusiveTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "RangeInclusiveTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @RangeInclusive<T>) -> bool"
-    insert_text = "RangeInclusiveTrait::is_empty()"
-    text_edits = ["""
-    use core::ops::RangeInclusiveTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "RangeIterator"
     completion_label_path = "(use core::ops::RangeIterator)"
     text_edits = ["""
@@ -29715,24 +16043,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "RangeTrait::contains(...)"
-    completion_label_type_info = "fn(self: @Range<T>, item: @T) -> bool"
-    insert_text = "RangeTrait::contains(${1:item})"
-    text_edits = ["""
-    use core::ops::RangeTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "RangeTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @Range<T>) -> bool"
-    insert_text = "RangeTrait::is_empty()"
-    text_edits = ["""
-    use core::ops::RangeTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "RemAssign"
     completion_label_path = "(use core::ops::RemAssign)"
     text_edits = ["""
@@ -29741,26 +16051,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "RemAssign::rem_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "RemAssign::rem_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::RemAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "RemEq"
     completion_label_path = "(use core::traits::RemEq)"
-    text_edits = ["""
-    use core::traits::RemEq;
-
-    """]
-
-    [[completions]]
-    completion_label = "RemEq::rem_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "RemEq::rem_eq(${1:other})"
     text_edits = ["""
     use core::traits::RemEq;
 
@@ -29783,206 +16075,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "ResultTraitImpl::and(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<U, E>) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::and(${1:other})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::and_then(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: F) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::and_then(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<E>"
-    insert_text = "ResultTraitImpl::err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::expect(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> T"
-    insert_text = "ResultTraitImpl::expect(${1:err})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::expect_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, err: felt252) -> E"
-    insert_text = "ResultTraitImpl::expect_err(${1:err})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::into_is_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::into_is_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::into_is_ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::into_is_ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::is_err(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::is_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::is_ok(...)"
-    completion_label_type_info = "fn(self: @Result<T, E>) -> bool"
-    insert_text = "ResultTraitImpl::is_ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> Result<U, E>"
-    insert_text = "ResultTraitImpl::map(${1:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::map_err(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: U, f: F) -> U"
-    insert_text = "ResultTraitImpl::map_or(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::map_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: D, f: F) -> U"
-    insert_text = "ResultTraitImpl::map_or_else(${1:default}, ${2:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::ok(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<T>"
-    insert_text = "ResultTraitImpl::ok()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, other: Result<T, F>) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::or(${1:other})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, op: O) -> Result<T, F>"
-    insert_text = "ResultTraitImpl::or_else(${1:op})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTraitImpl::unwrap()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> E"
-    insert_text = "ResultTraitImpl::unwrap_err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, default: T) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or(${1:default})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or_default(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or_default()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::unwrap_or_else(...)"
-    completion_label_type_info = "fn(self: Result<T, E>, f: F) -> T"
-    insert_text = "ResultTraitImpl::unwrap_or_else(${1:f})"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SaturatingAdd"
     completion_label_path = "(use core::num::traits::SaturatingAdd)"
-    text_edits = ["""
-    use core::num::traits::SaturatingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "SaturatingAdd::saturating_add(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingAdd::saturating_add(${1:other})"
     text_edits = ["""
     use core::num::traits::SaturatingAdd;
 
@@ -29997,26 +16091,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "SaturatingMul::saturating_mul(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingMul::saturating_mul(${1:other})"
-    text_edits = ["""
-    use core::num::traits::SaturatingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "SaturatingSub"
     completion_label_path = "(use core::num::traits::SaturatingSub)"
-    text_edits = ["""
-    use core::num::traits::SaturatingSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "SaturatingSub::saturating_sub(...)"
-    completion_label_type_info = "fn(self: T, other: T) -> T"
-    insert_text = "SaturatingSub::saturating_sub(${1:other})"
     text_edits = ["""
     use core::num::traits::SaturatingSub;
 
@@ -30031,33 +16107,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Secp256PointTrait::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256PointTrait::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256PointTrait::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256PointTrait::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256PointTrait::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256PointTrait::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256PointTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256Trait"
     completion_label_path = "(use starknet::secp256_trait::Secp256Trait)"
     text_edits = ["""
@@ -30066,80 +16115,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Secp256Trait::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256Trait::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256Trait::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256Trait::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256Trait::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256Trait::secp256_ec_new_syscall(${1:x}, ${2:y})"
-    text_edits = ["""
-    use starknet::secp256_trait::Secp256Trait;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256k1Impl"
     completion_label_path = "(use starknet::secp256k1::Secp256k1Impl)"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256k1Impl::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256k1Impl::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256k1Impl::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1Impl::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256k1Impl::secp256_ec_new_syscall(${1:x}, ${2:y})"
     text_edits = ["""
     use starknet::secp256k1::Secp256k1Impl;
 
@@ -30162,71 +16139,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Secp256k1PointImpl::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1PointImpl::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256k1PointImpl::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256k1PointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256k1::Secp256k1PointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "Secp256r1Impl"
     completion_label_path = "(use starknet::secp256r1::Secp256r1Impl)"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::get_curve_size(...)"
-    completion_label_type_info = "fn() -> u256"
-    insert_text = "Secp256r1Impl::get_curve_size()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::get_generator_point(...)"
-    completion_label_type_info = "fn() -> Secp256Point"
-    insert_text = "Secp256r1Impl::get_generator_point()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::secp256_ec_get_point_from_x_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y_parity: bool) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256r1Impl::secp256_ec_get_point_from_x_syscall(${1:x}, ${2:y_parity})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1Impl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1Impl::secp256_ec_new_syscall(...)"
-    completion_label_type_info = "fn(x: u256, y: u256) -> Result<Option<Secp256Point>, Array<felt252>>"
-    insert_text = "Secp256r1Impl::secp256_ec_new_syscall(${1:x}, ${2:y})"
     text_edits = ["""
     use starknet::secp256r1::Secp256r1Impl;
 
@@ -30249,33 +16163,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Secp256r1PointImpl::add(...)"
-    completion_label_type_info = "fn(self: Secp256Point, other: Secp256Point) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::add(${1:other})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1PointImpl::get_coordinates(...)"
-    completion_label_type_info = "fn(self: Secp256Point) -> Result<(u256, u256), Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::get_coordinates()"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Secp256r1PointImpl::mul(...)"
-    completion_label_type_info = "fn(self: Secp256Point, scalar: u256) -> Result<Secp256Point, Array<felt252>>"
-    insert_text = "Secp256r1PointImpl::mul(${1:scalar})"
-    text_edits = ["""
-    use starknet::secp256r1::Secp256r1PointImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SegmentArena"
     completion_label_path = "(use core::SegmentArena)"
     text_edits = ["""
@@ -30286,24 +16173,6 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "SerdeImpl"
     completion_label_path = "(use core::serde::into_felt252_based::SerdeImpl)"
-    text_edits = ["""
-    use core::serde::into_felt252_based::SerdeImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SerdeImpl::deserialize(...)"
-    completion_label_type_info = "fn(ref serialized: Span<felt252>) -> Option<T>"
-    insert_text = "SerdeImpl::deserialize(${1:serialized})"
-    text_edits = ["""
-    use core::serde::into_felt252_based::SerdeImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SerdeImpl::serialize(...)"
-    completion_label_type_info = "fn(self: @T, ref output: Array<felt252>) -> ()"
-    insert_text = "SerdeImpl::serialize(${1:output})"
     text_edits = ["""
     use core::serde::into_felt252_based::SerdeImpl;
 
@@ -30334,98 +16203,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "SpanImpl::at(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> @T"
-    insert_text = "SpanImpl::at(${1:index})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::get(...)"
-    completion_label_type_info = "fn(self: Span<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "SpanImpl::get(${1:index})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::is_empty(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> bool"
-    insert_text = "SpanImpl::is_empty()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::len(...)"
-    completion_label_type_info = "fn(self: Span<T>) -> u32"
-    insert_text = "SpanImpl::len()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::multi_pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanImpl::multi_pop_back()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::multi_pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@Box<[T; SIZE]>>"
-    insert_text = "SpanImpl::multi_pop_front()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::pop_back(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T>"
-    insert_text = "SpanImpl::pop_back()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Span<T>) -> Option<@T> nopanic"
-    insert_text = "SpanImpl::pop_front()"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanImpl::slice(...)"
-    completion_label_type_info = "fn(self: Span<T>, start: u32, length: u32) -> Span<T>"
-    insert_text = "SpanImpl::slice(${1:start}, ${2:length})"
-    text_edits = ["""
-    use core::array::SpanImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SpanIndex"
     completion_label_path = "(use core::array::SpanIndex)"
-    text_edits = ["""
-    use core::array::SpanIndex;
-
-    """]
-
-    [[completions]]
-    completion_label = "SpanIndex::index(...)"
-    completion_label_type_info = "fn(self: @C, index: I) -> V"
-    insert_text = "SpanIndex::index(${1:index})"
     text_edits = ["""
     use core::array::SpanIndex;
 
@@ -30448,22 +16227,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Sqrt::Target"
-    text_edits = ["""
-    use core::num::traits::Sqrt;
-
-    """]
-
-    [[completions]]
-    completion_label = "Sqrt::sqrt(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "Sqrt::sqrt()"
-    text_edits = ["""
-    use core::num::traits::Sqrt;
-
-    """]
-
-    [[completions]]
     completion_label = "SquashedFelt252Dict"
     completion_label_path = "(use core::dict::SquashedFelt252Dict)"
     text_edits = ["""
@@ -30480,15 +16243,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "SquashedFelt252DictImpl::into_entries(...)"
-    completion_label_type_info = "fn(self: SquashedFelt252Dict<T>) -> Array<(felt252, T, T)>"
-    insert_text = "SquashedFelt252DictImpl::into_entries()"
-    text_edits = ["""
-    use core::dict::SquashedFelt252DictImpl;
-
-    """]
-
-    [[completions]]
     completion_label = "SquashedFelt252DictTrait"
     completion_label_path = "(use core::dict::SquashedFelt252DictTrait)"
     text_edits = ["""
@@ -30497,33 +16251,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "SquashedFelt252DictTrait::into_entries(...)"
-    completion_label_type_info = "fn(self: SquashedFelt252Dict<T>) -> Array<(felt252, T, T)>"
-    insert_text = "SquashedFelt252DictTrait::into_entries()"
-    text_edits = ["""
-    use core::dict::SquashedFelt252DictTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "StorableStoragePointerReadAccess"
     completion_label_path = "(use starknet::storage::StorableStoragePointerReadAccess)"
-    text_edits = ["""
-    use starknet::storage::StorableStoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorableStoragePointerReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorableStoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorableStoragePointerReadAccess::read(...)"
-    completion_label_type_info = "fn(self: @T) -> Self::Value"
-    insert_text = "StorableStoragePointerReadAccess::read()"
     text_edits = ["""
     use starknet::storage::StorableStoragePointerReadAccess;
 
@@ -30546,40 +16275,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "StorageAsPath::Value"
-    text_edits = ["""
-    use starknet::storage::StorageAsPath;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPath::as_path(...)"
-    completion_label_type_info = "fn(self: @TMemberState) -> StoragePath<Self::Value>"
-    insert_text = "StorageAsPath::as_path()"
-    text_edits = ["""
-    use starknet::storage::StorageAsPath;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageAsPointer"
     completion_label_path = "(use starknet::storage::StorageAsPointer)"
-    text_edits = ["""
-    use starknet::storage::StorageAsPointer;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPointer::Value"
-    text_edits = ["""
-    use starknet::storage::StorageAsPointer;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageAsPointer::as_ptr(...)"
-    completion_label_type_info = "fn(self: @TMemberState) -> StoragePointer0Offset<Self::Value>"
-    insert_text = "StorageAsPointer::as_ptr()"
     text_edits = ["""
     use starknet::storage::StorageAsPointer;
 
@@ -30610,54 +16307,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "StorageMapReadAccess::Key"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapReadAccess::read(...)"
-    completion_label_type_info = "fn(self: TMemberState, key: Self::Key) -> Self::Value"
-    insert_text = "StorageMapReadAccess::read(${1:key})"
-    text_edits = ["""
-    use starknet::storage::StorageMapReadAccess;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageMapWriteAccess"
     completion_label_path = "(use starknet::storage::StorageMapWriteAccess)"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::Key"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StorageMapWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageMapWriteAccess::write(...)"
-    completion_label_type_info = "fn(self: TMemberState, key: Self::Key, value: Self::Value) -> ()"
-    insert_text = "StorageMapWriteAccess::write(${1:key}, ${2:value})"
     text_edits = ["""
     use starknet::storage::StorageMapWriteAccess;
 
@@ -30672,40 +16323,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "StorageNode::NodeType"
-    text_edits = ["""
-    use starknet::storage::StorageNode;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNode::storage_node(...)"
-    completion_label_type_info = "fn(self: StoragePath<T>) -> Self::NodeType"
-    insert_text = "StorageNode::storage_node()"
-    text_edits = ["""
-    use starknet::storage::StorageNode;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageNodeDeref"
     completion_label_path = "(use starknet::storage::StorageNodeDeref)"
-    text_edits = ["""
-    use starknet::storage::StorageNodeDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeDeref::Target"
-    text_edits = ["""
-    use starknet::storage::StorageNodeDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "StorageNodeDeref::deref()"
     text_edits = ["""
     use starknet::storage::StorageNodeDeref;
 
@@ -30720,40 +16339,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "StorageNodeMut::NodeType"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMut::storage_node_mut(...)"
-    completion_label_type_info = "fn(self: StoragePath<Mutable<T>>) -> Self::NodeType"
-    insert_text = "StorageNodeMut::storage_node_mut()"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMut;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageNodeMutDeref"
     completion_label_path = "(use starknet::storage::StorageNodeMutDeref)"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMutDeref::Target"
-    text_edits = ["""
-    use starknet::storage::StorageNodeMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageNodeMutDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "StorageNodeMutDeref::deref()"
     text_edits = ["""
     use starknet::storage::StorageNodeMutDeref;
 
@@ -30776,40 +16363,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "StoragePathEntry::Key"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathEntry::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathEntry::entry(...)"
-    completion_label_type_info = "fn(self: C, key: Self::Key) -> StoragePath<Self::Value>"
-    insert_text = "StoragePathEntry::entry(${1:key})"
-    text_edits = ["""
-    use starknet::storage::StoragePathEntry;
-
-    """]
-
-    [[completions]]
     completion_label = "StoragePathMutableConversion"
     completion_label_path = "(use starknet::storage::StoragePathMutableConversion)"
-    text_edits = ["""
-    use starknet::storage::StoragePathMutableConversion;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePathMutableConversion::as_non_mut(...)"
-    completion_label_type_info = "fn(self: StoragePath<Mutable<T>>) -> StoragePath<T>"
-    insert_text = "StoragePathMutableConversion::as_non_mut()"
     text_edits = ["""
     use starknet::storage::StoragePathMutableConversion;
 
@@ -30840,40 +16395,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "StoragePointerReadAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerReadAccess::read(...)"
-    completion_label_type_info = "fn(self: @T) -> Self::Value"
-    insert_text = "StoragePointerReadAccess::read()"
-    text_edits = ["""
-    use starknet::storage::StoragePointerReadAccess;
-
-    """]
-
-    [[completions]]
     completion_label = "StoragePointerWriteAccess"
     completion_label_path = "(use starknet::storage::StoragePointerWriteAccess)"
-    text_edits = ["""
-    use starknet::storage::StoragePointerWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerWriteAccess::Value"
-    text_edits = ["""
-    use starknet::storage::StoragePointerWriteAccess;
-
-    """]
-
-    [[completions]]
-    completion_label = "StoragePointerWriteAccess::write(...)"
-    completion_label_type_info = "fn(self: T, value: Self::Value) -> ()"
-    insert_text = "StoragePointerWriteAccess::write(${1:value})"
     text_edits = ["""
     use starknet::storage::StoragePointerWriteAccess;
 
@@ -30888,40 +16411,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "StorageTrait::BaseType"
-    text_edits = ["""
-    use starknet::storage::StorageTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTrait::storage(...)"
-    completion_label_type_info = "fn(self: FlattenedStorage<T>) -> Self::BaseType"
-    insert_text = "StorageTrait::storage()"
-    text_edits = ["""
-    use starknet::storage::StorageTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "StorageTraitMut"
     completion_label_path = "(use starknet::storage::StorageTraitMut)"
-    text_edits = ["""
-    use starknet::storage::StorageTraitMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTraitMut::BaseType"
-    text_edits = ["""
-    use starknet::storage::StorageTraitMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorageTraitMut::storage_mut(...)"
-    completion_label_type_info = "fn(self: FlattenedStorage<Mutable<T>>) -> Self::BaseType"
-    insert_text = "StorageTraitMut::storage_mut()"
     text_edits = ["""
     use starknet::storage::StorageTraitMut;
 
@@ -30936,80 +16427,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "Store::read(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress) -> Result<T, Array<felt252>>"
-    insert_text = "Store::read(${1:address_domain}, ${2:base})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::read_at_offset(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8) -> Result<T, Array<felt252>>"
-    insert_text = "Store::read_at_offset(${1:address_domain}, ${2:base}, ${3:offset})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::scrub(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8) -> Result<(), Array<felt252>>"
-    insert_text = "Store::scrub(${1:address_domain}, ${2:base}, ${3:offset})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::size(...)"
-    completion_label_type_info = "fn() -> u8"
-    insert_text = "Store::size()"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::write(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, value: T) -> Result<(), Array<felt252>>"
-    insert_text = "Store::write(${1:address_domain}, ${2:base}, ${3:value})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
-    completion_label = "Store::write_at_offset(...)"
-    completion_label_type_info = "fn(address_domain: u32, base: StorageBaseAddress, offset: u8, value: T) -> Result<(), Array<felt252>>"
-    insert_text = "Store::write_at_offset(${1:address_domain}, ${2:base}, ${3:offset}, ${4:value})"
-    text_edits = ["""
-    use starknet::Store;
-
-    """]
-
-    [[completions]]
     completion_label = "StorePacking"
     completion_label_path = "(use starknet::storage_access::StorePacking)"
-    text_edits = ["""
-    use starknet::storage_access::StorePacking;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorePacking::pack(...)"
-    completion_label_type_info = "fn(value: T) -> PackedT"
-    insert_text = "StorePacking::pack(${1:value})"
-    text_edits = ["""
-    use starknet::storage_access::StorePacking;
-
-    """]
-
-    [[completions]]
-    completion_label = "StorePacking::unpack(...)"
-    completion_label_type_info = "fn(value: PackedT) -> T"
-    insert_text = "StorePacking::unpack(${1:value})"
     text_edits = ["""
     use starknet::storage_access::StorePacking;
 
@@ -31032,26 +16451,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "SubAssign::sub_assign(...)"
-    completion_label_type_info = "fn(ref self: Lhs, rhs: Rhs) -> ()"
-    insert_text = "SubAssign::sub_assign(${1:rhs})"
-    text_edits = ["""
-    use core::ops::SubAssign;
-
-    """]
-
-    [[completions]]
     completion_label = "SubEq"
     completion_label_path = "(use core::traits::SubEq)"
-    text_edits = ["""
-    use core::traits::SubEq;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubEq::sub_eq(...)"
-    completion_label_type_info = "fn(ref self: T, other: T) -> ()"
-    insert_text = "SubEq::sub_eq(${1:other})"
     text_edits = ["""
     use core::traits::SubEq;
 
@@ -31066,31 +16467,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "SubHelper::Result"
-    text_edits = ["""
-    use core::internal::bounded_int::SubHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointers"
     completion_label_path = "(use starknet::storage::SubPointers)"
-    text_edits = ["""
-    use starknet::storage::SubPointers;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointers::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointers;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointers::sub_pointers(...)"
-    completion_label_type_info = "fn(self: StoragePointer<T>) -> Self::SubPointersType"
-    insert_text = "SubPointers::sub_pointers()"
     text_edits = ["""
     use starknet::storage::SubPointers;
 
@@ -31105,40 +16483,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersDeref::Target"
-    text_edits = ["""
-    use starknet::storage::SubPointersDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "SubPointersDeref::deref()"
-    text_edits = ["""
-    use starknet::storage::SubPointersDeref;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointersForward"
     completion_label_path = "(use starknet::storage::SubPointersForward)"
-    text_edits = ["""
-    use starknet::storage::SubPointersForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersForward::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersForward::sub_pointers(...)"
-    completion_label_type_info = "fn(self: T) -> Self::SubPointersType"
-    insert_text = "SubPointersForward::sub_pointers()"
     text_edits = ["""
     use starknet::storage::SubPointersForward;
 
@@ -31153,40 +16499,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersMut::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersMut;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMut::sub_pointers_mut(...)"
-    completion_label_type_info = "fn(self: StoragePointer<Mutable<T>>) -> Self::SubPointersType"
-    insert_text = "SubPointersMut::sub_pointers_mut()"
-    text_edits = ["""
-    use starknet::storage::SubPointersMut;
-
-    """]
-
-    [[completions]]
     completion_label = "SubPointersMutDeref"
     completion_label_path = "(use starknet::storage::SubPointersMutDeref)"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutDeref::Target"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutDeref;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutDeref::deref(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "SubPointersMutDeref::deref()"
     text_edits = ["""
     use starknet::storage::SubPointersMutDeref;
 
@@ -31201,33 +16515,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "SubPointersMutForward::SubPointersType"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutForward;
-
-    """]
-
-    [[completions]]
-    completion_label = "SubPointersMutForward::sub_pointers_mut(...)"
-    completion_label_type_info = "fn(self: T) -> Self::SubPointersType"
-    insert_text = "SubPointersMutForward::sub_pointers_mut()"
-    text_edits = ["""
-    use starknet::storage::SubPointersMutForward;
-
-    """]
-
-    [[completions]]
     completion_label = "Sum"
     completion_label_path = "(use core::iter::Sum)"
-    text_edits = ["""
-    use core::iter::Sum;
-
-    """]
-
-    [[completions]]
-    completion_label = "Sum::sum(...)"
-    completion_label_type_info = "fn(iter: I) -> A"
-    insert_text = "Sum::sum(${1:iter})"
     text_edits = ["""
     use core::iter::Sum;
 
@@ -31250,26 +16539,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "SyscallResultTrait::unwrap_syscall(...)"
-    completion_label_type_info = "fn(self: Result<T, Array<felt252>>) -> T"
-    insert_text = "SyscallResultTrait::unwrap_syscall()"
-    text_edits = ["""
-    use starknet::SyscallResultTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "ToByteSpanTrait"
     completion_label_path = "(use core::byte_array::ToByteSpanTrait)"
-    text_edits = ["""
-    use core::byte_array::ToByteSpanTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "ToByteSpanTrait::span(...)"
-    completion_label_type_info = "fn(self: @C) -> ByteSpan"
-    insert_text = "ToByteSpanTrait::span()"
     text_edits = ["""
     use core::byte_array::ToByteSpanTrait;
 
@@ -31284,22 +16555,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "TrimMaxHelper::Target"
-    text_edits = ["""
-    use core::internal::bounded_int::TrimMaxHelper;
-
-    """]
-
-    [[completions]]
     completion_label = "TrimMinHelper"
     completion_label_path = "(use core::internal::bounded_int::TrimMinHelper)"
-    text_edits = ["""
-    use core::internal::bounded_int::TrimMinHelper;
-
-    """]
-
-    [[completions]]
-    completion_label = "TrimMinHelper::Target"
     text_edits = ["""
     use core::internal::bounded_int::TrimMinHelper;
 
@@ -31340,15 +16597,6 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "U256IntoEthAddress"
     completion_label_path = "(use starknet::eth_address::U256IntoEthAddress)"
-    text_edits = ["""
-    use starknet::eth_address::U256IntoEthAddress;
-
-    """]
-
-    [[completions]]
-    completion_label = "U256IntoEthAddress::into(...)"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "U256IntoEthAddress::into()"
     text_edits = ["""
     use starknet::eth_address::U256IntoEthAddress;
 
@@ -31403,58 +16651,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "VecTrait::ElementType"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::at(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> StoragePath<Self::ElementType>"
-    insert_text = "VecTrait::at(${1:index})"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::get(...)"
-    completion_label_type_info = "fn(self: T, index: u64) -> Option<StoragePath<Self::ElementType>>"
-    insert_text = "VecTrait::get(${1:index})"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
-    completion_label = "VecTrait::len(...)"
-    completion_label_type_info = "fn(self: T) -> u64"
-    insert_text = "VecTrait::len()"
-    text_edits = ["""
-    use starknet::storage::VecTrait;
-
-    """]
-
-    [[completions]]
     completion_label = "WideMul"
     completion_label_path = "(use core::num::traits::WideMul)"
-    text_edits = ["""
-    use core::num::traits::WideMul;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideMul::Target"
-    text_edits = ["""
-    use core::num::traits::WideMul;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideMul::wide_mul(...)"
-    completion_label_type_info = "fn(self: Lhs, other: Rhs) -> Self::Target"
-    insert_text = "WideMul::wide_mul(${1:other})"
     text_edits = ["""
     use core::num::traits::WideMul;
 
@@ -31469,33 +16667,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "WideSquare::Target"
-    text_edits = ["""
-    use core::num::traits::WideSquare;
-
-    """]
-
-    [[completions]]
-    completion_label = "WideSquare::wide_square(...)"
-    completion_label_type_info = "fn(self: T) -> Self::Target"
-    insert_text = "WideSquare::wide_square()"
-    text_edits = ["""
-    use core::num::traits::WideSquare;
-
-    """]
-
-    [[completions]]
     completion_label = "WrappingAdd"
     completion_label_path = "(use core::num::traits::WrappingAdd)"
-    text_edits = ["""
-    use core::num::traits::WrappingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "WrappingAdd::wrapping_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingAdd::wrapping_add(${1:v})"
     text_edits = ["""
     use core::num::traits::WrappingAdd;
 
@@ -31510,15 +16683,6 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "WrappingMul::wrapping_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingMul::wrapping_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::WrappingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "WrappingSub"
     completion_label_path = "(use core::num::traits::WrappingSub)"
     text_edits = ["""
@@ -31527,44 +16691,8 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
-    completion_label = "WrappingSub::wrapping_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingSub::wrapping_sub(${1:v})"
-    text_edits = ["""
-    use core::num::traits::WrappingSub;
-
-    """]
-
-    [[completions]]
     completion_label = "Zero"
     completion_label_path = "(use core::num::traits::Zero)"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::is_non_zero(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "Zero::is_non_zero()"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::is_zero(...)"
-    completion_label_type_info = "fn(self: @T) -> bool"
-    insert_text = "Zero::is_zero()"
-    text_edits = ["""
-    use core::num::traits::Zero;
-
-    """]
-
-    [[completions]]
-    completion_label = "Zero::zero(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "Zero::zero()"
     text_edits = ["""
     use core::num::traits::Zero;
 

@@ -31,73 +31,14 @@ fn exp_inline_macro() {
     completion_label = "Option"
 
     [[completions]]
-    completion_label = "TryInto::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "TryInto::try_into()"
-
-    [[completions]]
     completion_label = "panic(...)"
     completion_label_path = "(use panic)"
     completion_label_type_info = "fn(data: Array<felt252>) -> crate::never"
     insert_text = "panic(${1:data})"
 
     [[completions]]
-    completion_label = "BoundedInt::min(...)"
-    completion_label_type_info = "fn() -> T nopanic"
-    insert_text = "BoundedInt::min()"
-    text_edits = ["""
-    use core::integer::BoundedInt;
-
-    """]
-
-    [[completions]]
-    completion_label = "EthAddressPrintImpl::print(...)"
-    completion_label_type_info = "fn(self: T) -> ()"
-    insert_text = "EthAddressPrintImpl::print()"
-    text_edits = ["""
-    use starknet::eth_address::EthAddressPrintImpl;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoClassHash::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoClassHash::try_into()"
-    text_edits = ["""
-    use starknet::class_hash::Felt252TryIntoClassHash;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoContractAddress::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoContractAddress::try_into()"
-    text_edits = ["""
-    use starknet::contract_address::Felt252TryIntoContractAddress;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoEthAddress::try_into(...)"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "Felt252TryIntoEthAddress::try_into()"
-    text_edits = ["""
-    use starknet::eth_address::Felt252TryIntoEthAddress;
-
-    """]
-
-    [[completions]]
     completion_label = "WrappingAdd"
     completion_label_path = "(use core::num::traits::WrappingAdd)"
-    text_edits = ["""
-    use core::num::traits::WrappingAdd;
-
-    """]
-
-    [[completions]]
-    completion_label = "WrappingAdd::wrapping_add(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingAdd::wrapping_add(${1:v})"
     text_edits = ["""
     use core::num::traits::WrappingAdd;
 
@@ -112,26 +53,8 @@ fn exp_inline_macro() {
     """]
 
     [[completions]]
-    completion_label = "WrappingMul::wrapping_mul(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingMul::wrapping_mul(${1:v})"
-    text_edits = ["""
-    use core::num::traits::WrappingMul;
-
-    """]
-
-    [[completions]]
     completion_label = "WrappingSub"
     completion_label_path = "(use core::num::traits::WrappingSub)"
-    text_edits = ["""
-    use core::num::traits::WrappingSub;
-
-    """]
-
-    [[completions]]
-    completion_label = "WrappingSub::wrapping_sub(...)"
-    completion_label_type_info = "fn(self: T, v: T) -> T"
-    insert_text = "WrappingSub::wrapping_sub(${1:v})"
     text_edits = ["""
     use core::num::traits::WrappingSub;
 
@@ -213,77 +136,13 @@ fn exp_inline_macro_in_let_statement() {
     completion_label = "ArrayTrait"
 
     [[completions]]
-    completion_label = "ArrayTrait::append(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, value: T) -> () nopanic"
-    insert_text = "ArrayTrait::append(${1:value})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::append_span(...)"
-    completion_label_type_info = "fn(ref self: Array<T>, span: Span<T>) -> ()"
-    insert_text = "ArrayTrait::append_span(${1:span})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::at(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> @T"
-    insert_text = "ArrayTrait::at(${1:index})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::get(...)"
-    completion_label_type_info = "fn(self: @Array<T>, index: u32) -> Option<Box<@T>>"
-    insert_text = "ArrayTrait::get(${1:index})"
-
-    [[completions]]
-    completion_label = "ArrayTrait::is_empty(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> bool"
-    insert_text = "ArrayTrait::is_empty()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::len(...)"
-    completion_label_type_info = "fn(self: @Array<T>) -> u32"
-    insert_text = "ArrayTrait::len()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::new(...)"
-    completion_label_type_info = "fn() -> Array<T> nopanic"
-    insert_text = "ArrayTrait::new()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::pop_front(...)"
-    completion_label_type_info = "fn(ref self: Array<T>) -> Option<T> nopanic"
-    insert_text = "ArrayTrait::pop_front()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::pop_front_consume(...)"
-    completion_label_type_info = "fn(self: Array<T>) -> Option<(Array<T>, T)> nopanic"
-    insert_text = "ArrayTrait::pop_front_consume()"
-
-    [[completions]]
-    completion_label = "ArrayTrait::span(...)"
-    completion_label_type_info = "fn(snapshot: @Array<T>) -> Span<T>"
-    insert_text = "ArrayTrait::span(${1:snapshot})"
-
-    [[completions]]
     completion_label = "Err"
-
-    [[completions]]
-    completion_label = "ResultTrait::err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<E>"
-    insert_text = "ResultTrait::err()"
 
     [[completions]]
     completion_label = "Err"
     completion_label_path = "(use PanicResult::Err)"
     text_edits = ["""
     use PanicResult::Err;
-
-    """]
-
-    [[completions]]
-    completion_label = "ResultTraitImpl::err(...)"
-    completion_label_type_info = "fn(self: Result<T, E>) -> Option<E>"
-    insert_text = "ResultTraitImpl::err()"
-    text_edits = ["""
-    use core::result::ResultTraitImpl;
 
     """]
 
