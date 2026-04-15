@@ -52,9 +52,7 @@ pub(crate) fn importable_path_suffix_completions<'db>(
     else {
         return Default::default();
     };
-    let Some((typed_segments, last_typed_segment)) =
-        resolve_typed_segments(db, ctx)
-    else {
+    let Some((typed_segments, last_typed_segment)) = resolve_typed_segments(db, ctx) else {
         return Default::default();
     };
     let current_crate = ctx.module_id.owning_crate(db);
@@ -262,7 +260,9 @@ fn resolve_typed_segments<'db>(
     ctx: &AnalysisContext<'db>,
 ) -> Option<(Vec<SmolStrId<'db>>, SmolStrId<'db>)> {
     match get_typed_text_and_last_segment(db, ctx) {
-        (Some(typed_segments), Some(last_typed_segment)) => Some((typed_segments, last_typed_segment)),
+        (Some(typed_segments), Some(last_typed_segment)) => {
+            Some((typed_segments, last_typed_segment))
+        }
         _ if is_empty_body_context(db, &ctx.node) => Some((vec![], SmolStrId::from(db, ""))),
         _ => None,
     }
