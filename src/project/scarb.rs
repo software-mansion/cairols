@@ -225,7 +225,7 @@ pub fn extract_crates(metadata: &Metadata) -> Vec<CrateInfo> {
             };
             let cr_info = CrateInfo {
                 cr,
-                package_config: PackageConfig::from_pkg(package),
+                package_config: PackageConfig::from_pkg(package, &compilation_unit.compiler_config),
                 manifest_path: package.manifest_path.clone().into_std_path_buf(),
                 is_member: is_workspace_member(&component.package),
             };

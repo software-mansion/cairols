@@ -201,12 +201,12 @@ impl ScarbToolchain {
             .clone()
     }
 
-    pub fn cache_path(&self) -> Option<PathBuf> {
-        self.cache_path.get_or_init(|| self.fetch_cache_path().ok()).clone()
-    }
-
     pub fn is_from_scarb_cache(&self, file_path: &Path) -> bool {
         self.cache_path().is_some_and(|cache_path| file_path.starts_with(cache_path))
+    }
+
+    fn cache_path(&self) -> Option<PathBuf> {
+        self.cache_path.get_or_init(|| self.fetch_cache_path().ok()).clone()
     }
 
     fn fetch_version(&self) -> Result<String> {
