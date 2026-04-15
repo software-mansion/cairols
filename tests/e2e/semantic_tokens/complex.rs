@@ -36,20 +36,20 @@ fn complex() {
     }
 
     <token=keyword>fn</token> <token=function>main</token>() {
-        <token=keyword>let</token> <token=variable>foo</token> = <token=type>Foo</token>::<token=enumMember>Bar</token>;
-        <token=keyword>let</token> <token=variable>foobar</token>: <token=type>Foo</token> = <token=variable>foo</token>;
+        <token=keyword>let</token> <token=variable>foo</token> = <token=enum>Foo</token>::<token=enumMember>Bar</token>;
+        <token=keyword>let</token> <token=variable>foobar</token>: <token=enum>Foo</token> = <token=variable>foo</token>;
     }
 
-    <token=keyword>fn</token> <token=function>calc</token>(<token=parameter>foo</token>: <token=type>Foo</token>) {}
+    <token=keyword>fn</token> <token=function>calc</token>(<token=parameter>foo</token>: <token=enum>Foo</token>) {}
 
     #[<token=decorator>cfg</token>(<token=decorator>test</token>)]
-    <token=keyword>mod</token> <token=class>rectangle</token> {
-        <token=keyword>use</token> <token=keyword>super</token>::<token=type>Foo</token>;
+    <token=keyword>mod</token> <token=namespace>rectangle</token> {
+        <token=keyword>use</token> <token=keyword>super</token>::<token=enum>Foo</token>;
     }
 
-    <token=keyword>mod</token> <token=class>b</token> {
-        <token=keyword>mod</token> <token=class>a</token> {
-            <token=keyword>mod</token> <token=class>trick</token> {
+    <token=keyword>mod</token> <token=namespace>b</token> {
+        <token=keyword>mod</token> <token=namespace>a</token> {
+            <token=keyword>mod</token> <token=namespace>trick</token> {
                 #[<token=decorator>test</token>]
                 <token=keyword>struct</token> <token=struct>Foo</token> {}
             }
@@ -80,7 +80,7 @@ fn on_mod() {
     mod rectangle { }
     "#, @r"
     #[<token=decorator>cfg</token>(<token=decorator>test</token>, <token=number>1234</token>)]
-    <token=keyword>mod</token> <token=class>rectangle</token> { }
+    <token=keyword>mod</token> <token=namespace>rectangle</token> { }
     ")
 }
 
@@ -115,7 +115,7 @@ fn consts() {
     "#, @r"
     <token=keyword>const</token> <token=enumMember>STANDALONE</token>: <token=type>u32</token> = <token=number>3</token>;
 
-    <token=keyword>trait</token> <token=class>Shape</token><token=operator><</token><token=typeParameter>T</token><token=operator>></token> {
+    <token=keyword>trait</token> <token=interface>Shape</token><token=operator><</token><token=typeParameter>T</token><token=operator>></token> {
         <token=keyword>const</token> <token=enumMember>SIDES</token>: <token=type>u8</token>;
     }
 
@@ -177,7 +177,7 @@ fn inline_macro_with_same_name_as_trait() {
         array![5];
     }
     "#, @r"
-    <token=keyword>trait</token> <token=class>array</token> { }
+    <token=keyword>trait</token> <token=interface>array</token> { }
 
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=macro>array</token><token=macro>!</token>[<token=number>5</token>];
@@ -237,23 +237,23 @@ fn doc_comment_with_link() {
     /// A Function which plays with <token=class>[`Foo`]</token>
     /// I can also use relative <token=class>[links](../Cargo.toml)</token> and they will highlight correctly
     <token=keyword>fn</token> <token=function>main</token>() {
-        <token=keyword>let</token> <token=variable>foo</token> = <token=type>Foo</token>::<token=enumMember>Bar</token>;
-        <token=keyword>let</token> <token=variable>foobar</token>: <token=type>Foo</token> = <token=variable>foo</token>; /// Inline usage of <token=class>[`Foo`]</token>
+        <token=keyword>let</token> <token=variable>foo</token> = <token=enum>Foo</token>::<token=enumMember>Bar</token>;
+        <token=keyword>let</token> <token=variable>foobar</token>: <token=enum>Foo</token> = <token=variable>foo</token>; /// Inline usage of <token=class>[`Foo`]</token>
     }
 
 
-    <token=keyword>fn</token> <token=function>calc</token>(<token=parameter>foo</token>: <token=type>Foo</token>) {}
+    <token=keyword>fn</token> <token=function>calc</token>(<token=parameter>foo</token>: <token=enum>Foo</token>) {}
 
     /// Something over an attribute referring to <token=class>[`Foo`]</token>
     #[<token=decorator>cfg</token>(<token=decorator>test</token>)]
-    <token=keyword>mod</token> <token=class>rectangle</token> {
-        <token=keyword>use</token> <token=keyword>super</token>::<token=type>Foo</token>;
+    <token=keyword>mod</token> <token=namespace>rectangle</token> {
+        <token=keyword>use</token> <token=keyword>super</token>::<token=enum>Foo</token>;
     }
 
-    <token=keyword>mod</token> <token=class>b</token> {
-        <token=keyword>mod</token> <token=class>a</token> {
+    <token=keyword>mod</token> <token=namespace>b</token> {
+        <token=keyword>mod</token> <token=namespace>a</token> {
             /// A module inside a module with a <token=class>[`Foo`]</token> inside
-            <token=keyword>mod</token> <token=class>trick</token> {
+            <token=keyword>mod</token> <token=namespace>trick</token> {
                 #[<token=decorator>test</token>]
                 <token=keyword>struct</token> <token=struct>Foo</token> {}
             }

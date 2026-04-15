@@ -399,10 +399,16 @@ impl Backend {
         requester: &mut Requester<'_>,
         _: Responder,
     ) {
-        if let ServerStatus::Connected(client) =
-            state.db.proc_macro_input().proc_macro_server_status(&state.db)
-            && client.available_responses().len() != 0
-        {
+        // Check for responses without keeping the Arc alive past this block.
+        // The Arc must be dropped before calling `handle_response`, because `handle_response` may
+        // call `force_restart` which calls `Arc::try_unwrap` and panics if any extra strong
+        // references exist.
+        let has_responses = match state.db.proc_macro_input().proc_macro_server_status(&state.db) {
+            ServerStatus::Connected(client) => client.available_responses().len() != 0,
+            _ => false,
+        };
+
+        if has_responses {
             state.proc_macro_controller.handle_response(
                 &mut state.db,
                 &state.config,

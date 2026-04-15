@@ -1,7 +1,9 @@
 use std::fmt::Display;
 use std::path::PathBuf;
 
-use cairo_language_server::lsp::ext::{ExecuteInTerminal, ExecuteInTerminalParams};
+use cairo_language_server::lsp::ext::{
+    ExecuteInTerminal, ExecuteInTerminalParams, LaunchDebugger, LaunchDebuggerParams,
+};
 use indoc::indoc;
 use lsp_types::request::{CodeLensRequest, ExecuteCommand};
 use lsp_types::{
@@ -186,23 +188,37 @@ fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
         work_done_progress_params: Default::default(),
     });
 
-    let execute_in_terminal = lenses.as_ref().and_then(|lenses| {
-        let code_lens =
-            lenses.iter().find(|code_lens| code_lens.range.start.line == position.line)?;
+    let execute_in_terminal = if let Some(lenses) = &lenses {
+        lenses
+            .iter()
+            .filter(|code_lens| code_lens.range.start.line == position.line)
+            .map(|code_lens| {
+                let command = code_lens.command.clone().unwrap();
 
-        let command = code_lens.command.clone().unwrap();
+                ls.send_request::<ExecuteCommand>(ExecuteCommandParams {
+                    command: command.command,
+                    arguments: command.arguments.clone().unwrap().clone(),
+                    work_done_progress_params: Default::default(),
+                });
 
-        ls.send_request::<ExecuteCommand>(ExecuteCommandParams {
-            command: command.command,
-            arguments: command.arguments.clone().unwrap().clone(),
-            work_done_progress_params: Default::default(),
-        });
+                let is_debug_lens = command.title.contains("Debug");
 
-        let ExecuteInTerminalParams { command, cwd } =
-            ls.wait_for_notification::<ExecuteInTerminal>(|_| true);
+                let (command, cwd) = if is_debug_lens {
+                    let LaunchDebuggerParams { command, cwd, test_name: _ } =
+                        ls.wait_for_notification::<LaunchDebugger>(|_| true);
+                    (command, cwd)
+                } else {
+                    let ExecuteInTerminalParams { command, cwd } =
+                        ls.wait_for_notification::<ExecuteInTerminal>(|_| true);
+                    (command, cwd)
+                };
 
-        Some(ShellCommand { command, cwd: ls.fixture.file_relative_path(cwd) })
-    });
+                ShellCommand { command, cwd: ls.fixture.file_relative_path(cwd) }
+            })
+            .collect()
+    } else {
+        vec![]
+    };
 
     Report {
         lenses: lenses.map(|lenses| {
@@ -237,8 +253,8 @@ fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
 struct Report {
     #[serde(skip_serializing_if = "Option::is_none")]
     lenses: Option<Vec<CodeLensReport>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    execute_in_terminal: Option<ShellCommand>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    execute_in_terminal: Vec<ShellCommand>,
 }
 
 #[derive(Serialize)]
@@ -273,7 +289,7 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
                 ..it
             }
         }),
-        experimental: Some(json!({ "cairo": { "executeInTerminal": {} } })),
+        experimental: Some(json!({ "cairo": { "executeInTerminal": {}, "launchDebugger": {} } })),
         ..base
     }
 }

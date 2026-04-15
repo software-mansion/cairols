@@ -20,7 +20,7 @@ fn other_file() {
     file_path = "src/lib.cairo"
     index = 1
 
-    [execute_in_terminal]
+    [[execute_in_terminal]]
     command = "scarb cairo-test --filter hello::foo"
     cwd = "./"
     "#)
@@ -62,7 +62,7 @@ fn other_file_nested_test() {
     file_path = "src/lib.cairo"
     index = 1
 
-    [execute_in_terminal]
+    [[execute_in_terminal]]
     command = "scarb cairo-test --filter hello::baz"
     cwd = "./"
     "#)

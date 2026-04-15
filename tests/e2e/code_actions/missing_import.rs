@@ -1,5 +1,6 @@
 use crate::code_actions::{
-    quick_fix, quick_fix_with_macros, quick_fix_without_visibility_constraints,
+    quick_fix, quick_fix_with_macros, quick_fix_with_scarb_macros,
+    quick_fix_without_visibility_constraints,
 };
 use crate::support::insta::test_transform;
 
@@ -215,5 +216,56 @@ fn in_proc_macro_controlled_code() {
 
     "
     At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    "#);
+}
+
+#[test]
+fn in_inline_macro() {
+    test_transform!(quick_fix, "
+    mod aa {
+        pub fn cc() -> u32 { 1 }
+    }
+
+    fn test() {
+        assert_eq!(c<caret>c(), 1_u32)
+    }
+    ", @r#"
+    Title: Import `aa::cc`
+    Add new text: "use aa::cc;
+
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Fix All
+    Add new text: "use aa::cc;
+
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Expand macro recursively at caret
+    "#);
+}
+
+#[test]
+fn in_proc_macro_wrapping_assert() {
+    test_transform!(quick_fix_with_scarb_macros, "
+    mod aa {
+        pub fn cc() -> bool { true }
+    }
+
+    #[test]
+    fn test() {
+        simple_inline_macro_v2!(assert!(c<caret>c()))
+    }
+    ", @r#"
+    Title: Import `aa::cc`
+    Add new text: "use aa::cc;
+
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Fix All
+    Add new text: "use aa::cc;
+
+    "
+    At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+    Title: Expand macro recursively at caret
     "#);
 }

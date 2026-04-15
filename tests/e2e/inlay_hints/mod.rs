@@ -8,6 +8,7 @@ use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2025_12;
 use crate::support::cursor::index_in_text;
 use crate::support::{cursors, sandbox};
 
+mod params;
 mod variables;
 
 fn inlay_hint(cairo_code: &str) -> String {

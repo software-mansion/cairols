@@ -45,6 +45,10 @@ jobs:
       - uses: software-mansion/setup-scarb@v1
         with:
           cache: false
+      # For debugger lens tests.
+      - uses: foundry-rs/setup-snfoundry@v6
+        with:
+          starknet-foundry-version: nightly-2026-04-06
       - uses: taiki-e/install-action@v2
         with:
           tool: nextest@0.9.98
