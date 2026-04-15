@@ -1311,7 +1311,6 @@ fn test_builtin_alias_in_impl_associated_type_as_type_parameter() {
     "#)
 }
 
-// FIXME(#660): This should be inferred
 #[test]
 fn test_impl_associated_type_with_path_reference() {
     test_transform_plain!(Hover, r#"
@@ -1335,16 +1334,16 @@ fn test_impl_associated_type_with_path_reference() {
     """
     popover = """
     ```cairo
-    hello
+    hello::Impl
     ```
     ```cairo
     impl Impl of Trait;
+    type Type = felt252;
     ```
     """
     "#)
 }
 
-// FIXME(#660): This should be inferred
 #[test]
 fn test_impl_associated_impl_with_path_reference() {
     test_transform_plain!(Hover, r#"
@@ -1376,10 +1375,11 @@ fn test_impl_associated_impl_with_path_reference() {
     """
     popover = """
     ```cairo
-    hello
+    hello::Impl
     ```
     ```cairo
     impl Impl of Trait;
+    impl SubTrait = SubTraitor911;
     ```
     """
     "#)
