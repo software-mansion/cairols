@@ -13,8 +13,8 @@ use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_executable_plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    CrateConfig, CrateConfigStorage, CrateConfigView, CrateConfigurationInput, FileContentStorage,
-    FileContentView, FileContents, FilesGroup, files_group_input, init_files_group,
+    CrateConfig, CrateConfigStorage, CrateConfigView, CrateConfigurationInput, FileContentOverride,
+    FileContentStorage, FileContentView, FilesGroup, files_group_input, init_files_group,
     register_crate_config_view, register_files_group_view,
 };
 use cairo_lang_filesystem::ids::{ArcStr, CrateId, CrateInput, CrateLongId, FileId, FileInput};
@@ -195,7 +195,7 @@ impl AnalysisDatabase {
         db
     }
 
-    fn file_contents_handle(&self, file_input: &FileInput) -> Option<FileContents> {
+    fn file_contents_handle(&self, file_input: &FileInput) -> Option<FileContentOverride> {
         self.file_contents.read().unwrap().get(file_input).copied()
     }
 
@@ -203,12 +203,7 @@ impl AnalysisDatabase {
         self.crate_configs.read().unwrap().get(crate_input).copied()
     }
 
-    fn file_contents_handle_for_file<'db>(&'db self, file_id: FileId<'db>) -> Option<FileContents> {
-        let file_input = self.file_input(file_id).clone();
-        self.file_contents_handle(&file_input)
-    }
-
-    pub fn ensure_crate_config_handle_for_input(&mut self, crate_input: CrateInput) -> CrateConfig {
+pub fn ensure_crate_config_handle_for_input(&mut self, crate_input: CrateInput) -> CrateConfig {
         let (handle, inserted) = self.ensure_crate_config_handle_for_input_impl(crate_input);
         if inserted {
             self.bump_crate_configs_revision();
@@ -332,12 +327,12 @@ impl AnalysisDatabase {
         }
     }
 
-    fn ensure_file_contents_handle_for_input(&mut self, file_input: FileInput) -> FileContents {
+    fn ensure_file_contents_handle_for_input(&mut self, file_input: FileInput) -> FileContentOverride {
         if let Some(handle) = self.file_contents_handle(&file_input) {
             return handle;
         }
 
-        let handle = FileContents::new(self, None, None);
+        let handle = FileContentOverride::new(self, None);
         self.file_contents.write().unwrap().insert(file_input, handle);
         self.bump_file_contents_revision();
         handle
@@ -359,7 +354,7 @@ impl AnalysisDatabase {
     ) {
         let handle = self.ensure_file_contents_handle_for_input(file_input);
         handle
-            .set_on_disk_content(self)
+            .set_content(self)
             .with_durability(Durability::LOW)
             .to(content.map(ArcStr::new));
     }
@@ -380,7 +375,7 @@ impl AnalysisDatabase {
     ) {
         let handle = self.ensure_file_contents_handle_for_input(file_input);
         handle
-            .set_generated_content(self)
+            .set_content(self)
             .with_durability(Durability::HIGH)
             .to(content.map(ArcStr::new));
     }
@@ -388,7 +383,7 @@ impl AnalysisDatabase {
     pub fn clear_generated_file_contents(&mut self) {
         let handles = self.file_contents.read().unwrap().values().copied().collect::<Vec<_>>();
         for handle in handles {
-            handle.set_generated_content(self).with_durability(Durability::HIGH).to(None);
+            handle.set_content(self).with_durability(Durability::HIGH).to(None);
         }
     }
 
@@ -400,7 +395,7 @@ impl AnalysisDatabase {
             .into_iter()
             .filter_map(|file_input| {
                 let handle = self.file_contents_handle(&file_input)?;
-                let content = handle.on_disk_content(self).as_ref()?;
+                let content = handle.content(self).as_ref()?;
                 Some((file_input, (**content).clone()))
             })
             .collect()
@@ -804,16 +799,8 @@ impl AnalysisDatabase {
 }
 
 impl FileContentView for AnalysisDatabase {
-    fn file_contents<'db>(&'db self, file_id: FileId<'db>) -> Option<FileContents> {
-        self.file_contents_handle_for_file(file_id)
-    }
-
-    fn on_disk_file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db ArcStr> {
-        self.file_contents_handle_for_file(file_id)?.on_disk_content(self).as_ref()
-    }
-
-    fn generated_file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db ArcStr> {
-        self.file_contents_handle_for_file(file_id)?.generated_content(self).as_ref()
+    fn file_content_storage(&self) -> Option<&FileContentStorage> {
+        Some(&self.file_contents)
     }
 }
 
