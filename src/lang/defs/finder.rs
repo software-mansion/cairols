@@ -87,7 +87,10 @@ pub fn find_definition<'db>(
             let result = try_concrete_type_or_impl(db, identifier, lookup_items)?;
             Some(redirect_to_use_alias_if_needed(db, identifier, result))
         })
-        .or_else(|| try_trait_as_generic_parameter_bound(db, identifier, lookup_items))
+        .or_else(|| {
+            let result = try_trait_as_generic_parameter_bound(db, identifier, lookup_items)?;
+            Some(redirect_to_use_alias_if_needed(db, identifier, result))
+        })
         .or_else(|| try_generic_arg(db, identifier, lookup_items))
         .or_else(|| {
             let result = lookup_resolved_items(db, identifier, lookup_items, resolver_data)?;
