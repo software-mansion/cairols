@@ -153,6 +153,52 @@ fn struct_alias_via_alias_definition() {
 }
 
 #[test]
+fn trait_alias_via_generic_constraint() {
+    test_transform_plain!(References, r#"
+    mod xyz {
+        pub trait MyTrait<T> {}
+    }
+
+    use xyz::MyTrait as AliasedTrait;
+
+    fn foo<T, +<caret>AliasedTrait<T>>() {}
+    fn bar<T, +AliasedTrait<T>>() {}
+    "#, @r"
+    mod xyz {
+        pub trait MyTrait<T> {}
+    }
+
+    use xyz::MyTrait as <sel=declaration>AliasedTrait</sel>;
+
+    fn foo<T, +<sel>AliasedTrait</sel><T>>() {}
+    fn bar<T, +<sel>AliasedTrait</sel><T>>() {}
+    ")
+}
+
+#[test]
+fn trait_alias_via_alias_definition() {
+    test_transform_plain!(References, r#"
+    mod xyz {
+        pub trait MyTrait<T> {}
+    }
+
+    use xyz::MyTrait as <caret>AliasedTrait;
+
+    fn foo<T, +AliasedTrait<T>>() {}
+    fn bar<T, +AliasedTrait<T>>() {}
+    "#, @r"
+    mod xyz {
+        pub trait MyTrait<T> {}
+    }
+
+    use xyz::MyTrait as <sel=declaration>AliasedTrait</sel>;
+
+    fn foo<T, +<sel>AliasedTrait</sel><T>>() {}
+    fn bar<T, +<sel>AliasedTrait</sel><T>>() {}
+    ")
+}
+
+#[test]
 fn original_symbol_does_not_find_alias_usages() {
     test_transform_plain!(References, r#"
     mod xyz {

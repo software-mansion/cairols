@@ -153,6 +153,52 @@ fn struct_alias_via_alias_definition() {
 }
 
 #[test]
+fn trait_alias_via_generic_constraint() {
+    test_transform_plain!(Rename, r#"
+    mod xyz {
+        pub trait MyTrait<T> {}
+    }
+
+    use xyz::MyTrait as AliasedTrait;
+
+    fn foo<T, +<caret>AliasedTrait<T>>() {}
+    fn bar<T, +AliasedTrait<T>>() {}
+    "#, @r"
+    mod xyz {
+        pub trait MyTrait<T> {}
+    }
+
+    use xyz::MyTrait as RENAMED;
+
+    fn foo<T, +RENAMED<T>>() {}
+    fn bar<T, +RENAMED<T>>() {}
+    ")
+}
+
+#[test]
+fn trait_alias_via_alias_definition() {
+    test_transform_plain!(Rename, r#"
+    mod xyz {
+        pub trait MyTrait<T> {}
+    }
+
+    use xyz::MyTrait as <caret>AliasedTrait;
+
+    fn foo<T, +AliasedTrait<T>>() {}
+    fn bar<T, +AliasedTrait<T>>() {}
+    "#, @r"
+    mod xyz {
+        pub trait MyTrait<T> {}
+    }
+
+    use xyz::MyTrait as RENAMED;
+
+    fn foo<T, +RENAMED<T>>() {}
+    fn bar<T, +RENAMED<T>>() {}
+    ")
+}
+
+#[test]
 fn original_rename_does_not_rename_alias_name() {
     test_transform_plain!(Rename, r#"
     mod xyz {
