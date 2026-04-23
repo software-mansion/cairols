@@ -1,6 +1,26 @@
 use lsp_types::request::Completion;
 
-use crate::{completions::completion_fixture, support::insta::test_transform_plain};
+use crate::{
+    completions::completion_fixture,
+    support::insta::{test_transform_plain, test_transform_with_macros},
+};
+
+// TODO(#1153)
+#[test]
+fn attribute_after_expanding_attr() {
+    test_transform_with_macros!(Completion, "
+    #[test]
+    #[available_gas<caret>]
+    fn a() {}
+    ", @r#"
+    caret = """
+    #[available_gas<caret>]
+    """
+
+    [[completions]]
+    completion_label = "available_gas"
+    "#);
+}
 
 #[test]
 fn derive() {
