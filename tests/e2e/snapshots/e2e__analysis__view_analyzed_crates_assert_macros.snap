@@ -59,7 +59,7 @@ snapshot_kind: text
   "settings": {
     "name": "core",
     "edition": "2025_12",
-    "version": "2.16.1",
+    "version": "2.18.0",
     "cfg_set": [
       [
         "target",
