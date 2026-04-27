@@ -1201,6 +1201,14 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
+    completion_label = "ForwardingClassHash"
+    completion_label_path = "(use starknet::ForwardingClassHash)"
+    text_edits = ["""
+    use starknet::ForwardingClassHash;
+
+    """]
+
+    [[completions]]
     completion_label = "FromNullableResult"
     completion_label_path = "(use core::nullable::FromNullableResult)"
     text_edits = ["""
@@ -3109,7 +3117,7 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "get_execution_info_v2_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v2_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<super::info::v2::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v2_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v2_syscall;
@@ -3119,7 +3127,7 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "get_execution_info_v3_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v3_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<super::info::v3::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v3_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v3_syscall;
@@ -5985,6 +5993,14 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
+    completion_label = "ForwardingClassHash"
+    completion_label_path = "(use starknet::ForwardingClassHash)"
+    text_edits = ["""
+    use starknet::ForwardingClassHash;
+
+    """]
+
+    [[completions]]
     completion_label = "FromNullableResult"
     completion_label_path = "(use core::nullable::FromNullableResult)"
     text_edits = ["""
@@ -7893,7 +7909,7 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "get_execution_info_v2_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v2_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<super::info::v2::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v2_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v2_syscall;
@@ -7903,7 +7919,7 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "get_execution_info_v3_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v3_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<super::info::v3::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v3_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v3_syscall;
@@ -10769,6 +10785,14 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
+    completion_label = "ForwardingClassHash"
+    completion_label_path = "(use starknet::ForwardingClassHash)"
+    text_edits = ["""
+    use starknet::ForwardingClassHash;
+
+    """]
+
+    [[completions]]
     completion_label = "FromNullableResult"
     completion_label_path = "(use core::nullable::FromNullableResult)"
     text_edits = ["""
@@ -12677,7 +12701,7 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "get_execution_info_v2_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v2_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<super::info::v2::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v2_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v2_syscall;
@@ -12687,7 +12711,7 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "get_execution_info_v3_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v3_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<super::info::v3::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v3_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v3_syscall;
@@ -15559,6 +15583,14 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
+    completion_label = "ForwardingClassHash"
+    completion_label_path = "(use starknet::ForwardingClassHash)"
+    text_edits = ["""
+    use starknet::ForwardingClassHash;
+
+    """]
+
+    [[completions]]
     completion_label = "FromNullableResult"
     completion_label_path = "(use core::nullable::FromNullableResult)"
     text_edits = ["""
@@ -17467,7 +17499,7 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "get_execution_info_v2_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v2_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<super::info::v2::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v2_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v2_syscall;
@@ -17477,7 +17509,7 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "get_execution_info_v3_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v3_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<super::info::v3::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v3_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v3_syscall;
