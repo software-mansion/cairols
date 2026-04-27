@@ -115,11 +115,11 @@ pub fn path_suffix_completions<'db>(
         .map(|item| item.item)
         .collect();
 
-    // In expression blocks, when the cursor is directly after `::` with non-empty preceding
-    // segments, also propose bare item names from traits/impls whose path matches.
+    // In expression blocks, when the cursor is after `::` with non-empty preceding segments
+    // (including when the user has already typed a partial segment), propose bare item names
+    // from traits/impls whose path matches. The LSP client handles prefix filtering.
     if ctx.node.ancestor_of_kind(db, SyntaxKind::ExprBlock).is_some()
         && !typed_segments.is_empty()
-        && last_typed_segment.to_string(db).is_empty()
     {
         extend_with_trait_items_for_matching_paths(
             db,

@@ -623,6 +623,37 @@ fn trait_prefix_with_all_items() {
 }
 
 #[test]
+fn trait_prefix_with_partial_segment() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        fn my_func() -> u32;
+        type MyType;
+        const MY_CONST: u32;
+    }
+
+    fn test() {
+        MyTrait::my<caret>
+    }
+    ",@r#"
+    caret = """
+        MyTrait::my<caret>
+    """
+
+    [[completions]]
+    completion_label = "MY_CONST"
+    completion_label_type_info = "u32"
+
+    [[completions]]
+    completion_label = "MyType"
+
+    [[completions]]
+    completion_label = "my_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "my_func()"
+    "#);
+}
+
+#[test]
 fn impl_prefix_with_all_items() {
     test_transform_plain!(Completion, completion_fixture(), "
     trait MyTrait {
@@ -643,6 +674,43 @@ fn impl_prefix_with_all_items() {
     ",@r#"
     caret = """
         MyImpl::<caret>
+    """
+
+    [[completions]]
+    completion_label = "MY_CONST"
+    completion_label_type_info = "u32"
+
+    [[completions]]
+    completion_label = "MyType"
+
+    [[completions]]
+    completion_label = "my_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "my_func()"
+    "#);
+}
+
+#[test]
+fn impl_prefix_with_partial_segment() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        fn my_func() -> u32;
+        type MyType;
+        const MY_CONST: u32;
+    }
+
+    impl MyImpl of MyTrait {
+        fn my_func() -> u32 { 0 }
+        type MyType = u32;
+        const MY_CONST: u32 = 5;
+    }
+
+    fn test() {
+        MyImpl::my<caret>
+    }
+    ",@r#"
+    caret = """
+        MyImpl::my<caret>
     """
 
     [[completions]]
