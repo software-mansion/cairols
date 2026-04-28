@@ -21,6 +21,7 @@ mod macros;
 mod structs;
 mod traits;
 mod types;
+mod use_alias;
 mod vars;
 
 impl Transformer for References {

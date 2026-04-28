@@ -167,6 +167,10 @@ impl<'db> SymbolSearch<'db> {
             ResolvedItem::GenericParam(ref generic_param) => {
                 Some(SymbolDef::GenericParam(GenericParamDef::new(db, generic_param)?))
             }
+
+            ResolvedItem::UseAlias(_) => {
+                ItemDef::new(db, resolved_item.definition_node(db)?).map(SymbolDef::Item)
+            }
         }
         .map(|def| Self { def, resolved_item, resolver_data })
     }
