@@ -83,19 +83,10 @@ pub fn find_definition<'db>(
         .or_else(|| try_variable_declaration(db, identifier, lookup_items))
         .or_else(|| try_impl_item_usages(db, identifier, lookup_items))
         .or_else(|| try_trait_or_impl_item_with_self_reference(db, identifier, lookup_items))
-        .or_else(|| {
-            let result = try_concrete_type_or_impl(db, identifier, lookup_items)?;
-            Some(redirect_to_use_alias_if_needed(db, identifier, result))
-        })
-        .or_else(|| {
-            let result = try_trait_as_generic_parameter_bound(db, identifier, lookup_items)?;
-            Some(redirect_to_use_alias_if_needed(db, identifier, result))
-        })
+        .or_else(|| try_concrete_type_or_impl(db, identifier, lookup_items))
+        .or_else(|| try_trait_as_generic_parameter_bound(db, identifier, lookup_items))
         .or_else(|| try_generic_arg(db, identifier, lookup_items))
-        .or_else(|| {
-            let result = lookup_resolved_items(db, identifier, lookup_items, resolver_data)?;
-            Some(redirect_to_use_alias_if_needed(db, identifier, result))
-        })
+        .or_else(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
 }
 
@@ -627,7 +618,8 @@ fn try_concrete_type_or_impl<'db>(
             | ResolvedGenericItem::GenericTypeAlias(_)
             | ResolvedGenericItem::Impl(_)
             | ResolvedGenericItem::GenericImplAlias(_) => {
-                return Some(ResolvedItem::Generic(resolved_item));
+                let result = ResolvedItem::Generic(resolved_item);
+                return Some(redirect_to_use_alias_if_needed(db, identifier, result));
             }
             _ => (),
         }
@@ -761,7 +753,8 @@ fn try_trait_as_generic_parameter_bound<'db>(
 
         match &resolved_item {
             ResolvedGenericItem::Trait(_) | ResolvedGenericItem::Impl(_) => {
-                return Some(ResolvedItem::Generic(resolved_item));
+                let result = ResolvedItem::Generic(resolved_item);
+                return Some(redirect_to_use_alias_if_needed(db, identifier, result));
             }
             _ => (),
         }
@@ -857,7 +850,8 @@ fn lookup_resolved_items<'db>(
             // Const cannot be easily converted into generic from concrete so return it unresolved.
             Some(ResolvedConcreteItem::Constant(_)) => {
                 if let Some(item) = db.lookup_resolved_generic_item_by_ptr(lookup_item_id, ptr) {
-                    return Some(ResolvedItem::Generic(item));
+                    let result = ResolvedItem::Generic(item);
+                    return Some(redirect_to_use_alias_if_needed(db, identifier, result));
                 }
             }
             Some(item) => {
@@ -868,7 +862,9 @@ fn lookup_resolved_items<'db>(
                     .map(|data| data.clone_with_inference_id(db, InferenceId::NoContext));
                 // We infer the impl function here manually, since it cannot be handled via resolver directly.
                 // This would default to generic function later, which we don't want to happen if we can infer it.
-                return try_infer_impl_function(db, resolver_data, item.clone()).or(Some(ResolvedItem::Concrete(item)));
+                let result = try_infer_impl_function(db, resolver_data, item.clone())
+                    .or(Some(ResolvedItem::Concrete(item)));
+                return result.map(|result| redirect_to_use_alias_if_needed(db, identifier, result));
             }
         }
     }
