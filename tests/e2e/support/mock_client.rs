@@ -9,14 +9,13 @@ use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, Analy
 use cairo_language_server::lsp::ext::ServerStatusParams;
 use cairo_language_server::lsp::ext::ViewAnalyzedCrates;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
-use cairo_language_server::testing::BackendForTesting;
+use cairo_language_server::testing::{BackendForTesting, LspClientConnection};
 use lsp_server::{Message, Notification, Request, Response};
 use lsp_types::request::{RegisterCapability, Request as LspRequest};
 use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url, lsp_notification, lsp_request};
 use serde_json::Value;
 
 use crate::support::fixture::Fixture;
-use crate::support::jsonrpc::RequestIdGenerator;
 use crate::support::mock_client::Action::{NoOp, RemoveFromTrace};
 
 /// A mock language client implementation that facilitates end-to-end testing language servers.
@@ -31,8 +30,7 @@ pub struct MockClient {
     pub fixture: Fixture,
     // Keeps last diagnostics generation for each file
     diagnostics: HashMap<Url, Vec<Diagnostic>>,
-    req_id: RequestIdGenerator,
-    client: lsp_server::Connection,
+    conn: LspClientConnection,
     trace: Vec<Message>,
     workspace_configuration: Value,
     // Mapping between request name and request handler
@@ -62,8 +60,7 @@ impl MockClient {
 
         let mut this = Self {
             fixture,
-            client,
-            req_id: RequestIdGenerator::default(),
+            conn: LspClientConnection::new(client),
             trace: Vec::new(),
             workspace_configuration,
             expect_request_handlers: Default::default(),
@@ -110,10 +107,10 @@ impl MockClient {
 
     /// Sends an arbitrary request to the server.
     pub fn send_request_untyped(&mut self, method: &'static str, params: Value) -> Value {
-        let id = self.req_id.next();
+        let id = self.conn.next_id();
         let message = Message::Request(Request::new(id.clone(), method.to_owned(), params));
 
-        self.client.sender.send(message.clone()).expect("failed to send request");
+        self.conn.connection.sender.send(message.clone()).expect("failed to send request");
 
         while let Some(response_message) =
             self.recv().unwrap_or_else(|err| panic!("{err:?}: {message:?}"))
@@ -139,14 +136,7 @@ impl MockClient {
         &mut self,
         params: N::Params,
     ) {
-        let params = serde_json::to_value(params).expect("failed to serialize notification params");
-        self.send_notification_untyped(N::METHOD, params)
-    }
-
-    /// Sends an arbitrary notification to the server.
-    pub fn send_notification_untyped(&mut self, method: &'static str, params: Value) {
-        let message = Message::Notification(Notification::new(method.to_string(), params));
-        self.client.sender.send(message).expect("failed to send notification");
+        self.conn.send_notification::<N>(params);
     }
 
     fn get_handler_for(&mut self, request_name: &String) -> Option<ExpectRequestHandler> {
@@ -179,7 +169,7 @@ impl MockClient {
     /// Receives a message from the server.
     fn recv(&mut self) -> Result<Option<Message>, RecvError> {
         const TIMEOUT: Duration = Duration::from_secs(3 * 60);
-        let message = match self.client.receiver.recv_timeout(TIMEOUT) {
+        let message = match self.conn.connection.receiver.recv_timeout(TIMEOUT) {
             Ok(msg) => Some(msg),
             Err(crossbeam::channel::RecvTimeoutError::Disconnected) => None,
             Err(crossbeam::channel::RecvTimeoutError::Timeout) => return Err(RecvError::Timeout),
@@ -194,7 +184,7 @@ impl MockClient {
                 } else if let Some(handler) = self.get_handler_for(&request.method) {
                     let response = (handler.f)(request);
                     let message = Message::Response(response);
-                    self.client.sender.send(message).expect("failed to send response");
+                    self.conn.connection.sender.send(message).expect("failed to send response");
                 } else {
                     panic!("unhandled request {request:?}");
                 }
@@ -517,46 +507,18 @@ impl MockClient {
     fn auto_respond_to_workspace_configuration_request(&mut self, request: &lsp_server::Request) {
         assert_eq!(request.method, <lsp_request!("workspace/configuration") as LspRequest>::METHOD);
 
-        let id = request.id.clone();
-
         let params = serde_json::from_value(request.params.clone())
             .expect("failed to parse `workspace/configuration` params");
 
-        let result = self.compute_workspace_configuration(params);
+        let result = LspClientConnection::compute_workspace_configuration(
+            &self.workspace_configuration,
+            params,
+        );
 
         let result = serde_json::to_value(result)
             .expect("failed to serialize `workspace/configuration` response");
 
-        let message = Message::Response(Response::new_ok(id, result));
-        self.client
-            .sender
-            .send(message)
-            .expect("failed to send `workspace/configuration` response");
-    }
-
-    /// Computes response to `workspace/configuration` request.
-    fn compute_workspace_configuration(
-        &self,
-        params: <lsp_request!("workspace/configuration") as LspRequest>::Params,
-    ) -> Vec<Value> {
-        params
-            .items
-            .iter()
-            .map(|item| {
-                // NOTE: `scope_uri` is ignored.
-                match &item.section {
-                    Some(section) => {
-                        // Items may ask for nested entries, with dot being the path separator.
-                        section
-                            .split('.')
-                            .try_fold(&self.workspace_configuration, |config, key| config.get(key))
-                            .cloned()
-                            .unwrap_or(Value::Null)
-                    }
-                    None => self.workspace_configuration.clone(),
-                }
-            })
-            .collect()
+        self.conn.send_response(request.id.clone(), result);
     }
 }
 

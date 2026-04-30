@@ -28,13 +28,6 @@ fn no_duplicate_code_actions_for_nested_conditions() {
         }
     "
     At: Range { start: Position { line: 4, character: 0 }, end: Position { line: 10, character: 0 } }
-    Title: Combine nested ifs into a single condition
-    Add new text: "    if (x || z) && (y && z) {
-            if z {
-            }
-        }
-    "
-    At: Range { start: Position { line: 4, character: 0 }, end: Position { line: 10, character: 0 } }
     "#);
 }
 

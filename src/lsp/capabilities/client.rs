@@ -67,8 +67,11 @@ pub trait ClientCapabilitiesExt {
     /// The client supports dynamic registration for inlay hint provider capabilities.
     fn text_document_inlay_hints_dynamic_registration(&self) -> bool;
 
-    /// The client supports [`crate::lsp::ext::ExecuteInTerminal`] requests.
+    /// The client supports [`crate::lsp::ext::ExecuteInTerminal`] notifications.
     fn execute_in_terminal_support(&self) -> bool;
+
+    /// The client supports [`crate::lsp::ext::LaunchDebugger`] notifications.
+    fn launch_debugger_support(&self) -> bool;
 }
 
 impl ClientCapabilitiesExt for ClientCapabilities {
@@ -170,6 +173,16 @@ impl ClientCapabilitiesExt for ClientCapabilities {
                 .is_some()
         )
     }
+
+    fn launch_debugger_support(&self) -> bool {
+        try_or_default!(
+            serde_json::from_value::<ExperimentalCapabilities>(self.experimental.clone()?)
+                .ok()?
+                .cairo?
+                .launch_debugger
+                .is_some()
+        )
+    }
 }
 
 #[derive(Deserialize)]
@@ -184,7 +197,13 @@ struct ExperimentalCapabilities {
 struct CairoMethods {
     #[serde(default)]
     execute_in_terminal: Option<ExecuteInTerminalCapabilities>,
+
+    #[serde(default)]
+    launch_debugger: Option<LaunchDebuggerCapabilities>,
 }
 
 #[derive(Deserialize)]
 struct ExecuteInTerminalCapabilities {}
+
+#[derive(Deserialize)]
+struct LaunchDebuggerCapabilities {}

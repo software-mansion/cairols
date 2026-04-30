@@ -9,5 +9,5 @@ fn text_matches_inner(proposed: &str, typed: &str) -> bool {
         return true;
     }
 
-    jaro_winkler(proposed, typed) > 0.7
+    jaro_winkler(proposed, typed) >= 0.7
 }

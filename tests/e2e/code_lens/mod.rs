@@ -1,12 +1,15 @@
 use std::fmt::Display;
 use std::path::PathBuf;
 
-use cairo_language_server::lsp::ext::{ExecuteInTerminal, ExecuteInTerminalParams};
-use indoc::indoc;
+use cairo_language_server::lsp::ext::{
+    ExecuteInTerminal, ExecuteInTerminalParams, LaunchDebugger, LaunchDebuggerParams,
+};
+use indoc::{formatdoc, indoc};
+use lsp_types::notification::ShowMessage;
 use lsp_types::request::{CodeLensRequest, ExecuteCommand};
 use lsp_types::{
     ClientCapabilities, CodeLensParams, DynamicRegistrationClientCapabilities,
-    ExecuteCommandParams, TextDocumentClientCapabilities, Url,
+    ExecuteCommandParams, ShowMessageParams, TextDocumentClientCapabilities, Url,
 };
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -50,6 +53,12 @@ fn test_code_lens_snforge(cairo_code: &str) -> Report {
 
             [tool.scarb]
             allow-prebuilt-plugins = ["snforge_std"]
+
+            [cairo]
+            add-functions-debug-info = true
+            skip-optimizations = true
+            unstable-add-statements-code-locations-debug-info = true
+            add-statements-functions-debug-info = true
             "#
         ),
         json!({
@@ -57,6 +66,38 @@ fn test_code_lens_snforge(cairo_code: &str) -> Report {
                 "enableProcMacros": true
             }
         }),
+    )
+}
+
+fn test_code_lens_snforge_wrong_debug_config(cairo_code: &str) -> Report {
+    test_code_lens_impl(
+        cairo_code,
+        &formatdoc!(
+            r#"
+            [package]
+            name = "hello"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [dependencies]
+            snforge_std = "0.50.0"
+
+            [tool.scarb]
+            allow-prebuilt-plugins = ["snforge_std"]
+
+            [cairo]
+            add-functions-debug-info = true
+            skip-optimizations = false
+            add-statements-code-locations-debug-info = true
+            add-statements-functions-debug-info = true
+            "#
+        ),
+        json!({
+            "cairo1": {
+                "enableProcMacros": true
+            }
+        }),
+        true,
     )
 }
 
@@ -149,6 +190,15 @@ fn test_code_lens_custom_runner(cairo_code: &str) -> Report {
 }
 
 fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
+    test_code_lens_impl(cairo_code, scarb_toml, config, false)
+}
+
+fn test_code_lens_impl(
+    cairo_code: &str,
+    scarb_toml: &str,
+    config: Value,
+    expect_wrong_compiler_config_for_debug: bool,
+) -> Report {
     let (cairo, cursors) = cursors(cairo_code);
 
     let mut ls = sandbox! {
@@ -186,23 +236,40 @@ fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
         work_done_progress_params: Default::default(),
     });
 
-    let execute_in_terminal = lenses.as_ref().and_then(|lenses| {
-        let code_lens =
-            lenses.iter().find(|code_lens| code_lens.range.start.line == position.line)?;
+    let mut execute_in_terminal: Vec<ShellCommand> = vec![];
+    let mut show_messages: Vec<ShowMessageReport> = vec![];
 
-        let command = code_lens.command.clone().unwrap();
+    if let Some(lenses) = &lenses {
+        for code_lens in lenses.iter().filter(|l| l.range.start.line == position.line) {
+            let command = code_lens.command.clone().unwrap();
 
-        ls.send_request::<ExecuteCommand>(ExecuteCommandParams {
-            command: command.command,
-            arguments: command.arguments.clone().unwrap().clone(),
-            work_done_progress_params: Default::default(),
-        });
+            ls.send_request::<ExecuteCommand>(ExecuteCommandParams {
+                command: command.command,
+                arguments: command.arguments.unwrap().clone(),
+                work_done_progress_params: Default::default(),
+            });
 
-        let ExecuteInTerminalParams { command, cwd } =
-            ls.wait_for_notification::<ExecuteInTerminal>(|_| true);
+            let is_debug_lens = command.title.contains("Debug");
 
-        Some(ShellCommand { command, cwd: ls.fixture.file_relative_path(cwd) })
-    });
+            if is_debug_lens && expect_wrong_compiler_config_for_debug {
+                let ShowMessageParams { typ, message } =
+                    ls.wait_for_notification::<ShowMessage>(|_| true);
+                show_messages.push(ShowMessageReport { typ: format!("{typ:?}"), message });
+            } else {
+                let (command, cwd) = if is_debug_lens {
+                    let LaunchDebuggerParams { command, cwd, test_name: _ } =
+                        ls.wait_for_notification::<LaunchDebugger>(|_| true);
+                    (command, cwd)
+                } else {
+                    let ExecuteInTerminalParams { command, cwd } =
+                        ls.wait_for_notification::<ExecuteInTerminal>(|_| true);
+                    (command, cwd)
+                };
+                execute_in_terminal
+                    .push(ShellCommand { command, cwd: ls.fixture.file_relative_path(cwd) });
+            }
+        }
+    }
 
     Report {
         lenses: lenses.map(|lenses| {
@@ -229,6 +296,7 @@ fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
 
             lenses
         }),
+        show_messages,
         execute_in_terminal,
     }
 }
@@ -237,8 +305,10 @@ fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
 struct Report {
     #[serde(skip_serializing_if = "Option::is_none")]
     lenses: Option<Vec<CodeLensReport>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    execute_in_terminal: Option<ShellCommand>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    show_messages: Vec<ShowMessageReport>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    execute_in_terminal: Vec<ShellCommand>,
 }
 
 #[derive(Serialize)]
@@ -247,6 +317,12 @@ struct CodeLensReport {
     command: String,
     file_path: PathBuf,
     index: u32,
+}
+
+#[derive(Serialize)]
+struct ShowMessageReport {
+    typ: String,
+    message: String,
 }
 
 #[derive(Serialize)]
@@ -273,7 +349,7 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
                 ..it
             }
         }),
-        experimental: Some(json!({ "cairo": { "executeInTerminal": {} } })),
+        experimental: Some(json!({ "cairo": { "executeInTerminal": {}, "launchDebugger": {} } })),
         ..base
     }
 }

@@ -1201,6 +1201,14 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
+    completion_label = "ForwardingClassHash"
+    completion_label_path = "(use starknet::ForwardingClassHash)"
+    text_edits = ["""
+    use starknet::ForwardingClassHash;
+
+    """]
+
+    [[completions]]
     completion_label = "FromNullableResult"
     completion_label_path = "(use core::nullable::FromNullableResult)"
     text_edits = ["""
@@ -2443,12 +2451,32 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
+    completion_label = "blake2s_compress_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_compress_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_compress_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_compress_guarantees;
+
+    """]
+
+    [[completions]]
     completion_label = "blake2s_finalize(...)"
     completion_label_path = "(use core::blake::blake2s_finalize)"
     completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_finalize_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_finalize_guarantees;
 
     """]
 
@@ -3089,7 +3117,7 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "get_execution_info_v2_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v2_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<super::info::v2::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v2_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v2_syscall;
@@ -3099,7 +3127,7 @@ fn no_text_in_function_context() {
     [[completions]]
     completion_label = "get_execution_info_v3_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v3_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<super::info::v3::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v3_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v3_syscall;
@@ -5965,6 +5993,14 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
+    completion_label = "ForwardingClassHash"
+    completion_label_path = "(use starknet::ForwardingClassHash)"
+    text_edits = ["""
+    use starknet::ForwardingClassHash;
+
+    """]
+
+    [[completions]]
     completion_label = "FromNullableResult"
     completion_label_path = "(use core::nullable::FromNullableResult)"
     text_edits = ["""
@@ -7207,12 +7243,32 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
+    completion_label = "blake2s_compress_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_compress_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_compress_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_compress_guarantees;
+
+    """]
+
+    [[completions]]
     completion_label = "blake2s_finalize(...)"
     completion_label_path = "(use core::blake::blake2s_finalize)"
     completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_finalize_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_finalize_guarantees;
 
     """]
 
@@ -7853,7 +7909,7 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "get_execution_info_v2_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v2_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<super::info::v2::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v2_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v2_syscall;
@@ -7863,7 +7919,7 @@ fn no_text_after_semicolon() {
     [[completions]]
     completion_label = "get_execution_info_v3_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v3_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<super::info::v3::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v3_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v3_syscall;
@@ -10729,6 +10785,14 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
+    completion_label = "ForwardingClassHash"
+    completion_label_path = "(use starknet::ForwardingClassHash)"
+    text_edits = ["""
+    use starknet::ForwardingClassHash;
+
+    """]
+
+    [[completions]]
     completion_label = "FromNullableResult"
     completion_label_path = "(use core::nullable::FromNullableResult)"
     text_edits = ["""
@@ -11971,12 +12035,32 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
+    completion_label = "blake2s_compress_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_compress_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_compress_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_compress_guarantees;
+
+    """]
+
+    [[completions]]
     completion_label = "blake2s_finalize(...)"
     completion_label_path = "(use core::blake::blake2s_finalize)"
     completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_finalize_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_finalize_guarantees;
 
     """]
 
@@ -12617,7 +12701,7 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "get_execution_info_v2_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v2_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<super::info::v2::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v2_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v2_syscall;
@@ -12627,7 +12711,7 @@ fn no_text_before_statement() {
     [[completions]]
     completion_label = "get_execution_info_v3_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v3_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<super::info::v3::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v3_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v3_syscall;
@@ -15499,6 +15583,14 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
+    completion_label = "ForwardingClassHash"
+    completion_label_path = "(use starknet::ForwardingClassHash)"
+    text_edits = ["""
+    use starknet::ForwardingClassHash;
+
+    """]
+
+    [[completions]]
     completion_label = "FromNullableResult"
     completion_label_path = "(use core::nullable::FromNullableResult)"
     text_edits = ["""
@@ -16741,12 +16833,32 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
+    completion_label = "blake2s_compress_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_compress_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_compress_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_compress_guarantees;
+
+    """]
+
+    [[completions]]
     completion_label = "blake2s_finalize(...)"
     completion_label_path = "(use core::blake::blake2s_finalize)"
     completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[u32; 16]>) -> Box<[u32; 8]> nopanic"
     insert_text = "blake2s_finalize(${1:state}, ${2:byte_count}, ${3:msg})"
     text_edits = ["""
     use core::blake::blake2s_finalize;
+
+    """]
+
+    [[completions]]
+    completion_label = "blake2s_finalize_guarantees(...)"
+    completion_label_path = "(use core::blake::blake2s_finalize_guarantees)"
+    completion_label_type_info = "fn(state: Box<[u32; 8]>, byte_count: u32, msg: Box<[BoundedIntGuarantee<0, 4294967295>; 16]>) -> Box<[u32; 8]> nopanic"
+    insert_text = "blake2s_finalize_guarantees(${1:state}, ${2:byte_count}, ${3:msg})"
+    text_edits = ["""
+    use core::blake::blake2s_finalize_guarantees;
 
     """]
 
@@ -17387,7 +17499,7 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "get_execution_info_v2_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v2_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<super::info::v2::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v2_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v2_syscall;
@@ -17397,7 +17509,7 @@ fn no_text_after_statement() {
     [[completions]]
     completion_label = "get_execution_info_v3_syscall(...)"
     completion_label_path = "(use starknet::syscalls::get_execution_info_v3_syscall)"
-    completion_label_type_info = "fn() -> Result<Box<super::info::v3::ExecutionInfo>, Array<felt252>> nopanic"
+    completion_label_type_info = "fn() -> Result<Box<starknet::ExecutionInfo>, Array<felt252>> nopanic"
     insert_text = "get_execution_info_v3_syscall()"
     text_edits = ["""
     use starknet::syscalls::get_execution_info_v3_syscall;

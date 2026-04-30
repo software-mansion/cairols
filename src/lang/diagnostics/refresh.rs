@@ -79,9 +79,8 @@ fn refresh_file_diagnostics<'db>(
             // not controlled by a user (dependencies from git/package register).
             // Therefore, we filter non-error diagnostics for files residing in Scarb cache
             // and virtual files that are their descendants.
-            let is_dependency = scarb_toolchain.cache_path().is_some_and(|cache_path| {
-                originating_file_path(db, file_id).is_some_and(|p| p.starts_with(cache_path))
-            });
+            let is_dependency = originating_file_path(db, file_id)
+                .is_some_and(|p| scarb_toolchain.is_from_scarb_cache(&p));
 
             if is_dependency {
                 diagnostics.retain(|diag| diag.severity == Some(DiagnosticSeverity::ERROR));

@@ -64,6 +64,10 @@ jobs:
         with:
           scarb-version: nightly
           cache: false
+      # For debugger lens tests.
+      - uses: foundry-rs/setup-snfoundry@v6
+        with:
+          starknet-foundry-version: nightly-2026-04-06
       - uses: taiki-e/install-action@v2
         with:
           tool: nextest@0.9.98
@@ -79,7 +83,7 @@ jobs:
     needs: [ build-test, test ]
     steps:
       - name: Notify the team about workflow failure
-        uses: slackapi/slack-github-action@v2.1.1
+        uses: slackapi/slack-github-action@v3.0.1
         with:
           webhook: ${{ secrets.SLACK_CAIRO_UPDATE_CHECK_FAILURE_WEBHOOK_URL }}
           webhook-type: webhook-trigger

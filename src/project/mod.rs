@@ -93,9 +93,7 @@ impl ProjectController {
         // Skip updating the project model for dependencies from Scarb cache.
         // It is extremely likely that this is not the project that a user wants to work on and
         // opening it was a result of `goto` to dependency.
-        if let Some(path) = self.scarb_toolchain.cache_path()
-            && file_path.starts_with(path)
-        {
+        if self.scarb_toolchain.is_from_scarb_cache(&file_path) {
             return;
         }
 
@@ -372,9 +370,5 @@ fn contains_core_from_scarb_cache(
         .crate_roots
         .get(&CrateIdentifier::from("core"))
         .map(|p| project_config.absolute_crate_root(p))
-        .is_some_and(|core_root| {
-            scarb_toolchain
-                .cache_path()
-                .is_some_and(|scarb_cache_path| core_root.starts_with(scarb_cache_path))
-        })
+        .is_some_and(|core_root| scarb_toolchain.is_from_scarb_cache(&core_root))
 }

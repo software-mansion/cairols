@@ -1,14 +1,15 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::{
     SemanticDiagnostic, db::SemanticGroup, diagnostic::SemanticDiagnosticKind,
 };
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lint::{CairoLintToolMetadata, LinterDiagnosticParams, LinterGroup};
 use lsp_types::{CodeAction, CodeActionKind, TextEdit, WorkspaceEdit};
 
 use crate::{
     lang::{
-        analysis_context::AnalysisContext,
         db::AnalysisDatabase,
         lsp::{LsProtoGroup, ToLsp},
     },
@@ -17,15 +18,11 @@ use crate::{
 
 pub fn cairo_lint<'db>(
     db: &'db AnalysisDatabase,
-    ctx: &AnalysisContext<'db>,
-    config_registry: &ConfigsRegistry,
+    module_id: ModuleId<'db>,
+    nodes: &[SyntaxNode<'db>],
+    tool_metadata: CairoLintToolMetadata,
 ) -> Option<Vec<CodeAction>> {
-    let linter_params = LinterDiagnosticParams {
-        only_generated_files: false,
-        tool_metadata: get_linter_tool_metadata(db, ctx, config_registry),
-    };
-
-    let module_id = ctx.module_id;
+    let linter_params = LinterDiagnosticParams { only_generated_files: false, tool_metadata };
 
     // We collect the semantic diagnostics, as the unused imports diagnostics (which come from the semantic diags),
     // can be fixed with the linter.
@@ -38,14 +35,13 @@ pub fn cairo_lint<'db>(
         )
     });
 
-    let node_span = ctx.node.span(db);
-
     let diagnostics = semantic_diags
         .get_diagnostics_without_duplicates(db)
         .into_iter()
         .chain(linter_diags)
         .filter(|diagnostic| {
-            diagnostic.stable_location.syntax_node(db).span(db).contains(node_span)
+            let diag_span = diagnostic.stable_location.syntax_node(db).span(db);
+            nodes.iter().any(|node| diag_span.contains(node.span(db)))
         })
         .collect();
 
@@ -85,12 +81,12 @@ pub fn cairo_lint<'db>(
     Some(result)
 }
 
-fn get_linter_tool_metadata<'db>(
+pub fn get_tool_metadata<'db>(
     db: &'db AnalysisDatabase,
-    ctx: &AnalysisContext<'db>,
+    node: SyntaxNode<'db>,
     config_registry: &ConfigsRegistry,
 ) -> CairoLintToolMetadata {
-    if let FileLongId::OnDisk(file_id) = ctx.node.stable_ptr(db).file_id(db).long(db)
+    if let FileLongId::OnDisk(file_id) = node.stable_ptr(db).file_id(db).long(db)
         && let Some(file_config) = config_registry.config_for_file(file_id)
     {
         file_config.lint.clone()

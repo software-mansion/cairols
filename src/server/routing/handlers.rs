@@ -48,7 +48,7 @@ use crate::lsp::ext::testing_requests::{
 };
 use crate::lsp::result::{LSPError, LSPResult};
 use crate::server::client::{Notifier, Requester};
-use crate::server::commands::ServerCommands;
+use crate::server::commands::ServerCommand;
 use crate::server::panic::is_cancelled;
 use crate::state::{MetaState, State, StateSnapshot};
 use crate::toolchain::info::toolchain_info;
@@ -127,15 +127,15 @@ impl SyncRequestHandler for ExecuteCommand {
         requester: &mut Requester<'_>,
         params: ExecuteCommandParams,
     ) -> LSPResult<Option<Value>> {
-        let command = ServerCommands::try_from(params.command);
+        let command = ServerCommand::try_from(params.command);
 
         if let Ok(cmd) = command {
             match cmd {
-                ServerCommands::Reload => {
+                ServerCommand::Reload => {
                     trace!("reloading backend from executeCommand handler");
                     Backend::reload(state, requester)?;
                 }
-                ServerCommands::ExecuteCodeLens => {
+                ServerCommand::ExecuteCodeLens => {
                     CodeLensController::execute_code_lens(state, notifier, &params.arguments);
                 }
             }

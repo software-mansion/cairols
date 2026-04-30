@@ -1,9 +1,10 @@
-use cairo_lang_defs::ids::{LookupItemId, TraitItemId};
+use cairo_lang_defs::ids::{GenericTypeId, LookupItemId, TraitItemId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::keyword::{CRATE_KW, SELF_TYPE_KW, SUPER_KW};
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
+use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::ast::{ExprPathPtr, TerminalIdentifier, TerminalIdentifierPtr};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
@@ -184,6 +185,10 @@ impl SemanticTokenKind {
             SyntaxKind::ItemConstant | SyntaxKind::TraitItemConstant => {
                 Some(SemanticTokenKind::EnumMember)
             }
+            SyntaxKind::ItemModule => Some(SemanticTokenKind::Namespace),
+            SyntaxKind::ItemStruct => Some(SemanticTokenKind::Struct),
+            SyntaxKind::ItemEnum => Some(SemanticTokenKind::Enum),
+            SyntaxKind::ItemTrait => Some(SemanticTokenKind::Interface),
             kind if ast::ModuleItem::is_variant(kind) => Some(SemanticTokenKind::Class),
             SyntaxKind::StructArgSingle => Some(SemanticTokenKind::Field),
             SyntaxKind::FunctionDeclaration => Some(SemanticTokenKind::Function),
@@ -221,9 +226,12 @@ impl SemanticTokenKind {
                 ResolvedGenericItem::GenericConstant(_) => SemanticTokenKind::EnumMember,
                 ResolvedGenericItem::Module(_) => SemanticTokenKind::Namespace,
                 ResolvedGenericItem::GenericFunction(_) => SemanticTokenKind::Function,
-                ResolvedGenericItem::GenericType(_) | ResolvedGenericItem::GenericTypeAlias(_) => {
-                    SemanticTokenKind::Type
-                }
+                ResolvedGenericItem::GenericType(generic_type_id) => match generic_type_id {
+                    GenericTypeId::Struct(_) => SemanticTokenKind::Struct,
+                    GenericTypeId::Enum(_) => SemanticTokenKind::Enum,
+                    GenericTypeId::Extern(_) => SemanticTokenKind::Type,
+                },
+                ResolvedGenericItem::GenericTypeAlias(_) => SemanticTokenKind::Type,
                 ResolvedGenericItem::Variant(_) => SemanticTokenKind::EnumMember,
                 ResolvedGenericItem::Trait(_) => SemanticTokenKind::Interface,
                 ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_) => {
@@ -245,7 +253,11 @@ impl SemanticTokenKind {
                 ResolvedConcreteItem::Constant(_) => SemanticTokenKind::EnumMember,
                 ResolvedConcreteItem::Module(_) => SemanticTokenKind::Namespace,
                 ResolvedConcreteItem::Function(_) => SemanticTokenKind::Function,
-                ResolvedConcreteItem::Type(_) => SemanticTokenKind::Type,
+                ResolvedConcreteItem::Type(type_id) => match type_id.long(db) {
+                    TypeLongId::Concrete(ConcreteTypeId::Struct(_)) => SemanticTokenKind::Struct,
+                    TypeLongId::Concrete(ConcreteTypeId::Enum(_)) => SemanticTokenKind::Enum,
+                    _ => SemanticTokenKind::Type,
+                },
                 ResolvedConcreteItem::Variant(_) => SemanticTokenKind::EnumMember,
                 ResolvedConcreteItem::Trait(_) | ResolvedConcreteItem::SelfTrait(_) => {
                     SemanticTokenKind::Interface

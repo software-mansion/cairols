@@ -23,9 +23,6 @@ Enables [Cairo lint](https://docs.swmansion.com/cairo-lint/) diagnostics and cod
 
 Enables support for procedural macros. 
 
-> [!WARNING]
-> With Language Server version 2.15 and above, the proc macro cache will be enabled by default and the option to turn it off will no longer be available. 
-
 ## Scarb Path
 
 Absolute path to the [Scarb](https://docs.swmansion.com/scarb/) binary.
@@ -48,8 +45,8 @@ Absolute path to Cairo core library. It's necessary if the project doesn't use S
 
 Enables on disk cache for procedural macros.
 
-> [!WARNING]
-> With Language Server version 2.15 and above, this option has no effect, as the Proc Macro Cache is no longer experimental and is always enabled.
+> [!NOTE]
+> With Language Server version **>=2.15**, this option has no effect, as the Proc Macro Cache is no longer experimental and is **always enabled**.
 
 > [!WARNING]
 > If you are using any Language Server version **below 2.15.0**, your cache will **NOT** be invalidated. If **ANY** of your procedural macro dependencies change - remove the `cairo-language-server/proc_macro.cache` file from your target directory.

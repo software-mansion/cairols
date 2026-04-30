@@ -78,7 +78,7 @@ governor = { version = "0.8.0", default-features = false, features = [
 ] }
 indoc = "2"
 itertools = "0.14.0"
-jaro_winkler = "0.1.0"
+jaro_winkler = "0.2.1"
 jod-thread = "1.0.0"
 lsp-server = "0.7.8"
 lsp-types = "=0.95.1"
@@ -94,8 +94,8 @@ serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9.34"
 tempfile = "3"
-toml = "1.0.3"
-toml_edit = "0.25.3"
+toml = "1.1.1"
+toml_edit = "0.25.9"
 tracing = "0.1"
 tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
@@ -107,10 +107,47 @@ libc = "0.2.180"
 [dev-dependencies]
 assert_fs = "1.1"
 cairo-language-server = { path = ".", features = ["testing"] }
-insta = { version = "1.46", features = ["toml", "json", "redactions"] }
+criterion = { package = "codspeed-criterion-compat", version = "4", features = ["html_reports"] }
+insta = { version = "1.47", features = ["toml", "json", "redactions"] }
 pathdiff = "0.2"
 regex = "1.12.3"
 similar = "2.7"
+
+[[bench]]
+name = "completions"
+harness = false
+
+[[bench]]
+name = "hover"
+harness = false
+
+[[bench]]
+name = "goto_definition"
+harness = false
+
+[[bench]]
+name = "references"
+harness = false
+
+[[bench]]
+name = "document_highlight"
+harness = false
+
+[[bench]]
+name = "formatting"
+harness = false
+
+[[bench]]
+name = "semantic_tokens"
+harness = false
+
+[[bench]]
+name = "inlay_hints"
+harness = false
+
+[[bench]]
+name = "code_actions"
+harness = false
 
 # Here we specify real dependency specifications for Cairo crates *if* currently we want to use
 # a particular unreleased commit (which is frequent mid-development).
