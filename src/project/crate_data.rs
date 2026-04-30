@@ -148,7 +148,7 @@ impl Crate {
     pub fn apply(&self, db: &mut AnalysisDatabase, proc_macro_plugin_suite: Option<PluginSuite>) {
         let crate_input =
             CrateInput::Real { name: self.name.clone(), discriminator: self.discriminator.clone() };
-        db.set_granular_crate_config_for_input(crate_input.clone(), Some(self.configuration_input()));
+        db.set_crate_config_for_input(crate_input.clone(), Some(self.configuration_input()));
 
         if let Some(file_stems) = &self.custom_main_file_stems {
             inject_virtual_wrapper_lib(db, crate_input.clone(), file_stems);

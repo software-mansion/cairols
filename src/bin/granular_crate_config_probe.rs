@@ -59,7 +59,7 @@ fn measure_for_existing_crates(existing_crates: usize, repetitions: usize) -> Pr
         let mut db = AnalysisDatabase::new();
         prepopulate_granular(&mut db, existing_crates);
         let started = Instant::now();
-        db.set_granular_crate_config_for_input(
+        db.set_crate_config_for_input(
             crate_input(existing_crates + 1),
             Some(crate_config_input(existing_crates + 1)),
         );
@@ -70,7 +70,7 @@ fn measure_for_existing_crates(existing_crates: usize, repetitions: usize) -> Pr
         let mut db = AnalysisDatabase::new();
         prepopulate_granular(&mut db, existing_crates.max(1));
         let started = Instant::now();
-        db.set_granular_crate_config_for_input(
+        db.set_crate_config_for_input(
             crate_input(existing_crates.max(1)),
             Some(crate_config_input(existing_crates.max(1) + 10_000)),
         );
@@ -81,7 +81,7 @@ fn measure_for_existing_crates(existing_crates: usize, repetitions: usize) -> Pr
         let mut db = AnalysisDatabase::new();
         prepopulate_granular(&mut db, existing_crates);
         let started = Instant::now();
-        db.sync_granular_crate_configs(build_crate_config_map(existing_crates + 1));
+        db.sync_crate_configs(build_crate_config_map(existing_crates + 1));
         started.elapsed().as_nanos() as u64
     });
 
@@ -94,7 +94,7 @@ fn measure_for_existing_crates(existing_crates: usize, repetitions: usize) -> Pr
             crate_config_input(existing_crates.max(1) + 10_000),
         );
         let started = Instant::now();
-        db.sync_granular_crate_configs(desired);
+        db.sync_crate_configs(desired);
         started.elapsed().as_nanos() as u64
     });
 
@@ -110,7 +110,7 @@ fn measure_for_existing_crates(existing_crates: usize, repetitions: usize) -> Pr
 }
 
 fn prepopulate_granular(db: &mut AnalysisDatabase, count: usize) {
-    db.sync_granular_crate_configs(build_crate_config_map(count));
+    db.sync_crate_configs(build_crate_config_map(count));
 }
 
 fn build_crate_config_map(count: usize) -> OrderedHashMap<CrateInput, CrateConfigurationInput> {

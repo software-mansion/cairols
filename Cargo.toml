@@ -3,13 +3,20 @@ name = "cairo-language-server"
 version = "2.16.1"
 edition = "2024"
 
-authors = ["Software Mansion <contact@swmansion.com>", "StarkWare <info@starkware.co>"]
+authors = [
+  "Software Mansion <contact@swmansion.com>",
+  "StarkWare <info@starkware.co>",
+]
 description = "The Cairo Language Server"
 license = "Apache-2.0"
 repository = "https://github.com/software-mansion/cairols"
 
 [workspace]
-members = ["xtask", "tests/scarb_procedural_macros", "tests/scarb_procedural_macros_v2"]
+members = [
+  "xtask",
+  "tests/scarb_procedural_macros",
+  "tests/scarb_procedural_macros_v2",
+]
 
 [features]
 testing = []
@@ -46,7 +53,9 @@ cairo-lang-filesystem = "*"
 cairo-lang-formatter = "*"
 cairo-lang-lowering = "*"
 cairo-lang-macro = "0.2.1"
-cairo-lang-macro-v1 = { version = "0.1", package = "cairo-lang-macro", features = ["serde"] }
+cairo-lang-macro-v1 = { version = "0.1", package = "cairo-lang-macro", features = [
+  "serde",
+] }
 cairo-lang-parser = "*"
 cairo-lang-plugins = "*"
 cairo-lang-proc-macros = "*"
@@ -63,7 +72,10 @@ colored = "3.1.1"
 convert_case = "0.11.0"
 create-output-dir = "1.0.0"
 crossbeam = "0.8.4"
-governor = { version = "0.8.0", default-features = false, features = ["std", "quanta"] }
+governor = { version = "0.8.0", default-features = false, features = [
+  "std",
+  "quanta",
+] }
 indoc = "2"
 itertools = "0.14.0"
 jaro_winkler = "0.1.0"
@@ -106,38 +118,38 @@ similar = "2.7"
 # on some of them directly.
 # This ensures no duplicate instances of Cairo crates are pulled in by mistake.
 [patch.crates-io]
-cairo-lang-casm = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-debug = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-diagnostics = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-doc = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-eq-solver = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-executable-plugin = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-formatter = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-lowering = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-plugins = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-proc-macros = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-project = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-runnable-utils = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-sierra-ap-change = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-sierra-gas = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-sierra-to-casm = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-sierra-type-size = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-starknet = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-starknet-classes = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-syntax = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-syntax-codegen = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-test-plugin = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-test-utils = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
-cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/prototype" }
+cairo-lang-casm = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-debug = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-diagnostics = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-doc = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-eq-solver = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-executable-plugin = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-formatter = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-lowering = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-plugins = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-proc-macros = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-project = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-runnable-utils = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-sierra-ap-change = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-sierra-gas = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-sierra-to-casm = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-sierra-type-size = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-starknet = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-starknet-classes = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-syntax = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-syntax-codegen = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-test-plugin = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-test-utils = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
+cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", branch = "optimization/granular-plugin-overrides" }
 cairo-language-common = { git = "https://github.com/software-mansion/cairo-language-common", branch = "optimization/prototype" }
-cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", branch = "optimization/prototype" }
+cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", branch = "wawel37/optimization-dev" }
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,
 # while crates in this workspace are built with `dev` profile and full debug info.

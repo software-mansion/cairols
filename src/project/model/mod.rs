@@ -73,7 +73,7 @@ impl ProjectModel {
     ) {
         if self.remove_crates_from_db_on_next_update {
             self.remove_crates_from_db_on_next_update = false;
-            db.sync_granular_crate_configs(Default::default());
+            db.sync_crate_configs(Default::default());
         }
 
         let workspace_crates = workspace_crates
@@ -112,7 +112,7 @@ impl ProjectModel {
         let merged_crates = self.merged_loaded_crates();
         let crate_configs: HashMap<CrateInput, CrateConfigurationInput> =
             merged_crates.iter().map(|cr| (cr.input(), cr.configuration_input())).collect();
-        db.sync_granular_crate_configs(crate_configs.into_iter().collect());
+        db.sync_crate_configs(crate_configs.into_iter().collect());
 
         let previous_plugin_suite_fingerprints = self.applied_plugin_suite_fingerprints.snapshot();
         let mut next_plugin_suite_fingerprints = OrderedHashMap::default();

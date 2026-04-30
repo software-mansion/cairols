@@ -1,32 +1,33 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::ops::Not;
 use std::sync::{Arc, RwLock};
 
 use cairo_lang_defs::db::{
-    GranularInlineMacroPluginOverride, GranularInlineMacroPluginOverrideStorage,
-    GranularInlineMacroPluginOverrideView, GranularMacroPluginOverride,
-    GranularMacroPluginOverrideStorage, GranularMacroPluginOverrideView, defs_group_input,
-    init_defs_group, init_external_files, register_granular_inline_macro_plugin_override_view,
-    register_granular_macro_plugin_override_view,
+    InlineMacroPluginOverride, InlineMacroPluginOverrideStorage, InlineMacroPluginOverrideView,
+    MacroPluginOverride, MacroPluginOverrideStorage, MacroPluginOverrideView, defs_group_input,
+    init_defs_group, init_external_files, new_inline_macro_plugin_override_storage,
+    new_macro_plugin_override_storage, register_inline_macro_plugin_override_view,
+    register_macro_plugin_override_view,
 };
 use cairo_lang_defs::ids::{InlineMacroExprPluginLongId, MacroPluginLongId};
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_executable_plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    CrateConfigurationInput, FilesGroup, GranularCrateConfig, GranularCrateConfigView,
-    GranularCrateConfigStorage, GranularFileContentView, GranularFileContents, files_group_input, init_files_group,
-    register_files_group_view, register_granular_crate_config_view,
+    CrateConfig, CrateConfigStorage, CrateConfigView, CrateConfigurationInput, FileContentStorage,
+    FileContentView, FilesGroup, files_group_input, init_files_group,
+    override_file_content_for_input, register_crate_config_view, register_files_group_view,
+    set_generated_file_content_for_input as fs_set_generated_file_content_for_input,
 };
-use cairo_lang_filesystem::ids::{ArcStr, CrateId, CrateInput, CrateLongId, FileId, FileInput};
+use cairo_lang_filesystem::ids::{CrateInput, CrateLongId, FileId, FileInput};
 use cairo_lang_lowering::db::init_lowering_group;
 use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_plugins::plugins::ConfigPlugin;
 use cairo_lang_semantic::db::{
-    GranularAnalyzerPluginOverride, GranularAnalyzerPluginOverrideStorage,
-    GranularAnalyzerPluginOverrideView, PluginSuiteInput, init_semantic_group,
-    register_granular_analyzer_plugin_override_view, semantic_group_input,
+    AnalyzerPluginOverride, AnalyzerPluginOverrideStorage, AnalyzerPluginOverrideView,
+    PluginSuiteInput, init_semantic_group, new_analyzer_plugin_override_storage,
+    register_analyzer_plugin_override_view, semantic_group_input,
 };
 use cairo_lang_semantic::ids::AnalyzerPluginLongId;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
@@ -60,11 +61,12 @@ pub struct AnalysisDatabase {
         Arc<RwLock<OrderedHashMap<CrateInput, CratePluginSuiteInputs>>>,
     current_granular_crate_plugin_suite_fingerprints:
         Arc<RwLock<OrderedHashMap<CrateInput, CratePluginSuiteFingerprint>>>,
-    granular_crate_configs: Arc<RwLock<HashMap<CrateInput, GranularCrateConfig>>>,
-    granular_file_contents: Arc<RwLock<HashMap<FileInput, GranularFileContents>>>,
-    granular_macro_plugin_overrides: GranularMacroPluginOverrideStorage,
-    granular_inline_macro_plugin_overrides: GranularInlineMacroPluginOverrideStorage,
-    granular_analyzer_plugin_overrides: GranularAnalyzerPluginOverrideStorage,
+    crate_configs: CrateConfigStorage,
+    file_contents: FileContentStorage,
+    macro_plugin_overrides: MacroPluginOverrideStorage,
+    inline_macro_plugin_overrides: InlineMacroPluginOverrideStorage,
+    analyzer_plugin_overrides: AnalyzerPluginOverrideStorage,
+    generated_file_inputs: HashSet<FileInput>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -163,18 +165,19 @@ impl AnalysisDatabase {
             current_granular_crate_configs: Default::default(),
             current_granular_crate_plugin_suites: Default::default(),
             current_granular_crate_plugin_suite_fingerprints: Default::default(),
-            granular_crate_configs: Default::default(),
-            granular_file_contents: Default::default(),
-            granular_macro_plugin_overrides: Default::default(),
-            granular_inline_macro_plugin_overrides: Default::default(),
-            granular_analyzer_plugin_overrides: Default::default(),
+            crate_configs: Default::default(),
+            file_contents: Default::default(),
+            macro_plugin_overrides: new_macro_plugin_override_storage(),
+            inline_macro_plugin_overrides: new_inline_macro_plugin_override_storage(),
+            analyzer_plugin_overrides: new_analyzer_plugin_override_storage(),
+            generated_file_inputs: Default::default(),
         };
 
         register_files_group_view(&db);
-        register_granular_crate_config_view(&db);
-        register_granular_macro_plugin_override_view(&db);
-        register_granular_inline_macro_plugin_override_view(&db);
-        register_granular_analyzer_plugin_override_view(&db);
+        register_crate_config_view(&db);
+        register_macro_plugin_override_view(&db);
+        register_inline_macro_plugin_override_view(&db);
+        register_analyzer_plugin_override_view(&db);
         init_external_files(&mut db);
         init_files_group(&mut db);
         init_defs_group(&mut db);
@@ -200,72 +203,45 @@ impl AnalysisDatabase {
         db
     }
 
-    fn granular_file_contents_handle(
-        &self,
-        file_input: &FileInput,
-    ) -> Option<GranularFileContents> {
-        self.granular_file_contents.read().unwrap().get(file_input).copied()
+    fn crate_config_handle(&self, crate_input: &CrateInput) -> Option<CrateConfig> {
+        self.crate_configs.read().unwrap().get(crate_input).copied()
     }
 
-    fn granular_crate_config_handle(
-        &self,
-        crate_input: &CrateInput,
-    ) -> Option<GranularCrateConfig> {
-        self.granular_crate_configs.read().unwrap().get(crate_input).copied()
-    }
-
-    fn granular_file_contents_handle_for_file<'db>(
-        &'db self,
-        file_id: FileId<'db>,
-    ) -> Option<GranularFileContents> {
-        let file_input = self.file_input(file_id).clone();
-        self.granular_file_contents_handle(&file_input)
-    }
-
-    fn ensure_granular_crate_config_handle_for_input_impl(
+    fn ensure_crate_config_handle_for_input_impl(
         &mut self,
         crate_input: CrateInput,
-    ) -> (GranularCrateConfig, bool) {
-        if let Some(handle) = self.granular_crate_config_handle(&crate_input) {
+    ) -> (CrateConfig, bool) {
+        if let Some(handle) = self.crate_config_handle(&crate_input) {
             return (handle, false);
         }
 
-        let handle = GranularCrateConfig::new(self, None);
-        self.granular_crate_configs.write().unwrap().insert(crate_input, handle);
+        let handle = CrateConfig::new(self, None);
+        self.crate_configs.write().unwrap().insert(crate_input, handle);
         (handle, true)
     }
 
-    pub fn ensure_granular_crate_config_handle_for_input(
+    pub fn ensure_crate_config_handle_for_input(
         &mut self,
         crate_input: CrateInput,
-    ) -> GranularCrateConfig {
+    ) -> CrateConfig {
         let (handle, inserted) =
-            self.ensure_granular_crate_config_handle_for_input_impl(crate_input);
+            self.ensure_crate_config_handle_for_input_impl(crate_input);
         if inserted {
-            self.bump_granular_crate_configs_revision();
+            self.bump_crate_configs_revision();
         }
         handle
     }
 
-    fn bump_granular_crate_configs_revision(&mut self) {
+    fn bump_crate_configs_revision(&mut self) {
         let next_revision =
-            files_group_input(self).granular_crate_configs_revision(self).saturating_add(1);
+            files_group_input(self).crate_configs_revision(self).saturating_add(1);
         files_group_input(self)
-            .set_granular_crate_configs_revision(self)
+            .set_crate_configs_revision(self)
             .with_durability(Durability::HIGH)
             .to(next_revision);
     }
 
-    fn bump_granular_file_contents_revision(&mut self) {
-        let next_revision =
-            files_group_input(self).granular_file_contents_revision(self).saturating_add(1);
-        files_group_input(self)
-            .set_granular_file_contents_revision(self)
-            .with_durability(Durability::HIGH)
-            .to(next_revision);
-    }
-
-    pub fn set_granular_crate_config_for_input(
+    pub fn set_crate_config_for_input(
         &mut self,
         crate_input: CrateInput,
         config: Option<CrateConfigurationInput>,
@@ -289,23 +265,23 @@ impl AnalysisDatabase {
         };
 
         if was_inserted {
-            self.bump_granular_crate_configs_revision();
+            self.bump_crate_configs_revision();
         }
 
         match config {
             Some(config) => {
-                let handle = self.ensure_granular_crate_config_handle_for_input(crate_input);
+                let handle = self.ensure_crate_config_handle_for_input(crate_input);
                 handle.set_config(self).with_durability(Durability::HIGH).to(Some(config));
             }
             None => {
-                if let Some(handle) = self.granular_crate_config_handle(&crate_input) {
+                if let Some(handle) = self.crate_config_handle(&crate_input) {
                     handle.set_config(self).with_durability(Durability::HIGH).to(None);
                 }
             }
         }
     }
 
-    pub fn sync_granular_crate_configs(
+    pub fn sync_crate_configs(
         &mut self,
         crate_configs: OrderedHashMap<CrateInput, CrateConfigurationInput>,
     ) {
@@ -337,32 +313,19 @@ impl AnalysisDatabase {
         };
 
         if !inserted_inputs.is_empty() {
-            self.bump_granular_crate_configs_revision();
+            self.bump_crate_configs_revision();
         }
 
         for (crate_input, config) in changed_inputs {
-            let handle = self.ensure_granular_crate_config_handle_for_input(crate_input);
+            let handle = self.ensure_crate_config_handle_for_input(crate_input);
             handle.set_config(self).with_durability(Durability::HIGH).to(Some(config));
         }
 
         for crate_input in removed_inputs {
-            if let Some(handle) = self.granular_crate_config_handle(&crate_input) {
+            if let Some(handle) = self.crate_config_handle(&crate_input) {
                 handle.set_config(self).with_durability(Durability::HIGH).to(None);
             }
         }
-    }
-    fn ensure_granular_file_contents_handle_for_input(
-        &mut self,
-        file_input: FileInput,
-    ) -> GranularFileContents {
-        if let Some(handle) = self.granular_file_contents_handle(&file_input) {
-            return handle;
-        }
-
-        let handle = GranularFileContents::new(self, None, None);
-        self.granular_file_contents.write().unwrap().insert(file_input, handle);
-        self.bump_granular_file_contents_revision();
-        handle
     }
 
     pub fn set_editor_file_content<'db>(
@@ -379,11 +342,7 @@ impl AnalysisDatabase {
         file_input: FileInput,
         content: Option<Arc<str>>,
     ) {
-        let handle = self.ensure_granular_file_contents_handle_for_input(file_input);
-        handle
-            .set_editor_content(self)
-            .with_durability(Durability::LOW)
-            .to(content.map(ArcStr::new));
+        override_file_content_for_input(self, file_input, content);
     }
 
     pub fn set_generated_file_content<'db>(
@@ -400,18 +359,18 @@ impl AnalysisDatabase {
         file_input: FileInput,
         content: Option<Arc<str>>,
     ) {
-        let handle = self.ensure_granular_file_contents_handle_for_input(file_input);
-        handle
-            .set_generated_content(self)
-            .with_durability(Durability::HIGH)
-            .to(content.map(ArcStr::new));
+        if content.is_some() {
+            self.generated_file_inputs.insert(file_input.clone());
+        } else {
+            self.generated_file_inputs.remove(&file_input);
+        }
+        fs_set_generated_file_content_for_input(self, file_input, content);
     }
 
     pub fn clear_generated_file_contents(&mut self) {
-        let handles =
-            self.granular_file_contents.read().unwrap().values().copied().collect::<Vec<_>>();
-        for handle in handles {
-            handle.set_generated_content(self).with_durability(Durability::HIGH).to(None);
+        let generated: Vec<FileInput> = self.generated_file_inputs.drain().collect();
+        for file_input in generated {
+            fs_set_generated_file_content_for_input(self, file_input, None);
         }
     }
 
@@ -419,11 +378,12 @@ impl AnalysisDatabase {
         &self,
         files: impl IntoIterator<Item = FileInput>,
     ) -> OrderedHashMap<FileInput, Arc<str>> {
+        let storage = self.file_content_storage();
         files
             .into_iter()
             .filter_map(|file_input| {
-                let handle = self.granular_file_contents_handle(&file_input)?;
-                let content = handle.editor_content(self).as_ref()?;
+                let handle = storage.read().unwrap().get(&file_input).copied()?;
+                let content = handle.content(self).as_ref()?;
                 Some((file_input, (**content).clone()))
             })
             .collect()
@@ -431,91 +391,91 @@ impl AnalysisDatabase {
 
     pub fn restore_open_file_overrides(&mut self, overrides: OrderedHashMap<FileInput, Arc<str>>) {
         for (file_input, content) in overrides {
-            self.set_editor_file_content_for_input(file_input, Some(content));
+            override_file_content_for_input(self, file_input, Some(content));
         }
     }
 
-    fn granular_macro_plugin_override_handle(
+    fn macro_plugin_override_handle(
         &self,
         crate_input: &CrateInput,
-    ) -> Option<GranularMacroPluginOverride> {
-        self.granular_macro_plugin_overrides.read().unwrap().get(crate_input).copied()
+    ) -> Option<MacroPluginOverride> {
+        self.macro_plugin_overrides.read().unwrap().get(crate_input).copied()
     }
 
-    fn granular_inline_macro_plugin_override_handle(
+    fn inline_macro_plugin_override_handle(
         &self,
         crate_input: &CrateInput,
-    ) -> Option<GranularInlineMacroPluginOverride> {
-        self.granular_inline_macro_plugin_overrides.read().unwrap().get(crate_input).copied()
+    ) -> Option<InlineMacroPluginOverride> {
+        self.inline_macro_plugin_overrides.read().unwrap().get(crate_input).copied()
     }
 
-    fn granular_analyzer_plugin_override_handle(
+    fn analyzer_plugin_override_handle(
         &self,
         crate_input: &CrateInput,
-    ) -> Option<GranularAnalyzerPluginOverride> {
-        self.granular_analyzer_plugin_overrides.read().unwrap().get(crate_input).copied()
+    ) -> Option<AnalyzerPluginOverride> {
+        self.analyzer_plugin_overrides.read().unwrap().get(crate_input).copied()
     }
 
-    fn ensure_granular_macro_plugin_override_handle(
+    fn ensure_macro_plugin_override_handle(
         &mut self,
         crate_input: CrateInput,
-    ) -> GranularMacroPluginOverride {
-        if let Some(handle) = self.granular_macro_plugin_override_handle(&crate_input) {
+    ) -> MacroPluginOverride {
+        if let Some(handle) = self.macro_plugin_override_handle(&crate_input) {
             return handle;
         }
 
-        let handle = GranularMacroPluginOverride::new(self, None);
-        self.granular_macro_plugin_overrides.write().unwrap().insert(crate_input, handle);
+        let handle = MacroPluginOverride::new(self, None);
+        self.macro_plugin_overrides.write().unwrap().insert(crate_input, handle);
         let next =
-            defs_group_input(self).granular_macro_plugin_overrides_revision(self).saturating_add(1);
+            defs_group_input(self).macro_plugin_overrides_revision(self).saturating_add(1);
         defs_group_input(self)
-            .set_granular_macro_plugin_overrides_revision(self)
+            .set_macro_plugin_overrides_revision(self)
             .with_durability(Durability::HIGH)
             .to(next);
         handle
     }
 
-    fn ensure_granular_inline_macro_plugin_override_handle(
+    fn ensure_inline_macro_plugin_override_handle(
         &mut self,
         crate_input: CrateInput,
-    ) -> GranularInlineMacroPluginOverride {
-        if let Some(handle) = self.granular_inline_macro_plugin_override_handle(&crate_input) {
+    ) -> InlineMacroPluginOverride {
+        if let Some(handle) = self.inline_macro_plugin_override_handle(&crate_input) {
             return handle;
         }
 
-        let handle = GranularInlineMacroPluginOverride::new(self, None);
-        self.granular_inline_macro_plugin_overrides.write().unwrap().insert(crate_input, handle);
+        let handle = InlineMacroPluginOverride::new(self, None);
+        self.inline_macro_plugin_overrides.write().unwrap().insert(crate_input, handle);
         let next = defs_group_input(self)
-            .granular_inline_macro_plugin_overrides_revision(self)
+            .inline_macro_plugin_overrides_revision(self)
             .saturating_add(1);
         defs_group_input(self)
-            .set_granular_inline_macro_plugin_overrides_revision(self)
+            .set_inline_macro_plugin_overrides_revision(self)
             .with_durability(Durability::HIGH)
             .to(next);
         handle
     }
 
-    fn ensure_granular_analyzer_plugin_override_handle(
+    fn ensure_analyzer_plugin_override_handle(
         &mut self,
         crate_input: CrateInput,
-    ) -> GranularAnalyzerPluginOverride {
-        if let Some(handle) = self.granular_analyzer_plugin_override_handle(&crate_input) {
+    ) -> AnalyzerPluginOverride {
+        if let Some(handle) = self.analyzer_plugin_override_handle(&crate_input) {
             return handle;
         }
 
-        let handle = GranularAnalyzerPluginOverride::new(self, None);
-        self.granular_analyzer_plugin_overrides.write().unwrap().insert(crate_input, handle);
+        let handle = AnalyzerPluginOverride::new(self, None);
+        self.analyzer_plugin_overrides.write().unwrap().insert(crate_input, handle);
         let next = semantic_group_input(self)
-            .granular_analyzer_plugin_overrides_revision(self)
+            .analyzer_plugin_overrides_revision(self)
             .saturating_add(1);
         semantic_group_input(self)
-            .set_granular_analyzer_plugin_overrides_revision(self)
+            .set_analyzer_plugin_overrides_revision(self)
             .with_durability(Durability::HIGH)
             .to(next);
         handle
     }
 
-    fn apply_granular_crate_plugin_suite_for_input(
+    fn apply_crate_plugin_suite_for_input(
         &mut self,
         crate_input: CrateInput,
         suite: Option<CratePluginSuiteInputs>,
@@ -529,29 +489,29 @@ impl AnalysisDatabase {
                     "cfg plugin must be the first macro plugin"
                 );
 
-                self.ensure_granular_macro_plugin_override_handle(crate_input.clone())
+                self.ensure_macro_plugin_override_handle(crate_input.clone())
                     .set_plugins(self)
                     .with_durability(Durability::HIGH)
                     .to(Some(suite.macro_plugins.clone()));
-                self.ensure_granular_inline_macro_plugin_override_handle(crate_input.clone())
+                self.ensure_inline_macro_plugin_override_handle(crate_input.clone())
                     .set_plugins(self)
                     .with_durability(Durability::HIGH)
                     .to(Some(suite.inline_macro_plugins.clone()));
-                self.ensure_granular_analyzer_plugin_override_handle(crate_input)
+                self.ensure_analyzer_plugin_override_handle(crate_input)
                     .set_plugins(self)
                     .with_durability(Durability::HIGH)
                     .to(Some(suite.analyzer_plugins.clone()));
             }
             None => {
-                if let Some(handle) = self.granular_macro_plugin_override_handle(&crate_input) {
+                if let Some(handle) = self.macro_plugin_override_handle(&crate_input) {
                     handle.set_plugins(self).with_durability(Durability::HIGH).to(None);
                 }
                 if let Some(handle) =
-                    self.granular_inline_macro_plugin_override_handle(&crate_input)
+                    self.inline_macro_plugin_override_handle(&crate_input)
                 {
                     handle.set_plugins(self).with_durability(Durability::HIGH).to(None);
                 }
-                if let Some(handle) = self.granular_analyzer_plugin_override_handle(&crate_input) {
+                if let Some(handle) = self.analyzer_plugin_override_handle(&crate_input) {
                     handle.set_plugins(self).with_durability(Durability::HIGH).to(None);
                 }
             }
@@ -595,7 +555,7 @@ impl AnalysisDatabase {
                 .write()
                 .unwrap()
                 .insert(crate_input.clone(), fingerprint);
-            self.apply_granular_crate_plugin_suite_for_input(crate_input, Some(suite_inputs));
+            self.apply_crate_plugin_suite_for_input(crate_input, Some(suite_inputs));
         }
     }
 
@@ -605,7 +565,7 @@ impl AnalysisDatabase {
             .write()
             .unwrap()
             .swap_remove(&crate_input);
-        self.apply_granular_crate_plugin_suite_for_input(crate_input, None);
+        self.apply_crate_plugin_suite_for_input(crate_input, None);
     }
 
     pub fn sync_granular_crate_plugin_suites(
@@ -652,11 +612,11 @@ impl AnalysisDatabase {
         };
 
         for (crate_input, suite) in changed {
-            self.apply_granular_crate_plugin_suite_for_input(crate_input, Some(suite));
+            self.apply_crate_plugin_suite_for_input(crate_input, Some(suite));
         }
 
         for crate_input in removed {
-            self.apply_granular_crate_plugin_suite_for_input(crate_input, None);
+            self.apply_crate_plugin_suite_for_input(crate_input, None);
         }
     }
 
@@ -750,7 +710,7 @@ impl AnalysisDatabase {
                     crate_input.clone(),
                     CratePluginSuiteFingerprint::from_inputs(&next_suite),
                 );
-            self.apply_granular_crate_plugin_suite_for_input(crate_input, Some(next_suite));
+            self.apply_crate_plugin_suite_for_input(crate_input, Some(next_suite));
         }
     }
 
@@ -816,7 +776,7 @@ impl AnalysisDatabase {
                 crate_input.clone(),
                 CratePluginSuiteFingerprint::from_inputs(&current),
             );
-        self.apply_granular_crate_plugin_suite_for_input(crate_input, Some(current));
+        self.apply_crate_plugin_suite_for_input(crate_input, Some(current));
     }
 
     fn default_global_plugin_suite() -> PluginSuite {
@@ -849,63 +809,33 @@ impl AnalysisDatabase {
     }
 }
 
-impl GranularFileContentView for AnalysisDatabase {
-    fn granular_file_contents<'db>(
-        &'db self,
-        file_id: FileId<'db>,
-    ) -> Option<GranularFileContents> {
-        self.granular_file_contents_handle_for_file(file_id)
-    }
-
-    fn editor_file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db ArcStr> {
-        self.granular_file_contents_handle_for_file(file_id)?.editor_content(self).as_ref()
-    }
-
-    fn generated_file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db ArcStr> {
-        self.granular_file_contents_handle_for_file(file_id)?.generated_content(self).as_ref()
+impl FileContentView for AnalysisDatabase {
+    fn file_content_storage(&self) -> &FileContentStorage {
+        &self.file_contents
     }
 }
 
-impl GranularCrateConfigView for AnalysisDatabase {
-    fn granular_crate_config_storage(&self) -> Option<&GranularCrateConfigStorage> {
-        Some(&self.granular_crate_configs)
-    }
-
-    fn crate_config_input_for<'db>(
-        &'db self,
-        crate_id: CrateId<'db>,
-    ) -> Option<&'db CrateConfigurationInput> {
-        let crate_input = self.crate_input(crate_id).clone();
-        self.crate_config_input_for_input(&crate_input)
-    }
-
-    fn crate_config_input_for_input<'db>(
-        &'db self,
-        crate_input: &CrateInput,
-    ) -> Option<&'db CrateConfigurationInput> {
-        self.granular_crate_config_handle(crate_input)?.config(self).as_ref()
+impl CrateConfigView for AnalysisDatabase {
+    fn crate_config_storage(&self) -> Option<&CrateConfigStorage> {
+        Some(&self.crate_configs)
     }
 }
 
-impl GranularMacroPluginOverrideView for AnalysisDatabase {
-    fn granular_macro_plugin_override_storage(&self) -> Option<&GranularMacroPluginOverrideStorage> {
-        Some(&self.granular_macro_plugin_overrides)
+impl MacroPluginOverrideView for AnalysisDatabase {
+    fn macro_plugin_override_storage(&self) -> Option<&MacroPluginOverrideStorage> {
+        Some(&self.macro_plugin_overrides)
     }
 }
 
-impl GranularInlineMacroPluginOverrideView for AnalysisDatabase {
-    fn granular_inline_macro_plugin_override_storage(
-        &self,
-    ) -> Option<&GranularInlineMacroPluginOverrideStorage> {
-        Some(&self.granular_inline_macro_plugin_overrides)
+impl InlineMacroPluginOverrideView for AnalysisDatabase {
+    fn inline_macro_plugin_override_storage(&self) -> Option<&InlineMacroPluginOverrideStorage> {
+        Some(&self.inline_macro_plugin_overrides)
     }
 }
 
-impl GranularAnalyzerPluginOverrideView for AnalysisDatabase {
-    fn granular_analyzer_plugin_override_storage(
-        &self,
-    ) -> Option<&GranularAnalyzerPluginOverrideStorage> {
-        Some(&self.granular_analyzer_plugin_overrides)
+impl AnalyzerPluginOverrideView for AnalysisDatabase {
+    fn analyzer_plugin_override_storage(&self) -> Option<&AnalyzerPluginOverrideStorage> {
+        Some(&self.analyzer_plugin_overrides)
     }
 }
 
