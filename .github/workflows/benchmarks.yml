@@ -40,7 +40,6 @@ jobs:
       - name: build benchmarks for CodSpeed
         run: >
           cargo codspeed build
-          -m walltime
           --bench completions
           --bench hover
           --bench goto_definition
@@ -53,5 +52,5 @@ jobs:
       - name: run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v4
         with:
-          mode: walltime
+          mode: simulation
           run: cargo codspeed run
