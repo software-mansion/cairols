@@ -42,7 +42,7 @@ use crate::lang::visibility::peek_visible_in_with_edition;
 /// "Suffix" refers to the typed text being matched against the **end** of known importable paths:
 /// e.g. typing `ArrayTrait` surfaces `core::array::ArrayTrait` as a candidate to import.
 /// Used by [`macro_call`] for filtering completions by importable kind.
-pub(crate) fn importable_path_suffix_completions<'db>(
+pub fn importable_path_suffix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &'db AnalysisContext<'db>,
     was_node_corrected: bool,
