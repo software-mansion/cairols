@@ -60,3 +60,45 @@ Improve inlay hint robustness and coverage: handle parameter hints on arity mism
 keep semantic highlighting and inlay hints in sync with server-side state changes.
 
 Size: 3
+
+### 8. Signature help ([#102](https://github.com/software-mansion/cairols/issues/102))
+
+Implement the LSP signature help feature, showing the function/method signature with
+the current argument position highlighted while the user is typing a call.
+
+Size: 3.5
+
+### 9. LSP support for `#[derive(...)]` and associated items ([#847](https://github.com/software-mansion/cairols/issues/847))
+
+Ensure goto definition, find references, hover, and rename work correctly for trait identifiers
+inside `#[derive(...)]` attributes and for associated items inside traits and impls.
+
+Size: 3
+
+### 10. Find references & goto definition improvements ([#191](https://github.com/software-mansion/cairols/issues/191))
+
+Extend find references and goto definition to cover missing cases such as struct constructor
+field shorthands.
+
+Size: 2
+
+### 11. Snforge integration improvements ([#1244](https://github.com/software-mansion/cairols/issues/1244))
+
+Improve LS integration with snforge: add missing run lenses for parameterised test cases
+and ensure code lenses work correctly in snforge-controlled code.
+
+Size: 3
+
+### 12. LS observability & profiling ([#1104](https://github.com/software-mansion/cairols/issues/1104))
+
+Set up memory and performance profiling of the LS in MAAT to get better insight into
+real-world resource usage; feeds directly into the performance optimization work.
+
+Size: 3.5
+
+### 13. Stability improvements ([#1154](https://github.com/software-mansion/cairols/issues/1154), [#1276](https://github.com/software-mansion/cairols/issues/1276), [#498](https://github.com/software-mansion/cairols/issues/498))
+
+Fix a set of reliability issues: retries operating on stale parameters, missing error
+notifications to the client, and code lens not refreshing for parent modules.
+
+Size: 4
