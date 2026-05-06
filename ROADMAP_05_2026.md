@@ -11,19 +11,19 @@ typically in the `Todo` and `Backlog LS` columns.
 
 ## Q2 2026 + Q3 2026
 
-### 1. Memory consumption optimizations
+### 1. Performance & memory optimizations
 
 LS uses too much memory, causing slowdowns and crashes in larger workspaces.
 The work involves researching ideas that can reduce memory usage and validating them through profiling and testing.
 
 Size: 5
 
-### 2. Scarb.toml support improvements
+### 2. Fix LS not being killed after closing VS Code window
 
-Expand LS understanding of `Scarb.toml` files: reject unknown/extra keys with diagnostics,
-add quick-fixes for common manifest issues, and improve hover quality for manifest fields.
+Sometimes after closing all VS Code windows a hanging LS process remains with ever-growing memory usage.
+The work involves researching the root cause and fixing the process lifecycle management.
 
-Size: 4
+Size: 3
 
 ### 3. Gas cost & tooling code lenses
 
@@ -32,36 +32,29 @@ and add commands for running `cairo-profiler` and `cairo-coverage` directly from
 
 Size: 4
 
-### 4. Proc-macro & declarative macro improvements
+### 4. Proc-macro & declarative macro improvements ([#349](https://github.com/software-mansion/cairols/issues/349), [#677](https://github.com/software-mansion/cairols/issues/677))
 
 Fix bugs in proc-macro-controlled code where LSP features (goto, references, hover) do not work correctly,
 and add code lens support for declarative macros.
 
 Size: 4
 
-### 5. Fix LS not being killed after closing VS Code window
+### 5. Completions improvements
 
-Sometimes after closing all VS Code windows a hanging LS process remains with ever-growing memory usage.
-The work involves researching the root cause and fixing the process lifecycle management.
-
-Size: 2
-
-### 6. Completions improvements
-
-Make completions smarter and more context-aware: suggest identifiers based on their kind,
-filter out already-imported items, propose only correct items for impl aliases,
+Make completions smarter and more context-aware: suggest symbols based on expected type,
+propose only correct items for impl aliases,
 and ensure consistent filtering with `text_matches` across all completion providers.
 
 Size: 3
 
-### 7. Hover improvements
+### 6. Hover improvements
 
 Expand hover coverage: keyword documentation expansion, hovers for closure parameters,
 and showing generic type parameter constraints in hover info.
 
 Size: 3
 
-### 8. Inlay hints improvements
+### 7. Inlay hints improvements
 
 Improve inlay hint robustness and coverage: handle parameter hints on arity mismatches,
 keep semantic highlighting and inlay hints in sync with server-side state changes.
