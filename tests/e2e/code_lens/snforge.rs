@@ -385,6 +385,25 @@ fn fuzzer_without_test_case() {
 }
 
 #[test]
+fn fuzzer_before_test() {
+    test_transform!(test_code_lens_snforge, r#"
+    #[fuzzer]
+    #[test]<caret>
+    fn a(_a: felt252) {}
+    "#, @r#"
+    [[lenses]]
+    line = 1
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 0
+
+    [[execute_in_terminal]]
+    command = "snforge test hello::a --exact"
+    cwd = "./"
+    "#)
+}
+
+#[test]
 fn debug_with_incorrect_compiler_config() {
     test_transform!(test_code_lens_snforge_wrong_debug_config, r#"
     #[test]<caret>
