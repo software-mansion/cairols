@@ -160,8 +160,54 @@ impl Notification for LaunchDebugger {
 
 pub struct ShowMemoryUsage;
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryUsageEntry {
+    pub debug_name: String,
+    pub layer: String,
+    pub count: usize,
+    pub size_of_metadata: usize,
+    pub size_of_fields: usize,
+    pub heap_size_of_fields: usize,
+    pub total_size: usize,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryUsageTotals {
+    pub count: usize,
+    pub size_of_metadata: usize,
+    pub size_of_fields: usize,
+    pub heap_size_of_fields: usize,
+    pub total_size: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryUsageSummary {
+    pub totals: MemoryUsageTotals,
+    pub by_layer: Vec<MemoryUsageLayerSummary>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryUsageLayerSummary {
+    pub layer: String,
+    pub totals: MemoryUsageTotals,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ShowMemoryUsageResponse {
+    pub summary: MemoryUsageSummary,
+    pub structs: Vec<MemoryUsageEntry>,
+    pub queries: Vec<MemoryUsageEntry>,
+    pub top_structs: Vec<MemoryUsageEntry>,
+    pub top_queries: Vec<MemoryUsageEntry>,
+}
+
 impl Request for ShowMemoryUsage {
     type Params = ();
-    type Result = serde_json::Value;
+    type Result = ShowMemoryUsageResponse;
     const METHOD: &'static str = "cairo/showMemoryUsage";
 }

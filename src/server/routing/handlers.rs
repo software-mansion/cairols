@@ -28,15 +28,17 @@ use lsp_types::{
     RenameFilesParams, RenameParams, SemanticTokensParams, SemanticTokensResult,
     TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url, WorkspaceEdit,
 };
-use salsa::{Database, IngredientInfo};
-use serde_json::{Value, json};
+use salsa::Database;
+use serde_json::Value;
 use tracing::{error, trace};
 
 use crate::ide::code_lens::{CodeLensController, FileChange};
 use crate::lang::lsp::LsProtoGroup;
+use crate::lang::db::memory_report::build_memory_usage_report;
 use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
-    ShowMemoryUsage, ToolchainInfo, ToolchainInfoResponse, ViewAnalyzedCrates, ViewSyntaxTree,
+    ShowMemoryUsage, ShowMemoryUsageResponse, ToolchainInfo, ToolchainInfoResponse,
+    ViewAnalyzedCrates, ViewSyntaxTree,
 };
 use crate::lsp::result::{LSPError, LSPResult};
 use crate::server::client::{Notifier, Requester};
@@ -493,31 +495,8 @@ impl BackgroundDocumentRequestHandler for ShowMemoryUsage {
         _meta_state: MetaState,
         _notifier: Notifier,
         _params: (),
-    ) -> LSPResult<serde_json::Value> {
-        let db: &dyn Database = &snapshot.db;
-        let memory_usage = db.memory_usage();
-
-        let to_value = |info: IngredientInfo| {
-            json!({
-                "debug_name": info.debug_name(),
-                "count": info.count(),
-                "size_of_metadata": info.size_of_metadata(),
-                "size_of_fields": info.size_of_fields(),
-                "heap_size_of_fields": info.heap_size_of_fields(),
-            })
-        };
-
-        let structs = memory_usage.structs.into_iter().map(to_value).collect::<Vec<_>>();
-        let queries = memory_usage
-            .queries
-            .into_iter()
-            .map(|(key, value)| json!({ key: to_value(value) }))
-            .collect::<Vec<_>>();
-
-        Ok(json!({
-            "structs": structs,
-            "queries": queries,
-        }))
+    ) -> LSPResult<ShowMemoryUsageResponse> {
+        Ok(build_memory_usage_report(&snapshot.db))
     }
 }
 

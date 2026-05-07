@@ -31,6 +31,7 @@ pub use self::semantic::*;
 pub use self::swapper::*;
 pub use self::syntax::*;
 
+pub(crate) mod memory_report;
 mod semantic;
 mod swapper;
 mod syntax;

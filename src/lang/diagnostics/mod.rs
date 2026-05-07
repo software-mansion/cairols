@@ -11,6 +11,7 @@ use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
 use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
+use crate::lang::db::memory_report::print_memory_usage_report;
 use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
@@ -239,6 +240,10 @@ impl DiagnosticsControllerThread {
                 controller_cancelled || diagnostics_results.contains(&TaskResult::Cancelled);
 
             self.analysis_progress_controller.diagnostic_end(diagnostics_cancelled);
+
+            if !diagnostics_cancelled {
+                print_memory_usage_report(&state.db);
+            }
         }
     }
 
