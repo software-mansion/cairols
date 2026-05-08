@@ -169,5 +169,13 @@ fn issue_80() {
     source_context = """
         format!("0x{}", str<caret>ing)
     """
+    highlight = """
+        format!("0x{}", <sel>string</sel>)
+    """
+    popover = """
+    ```cairo
+    let string: ByteArray
+    ```
+    """
     "#)
 }

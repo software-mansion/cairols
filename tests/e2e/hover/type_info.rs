@@ -337,12 +337,12 @@ fn type_info_inside_attribute_macro() {
     "#)
 }
 
-/// Hover on an operator inside a built-in inline macro shows no type info — built-in macros use
-/// PatchBuilder::add_node which emits a single CodeOrigin::Start mapping per argument node rather
-/// than per-token mappings, so source tokens inside the token tree have no expression resultants
-/// to walk up from.
+/// Hover on an operator inside a built-in inline macro shows the type of the sub-expression.
+/// Built-in macros use PatchBuilder::add_node which now emits per-token CodeOrigin::Start
+/// mappings, so each source token inside the argument list has an expansion resultant and type
+/// resolution works via the standard expression-lookup path.
 #[test]
-fn no_type_info_inside_builtin_inline_macro() {
+fn type_info_inside_builtin_inline_macro() {
     test_transform_plain!(Hover, r#"
     fn main() {
         let _ = array![1_u32 <caret>+ 2_u32];
@@ -350,6 +350,14 @@ fn no_type_info_inside_builtin_inline_macro() {
     "#, @r#"
     source_context = """
         let _ = array![1_u32 <caret>+ 2_u32];
+    """
+    highlight = """
+        let _ = array![<sel>1_u32 + 2_u32</sel>];
+    """
+    popover = """
+    ```cairo
+    u32
+    ```
     """
     "#)
 }
