@@ -59,6 +59,26 @@ fn invalid_manifest_reports_diagnostics() {
 }
 
 #[test]
+fn successful_manifest_warning_reports_diagnostics() {
+    let mut ls = sandbox! {
+        files {
+            "Scarb.toml" => indoc! {r#"
+                [package]
+                name = "test_package"
+                version = "0.1.0"
+                edition = "2025_12"
+                typo_field = "oops"
+            "#},
+            "src/lib.cairo" => "fn main() {}\n",
+        }
+    };
+
+    ls.open_and_wait_for_project_update("src/lib.cairo");
+
+    insta::assert_snapshot!(diagnostics_report(&mut ls, &["Scarb.toml"]));
+}
+
+#[test]
 fn workspace_manifest_diagnostics_from_member_manifest() {
     let mut ls = sandbox! {
         files {

@@ -8,6 +8,7 @@ use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_project::ProjectConfig;
 use crossbeam::channel::{Receiver, Sender};
+use lsp_types::DiagnosticSeverity;
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
 use tracing::{debug, error, warn};
@@ -19,7 +20,8 @@ pub use self::scarb_manifest_diagnostics::{
     ScarbMetadataMessage, scarb_metadata_messages_to_diagnostics,
 };
 use self::scarb_manifest_diagnostics::{
-    collect_scarb_manifest_diagnostics, scarb_metadata_messages_contain_only_errors,
+    collect_scarb_manifest_diagnostics, manifest_diagnostics_from_ndjson,
+    scarb_metadata_messages_contain_only_errors,
 };
 use crate::ide::code_lens::FileChange;
 use crate::lang::db::AnalysisDatabase;
@@ -116,15 +118,29 @@ impl ProjectController {
     pub fn handle_update(state: &mut State, notifier: Notifier, project_update: ProjectUpdate) {
         let db = &mut state.db;
         match project_update {
-            ProjectUpdate::Scarb { crates, workspace_dir, workspace_manifest_path } => {
+            ProjectUpdate::Scarb {
+                crates,
+                workspace_dir,
+                workspace_manifest_path,
+                diagnostics,
+            } => {
                 state.diagnostics_controller.clear_scarb_manifest_diagnostics(&crates, &notifier);
                 debug!("updating crate roots from scarb metadata: {crates:#?}");
-                state.proc_macro_controller.request_defined_macros(db, workspace_manifest_path);
+                state
+                    .proc_macro_controller
+                    .request_defined_macros(db, workspace_manifest_path.clone());
                 state.project_controller.model.load_workspace(
                     db,
                     crates,
                     workspace_dir,
                     &state.proc_macro_controller,
+                );
+                state.diagnostics_controller.publish_scarb_manifest_diagnostics(
+                    &workspace_manifest_path,
+                    diagnostics,
+                    DiagnosticSeverity::WARNING,
+                    db,
+                    &notifier,
                 );
                 state.analysis_progress_controller.project_model_loaded();
             }
@@ -132,6 +148,7 @@ impl ProjectController {
                 state.diagnostics_controller.publish_scarb_manifest_diagnostics(
                     &manifest_path,
                     diagnostics,
+                    DiagnosticSeverity::ERROR,
                     db,
                     &notifier,
                 );
@@ -230,8 +247,16 @@ impl ProjectController {
 /// Intermediate struct used to communicate what changes to the project model should be applied.
 /// Associated with [`ProjectManifestPath`] (or its absence) that was detected for a given file.
 pub enum ProjectUpdate {
-    Scarb { crates: Vec<CrateInfo>, workspace_dir: PathBuf, workspace_manifest_path: PathBuf },
-    ScarbMetadataFailed { manifest_path: PathBuf, diagnostics: Vec<ScarbMetadataMessage> },
+    Scarb {
+        crates: Vec<CrateInfo>,
+        workspace_dir: PathBuf,
+        workspace_manifest_path: PathBuf,
+        diagnostics: Vec<ScarbMetadataMessage>,
+    },
+    ScarbMetadataFailed {
+        manifest_path: PathBuf,
+        diagnostics: Vec<ScarbMetadataMessage>,
+    },
     CairoProjectToml(Box<Option<ProjectConfig>>),
     NoConfig(PathBuf),
 }
@@ -293,13 +318,15 @@ impl ProjectControllerThread {
                 let metadata = self.scarb_toolchain.metadata_raw(&manifest_path, scarb_path);
 
                 metadata
-                    .map(|metadata| ProjectUpdate::Scarb {
-                        crates: extract_crates(&metadata),
-                        workspace_dir: metadata.workspace.root.into_std_path_buf(),
-                        workspace_manifest_path: metadata
+                    .map(|output| ProjectUpdate::Scarb {
+                        crates: extract_crates(&output.metadata),
+                        workspace_dir: output.metadata.workspace.root.into_std_path_buf(),
+                        workspace_manifest_path: output
+                            .metadata
                             .workspace
                             .manifest_path
                             .into_std_path_buf(),
+                        diagnostics: manifest_diagnostics_from_ndjson(&output.stdout),
                     })
                     .unwrap_or_else(|error| {
                         let metadata_messages = collect_scarb_manifest_diagnostics(error);
