@@ -30,6 +30,7 @@ pub struct State {
     pub project_controller: ProjectController,
     pub analysis_progress_controller: AnalysisProgressController,
     pub code_lens_controller: CodeLensController,
+    pub cwd: Arc<PathBuf>,
 }
 
 impl State {
@@ -49,11 +50,12 @@ impl State {
             scarb_toolchain.clone(),
         );
 
+        let cwd = Arc::new(cwd);
         let proc_macro_controller = ProcMacroClientController::new(
             scarb_toolchain.clone(),
             notifier.clone(),
             analysis_progress_controller.server_tracker(),
-            cwd,
+            (*cwd).clone(),
             diagnostics_controller.generate_code_complete_receiver(),
         );
 
@@ -68,6 +70,7 @@ impl State {
             proc_macro_controller,
             project_controller: ProjectController::initialize(scarb_toolchain, notifier),
             code_lens_controller: CodeLensController::new(),
+            cwd,
         }
     }
 
@@ -80,6 +83,7 @@ impl State {
             client_capabilities: self.client_capabilities.snapshot(),
             configs_registry: self.project_controller.configs_registry(),
             code_lens_controller: self.code_lens_controller.clone(),
+            cwd: Arc::clone(&self.cwd),
         }
     }
 }
@@ -113,6 +117,7 @@ pub struct StateSnapshot {
     pub client_capabilities: Snapshot<ClientCapabilities>,
     pub configs_registry: Snapshot<ConfigsRegistry>,
     pub code_lens_controller: CodeLensController,
+    pub cwd: Arc<PathBuf>,
 }
 
 impl std::panic::UnwindSafe for StateSnapshot {}

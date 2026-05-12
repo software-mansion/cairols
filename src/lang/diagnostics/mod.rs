@@ -11,7 +11,7 @@ use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
 use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
-use crate::lang::db::memory_report::print_memory_usage_report;
+use crate::lang::db::memory_report::{print_memory_usage_report, save_memory_usage_report};
 use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
@@ -243,6 +243,12 @@ impl DiagnosticsControllerThread {
 
             if !diagnostics_cancelled {
                 print_memory_usage_report(&state.db);
+                let dir = std::env::var_os("CAIROLS_MEMORY_REPORT_DIR")
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_else(|| state.cwd.join("cairols-memory"));
+                if let Err(err) = save_memory_usage_report(&state.db, &dir) {
+                    error!("failed to save memory snapshot to {}: {err}", dir.display());
+                }
             }
         }
     }

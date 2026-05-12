@@ -24,6 +24,8 @@ pub(crate) fn build_memory_usage_report(db: &dyn Database) -> ShowMemoryUsageRes
     ShowMemoryUsageResponse { summary, structs, queries, top_structs, top_queries }
 }
 
+const TOP_ENTRIES_LIMIT: usize = 10;
+
 fn top_entries(entries: &[MemoryUsageEntry]) -> Vec<MemoryUsageEntry> {
     let mut entries = entries.to_vec();
     entries.sort_by(|left, right| {
@@ -33,7 +35,7 @@ fn top_entries(entries: &[MemoryUsageEntry]) -> Vec<MemoryUsageEntry> {
             .then_with(|| right.heap_size_of_fields.cmp(&left.heap_size_of_fields))
             .then_with(|| left.debug_name.cmp(&right.debug_name))
     });
-    entries.truncate(10);
+    entries.truncate(TOP_ENTRIES_LIMIT);
     entries
 }
 
@@ -179,3 +181,178 @@ pub(crate) fn print_memory_usage_report(db: &AnalysisDatabase) {
         );
     }
 }
+
+pub(crate) fn save_memory_usage_report(
+    db: &AnalysisDatabase,
+    dir: &std::path::Path,
+) -> std::io::Result<()> {
+    let report = build_memory_usage_report(db);
+    std::fs::create_dir_all(dir)?;
+    let json = serde_json::to_string_pretty(&report)
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?;
+    std::fs::write(dir.join("latest.json"), json)?;
+    std::fs::write(dir.join("latest.html"), render_html(&report))?;
+    Ok(())
+}
+
+fn render_html(report: &ShowMemoryUsageResponse) -> String {
+    let mut entries: Vec<(&'static str, &MemoryUsageEntry)> =
+        Vec::with_capacity(report.structs.len() + report.queries.len());
+    for entry in &report.structs {
+        entries.push((classify_struct_kind(&entry.debug_name), entry));
+    }
+    for entry in &report.queries {
+        entries.push(("query", entry));
+    }
+    entries.sort_by(|a, b| b.1.total_size.cmp(&a.1.total_size));
+
+    let total_bytes = report.summary.totals.total_size;
+    let total_count = report.summary.totals.count;
+
+    let mut out = String::with_capacity(64 * 1024);
+    out.push_str(HTML_HEAD);
+
+    push_li_open(
+        &mut out,
+        "session",
+        "cairols memory snapshot",
+        total_bytes,
+        total_count,
+        &format!("{} entries", entries.len()),
+        true,
+    );
+
+    out.push_str("<ul>\n");
+    for (kind, entry) in entries {
+        push_leaf(&mut out, kind, entry);
+    }
+    out.push_str("</ul>\n</details></li>\n");
+    out.push_str(HTML_TAIL);
+    out
+}
+
+fn classify_struct_kind(debug_name: &str) -> &'static str {
+    if debug_name.ends_with("Input") { "input" } else { "struct" }
+}
+
+fn push_li_open(
+    out: &mut String,
+    kind: &str,
+    label: &str,
+    bytes: usize,
+    count: usize,
+    summary: &str,
+    open: bool,
+) {
+    use std::fmt::Write;
+    let label_lc = label.to_lowercase();
+    let _ = write!(
+        out,
+        r#"<li data-label="{kind} {label_lc}" data-sort-label="{label_lc}" data-total="{bytes}" data-count="{count}"><details{open}><summary><span class="kind">{kind}</span>: {label_esc} <span class="size">{size_str}</span> <span class="count">x{count}</span><span class="summary">{summary_esc}</span></summary>
+"#,
+        kind = kind,
+        label_lc = escape(&label_lc),
+        bytes = bytes,
+        count = count,
+        open = if open { " open" } else { "" },
+        label_esc = escape(label),
+        size_str = fmt_bytes(bytes),
+        summary_esc = escape(summary),
+    );
+}
+
+fn push_leaf(out: &mut String, kind: &str, entry: &MemoryUsageEntry) {
+    use std::fmt::Write;
+    let label_lc = entry.debug_name.to_lowercase();
+    let _ = write!(
+        out,
+        r#"<li data-label="{kind} {label_lc}" data-sort-label="{label_lc}" data-total="{total}" data-count="{count}"><div class="leaf"><span class="kind">{kind}</span>: {name_esc} <span class="size">{size_str}</span> <span class="count">x{count}</span><span class="summary">stack {stack} · heap {heap} · metadata {meta}</span></div></li>
+"#,
+        kind = kind,
+        label_lc = escape(&label_lc),
+        total = entry.total_size,
+        count = entry.count,
+        name_esc = escape(&entry.debug_name),
+        size_str = fmt_bytes(entry.total_size),
+        stack = fmt_bytes(entry.size_of_fields),
+        heap = fmt_bytes(entry.heap_size_of_fields),
+        meta = fmt_bytes(entry.size_of_metadata),
+    );
+}
+
+fn escape(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    for ch in value.chars() {
+        match ch {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '"' => out.push_str("&quot;"),
+            '\'' => out.push_str("&#39;"),
+            _ => out.push(ch),
+        }
+    }
+    out
+}
+
+fn fmt_bytes(bytes: usize) -> String {
+    const KB: f64 = 1024.0;
+    const MB: f64 = 1024.0 * 1024.0;
+    const GB: f64 = 1024.0 * 1024.0 * 1024.0;
+    let b = bytes as f64;
+    if b >= GB {
+        format!("{:.2} GB", b / GB)
+    } else if b >= MB {
+        format!("{:.2} MB", b / MB)
+    } else if b >= KB {
+        format!("{:.1} KB", b / KB)
+    } else {
+        format!("{} B", bytes)
+    }
+}
+
+const HTML_HEAD: &str = r#"<!doctype html><html><head><meta charset="utf-8"><title>CairoLS Memory Snapshot</title><style>
+body{font:13px/1.35 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;margin:24px;background:#fafafa;color:#1f2328}
+.toolbar{position:sticky;top:0;background:#fafafacc;backdrop-filter:blur(8px);padding:8px 0 14px;border-bottom:1px solid #ddd;margin-bottom:12px}
+input{font:inherit;padding:5px 7px;width:min(680px,80vw)}
+select{font:inherit;padding:5px 7px;margin-left:8px}
+ul{list-style:none;margin:0 0 0 18px;padding:0;border-left:1px solid #ddd}
+li{margin:2px 0 2px 10px}
+details{padding:1px 0}
+summary{cursor:pointer;white-space:nowrap}
+.leaf{padding:1px 0}
+.kind{font-weight:700;color:#8250df}
+.size{color:#0969da;font-variant-numeric:tabular-nums}
+.count{color:#57606a;font-variant-numeric:tabular-nums;margin-left:6px}
+.summary{color:#475569;margin-left:10px;font-size:12px;font-weight:400;white-space:normal}
+.hide{display:none}
+</style></head><body><div class="toolbar"><input id="filter" placeholder="Filter by name, e.g. SemanticGroup or Result"><select id="sort"><option value="total">Sort: total size</option><option value="count">Sort: count</option><option value="name">Sort: name</option></select></div><ul class="tree">
+"#;
+
+const HTML_TAIL: &str = r#"</ul><script>
+const input=document.getElementById('filter');
+input.addEventListener('input',()=>{
+  const q=input.value.toLowerCase();
+  for (const li of document.querySelectorAll('li[data-label]')) {
+    const hit=!q||li.dataset.label.includes(q);
+    let childHit=false;
+    if(!hit){for (const c of li.querySelectorAll('li[data-label]')) { if(c.dataset.label.includes(q)) { childHit=true; break; } }}
+    li.classList.toggle('hide', !(hit||childHit));
+    if(q&&(hit||childHit)) { const d=li.querySelector(':scope > details'); if(d) d.open=true; }
+  }
+});
+const sort=document.getElementById('sort');
+function sortUl(ul,mode){
+  const items=[...ul.children];
+  items.sort((a,b)=>{
+    if(mode==='count'){const av=+(a.dataset.count||0);const bv=+(b.dataset.count||0);if(bv!==av)return bv-av;}
+    if(mode==='total'){const av=+(a.dataset.total||0);const bv=+(b.dataset.total||0);if(bv!==av)return bv-av;}
+    return (a.dataset.sortLabel||a.dataset.label||'').localeCompare(b.dataset.sortLabel||b.dataset.label||'');
+  });
+  for(const it of items) ul.appendChild(it);
+}
+function sortAll(){const mode=sort.value;for(const ul of document.querySelectorAll('ul')) sortUl(ul,mode);}
+sort.addEventListener('change',sortAll);
+sortAll();
+</script></body></html>
+"#;
