@@ -2,6 +2,7 @@ use lsp_types::{
     ClientCapabilities, DidChangeWatchedFilesClientCapabilities, WorkspaceClientCapabilities,
 };
 
+mod integration_tests;
 mod invalid;
 mod removing_dependency;
 mod removing_member;

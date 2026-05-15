@@ -6,6 +6,7 @@
 // +-----------------------------------------------------+
 
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+use std::path::Path;
 
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::override_file_content;
@@ -254,7 +255,11 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
             }
         }
 
-        // Reload workspace if a config file has changed.
+        // Reload workspace if a config file has changed or if the Scarb integration-test crate
+        // structure changed. Scarb derives integration-test crates from direct `tests/*.cairo`
+        // files when `tests/lib.cairo` is absent, so create/delete events can change metadata.
+        let mut should_reload_backend = false;
+        let mut should_restart_proc_macros = false;
         for change in &params.changes {
             let changed_file_path = change.uri.to_file_path().unwrap_or_default();
             let changed_file_name = changed_file_path.file_name().unwrap_or_default();
@@ -262,9 +267,18 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
             //  metadata call, so it is easy to fall in a loop here.
             if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
             {
-                trace!("reloading backend from didChangeWatchedFiles handler");
-                Backend::reload(state, requester)?;
+                should_reload_backend = true;
+                should_restart_proc_macros = true;
+            } else if is_integration_test_structure_change(&changed_file_path, change.typ) {
+                should_reload_backend = true;
+            }
+        }
 
+        if should_reload_backend {
+            trace!("reloading backend from didChangeWatchedFiles handler");
+            Backend::reload(state, requester)?;
+
+            if should_restart_proc_macros {
                 state
                     .proc_macro_controller
                     .force_restart_without_rate_limit(&mut state.db, &state.config);
@@ -284,6 +298,12 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
 
         Ok(())
     }
+}
+
+fn is_integration_test_structure_change(path: &Path, change_type: FileChangeType) -> bool {
+    matches!(change_type, FileChangeType::CREATED | FileChangeType::DELETED)
+        && path.extension().is_some_and(|extension| extension == "cairo")
+        && path.parent().and_then(Path::file_name).is_some_and(|parent| parent == "tests")
 }
 
 impl SyncNotificationHandler for DidCloseTextDocument {
