@@ -561,6 +561,14 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
+    completion_label = "BoundedInt"
+    completion_label_path = "(use core::internal::bounded_int::BoundedInt)"
+    text_edits = ["""
+    use core::internal::bounded_int::BoundedInt;
+
+    """]
+
+    [[completions]]
     completion_label = "BoxImpl"
     completion_label_path = "(use core::box::BoxImpl)"
     text_edits = ["""
@@ -5353,6 +5361,14 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
+    completion_label = "BoundedInt"
+    completion_label_path = "(use core::internal::bounded_int::BoundedInt)"
+    text_edits = ["""
+    use core::internal::bounded_int::BoundedInt;
+
+    """]
+
+    [[completions]]
     completion_label = "BoxImpl"
     completion_label_path = "(use core::box::BoxImpl)"
     text_edits = ["""
@@ -10141,6 +10157,14 @@ fn no_text_before_statement() {
     completion_label_path = "(use core::integer::BoundedInt)"
     text_edits = ["""
     use core::integer::BoundedInt;
+
+    """]
+
+    [[completions]]
+    completion_label = "BoundedInt"
+    completion_label_path = "(use core::internal::bounded_int::BoundedInt)"
+    text_edits = ["""
+    use core::internal::bounded_int::BoundedInt;
 
     """]
 
@@ -14939,6 +14963,14 @@ fn no_text_after_statement() {
     completion_label_path = "(use core::integer::BoundedInt)"
     text_edits = ["""
     use core::integer::BoundedInt;
+
+    """]
+
+    [[completions]]
+    completion_label = "BoundedInt"
+    completion_label_path = "(use core::internal::bounded_int::BoundedInt)"
+    text_edits = ["""
+    use core::internal::bounded_int::BoundedInt;
 
     """]
 
