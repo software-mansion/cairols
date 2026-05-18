@@ -105,7 +105,7 @@ fn number_hover<'db>(
     type_id: &TypeId<'db>,
     importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
-    let value = literal.numeric_value(db)?;
+    let value = literal.numeric_value_and_suffix(db).0;
 
     let mut representation = formatdoc!("value of literal: `{value} ({value:#x} | {value:#b})`");
 
