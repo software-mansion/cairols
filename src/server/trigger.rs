@@ -71,6 +71,12 @@ impl<T> Receiver<T> {
     pub fn wait(&self) -> Option<T> {
         self.0.wait()
     }
+
+    /// Attempts to read a buffered value without blocking.
+    #[allow(dead_code)]
+    pub fn try_wait(&self) -> Option<T> {
+        self.0.try_wait()
+    }
 }
 
 impl<T> Drop for Receiver<T> {
@@ -145,6 +151,24 @@ impl<T> Inner<T> {
                 State::Activated(value) => return Some(value),
                 State::Disconnected(value) => return value,
             }
+        }
+    }
+
+    #[allow(dead_code)]
+    fn try_wait(&self) -> Option<T> {
+        let &Inner { state_mutex, .. } = &self;
+
+        let mut state_guard = state_mutex.lock().expect(POISON_PANIC);
+        let idle = match &*state_guard {
+            State::Pending => return None,
+            State::Activated(_) => State::Pending,
+            State::Disconnected(_) => State::Disconnected(None),
+        };
+
+        match mem::replace(&mut *state_guard, idle) {
+            State::Pending => None,
+            State::Activated(value) => Some(value),
+            State::Disconnected(value) => value,
         }
     }
 }

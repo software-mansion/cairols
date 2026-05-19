@@ -51,3 +51,19 @@ fn test_drop_receiver() {
     // This line should just do nothing.
     sender.activate(42);
 }
+
+#[test]
+fn test_try_wait() {
+    let (sender, receiver) = trigger();
+
+    assert_eq!(receiver.try_wait(), None);
+
+    sender.activate(42);
+    assert_eq!(receiver.try_wait(), Some(42));
+    assert_eq!(receiver.try_wait(), None);
+
+    sender.activate(43);
+    drop(sender);
+    assert_eq!(receiver.try_wait(), Some(43));
+    assert_eq!(receiver.try_wait(), None);
+}
