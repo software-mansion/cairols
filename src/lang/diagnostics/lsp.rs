@@ -13,7 +13,6 @@ use tracing::{error, trace};
 
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
-/// Converts internal diagnostics to LSP format.
 pub fn map_cairo_diagnostics_to_lsp<'db, T>(
     db: &'db dyn Database,
     diags: &mut HashMap<(Url, FileId<'db>), Vec<Diagnostic>>,
@@ -84,8 +83,6 @@ pub fn map_cairo_diagnostics_to_lsp<'db, T>(
     }
 }
 
-/// Returns the mapped range of a location, optionally adds a note about the mapping of the
-/// location.
 fn get_mapped_range_and_add_mapping_note<'db>(
     db: &'db dyn Database,
     orig: &SpanInFile<'db>,
@@ -106,7 +103,6 @@ fn get_mapped_range_and_add_mapping_note<'db>(
     Some((mapped_range, mapped.file_id))
 }
 
-/// Converts an internal diagnostic location to an LSP range.
 fn get_lsp_range<'db>(db: &'db dyn Database, location: &SpanInFile<'db>) -> Option<Range> {
     let Some(span) = location.span.position_in_file(db, location.file_id) else {
         error!("failed to get range for diagnostic");

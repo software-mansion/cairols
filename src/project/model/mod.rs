@@ -26,6 +26,10 @@ pub struct ProjectModel {
     loaded_crates: HashMap<CrateInput, HashSet<WorkspaceRoot>>,
     /// Used to determine when we can skip calling `scarb metadata` to update a project model.
     manifests_of_members_from_loaded_workspaces: Owned<HashSet<PathBuf>>,
+    /// Set of loaded Scarb workspace manifests.
+    workspace_manifests: Owned<HashSet<PathBuf>>,
+    /// Paths that can be used to reload currently loaded projects.
+    reload_targets: Owned<HashSet<PathBuf>>,
     configs_registry: Owned<ConfigsRegistry>,
     /// Used to delay removing of crates from the db until the next workspace is loaded.
     /// It is done to ensure diagnostics are not randomly cleared after a project manifest change/
@@ -39,6 +43,8 @@ impl ProjectModel {
             loaded_workspaces: Default::default(),
             loaded_crates: Default::default(),
             manifests_of_members_from_loaded_workspaces: Default::default(),
+            workspace_manifests: Default::default(),
+            reload_targets: Default::default(),
             configs_registry: Default::default(),
             remove_crates_from_db_on_next_update: false,
         }
@@ -52,10 +58,20 @@ impl ProjectModel {
         self.manifests_of_members_from_loaded_workspaces.snapshot()
     }
 
+    pub fn loaded_workspace_manifests(&self) -> Snapshot<HashSet<PathBuf>> {
+        self.workspace_manifests.snapshot()
+    }
+
+    pub fn reload_targets(&self) -> Snapshot<HashSet<PathBuf>> {
+        self.reload_targets.snapshot()
+    }
+
     pub fn clear_loaded_workspaces(&mut self) {
         self.loaded_workspaces.clear();
         self.loaded_crates.clear();
         self.manifests_of_members_from_loaded_workspaces.clear();
+        self.workspace_manifests.clear();
+        self.reload_targets.clear();
         self.configs_registry.clear();
 
         self.remove_crates_from_db_on_next_update = true;
@@ -66,6 +82,7 @@ impl ProjectModel {
         db: &mut AnalysisDatabase,
         workspace_crates: Vec<CrateInfo>,
         workspace_dir: PathBuf,
+        workspace_manifest_path: PathBuf,
         proc_macro_controller: &ProcMacroClientController,
     ) {
         if self.remove_crates_from_db_on_next_update {
@@ -97,8 +114,14 @@ impl ProjectModel {
         };
 
         self.add_crates(workspace_crates, &workspace_dir);
+        self.workspace_manifests.insert(workspace_manifest_path.clone());
+        self.reload_targets.insert(workspace_manifest_path);
 
         self.apply_changes_to_db(db, proc_macro_controller);
+    }
+
+    pub fn add_reload_target(&mut self, path: PathBuf) {
+        self.reload_targets.insert(path);
     }
 
     pub fn apply_changes_to_db(

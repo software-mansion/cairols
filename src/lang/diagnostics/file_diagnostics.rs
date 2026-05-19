@@ -47,8 +47,6 @@ pub struct FilesDiagnostics<'db> {
 }
 
 impl<'db> FilesDiagnostics<'db> {
-    /// Collects all diagnostics kinds by processing an on disk `root_on_disk_file` together with
-    /// virtual files that are its descendants.
     pub fn collect(
         db: &'db AnalysisDatabase,
         config: &Config,
@@ -124,11 +122,6 @@ impl<'db> FilesDiagnostics<'db> {
         })
     }
 
-    /// Converts all diagnostics from this [`FilesDiagnostics`] to mapping from [`Url`] and
-    /// [`FileId`] to [`Diagnostic`].
-    ///
-    /// The key in the mapping refers to either the processed on disk file or
-    /// any of the virtual files originating from the processed file.
     pub fn to_lsp(
         &self,
         db: &'db AnalysisDatabase,

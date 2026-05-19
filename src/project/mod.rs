@@ -11,7 +11,7 @@ use crossbeam::channel::{Receiver, Sender};
 use lsp_types::DiagnosticSeverity;
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
-use tracing::{debug, error, warn};
+use tracing::{debug, error};
 
 pub use self::crate_data::{Crate, CrateInfo, extract_custom_file_stems};
 pub use self::model::ConfigsRegistry;
@@ -28,7 +28,6 @@ use self::scarb_manifest_diagnostics::{
     collect_scarb_manifest_diagnostics, manifest_diagnostics_from_ndjson,
     scarb_metadata_messages_contain_only_errors,
 };
-use crate::ide::code_lens::FileChange;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lsp::ext::CorelibVersionMismatch;
@@ -36,7 +35,6 @@ use crate::project::model::ProjectModel;
 use crate::project::scarb::extract_crates;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core_if_not_present;
 use crate::server::client::Notifier;
-use crate::server::is_cairo_file_path;
 use crate::server::schedule::thread;
 use crate::server::schedule::thread::{JoinHandle, ThreadPriority};
 use crate::state::{Snapshot, State};
@@ -112,6 +110,16 @@ impl ProjectController {
         })
     }
 
+    #[allow(dead_code)]
+    pub fn loaded_workspace_manifests(&self) -> Snapshot<HashSet<PathBuf>> {
+        self.model.loaded_workspace_manifests()
+    }
+
+    #[allow(dead_code)]
+    pub fn reload_targets(&self) -> Snapshot<HashSet<PathBuf>> {
+        self.model.reload_targets()
+    }
+
     pub fn clear_loaded_workspaces(&mut self) {
         self.model.clear_loaded_workspaces();
     }
@@ -139,6 +147,7 @@ impl ProjectController {
                     db,
                     crates,
                     workspace_dir,
+                    workspace_manifest_path.clone(),
                     &state.proc_macro_controller,
                 );
                 state.diagnostics_controller.publish_scarb_manifest_diagnostics(
@@ -151,6 +160,7 @@ impl ProjectController {
                 state.analysis_progress_controller.project_model_loaded();
             }
             ProjectUpdate::ScarbMetadataFailed { manifest_path, diagnostics } => {
+                state.project_controller.model.add_reload_target(manifest_path.clone());
                 state.diagnostics_controller.publish_scarb_manifest_diagnostics(
                     &manifest_path,
                     diagnostics,
@@ -165,8 +175,9 @@ impl ProjectController {
                     &state.scarb_toolchain,
                 );
             }
-            ProjectUpdate::CairoProjectToml(maybe_project_config) => {
-                if let Some(project_config) = *maybe_project_config {
+            ProjectUpdate::CairoProjectToml { path, config } => {
+                state.project_controller.model.add_reload_target(path);
+                if let Some(project_config) = *config {
                     update_crate_roots_from_project_config(db, &project_config);
 
                     // Make sure cfg(test) is not set if the core crate comes from the Scarb cache.
@@ -194,6 +205,7 @@ impl ProjectController {
                 );
             }
             ProjectUpdate::NoConfig(file_path) => {
+                state.project_controller.model.add_reload_target(file_path.clone());
                 try_to_init_unmanaged_core_if_not_present(
                     db,
                     &state.config,
@@ -214,21 +226,16 @@ impl ProjectController {
         // Drop mut ref so we can obtain snapshot.
         let _ = db;
 
-        // Manifest may have changed, update for open files
-        state.code_lens_controller.on_did_change(
-            state.db.clone(),
-            state.config.clone(),
-            state
-                .open_files
-                .iter()
-                .filter(|&url| is_cairo_file_path(url))
-                .cloned()
-                .map(|file| FileChange { url: file, was_deleted: false }),
-        );
+        // Manifest may have changed, refresh all lenses.
+        state
+            .code_lens_controller
+            .schedule_refreshing_all_lenses(state.db.clone(), state.config.clone());
 
         if let Err(result) = validate_corelib(&state.db) {
             notifier.notify::<CorelibVersionMismatch>(result.to_string());
         }
+
+        state.diagnostics_controller.refresh(state);
 
         #[cfg(feature = "testing")]
         notifier.notify::<crate::lsp::ext::testing::ProjectUpdatingFinished>(());
@@ -263,7 +270,10 @@ pub enum ProjectUpdate {
         manifest_path: PathBuf,
         diagnostics: Vec<ScarbMetadataMessage>,
     },
-    CairoProjectToml(Box<Option<ProjectConfig>>),
+    CairoProjectToml {
+        path: PathBuf,
+        config: Box<Option<ProjectConfig>>,
+    },
     NoConfig(PathBuf),
 }
 
@@ -366,7 +376,10 @@ impl ProjectControllerThread {
                         });
                     })
                     .ok();
-                ProjectUpdate::CairoProjectToml(Box::new(maybe_project_config))
+                ProjectUpdate::CairoProjectToml {
+                    path: config_path,
+                    config: Box::new(maybe_project_config),
+                }
             }
 
             None => ProjectUpdate::NoConfig(project_update_request.file_path),
