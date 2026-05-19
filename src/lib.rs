@@ -20,7 +20,6 @@ use std::time::SystemTime;
 use std::{io, panic};
 
 use anyhow::Result;
-use cairo_lang_filesystem::ids::FileLongId;
 use crossbeam::channel::{self, Receiver, select_biased};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
@@ -30,7 +29,6 @@ use tracing::{debug, error, info};
 
 use crate::ide::analysis_progress::AnalysisStatus;
 use crate::ide::code_lens::CodeLensController;
-use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros;
 use crate::lang::proc_macros::client::ServerStatus;
 use crate::lang::proc_macros::controller::ProcMacroChannels;
@@ -218,19 +216,11 @@ impl Backend {
             scheduler.on_sync_mut_task(Self::register_mutation_in_swapper);
 
             // Attempt to swap the database to reduce memory use.
-            // Because diagnostics are always refreshed afterwards, the fresh database state will
-            // be quickly repopulated.
             scheduler.on_sync_mut_task(Self::maybe_swap_database);
 
-            // Refresh diagnostics each time state changes.
-            // Although it is possible to mutate state without affecting the analysis database,
-            // we basically never hit such a case in CairoLS in happy paths.
-            scheduler.on_sync_mut_task(Self::refresh_diagnostics);
-
-            // Keep it last, marks that db mutation might happened.
-            scheduler.on_sync_mut_task(|state, _, _| {
-                state.analysis_progress_controller.mutation();
-            });
+            // Proc-macro polling still needs a post-analysis signal after in-memory edits,
+            // even though Scarb diagnostics are refreshed only on open/save/project changes.
+            scheduler.on_sync_mut_task(Self::prime_proc_macro_requests);
 
             let result = Self::event_loop(
                 &connection,
@@ -447,27 +437,27 @@ impl Backend {
     fn maybe_swap_database(state: &mut State, meta_state: MetaState, _notifier: Notifier) {
         meta_state.lock().expect("should be able to acquire the MetaState").db_swapper.maybe_swap(
             &mut state.db,
-            &state.open_files,
             &mut state.project_controller,
             &state.proc_macro_controller,
         );
     }
 
-    /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
-    fn refresh_diagnostics(state: &mut State, _meta_state: MetaState, _notifier: Notifier) {
-        state.diagnostics_controller.refresh(state);
+    /// Calls [`lang::proc_macros::controller::ProcMacroClientController::prime_requests`] to do its
+    /// work.
+    fn prime_proc_macro_requests(state: &mut State, _meta_state: MetaState, _notifier: Notifier) {
+        state.proc_macro_controller.prime_requests(&state.db, &state.open_files);
     }
 
     /// Reload config and update project model for all open files.
     fn reload(state: &mut State, requester: &mut Requester<'_>) -> LSPResult<()> {
+        let reload_targets: Vec<_> =
+            state.project_controller.reload_targets().iter().cloned().collect();
+
         state.project_controller.clear_loaded_workspaces();
         state.config.reload(requester, &state.client_capabilities)?;
 
-        for uri in state.open_files.iter() {
-            let Some(file_id) = state.db.file_for_url(uri) else { continue };
-            if let FileLongId::OnDisk(file_path) = file_id.long(&state.db) {
-                state.project_controller.request_updating_project_for_file(file_path.clone());
-            }
+        for reload_target in reload_targets {
+            state.project_controller.request_updating_project_for_file(reload_target);
         }
 
         Ok(())

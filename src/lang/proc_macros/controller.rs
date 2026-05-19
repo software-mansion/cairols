@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 use std::mem;
 use std::num::NonZeroU32;
@@ -6,7 +7,8 @@ use std::sync::{Arc, Once};
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow};
-use cairo_lang_filesystem::ids::CrateInput;
+use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_filesystem::ids::{CrateInput, FileLongId};
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use crossbeam::channel::{Receiver, Sender};
@@ -15,7 +17,7 @@ use governor::state::{InMemoryState, NotKeyed};
 use governor::{Quota, RateLimiter};
 use lsp_types::notification::ShowMessage;
 use lsp_types::request::SemanticTokensRefresh;
-use lsp_types::{ClientCapabilities, MessageType, ShowMessageParams};
+use lsp_types::{ClientCapabilities, MessageType, ShowMessageParams, Url};
 use salsa::Setter;
 use scarb_proc_macro_server_types::jsonrpc::RpcResponse;
 use scarb_proc_macro_server_types::methods::ProcMacroResult;
@@ -32,6 +34,7 @@ use super::client::{ProcMacroClient, RequestParams};
 use crate::config::Config;
 use crate::ide::analysis_progress::{ProcMacroServerStatus, ProcMacroServerTracker};
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros::cache::try_load_proc_macro_cache;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 #[cfg(doc)]
@@ -68,6 +71,7 @@ pub struct ProcMacroClientController {
     notifier: Notifier,
     crate_plugin_suites: OrderedHashMap<CrateInput, PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
+    generate_code_complete_sender: Sender<()>,
     channels: ProcMacroChannels,
     proc_macro_server_tracker: ProcMacroServerTracker,
     cwd: PathBuf,
@@ -100,6 +104,7 @@ impl ProcMacroClientController {
         notifier: Notifier,
         proc_macro_server_tracker: ProcMacroServerTracker,
         cwd: PathBuf,
+        generate_code_complete_sender: Sender<()>,
         generate_code_complete_receiver: Receiver<()>,
     ) -> Self {
         let (poll_response_sender, poll_responses_receiver) = crossbeam::channel::bounded(1);
@@ -119,6 +124,7 @@ impl ProcMacroClientController {
                     NonZeroU32::new(RESTART_RATE_LIMITER_RETRIES).unwrap(),
                 ),
             ),
+            generate_code_complete_sender,
             channels: ProcMacroChannels::new(poll_responses_receiver),
             cwd,
             _response_poll_thread: ResponsePollThread::spawn(
@@ -166,6 +172,19 @@ impl ProcMacroClientController {
                 workspace: Workspace { manifest_path },
             });
         }
+    }
+
+    /// Forces analysis over the currently open on-disk files so proc-macro expansion requests are
+    /// issued, then signals the response poller to observe the resulting replies.
+    pub fn prime_requests(&self, db: &AnalysisDatabase, open_files: &HashSet<Url>) {
+        for uri in open_files {
+            let Some(file_id) = db.file_for_url(uri) else { continue };
+            if matches!(file_id.long(db), FileLongId::OnDisk(_)) {
+                let _ = db.file_modules(file_id);
+            }
+        }
+
+        let _ = self.generate_code_complete_sender.try_send(());
     }
 
     /// Handles the update of the config related to proc macros.

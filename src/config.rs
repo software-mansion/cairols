@@ -204,6 +204,8 @@ impl Config {
                     &mut state.proc_macro_controller,
                     &mut state.analysis_progress_controller,
                 );
+
+                state.diagnostics_controller.refresh(state);
             })
         };
 

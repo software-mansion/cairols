@@ -58,10 +58,7 @@ pub struct Scheduler<'s> {
 
 impl<'s> Scheduler<'s> {
     pub fn new(state: &'s mut State, sender: ClientSender) -> Self {
-        let analysis_event_sender =
-            state.analysis_progress_controller.server_tracker().events_sender();
-
-        let meta_state = Arc::new(Mutex::new(MetaStateInner::new(analysis_event_sender)));
+        let meta_state = Arc::new(Mutex::new(MetaStateInner::new()));
 
         Self {
             state,

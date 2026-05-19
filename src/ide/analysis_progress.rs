@@ -28,10 +28,6 @@ impl ProcMacroServerTracker {
         Self { procmacro_request_counter: Arc::new(AtomicU64::new(0)), events_sender }
     }
 
-    pub fn events_sender(&self) -> Sender<AnalysisEvent> {
-        self.events_sender.clone()
-    }
-
     /// Signals that a request to proc macro server was made.
     pub fn register_procmacro_request(&self) {
         self.procmacro_request_counter.fetch_add(1, Ordering::SeqCst);
@@ -95,10 +91,6 @@ impl AnalysisProgressController {
         });
     }
 
-    pub fn mutation(&self) {
-        self.send(AnalysisEvent::Mutation);
-    }
-
     pub fn project_model_loaded(&self) {
         self.send(AnalysisEvent::ProjectLoaded);
     }
@@ -123,7 +115,6 @@ pub enum AnalysisEvent {
         /// Loaded asynchronously from config
         enable_proc_macros: bool,
     },
-    Mutation,
     ApplyResponses {
         response_count: u64,
     },
@@ -134,7 +125,6 @@ pub enum AnalysisEvent {
         all_request_count: u64,
     },
     PMSStatusChange(ProcMacroServerStatus),
-    DatabaseSwap,
     ProjectLoaded,
     DefinedMacrosRequested,
     DefinedMacrosResponseReceived,
@@ -184,6 +174,13 @@ impl AnalysisProgressThread {
                 }
                 AnalysisEvent::DiagnosticsTickStart => {
                     pending_requests = all_prev_requests_count - received_responses;
+                    if project_loaded {
+                        self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                            event: ServerStatusEvent::AnalysisStarted,
+                        });
+                        let _ = self.status_sender.send(AnalysisStatus::Started);
+                        analysis_in_progress = true;
+                    }
                 }
                 AnalysisEvent::DiagnosticsTickEnd { was_cancelled, all_request_count } => {
                     let request_count = all_request_count.into();
@@ -203,16 +200,6 @@ impl AnalysisProgressThread {
                     }
 
                     all_prev_requests_count = request_count;
-                }
-                AnalysisEvent::Mutation | AnalysisEvent::DatabaseSwap => {
-                    if project_loaded && !analysis_in_progress {
-                        self.notifier.notify::<ServerStatus>(ServerStatusParams {
-                            event: ServerStatusEvent::AnalysisStarted,
-                        });
-                        let _ = self.status_sender.send(AnalysisStatus::Started);
-
-                        analysis_in_progress = true;
-                    }
                 }
                 AnalysisEvent::PMSStatusChange(new_pms_status) => {
                     match (pms_status, new_pms_status) {

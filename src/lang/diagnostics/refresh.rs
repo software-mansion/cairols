@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 use cairo_lang_filesystem::db::{FilesGroup, ext_as_virtual};
@@ -9,48 +9,45 @@ use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FilesDiagnostics;
-use crate::lang::diagnostics::project_diagnostics::ProjectDiagnostics;
+use crate::lang::diagnostics::project_diagnostics::WindowDiagnostics;
 use crate::lang::lsp::LsProtoGroup;
 use crate::project::ConfigsRegistry;
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 
-/// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(skip_all)]
-pub fn refresh_diagnostics<'db>(
+pub fn refresh_plugin_diagnostics<'db>(
     db: &'db AnalysisDatabase,
     config: &Config,
     config_registry: &ConfigsRegistry,
     batch: Vec<FileId<'db>>,
-    project_diagnostics: ProjectDiagnostics,
+    window_diagnostics: WindowDiagnostics,
     notifier: Notifier,
     scarb_toolchain: ScarbToolchain,
 ) {
     for file in batch {
-        refresh_file_diagnostics(
+        refresh_file_plugin_diagnostics(
             db,
             config,
             config_registry,
             file,
-            &project_diagnostics,
+            &window_diagnostics,
             &notifier,
             &scarb_toolchain,
         );
     }
 }
 
-/// Refresh diagnostics for a single on disk file.
-///
 /// IMPORTANT: keep updating diagnostics state between server and client ATOMIC!
 /// I.e, if diagnostics are updated on the server side they MUST be sent successfully to the
 /// client (and vice-versa).
 #[tracing::instrument(skip_all, fields(url = tracing_file_url(db, root_on_disk_file)))]
-fn refresh_file_diagnostics<'db>(
+fn refresh_file_plugin_diagnostics<'db>(
     db: &'db AnalysisDatabase,
     config: &Config,
     config_registry: &ConfigsRegistry,
     root_on_disk_file: FileId<'db>,
-    project_diagnostics: &ProjectDiagnostics,
+    window_diagnostics: &WindowDiagnostics,
     notifier: &Notifier,
     scarb_toolchain: &ScarbToolchain,
 ) {
@@ -65,30 +62,27 @@ fn refresh_file_diagnostics<'db>(
     let (root_on_disk_file_url, new_diags) =
         new_files_diagnostics.to_lsp(db, config.trace_macro_diagnostics);
 
-    let new_diags = new_diags
+    let mut filtered_diags = new_diags
         .into_iter()
         .filter_map(|((url, file_id), mut diagnostics)| {
-            // We want to ensure better UX by avoiding showing anything but errors from code that is
-            // not controlled by a user (dependencies from git/package register).
-            // Therefore, we filter non-error diagnostics for files residing in Scarb cache
-            // and virtual files that are their descendants.
+            // Scarb check provides syntax/semantic/lowering diagnostics. Only emit plugin
+            // diagnostics from this path to avoid duplicating what scarb check already reports.
+            diagnostics.retain(|diag| diag.message.starts_with("Plugin diagnostic:"));
+
             let is_dependency = originating_file_path(db, file_id)
                 .is_some_and(|p| scarb_toolchain.is_from_scarb_cache(&p));
-
             if is_dependency {
                 diagnostics.retain(|diag| diag.severity == Some(DiagnosticSeverity::ERROR));
-                // Return early here to not filter out entry with empty diagnostics for
-                // the processed file if it happens to be here. It is necessary for our tests.
-                if diagnostics.is_empty() {
-                    return None;
-                }
             }
 
-            Some((url, diagnostics))
+            ((!diagnostics.is_empty()) || url == root_on_disk_file_url)
+                .then_some((url, diagnostics))
         })
-        .collect();
+        .collect::<HashMap<_, _>>();
 
-    let diags_to_send = project_diagnostics.update(root_on_disk_file_url, new_diags);
+    filtered_diags.entry(root_on_disk_file_url.clone()).or_default();
+
+    let diags_to_send = window_diagnostics.update_file(root_on_disk_file_url, filtered_diags);
     for (url, diagnostics) in diags_to_send {
         notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
             uri: url,
@@ -98,8 +92,22 @@ fn refresh_file_diagnostics<'db>(
     }
 }
 
-/// For an on disk file - returns a path to it.
-/// For a virtual file - returns a path to its first on disk ancestor.
+/// IMPORTANT: keep updating diagnostics state between server and client ATOMIC!
+/// I.e, if diagnostics are updated on the server side they MUST be sent successfully to the
+/// client (and vice-versa).
+#[tracing::instrument(skip_all)]
+pub fn clear_old_plugin_diagnostics(
+    files_to_preserve: HashSet<Url>,
+    window_diagnostics: WindowDiagnostics,
+    notifier: Notifier,
+) {
+    let removed = window_diagnostics.clear_old_files(&files_to_preserve);
+    for url in removed {
+        let params = PublishDiagnosticsParams { uri: url, diagnostics: vec![], version: None };
+        notifier.notify::<PublishDiagnostics>(params);
+    }
+}
+
 fn originating_file_path<'db>(db: &'db dyn FilesGroup, file_id: FileId<'db>) -> Option<PathBuf> {
     match file_id.long(db) {
         FileLongId::OnDisk(path) => Some(path.clone()),
@@ -107,24 +115,6 @@ fn originating_file_path<'db>(db: &'db dyn FilesGroup, file_id: FileId<'db>) -> 
         FileLongId::External(id) => {
             originating_file_path(db, ext_as_virtual(db, *id).parent?.file_id)
         }
-    }
-}
-
-/// Wipes diagnostics for any files not present in the preserve set.
-///
-/// IMPORTANT: keep updating diagnostics state between server and client ATOMIC!
-/// I.e, if diagnostics are updated on the server side they MUST be sent successfully to the
-/// client (and vice-versa).
-#[tracing::instrument(skip_all)]
-pub fn clear_old_diagnostics(
-    files_to_preserve: HashSet<Url>,
-    project_diagnostics: ProjectDiagnostics,
-    notifier: Notifier,
-) {
-    let removed = project_diagnostics.clear_old(&files_to_preserve);
-    for url in removed {
-        let params = PublishDiagnosticsParams { uri: url, diagnostics: vec![], version: None };
-        notifier.notify::<PublishDiagnostics>(params);
     }
 }
 

@@ -138,7 +138,7 @@ impl SyncRequestHandler for ExecuteCommand {
 }
 
 impl BackgroundDocumentRequestHandler for HoverRequest {
-    const RETRY: bool = false;
+    const RETRY: bool = true;
 
     #[tracing::instrument(name = "textDocument/hover", skip_all)]
     fn run_with_snapshot(
@@ -220,6 +220,8 @@ impl SyncNotificationHandler for DidChangeTextDocument {
                 .into_iter(),
         );
 
+        state.proc_macro_controller.prime_requests(&state.db, &state.open_files);
+
         Ok(())
     }
 }
@@ -245,9 +247,13 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
         requester: &mut Requester<'_>,
         params: DidChangeWatchedFilesParams,
     ) -> LSPResult<()> {
+        let mut changed_cairo_files = false;
+        let mut changed_project_files = false;
+
         // Invalidate changed cairo files.
         for change in &params.changes {
             if is_cairo_file_path(&change.uri) {
+                changed_cairo_files = true;
                 let Some(_file) = state.db.file_for_url(&change.uri) else { continue };
                 // In perfect scenario we would do this only for `file` but there is no way to make it more granulary.
                 state.db.cancel_all();
@@ -262,6 +268,7 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
             //  metadata call, so it is easy to fall in a loop here.
             if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
             {
+                changed_project_files = true;
                 trace!("reloading backend from didChangeWatchedFiles handler");
                 Backend::reload(state, requester)?;
 
@@ -282,6 +289,10 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
             }),
         );
 
+        if changed_cairo_files && !changed_project_files {
+            state.diagnostics_controller.refresh(state);
+        }
+
         Ok(())
     }
 }
@@ -298,8 +309,9 @@ impl SyncNotificationHandler for DidCloseTextDocument {
         _requester: &mut Requester<'_>,
         params: DidCloseTextDocumentParams,
     ) -> LSPResult<()> {
-        let db = &mut state.db;
         state.open_files.remove(&params.text_document.uri);
+
+        let db = &mut state.db;
         if let Some(file) = db.file_for_url(&params.text_document.uri)
             && db.file_overrides().contains_key(&file)
         {
@@ -322,6 +334,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
         params: DidOpenTextDocumentParams,
     ) -> LSPResult<()> {
         let uri = params.text_document.uri;
+        state.open_files.insert(uri.clone());
 
         // Try to detect the crate for physical files.
         // The crate for virtual files is already known.
@@ -332,7 +345,6 @@ impl SyncNotificationHandler for DidOpenTextDocument {
         }
         let db = &mut state.db;
         if let Some(file_id) = db.file_for_url(&uri) {
-            state.open_files.insert(uri.clone());
             if let Some(content) = db.file_content(file_id)
                 && content != params.text_document.text.as_str()
             {
@@ -347,6 +359,11 @@ impl SyncNotificationHandler for DidOpenTextDocument {
                     .into_iter(),
             );
         }
+
+        // Scarb diagnostics read from disk, so they are refreshed when a file is opened and after
+        // subsequent saves or project reloads, not on every in-memory edit.
+        state.proc_macro_controller.prime_requests(&state.db, &state.open_files);
+        state.diagnostics_controller.refresh(state);
 
         Ok(())
     }
@@ -372,12 +389,15 @@ impl SyncNotificationHandler for DidSaveTextDocument {
             state.db.cancel_all();
         }
 
+        state.proc_macro_controller.prime_requests(&state.db, &state.open_files);
+        state.diagnostics_controller.refresh(state);
+
         Ok(())
     }
 }
 
 impl BackgroundDocumentRequestHandler for GotoDefinition {
-    const RETRY: bool = false;
+    const RETRY: bool = true;
 
     #[tracing::instrument(name = "textDocument/definition", skip_all)]
     fn run_with_snapshot(
@@ -550,7 +570,7 @@ impl BackgroundDocumentRequestHandler for ToolchainInfo {
 }
 
 impl BackgroundDocumentRequestHandler for References {
-    const RETRY: bool = false;
+    const RETRY: bool = true;
 
     #[tracing::instrument(name = "textDocument/references", skip_all)]
     fn run_with_snapshot(
@@ -573,7 +593,7 @@ impl BackgroundDocumentRequestHandler for References {
 }
 
 impl BackgroundDocumentRequestHandler for DocumentHighlightRequest {
-    const RETRY: bool = false;
+    const RETRY: bool = true;
 
     #[tracing::instrument(name = "textDocument/documentHighlight", skip_all)]
     fn run_with_snapshot(
@@ -596,7 +616,7 @@ impl BackgroundDocumentRequestHandler for DocumentHighlightRequest {
 }
 
 impl BackgroundDocumentRequestHandler for Rename {
-    const RETRY: bool = false;
+    const RETRY: bool = true;
 
     #[tracing::instrument(name = "textDocument/rename", skip_all)]
     fn run_with_snapshot(
@@ -637,7 +657,7 @@ impl BackgroundDocumentRequestHandler for ViewSyntaxTree {
 }
 
 impl BackgroundDocumentRequestHandler for CodeLensRequest {
-    const RETRY: bool = false;
+    const RETRY: bool = true;
 
     #[tracing::instrument(name = "textDocument/codeLens", skip_all)]
     fn run_with_snapshot(
@@ -678,7 +698,7 @@ impl BackgroundDocumentRequestHandler for WillRenameFiles {
 }
 
 impl BackgroundDocumentRequestHandler for InlayHintRequest {
-    const RETRY: bool = false;
+    const RETRY: bool = true;
 
     #[tracing::instrument(name = "textDocument/inlayHint", skip_all)]
     fn run_with_snapshot(

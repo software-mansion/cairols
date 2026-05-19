@@ -4,11 +4,10 @@ use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use crossbeam::channel::Sender;
 use lsp_types::{ClientCapabilities, Url};
 
 use crate::config::Config;
-use crate::ide::analysis_progress::{AnalysisEvent, AnalysisProgressController};
+use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::ide::code_lens::CodeLensController;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
@@ -42,6 +41,8 @@ impl State {
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
 
         let analysis_progress_controller = AnalysisProgressController::new(notifier.clone());
+        let (generate_code_complete_sender, generate_code_complete_receiver) =
+            crossbeam::channel::bounded(1);
 
         let diagnostics_controller = DiagnosticsController::new(
             notifier.clone(),
@@ -54,7 +55,8 @@ impl State {
             notifier.clone(),
             analysis_progress_controller.server_tracker(),
             cwd,
-            diagnostics_controller.generate_code_complete_receiver(),
+            generate_code_complete_sender,
+            generate_code_complete_receiver,
         );
 
         Self {
@@ -79,6 +81,7 @@ impl State {
             config: self.config.snapshot(),
             client_capabilities: self.client_capabilities.snapshot(),
             configs_registry: self.project_controller.configs_registry(),
+            loaded_workspace_manifests: self.project_controller.loaded_workspace_manifests(),
             code_lens_controller: self.code_lens_controller.clone(),
         }
     }
@@ -93,8 +96,8 @@ pub struct MetaStateInner {
 }
 
 impl MetaStateInner {
-    pub fn new(analysis_event_sender: Sender<AnalysisEvent>) -> Self {
-        let db_swapper = AnalysisDatabaseSwapper::new(analysis_event_sender);
+    pub fn new() -> Self {
+        let db_swapper = AnalysisDatabaseSwapper::new();
         Self { db_swapper }
     }
 }
@@ -112,6 +115,7 @@ pub struct StateSnapshot {
     pub config: Snapshot<Config>,
     pub client_capabilities: Snapshot<ClientCapabilities>,
     pub configs_registry: Snapshot<ConfigsRegistry>,
+    pub loaded_workspace_manifests: Snapshot<HashSet<PathBuf>>,
     pub code_lens_controller: CodeLensController,
 }
 

@@ -1,23 +1,16 @@
-use std::collections::HashSet;
 use std::fmt::Display;
 use std::mem;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::time::{Duration, SystemTime};
 
 use cairo_lang_defs::db::{DefsGroup, defs_group_input};
-use cairo_lang_filesystem::db::{FilesGroup, files_group_input};
 use cairo_lang_semantic::db::{SemanticGroup, semantic_group_input};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use crossbeam::channel::Sender;
-use lsp_types::Url;
 use salsa::Setter;
 use serde::Serialize;
 use tracing::{error, trace, warn};
 
 use crate::env_config;
-use crate::ide::analysis_progress::AnalysisEvent;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::project::ProjectController;
@@ -62,17 +55,15 @@ pub struct AnalysisDatabaseSwapper {
     mutations_since_last_replace: u64,
     db_replace_min_interval: Duration,
     db_replace_min_mutations: u64,
-    analysis_event_sender: Sender<AnalysisEvent>,
 }
 
 impl AnalysisDatabaseSwapper {
-    pub fn new(analysis_event_sender: Sender<AnalysisEvent>) -> Self {
+    pub fn new() -> Self {
         Self {
             stopwatch: Stopwatch::default(),
             mutations_since_last_replace: 0,
             db_replace_min_interval: env_config::db_replace_interval(),
             db_replace_min_mutations: env_config::db_replace_mutations(),
-            analysis_event_sender,
         }
     }
 
@@ -97,17 +88,12 @@ impl AnalysisDatabaseSwapper {
     pub fn maybe_swap(
         &mut self,
         db: &mut AnalysisDatabase,
-        open_files: &HashSet<Url>,
         project_controller: &mut ProjectController,
         proc_macro_client_controller: &ProcMacroClientController,
     ) -> Option<SwapReason> {
         let reason = self.check_for_swap()?;
 
-        if let Err(err) = self.analysis_event_sender.send(AnalysisEvent::DatabaseSwap) {
-            error!("Could not send swap status: {err:?}");
-        };
-
-        self.swap(db, open_files, project_controller, proc_macro_client_controller);
+        self.swap(db, project_controller, proc_macro_client_controller);
 
         self.mutations_since_last_replace = 0;
         self.stopwatch.reset();
@@ -136,7 +122,6 @@ impl AnalysisDatabaseSwapper {
     fn swap(
         &self,
         db: &mut AnalysisDatabase,
-        open_files: &HashSet<Url>,
         project_controller: &mut ProjectController,
         proc_macro_client_controller: &ProcMacroClientController,
     ) {
@@ -145,7 +130,6 @@ impl AnalysisDatabaseSwapper {
 
             self.migrate_default_plugins(&mut new_db, db);
             self.migrate_proc_macro_state(&mut new_db, db);
-            self.migrate_file_overrides(&mut new_db, db, open_files);
 
             project_controller.migrate_crates_to_new_db(&mut new_db, proc_macro_client_controller);
 
@@ -197,30 +181,6 @@ impl AnalysisDatabaseSwapper {
             .proc_macro_input()
             .set_inline_macro_resolution(new_db)
             .to(old_db_input.inline_macro_resolution(old_db).clone());
-    }
-
-    /// Makes sure that all open files exist in the new db, with their current changes.
-    fn migrate_file_overrides(
-        &self,
-        new_db: &mut AnalysisDatabase,
-        old_db: &AnalysisDatabase,
-        open_files: &HashSet<Url>,
-    ) {
-        let overrides = old_db.file_overrides();
-        let mut new_overrides: OrderedHashMap<_, _> = Default::default();
-        for uri in open_files {
-            let Some(file_id) = old_db.file_for_url(uri) else {
-                // This branch is hit for open files that have never been seen by the old db.
-                // This is a strange condition, but it is OK to just not think about such files
-                // here.
-                continue;
-            };
-            let file_input = file_id.long(old_db).into_file_input(old_db);
-            if let Some(content) = overrides.get(&file_id) {
-                new_overrides.insert(file_input, content.to_string().into());
-            }
-        }
-        files_group_input(new_db).set_file_overrides(new_db).to(Some(new_overrides));
     }
 }
 

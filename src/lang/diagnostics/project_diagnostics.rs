@@ -1,11 +1,10 @@
-use std::collections::{HashMap, HashSet};
-use std::mem;
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 
-use itertools::{Either, Itertools};
 use lsp_types::{Diagnostic, Url};
 
-/// Global storage of diagnostics for the entire analysed codebase(s).
+/// Global storage of diagnostics currently published in this LS window.
 ///
 /// This object can be shared between threads and accessed concurrently.
 ///
@@ -16,47 +15,90 @@ use lsp_types::{Diagnostic, Url};
 ///
 /// [`FileId`]: cairo_lang_filesystem::ids::FileId
 #[derive(Clone)]
-pub struct ProjectDiagnostics {
-    /// A map from an [`Url`] of an on disk file to diagnostics of the file and virtual files
-    /// that are descendants of the file.
+pub struct WindowDiagnostics {
+    file_diagnostics: Arc<RwLock<HashMap<Url, FileDiagnostics>>>,
+    /// A map from a workspace manifest [`Url`] to diagnostics published for that workspace.
     ///
     /// ## Invariants
-    /// 1. Any [`Url`] key in the *outer* mapping **MUST** correspond to an on disk file.
+    /// 1. Any [`Url`] key in the *outer* mapping **MUST** correspond to the owner of one
+    ///    workspace diagnostics set.
     /// 2. Any [`Url`] key in an *inner* mapping **MUST** be either:
     ///    - equal to the [`Url`] key from the outer mapping
-    ///    - corresponding to a virtual file originating from the file with the [`Url`] key from the
+    ///    - one of the files covered by the workspace identified by the [`Url`] key from the
     ///      outer mapping
     /// 3. Any [`Url`] key from any *inner* mapping **MUST** be unique amongst all the keys from all
     ///    inner mappings. This invariant always holds if the previous one does.
-    file_diagnostics: Arc<RwLock<HashMap<Url, SelfAndOriginatingFilesDiagnostics>>>,
+    workspace_diagnostics: Arc<RwLock<HashMap<Url, WorkspaceDiagnostics>>>,
 }
 
-/// Diagnostics for a processed on disk file and virtual files originating from the processed file.
-/// Check [`crate::lang::diagnostics::file_diagnostics`] for more info.
-type SelfAndOriginatingFilesDiagnostics = HashMap<Url, Vec<Diagnostic>>;
+/// Diagnostics published by a single root on-disk file and the virtual files owned by it.
+type FileDiagnostics = HashMap<Url, Vec<Diagnostic>>;
+/// Diagnostics published by a single workspace.
+type WorkspaceDiagnostics = HashMap<Url, Vec<Diagnostic>>;
 
-impl ProjectDiagnostics {
-    /// Creates new project diagnostics instance.
+impl WindowDiagnostics {
+    /// Creates new window diagnostics instance.
     pub fn new() -> Self {
-        Self { file_diagnostics: Default::default() }
+        Self { file_diagnostics: Default::default(), workspace_diagnostics: Default::default() }
     }
 
-    /// Update existing diagnostics based on new diagnostics obtained by processing an on disk file
-    /// identified by `root_on_disk_file_url` and virtual files originating from it.
+    #[tracing::instrument(skip_all)]
+    pub fn update_file(
+        &self,
+        root_on_disk_file_url: Url,
+        new_diags: FileDiagnostics,
+    ) -> HashMap<Url, Vec<Diagnostic>> {
+        Self::update_inner(&self.file_diagnostics, root_on_disk_file_url, new_diags, "file")
+    }
+
+    #[tracing::instrument(skip_all)]
+    pub fn clear_old_files(&self, processed_files_to_retain: &HashSet<Url>) -> Vec<Url> {
+        let mut file_diagnostics =
+            self.file_diagnostics.write().expect("file diagnostics are poisoned, bailing out");
+
+        let removed = file_diagnostics
+            .keys()
+            .filter(|url| !processed_files_to_retain.contains(*url))
+            .cloned()
+            .collect::<Vec<_>>();
+
+        for url in &removed {
+            file_diagnostics.remove(url);
+        }
+
+        removed
+    }
+
+    /// Update existing diagnostics based on new diagnostics produced by the given workspace.
     ///
     /// Returns mapping from a file to its diagnostics for files which diagnostics changed
     /// as a result of the update.
     #[tracing::instrument(skip_all)]
-    pub fn update(
+    pub fn update_workspace(
         &self,
-        root_on_disk_file_url: Url,
-        new_diags: SelfAndOriginatingFilesDiagnostics,
+        workspace_manifest_url: Url,
+        new_diags: WorkspaceDiagnostics,
     ) -> HashMap<Url, Vec<Diagnostic>> {
-        let old_diags = self
-            .file_diagnostics
+        Self::update_inner(
+            &self.workspace_diagnostics,
+            workspace_manifest_url,
+            new_diags,
+            "workspace",
+        )
+    }
+
+    fn update_inner(
+        store: &Arc<RwLock<HashMap<Url, FileDiagnostics>>>,
+        owner_url: Url,
+        new_diags: FileDiagnostics,
+        poisoned_message_prefix: &str,
+    ) -> FileDiagnostics {
+        let old_diags = store
             .read()
-            .expect("file diagnostics are poisoned, bailing out")
-            .get(&root_on_disk_file_url)
+            .unwrap_or_else(|_| {
+                panic!("{poisoned_message_prefix} diagnostics are poisoned, bailing out")
+            })
+            .get(&owner_url)
             .cloned()
             .unwrap_or_default();
 
@@ -64,10 +106,12 @@ impl ProjectDiagnostics {
             return HashMap::new();
         }
 
-        self.file_diagnostics
+        store
             .write()
-            .expect("file diagnostics are poisoned, bailing out")
-            .insert(root_on_disk_file_url.clone(), new_diags.clone());
+            .unwrap_or_else(|_| {
+                panic!("{poisoned_message_prefix} diagnostics are poisoned, bailing out")
+            })
+            .insert(owner_url, new_diags.clone());
 
         let mut diags_to_send = HashMap::new();
 
@@ -87,25 +131,5 @@ impl ProjectDiagnostics {
         }
 
         diags_to_send
-    }
-
-    /// Removes diagnostics for files not present in the given set and returns a list of files for
-    /// which diagnostics were actually cleared.
-    pub fn clear_old(&self, processed_files_to_retain: &HashSet<Url>) -> Vec<Url> {
-        let mut file_diagnostics =
-            self.file_diagnostics.write().expect("file diagnostics are poisoned, bailing out");
-
-        let (clean, removed) = mem::take(&mut *file_diagnostics).into_iter().partition_map(
-            |(processed_file_url, diags)| {
-                if processed_files_to_retain.contains(&processed_file_url) {
-                    Either::Left((processed_file_url, diags))
-                } else {
-                    Either::Right(processed_file_url)
-                }
-            },
-        );
-
-        *file_diagnostics = clean;
-        removed
     }
 }
