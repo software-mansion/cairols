@@ -46,7 +46,8 @@ fn test_simple_deps() {
         }
     };
 
-    assert!(ls.open_and_wait_for_diagnostics("a/src/lib.cairo").is_empty());
+    ls.open_and_wait_for_diagnostics_generation("a/src/lib.cairo");
+    assert!(ls.get_diagnostics_for_file("a/src/lib.cairo").is_empty());
 
     // Check if opening `a` triggers calculating diagnostics for `b`.
     let diagnostics_from_b = ls.get_diagnostics_for_file("b/src/lib.cairo");

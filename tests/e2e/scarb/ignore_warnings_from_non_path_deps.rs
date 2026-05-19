@@ -21,14 +21,6 @@ fn caps(base: ClientCapabilities) -> ClientCapabilities {
 
 #[test]
 fn test_ignore_warnings_from_non_path_deps() {
-    let cairo = indoc! {r#"
-        use snforge_std::byte_array::byte_array_as_felt_array;
-
-        fn func() {
-            byte_array_as_felt_array(@"abc");
-        }
-    "#};
-
     let mut ls = sandbox! {
         files {
             "Scarb.toml" => indoc! (r#"
@@ -40,7 +32,9 @@ fn test_ignore_warnings_from_non_path_deps() {
                 [dev-dependencies]
                 snforge_std = "0.37.0"  # This version contains lint errors.
             "#),
-            "src/lib.cairo" => cairo,
+            "src/lib.cairo" => indoc! {r#"
+                fn main() {}
+            "#},
         }
         client_capabilities = caps;
         workspace_configuration = json!({

@@ -1,0 +1,41 @@
+---
+source: tests/e2e/scarb/check_diagnostics.rs
+description: "// → Scarb.toml\n[package]\nname = \"semantic_error\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n// → src/lib.cairo\nfn main() {\n    let x: felt252 = 1;\n    let _y: u32 = x;\n}"
+expression: "DiagnosticsLifecycleReport { before_save, after_unsaved_edit, after_save, }"
+---
+before_save:
+  diagnostics:
+  - url: '[ROOT_URL]src/lib.cairo'
+    diagnostics:
+    - related_code: x
+      diagnostic:
+        range:
+          start:
+            line: 2
+            character: 18
+          end:
+            line: 2
+            character: 19
+        severity: 1
+        code: E2041
+        source: scarb
+        message: 'Unexpected argument type. Expected: "core::integer::u32", found: "core::felt252".'
+after_unsaved_edit:
+  diagnostics:
+  - url: '[ROOT_URL]src/lib.cairo'
+    diagnostics:
+    - related_code: x
+      diagnostic:
+        range:
+          start:
+            line: 2
+            character: 18
+          end:
+            line: 2
+            character: 19
+        severity: 1
+        code: E2041
+        source: scarb
+        message: 'Unexpected argument type. Expected: "core::integer::u32", found: "core::felt252".'
+after_save:
+  diagnostics: []

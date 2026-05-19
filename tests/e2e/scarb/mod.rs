@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+mod check_diagnostics;
 mod ignore_warnings_from_non_path_deps;
 mod manifest_diagnostics;
 mod opening_multiple_workspaces;

@@ -1,0 +1,60 @@
+---
+source: tests/e2e/scarb/check_diagnostics.rs
+description: "// → Scarb.toml\n[package]\nname = \"syntax_error\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n// → src/lib.cairo\nfn main() {\n    let x =\n}"
+expression: "diagnostics_report(&mut ls, &[\"src/lib.cairo\"])"
+---
+diagnostics:
+- url: '[ROOT_URL]src/lib.cairo'
+  diagnostics:
+  - related_code: x
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 8
+        end:
+          line: 1
+          character: 9
+      severity: 2
+      code: E0001
+      source: scarb
+      message: Unused variable. Consider ignoring by prefixing with `_`.
+  - related_code: ''
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 11
+        end:
+          line: 1
+          character: 11
+      severity: 1
+      code: E1002
+      source: scarb
+      message: Missing tokens. Expected an expression.
+  - related_code: ''
+    diagnostic:
+      range:
+        start:
+          line: 1
+          character: 11
+        end:
+          line: 1
+          character: 11
+      severity: 1
+      code: E1001
+      source: scarb
+      message: Missing token ';'.
+  - related_code: ''
+    diagnostic:
+      range:
+        start:
+          line: 2
+          character: 0
+        end:
+          line: 2
+          character: 0
+      severity: 1
+      code: E2000
+      source: scarb
+      message: Unsupported feature.

@@ -14,7 +14,11 @@ use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
 use cairo_language_server::testing::BackendForTesting;
 use lsp_server::{Message, Notification, Request, Response};
 use lsp_types::request::{RegisterCapability, Request as LspRequest};
-use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url, lsp_notification, lsp_request};
+use lsp_types::{
+    Diagnostic, DidChangeTextDocumentParams, DidSaveTextDocumentParams, PublishDiagnosticsParams,
+    TextDocumentContentChangeEvent, Url, VersionedTextDocumentIdentifier, lsp_notification,
+    lsp_request,
+};
 use serde_json::Value;
 
 use crate::support::fixture::Fixture;
@@ -358,6 +362,30 @@ impl MockClient {
         self.fixture.edit_file(path, contents);
     }
 
+    /// Sends `textDocument/didChange` notification with the full document contents.
+    pub fn change_file(&mut self, path: impl AsRef<Path>, contents: &str) {
+        self.send_notification::<lsp_notification!("textDocument/didChange")>(
+            DidChangeTextDocumentParams {
+                text_document: VersionedTextDocumentIdentifier {
+                    uri: self.fixture.file_url(path),
+                    version: 1,
+                },
+                content_changes: vec![TextDocumentContentChangeEvent {
+                    range: None,
+                    range_length: None,
+                    text: contents.to_string(),
+                }],
+            },
+        );
+    }
+
+    /// Sends `textDocument/didSave` notification.
+    pub fn save_file(&mut self, path: impl AsRef<Path>) {
+        self.send_notification::<lsp_notification!("textDocument/didSave")>(
+            DidSaveTextDocumentParams { text_document: self.doc_id(path), text: None },
+        );
+    }
+
     /// Sends `textDocument/didOpen` notification to the server and
     /// waits for `cairo/projectUpdatingFinished` to be sent.
     ///
@@ -573,6 +601,27 @@ impl MockClient {
                 Ok(None) | Err(RecvError::Timeout) | Err(RecvError::NoMessage) => return,
             }
         }
+    }
+
+    /// Waits for one analysis cycle to finish.
+    pub fn wait_for_analysis(&mut self) {
+        let mut started = false;
+        self.subscribe_notifications(Box::new(move |notification: Notification| {
+            if notification.method != "cairo/serverStatus" {
+                return ControlFlow::Continue(NoOp);
+            }
+
+            let params: ServerStatusParams = serde_json::from_value(notification.params).unwrap();
+            match params.event {
+                AnalysisStarted => {
+                    started = true;
+                    ControlFlow::Continue(RemoveFromTrace)
+                }
+                AnalysisFinished if started => ControlFlow::Break(()),
+                AnalysisFinished => ControlFlow::Continue(RemoveFromTrace),
+                _ => ControlFlow::Continue(NoOp),
+            }
+        }));
     }
 
     /// Sends `textDocument/didChange` notification to the server for each `*.cairo` file in test
