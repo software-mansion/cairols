@@ -12,6 +12,9 @@ use which::which;
 
 use crate::env_config::{self, CAIRO_LS_LOG, scarb_cache_path};
 use crate::lsp::ext::ScarbPathMissing;
+use crate::project::{
+    ScarbCheckDiagnostic, collect_scarb_check_diagnostics, workspace_root_for_check,
+};
 use crate::server::client::Notifier;
 
 pub const SCARB_TOML: &str = "Scarb.toml";
@@ -68,9 +71,13 @@ impl ScarbToolchain {
     pub fn discover(&self) -> Option<&Path> {
         self.scarb_path_cell
             .get_or_init(|| {
-                // While running tests, we do not have SCARB env set,
-                // but we expect `scarb` binary to be in the PATH.
+                // While running tests, the SCARB env var can override the scarb binary
+                // (useful for testing against a locally-built scarb with new features).
+                // Otherwise, fall back to finding `scarb` in PATH.
                 if cfg!(feature = "testing") {
+                    if let Some(path) = env_config::scarb_path() {
+                        return Some(path);
+                    }
                     return Some(
                         which("scarb")
                             .expect("running tests requires a `scarb` binary available in `PATH`"),
@@ -185,6 +192,47 @@ impl ScarbToolchain {
         .inspect_err(|err| {
             error!("{err:?}");
         })
+    }
+
+    /// Calls `scarb --json check --workspace` for the given workspace `Scarb.toml`
+    /// and parses structured diagnostics from its NDJSON stdout.
+    ///
+    /// This is a blocking operation that may be long-running. It should only be called from within
+    /// a background task.
+    #[allow(dead_code)]
+    #[tracing::instrument(skip(self))]
+    pub fn check_diagnostics(
+        &self,
+        workspace_manifest_path: &Path,
+    ) -> Result<Vec<ScarbCheckDiagnostic>> {
+        let Some(scarb_path) = self.discover() else {
+            bail!("could not find scarb executable");
+        };
+        let Some(workspace_root) = workspace_root_for_check(workspace_manifest_path) else {
+            bail!("workspace manifest path must point to Scarb.toml");
+        };
+
+        let output = Command::new(scarb_path)
+            .current_dir(workspace_root)
+            .arg("--json")
+            .arg("check")
+            .arg("--workspace")
+            .stdout(Stdio::piped())
+            .stderr(Stdio::inherit())
+            .output()
+            .context("failed to execute: scarb --json check --workspace")?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let diagnostics = collect_scarb_check_diagnostics(&stdout);
+
+        if output.status.success() || !diagnostics.is_empty() {
+            return Ok(diagnostics);
+        }
+
+        bail!(
+            "scarb check failed without structured diagnostics for {}",
+            workspace_manifest_path.display()
+        )
     }
 
     pub fn notify_metadata_failed(&self) {

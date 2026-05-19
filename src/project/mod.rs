@@ -16,6 +16,11 @@ use tracing::{debug, error, warn};
 pub use self::crate_data::{Crate, CrateInfo, extract_custom_file_stems};
 pub use self::model::ConfigsRegistry;
 pub use self::project_manifest_path::*;
+#[allow(unused_imports)]
+pub use self::scarb_check_diagnostics::{
+    ScarbCheckDiagnostic, collect_scarb_check_diagnostics, scarb_check_diagnostics_to_diagnostics,
+    workspace_root_for_check,
+};
 pub use self::scarb_manifest_diagnostics::{
     ScarbMetadataMessage, scarb_metadata_messages_to_diagnostics,
 };
@@ -42,6 +47,7 @@ mod crate_data;
 mod model;
 mod project_manifest_path;
 mod scarb;
+mod scarb_check_diagnostics;
 mod scarb_manifest_diagnostics;
 mod unmanaged_core_crate;
 
