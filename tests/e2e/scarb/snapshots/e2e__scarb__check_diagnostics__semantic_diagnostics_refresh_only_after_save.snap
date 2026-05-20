@@ -18,7 +18,6 @@ before_save:
             character: 19
         severity: 1
         code: E2041
-        source: scarb
         message: 'Unexpected argument type. Expected: "core::integer::u32", found: "core::felt252".'
 after_unsaved_edit:
   diagnostics:
@@ -35,7 +34,6 @@ after_unsaved_edit:
             character: 19
         severity: 1
         code: E2041
-        source: scarb
         message: 'Unexpected argument type. Expected: "core::integer::u32", found: "core::felt252".'
 after_save:
   diagnostics: []

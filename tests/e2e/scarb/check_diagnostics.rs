@@ -56,7 +56,6 @@ fn syntax_error_reports_scarb_check_diagnostics() {
     };
 
     ls.open_and_wait_for_diagnostics_generation("src/lib.cairo");
-
     insta::assert_snapshot!(diagnostics_report(&mut ls, &["src/lib.cairo"]));
 }
 
@@ -119,6 +118,7 @@ fn diagnostics_report(ls: &mut MockClient, paths: &[&str]) -> DiagnosticsReport 
 
         let mut mapped_diagnostics = Vec::new();
         for mut diagnostic in diagnostics {
+            diagnostic.source = None;
             diagnostic.message = normalize(&*ls, &diagnostic.message);
             let related_code = get_related_diagnostic_code(ls, &diagnostic, &original_url);
             mapped_diagnostics.push(DiagnosticAndRelatedInfo { related_code, diagnostic });

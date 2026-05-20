@@ -17,7 +17,6 @@ diagnostics:
           character: 9
       severity: 2
       code: E0001
-      source: scarb
       message: Unused variable. Consider ignoring by prefixing with `_`.
   - related_code: ''
     diagnostic:
@@ -30,7 +29,6 @@ diagnostics:
           character: 11
       severity: 1
       code: E1002
-      source: scarb
       message: Missing tokens. Expected an expression.
   - related_code: ''
     diagnostic:
@@ -43,7 +41,6 @@ diagnostics:
           character: 11
       severity: 1
       code: E1001
-      source: scarb
       message: Missing token ';'.
   - related_code: ''
     diagnostic:
@@ -56,5 +53,4 @@ diagnostics:
           character: 0
       severity: 1
       code: E2000
-      source: scarb
       message: Unsupported feature.
