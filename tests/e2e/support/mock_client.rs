@@ -5,7 +5,9 @@ use std::path::Path;
 use std::time::Duration;
 use std::{fmt, process};
 
-use cairo_language_server::lsp::ext::ServerStatusEvent::{AnalysisFinished, AnalysisStarted};
+use cairo_language_server::lsp::ext::ServerStatusEvent::{
+    AnalysisFinished, AnalysisStarted, MacrosBuildingFinished, MacrosBuildingStarted,
+};
 use cairo_language_server::lsp::ext::ServerStatusParams;
 use cairo_language_server::lsp::ext::ViewAnalyzedCrates;
 use cairo_language_server::lsp::ext::testing::ProjectUpdatingFinished;
@@ -366,7 +368,7 @@ impl MockClient {
     pub fn open_and_wait_for_diagnostics(&mut self, path: impl AsRef<Path>) -> Vec<Diagnostic> {
         let path = path.as_ref();
         self.open(path);
-        self.wait_for_diagnostics_generation();
+        self.wait_for_diagnostics_for_file(path);
         self.get_diagnostics_for_file(path)
     }
 
@@ -440,6 +442,76 @@ impl MockClient {
 
         // It should contain all accumulated diagnostics up to the end of the generation.
         self.diagnostics.clone()
+    }
+
+    fn wait_for_diagnostics_for_file(&mut self, path: &Path) {
+        let target_uri = self.fixture.file_url(path);
+        let mut project_updated = false;
+        let mut macros_started = false;
+        let mut macros_finished = false;
+        let mut post_macro_analysis_started = false;
+        let mut analysis_started = false;
+        let mut target_file_updated = false;
+
+        self.subscribe_notifications(Box::new(
+            move |notification: Notification| match notification.method.as_str() {
+                "cairo/serverStatus" => {
+                    let params: ServerStatusParams =
+                        serde_json::from_value(notification.params).unwrap();
+
+                    match params.event {
+                        AnalysisStarted => {
+                            analysis_started = true;
+                            target_file_updated = false;
+                            if macros_finished {
+                                post_macro_analysis_started = true;
+                            }
+                            ControlFlow::Continue(RemoveFromTrace)
+                        }
+                        AnalysisFinished => {
+                            if target_file_updated
+                                && project_updated
+                                && analysis_started
+                                && (!macros_started
+                                    || (macros_finished && post_macro_analysis_started))
+                            {
+                                ControlFlow::Break(())
+                            } else {
+                                ControlFlow::Continue(RemoveFromTrace)
+                            }
+                        }
+                        MacrosBuildingStarted => {
+                            macros_started = true;
+                            ControlFlow::Continue(RemoveFromTrace)
+                        }
+                        MacrosBuildingFinished => {
+                            macros_finished = true;
+                            ControlFlow::Continue(RemoveFromTrace)
+                        }
+                    }
+                }
+                "cairo/projectUpdatingFinished" => {
+                    project_updated = true;
+                    ControlFlow::Continue(RemoveFromTrace)
+                }
+                "textDocument/publishDiagnostics" => {
+                    let params: PublishDiagnosticsParams =
+                        serde_json::from_value(notification.params).unwrap();
+
+                    if params.uri == target_uri
+                        && project_updated
+                        && analysis_started
+                        && (!macros_started || (macros_finished && post_macro_analysis_started))
+                    {
+                        target_file_updated = true;
+                        ControlFlow::Continue(NoOp)
+                    } else {
+                        ControlFlow::Continue(NoOp)
+                    }
+                }
+                _ => ControlFlow::Continue(NoOp),
+            },
+        ));
     }
 
     fn subscribe_notifications(&mut self, mut stream_consumer: StreamConsumer<Notification>) {

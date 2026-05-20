@@ -65,9 +65,9 @@ fn refresh_file_plugin_diagnostics<'db>(
     let mut filtered_diags = new_diags
         .into_iter()
         .filter_map(|((url, file_id), mut diagnostics)| {
-            // Scarb check provides syntax/semantic/lowering diagnostics. Only emit plugin
-            // diagnostics from this path to avoid duplicating what scarb check already reports.
-            diagnostics.retain(|diag| diag.message.starts_with("Plugin diagnostic:"));
+            // Scarb check provides syntax/semantic/lowering diagnostics. Keep everything else here
+            // so editor features depending on native diagnostics, like code actions, still work.
+            diagnostics.retain(|diag| diag.source.as_deref() != Some("scarb"));
 
             let is_dependency = originating_file_path(db, file_id)
                 .is_some_and(|p| scarb_toolchain.is_from_scarb_cache(&p));
@@ -102,8 +102,8 @@ pub fn clear_old_plugin_diagnostics(
     notifier: Notifier,
 ) {
     let removed = window_diagnostics.clear_old_files(&files_to_preserve);
-    for url in removed {
-        let params = PublishDiagnosticsParams { uri: url, diagnostics: vec![], version: None };
+    for (url, diagnostics) in removed {
+        let params = PublishDiagnosticsParams { uri: url, diagnostics, version: None };
         notifier.notify::<PublishDiagnostics>(params);
     }
 }

@@ -85,7 +85,7 @@ pub trait SyncNotificationHandler: Notification {
 }
 
 impl BackgroundDocumentRequestHandler for CodeActionRequest {
-    const RETRY: bool = false;
+    const RETRY: bool = true;
 
     #[tracing::instrument(name = "textDocument/codeAction", skip_all)]
     fn run_with_snapshot(
@@ -362,7 +362,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
 
         // Scarb diagnostics read from disk, so they are refreshed when a file is opened and after
         // subsequent saves or project reloads, not on every in-memory edit.
-        state.proc_macro_controller.prime_requests(&state.db, &state.open_files);
+        state.proc_macro_controller.prime_requests_all_crates(&state.db, &state.open_files);
         state.diagnostics_controller.refresh(state);
 
         Ok(())

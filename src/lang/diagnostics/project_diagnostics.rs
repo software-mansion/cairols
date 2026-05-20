@@ -48,11 +48,20 @@ impl WindowDiagnostics {
         root_on_disk_file_url: Url,
         new_diags: FileDiagnostics,
     ) -> HashMap<Url, Vec<Diagnostic>> {
-        Self::update_inner(&self.file_diagnostics, root_on_disk_file_url, new_diags, "file")
+        self.update_inner(
+            &self.file_diagnostics,
+            &self.workspace_diagnostics,
+            root_on_disk_file_url,
+            new_diags,
+            "file",
+        )
     }
 
     #[tracing::instrument(skip_all)]
-    pub fn clear_old_files(&self, processed_files_to_retain: &HashSet<Url>) -> Vec<Url> {
+    pub fn clear_old_files(
+        &self,
+        processed_files_to_retain: &HashSet<Url>,
+    ) -> HashMap<Url, Vec<Diagnostic>> {
         let mut file_diagnostics =
             self.file_diagnostics.write().expect("file diagnostics are poisoned, bailing out");
 
@@ -62,11 +71,25 @@ impl WindowDiagnostics {
             .cloned()
             .collect::<Vec<_>>();
 
+        let affected_urls = removed
+            .iter()
+            .flat_map(|url| file_diagnostics.get(url).into_iter().flat_map(HashMap::keys))
+            .cloned()
+            .collect::<HashSet<_>>();
+
         for url in &removed {
             file_diagnostics.remove(url);
         }
 
-        removed
+        drop(file_diagnostics);
+
+        affected_urls
+            .into_iter()
+            .map(|url| {
+                let diagnostics = self.merged_diagnostics_for_url(&url);
+                (url, diagnostics)
+            })
+            .collect()
     }
 
     /// Update existing diagnostics based on new diagnostics produced by the given workspace.
@@ -79,8 +102,9 @@ impl WindowDiagnostics {
         workspace_manifest_url: Url,
         new_diags: WorkspaceDiagnostics,
     ) -> HashMap<Url, Vec<Diagnostic>> {
-        Self::update_inner(
+        self.update_inner(
             &self.workspace_diagnostics,
+            &self.file_diagnostics,
             workspace_manifest_url,
             new_diags,
             "workspace",
@@ -88,7 +112,9 @@ impl WindowDiagnostics {
     }
 
     fn update_inner(
+        &self,
         store: &Arc<RwLock<HashMap<Url, FileDiagnostics>>>,
+        other_store: &Arc<RwLock<HashMap<Url, FileDiagnostics>>>,
         owner_url: Url,
         new_diags: FileDiagnostics,
         poisoned_message_prefix: &str,
@@ -113,23 +139,63 @@ impl WindowDiagnostics {
             })
             .insert(owner_url, new_diags.clone());
 
+        let other_diags = other_store
+            .read()
+            .unwrap_or_else(|_| {
+                panic!("{poisoned_message_prefix} diagnostics are poisoned, bailing out")
+            })
+            .clone();
+
+        let affected_urls =
+            old_diags.keys().chain(new_diags.keys()).cloned().collect::<HashSet<_>>();
+
         let mut diags_to_send = HashMap::new();
 
-        for location_file_url in old_diags.keys() {
-            // If there are no diagnostics for a file that used to have diagnostics,
-            // we have to send empty diagnostics to the client.
-            if !new_diags.contains_key(location_file_url) {
-                diags_to_send.insert(location_file_url.clone(), Vec::new());
-            }
-        }
+        for location_file_url in affected_urls {
+            let old_merged = Self::merge_diagnostics(
+                old_diags.get(&location_file_url),
+                Self::collect_diagnostics_for_url(&other_diags, &location_file_url).as_ref(),
+            );
+            let new_merged = self.merged_diagnostics_for_url(&location_file_url);
 
-        for (location_file_url, new_diags_for_url) in new_diags {
-            // If diagnostics have changed for a given file, we have to send an update.
-            if old_diags.get(&location_file_url) != Some(&new_diags_for_url) {
-                diags_to_send.insert(location_file_url, new_diags_for_url);
+            if old_merged != new_merged {
+                diags_to_send.insert(location_file_url, new_merged);
             }
         }
 
         diags_to_send
+    }
+
+    fn merged_diagnostics_for_url(&self, url: &Url) -> Vec<Diagnostic> {
+        let file_diags =
+            self.file_diagnostics.read().expect("file diagnostics are poisoned, bailing out");
+        let workspace_diags = self
+            .workspace_diagnostics
+            .read()
+            .expect("workspace diagnostics are poisoned, bailing out");
+
+        let file = Self::collect_diagnostics_for_url(&file_diags, url);
+        let workspace = Self::collect_diagnostics_for_url(&workspace_diags, url);
+        Self::merge_diagnostics(file.as_ref(), workspace.as_ref())
+    }
+
+    fn collect_diagnostics_for_url(
+        store: &HashMap<Url, FileDiagnostics>,
+        url: &Url,
+    ) -> Option<Vec<Diagnostic>> {
+        let diagnostics = store
+            .values()
+            .filter_map(|diagnostics| diagnostics.get(url))
+            .flat_map(|diagnostics| diagnostics.iter().cloned())
+            .collect::<Vec<_>>();
+
+        (!diagnostics.is_empty()).then_some(diagnostics)
+    }
+
+    fn merge_diagnostics(
+        primary: Option<&Vec<Diagnostic>>,
+        secondary: Option<&Vec<Diagnostic>>,
+    ) -> Vec<Diagnostic> {
+        primary.into_iter().flatten().chain(secondary.into_iter().flatten()).cloned().collect()
     }
 }

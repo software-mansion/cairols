@@ -8,9 +8,12 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow};
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateInput, FileLongId};
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_language_common::CommonGroup;
 use crossbeam::channel::{Receiver, Sender};
 use governor::clock::QuantaClock;
 use governor::state::{InMemoryState, NotKeyed};
@@ -137,28 +140,32 @@ impl ProcMacroClientController {
     /// Applies all pending responses received from the server.
     /// Does nothing if the server is not connected.
     #[tracing::instrument(level = "trace", skip_all)]
+    /// Processes available proc-macro responses and returns `true` if new macros were registered
+    /// (i.e., a `DefinedMacros` response was processed), in which case all-crate priming is needed.
     pub fn handle_response(
         &mut self,
         db: &mut AnalysisDatabase,
         config: &Config,
         client_capabilities: &ClientCapabilities,
         requester: &mut Requester,
-    ) {
+    ) -> bool {
         let ServerStatus::Connected(client) = db.proc_macro_input().proc_macro_server_status(db)
         else {
-            return;
+            return false;
         };
 
         let result = self.apply_responses(db, client, client_capabilities, requester);
-        let Err(error) = result else {
-            return;
-        };
+        match result {
+            Ok(defined_macros_processed) => defined_macros_processed,
+            Err(error) => {
+                error!("proc macro server returned an error response: {:?}", error);
 
-        error!("proc macro server returned an error response: {:?}", error);
-
-        // Safety: Arc with the client has been moved to `apply_responses`.
-        // No references to the client other than in the database should exist at this point.
-        self.force_restart(db, config);
+                // Safety: Arc with the client has been moved to `apply_responses`.
+                // No references to the client other than in the database should exist at this point.
+                self.force_restart(db, config);
+                false
+            }
+        }
     }
 
     /// Requests the proc-macro-server to:
@@ -177,14 +184,49 @@ impl ProcMacroClientController {
     /// Forces analysis over the currently open on-disk files so proc-macro expansion requests are
     /// issued, then signals the response poller to observe the resulting replies.
     pub fn prime_requests(&self, db: &AnalysisDatabase, open_files: &HashSet<Url>) {
-        for uri in open_files {
-            let Some(file_id) = db.file_for_url(uri) else { continue };
-            if matches!(file_id.long(db), FileLongId::OnDisk(_)) {
-                let _ = db.file_modules(file_id);
+        self.prime_open_files(db, open_files);
+        let _ = self.generate_code_complete_sender.try_send(());
+    }
+
+    /// Like [`prime_requests`], but also primes all other on-disk crate modules to ensure
+    /// proc-macro expansions are available for workspace members that are not currently open.
+    /// Call this on file open or after processing proc-macro responses to avoid triggering
+    /// spurious salsa cancellations on in-flight requests.
+    pub fn prime_requests_all_crates(&self, db: &AnalysisDatabase, open_files: &HashSet<Url>) {
+        self.prime_open_files(db, open_files);
+
+        // Also prime all other crate files so that proc-macro expansions are available for files
+        // that belong to workspace members but are not currently open.
+        for crate_id in db.crates() {
+            for module_id in db.crate_modules(*crate_id).iter() {
+                if let Ok(file) = db.module_main_file(*module_id)
+                    && matches!(file.long(db), FileLongId::OnDisk(_))
+                {
+                    let _ = db.module_semantic_diagnostics(*module_id);
+                }
             }
         }
 
         let _ = self.generate_code_complete_sender.try_send(());
+    }
+
+    fn prime_open_files(&self, db: &AnalysisDatabase, open_files: &HashSet<Url>) {
+        for uri in open_files {
+            let Some(file_id) = db.file_for_url(uri) else { continue };
+            if !matches!(file_id.long(db), FileLongId::OnDisk(_)) {
+                continue;
+            }
+
+            let Some((_, modules_to_process)) =
+                db.file_and_subfiles_with_corresponding_modules_without_inline(file_id)
+            else {
+                continue;
+            };
+
+            for module_id in modules_to_process {
+                let _ = db.module_semantic_diagnostics(*module_id);
+            }
+        }
     }
 
     /// Handles the update of the config related to proc macros.
@@ -238,6 +280,9 @@ impl ProcMacroClientController {
     /// Processes the responses received from proc-macro-server
     /// by updating all necessary information
     /// in the database and in the state of the controller.
+    ///
+    /// Returns `true` if any `DefinedMacros` response was processed, meaning the set of available
+    /// proc macros changed and all-crate priming is needed.
     #[tracing::instrument(level = "trace", skip_all)]
     fn apply_responses(
         &mut self,
@@ -245,7 +290,7 @@ impl ProcMacroClientController {
         client: Arc<ProcMacroClient>,
         client_capabilities: &ClientCapabilities,
         requester: &mut Requester,
-    ) -> Result<()> {
+    ) -> Result<bool> {
         let mut attribute_resolutions =
             db.proc_macro_input().attribute_macro_resolution(db).clone();
         let mut attribute_resolutions_changed = false;
@@ -256,6 +301,8 @@ impl ProcMacroClientController {
         let mut inline_macro_resolutions =
             db.proc_macro_input().inline_macro_resolution(db).clone();
         let mut inline_macro_resolutions_changed = false;
+
+        let mut defined_macros_processed = false;
 
         let available_responses = client.available_responses();
         let request_count = available_responses.len() as u64;
@@ -268,6 +315,7 @@ impl ProcMacroClientController {
                     self.apply_defined_macros_response(db, params.workspace, defined_macros);
                     self.try_load_proc_macro_cache(db);
                     try_request_semantic_tokens_refresh(client_capabilities, requester);
+                    defined_macros_processed = true;
                 }
                 RequestParams::ExpandAttribute(params) => {
                     let proc_macro_result = parse_response::<ProcMacroResult>(response)?;
@@ -304,7 +352,7 @@ impl ProcMacroClientController {
 
         self.proc_macro_server_tracker.mark_requests_as_handled(request_count);
 
-        Ok(())
+        Ok(defined_macros_processed)
     }
 
     /// Handles a response for `definedMacros` request.

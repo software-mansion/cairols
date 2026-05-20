@@ -161,6 +161,29 @@ impl AnalysisProgressThread {
         let mut pending_requests = 0_i128;
         let mut pms_status = ProcMacroServerStatus::default();
 
+        let finish_analysis_if_ready =
+            |analysis_in_progress: &mut bool,
+             was_cancelled: bool,
+             request_count: i128,
+             received_responses: i128,
+             pending_requests: i128,
+             enable_proc_macros: bool,
+             pms_status: ProcMacroServerStatus| {
+                if *analysis_in_progress
+                    && (!enable_proc_macros
+                        || (pms_status == ProcMacroServerStatus::Connected
+                            && pending_requests == 0))
+                    && (!was_cancelled && request_count == received_responses)
+                {
+                    self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                        event: ServerStatusEvent::AnalysisFinished,
+                    });
+                    let _ = self.status_sender.send(AnalysisStatus::Finished);
+
+                    *analysis_in_progress = false;
+                }
+            };
+
         while let Ok(event) = self.events_receiver.recv() {
             match event {
                 AnalysisEvent::ConfigLoad { enable_proc_macros: new_enable_proc_macros } => {
@@ -171,6 +194,15 @@ impl AnalysisProgressThread {
                 AnalysisEvent::ApplyResponses { response_count } => {
                     // Response count is delta, add it.
                     received_responses += response_count as i128;
+                    finish_analysis_if_ready(
+                        &mut analysis_in_progress,
+                        false,
+                        all_prev_requests_count,
+                        received_responses,
+                        pending_requests,
+                        enable_proc_macros,
+                        pms_status,
+                    );
                 }
                 AnalysisEvent::DiagnosticsTickStart => {
                     pending_requests = all_prev_requests_count - received_responses;
@@ -185,21 +217,16 @@ impl AnalysisProgressThread {
                 AnalysisEvent::DiagnosticsTickEnd { was_cancelled, all_request_count } => {
                     let request_count = all_request_count.into();
 
-                    if analysis_in_progress
-                        && (!enable_proc_macros
-                            || (pms_status == ProcMacroServerStatus::Connected
-                                && pending_requests == 0))
-                        && (!was_cancelled && request_count == received_responses)
-                    {
-                        self.notifier.notify::<ServerStatus>(ServerStatusParams {
-                            event: ServerStatusEvent::AnalysisFinished,
-                        });
-                        let _ = self.status_sender.send(AnalysisStatus::Finished);
-
-                        analysis_in_progress = false;
-                    }
-
                     all_prev_requests_count = request_count;
+                    finish_analysis_if_ready(
+                        &mut analysis_in_progress,
+                        was_cancelled,
+                        all_prev_requests_count,
+                        received_responses,
+                        pending_requests,
+                        enable_proc_macros,
+                        pms_status,
+                    );
                 }
                 AnalysisEvent::PMSStatusChange(new_pms_status) => {
                     match (pms_status, new_pms_status) {
