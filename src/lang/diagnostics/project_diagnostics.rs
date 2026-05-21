@@ -152,13 +152,17 @@ impl WindowDiagnostics {
         let mut diags_to_send = HashMap::new();
 
         for location_file_url in affected_urls {
+            let old_store_covers_url = old_diags.contains_key(&location_file_url);
+            let new_store_covers_url = new_diags.contains_key(&location_file_url);
             let old_merged = Self::merge_diagnostics(
                 old_diags.get(&location_file_url),
                 Self::collect_diagnostics_for_url(&other_diags, &location_file_url).as_ref(),
             );
             let new_merged = self.merged_diagnostics_for_url(&location_file_url);
 
-            if old_merged != new_merged {
+            // Even if the merged diagnostics stay empty, clients still need the publish event
+            // when a source starts or stops covering a file.
+            if old_merged != new_merged || old_store_covers_url != new_store_covers_url {
                 diags_to_send.insert(location_file_url, new_merged);
             }
         }
