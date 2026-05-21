@@ -1,5 +1,3 @@
-use std::{thread, time::Duration};
-
 use indoc::{formatdoc, indoc};
 use lsp_types::{
     ClientCapabilities, CodeActionContext, CodeActionOrCommand, CodeActionParams,
@@ -134,9 +132,6 @@ fn quick_fix_general(cairo_code: &str, mut fixture: Fixture, linter: bool, macro
     };
 
     let diagnostics = ls.open_and_wait_for_diagnostics("src/lib.cairo");
-    if macros {
-        thread::sleep(Duration::from_millis(50));
-    }
 
     let range = match cursors.assert_single() {
         Cursor::Caret(position) => Range { start: position, end: position },

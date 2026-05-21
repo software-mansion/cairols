@@ -44,6 +44,8 @@ pub struct MockClient {
 }
 
 impl MockClient {
+    const QUIET_PERIOD: Duration = Duration::from_millis(500);
+
     /// Starts and initializes CairoLS in the context of a given fixture and given client
     /// capabilities.
     ///
@@ -181,7 +183,11 @@ impl MockClient {
     /// Receives a message from the server.
     fn recv(&mut self) -> Result<Option<Message>, RecvError> {
         const TIMEOUT: Duration = Duration::from_secs(3 * 60);
-        let message = match self.client.receiver.recv_timeout(TIMEOUT) {
+        self.recv_with_timeout(TIMEOUT)
+    }
+
+    fn recv_with_timeout(&mut self, timeout: Duration) -> Result<Option<Message>, RecvError> {
+        let message = match self.client.receiver.recv_timeout(timeout) {
             Ok(msg) => Some(msg),
             Err(crossbeam::channel::RecvTimeoutError::Disconnected) => None,
             Err(crossbeam::channel::RecvTimeoutError::Timeout) => return Err(RecvError::Timeout),
@@ -369,6 +375,7 @@ impl MockClient {
         let path = path.as_ref();
         self.open(path);
         self.wait_for_diagnostics_for_file(path);
+        self.wait_for_server_quiet(Self::QUIET_PERIOD);
         self.get_diagnostics_for_file(path)
     }
 
@@ -380,7 +387,9 @@ impl MockClient {
         path: impl AsRef<Path>,
     ) -> HashMap<Url, Vec<Diagnostic>> {
         self.open(path);
-        self.wait_for_diagnostics_generation()
+        self.wait_for_diagnostics_generation();
+        self.wait_for_server_quiet(Self::QUIET_PERIOD);
+        self.diagnostics.clone()
     }
 
     /// Opens each `*.cairo` file in the test fixture and waits until all procmacros,
@@ -401,7 +410,9 @@ impl MockClient {
             self.open(file);
         }
 
-        self.wait_for_diagnostics_generation()
+        self.wait_for_diagnostics_generation();
+        self.wait_for_server_quiet(Self::QUIET_PERIOD);
+        self.diagnostics.clone()
     }
 
     /// Waits until all procmacros, and related diagnostics get resolved within
@@ -462,7 +473,6 @@ impl MockClient {
                     match params.event {
                         AnalysisStarted => {
                             analysis_started = true;
-                            target_file_updated = false;
                             if macros_finished {
                                 post_macro_analysis_started = true;
                             }
@@ -498,16 +508,11 @@ impl MockClient {
                     let params: PublishDiagnosticsParams =
                         serde_json::from_value(notification.params).unwrap();
 
-                    if params.uri == target_uri
-                        && project_updated
-                        && analysis_started
-                        && (!macros_started || (macros_finished && post_macro_analysis_started))
-                    {
+                    if params.uri == target_uri && project_updated {
                         target_file_updated = true;
-                        ControlFlow::Continue(NoOp)
-                    } else {
-                        ControlFlow::Continue(NoOp)
                     }
+
+                    ControlFlow::Continue(NoOp)
                 }
                 _ => ControlFlow::Continue(NoOp),
             },
@@ -559,6 +564,15 @@ impl MockClient {
     pub fn wait_for_project_update(&mut self) -> String {
         self.wait_for_notification::<ProjectUpdatingFinished>(|_| true);
         self.send_request::<ViewAnalyzedCrates>(())
+    }
+
+    pub fn wait_for_server_quiet(&mut self, quiet_period: Duration) {
+        loop {
+            match self.recv_with_timeout(quiet_period) {
+                Ok(Some(_)) => continue,
+                Ok(None) | Err(RecvError::Timeout) | Err(RecvError::NoMessage) => return,
+            }
+        }
     }
 
     /// Sends `textDocument/didChange` notification to the server for each `*.cairo` file in test
