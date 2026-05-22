@@ -45,6 +45,16 @@ impl ProcMacroServerTracker {
         let _ = self.events_sender.send(AnalysisEvent::DefinedMacrosRequested);
     }
 
+    /// Atomically signals that the server transitioned to Connected and that `count`
+    /// DefinedMacros requests are already in flight. Using a single event prevents
+    /// a `DiagnosticsTickEnd` from slipping between the status-change and the
+    /// individual `DefinedMacrosRequested` events, which would cause a spurious
+    /// `AnalysisFinished` while macros are still loading.
+    pub fn set_server_connected_with_pending_defined_macros(&self, count: usize) {
+        let _ =
+            self.events_sender.send(AnalysisEvent::PMSConnectedWithDefinedMacros { count });
+    }
+
     pub fn register_proc_macros_request_handled(&self) {
         let _ = self.events_sender.send(AnalysisEvent::DefinedMacrosResponseReceived);
     }
@@ -125,6 +135,9 @@ pub enum AnalysisEvent {
         all_request_count: u64,
     },
     PMSStatusChange(ProcMacroServerStatus),
+    /// Combines a Pending→Connected status transition with N pre-counted DefinedMacros requests,
+    /// preventing a DiagnosticsTickEnd from racing between the two events.
+    PMSConnectedWithDefinedMacros { count: usize },
     ProjectLoaded,
     DefinedMacrosRequested,
     DefinedMacrosResponseReceived,
@@ -159,6 +172,13 @@ impl AnalysisProgressThread {
         let mut all_prev_requests_count = 0_i128;
         let mut received_responses = 0_i128;
         let mut pending_requests = 0_i128;
+        // Tracks in-flight DefinedMacros requests so we don't fire AnalysisFinished while
+        // the proc-macro server is still loading macros and hasn't responded yet.
+        let mut defined_macros_pending = 0_i128;
+        // Set when macros finish loading; cleared by the next DiagnosticsTickStart.
+        // Ensures AnalysisFinished is not fired until a fresh tick that sees the loaded macros
+        // has completed, so diagnostics returned to the client are never stale.
+        let mut requires_post_macro_tick = false;
         let mut pms_status = ProcMacroServerStatus::default();
 
         let finish_analysis_if_ready =
@@ -167,12 +187,16 @@ impl AnalysisProgressThread {
              request_count: i128,
              received_responses: i128,
              pending_requests: i128,
+             defined_macros_pending: i128,
+             requires_post_macro_tick: bool,
              enable_proc_macros: bool,
              pms_status: ProcMacroServerStatus| {
                 if *analysis_in_progress
                     && (!enable_proc_macros
                         || (pms_status == ProcMacroServerStatus::Connected
-                            && pending_requests == 0))
+                            && pending_requests == 0
+                            && defined_macros_pending == 0
+                            && !requires_post_macro_tick))
                     && (!was_cancelled && request_count == received_responses)
                 {
                     self.notifier.notify::<ServerStatus>(ServerStatusParams {
@@ -200,12 +224,16 @@ impl AnalysisProgressThread {
                         all_prev_requests_count,
                         received_responses,
                         pending_requests,
+                        defined_macros_pending,
+                        requires_post_macro_tick,
                         enable_proc_macros,
                         pms_status,
                     );
                 }
                 AnalysisEvent::DiagnosticsTickStart => {
                     pending_requests = all_prev_requests_count - received_responses;
+                    // A new tick is starting; it will see up-to-date macros, so clear the gate.
+                    requires_post_macro_tick = false;
                     if project_loaded {
                         self.notifier.notify::<ServerStatus>(ServerStatusParams {
                             event: ServerStatusEvent::AnalysisStarted,
@@ -224,6 +252,8 @@ impl AnalysisProgressThread {
                         all_prev_requests_count,
                         received_responses,
                         pending_requests,
+                        defined_macros_pending,
+                        requires_post_macro_tick,
                         enable_proc_macros,
                         pms_status,
                     );
@@ -240,6 +270,8 @@ impl AnalysisProgressThread {
                         _ => {
                             all_prev_requests_count = 0;
                             received_responses = 0;
+                            defined_macros_pending = 0;
+                            requires_post_macro_tick = false;
 
                             // Mutation event will happen after this, so no need to restart analysis here.
                         }
@@ -247,15 +279,31 @@ impl AnalysisProgressThread {
 
                     pms_status = new_pms_status;
                 }
+                AnalysisEvent::PMSConnectedWithDefinedMacros { count } => {
+                    pms_status = ProcMacroServerStatus::Connected;
+                    defined_macros_pending += count as i128;
+                    for _ in 0..count {
+                        self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                            event: ServerStatusEvent::MacrosBuildingStarted,
+                        });
+                    }
+                }
                 AnalysisEvent::ProjectLoaded => {
                     project_loaded = true;
                 }
                 AnalysisEvent::DefinedMacrosRequested => {
+                    defined_macros_pending += 1;
                     self.notifier.notify::<ServerStatus>(ServerStatusParams {
                         event: ServerStatusEvent::MacrosBuildingStarted,
                     });
                 }
                 AnalysisEvent::DefinedMacrosResponseReceived => {
+                    defined_macros_pending -= 1;
+                    if defined_macros_pending == 0 {
+                        // All macros are now loaded. The current tick's diagnostics were computed
+                        // with stale macro state, so gate AnalysisFinished until a fresh tick runs.
+                        requires_post_macro_tick = true;
+                    }
                     self.notifier.notify::<ServerStatus>(ServerStatusParams {
                         event: ServerStatusEvent::MacrosBuildingFinished,
                     });

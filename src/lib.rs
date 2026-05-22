@@ -378,7 +378,9 @@ impl Backend {
     /// Calls [`lang::proc_macros::controller::ProcMacroClientController::handle_error`] to do its
     /// work.
     fn on_proc_macro_error(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
-        state.proc_macro_controller.force_restart(&mut state.db, &state.config);
+        let loaded_manifests: Vec<_> =
+            state.project_controller.loaded_workspace_manifests().iter().cloned().collect();
+        state.proc_macro_controller.force_restart(&mut state.db, &state.config, loaded_manifests);
     }
 
     /// Calls [`lang::proc_macros::controller::ProcMacroClientController::on_response`] to do its
@@ -399,11 +401,14 @@ impl Backend {
         };
 
         if has_responses {
+            let loaded_manifests: Vec<_> =
+                state.project_controller.loaded_workspace_manifests().iter().cloned().collect();
             let defined_macros_changed = state.proc_macro_controller.handle_response(
                 &mut state.db,
                 &state.config,
                 &state.client_capabilities,
                 requester,
+                loaded_manifests,
             );
             if defined_macros_changed {
                 state.proc_macro_controller.prime_requests_all_crates(&state.db, &state.open_files);

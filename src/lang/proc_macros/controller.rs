@@ -78,6 +78,9 @@ pub struct ProcMacroClientController {
     channels: ProcMacroChannels,
     proc_macro_server_tracker: ProcMacroServerTracker,
     cwd: PathBuf,
+    /// Workspace manifests whose `DefinedMacros` request was skipped because the server was not
+    /// yet connected. Drained when the server successfully connects.
+    pending_workspace_manifests: HashSet<PathBuf>,
     _response_poll_thread: JoinHandle<()>,
 }
 
@@ -130,6 +133,7 @@ impl ProcMacroClientController {
             generate_code_complete_sender,
             channels: ProcMacroChannels::new(poll_responses_receiver),
             cwd,
+            pending_workspace_manifests: Default::default(),
             _response_poll_thread: ResponsePollThread::spawn(
                 generate_code_complete_receiver,
                 poll_response_sender,
@@ -142,12 +146,17 @@ impl ProcMacroClientController {
     #[tracing::instrument(level = "trace", skip_all)]
     /// Processes available proc-macro responses and returns `true` if new macros were registered
     /// (i.e., a `DefinedMacros` response was processed), in which case all-crate priming is needed.
+    ///
+    /// `loaded_manifests` is the set of workspace manifest paths currently known to the project
+    /// controller. It is passed through to [`Self::force_restart`] in the error case so that a
+    /// crashed-and-restarted proc-macro server re-registers all workspace macros.
     pub fn handle_response(
         &mut self,
         db: &mut AnalysisDatabase,
         config: &Config,
         client_capabilities: &ClientCapabilities,
         requester: &mut Requester,
+        loaded_manifests: impl IntoIterator<Item = PathBuf>,
     ) -> bool {
         let ServerStatus::Connected(client) = db.proc_macro_input().proc_macro_server_status(db)
         else {
@@ -162,7 +171,7 @@ impl ProcMacroClientController {
 
                 // Safety: Arc with the client has been moved to `apply_responses`.
                 // No references to the client other than in the database should exist at this point.
-                self.force_restart(db, config);
+                self.force_restart(db, config, loaded_manifests);
                 false
             }
         }
@@ -171,12 +180,41 @@ impl ProcMacroClientController {
     /// Requests the proc-macro-server to:
     /// - load the workspace with the given `manifest_path`
     /// - respond with all macros available for it.
-    pub fn request_defined_macros(&self, db: &AnalysisDatabase, manifest_path: PathBuf) {
+    ///
+    /// If the server is not yet connected, the request is queued and will be re-issued
+    /// once the server connects (see [`Self::drain_pending_workspace_manifests`]).
+    pub fn request_defined_macros(&mut self, db: &AnalysisDatabase, manifest_path: PathBuf) {
         if let ServerStatus::Connected(client) = db.proc_macro_input().proc_macro_server_status(db)
         {
             self.proc_macro_server_tracker.register_defined_macros_request();
             client.request_defined_macros(DefinedMacrosParams {
                 workspace: Workspace { manifest_path },
+            });
+        } else {
+            self.pending_workspace_manifests.insert(manifest_path);
+        }
+    }
+
+    /// Re-issues any queued `DefinedMacros` requests that were pending while the server was
+    /// not yet connected. Should be called right after the server successfully connects.
+    fn drain_pending_workspace_manifests(&mut self, db: &AnalysisDatabase) {
+        let ServerStatus::Connected(client) = db.proc_macro_input().proc_macro_server_status(db)
+        else {
+            return;
+        };
+
+        let pending = std::mem::take(&mut self.pending_workspace_manifests);
+        let count = pending.len();
+
+        // Send a single event that atomically records both the Connected status change and
+        // the number of DefinedMacros requests about to be dispatched. This prevents the
+        // AnalysisProgressThread from seeing pms=Connected with defined_macros_pending=0 in
+        // a window where DiagnosticsTickEnd could fire AnalysisFinished prematurely.
+        self.proc_macro_server_tracker.set_server_connected_with_pending_defined_macros(count);
+
+        for manifest in pending {
+            client.request_defined_macros(DefinedMacrosParams {
+                workspace: Workspace { manifest_path: manifest },
             });
         }
     }
@@ -240,6 +278,9 @@ impl ProcMacroClientController {
 
         if db.proc_macro_input().proc_macro_server_status(db).is_pending() {
             self.try_launch_proc_macro_server(db, config);
+            // If the server is now connected, re-issue any DefinedMacros requests that were
+            // skipped while the server was still starting up.
+            self.drain_pending_workspace_manifests(db);
         }
     }
 
@@ -248,13 +289,23 @@ impl ProcMacroClientController {
     /// A new server instance is started only if there are available restart attempts left.
     /// This ensures that a fresh proc-macro-server is used.
     ///
+    /// `loaded_manifests` are re-seeded into the pending queue so the restarted server
+    /// re-registers all workspace macros even when no project reload follows the crash.
+    ///
     /// # Safety
     /// Don't call this function if any reference to the [`ProcMacroClient`] exist,
     /// except the one in the [`ProcMacroInput`].
     #[tracing::instrument(level = "trace", skip_all)]
-    pub fn force_restart(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+    pub fn force_restart(
+        &mut self,
+        db: &mut AnalysisDatabase,
+        config: &Config,
+        loaded_manifests: impl IntoIterator<Item = PathBuf>,
+    ) {
         self.reset_proc_macro_state(db);
+        self.pending_workspace_manifests.extend(loaded_manifests);
         self.try_launch_proc_macro_server(db, config);
+        self.drain_pending_workspace_manifests(db);
     }
 
     /// Forcibly restarts the proc-macro-server without consuming restart-rate budget.
@@ -265,6 +316,7 @@ impl ProcMacroClientController {
     pub fn force_restart_without_rate_limit(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         self.reset_proc_macro_state(db);
         self.try_launch_proc_macro_server_without_rate_limit(db, config);
+        self.drain_pending_workspace_manifests(db);
     }
 
     pub fn proc_macro_plugin_suite_for_crate(&self, id: &CrateInput) -> Option<&PluginSuite> {
@@ -425,7 +477,11 @@ impl ProcMacroClientController {
 
         match self.spawn_proc_macro_server_process() {
             Ok(client) => {
-                self.set_proc_macro_server_status(db, ServerStatus::Connected(Arc::new(client)))
+                // Only update the DB here. The tracker is notified by drain_pending_workspace_manifests
+                // so it can atomically carry the count of pending DefinedMacros requests.
+                db.proc_macro_input()
+                    .set_proc_macro_server_status(db)
+                    .to(ServerStatus::Connected(Arc::new(client)));
             }
             Err(error) => {
                 error!("spawning proc-macro-server failed: {error:?}");
