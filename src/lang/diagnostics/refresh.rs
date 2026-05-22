@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use cairo_lang_filesystem::db::{FilesGroup, ext_as_virtual};
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
@@ -25,8 +27,13 @@ pub fn refresh_diagnostics<'db>(
     project_diagnostics: ProjectDiagnostics,
     notifier: Notifier,
     scarb_toolchain: ScarbToolchain,
+    generation: u64,
+    latest_generation: Arc<AtomicU64>,
 ) {
     for file in batch {
+        if !is_current_generation(generation, &latest_generation) {
+            return;
+        }
         refresh_file_diagnostics(
             db,
             config,
@@ -35,6 +42,8 @@ pub fn refresh_diagnostics<'db>(
             &project_diagnostics,
             &notifier,
             &scarb_toolchain,
+            generation,
+            &latest_generation,
         );
     }
 }
@@ -53,7 +62,13 @@ fn refresh_file_diagnostics<'db>(
     project_diagnostics: &ProjectDiagnostics,
     notifier: &Notifier,
     scarb_toolchain: &ScarbToolchain,
+    generation: u64,
+    latest_generation: &AtomicU64,
 ) {
+    if !is_current_generation(generation, latest_generation) {
+        return;
+    }
+
     let Some(new_files_diagnostics) =
         FilesDiagnostics::collect(db, config, config_registry, scarb_toolchain, root_on_disk_file)
     else {
@@ -88,8 +103,22 @@ fn refresh_file_diagnostics<'db>(
         })
         .collect();
 
-    let diags_to_send = project_diagnostics.update(root_on_disk_file_url, new_diags);
+    let Some(diags_to_send) =
+        project_diagnostics.update_if_current(root_on_disk_file_url, new_diags, || {
+            is_current_generation(generation, latest_generation)
+        })
+    else {
+        return;
+    };
+
+    if !is_current_generation(generation, latest_generation) {
+        return;
+    }
+
     for (url, diagnostics) in diags_to_send {
+        if !is_current_generation(generation, latest_generation) {
+            return;
+        }
         notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
             uri: url,
             diagnostics,
@@ -120,9 +149,23 @@ pub fn clear_old_diagnostics(
     files_to_preserve: HashSet<Url>,
     project_diagnostics: ProjectDiagnostics,
     notifier: Notifier,
+    generation: u64,
+    latest_generation: Arc<AtomicU64>,
 ) {
-    let removed = project_diagnostics.clear_old(&files_to_preserve);
+    let Some(removed) = project_diagnostics.clear_old_if_current(&files_to_preserve, || {
+        is_current_generation(generation, &latest_generation)
+    }) else {
+        return;
+    };
+
+    if !is_current_generation(generation, &latest_generation) {
+        return;
+    }
+
     for url in removed {
+        if !is_current_generation(generation, &latest_generation) {
+            return;
+        }
         let params = PublishDiagnosticsParams { uri: url, diagnostics: vec![], version: None };
         notifier.notify::<PublishDiagnostics>(params);
     }
@@ -130,4 +173,8 @@ pub fn clear_old_diagnostics(
 
 fn tracing_file_url<'db>(db: &'db AnalysisDatabase, file: FileId<'db>) -> String {
     db.url_for_file(file).map(|u| u.to_string()).unwrap_or_default()
+}
+
+fn is_current_generation(generation: u64, latest_generation: &AtomicU64) -> bool {
+    latest_generation.load(Ordering::Acquire) == generation
 }

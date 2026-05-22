@@ -41,33 +41,32 @@ impl ProjectDiagnostics {
         Self { file_diagnostics: Default::default() }
     }
 
-    /// Update existing diagnostics based on new diagnostics obtained by processing an on disk file
-    /// identified by `root_on_disk_file_url` and virtual files originating from it.
-    ///
-    /// Returns mapping from a file to its diagnostics for files which diagnostics changed
-    /// as a result of the update.
+    /// Updates diagnostics, unless the diagnostics generation became stale.
     #[tracing::instrument(skip_all)]
-    pub fn update(
+    pub fn update_if_current(
         &self,
         root_on_disk_file_url: Url,
         new_diags: SelfAndOriginatingFilesDiagnostics,
-    ) -> HashMap<Url, Vec<Diagnostic>> {
-        let old_diags = self
-            .file_diagnostics
-            .read()
-            .expect("file diagnostics are poisoned, bailing out")
-            .get(&root_on_disk_file_url)
-            .cloned()
-            .unwrap_or_default();
-
-        if new_diags == old_diags {
-            return HashMap::new();
+        is_current: impl Fn() -> bool,
+    ) -> Option<HashMap<Url, Vec<Diagnostic>>> {
+        if !is_current() {
+            return None;
         }
 
-        self.file_diagnostics
-            .write()
-            .expect("file diagnostics are poisoned, bailing out")
-            .insert(root_on_disk_file_url.clone(), new_diags.clone());
+        let mut file_diagnostics =
+            self.file_diagnostics.write().expect("file diagnostics are poisoned, bailing out");
+
+        if !is_current() {
+            return None;
+        }
+
+        let old_diags = file_diagnostics.get(&root_on_disk_file_url).cloned().unwrap_or_default();
+
+        if new_diags == old_diags {
+            return Some(HashMap::new());
+        }
+
+        file_diagnostics.insert(root_on_disk_file_url.clone(), new_diags.clone());
 
         let mut diags_to_send = HashMap::new();
 
@@ -86,14 +85,25 @@ impl ProjectDiagnostics {
             }
         }
 
-        diags_to_send
+        Some(diags_to_send)
     }
 
-    /// Removes diagnostics for files not present in the given set and returns a list of files for
-    /// which diagnostics were actually cleared.
-    pub fn clear_old(&self, processed_files_to_retain: &HashSet<Url>) -> Vec<Url> {
+    /// Clears old diagnostics, unless the diagnostics generation became stale.
+    pub fn clear_old_if_current(
+        &self,
+        processed_files_to_retain: &HashSet<Url>,
+        is_current: impl Fn() -> bool,
+    ) -> Option<Vec<Url>> {
+        if !is_current() {
+            return None;
+        }
+
         let mut file_diagnostics =
             self.file_diagnostics.write().expect("file diagnostics are poisoned, bailing out");
+
+        if !is_current() {
+            return None;
+        }
 
         let (clean, removed) = mem::take(&mut *file_diagnostics).into_iter().partition_map(
             |(processed_file_url, diags)| {
@@ -106,6 +116,57 @@ impl ProjectDiagnostics {
         );
 
         *file_diagnostics = clean;
-        removed
+        Some(removed)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::{HashMap, HashSet};
+
+    use lsp_types::Url;
+
+    use super::ProjectDiagnostics;
+
+    #[test]
+    fn stale_generation_does_not_update_diagnostics() {
+        let project_diagnostics = ProjectDiagnostics::new();
+        let url = Url::parse("file:///test.cairo").unwrap();
+
+        let stale_update = project_diagnostics.update_if_current(
+            url.clone(),
+            HashMap::from([(url.clone(), vec![])]),
+            || false,
+        );
+
+        assert!(stale_update.is_none());
+        assert_eq!(
+            project_diagnostics.update_if_current(
+                url.clone(),
+                HashMap::from([(url.clone(), vec![])]),
+                || true
+            ),
+            Some(HashMap::from([(url, vec![])]))
+        );
+    }
+
+    #[test]
+    fn stale_generation_does_not_clear_diagnostics() {
+        let project_diagnostics = ProjectDiagnostics::new();
+        let url = Url::parse("file:///test.cairo").unwrap();
+
+        project_diagnostics.update_if_current(
+            url.clone(),
+            HashMap::from([(url.clone(), vec![])]),
+            || true,
+        );
+
+        let stale_clear = project_diagnostics.clear_old_if_current(&HashSet::new(), || false);
+
+        assert!(stale_clear.is_none());
+        assert_eq!(
+            project_diagnostics.clear_old_if_current(&HashSet::new(), || true),
+            Some(vec![url])
+        );
     }
 }

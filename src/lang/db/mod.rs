@@ -27,10 +27,12 @@ use cairo_lint::plugin::cairo_lint_allow_plugin_suite;
 use itertools::Itertools;
 use salsa::{Database, Durability, Setter};
 
+pub use self::migration::*;
 pub use self::semantic::*;
 pub use self::swapper::*;
 pub use self::syntax::*;
 
+mod migration;
 mod semantic;
 mod swapper;
 mod syntax;
