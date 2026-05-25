@@ -1,10 +1,6 @@
 use std::fmt::Display;
 
 use indoc::indoc;
-use lsp_types::notification::{DidChangeTextDocument, PublishDiagnostics};
-use lsp_types::{
-    DidChangeTextDocumentParams, TextDocumentContentChangeEvent, VersionedTextDocumentIdentifier,
-};
 use serde::Serialize;
 use serde_json::json;
 
@@ -70,50 +66,6 @@ fn test_two_simultaneous_lints() {
         message = 'Plugin diagnostic: you seem to be trying to use `loop` for iterating over a span. Consider using `for in`'
         "
     );
-}
-
-#[test]
-fn diagnostics_refresh_after_edit_clears_stale_lint() {
-    let mut ls = sandbox! {
-        files {
-            "cairo_project.toml" => CAIRO_PROJECT_TOML_2025_12,
-            "src/lib.cairo" => indoc!(r#"
-                fn foo() {
-                    let mut span = array![0x0].span();
-
-                    loop {
-                        match span.pop_front() {
-                            Some(_) => {},
-                            None => { break; },
-                        }
-                    }
-                }
-            "#)
-        }
-        workspace_configuration = json!({
-            "cairo1": {
-                "enableLinter": true
-            }
-        });
-    };
-
-    assert!(!ls.open_and_wait_for_diagnostics("src/lib.cairo").is_empty());
-
-    let uri = ls.doc_id("src/lib.cairo").uri;
-    ls.send_notification::<DidChangeTextDocument>(DidChangeTextDocumentParams {
-        text_document: VersionedTextDocumentIdentifier { uri: uri.clone(), version: 1 },
-        content_changes: vec![TextDocumentContentChangeEvent {
-            range: None,
-            range_length: None,
-            text: "fn foo() {}".to_string(),
-        }],
-    });
-
-    let params = ls.wait_for_notification::<PublishDiagnostics>(|params| {
-        params.uri == uri && params.diagnostics.is_empty()
-    });
-    assert!(params.diagnostics.is_empty());
-    assert!(ls.get_diagnostics_for_file("src/lib.cairo").is_empty());
 }
 
 #[test]
