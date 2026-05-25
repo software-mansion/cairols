@@ -365,63 +365,9 @@ impl MockClient {
     /// path.
     pub fn open_and_wait_for_diagnostics(&mut self, path: impl AsRef<Path>) -> Vec<Diagnostic> {
         let path = path.as_ref();
-        let uri = self.fixture.file_url(path);
         self.open(path);
-        self.wait_for_diagnostics_generation_for_file(uri);
+        self.wait_for_diagnostics_generation();
         self.get_diagnostics_for_file(path)
-    }
-
-    /// Waits for the diagnostics generation to complete and for diagnostics to be published for a
-    /// specific file. A generation can finish before the opened file is included in a later project
-    /// update, so waiting only for server status is not enough here.
-    fn wait_for_diagnostics_generation_for_file(&mut self, uri: Url) {
-        let mut in_progress_open = false;
-        let mut project_updated = false;
-        let mut generation_finished = false;
-        let mut file_diagnostics_published = false;
-
-        self.subscribe_notifications(Box::new(
-            move |notification: Notification| match notification.method.as_str() {
-                "textDocument/publishDiagnostics" => {
-                    let params: PublishDiagnosticsParams =
-                        serde_json::from_value(notification.params).unwrap();
-                    if params.uri == uri {
-                        file_diagnostics_published = true;
-                    }
-
-                    if generation_finished && file_diagnostics_published {
-                        ControlFlow::Break(())
-                    } else {
-                        ControlFlow::Continue(NoOp)
-                    }
-                }
-                "cairo/serverStatus" => {
-                    let params: ServerStatusParams =
-                        serde_json::from_value(notification.params).unwrap();
-
-                    match params.event {
-                        AnalysisStarted => {
-                            in_progress_open = true;
-                            ControlFlow::Continue(RemoveFromTrace)
-                        }
-                        AnalysisFinished => {
-                            generation_finished = in_progress_open && project_updated;
-                            if generation_finished && file_diagnostics_published {
-                                ControlFlow::Break(())
-                            } else {
-                                ControlFlow::Continue(RemoveFromTrace)
-                            }
-                        }
-                        _ => ControlFlow::Continue(NoOp),
-                    }
-                }
-                "cairo/projectUpdatingFinished" => {
-                    project_updated = true;
-                    ControlFlow::Continue(RemoveFromTrace)
-                }
-                _ => ControlFlow::Continue(NoOp),
-            },
-        ));
     }
 
     /// Opens the file and waits until all procmacros, and related diagnostics get resolved within

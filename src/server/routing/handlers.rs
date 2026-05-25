@@ -85,7 +85,7 @@ pub trait SyncNotificationHandler: Notification {
 }
 
 impl BackgroundDocumentRequestHandler for CodeActionRequest {
-    const RETRY: bool = true;
+    const RETRY: bool = false;
 
     #[tracing::instrument(name = "textDocument/codeAction", skip_all)]
     fn run_with_snapshot(
@@ -138,7 +138,7 @@ impl SyncRequestHandler for ExecuteCommand {
 }
 
 impl BackgroundDocumentRequestHandler for HoverRequest {
-    const RETRY: bool = true;
+    const RETRY: bool = false;
 
     #[tracing::instrument(name = "textDocument/hover", skip_all)]
     fn run_with_snapshot(
