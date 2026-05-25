@@ -1,4 +1,5 @@
-use crate::{code_lens::test_code_lens_snforge, support::insta::test_transform};
+use crate::code_lens::{test_code_lens_snforge, test_code_lens_snforge_wrong_debug_config};
+use crate::support::insta::test_transform;
 
 #[test]
 fn only_functions() {
@@ -438,6 +439,61 @@ fn fuzzer_without_test_case() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
+
+    [[execute_in_terminal]]
+    command = "snforge test hello::a --exact"
+    cwd = "./"
+    "#)
+}
+
+#[test]
+fn fuzzer_before_test() {
+    test_transform!(test_code_lens_snforge, r#"
+    #[fuzzer]
+    #[test]<caret>
+    fn a(_a: felt252) {}
+    "#, @r#"
+    [[lenses]]
+    line = 1
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 0
+
+    [[execute_in_terminal]]
+    command = "snforge test hello::a --exact"
+    cwd = "./"
+    "#)
+}
+
+#[test]
+fn debug_with_incorrect_compiler_config() {
+    test_transform!(test_code_lens_snforge_wrong_debug_config, r#"
+    #[test]<caret>
+    fn a() {}
+    "#, @r#"
+    [[lenses]]
+    line = 0
+    command = "▶ Debug test"
+    file_path = "src/lib.cairo"
+    index = 1
+
+    [[lenses]]
+    line = 0
+    command = "▶ Run test"
+    file_path = "src/lib.cairo"
+    index = 0
+
+    [[show_messages]]
+    typ = "Error"
+    message = """
+    Cannot launch debugger: the Cairo compiler is not configured for debugging.
+    Add the following key-value pairs your Scarb.toml to `[profile.dev.cairo]` section:
+
+    unstable-add-statements-code-locations-debug-info = true
+    unstable-add-statements-functions-debug-info = true
+    add-functions-debug-info = true
+    skip-optimizations = true
+    """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"

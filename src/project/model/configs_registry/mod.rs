@@ -21,6 +21,10 @@ impl ConfigsRegistry {
         self.entry_for_file(path).map(|(dir, _)| dir)
     }
 
+    pub fn is_compiler_config_correct_for_debugging_for_file(&self, path: &Path) -> Option<bool> {
+        self.entry_for_file(path).map(|(_, config)| config.compiler_config_correct_for_debugging)
+    }
+
     pub fn clear(&mut self) {
         self.packages_configs.clear();
     }

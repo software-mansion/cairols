@@ -158,9 +158,7 @@ fn complete_ex<'db>(
     if trigger_kind == CompletionTriggerKind::INVOKED
         && ctx.node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
     {
-        completions.extend(
-            path_suffix_completions(db, &ctx, was_node_corrected).into_iter().map(|item| item.item),
-        )
+        completions.extend(path_suffix_completions(db, &ctx, was_node_corrected));
     }
 
     Some(completions)

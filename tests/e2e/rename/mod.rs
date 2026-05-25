@@ -24,6 +24,7 @@ mod modules;
 mod structs;
 mod traits;
 mod types;
+mod use_alias;
 mod vars;
 
 const DEFAULT_NEW_NAME: &'_ str = "RENAMED";

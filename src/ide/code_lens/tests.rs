@@ -403,4 +403,5 @@ pub fn sanitize_test_case_name(name: &str) -> String {
     name.replace("__test_generated", "")
         .replace("__fuzzer_generated", "")
         .replace("__snforge_internal_test_generated", "")
+        .replace("__snforge_internal_fuzzer_generated", "")
 }

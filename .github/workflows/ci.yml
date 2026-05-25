@@ -58,12 +58,6 @@ jobs:
       - name: nextest partition ${{ matrix.partition }}/6
         run: cargo nextest run --profile ci --partition 'count:${{ matrix.partition }}/6' --archive-file 'nextest-archive.tar.zst'
 
-  benchmarks:
-    uses: ./.github/workflows/benchmarks.yml
-    permissions:
-      contents: read
-      id-token: write
-
   fmt:
     runs-on: ubuntu-latest
     steps:

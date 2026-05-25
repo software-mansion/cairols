@@ -3,6 +3,7 @@ use std::process::Stdio;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::db::FilesGroup;
+use indoc::indoc;
 use lsp_types::notification::ShowMessage;
 use lsp_types::{CodeLens, Command, MessageType, Range, ShowMessageParams, Url};
 
@@ -31,7 +32,25 @@ impl CodeLensInterface for DebuggerCodeLens {
         let full_path = sanitize_test_case_name(full_qualified_path.as_ref());
 
         let file_path = file_url.to_file_path().ok()?;
-        let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
+        let configs = state.project_controller.configs_registry();
+        let cwd = configs.manifest_dir_for_file(&file_path)?;
+
+        if !configs.is_compiler_config_correct_for_debugging_for_file(&file_path)? {
+            notifier.notify::<ShowMessage>(ShowMessageParams {
+                typ: MessageType::ERROR,
+                message: indoc! {r#"
+                    Cannot launch debugger: the Cairo compiler is not configured for debugging.
+                    Add the following key-value pairs your Scarb.toml to `[profile.dev.cairo]` section:
+
+                    unstable-add-statements-code-locations-debug-info = true
+                    unstable-add-statements-functions-debug-info = true
+                    add-functions-debug-info = true
+                    skip-optimizations = true
+                "#}
+                    .to_string(),
+            });
+            return Some(());
+        }
 
         let command = format!("snforge test {full_path} --exact --launch-debugger");
         send_launch_debugger(state, notifier, command, cwd, full_path);

@@ -1,0 +1,21 @@
+---
+source: tests/e2e/scarb/manifest_diagnostics.rs
+assertion_line: 78
+description: "// → Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\ntypo_field = \"oops\"\n\n// → src/lib.cairo\nfn main() {}"
+expression: "diagnostics_report(&mut ls, &[\"Scarb.toml\"])"
+---
+diagnostics:
+- url: '[ROOT_URL]Scarb.toml'
+  diagnostics:
+  - related_code: typo_field
+    diagnostic:
+      range:
+        start:
+          line: 4
+          character: 0
+        end:
+          line: 4
+          character: 10
+      severity: 2
+      source: scarb
+      message: unknown manifest field `package.typo_field`

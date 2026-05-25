@@ -23,6 +23,7 @@ mod partial;
 mod paths;
 mod structs;
 mod traits;
+mod type_info;
 mod types;
 mod variables;
 

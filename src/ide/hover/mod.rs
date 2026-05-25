@@ -1,3 +1,5 @@
+use cairo_lang_filesystem::db::get_originating_location;
+use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::{TerminalIdentifier, TerminalUnderscore};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -23,22 +25,39 @@ pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
 
     let resultants = db.get_node_resultants(node)?;
 
-    let hover_content = resultants
+    // Try standard renderers first (identifiers, literals, keywords, underscores).
+    let content = resultants
         .iter()
         .filter_map(|node| render_hover(db, *node))
-        .collect::<OrderedHashSet<_>>() // Deduplicate so we want display doubled hover if we point to same item from few resultants.
+        .collect::<OrderedHashSet<_>>() // Deduplicate so we don't display doubled hover if we point to same item from few resultants.
         .into_iter()
-        .reduce(|value1, value2| format!("{value1}\n{RULE}{value2}"))?;
+        .reduce(|value1, value2| format!("{value1}\n{RULE}{value2}"));
 
-    let hover = Hover {
-        contents: HoverContents::Markup(MarkupContent {
-            kind: MarkupKind::Markdown,
-            value: hover_content,
-        }),
-        range: node.span_without_trivia(db).position_in_file(db, file_id).map(|p| p.to_lsp()),
+    // Fallback: show the type of the expression at the cursor position, highlighting the
+    // full expression rather than just the hovered token.
+    let (content, node) = match (content, node) {
+        (Some(content), node) => (content, node),
+        _ => resultants.iter().find_map(|node| render::type_info(db, *node))?,
     };
 
-    Some(hover)
+    // Map expanded nodes back to their originating source span so hover highlights work in user
+    // code even when type info comes from a virtual file.
+    let SpanInFile { file_id: range_file_id, span } = get_originating_location(
+        db,
+        SpanInFile { file_id: node.stable_ptr(db).file_id(db), span: node.span_without_trivia(db) },
+        None,
+    );
+    let range = (range_file_id == file_id)
+        .then(|| span.position_in_file(db, file_id).map(|p| p.to_lsp()))
+        .flatten();
+
+    Some(Hover {
+        contents: HoverContents::Markup(MarkupContent {
+            kind: MarkupKind::Markdown,
+            value: content,
+        }),
+        range,
+    })
 }
 
 fn render_hover<'db>(db: &'db AnalysisDatabase, node: SyntaxNode<'db>) -> Option<String> {

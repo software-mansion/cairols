@@ -196,7 +196,6 @@ fn in_use_path_multi_macro() {
     "#);
 }
 
-// FIXME(#673)
 #[test]
 fn in_use_path_multi_with_one_in_scope() {
     test_transform_plain!(Completion, completion_fixture(), "
@@ -212,12 +211,93 @@ fn in_use_path_multi_with_one_in_scope() {
     """
 
     [[completions]]
+    completion_label = "y"
+    completion_label_type_info = "fn() -> ()"
+    "#);
+}
+
+#[test]
+fn in_use_path_multi_with_caret_before_existing() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod module {
+        pub fn x() {}
+        pub fn y() {}
+    }
+
+    use module::{<caret>, y}
+    ",@r#"
+    caret = """
+    use module::{<caret>, y}
+    """
+
+    [[completions]]
+    completion_label = "x"
+    completion_label_type_info = "fn() -> ()"
+    "#);
+}
+
+#[test]
+fn in_use_path_multi_with_aliased_in_scope() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod module {
+        pub fn x() {}
+        pub fn y() {}
+    }
+
+    use module::{x as foo, <caret>
+    ",@r#"
+    caret = """
+    use module::{x as foo,<caret>
+    """
+
+    [[completions]]
+    completion_label = "y"
+    completion_label_type_info = "fn() -> ()"
+    "#);
+}
+
+#[test]
+fn in_use_path_multi_with_star_in_scope() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod module {
+        pub fn x() {}
+        pub fn y() {}
+    }
+
+    use module::{*, <caret>
+    ",@r#"
+    caret = """
+    use module::{*,<caret>
+    """
+
+    [[completions]]
     completion_label = "x"
     completion_label_type_info = "fn() -> ()"
 
     [[completions]]
     completion_label = "y"
     completion_label_type_info = "fn() -> ()"
+    "#);
+}
+
+#[test]
+fn in_use_path_multi_nested_module_with_one_in_scope() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod outer {
+        pub mod inner {
+            pub fn x() {}
+            pub fn y() {}
+        }
+    }
+
+    use outer::{inner::x, <caret>
+    ",@r#"
+    caret = """
+    use outer::{inner::x,<caret>
+    """
+
+    [[completions]]
+    completion_label = "inner"
     "#);
 }
 

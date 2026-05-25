@@ -6,7 +6,7 @@ use std::path::Path;
 use cairo_lang_filesystem::ids::FileId;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{Diagnostic, PublishDiagnosticsParams, Url};
+use lsp_types::{Diagnostic, DiagnosticSeverity, PublishDiagnosticsParams, Url};
 use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
@@ -87,15 +87,20 @@ impl DiagnosticsController {
         &mut self,
         root_manifest_path: &Path,
         diagnostics: Vec<ScarbMetadataMessage>,
+        manifest_diagnostic_severity: DiagnosticSeverity,
         db: &AnalysisDatabase,
         notifier: &Notifier,
     ) {
         let Some(root_manifest_url) = Url::from_file_path(root_manifest_path).ok() else {
             return;
         };
-        let diagnostics =
-            scarb_metadata_messages_to_diagnostics(db, diagnostics, root_manifest_path)
-                .unwrap_or_default();
+        let diagnostics = scarb_metadata_messages_to_diagnostics(
+            db,
+            diagnostics,
+            root_manifest_path,
+            manifest_diagnostic_severity,
+        )
+        .unwrap_or_default();
         let diags_to_send = self.update_scarb_manifest_diagnostics(root_manifest_url, diagnostics);
         for (url, diagnostics) in diags_to_send {
             notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {

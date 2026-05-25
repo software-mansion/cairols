@@ -7,7 +7,7 @@ use cairo_lang_semantic::{
     lookup_item::{HasResolverData, LookupItemEx},
     substitution::SemanticRewriter,
 };
-use cairo_lang_syntax::node::ast::Pattern;
+use cairo_lang_syntax::node::ast::{ExprFunctionCall, Pattern};
 use cairo_lang_syntax::node::{
     SyntaxNode, TypedStablePtr, TypedSyntaxNode,
     ast::{OptionTypeClause, StatementLet},
@@ -27,6 +27,7 @@ use crate::lang::{
 };
 use crate::lang::{lsp::LsProtoGroup, proc_macros::db::get_og_node};
 
+mod params;
 mod types;
 
 pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec<InlayHint>> {
@@ -37,11 +38,16 @@ pub fn inlay_hints(db: &AnalysisDatabase, params: InlayHintParams) -> Option<Vec
 
     let mut result = vec![];
 
-    for let_statement in syntax
+    let nodes: Vec<_> = syntax
         .descendants(db)
         .filter(|node| range.contains(node.span_without_trivia(db)))
-        .filter_map(|node| StatementLet::cast(db, node))
-    {
+        .collect();
+
+    for call_syntax in nodes.iter().filter_map(|node| ExprFunctionCall::cast(db, *node)) {
+        result.extend(params::param_inlay_hints(db, file, call_syntax));
+    }
+
+    for let_statement in nodes.iter().filter_map(|node| StatementLet::cast(db, *node)) {
         // In particular, this can be an inline module (normal or component).
         let module = db.find_module_containing_node(let_statement.as_syntax_node())?;
 

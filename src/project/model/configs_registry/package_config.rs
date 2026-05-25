@@ -11,11 +11,18 @@ mod package_config_test;
 pub struct PackageConfig {
     pub fmt: FormatterConfig,
     pub lint: CairoLintToolMetadata,
+    pub compiler_config_correct_for_debugging: bool,
 }
 
 impl PackageConfig {
-    pub fn from_pkg(pkg: &PackageMetadata) -> Self {
-        Self { fmt: Self::fmt(pkg), lint: Self::lint(pkg) }
+    pub fn from_pkg(pkg: &PackageMetadata, compiler_config: &Value) -> Self {
+        Self {
+            fmt: Self::fmt(pkg),
+            lint: Self::lint(pkg),
+            compiler_config_correct_for_debugging: check_compiler_config_for_debugging(
+                compiler_config,
+            ),
+        }
     }
 
     fn fmt(pkg: &PackageMetadata) -> FormatterConfig {
@@ -52,4 +59,14 @@ fn merge_serde_json_value(a: &mut Value, b: &Value) {
             }
         }
     }
+}
+
+fn check_compiler_config_for_debugging(config: &Value) -> bool {
+    let bool_field = |key| config.get(key).and_then(|v| v.as_bool()).unwrap_or(false);
+    let str_field = |key| config.get(key).and_then(|v| v.as_str()).unwrap_or("");
+
+    bool_field("add_functions_debug_info")
+        && bool_field("add_statements_code_locations_debug_info")
+        && bool_field("add_statements_functions_debug_info")
+        && str_field("compiler_optimizations") == "Disabled"
 }

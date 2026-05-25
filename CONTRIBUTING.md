@@ -122,6 +122,10 @@ While your PR is being reviewed on, you can push merge commits and use [
 `git commit --fixup`](https://git-scm.com/docs/git-commit/2.32.0#Documentation/git-commit.txt---fixupamendrewordltcommitgt)
 to push further changes to your commits.
 
+All commits must be signed.
+You can sign commits with a GPG key using `git commit -S`, or set `commit.gpgSign = true` in your Git config to sign automatically.
+GitHub's documentation on [signing commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits) explains how to set this up.
+
 ## Typos
 
 Our policy is to not accept PRs that only fix typos in the documentation and code.

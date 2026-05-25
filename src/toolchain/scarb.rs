@@ -6,7 +6,7 @@ use std::sync::{Arc, OnceLock};
 use anyhow::{Context, Result, bail, ensure};
 use lsp_types::notification::ShowMessage;
 use lsp_types::{MessageType, ShowMessageParams};
-use scarb_metadata::{Metadata, MetadataCommand, MetadataCommandError};
+use scarb_metadata::{Metadata, MetadataCommand, MetadataCommandError, VersionPin};
 use tracing::{debug, error, warn};
 use which::which;
 
@@ -17,6 +17,11 @@ use crate::server::client::Notifier;
 pub const SCARB_TOML: &str = "Scarb.toml";
 pub const SCARB_METADATA_FAILED_MESSAGE: &str =
     "`scarb metadata` failed. Check if your project builds correctly via `scarb build`.";
+
+pub struct MetadataOutput {
+    pub metadata: Metadata,
+    pub stdout: String,
+}
 
 /// The ultimate object for invoking Scarb.
 ///
@@ -157,16 +162,29 @@ impl ScarbToolchain {
         &self,
         manifest_path: &Path,
         scarb_path: &Path,
-    ) -> Result<Metadata, MetadataCommandError> {
-        MetadataCommand::new()
-            .scarb_path(scarb_path)
-            .manifest_path(manifest_path)
-            .json()
-            .inherit_stderr()
-            .exec()
-            .inspect_err(|err| {
-                error!("{err:?}");
+    ) -> Result<MetadataOutput, MetadataCommandError> {
+        let output = Command::new(scarb_path)
+            .arg("--json")
+            .arg("--manifest-path")
+            .arg(manifest_path)
+            .arg("metadata")
+            .arg("--format-version")
+            .arg(VersionPin.numeric().to_string())
+            .output()?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+
+        if output.status.success() {
+            parse_metadata_from_ndjson(&stdout).map(|metadata| MetadataOutput { metadata, stdout })
+        } else {
+            Err(MetadataCommandError::ScarbError {
+                stdout,
+                stderr: String::from_utf8_lossy(&output.stderr).to_string(),
             })
+        }
+        .inspect_err(|err| {
+            error!("{err:?}");
+        })
     }
 
     pub fn notify_metadata_failed(&self) {
@@ -201,12 +219,12 @@ impl ScarbToolchain {
             .clone()
     }
 
-    pub fn cache_path(&self) -> Option<PathBuf> {
-        self.cache_path.get_or_init(|| self.fetch_cache_path().ok()).clone()
-    }
-
     pub fn is_from_scarb_cache(&self, file_path: &Path) -> bool {
         self.cache_path().is_some_and(|cache_path| file_path.starts_with(cache_path))
+    }
+
+    fn cache_path(&self) -> Option<PathBuf> {
+        self.cache_path.get_or_init(|| self.fetch_cache_path().ok()).clone()
     }
 
     fn fetch_version(&self) -> Result<String> {
@@ -241,4 +259,14 @@ impl ScarbToolchain {
             .inspect(|p| debug!("Scarb cache path: {}", p.display()))
             .inspect_err(|err| error!("{err:#?}"))
     }
+}
+
+fn parse_metadata_from_ndjson(stdout: &str) -> Result<Metadata, MetadataCommandError> {
+    stdout
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .filter_map(|line| serde_json::from_str::<Metadata>(line).ok())
+        .next()
+        .ok_or_else(|| MetadataCommandError::NotFound { stdout: stdout.to_string() })
 }

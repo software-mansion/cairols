@@ -16,7 +16,7 @@ analyzed_crates = '''
   "settings": {
     "name": "core",
     "edition": "2025_12",
-    "version": "2.16.1",
+    "version": "2.18.0",
     "cfg_set": [
       [
         "target",
@@ -142,7 +142,7 @@ analyzed_crates_diff = '''
    "settings": {
      "name": "core",
      "edition": "2025_12",
-     "version": "2.16.1",
+     "version": "2.18.0",
      "cfg_set": [
        [
          "target",
