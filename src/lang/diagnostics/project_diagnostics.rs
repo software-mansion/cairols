@@ -41,32 +41,33 @@ impl ProjectDiagnostics {
         Self { file_diagnostics: Default::default() }
     }
 
-    /// Updates diagnostics, unless the diagnostics generation became stale.
+    /// Update existing diagnostics based on new diagnostics obtained by processing an on disk file
+    /// identified by `root_on_disk_file_url` and virtual files originating from it.
+    ///
+    /// Returns mapping from a file to its diagnostics for files which diagnostics changed
+    /// as a result of the update.
     #[tracing::instrument(skip_all)]
-    pub fn update_if_current(
+    pub fn update(
         &self,
         root_on_disk_file_url: Url,
         new_diags: SelfAndOriginatingFilesDiagnostics,
-        is_current: impl Fn() -> bool,
-    ) -> Option<HashMap<Url, Vec<Diagnostic>>> {
-        if !is_current() {
-            return None;
-        }
-
-        let mut file_diagnostics =
-            self.file_diagnostics.write().expect("file diagnostics are poisoned, bailing out");
-
-        if !is_current() {
-            return None;
-        }
-
-        let old_diags = file_diagnostics.get(&root_on_disk_file_url).cloned().unwrap_or_default();
+    ) -> HashMap<Url, Vec<Diagnostic>> {
+        let old_diags = self
+            .file_diagnostics
+            .read()
+            .expect("file diagnostics are poisoned, bailing out")
+            .get(&root_on_disk_file_url)
+            .cloned()
+            .unwrap_or_default();
 
         if new_diags == old_diags {
-            return Some(HashMap::new());
+            return HashMap::new();
         }
 
-        file_diagnostics.insert(root_on_disk_file_url.clone(), new_diags.clone());
+        self.file_diagnostics
+            .write()
+            .expect("file diagnostics are poisoned, bailing out")
+            .insert(root_on_disk_file_url.clone(), new_diags.clone());
 
         let mut diags_to_send = HashMap::new();
 
@@ -85,25 +86,14 @@ impl ProjectDiagnostics {
             }
         }
 
-        Some(diags_to_send)
+        diags_to_send
     }
 
-    /// Clears old diagnostics, unless the diagnostics generation became stale.
-    pub fn clear_old_if_current(
-        &self,
-        processed_files_to_retain: &HashSet<Url>,
-        is_current: impl Fn() -> bool,
-    ) -> Option<Vec<Url>> {
-        if !is_current() {
-            return None;
-        }
-
+    /// Removes diagnostics for files not present in the given set and returns a list of files for
+    /// which diagnostics were actually cleared.
+    pub fn clear_old(&self, processed_files_to_retain: &HashSet<Url>) -> Vec<Url> {
         let mut file_diagnostics =
             self.file_diagnostics.write().expect("file diagnostics are poisoned, bailing out");
-
-        if !is_current() {
-            return None;
-        }
 
         let (clean, removed) = mem::take(&mut *file_diagnostics).into_iter().partition_map(
             |(processed_file_url, diags)| {
@@ -116,6 +106,6 @@ impl ProjectDiagnostics {
         );
 
         *file_diagnostics = clean;
-        Some(removed)
+        removed
     }
 }

@@ -8,7 +8,6 @@ use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::diagnostics::DiagnosticsRun;
 use crate::lang::diagnostics::file_diagnostics::FilesDiagnostics;
 use crate::lang::diagnostics::project_diagnostics::ProjectDiagnostics;
 use crate::lang::lsp::LsProtoGroup;
@@ -27,13 +26,8 @@ pub fn refresh_diagnostics<'db>(
     project_diagnostics: ProjectDiagnostics,
     notifier: Notifier,
     scarb_toolchain: ScarbToolchain,
-    run: DiagnosticsRun,
 ) {
     for file in batch {
-        // Stop before starting more file work once this run is stale.
-        if !run.is_current() {
-            return;
-        }
         refresh_file_diagnostics(
             db,
             config,
@@ -42,7 +36,6 @@ pub fn refresh_diagnostics<'db>(
             &project_diagnostics,
             &notifier,
             &scarb_toolchain,
-            &run,
         );
     }
 }
@@ -62,13 +55,7 @@ fn refresh_file_diagnostics<'db>(
     project_diagnostics: &ProjectDiagnostics,
     notifier: &Notifier,
     scarb_toolchain: &ScarbToolchain,
-    run: &DiagnosticsRun,
 ) {
-    // Avoid expensive collection for a stale run.
-    if !run.is_current() {
-        return;
-    }
-
     let Some(new_files_diagnostics) =
         FilesDiagnostics::collect(db, config, config_registry, scarb_toolchain, root_on_disk_file)
     else {
@@ -103,23 +90,8 @@ fn refresh_file_diagnostics<'db>(
         })
         .collect();
 
-    let Some(diags_to_send) =
-        project_diagnostics
-            .update_if_current(root_on_disk_file_url, new_diags, || run.is_current())
-    else {
-        return;
-    };
-
-    // Re-check after touching shared diagnostics state and before publishing.
-    if !run.is_current() {
-        return;
-    }
-
+    let diags_to_send = project_diagnostics.update(root_on_disk_file_url, new_diags);
     for (url, diagnostics) in diags_to_send {
-        // A run may become stale after only part of the diff was sent.
-        if !run.is_current() {
-            return;
-        }
         notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
             uri: url,
             diagnostics,
@@ -150,24 +122,9 @@ pub fn clear_old_diagnostics(
     files_to_preserve: HashSet<Url>,
     project_diagnostics: ProjectDiagnostics,
     notifier: Notifier,
-    run: DiagnosticsRun,
 ) {
-    let Some(removed) =
-        project_diagnostics.clear_old_if_current(&files_to_preserve, || run.is_current())
-    else {
-        return;
-    };
-
-    // Re-check after touching shared diagnostics state and before publishing.
-    if !run.is_current() {
-        return;
-    }
-
+    let removed = project_diagnostics.clear_old(&files_to_preserve);
     for url in removed {
-        // A run may become stale after only part of the clears was sent.
-        if !run.is_current() {
-            return;
-        }
         let params = PublishDiagnosticsParams { uri: url, diagnostics: vec![], version: None };
         notifier.notify::<PublishDiagnostics>(params);
     }
