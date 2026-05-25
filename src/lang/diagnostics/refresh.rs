@@ -17,7 +17,6 @@ use crate::toolchain::scarb::ScarbToolchain;
 
 /// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(skip_all)]
-#[allow(clippy::too_many_arguments)]
 pub fn refresh_diagnostics<'db>(
     db: &'db AnalysisDatabase,
     config: &Config,
@@ -46,7 +45,6 @@ pub fn refresh_diagnostics<'db>(
 /// I.e, if diagnostics are updated on the server side they MUST be sent successfully to the
 /// client (and vice-versa).
 #[tracing::instrument(skip_all, fields(url = tracing_file_url(db, root_on_disk_file)))]
-#[allow(clippy::too_many_arguments)]
 fn refresh_file_diagnostics<'db>(
     db: &'db AnalysisDatabase,
     config: &Config,
