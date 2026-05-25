@@ -138,7 +138,7 @@ impl SyncRequestHandler for ExecuteCommand {
 }
 
 impl BackgroundDocumentRequestHandler for HoverRequest {
-    const RETRY: bool = false;
+    const RETRY: bool = true;
 
     #[tracing::instrument(name = "textDocument/hover", skip_all)]
     fn run_with_snapshot(

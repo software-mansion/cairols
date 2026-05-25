@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
 
 use cairo_lang_filesystem::db::{FilesGroup, ext_as_virtual};
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
@@ -10,6 +8,7 @@ use lsp_types::{DiagnosticSeverity, PublishDiagnosticsParams, Url};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::diagnostics::DiagnosticsRun;
 use crate::lang::diagnostics::file_diagnostics::FilesDiagnostics;
 use crate::lang::diagnostics::project_diagnostics::ProjectDiagnostics;
 use crate::lang::lsp::LsProtoGroup;
@@ -28,11 +27,11 @@ pub fn refresh_diagnostics<'db>(
     project_diagnostics: ProjectDiagnostics,
     notifier: Notifier,
     scarb_toolchain: ScarbToolchain,
-    generation: u64,
-    latest_generation: Arc<AtomicU64>,
+    run: DiagnosticsRun,
 ) {
     for file in batch {
-        if !is_current_generation(generation, &latest_generation) {
+        // Stop before starting more file work once this run is stale.
+        if !run.is_current() {
             return;
         }
         refresh_file_diagnostics(
@@ -43,8 +42,7 @@ pub fn refresh_diagnostics<'db>(
             &project_diagnostics,
             &notifier,
             &scarb_toolchain,
-            generation,
-            &latest_generation,
+            &run,
         );
     }
 }
@@ -64,10 +62,10 @@ fn refresh_file_diagnostics<'db>(
     project_diagnostics: &ProjectDiagnostics,
     notifier: &Notifier,
     scarb_toolchain: &ScarbToolchain,
-    generation: u64,
-    latest_generation: &AtomicU64,
+    run: &DiagnosticsRun,
 ) {
-    if !is_current_generation(generation, latest_generation) {
+    // Avoid expensive collection for a stale run.
+    if !run.is_current() {
         return;
     }
 
@@ -106,19 +104,20 @@ fn refresh_file_diagnostics<'db>(
         .collect();
 
     let Some(diags_to_send) =
-        project_diagnostics.update_if_current(root_on_disk_file_url, new_diags, || {
-            is_current_generation(generation, latest_generation)
-        })
+        project_diagnostics
+            .update_if_current(root_on_disk_file_url, new_diags, || run.is_current())
     else {
         return;
     };
 
-    if !is_current_generation(generation, latest_generation) {
+    // Re-check after touching shared diagnostics state and before publishing.
+    if !run.is_current() {
         return;
     }
 
     for (url, diagnostics) in diags_to_send {
-        if !is_current_generation(generation, latest_generation) {
+        // A run may become stale after only part of the diff was sent.
+        if !run.is_current() {
             return;
         }
         notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
@@ -151,21 +150,22 @@ pub fn clear_old_diagnostics(
     files_to_preserve: HashSet<Url>,
     project_diagnostics: ProjectDiagnostics,
     notifier: Notifier,
-    generation: u64,
-    latest_generation: Arc<AtomicU64>,
+    run: DiagnosticsRun,
 ) {
-    let Some(removed) = project_diagnostics.clear_old_if_current(&files_to_preserve, || {
-        is_current_generation(generation, &latest_generation)
-    }) else {
+    let Some(removed) =
+        project_diagnostics.clear_old_if_current(&files_to_preserve, || run.is_current())
+    else {
         return;
     };
 
-    if !is_current_generation(generation, &latest_generation) {
+    // Re-check after touching shared diagnostics state and before publishing.
+    if !run.is_current() {
         return;
     }
 
     for url in removed {
-        if !is_current_generation(generation, &latest_generation) {
+        // A run may become stale after only part of the clears was sent.
+        if !run.is_current() {
             return;
         }
         let params = PublishDiagnosticsParams { uri: url, diagnostics: vec![], version: None };
@@ -175,8 +175,4 @@ pub fn clear_old_diagnostics(
 
 fn tracing_file_url<'db>(db: &'db AnalysisDatabase, file: FileId<'db>) -> String {
     db.url_for_file(file).map(|u| u.to_string()).unwrap_or_default()
-}
-
-fn is_current_generation(generation: u64, latest_generation: &AtomicU64) -> bool {
-    latest_generation.load(Ordering::Acquire) == generation
 }
