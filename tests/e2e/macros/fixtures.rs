@@ -155,8 +155,8 @@ impl MacroTest for ProjectWithSnforgeUnitTest {
 
                 [dev-dependencies]
                 assert_macros = "2.10.0"
-                snforge_std = "0.37.0"
-                snforge_scarb_plugin = "0.37.0"
+                snforge_std = "0.60.0"
+                snforge_scarb_plugin = "0.60.0"
             "#),
         }
     }
@@ -174,8 +174,8 @@ impl MacroTest for ProjectWithSnforgeIntegrationTest {
                 edition = "2025_12"
 
                 [dev-dependencies]
-                snforge_std = "0.37.0"
-                snforge_scarb_plugin = "0.37.0"
+                snforge_std = "0.60.0"
+                snforge_scarb_plugin = "0.60.0"
 
                 [tool.scarb]
                 allow-prebuilt-plugins = ["snforge_scarb_plugin"]
