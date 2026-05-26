@@ -34,27 +34,27 @@ fn a__snforge_internal_test_generated(mut _data: Span<felt252>) -> Span<felt252>
     core::array::ArrayTrait::span(@arr)
 }
 fn a__snforge_internal_fuzzer_generated() {
-if snforge_std::_internals::is_config_run() {
-let mut data = {
-    let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
-    __array_builder_macro_result__
-};
-snforge_std::_internals::config_types::FuzzerConfig { seed: Option::None, runs: Option::None }
-    .serialize(ref data);
-starknet::testing::cheatcode::<'set_config_fuzzer'>(data.span());
-a(snforge_std::fuzzable::Fuzzable::blank
+    if snforge_std::_internals::is_config_run() {
+        let mut data = {
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+            __array_builder_macro_result__
+        };
+        snforge_std::_internals::config_types::FuzzerConfig {
+            seed: Option::None, runs: Option::None,
+        }
+            .serialize(ref data);
+        starknet::testing::cheatcode::<'set_config_fuzzer'>(data.span());
+        a(snforge_std::fuzzable::Fuzzable::blank());
+        return;
+    }
+    let _a = snforge_std::fuzzable::Fuzzable::<felt252>::generate();
+    snforge_std::_internals::save_fuzzer_arg(@_a);
+    a(_a);
+}
 fn a(_a: felt252) {
     if snforge_std::_internals::is_config_run() {
         return;
     }
-    let mut hehe = _a;
-    hehe += 10 + 5;
-    hehe -= 7;
-}
-zzer_arg (@_a);
-a (_a);
-} #[__internal_config_statement]
-fn a(_a: felt252) {
     let mut hehe = _a;
     hehe += 10 + 5;
     hehe -= 7;

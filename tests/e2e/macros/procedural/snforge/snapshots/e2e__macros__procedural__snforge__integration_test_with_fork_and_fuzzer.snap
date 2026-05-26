@@ -37,33 +37,34 @@ fn test_nothing__snforge_internal_test_generated(mut _data: Span<felt252>) -> Sp
     core::array::ArrayTrait::span(@arr)
 }
 fn test_nothing__snforge_internal_fuzzer_generated() {
-if snforge_std::_internals::is_config_run() {
-let mut data = {
-    let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
-    __array_builder_macro_result__
-};
-snforge_std::_internals::config_types::ForkConfig::Named("SEPOLIA_LATEST").serialize(ref data);
-starknet::testing::cheatcode::<'set_config_fork'>(data.span());
-let mut data = {
-    let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
-    __array_builder_macro_result__
-};
-snforge_std::_internals::config_types::FuzzerConfig {
-    seed: Option::Some(0x1234), runs: Option::Some(0x64),
+    if snforge_std::_internals::is_config_run() {
+        let mut data = {
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+            __array_builder_macro_result__
+        };
+        snforge_std::_internals::config_types::ForkConfig::Named("SEPOLIA_LATEST")
+            .serialize(ref data);
+        starknet::testing::cheatcode::<'set_config_fork'>(data.span());
+        let mut data = {
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+            __array_builder_macro_result__
+        };
+        snforge_std::_internals::config_types::FuzzerConfig {
+            seed: Option::Some(0x1234), runs: Option::Some(0x64),
+        }
+            .serialize(ref data);
+        starknet::testing::cheatcode::<'set_config_fuzzer'>(data.span());
+        test_nothing(snforge_std::fuzzable::Fuzzable::blank());
+        return;
+    }
+    let x = snforge_std::fuzzable::Fuzzable::<felt252>::generate();
+    snforge_std::_internals::save_fuzzer_arg(@x);
+    test_nothing(x);
 }
-    .serialize(ref da
 fn test_nothing(x: felt252) {
     if snforge_std::_internals::is_config_run() {
         return;
     }
-    assert(x == x, 'Who knows');
-}
-_std::fuzzable::Fuzzable::blank ()
-, ) ; return ; } let x = snforge_std::fuzzable::Fuzzable::<felt252>::generate ();
-snforge_std::_internals::save_fuzzer_arg (@x);
-test_nothing (x);
-} #[__internal_config_statement]
-fn test_nothing(x: felt252) {
     assert(x == x, 'Who knows');
 }
 """
