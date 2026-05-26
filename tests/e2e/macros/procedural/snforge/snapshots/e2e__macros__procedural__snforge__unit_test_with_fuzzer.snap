@@ -1,0 +1,62 @@
+---
+source: tests/e2e/macros/procedural/snforge/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dev-dependencies]\nsnforge_std = \"0.60.0\"\nsnforge_scarb_plugin = \"0.60.0\"\n\n[tool.scarb]\nallow-prebuilt-plugins = [\"snforge_scarb_plugin\"]\n\n[[tool.snforge.fork]]\nname = \"SEPOLIA_LATEST\"\nurl = \"https://starknet-sepolia.public.blastapi.io/rpc/v0_7\"\nblock_id.tag = \"latest\"\n\n// → test_package/src/lib.cairo\n\n\n// → test_package/tests/test.cairo\n#[test]\n#[fuzzer]\nfn a(_a: felt252) {\n    let mut hehe = _a;\n    hehe += 10 + 5;\n    hehe -= 7;\n}"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+#[test]<caret>
+"""
+generated_code = """
+#[implicit_precedence(
+    core::pedersen::Pedersen,
+    core::RangeCheck,
+    core::integer::Bitwise,
+    core::ec::EcOp,
+    core::poseidon::Poseidon,
+    core::SegmentArena,
+    core::circuit::RangeCheck96,
+    core::circuit::AddMod,
+    core::circuit::MulMod,
+    core::gas::GasBuiltin,
+    System,
+)]
+#[snforge_internal_test_executable]
+fn a__snforge_internal_test_generated(mut _data: Span<felt252>) -> Span<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    a__snforge_internal_fuzzer_generated();
+    let mut arr = ArrayTrait::new();
+    core::array::ArrayTrait::span(@arr)
+}
+fn a__snforge_internal_fuzzer_generated() {
+if snforge_std::_internals::is_config_run() {
+let mut data = {
+    let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+    __array_builder_macro_result__
+};
+snforge_std::_internals::config_types::FuzzerConfig { seed: Option::None, runs: Option::None }
+    .serialize(ref data);
+starknet::testing::cheatcode::<'set_config_fuzzer'>(data.span());
+a(snforge_std::fuzzable::Fuzzable::blank
+fn a(_a: felt252) {
+    if snforge_std::_internals::is_config_run() {
+        return;
+    }
+    let mut hehe = _a;
+    hehe += 10 + 5;
+    hehe -= 7;
+}
+zzer_arg (@_a);
+a (_a);
+} #[__internal_config_statement]
+fn a(_a: felt252) {
+    let mut hehe = _a;
+    hehe += 10 + 5;
+    hehe -= 7;
+}
+"""

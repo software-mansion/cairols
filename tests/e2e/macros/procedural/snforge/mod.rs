@@ -44,6 +44,25 @@ fn unit_test_with_assert_macro() {
 }
 
 #[test]
+fn unit_test_with_fuzzer() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithSnforgeIntegrationTest,
+        cwd = "test_package",
+        files {
+            "test_package/tests/test.cairo" => indoc!(r#"
+                #[test]<caret>
+                #[fuzzer]
+                fn a(_a: felt252) {
+                    let mut hehe = _a;
+                    hehe += 10 + 5;
+                    hehe -= 7;
+                }
+            "#)
+        }
+    );
+}
+
+#[test]
 fn integration_test_with_fork_and_fuzzer() {
     test_macro_expansion_and_diagnostics!(
         project = ProjectWithSnforgeIntegrationTest,
