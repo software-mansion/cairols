@@ -282,6 +282,12 @@ fn test_case_with_fuzzer() {
     "#, @r#"
     [[lenses]]
     line = 0
+    command = "▶ Debug test"
+    file_path = "src/lib.cairo"
+    index = 3
+
+    [[lenses]]
+    line = 0
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
@@ -290,7 +296,7 @@ fn test_case_with_fuzzer() {
     line = 2
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
-    index = 3
+    index = 4
 
     [[lenses]]
     line = 2
@@ -302,7 +308,7 @@ fn test_case_with_fuzzer() {
     line = 3
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
-    index = 4
+    index = 5
 
     [[lenses]]
     line = 3
