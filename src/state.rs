@@ -43,8 +43,11 @@ impl State {
 
         let analysis_progress_controller = AnalysisProgressController::new(notifier.clone());
 
-        let diagnostics_controller =
-            DiagnosticsController::new(notifier.clone(), analysis_progress_controller.clone());
+        let diagnostics_controller = DiagnosticsController::new(
+            notifier.clone(),
+            analysis_progress_controller.clone(),
+            scarb_toolchain.clone(),
+        );
 
         let proc_macro_controller = ProcMacroClientController::new(
             scarb_toolchain.clone(),

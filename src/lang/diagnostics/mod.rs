@@ -2,7 +2,6 @@ use std::collections::{HashMap, HashSet};
 use std::num::NonZero;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 
 use cairo_lang_filesystem::ids::FileId;
 use crossbeam::channel::{Receiver, Sender};
@@ -17,7 +16,8 @@ use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::lang::lsp::LsProtoGroup;
-use crate::project::ConfigsRegistry;
+use crate::lang::proc_macros::controller::ProcMacroClientController;
+use crate::project::{ConfigsRegistry, ProjectController};
 use crate::project::{CrateInfo, ScarbMetadataMessage, scarb_metadata_messages_to_diagnostics};
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
@@ -26,7 +26,6 @@ use crate::server::schedule::thread::task_progress_monitor::{
 };
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 use crate::server::trigger;
-use crate::state::{Snapshot, State};
 use crate::toolchain::scarb::ScarbToolchain;
 
 mod file_batches;
@@ -47,7 +46,7 @@ pub struct DiagnosticsController {
     //   Otherwise, the controller thread will never be requested to stop, and the controller's
     //   JoinHandle will never terminate.
     trigger: trigger::Sender<DiagnosticsRunInput>,
-    active_diagnostics_db: Arc<Mutex<Option<AnalysisDatabase>>>,
+    active_diagnostics_db: Option<AnalysisDatabase>,
     generate_code_complete_receiver: Receiver<()>,
     scarb_manifest_diagnostics: ScarbManifestDiagnostics,
     _thread: JoinHandle,
@@ -55,21 +54,24 @@ pub struct DiagnosticsController {
 
 impl DiagnosticsController {
     /// Creates a new diagnostics controller.
-    pub fn new(notifier: Notifier, analysis_progress_tracker: AnalysisProgressController) -> Self {
+    pub fn new(
+        notifier: Notifier,
+        analysis_progress_tracker: AnalysisProgressController,
+        scarb_toolchain: ScarbToolchain,
+    ) -> Self {
         let (generate_code_complete_sender, generate_code_complete_receiver) =
             crossbeam::channel::bounded(1);
         let (trigger, receiver) = trigger::trigger();
-        let active_diagnostics_db = Arc::new(Mutex::new(None));
         let (thread, _) = DiagnosticsControllerThread::spawn(
             receiver,
             generate_code_complete_sender,
             notifier,
             analysis_progress_tracker,
-            active_diagnostics_db.clone(),
+            scarb_toolchain,
         );
         Self {
             trigger,
-            active_diagnostics_db,
+            active_diagnostics_db: None,
             generate_code_complete_receiver,
             scarb_manifest_diagnostics: Default::default(),
             _thread: thread,
@@ -81,42 +83,44 @@ impl DiagnosticsController {
     }
 
     /// Schedules diagnostics refreshing on a fresh diagnostics-only database.
-    pub fn refresh(&self, state: &State) {
+    #[allow(clippy::too_many_arguments)]
+    pub fn refresh(
+        &mut self,
+        db: &AnalysisDatabase,
+        open_files: &HashSet<Url>,
+        project_controller: &ProjectController,
+        proc_macro_client_controller: &ProcMacroClientController,
+        config: &Config,
+        configs_registry: &ConfigsRegistry,
+    ) {
         self.cancel_active_diagnostics_db();
 
         let Ok(db) = catch_unwind(AssertUnwindSafe(|| {
             crate::lang::db::migrate_to_fresh_database(
-                &state.db,
-                &state.open_files,
-                &state.project_controller,
-                &state.proc_macro_controller,
+                db,
+                open_files,
+                project_controller,
+                proc_macro_client_controller,
             )
         })) else {
             error!("caught panic when preparing diagnostics db");
             return;
         };
 
+        self.active_diagnostics_db = Some(db.clone());
+
         self.trigger.activate(DiagnosticsRunInput {
             db,
-            scarb_toolchain: state.scarb_toolchain.clone(),
-            open_files: state.open_files.snapshot(),
-            config: state.config.snapshot(),
-            configs_registry: state.project_controller.configs_registry(),
+            open_files: open_files.clone(),
+            config: config.clone(),
+            configs_registry: configs_registry.clone(),
         });
     }
 
-    fn cancel_active_diagnostics_db(&self) {
-        let Some(mut db) = self
-            .active_diagnostics_db
-            .lock()
-            .expect("active diagnostics db mutex should never be poisoned")
-            .as_ref()
-            .cloned()
-        else {
-            return;
-        };
-
-        db.cancel_all();
+    fn cancel_active_diagnostics_db(&mut self) {
+        if let Some(db) = self.active_diagnostics_db.as_mut() {
+            db.cancel_all()
+        }
     }
 
     pub fn publish_scarb_manifest_diagnostics(
@@ -214,10 +218,9 @@ impl DiagnosticsController {
 #[derive(Clone)]
 struct DiagnosticsRunInput {
     db: AnalysisDatabase,
-    scarb_toolchain: ScarbToolchain,
-    open_files: Snapshot<HashSet<Url>>,
-    config: Snapshot<Config>,
-    configs_registry: Snapshot<ConfigsRegistry>,
+    open_files: HashSet<Url>,
+    config: Config,
+    configs_registry: ConfigsRegistry,
 }
 
 /// Stores entire state of diagnostics controller's worker thread.
@@ -229,7 +232,7 @@ struct DiagnosticsControllerThread {
     project_diagnostics: ProjectDiagnostics,
     analysis_progress_controller: AnalysisProgressController,
     worker_handles: Vec<TaskHandle>,
-    active_diagnostics_db: Arc<Mutex<Option<AnalysisDatabase>>>,
+    scarb_toolchain: ScarbToolchain,
 }
 
 impl DiagnosticsControllerThread {
@@ -240,7 +243,7 @@ impl DiagnosticsControllerThread {
         generate_code_complete_sender: Sender<()>,
         notifier: Notifier,
         analysis_progress_controller: AnalysisProgressController,
-        active_diagnostics_db: Arc<Mutex<Option<AnalysisDatabase>>>,
+        scarb_toolchain: ScarbToolchain,
     ) -> (JoinHandle, NonZero<usize>) {
         let mut this = Self {
             receiver,
@@ -252,7 +255,7 @@ impl DiagnosticsControllerThread {
             pool: thread::Pool::new(4, "diagnostic-worker"),
             project_diagnostics: ProjectDiagnostics::new(),
             worker_handles: Vec::new(),
-            active_diagnostics_db,
+            scarb_toolchain,
         };
 
         let parallelism = this.pool.parallelism();
@@ -270,7 +273,6 @@ impl DiagnosticsControllerThread {
         while let Some(input) = self.receiver.wait() {
             assert!(self.worker_handles.is_empty());
             self.analysis_progress_controller.diagnostic_start();
-            self.set_active_diagnostics_db(input.db.clone());
 
             let mut controller_cancelled = false;
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
@@ -288,8 +290,6 @@ impl DiagnosticsControllerThread {
             let diagnostics_results = self.join_and_clear_workers();
             let diagnostics_cancelled =
                 controller_cancelled || diagnostics_results.contains(&TaskResult::Cancelled);
-            self.clear_active_diagnostics_db();
-
             self.analysis_progress_controller.diagnostic_end(diagnostics_cancelled);
         }
     }
@@ -353,7 +353,7 @@ impl DiagnosticsControllerThread {
             let db = input.db.clone();
             let config = input.config.clone();
             let configs_registry = input.configs_registry.clone();
-            let scarb_toolchain = input.scarb_toolchain.clone();
+            let scarb_toolchain = self.scarb_toolchain.clone();
             self.spawn_worker(move |project_diagnostics, notifier| {
                 refresh_diagnostics(
                     &db,
@@ -370,19 +370,5 @@ impl DiagnosticsControllerThread {
 
     fn join_and_clear_workers(&mut self) -> Vec<TaskResult> {
         self.worker_handles.drain(..).map(|handle| handle.join()).collect()
-    }
-
-    fn set_active_diagnostics_db(&self, db: AnalysisDatabase) {
-        *self
-            .active_diagnostics_db
-            .lock()
-            .expect("active diagnostics db mutex should never be poisoned") = Some(db);
-    }
-
-    fn clear_active_diagnostics_db(&self) {
-        *self
-            .active_diagnostics_db
-            .lock()
-            .expect("active diagnostics db mutex should never be poisoned") = None;
     }
 }

@@ -455,7 +455,14 @@ impl Backend {
 
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
     fn refresh_diagnostics(state: &mut State, _meta_state: MetaState, _notifier: Notifier) {
-        state.diagnostics_controller.refresh(state);
+        state.diagnostics_controller.refresh(
+            &state.db,
+            &state.open_files,
+            &state.project_controller,
+            &state.proc_macro_controller,
+            &state.config,
+            &state.project_controller.configs_registry(),
+        );
     }
 
     /// Reload config and update project model for all open files.
