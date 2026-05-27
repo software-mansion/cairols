@@ -282,13 +282,7 @@ fn collect_test_lenses<'db>(
             db,
             file_code_lens,
             |range, full_path| {
-                TestCodeLensInternal::new(
-                    range,
-                    full_path,
-                    file_url.clone(),
-                    false,
-                    is_fuzzer,
-                )
+                TestCodeLensInternal::new(range, full_path, file_url.clone(), false, is_fuzzer)
             },
             node,
         );
@@ -388,14 +382,12 @@ fn is_fuzzer_test(db: &AnalysisDatabase, ptr: SyntaxStablePtrId) -> bool {
     // `ancestor_of_type::<Attribute>` (which excludes self) for this check, but after a Cairo
     // bump `find_syntax_node_at_offset` started returning the attribute node itself, so we use
     // `ancestors_with_self` to include it.
-    if original_node
-        .ancestors_with_self(db)
-        .find_map(|n| Attribute::cast(db, n))
-        .is_some_and(|attr| {
+    if original_node.ancestors_with_self(db).find_map(|n| Attribute::cast(db, n)).is_some_and(
+        |attr| {
             attr.attr(db).as_syntax_node().get_text_without_trivia(db).to_string(db)
                 == TEST_CASE_ATTR
-        })
-    {
+        },
+    ) {
         return false;
     }
 
