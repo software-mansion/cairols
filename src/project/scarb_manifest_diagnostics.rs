@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_utils::Intern;
-use lsp_types::{Diagnostic, DiagnosticSeverity, Range, Url};
+use lsp_types::{Diagnostic, DiagnosticSeverity, NumberOrString, Range, Url};
 use scarb_metadata::MetadataCommandError;
 use serde_json::Value;
 
@@ -15,7 +15,12 @@ pub enum ScarbMetadataMessage {
     // Represents an "error" kind message from the metadata command.
     MetadataError(String),
     // Represents a "manifest_diagnostic" kind message from the metadata command.
-    MetadataDiagnostic { path: PathBuf, message: String, span: Option<Utf8Span> },
+    MetadataDiagnostic {
+        path: PathBuf,
+        message: String,
+        error_code: Option<String>,
+        span: Option<Utf8Span>,
+    },
 }
 
 fn diagnostics_to_display(all_messages: Vec<ScarbMetadataMessage>) -> Vec<ScarbMetadataMessage> {
@@ -105,6 +110,7 @@ fn manifest_diagnostic_from_value(value: &Value) -> Option<ScarbMetadataMessage>
         return Some(ScarbMetadataMessage::MetadataDiagnostic {
             path: diagnostic_path(value)?,
             message,
+            error_code: diagnostic_error_code(value),
             span: diagnostic_span(value),
         });
     }
@@ -145,6 +151,10 @@ fn diagnostic_path(value: &Value) -> Option<PathBuf> {
     value.get("file").and_then(Value::as_str).map(PathBuf::from)
 }
 
+fn diagnostic_error_code(value: &Value) -> Option<String> {
+    value.get("error_code").and_then(Value::as_str).map(ToOwned::to_owned)
+}
+
 fn diagnostic_span(value: &Value) -> Option<Utf8Span> {
     let span = value.get("span")?;
     let start = span.get("start")?.as_u64()?;
@@ -163,14 +173,24 @@ fn scarb_metadata_message_to_diagnostic(
         ScarbMetadataMessage::MetadataError(message) => {
             Url::from_file_path(root_manifest_path).ok().map(|uri| LspScarbDiagnostic {
                 uri,
-                diagnostic: build_diagnostic(message, Range::default(), DiagnosticSeverity::ERROR),
+                diagnostic: build_diagnostic(
+                    message,
+                    None,
+                    Range::default(),
+                    DiagnosticSeverity::ERROR,
+                ),
             })
         }
-        ScarbMetadataMessage::MetadataDiagnostic { path, message, span } => {
+        ScarbMetadataMessage::MetadataDiagnostic { path, message, error_code, span } => {
             let range = manifest_diagnostic_range(db, &path, span);
             Url::from_file_path(path).ok().map(|uri| LspScarbDiagnostic {
                 uri,
-                diagnostic: build_diagnostic(message, range, manifest_diagnostic_severity),
+                diagnostic: build_diagnostic(
+                    message,
+                    error_code,
+                    range,
+                    manifest_diagnostic_severity,
+                ),
             })
         }
     }
@@ -185,11 +205,16 @@ fn manifest_diagnostic_range(
     span.and_then(|span| span.to_lsp_range(db, file)).unwrap_or_default()
 }
 
-fn build_diagnostic(message: String, range: Range, severity: DiagnosticSeverity) -> Diagnostic {
+fn build_diagnostic(
+    message: String,
+    error_code: Option<String>,
+    range: Range,
+    severity: DiagnosticSeverity,
+) -> Diagnostic {
     Diagnostic {
         range,
         severity: Some(severity),
-        code: None,
+        code: error_code.map(NumberOrString::String),
         code_description: None,
         source: Some("scarb".to_string()),
         message,
@@ -222,6 +247,7 @@ mod tests {
             vec![ScarbMetadataMessage::MetadataDiagnostic {
                 path: PathBuf::from("/tmp/Scarb.toml"),
                 message: "unknown manifest field `package.typo_field`".to_string(),
+                error_code: None,
                 span: Some(Utf8Span::new(10, 20)),
             }]
         );
@@ -241,8 +267,21 @@ mod tests {
             vec![ScarbMetadataMessage::MetadataDiagnostic {
                 path: PathBuf::from("/tmp/Scarb.toml"),
                 message: "profile name `test` is not allowed".to_string(),
+                error_code: None,
                 span: Some(Utf8Span::new(4, 11)),
             }]
         );
+    }
+
+    #[test]
+    fn build_diagnostic_sets_lsp_code_from_manifest_error_code() {
+        let diagnostic = build_diagnostic(
+            "profile name `test` is not allowed".to_string(),
+            Some("SE0003".to_string()),
+            Range::default(),
+            DiagnosticSeverity::ERROR,
+        );
+
+        assert_eq!(diagnostic.code, Some(NumberOrString::String("SE0003".to_string())));
     }
 }

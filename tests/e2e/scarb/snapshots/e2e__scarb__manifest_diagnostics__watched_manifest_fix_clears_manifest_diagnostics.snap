@@ -2,7 +2,6 @@
 source: tests/e2e/scarb/manifest_diagnostics.rs
 description: "// → Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\ndep = 1\n\n// → src/lib.cairo\nfn main() {}"
 expression: "DiagnosticsChangeReport { before_changes, after_changes }"
-snapshot_kind: text
 ---
 before_changes:
   diagnostics:
@@ -18,6 +17,7 @@ before_changes:
             line: 6
             character: 7
         severity: 1
+        code: SE0001
         source: scarb
         message: |
           TOML parse error at line 7, column 7

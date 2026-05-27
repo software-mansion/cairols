@@ -23,6 +23,7 @@ mod fill_trait_members;
 mod make_variable_mutable;
 mod missing_import;
 mod rename_unused_variable;
+mod scarb_manifest;
 mod suggest_similar_identifier;
 mod suggest_similar_member;
 mod suggest_similar_method;
@@ -36,15 +37,27 @@ pub fn code_actions(
 ) -> Option<CodeActionResponse> {
     let mut actions = Vec::with_capacity(params.context.diagnostics.len());
 
+    // Scarb manifest code actions handling
+    if params.context.diagnostics.iter().any(scarb_manifest::is_manifest_diagnostic) {
+        actions.extend(
+            with_fix_all(scarb_manifest::code_actions(&params, db))
+                .into_iter()
+                .map(CodeActionOrCommand::from),
+        );
+        return Some(actions);
+    }
+
     actions.extend(
-        get_code_actions_for_diagnostics(db, config_registry, &params)
+        with_fix_all(get_code_actions_for_diagnostics(db, config_registry, &params))
             .into_iter()
             .map(CodeActionOrCommand::from),
     );
 
-    let node = node_on_range_start(db, &params.text_document.uri, &params.range)?;
-
-    actions.extend(expand_macro::expand_macro(db, node).into_iter().map(CodeActionOrCommand::from));
+    if let Some(node) = node_on_range_start(db, &params.text_document.uri, &params.range) {
+        actions.extend(
+            expand_macro::expand_macro(db, node).into_iter().map(CodeActionOrCommand::from),
+        );
+    }
 
     Some(actions)
 }
@@ -140,6 +153,10 @@ fn get_code_actions_for_diagnostics(
         }
     }));
 
+    result
+}
+
+fn with_fix_all(mut result: Vec<CodeAction>) -> Vec<CodeAction> {
     let changes = result
         .iter()
         .filter(|action| action.is_preferred.is_some_and(|a| a))

@@ -20,6 +20,7 @@ mod make_variable_mutable;
 mod missing_import;
 mod missing_trait;
 mod rename_unused_variable;
+mod scarb_manifest;
 mod similar_identifier;
 mod similar_member;
 mod similar_method;
