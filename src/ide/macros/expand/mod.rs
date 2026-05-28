@@ -83,11 +83,12 @@ fn expand<'db>(
 
     let mut files = files.into_iter().peekable();
 
-    let first_file = if files.peek().is_some_and(|f| f.as_virtual(db).original_item_removed) {
-        files.next()
-    } else {
-        None
-    };
+    let maybe_file_replacing_og_item =
+        if files.peek().is_some_and(|f| f.as_virtual(db).original_item_removed) {
+            files.next()
+        } else {
+            None
+        };
 
     // There should be at most 1 file that replaces the original item.
     // This is true because compiler will stop processing module item when any plugin will return `remove_original_item == true`.
@@ -104,7 +105,8 @@ fn expand<'db>(
     // `replace_range` for the attribute corrupts spans whenever an inline call
     // changes the length of content before/inside the attribute's target.
     let mut patches: Vec<(TextSpan, String)> = Vec::new();
-    let first_file_span = first_file.map(|f| f.as_virtual(db).parent.unwrap().span);
+    let first_file_span =
+        maybe_file_replacing_og_item.map(|f| f.as_virtual(db).parent.unwrap().span);
 
     for inline_file in direct_child_files(db, inline_files, start_file) {
         let span = inline_file.as_virtual(db).parent.unwrap().span;
@@ -117,7 +119,7 @@ fn expand<'db>(
         patches.push((span, expand_inline(db, inline_file, inline_files)?));
     }
 
-    if let Some(first) = first_file {
+    if let Some(first) = maybe_file_replacing_og_item {
         let span = first.as_virtual(db).parent.unwrap().span;
         patches.push((span, expand(db, first, None, og_files, inline_files)?));
     }
