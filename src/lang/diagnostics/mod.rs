@@ -18,8 +18,7 @@ use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::lang::lsp::LsProtoGroup;
-use crate::lang::proc_macros::controller::ProcMacroClientController;
-use crate::project::{ConfigsRegistry, ProjectController};
+use crate::project::ConfigsRegistry;
 use crate::project::{CrateInfo, ScarbMetadataMessage, scarb_metadata_messages_to_diagnostics};
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
@@ -51,7 +50,7 @@ pub struct DiagnosticsController {
     // This is intentionally shared between the main thread and the diagnostics controller thread:
     // the main thread must be able to cancel the currently running diagnostics DB as soon as a new
     // refresh is requested, while the diagnostics thread is the one that sets it at tick start and
-    // clears it after the tick. The mutex protects that single shared slot.
+    // clears it after the tick. This is done to reduce memory consumption after diagnostics are done computing.
     active_diagnostics_db: Arc<Mutex<Option<AnalysisDatabase>>>,
     generate_code_complete_receiver: Receiver<()>,
     scarb_manifest_diagnostics: ScarbManifestDiagnostics,
@@ -96,20 +95,13 @@ impl DiagnosticsController {
         &mut self,
         db: &AnalysisDatabase,
         open_files: &HashSet<Url>,
-        project_controller: &ProjectController,
-        proc_macro_client_controller: &ProcMacroClientController,
         config: &Config,
         configs_registry: &ConfigsRegistry,
     ) {
         self.cancel_and_drop_active_diagnostics_db();
 
         let Ok(db) = catch_unwind(AssertUnwindSafe(|| {
-            crate::lang::db::migrate_to_fresh_database(
-                db,
-                open_files,
-                project_controller,
-                proc_macro_client_controller,
-            )
+            crate::lang::db::migrate_to_fresh_database(db, open_files)
         })) else {
             error!("caught panic when preparing diagnostics db");
             return;
@@ -307,7 +299,7 @@ impl DiagnosticsControllerThread {
             let diagnostics_results = self.join_and_clear_workers();
             let diagnostics_cancelled =
                 controller_cancelled || diagnostics_results.contains(&TaskResult::Cancelled);
-            self.clear_active_diagnostics_db(input.db.clone());
+            self.clear_active_diagnostics_db(&input.db);
             self.analysis_progress_controller.diagnostic_end(diagnostics_cancelled);
         }
     }
@@ -397,7 +389,7 @@ impl DiagnosticsControllerThread {
             .expect("active diagnostics db mutex should never be poisoned") = Some(db);
     }
 
-    fn clear_active_diagnostics_db(&self, db: AnalysisDatabase) {
+    fn clear_active_diagnostics_db(&self, current_db: &AnalysisDatabase) {
         let mut active_diagnostics_db = self
             .active_diagnostics_db
             .lock()
@@ -405,7 +397,7 @@ impl DiagnosticsControllerThread {
 
         if active_diagnostics_db
             .as_ref()
-            .is_some_and(|active_db| current_revision(active_db) == current_revision(&db))
+            .is_some_and(|active_db| current_revision(active_db) == current_revision(current_db))
         {
             *active_diagnostics_db = None;
         }

@@ -12,8 +12,6 @@ use tracing::{error, trace};
 use crate::env_config;
 use crate::ide::analysis_progress::AnalysisEvent;
 use crate::lang::db::{AnalysisDatabase, migrate_to_fresh_database};
-use crate::lang::proc_macros::controller::ProcMacroClientController;
-use crate::project::ProjectController;
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub enum SwapReason {
@@ -91,8 +89,6 @@ impl AnalysisDatabaseSwapper {
         &mut self,
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
-        project_controller: &mut ProjectController,
-        proc_macro_client_controller: &ProcMacroClientController,
     ) -> Option<SwapReason> {
         let reason = self.check_for_swap()?;
 
@@ -100,7 +96,7 @@ impl AnalysisDatabaseSwapper {
             error!("Could not send swap status: {err:?}");
         };
 
-        self.swap(db, open_files, project_controller, proc_macro_client_controller);
+        self.swap(db, open_files);
 
         self.mutations_since_last_replace = 0;
         self.stopwatch.reset();
@@ -126,21 +122,10 @@ impl AnalysisDatabaseSwapper {
 
     /// Swaps the database.
     #[tracing::instrument(skip_all)]
-    fn swap(
-        &self,
-        db: &mut AnalysisDatabase,
-        open_files: &HashSet<Url>,
-        project_controller: &mut ProjectController,
-        proc_macro_client_controller: &ProcMacroClientController,
-    ) {
-        let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
-            migrate_to_fresh_database(
-                db,
-                open_files,
-                project_controller,
-                proc_macro_client_controller,
-            )
-        })) else {
+    fn swap(&self, db: &mut AnalysisDatabase, open_files: &HashSet<Url>) {
+        let Ok(new_db) =
+            catch_unwind(AssertUnwindSafe(|| migrate_to_fresh_database(db, open_files)))
+        else {
             error!("caught panic when preparing new db for swap");
             return;
         };

@@ -10,17 +10,13 @@ use salsa::Setter;
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
-use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lang::proc_macros::db::ProcMacroGroup;
-use crate::project::ProjectController;
 
 /// Builds a fresh analysis database that contains only state required to keep analysis usable.
 #[tracing::instrument(skip_all)]
 pub fn migrate_to_fresh_database(
     old_db: &AnalysisDatabase,
     open_files: &HashSet<Url>,
-    project_controller: &ProjectController,
-    proc_macro_client_controller: &ProcMacroClientController,
 ) -> AnalysisDatabase {
     let mut new_db = AnalysisDatabase::new();
 
@@ -105,7 +101,7 @@ fn migrate_file_overrides(
     files_group_input(new_db).set_file_overrides(new_db).to(Some(new_overrides));
 }
 
-/// Copies the currently configured project crates without migrating query outputs.
+/// Copies the currently configured project crates.
 fn migrate_crate_model_inputs(new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
     files_group_input(new_db)
         .set_crate_configs(new_db)

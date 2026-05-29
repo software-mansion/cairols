@@ -445,12 +445,11 @@ impl Backend {
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
     fn maybe_swap_database(state: &mut State, meta_state: MetaState, _notifier: Notifier) {
-        meta_state.lock().expect("should be able to acquire the MetaState").db_swapper.maybe_swap(
-            &mut state.db,
-            &state.open_files,
-            &mut state.project_controller,
-            &state.proc_macro_controller,
-        );
+        meta_state
+            .lock()
+            .expect("should be able to acquire the MetaState")
+            .db_swapper
+            .maybe_swap(&mut state.db, &state.open_files);
     }
 
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
@@ -458,8 +457,6 @@ impl Backend {
         state.diagnostics_controller.refresh(
             &state.db,
             &state.open_files,
-            &state.project_controller,
-            &state.proc_macro_controller,
             &state.config,
             &state.project_controller.configs_registry(),
         );
