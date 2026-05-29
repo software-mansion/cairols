@@ -46,7 +46,6 @@ pub struct DiagnosticsController {
     //   Otherwise, the controller thread will never be requested to stop, and the controller's
     //   JoinHandle will never terminate.
     trigger: trigger::Sender<DiagnosticsRunInput>,
-    active_diagnostics_db: Option<AnalysisDatabase>,
     generate_code_complete_receiver: Receiver<()>,
     scarb_manifest_diagnostics: ScarbManifestDiagnostics,
     _thread: JoinHandle,
@@ -71,7 +70,6 @@ impl DiagnosticsController {
         );
         Self {
             trigger,
-            active_diagnostics_db: None,
             generate_code_complete_receiver,
             scarb_manifest_diagnostics: Default::default(),
             _thread: thread,
@@ -93,8 +91,6 @@ impl DiagnosticsController {
         config: &Config,
         configs_registry: &ConfigsRegistry,
     ) {
-        self.cancel_active_diagnostics_db();
-
         let Ok(db) = catch_unwind(AssertUnwindSafe(|| {
             crate::lang::db::migrate_to_fresh_database(
                 db,
@@ -107,20 +103,12 @@ impl DiagnosticsController {
             return;
         };
 
-        self.active_diagnostics_db = Some(db.clone());
-
         self.trigger.activate(DiagnosticsRunInput {
             db,
             open_files: open_files.clone(),
             config: config.clone(),
             configs_registry: configs_registry.clone(),
         });
-    }
-
-    fn cancel_active_diagnostics_db(&mut self) {
-        if let Some(db) = self.active_diagnostics_db.as_mut() {
-            db.cancel_all()
-        }
     }
 
     pub fn publish_scarb_manifest_diagnostics(
@@ -231,6 +219,7 @@ struct DiagnosticsControllerThread {
     pool: thread::Pool,
     project_diagnostics: ProjectDiagnostics,
     analysis_progress_controller: AnalysisProgressController,
+    active_diagnostics_db: Option<AnalysisDatabase>,
     worker_handles: Vec<TaskHandle>,
     scarb_toolchain: ScarbToolchain,
 }
@@ -254,6 +243,7 @@ impl DiagnosticsControllerThread {
             // due to salsa locking and context switching.
             pool: thread::Pool::new(4, "diagnostic-worker"),
             project_diagnostics: ProjectDiagnostics::new(),
+            active_diagnostics_db: None,
             worker_handles: Vec::new(),
             scarb_toolchain,
         };
@@ -273,6 +263,7 @@ impl DiagnosticsControllerThread {
         while let Some(input) = self.receiver.wait() {
             assert!(self.worker_handles.is_empty());
             self.analysis_progress_controller.diagnostic_start();
+            self.active_diagnostics_db = Some(input.db.clone());
 
             let mut controller_cancelled = false;
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
@@ -290,6 +281,7 @@ impl DiagnosticsControllerThread {
             let diagnostics_results = self.join_and_clear_workers();
             let diagnostics_cancelled =
                 controller_cancelled || diagnostics_results.contains(&TaskResult::Cancelled);
+            self.active_diagnostics_db = None;
             self.analysis_progress_controller.diagnostic_end(diagnostics_cancelled);
         }
     }
