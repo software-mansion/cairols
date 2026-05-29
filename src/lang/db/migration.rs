@@ -29,8 +29,6 @@ pub fn migrate_to_fresh_database(
     migrate_file_overrides(&mut new_db, old_db, open_files);
     migrate_crate_model_inputs(&mut new_db, old_db);
 
-    project_controller.migrate_crates_to_new_db(&mut new_db, proc_macro_client_controller);
-
     new_db
 }
 

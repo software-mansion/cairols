@@ -2,11 +2,13 @@ use std::collections::{HashMap, HashSet};
 use std::num::NonZero;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 use cairo_lang_filesystem::ids::FileId;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{Diagnostic, DiagnosticSeverity, PublishDiagnosticsParams, Url};
+use salsa::plumbing::current_revision;
 use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
@@ -46,6 +48,11 @@ pub struct DiagnosticsController {
     //   Otherwise, the controller thread will never be requested to stop, and the controller's
     //   JoinHandle will never terminate.
     trigger: trigger::Sender<DiagnosticsRunInput>,
+    // This is intentionally shared between the main thread and the diagnostics controller thread:
+    // the main thread must be able to cancel the currently running diagnostics DB as soon as a new
+    // refresh is requested, while the diagnostics thread is the one that sets it at tick start and
+    // clears it after the tick. The mutex protects that single shared slot.
+    active_diagnostics_db: Arc<Mutex<Option<AnalysisDatabase>>>,
     generate_code_complete_receiver: Receiver<()>,
     scarb_manifest_diagnostics: ScarbManifestDiagnostics,
     _thread: JoinHandle,
@@ -61,15 +68,18 @@ impl DiagnosticsController {
         let (generate_code_complete_sender, generate_code_complete_receiver) =
             crossbeam::channel::bounded(1);
         let (trigger, receiver) = trigger::trigger();
+        let active_diagnostics_db = Arc::new(Mutex::new(None));
         let (thread, _) = DiagnosticsControllerThread::spawn(
             receiver,
             generate_code_complete_sender,
             notifier,
             analysis_progress_tracker,
+            active_diagnostics_db.clone(),
             scarb_toolchain,
         );
         Self {
             trigger,
+            active_diagnostics_db,
             generate_code_complete_receiver,
             scarb_manifest_diagnostics: Default::default(),
             _thread: thread,
@@ -91,6 +101,8 @@ impl DiagnosticsController {
         config: &Config,
         configs_registry: &ConfigsRegistry,
     ) {
+        self.cancel_and_drop_active_diagnostics_db();
+
         let Ok(db) = catch_unwind(AssertUnwindSafe(|| {
             crate::lang::db::migrate_to_fresh_database(
                 db,
@@ -109,6 +121,19 @@ impl DiagnosticsController {
             config: config.clone(),
             configs_registry: configs_registry.clone(),
         });
+    }
+
+    fn cancel_and_drop_active_diagnostics_db(&mut self) {
+        let Some(mut db) = self
+            .active_diagnostics_db
+            .lock()
+            .expect("active diagnostics db mutex should never be poisoned")
+            .take()
+        else {
+            return;
+        };
+
+        db.cancel_all();
     }
 
     pub fn publish_scarb_manifest_diagnostics(
@@ -219,7 +244,7 @@ struct DiagnosticsControllerThread {
     pool: thread::Pool,
     project_diagnostics: ProjectDiagnostics,
     analysis_progress_controller: AnalysisProgressController,
-    active_diagnostics_db: Option<AnalysisDatabase>,
+    active_diagnostics_db: Arc<Mutex<Option<AnalysisDatabase>>>,
     worker_handles: Vec<TaskHandle>,
     scarb_toolchain: ScarbToolchain,
 }
@@ -232,6 +257,7 @@ impl DiagnosticsControllerThread {
         generate_code_complete_sender: Sender<()>,
         notifier: Notifier,
         analysis_progress_controller: AnalysisProgressController,
+        active_diagnostics_db: Arc<Mutex<Option<AnalysisDatabase>>>,
         scarb_toolchain: ScarbToolchain,
     ) -> (JoinHandle, NonZero<usize>) {
         let mut this = Self {
@@ -243,7 +269,7 @@ impl DiagnosticsControllerThread {
             // due to salsa locking and context switching.
             pool: thread::Pool::new(4, "diagnostic-worker"),
             project_diagnostics: ProjectDiagnostics::new(),
-            active_diagnostics_db: None,
+            active_diagnostics_db,
             worker_handles: Vec::new(),
             scarb_toolchain,
         };
@@ -263,7 +289,7 @@ impl DiagnosticsControllerThread {
         while let Some(input) = self.receiver.wait() {
             assert!(self.worker_handles.is_empty());
             self.analysis_progress_controller.diagnostic_start();
-            self.active_diagnostics_db = Some(input.db.clone());
+            self.set_active_diagnostics_db(input.db.clone());
 
             let mut controller_cancelled = false;
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
@@ -281,7 +307,7 @@ impl DiagnosticsControllerThread {
             let diagnostics_results = self.join_and_clear_workers();
             let diagnostics_cancelled =
                 controller_cancelled || diagnostics_results.contains(&TaskResult::Cancelled);
-            self.active_diagnostics_db = None;
+            self.clear_active_diagnostics_db(input.db.clone());
             self.analysis_progress_controller.diagnostic_end(diagnostics_cancelled);
         }
     }
@@ -362,5 +388,26 @@ impl DiagnosticsControllerThread {
 
     fn join_and_clear_workers(&mut self) -> Vec<TaskResult> {
         self.worker_handles.drain(..).map(|handle| handle.join()).collect()
+    }
+
+    fn set_active_diagnostics_db(&self, db: AnalysisDatabase) {
+        *self
+            .active_diagnostics_db
+            .lock()
+            .expect("active diagnostics db mutex should never be poisoned") = Some(db);
+    }
+
+    fn clear_active_diagnostics_db(&self, db: AnalysisDatabase) {
+        let mut active_diagnostics_db = self
+            .active_diagnostics_db
+            .lock()
+            .expect("active diagnostics db mutex should never be poisoned");
+
+        if active_diagnostics_db
+            .as_ref()
+            .is_some_and(|active_db| current_revision(active_db) == current_revision(&db))
+        {
+            *active_diagnostics_db = None;
+        }
     }
 }
