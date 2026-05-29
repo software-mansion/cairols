@@ -11,6 +11,7 @@ use crate::support::cursor::{Cursors, peek_caret, peek_selection};
 use crate::support::transform::Transformer;
 
 mod basic;
+mod closures;
 mod consts;
 mod function_call;
 mod generic_params;
