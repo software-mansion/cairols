@@ -33,7 +33,7 @@ pub fn db_replace_interval() -> Duration {
 
 /// Number of mutations required to refresh the compiler database (to free unused memory).
 pub fn db_replace_mutations() -> u64 {
-    const DEFAULT: u64 = 5_000;
+    const DEFAULT: u64 = 200;
 
     env::var(CAIRO_LS_DB_REPLACE_MUTATIONS).ok().and_then(|v| v.parse().ok()).unwrap_or(DEFAULT)
 }
