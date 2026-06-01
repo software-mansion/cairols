@@ -69,6 +69,10 @@ static GLOBAL: MiMalloc = MiMalloc;
 ///
 /// [lib]: crate#running-vanilla
 pub fn start() -> ExitCode {
+    // Return freed pages to OS immediately. mimalloc reads this env var on first allocation,
+    // so it must be set before any significant work begins.
+    unsafe { std::env::set_var("MIMALLOC_PURGE_DELAY", "0") };
+
     let _log_guard = init_logging();
     set_panic_hook();
 
