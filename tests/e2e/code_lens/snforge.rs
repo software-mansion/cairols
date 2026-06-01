@@ -15,21 +15,9 @@ fn only_functions() {
     "#, @r#"
     [[lenses]]
     line = 0
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 3
-
-    [[lenses]]
-    line = 0
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
-
-    [[lenses]]
-    line = 2
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 4
 
     [[lenses]]
     line = 2
@@ -39,19 +27,9 @@ fn only_functions() {
 
     [[lenses]]
     line = 6
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 5
-
-    [[lenses]]
-    line = 6
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 2
-
-    [[execute_in_terminal]]
-    command = "snforge test hello::b --exact --launch-debugger"
-    cwd = "./"
 
     [[execute_in_terminal]]
     command = "snforge test hello::b --exact"
@@ -75,19 +53,9 @@ fn fn_in_mod() {
 
     [[lenses]]
     line = 1
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 2
-
-    [[lenses]]
-    line = 1
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
-
-    [[execute_in_terminal]]
-    command = "snforge test hello::b::a --exact --launch-debugger"
-    cwd = "./"
 
     [[execute_in_terminal]]
     command = "snforge test hello::b::a --exact"
@@ -108,12 +76,6 @@ fn run_for_mod() {
     command = "▶ Run tests"
     file_path = "src/lib.cairo"
     index = 1
-
-    [[lenses]]
-    line = 1
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 2
 
     [[lenses]]
     line = 1
@@ -163,21 +125,9 @@ fn complex() {
 
     [[lenses]]
     line = 5
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 4
-
-    [[lenses]]
-    line = 5
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 1
-
-    [[lenses]]
-    line = 11
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 3
 
     [[lenses]]
     line = 11
@@ -197,31 +147,15 @@ fn test_case_1() {
     "#, @r#"
     [[lenses]]
     line = 1
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 2
-
-    [[lenses]]
-    line = 1
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
 
     [[lenses]]
     line = 2
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 3
-
-    [[lenses]]
-    line = 2
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 1
-
-    [[execute_in_terminal]]
-    command = "snforge test hello::a_1 --exact --launch-debugger"
-    cwd = "./"
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_1 --exact"
@@ -239,31 +173,15 @@ fn test_case_2() {
     "#, @r#"
     [[lenses]]
     line = 1
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 2
-
-    [[lenses]]
-    line = 1
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
 
     [[lenses]]
     line = 2
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 3
-
-    [[lenses]]
-    line = 2
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 1
-
-    [[execute_in_terminal]]
-    command = "snforge test hello::a_2 --exact --launch-debugger"
-    cwd = "./"
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_2 --exact"
@@ -288,31 +206,15 @@ fn test_case_with_fuzzer() {
 
     [[lenses]]
     line = 2
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 3
-
-    [[lenses]]
-    line = 2
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 1
 
     [[lenses]]
     line = 3
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 4
-
-    [[lenses]]
-    line = 3
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 2
-
-    [[execute_in_terminal]]
-    command = "snforge test hello::a_1 --exact --launch-debugger"
-    cwd = "./"
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_1 --exact"
@@ -337,21 +239,9 @@ fn fuzzer_with_test_case() {
 
     [[lenses]]
     line = 2
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 3
-
-    [[lenses]]
-    line = 2
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 1
-
-    [[lenses]]
-    line = 3
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 4
 
     [[lenses]]
     line = 3
@@ -411,27 +301,9 @@ fn debug_with_incorrect_compiler_config() {
     "#, @r#"
     [[lenses]]
     line = 0
-    command = "▶ Debug test"
-    file_path = "src/lib.cairo"
-    index = 1
-
-    [[lenses]]
-    line = 0
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
-
-    [[show_messages]]
-    typ = "Error"
-    message = """
-    Cannot launch debugger: the Cairo compiler is not configured for debugging.
-    Add the following key-value pairs your Scarb.toml to `[profile.dev.cairo]` section:
-
-    unstable-add-statements-code-locations-debug-info = true
-    unstable-add-statements-functions-debug-info = true
-    add-functions-debug-info = true
-    skip-optimizations = true
-    """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"

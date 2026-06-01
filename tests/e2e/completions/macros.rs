@@ -386,6 +386,46 @@ fn partially_typed_top_level_macro_after_items() {
     use core::sha256::compute_sha256_u32_array_safe;
 
     """]
+
+    [[completions]]
+    completion_label = "compute_sha384_byte_array(...)"
+    completion_label_path = "(use core::sha384::compute_sha384_byte_array)"
+    completion_label_type_info = "fn(arr: @ByteArray) -> [u64; 6]"
+    insert_text = "compute_sha384_byte_array(${1:arr})"
+    text_edits = ["""
+    use core::sha384::compute_sha384_byte_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha384_u64_array(...)"
+    completion_label_path = "(use core::sha384::compute_sha384_u64_array)"
+    completion_label_type_info = "fn(input: Array<u64>, last_input_word: u64, last_input_num_bytes: crate::internal::bounded_int::BoundedInt<0, 7>) -> [u64; 6]"
+    insert_text = "compute_sha384_u64_array(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
+    text_edits = ["""
+    use core::sha384::compute_sha384_u64_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha512_byte_array(...)"
+    completion_label_path = "(use core::sha512::compute_sha512_byte_array)"
+    completion_label_type_info = "fn(arr: @ByteArray) -> [u64; 8]"
+    insert_text = "compute_sha512_byte_array(${1:arr})"
+    text_edits = ["""
+    use core::sha512::compute_sha512_byte_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha512_u64_array(...)"
+    completion_label_path = "(use core::sha512::compute_sha512_u64_array)"
+    completion_label_type_info = "fn(input: Array<u64>, last_input_word: u64, last_input_num_bytes: crate::internal::bounded_int::BoundedInt<0, 7>) -> [u64; 8]"
+    insert_text = "compute_sha512_u64_array(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
+    text_edits = ["""
+    use core::sha512::compute_sha512_u64_array;
+
+    """]
     "#);
 }
 
