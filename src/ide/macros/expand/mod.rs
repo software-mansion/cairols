@@ -83,28 +83,52 @@ fn expand<'db>(
 
     let mut files = files.into_iter().peekable();
 
-    let mut content = expand_inline(db, start_file, inline_files)?;
+    let maybe_file_replacing_og_item =
+        if files.peek().is_some_and(|f| f.as_virtual(db).original_item_removed) {
+            files.next()
+        } else {
+            None
+        };
 
-    let Some(first_file) = files.peek() else {
-        return Some(content);
-    };
-
-    let first_file_virtual = first_file.as_virtual(db);
-    if first_file_virtual.original_item_removed {
-        let first_file_content = expand(db, *first_file, None, og_files, inline_files)?;
-        files.next(); // Consume it
-        content.replace_range(
-            first_file_virtual.parent.unwrap().span.to_str_range(),
-            &first_file_content,
-        );
-    }
-
-    // There should be at most 1 file that replaces it.
+    // There should be at most 1 file that replaces the original item.
     // This is true because compiler will stop processing module item when any plugin will return `remove_original_item == true`.
     // See: https://github.com/starkware-libs/cairo/blob/482afce5f4cd2c1c2e0c6b2357b5021695904877/crates/cairo-lang-defs/src/db.rs#L1220
     if let Some(f) = files.peek() {
         assert!(!f.as_virtual(db).original_item_removed);
     }
+
+    let mut content = db.file_content(start_file)?.to_string();
+
+    // Collect every span-based replacement (inline macros and the attribute/derive
+    // that removes the original item) into a single list so we can apply them in
+    // a single reverse-span pass. Expanding inlines first and then doing a separate
+    // `replace_range` for the attribute corrupts spans whenever an inline call
+    // changes the length of content before/inside the attribute's target.
+    let mut patches: Vec<(TextSpan, String)> = Vec::new();
+    let first_file_span =
+        maybe_file_replacing_og_item.map(|f| f.as_virtual(db).parent.unwrap().span);
+
+    for inline_file in direct_child_files(db, inline_files, start_file) {
+        let span = inline_file.as_virtual(db).parent.unwrap().span;
+        // An inline call nested inside the item being replaced by the attribute
+        // gets obliterated by that replacement; skip it so patches stay disjoint
+        // (overlapping patches can't be applied via `replace_range`).
+        if first_file_span.is_some_and(|fs| fs.contains(span)) {
+            continue;
+        }
+        patches.push((span, expand_inline(db, inline_file, inline_files)?));
+    }
+
+    if let Some(first) = maybe_file_replacing_og_item {
+        let span = first.as_virtual(db).parent.unwrap().span;
+        patches.push((span, expand(db, first, None, og_files, inline_files)?));
+    }
+
+    patches.sort_by_key(|(span, _)| Reverse(*span));
+    for (span, replacement) in &patches {
+        content.replace_range(span.to_str_range(), replacement);
+    }
+
     let file_end = TextOffset::from_str(&content);
     // We want to insert files that does not remove original item right after original code/file that removed original code.
     // Easiest way is to determine position is using prefix which is constant.
