@@ -236,12 +236,20 @@ impl Backend {
                 state.analysis_progress_controller.mutation();
             });
 
+            let inactivity_swap_request_receiver = scheduler
+                .meta_state
+                .lock()
+                .expect("should be able to acquire the MetaState")
+                .inactivity_monitor
+                .swap_request_receiver();
+
             let result = Self::event_loop(
                 &connection,
                 proc_macro_channels,
                 project_updates_receiver,
                 analysis_progress_receiver,
                 code_lens_request_refresh_receiver,
+                inactivity_swap_request_receiver,
                 scheduler,
             );
 
@@ -306,6 +314,7 @@ impl Backend {
         project_updates_receiver: Receiver<ProjectUpdate>,
         analysis_progress_status_receiver: Receiver<AnalysisStatus>,
         code_lens_request_refresh_receiver: Receiver<()>,
+        inactivity_swap_request_receiver: Receiver<()>,
         mut scheduler: Scheduler<'_>,
     ) -> Result<()> {
         let incoming = connection.incoming();
@@ -327,6 +336,11 @@ impl Backend {
                     if connection.handle_shutdown(&msg)? {
                         break;
                     }
+                    scheduler.meta_state
+                        .lock()
+                        .expect("should be able to acquire the MetaState")
+                        .inactivity_monitor
+                        .notify_activity();
                     let task = match msg {
                         Message::Request(req) => server::request(req, retry_sender.clone()),
                         Message::Notification(notification) => server::notification(notification),
@@ -355,11 +369,10 @@ impl Backend {
 
                     match analysis_status {
                         AnalysisStatus::Started => {
-                            scheduler.meta_state
+                            let mut ms = scheduler.meta_state
                                 .lock()
-                                .expect("should be able to acquire the MetaState")
-                                .db_swapper
-                                .start_stopwatch();
+                                .expect("should be able to acquire the MetaState");
+                            ms.db_swapper.start_stopwatch();
                         }
                         AnalysisStatus::Finished => {
                             scheduler.meta_state
@@ -381,6 +394,21 @@ impl Backend {
                         if state.client_capabilities.workspace_code_lens_refresh_support() {
                             CodeLensController::handle_refresh(requester);
                         }
+                    });
+                }
+                recv(inactivity_swap_request_receiver) -> result => {
+                    let Ok(()) = result else { break };
+
+                    let meta_state = scheduler.meta_state.clone();
+                    scheduler.local_mut(move |state, _, _, _| {
+                        let mut ms = meta_state
+                            .lock()
+                            .expect("should be able to acquire the MetaState");
+                        ms.inactivity_monitor.notify_swap_triggered();
+                        ms.db_swapper.swap_on_inactivity(
+                            &mut state.db,
+                            &state.open_files,
+                        );
                     });
                 }
             }
@@ -440,11 +468,9 @@ impl Backend {
         meta_state: MetaState,
         _notifier: Notifier,
     ) {
-        meta_state
-            .lock()
-            .expect("should be able to acquire the MetaState")
-            .db_swapper
-            .register_mutation();
+        let mut ms = meta_state.lock().expect("should be able to acquire the MetaState");
+        ms.db_swapper.register_mutation();
+        ms.inactivity_monitor.notify_activity();
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
