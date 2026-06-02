@@ -2799,6 +2799,46 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
+    completion_label = "compute_sha384_byte_array(...)"
+    completion_label_path = "(use core::sha384::compute_sha384_byte_array)"
+    completion_label_type_info = "fn(arr: @ByteArray) -> [u64; 6]"
+    insert_text = "compute_sha384_byte_array(${1:arr})"
+    text_edits = ["""
+    use core::sha384::compute_sha384_byte_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha384_u64_array(...)"
+    completion_label_path = "(use core::sha384::compute_sha384_u64_array)"
+    completion_label_type_info = "fn(input: Array<u64>, last_input_word: u64, last_input_num_bytes: crate::internal::bounded_int::BoundedInt<0, 7>) -> [u64; 6]"
+    insert_text = "compute_sha384_u64_array(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
+    text_edits = ["""
+    use core::sha384::compute_sha384_u64_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha512_byte_array(...)"
+    completion_label_path = "(use core::sha512::compute_sha512_byte_array)"
+    completion_label_type_info = "fn(arr: @ByteArray) -> [u64; 8]"
+    insert_text = "compute_sha512_byte_array(${1:arr})"
+    text_edits = ["""
+    use core::sha512::compute_sha512_byte_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha512_u64_array(...)"
+    completion_label_path = "(use core::sha512::compute_sha512_u64_array)"
+    completion_label_type_info = "fn(input: Array<u64>, last_input_word: u64, last_input_num_bytes: crate::internal::bounded_int::BoundedInt<0, 7>) -> [u64; 8]"
+    insert_text = "compute_sha512_u64_array(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
+    text_edits = ["""
+    use core::sha512::compute_sha512_u64_array;
+
+    """]
+
+    [[completions]]
     completion_label = "contract_address"
     completion_label_path = "(use starknet::contract_address)"
     text_edits = ["""
@@ -4045,6 +4085,32 @@ fn no_text_in_function_context() {
     """]
 
     [[completions]]
+    completion_label = "sha384"
+    completion_label_path = "(use core::sha384)"
+    text_edits = ["""
+    use core::sha384;
+
+    """]
+
+    [[completions]]
+    completion_label = "sha512"
+    completion_label_path = "(use core::sha512)"
+    text_edits = ["""
+    use core::sha512;
+
+    """]
+
+    [[completions]]
+    completion_label = "sha512_process_block_syscall(...)"
+    completion_label_path = "(use starknet::syscalls::sha512_process_block_syscall)"
+    completion_label_type_info = "fn(state: crate::sha2_64_core::Sha512StateHandle, input: Box<[u64; 16]>) -> Result<crate::sha2_64_core::Sha512StateHandle, Array<felt252>> nopanic"
+    insert_text = "sha512_process_block_syscall(${1:state}, ${2:input})"
+    text_edits = ["""
+    use starknet::syscalls::sha512_process_block_syscall;
+
+    """]
+
+    [[completions]]
     completion_label = "signature_from_vrs(...)"
     completion_label_path = "(use starknet::secp256_trait::signature_from_vrs)"
     completion_label_type_info = "fn(v: u32, r: u256, s: u256) -> Signature"
@@ -4479,6 +4545,14 @@ fn no_text_in_function_context() {
     insert_text = "u256_wide_mul(${1:a}, ${2:b})"
     text_edits = ["""
     use core::integer::u256_wide_mul;
+
+    """]
+
+    [[completions]]
+    completion_label = "u3"
+    completion_label_path = "(use core::sha384::u3)"
+    text_edits = ["""
+    use core::sha384::u3;
 
     """]
 
@@ -7599,6 +7673,46 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
+    completion_label = "compute_sha384_byte_array(...)"
+    completion_label_path = "(use core::sha384::compute_sha384_byte_array)"
+    completion_label_type_info = "fn(arr: @ByteArray) -> [u64; 6]"
+    insert_text = "compute_sha384_byte_array(${1:arr})"
+    text_edits = ["""
+    use core::sha384::compute_sha384_byte_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha384_u64_array(...)"
+    completion_label_path = "(use core::sha384::compute_sha384_u64_array)"
+    completion_label_type_info = "fn(input: Array<u64>, last_input_word: u64, last_input_num_bytes: crate::internal::bounded_int::BoundedInt<0, 7>) -> [u64; 6]"
+    insert_text = "compute_sha384_u64_array(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
+    text_edits = ["""
+    use core::sha384::compute_sha384_u64_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha512_byte_array(...)"
+    completion_label_path = "(use core::sha512::compute_sha512_byte_array)"
+    completion_label_type_info = "fn(arr: @ByteArray) -> [u64; 8]"
+    insert_text = "compute_sha512_byte_array(${1:arr})"
+    text_edits = ["""
+    use core::sha512::compute_sha512_byte_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha512_u64_array(...)"
+    completion_label_path = "(use core::sha512::compute_sha512_u64_array)"
+    completion_label_type_info = "fn(input: Array<u64>, last_input_word: u64, last_input_num_bytes: crate::internal::bounded_int::BoundedInt<0, 7>) -> [u64; 8]"
+    insert_text = "compute_sha512_u64_array(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
+    text_edits = ["""
+    use core::sha512::compute_sha512_u64_array;
+
+    """]
+
+    [[completions]]
     completion_label = "contract_address"
     completion_label_path = "(use starknet::contract_address)"
     text_edits = ["""
@@ -8845,6 +8959,32 @@ fn no_text_after_semicolon() {
     """]
 
     [[completions]]
+    completion_label = "sha384"
+    completion_label_path = "(use core::sha384)"
+    text_edits = ["""
+    use core::sha384;
+
+    """]
+
+    [[completions]]
+    completion_label = "sha512"
+    completion_label_path = "(use core::sha512)"
+    text_edits = ["""
+    use core::sha512;
+
+    """]
+
+    [[completions]]
+    completion_label = "sha512_process_block_syscall(...)"
+    completion_label_path = "(use starknet::syscalls::sha512_process_block_syscall)"
+    completion_label_type_info = "fn(state: crate::sha2_64_core::Sha512StateHandle, input: Box<[u64; 16]>) -> Result<crate::sha2_64_core::Sha512StateHandle, Array<felt252>> nopanic"
+    insert_text = "sha512_process_block_syscall(${1:state}, ${2:input})"
+    text_edits = ["""
+    use starknet::syscalls::sha512_process_block_syscall;
+
+    """]
+
+    [[completions]]
     completion_label = "signature_from_vrs(...)"
     completion_label_path = "(use starknet::secp256_trait::signature_from_vrs)"
     completion_label_type_info = "fn(v: u32, r: u256, s: u256) -> Signature"
@@ -9279,6 +9419,14 @@ fn no_text_after_semicolon() {
     insert_text = "u256_wide_mul(${1:a}, ${2:b})"
     text_edits = ["""
     use core::integer::u256_wide_mul;
+
+    """]
+
+    [[completions]]
+    completion_label = "u3"
+    completion_label_path = "(use core::sha384::u3)"
+    text_edits = ["""
+    use core::sha384::u3;
 
     """]
 
@@ -12399,6 +12547,46 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
+    completion_label = "compute_sha384_byte_array(...)"
+    completion_label_path = "(use core::sha384::compute_sha384_byte_array)"
+    completion_label_type_info = "fn(arr: @ByteArray) -> [u64; 6]"
+    insert_text = "compute_sha384_byte_array(${1:arr})"
+    text_edits = ["""
+    use core::sha384::compute_sha384_byte_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha384_u64_array(...)"
+    completion_label_path = "(use core::sha384::compute_sha384_u64_array)"
+    completion_label_type_info = "fn(input: Array<u64>, last_input_word: u64, last_input_num_bytes: crate::internal::bounded_int::BoundedInt<0, 7>) -> [u64; 6]"
+    insert_text = "compute_sha384_u64_array(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
+    text_edits = ["""
+    use core::sha384::compute_sha384_u64_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha512_byte_array(...)"
+    completion_label_path = "(use core::sha512::compute_sha512_byte_array)"
+    completion_label_type_info = "fn(arr: @ByteArray) -> [u64; 8]"
+    insert_text = "compute_sha512_byte_array(${1:arr})"
+    text_edits = ["""
+    use core::sha512::compute_sha512_byte_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha512_u64_array(...)"
+    completion_label_path = "(use core::sha512::compute_sha512_u64_array)"
+    completion_label_type_info = "fn(input: Array<u64>, last_input_word: u64, last_input_num_bytes: crate::internal::bounded_int::BoundedInt<0, 7>) -> [u64; 8]"
+    insert_text = "compute_sha512_u64_array(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
+    text_edits = ["""
+    use core::sha512::compute_sha512_u64_array;
+
+    """]
+
+    [[completions]]
     completion_label = "contract_address"
     completion_label_path = "(use starknet::contract_address)"
     text_edits = ["""
@@ -13645,6 +13833,32 @@ fn no_text_before_statement() {
     """]
 
     [[completions]]
+    completion_label = "sha384"
+    completion_label_path = "(use core::sha384)"
+    text_edits = ["""
+    use core::sha384;
+
+    """]
+
+    [[completions]]
+    completion_label = "sha512"
+    completion_label_path = "(use core::sha512)"
+    text_edits = ["""
+    use core::sha512;
+
+    """]
+
+    [[completions]]
+    completion_label = "sha512_process_block_syscall(...)"
+    completion_label_path = "(use starknet::syscalls::sha512_process_block_syscall)"
+    completion_label_type_info = "fn(state: crate::sha2_64_core::Sha512StateHandle, input: Box<[u64; 16]>) -> Result<crate::sha2_64_core::Sha512StateHandle, Array<felt252>> nopanic"
+    insert_text = "sha512_process_block_syscall(${1:state}, ${2:input})"
+    text_edits = ["""
+    use starknet::syscalls::sha512_process_block_syscall;
+
+    """]
+
+    [[completions]]
     completion_label = "signature_from_vrs(...)"
     completion_label_path = "(use starknet::secp256_trait::signature_from_vrs)"
     completion_label_type_info = "fn(v: u32, r: u256, s: u256) -> Signature"
@@ -14079,6 +14293,14 @@ fn no_text_before_statement() {
     insert_text = "u256_wide_mul(${1:a}, ${2:b})"
     text_edits = ["""
     use core::integer::u256_wide_mul;
+
+    """]
+
+    [[completions]]
+    completion_label = "u3"
+    completion_label_path = "(use core::sha384::u3)"
+    text_edits = ["""
+    use core::sha384::u3;
 
     """]
 
@@ -17205,6 +17427,46 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
+    completion_label = "compute_sha384_byte_array(...)"
+    completion_label_path = "(use core::sha384::compute_sha384_byte_array)"
+    completion_label_type_info = "fn(arr: @ByteArray) -> [u64; 6]"
+    insert_text = "compute_sha384_byte_array(${1:arr})"
+    text_edits = ["""
+    use core::sha384::compute_sha384_byte_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha384_u64_array(...)"
+    completion_label_path = "(use core::sha384::compute_sha384_u64_array)"
+    completion_label_type_info = "fn(input: Array<u64>, last_input_word: u64, last_input_num_bytes: crate::internal::bounded_int::BoundedInt<0, 7>) -> [u64; 6]"
+    insert_text = "compute_sha384_u64_array(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
+    text_edits = ["""
+    use core::sha384::compute_sha384_u64_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha512_byte_array(...)"
+    completion_label_path = "(use core::sha512::compute_sha512_byte_array)"
+    completion_label_type_info = "fn(arr: @ByteArray) -> [u64; 8]"
+    insert_text = "compute_sha512_byte_array(${1:arr})"
+    text_edits = ["""
+    use core::sha512::compute_sha512_byte_array;
+
+    """]
+
+    [[completions]]
+    completion_label = "compute_sha512_u64_array(...)"
+    completion_label_path = "(use core::sha512::compute_sha512_u64_array)"
+    completion_label_type_info = "fn(input: Array<u64>, last_input_word: u64, last_input_num_bytes: crate::internal::bounded_int::BoundedInt<0, 7>) -> [u64; 8]"
+    insert_text = "compute_sha512_u64_array(${1:input}, ${2:last_input_word}, ${3:last_input_num_bytes})"
+    text_edits = ["""
+    use core::sha512::compute_sha512_u64_array;
+
+    """]
+
+    [[completions]]
     completion_label = "contract_address"
     completion_label_path = "(use starknet::contract_address)"
     text_edits = ["""
@@ -18451,6 +18713,32 @@ fn no_text_after_statement() {
     """]
 
     [[completions]]
+    completion_label = "sha384"
+    completion_label_path = "(use core::sha384)"
+    text_edits = ["""
+    use core::sha384;
+
+    """]
+
+    [[completions]]
+    completion_label = "sha512"
+    completion_label_path = "(use core::sha512)"
+    text_edits = ["""
+    use core::sha512;
+
+    """]
+
+    [[completions]]
+    completion_label = "sha512_process_block_syscall(...)"
+    completion_label_path = "(use starknet::syscalls::sha512_process_block_syscall)"
+    completion_label_type_info = "fn(state: crate::sha2_64_core::Sha512StateHandle, input: Box<[u64; 16]>) -> Result<crate::sha2_64_core::Sha512StateHandle, Array<felt252>> nopanic"
+    insert_text = "sha512_process_block_syscall(${1:state}, ${2:input})"
+    text_edits = ["""
+    use starknet::syscalls::sha512_process_block_syscall;
+
+    """]
+
+    [[completions]]
     completion_label = "signature_from_vrs(...)"
     completion_label_path = "(use starknet::secp256_trait::signature_from_vrs)"
     completion_label_type_info = "fn(v: u32, r: u256, s: u256) -> Signature"
@@ -18885,6 +19173,14 @@ fn no_text_after_statement() {
     insert_text = "u256_wide_mul(${1:a}, ${2:b})"
     text_edits = ["""
     use core::integer::u256_wide_mul;
+
+    """]
+
+    [[completions]]
+    completion_label = "u3"
+    completion_label_path = "(use core::sha384::u3)"
+    text_edits = ["""
+    use core::sha384::u3;
 
     """]
 
