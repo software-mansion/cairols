@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::fmt::Display;
-use std::mem;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -9,7 +8,6 @@ use std::time::{Duration, SystemTime};
 use crossbeam::channel::Sender;
 use crossbeam::channel::{Receiver, RecvTimeoutError, TrySendError};
 use lsp_types::Url;
-use serde::Serialize;
 use tracing::{error, trace, warn};
 
 use crate::env_config;
@@ -17,18 +15,14 @@ use crate::ide::analysis_progress::AnalysisEvent;
 use crate::lang::db::{AnalysisDatabase, migrate_to_fresh_database};
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy)]
 pub enum SwapReason {
-    Time(Duration),
     Mutations(u64),
 }
 
 impl Display for SwapReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SwapReason::Time(duration) => {
-                write!(f, "{}s passed since the last swap", duration.as_secs())
-            }
             SwapReason::Mutations(mutations) => {
                 write!(f, "{mutations} mutations applied since the last swap")
             }
@@ -45,17 +39,14 @@ impl Display for SwapReason {
 /// This object realises a nuclear GC strategy by wiping the entire analysis database from time to
 /// time.
 ///
-/// The swapping criteria can be configured with environment variables.
-/// Consult [`env_config::db_replace_interval`] and [`env_config::db_replace_mutations`]
-/// for more information.
+/// The mutation threshold can be configured with an environment variable.
+/// Consult [`env_config::db_replace_mutations`] for more information.
 ///
 /// The new database has a clean state.
 /// It is expected that diagnostics will be refreshed on it as quickly as possible, otherwise
 /// the entire workspace would be recompiled at an undetermined time leading to bad UX delays.
 pub struct AnalysisDatabaseSwapper {
-    stopwatch: Stopwatch,
     mutations_since_last_replace: u64,
-    db_replace_min_interval: Duration,
     db_replace_min_mutations: u64,
     analysis_event_sender: Sender<AnalysisEvent>,
 }
@@ -63,9 +54,7 @@ pub struct AnalysisDatabaseSwapper {
 impl AnalysisDatabaseSwapper {
     pub fn new(analysis_event_sender: Sender<AnalysisEvent>) -> Self {
         Self {
-            stopwatch: Stopwatch::default(),
             mutations_since_last_replace: 0,
-            db_replace_min_interval: env_config::db_replace_interval(),
             db_replace_min_mutations: env_config::db_replace_mutations(),
             analysis_event_sender,
         }
@@ -73,19 +62,6 @@ impl AnalysisDatabaseSwapper {
 
     pub fn register_mutation(&mut self) {
         self.mutations_since_last_replace += 1;
-    }
-
-    pub fn start_stopwatch(&mut self) {
-        self.stopwatch.start();
-        trace!("Stopwatch started!");
-    }
-
-    pub fn stop_stopwatch(&mut self) {
-        self.stopwatch.stop();
-        trace!(
-            "Stopwatch stopped! Total elapsed time: {}s",
-            self.stopwatch.total_elapsed_time.as_secs()
-        );
     }
 
     /// Swaps the database unconditionally, triggered by the inactivity monitor.
@@ -97,12 +73,11 @@ impl AnalysisDatabaseSwapper {
         self.swap(db, open_files);
 
         self.mutations_since_last_replace = 0;
-        self.stopwatch.reset();
 
         trace!("Database swapped due to inactivity");
     }
 
-    /// Checks for the swap criteria and swaps the database if they have been met.
+    /// Checks for the mutation-based swap criterion and swaps the database if it has been met.
     pub fn maybe_swap(
         &mut self,
         db: &mut AnalysisDatabase,
@@ -112,30 +87,20 @@ impl AnalysisDatabaseSwapper {
 
         if let Err(err) = self.analysis_event_sender.send(AnalysisEvent::DatabaseSwap) {
             error!("Could not send swap status: {err:?}");
-        };
+        }
 
         self.swap(db, open_files);
 
         self.mutations_since_last_replace = 0;
-        self.stopwatch.reset();
 
         trace!("Database swapped - {reason}");
 
         Some(reason)
     }
 
-    /// Checks whether any swap condition has been met. Returns the reason if swap is possible, `None` otherwise.
     fn check_for_swap(&self) -> Option<SwapReason> {
-        let elapsed_time = self.stopwatch.total_elapsed_time;
         let mutations = self.mutations_since_last_replace;
-
-        if mutations >= self.db_replace_min_mutations {
-            Some(SwapReason::Mutations(mutations))
-        } else if elapsed_time >= self.db_replace_min_interval {
-            Some(SwapReason::Time(elapsed_time))
-        } else {
-            None
-        }
+        (mutations >= self.db_replace_min_mutations).then_some(SwapReason::Mutations(mutations))
     }
 
     /// Swaps the database.
@@ -262,36 +227,5 @@ impl InactivitySwapMonitor {
 
     fn unix_secs_now() -> u64 {
         SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap_or_default().as_secs()
-    }
-}
-
-#[derive(Default)]
-struct Stopwatch {
-    start_time: Option<SystemTime>,
-    total_elapsed_time: Duration,
-}
-
-impl Stopwatch {
-    fn start(&mut self) {
-        self.start_time = Some(SystemTime::now());
-    }
-
-    fn stop(&mut self) {
-        let Some(start_time) = mem::take(&mut self.start_time) else {
-            error!("Tried to start a stopwatch which has not started");
-            return;
-        };
-
-        let Ok(elapsed_time) = start_time.elapsed() else {
-            // Unprobable case, would happen if system time somehow went backwards.
-            error!("Failed to read the elapsed time of the stopwatch");
-            return;
-        };
-
-        self.total_elapsed_time += elapsed_time;
-    }
-
-    fn reset(&mut self) {
-        *self = Self::default();
     }
 }

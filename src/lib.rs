@@ -218,12 +218,10 @@ impl Backend {
 
             Self::dispatch_setup_tasks(&mut scheduler);
 
-            // Notify the swapper about state mutation.
+            // Mutations count as user activity for the inactivity-based swapper.
             scheduler.on_sync_mut_task(Self::register_mutation_in_swapper);
 
-            // Attempt to swap the database to reduce memory use.
-            // Because diagnostics are always refreshed afterwards, the fresh database state will
-            // be quickly repopulated.
+            // Attempt to swap the database after enough mutations accumulate.
             scheduler.on_sync_mut_task(Self::maybe_swap_database);
 
             // Refresh diagnostics each time state changes.
@@ -367,25 +365,11 @@ impl Backend {
                 recv(analysis_progress_status_receiver) -> analysis_progress_status => {
                     let Ok(analysis_status) = analysis_progress_status else { break };
 
-                    match analysis_status {
-                        AnalysisStatus::Started => {
-                            let mut ms = scheduler.meta_state
-                                .lock()
-                                .expect("should be able to acquire the MetaState");
-                            ms.db_swapper.start_stopwatch();
-                        }
-                        AnalysisStatus::Finished => {
-                            scheduler.meta_state
-                                .lock()
-                                .expect("should be able to acquire the MetaState")
-                                .db_swapper
-                                .stop_stopwatch();
-
-                            scheduler.local(|state, _, _notifier, requester, _responder|
-                                Self::on_stopped_analysis(state, requester)
-                            );
-                        }
-                    };
+                    if let AnalysisStatus::Finished = analysis_status {
+                        scheduler.local(|state, _, _notifier, requester, _responder|
+                            Self::on_stopped_analysis(state, requester)
+                        );
+                    }
                 }
                 recv(code_lens_request_refresh_receiver) -> error => {
                     let Ok(()) = error else { break };
