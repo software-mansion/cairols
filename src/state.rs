@@ -10,7 +10,7 @@ use lsp_types::{ClientCapabilities, Url};
 use crate::config::Config;
 use crate::ide::analysis_progress::{AnalysisEvent, AnalysisProgressController};
 use crate::ide::code_lens::CodeLensController;
-use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
+use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper, InactivitySwapMonitor};
 use crate::lang::diagnostics::DiagnosticsController;
 use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::project::{ConfigsRegistry, ProjectController};
@@ -89,12 +89,14 @@ pub struct MetaStateInner {
     /// Swapper does not communicate with other critical modules and do not access the state.
     /// Using it also does not affect the analysis. Thus, it's safe to place it here and access via interior mutability.
     pub db_swapper: AnalysisDatabaseSwapper,
+    pub inactivity_monitor: InactivitySwapMonitor,
 }
 
 impl MetaStateInner {
     pub fn new(analysis_event_sender: Sender<AnalysisEvent>) -> Self {
         let db_swapper = AnalysisDatabaseSwapper::new(analysis_event_sender);
-        Self { db_swapper }
+        let inactivity_monitor = InactivitySwapMonitor::new();
+        Self { db_swapper, inactivity_monitor }
     }
 }
 
