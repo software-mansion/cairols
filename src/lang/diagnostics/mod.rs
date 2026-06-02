@@ -90,7 +90,6 @@ impl DiagnosticsController {
     }
 
     /// Schedules diagnostics refreshing on a fresh diagnostics-only database.
-    #[allow(clippy::too_many_arguments)]
     pub fn refresh(
         &mut self,
         db: &AnalysisDatabase,
@@ -220,7 +219,6 @@ impl DiagnosticsController {
     }
 }
 
-#[derive(Clone)]
 struct DiagnosticsRunInput {
     db: AnalysisDatabase,
     open_files: HashSet<Url>,
