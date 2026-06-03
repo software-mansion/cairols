@@ -189,8 +189,9 @@ fn lookup_binding<'db>(
                 return Some(binding.clone().into());
             }
 
-            // The param belongs to a closure expression inside the function body.
-            // Walk up the AST from the param node to find the enclosing closure.
+            // The param belongs to a closure — closures are absent from LookupItemId,
+            // so find_lookup_item returned the enclosing function instead.
+            // Walk up the AST to find the nearest enclosing closure expression.
             let closure_ast = param.ancestor_of_type::<ast::ExprClosure>(db)?;
             let closure_expr_id =
                 db.lookup_expr_by_ptr(function_id, closure_ast.stable_ptr(db).into()).ok()?;

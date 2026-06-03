@@ -42,8 +42,7 @@ fn function_param_usage() {
 }
 
 // Regression tests for https://github.com/software-mansion/cairols/issues/120
-// Closure parameters are not in LookupItemId, so hover falls back to the enclosing closure
-// expression instead of the parameter itself.
+
 #[test]
 fn closure_param_def() {
     test_transform_plain!(Hover, r#"
@@ -81,6 +80,132 @@ fn closure_param_usage() {
     popover = """
     ```cairo
     abc: felt252
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn closure_param_inferred_type() {
+    test_transform_plain!(Hover, r#"
+    fn main() {
+        let closure = |ab<caret>c| abc * 2;
+    }
+    "#, @r#"
+    source_context = """
+        let closure = |ab<caret>c| abc * 2;
+    """
+    highlight = """
+        let closure = |<sel>abc</sel>| abc * 2;
+    """
+    popover = """
+    ```cairo
+    abc: felt252
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn closure_param_inferred_type_usage() {
+    test_transform_plain!(Hover, r#"
+    fn main() {
+        let closure = |abc| ab<caret>c * 2;
+    }
+    "#, @r#"
+    source_context = """
+        let closure = |abc| ab<caret>c * 2;
+    """
+    highlight = """
+        let closure = |abc| <sel>abc</sel> * 2;
+    """
+    popover = """
+    ```cairo
+    abc: felt252
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn closure_multi_param() {
+    test_transform_plain!(Hover, r#"
+    fn main() {
+        let closure = |a: felt252, b<caret>: felt252| a + b;
+    }
+    "#, @r#"
+    source_context = """
+        let closure = |a: felt252, b<caret>: felt252| a + b;
+    """
+    highlight = """
+        let closure = |a: felt252, <sel>b</sel>: felt252| a + b;
+    """
+    popover = """
+    ```cairo
+    b: felt252
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn closure_multi_param_usage() {
+    test_transform_plain!(Hover, r#"
+    fn main() {
+        let closure = |a: felt252, b: felt252| a + b<caret>;
+    }
+    "#, @r#"
+    source_context = """
+        let closure = |a: felt252, b: felt252| a + b<caret>;
+    """
+    highlight = """
+        let closure = |a: felt252, b: felt252| a + <sel>b</sel>;
+    """
+    popover = """
+    ```cairo
+    b: felt252
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn closure_nested_inner_param() {
+    test_transform_plain!(Hover, r#"
+    fn main() {
+        let _ = |a: felt252| |b<caret>: felt252| a + b;
+    }
+    "#, @r#"
+    source_context = """
+        let _ = |a: felt252| |b<caret>: felt252| a + b;
+    """
+    highlight = """
+        let _ = |a: felt252| |<sel>b</sel>: felt252| a + b;
+    """
+    popover = """
+    ```cairo
+    b: felt252
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn closure_nested_inner_param_usage() {
+    test_transform_plain!(Hover, r#"
+    fn main() {
+        let _ = |a: felt252| |b: felt252| a + b<caret>;
+    }
+    "#, @r#"
+    source_context = """
+        let _ = |a: felt252| |b: felt252| a + b<caret>;
+    """
+    highlight = """
+        let _ = |a: felt252| |b: felt252| a + <sel>b</sel>;
+    """
+    popover = """
+    ```cairo
+    b: felt252
     ```
     """
     "#)
