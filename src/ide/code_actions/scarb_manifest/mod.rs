@@ -13,6 +13,7 @@ mod dependency_git_path_ambiguous;
 mod dependency_git_ref_without_git;
 mod dependency_git_reference_ambiguous;
 mod dependency_git_registry_ambiguous;
+mod inlining_strategy_conflict;
 mod profile_inheritance_invalid;
 mod toml;
 mod unknown_field;
@@ -32,6 +33,7 @@ struct ManifestActionContext<'a> {
 enum ScarbManifestCode {
     UnknownField,
     ProfileInheritanceInvalid,
+    InliningStrategyConflict,
     DependencyGitRefWithoutGit,
     DependencyGitReferenceAmbiguous,
     DependencyGitPathAmbiguous,
@@ -43,6 +45,7 @@ impl ScarbManifestCode {
         match code {
             "SE0002" => Some(Self::UnknownField),
             "SE0004" => Some(Self::ProfileInheritanceInvalid),
+            "SE0005" => Some(Self::InliningStrategyConflict),
             "SE0007" => Some(Self::DependencyGitRefWithoutGit),
             "SE0008" => Some(Self::DependencyGitReferenceAmbiguous),
             "SE0010" => Some(Self::DependencyGitPathAmbiguous),
@@ -59,6 +62,7 @@ impl ScarbManifestCode {
         match self {
             Self::UnknownField => unknown_field::build(ctx),
             Self::ProfileInheritanceInvalid => profile_inheritance_invalid::build(ctx),
+            Self::InliningStrategyConflict => inlining_strategy_conflict::build(ctx),
             Self::DependencyGitRefWithoutGit => dependency_git_ref_without_git::build(ctx),
             Self::DependencyGitReferenceAmbiguous => dependency_git_reference_ambiguous::build(ctx),
             Self::DependencyGitPathAmbiguous => dependency_git_path_ambiguous::build(ctx),
@@ -154,4 +158,15 @@ fn unknown_field_path(message: &str) -> Option<Vec<String>> {
     let path = message.strip_prefix("unknown manifest field `")?.strip_suffix('`')?;
 
     Some(path.split('.').map(str::to_string).collect())
+}
+
+fn sibling_key_path(path: &[String], key: &str) -> Option<Vec<String>> {
+    let (last, parent) = path.split_last()?;
+    if last == key {
+        return Some(path.to_vec());
+    }
+
+    let mut sibling = parent.to_vec();
+    sibling.push(key.to_string());
+    Some(sibling)
 }

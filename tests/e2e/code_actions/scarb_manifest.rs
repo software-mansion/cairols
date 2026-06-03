@@ -25,6 +25,45 @@ fn manifest_unknown_field_code_action_endpoint_returns_fix() {
 }
 
 #[test]
+fn manifest_inlining_strategy_conflict_code_action_endpoint_returns_fixes() {
+    let manifest = indoc! {r#"
+        [package]
+        name = "test_package"
+        version = "0.1.0"
+        edition = "2025_12"
+
+        [profile.dev.cairo]
+        inlining-strategy = "default"
+        skip-optimizations = true
+    "#};
+
+    let diagnostic = manifest_diagnostic(
+        manifest,
+        "`inlining-strategy` has no effect when `skip-optimizations = true`; remove it, set it to `\"avoid\"`, or disable `skip-optimizations`",
+        "SE0005",
+    );
+
+    let code_actions = manifest_code_actions(manifest, diagnostic.clone());
+
+    let remove_action =
+        find_code_action(code_actions.clone(), "Remove conflicting `inlining-strategy` field");
+    let remove_text = only_manifest_edit(&remove_action);
+    assert!(!remove_text.contains("inlining-strategy"), "{remove_text}");
+    assert!(remove_text.contains("skip-optimizations = true"), "{remove_text}");
+
+    let avoid_action =
+        find_code_action(code_actions.clone(), "Set `inlining-strategy` to `\"avoid\"`");
+    let avoid_text = only_manifest_edit(&avoid_action);
+    assert!(avoid_text.contains(r#"inlining-strategy = "avoid""#), "{avoid_text}");
+    assert!(avoid_text.contains("skip-optimizations = true"), "{avoid_text}");
+
+    let skip_action = find_code_action(code_actions, "Set `skip-optimizations` to `false`");
+    let skip_text = only_manifest_edit(&skip_action);
+    assert!(skip_text.contains(r#"inlining-strategy = "default""#), "{skip_text}");
+    assert!(skip_text.contains("skip-optimizations = false"), "{skip_text}");
+}
+
+#[test]
 fn manifest_profile_inheritance_invalid_code_action_endpoint_returns_fix() {
     assert_manifest_quick_fix(
         indoc! {r#"
@@ -132,6 +171,17 @@ fn assert_manifest_quick_fix(
     removed_text: &str,
     kept_text: &str,
 ) {
+    let diagnostic = manifest_diagnostic(manifest, diagnostic_message, code);
+    let code_actions = manifest_code_actions(manifest, diagnostic);
+
+    let action = find_code_action(code_actions, expected_title);
+
+    let new_text = only_manifest_edit(&action);
+    assert!(!new_text.contains(removed_text), "{new_text}");
+    assert!(new_text.contains(kept_text), "{new_text}");
+}
+
+fn manifest_code_actions(manifest: &str, diagnostic: Diagnostic) -> Vec<CodeActionOrCommand> {
     let mut ls = sandbox! {
         files {
             "Scarb.toml" => manifest,
@@ -140,27 +190,18 @@ fn assert_manifest_quick_fix(
 
     ls.open_and_wait_for_project_update("Scarb.toml");
 
-    let diagnostic = manifest_diagnostic(manifest, diagnostic_message, code);
-
-    let code_actions = ls
-        .send_request::<lsp_request!("textDocument/codeAction")>(CodeActionParams {
-            text_document: ls.doc_id("Scarb.toml"),
-            range: Range { start: diagnostic.range.start, end: diagnostic.range.end },
-            context: CodeActionContext {
-                diagnostics: vec![diagnostic],
-                only: None,
-                trigger_kind: None,
-            },
-            work_done_progress_params: Default::default(),
-            partial_result_params: Default::default(),
-        })
-        .expect("code actions request failed");
-
-    let action = find_code_action(code_actions, expected_title);
-
-    let new_text = only_manifest_edit(&action);
-    assert!(!new_text.contains(removed_text), "{new_text}");
-    assert!(new_text.contains(kept_text), "{new_text}");
+    ls.send_request::<lsp_request!("textDocument/codeAction")>(CodeActionParams {
+        text_document: ls.doc_id("Scarb.toml"),
+        range: Range { start: diagnostic.range.start, end: diagnostic.range.end },
+        context: CodeActionContext {
+            diagnostics: vec![diagnostic],
+            only: None,
+            trigger_kind: None,
+        },
+        work_done_progress_params: Default::default(),
+        partial_result_params: Default::default(),
+    })
+    .expect("code actions request failed")
 }
 
 fn manifest_diagnostic(manifest: &str, message: &str, code: &str) -> Diagnostic {
@@ -186,6 +227,7 @@ fn manifest_diagnostic(manifest: &str, message: &str, code: &str) -> Diagnostic 
 fn diagnostic_anchor(code: &str) -> &'static str {
     match code {
         "SE0002" => "typo_field",
+        "SE0005" => "inlining-strategy",
         "SE0004" => "inherits",
         "SE0007" => "branch",
         "SE0008" => "branch",
