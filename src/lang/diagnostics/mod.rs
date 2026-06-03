@@ -2,19 +2,23 @@ use std::collections::{HashMap, HashSet};
 use std::num::NonZero;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 use cairo_lang_filesystem::ids::FileId;
 use crossbeam::channel::{Receiver, Sender};
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{Diagnostic, DiagnosticSeverity, PublishDiagnosticsParams, Url};
+use salsa::plumbing::current_revision;
 use tracing::{error, trace};
 
 use self::project_diagnostics::ProjectDiagnostics;
 use self::refresh::{clear_old_diagnostics, refresh_diagnostics};
+use crate::config::Config;
 use crate::ide::analysis_progress::AnalysisProgressController;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::lang::lsp::LsProtoGroup;
+use crate::project::ConfigsRegistry;
 use crate::project::{CrateInfo, ScarbMetadataMessage, scarb_metadata_messages_to_diagnostics};
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
@@ -23,7 +27,6 @@ use crate::server::schedule::thread::task_progress_monitor::{
 };
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 use crate::server::trigger;
-use crate::state::{State, StateSnapshot};
 use crate::toolchain::scarb::ScarbToolchain;
 
 mod file_batches;
@@ -43,7 +46,12 @@ pub struct DiagnosticsController {
     //   The trigger MUST be dropped before worker's join handle.
     //   Otherwise, the controller thread will never be requested to stop, and the controller's
     //   JoinHandle will never terminate.
-    trigger: trigger::Sender<StateSnapshot>,
+    trigger: trigger::Sender<DiagnosticsRunInput>,
+    // This is intentionally shared between the main thread and the diagnostics controller thread:
+    // the main thread must be able to cancel the currently running diagnostics DB as soon as a new
+    // refresh is requested, while the diagnostics thread is the one that sets it at tick start and
+    // clears it after the tick. This is done to reduce memory consumption after diagnostics are done computing.
+    active_diagnostics_db: Arc<Mutex<Option<AnalysisDatabase>>>,
     generate_code_complete_receiver: Receiver<()>,
     scarb_manifest_diagnostics: ScarbManifestDiagnostics,
     _thread: JoinHandle,
@@ -59,15 +67,18 @@ impl DiagnosticsController {
         let (generate_code_complete_sender, generate_code_complete_receiver) =
             crossbeam::channel::bounded(1);
         let (trigger, receiver) = trigger::trigger();
+        let active_diagnostics_db = Arc::new(Mutex::new(None));
         let (thread, _) = DiagnosticsControllerThread::spawn(
             receiver,
             generate_code_complete_sender,
             notifier,
             analysis_progress_tracker,
+            active_diagnostics_db.clone(),
             scarb_toolchain,
         );
         Self {
             trigger,
+            active_diagnostics_db,
             generate_code_complete_receiver,
             scarb_manifest_diagnostics: Default::default(),
             _thread: thread,
@@ -78,9 +89,42 @@ impl DiagnosticsController {
         self.generate_code_complete_receiver.clone()
     }
 
-    /// Schedules diagnostics refreshing on snapshot(s) of the current state.
-    pub fn refresh(&self, state: &State) {
-        self.trigger.activate(state.snapshot());
+    /// Schedules diagnostics refreshing on a fresh diagnostics-only database.
+    pub fn refresh(
+        &mut self,
+        db: &AnalysisDatabase,
+        open_files: &HashSet<Url>,
+        config: &Config,
+        configs_registry: &ConfigsRegistry,
+    ) {
+        self.cancel_and_drop_active_diagnostics_db();
+
+        let Ok(db) = catch_unwind(AssertUnwindSafe(|| {
+            crate::lang::db::migrate_to_fresh_database(db, open_files)
+        })) else {
+            error!("caught panic when preparing diagnostics db");
+            return;
+        };
+
+        self.trigger.activate(DiagnosticsRunInput {
+            db,
+            open_files: open_files.clone(),
+            config: config.clone(),
+            configs_registry: configs_registry.clone(),
+        });
+    }
+
+    fn cancel_and_drop_active_diagnostics_db(&mut self) {
+        let Some(mut db) = self
+            .active_diagnostics_db
+            .lock()
+            .expect("active diagnostics db mutex should never be poisoned")
+            .take()
+        else {
+            return;
+        };
+
+        db.cancel_all();
     }
 
     pub fn publish_scarb_manifest_diagnostics(
@@ -175,14 +219,22 @@ impl DiagnosticsController {
     }
 }
 
+struct DiagnosticsRunInput {
+    db: AnalysisDatabase,
+    open_files: HashSet<Url>,
+    config: Config,
+    configs_registry: ConfigsRegistry,
+}
+
 /// Stores entire state of diagnostics controller's worker thread.
 struct DiagnosticsControllerThread {
-    receiver: trigger::Receiver<StateSnapshot>,
+    receiver: trigger::Receiver<DiagnosticsRunInput>,
     generate_code_complete_sender: Sender<()>,
     notifier: Notifier,
     pool: thread::Pool,
     project_diagnostics: ProjectDiagnostics,
     analysis_progress_controller: AnalysisProgressController,
+    active_diagnostics_db: Arc<Mutex<Option<AnalysisDatabase>>>,
     worker_handles: Vec<TaskHandle>,
     scarb_toolchain: ScarbToolchain,
 }
@@ -191,10 +243,11 @@ impl DiagnosticsControllerThread {
     /// Spawns a new diagnostics controller worker thread
     /// and returns a handle to it and the amount of parallelism it provides.
     fn spawn(
-        receiver: trigger::Receiver<StateSnapshot>,
+        receiver: trigger::Receiver<DiagnosticsRunInput>,
         generate_code_complete_sender: Sender<()>,
         notifier: Notifier,
         analysis_progress_controller: AnalysisProgressController,
+        active_diagnostics_db: Arc<Mutex<Option<AnalysisDatabase>>>,
         scarb_toolchain: ScarbToolchain,
     ) -> (JoinHandle, NonZero<usize>) {
         let mut this = Self {
@@ -206,6 +259,7 @@ impl DiagnosticsControllerThread {
             // due to salsa locking and context switching.
             pool: thread::Pool::new(4, "diagnostic-worker"),
             project_diagnostics: ProjectDiagnostics::new(),
+            active_diagnostics_db,
             worker_handles: Vec::new(),
             scarb_toolchain,
         };
@@ -222,13 +276,14 @@ impl DiagnosticsControllerThread {
 
     /// Runs diagnostics controller's event loop.
     fn event_loop(&mut self) {
-        while let Some(state) = self.receiver.wait() {
+        while let Some(input) = self.receiver.wait() {
             assert!(self.worker_handles.is_empty());
             self.analysis_progress_controller.diagnostic_start();
+            self.set_active_diagnostics_db(input.db.clone());
 
             let mut controller_cancelled = false;
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
-                self.diagnostics_controller_tick(&state);
+                self.diagnostics_controller_tick(&input);
             })) {
                 if let Ok(err) = cancelled_anyhow(err, "diagnostics refreshing has been cancelled")
                 {
@@ -242,28 +297,28 @@ impl DiagnosticsControllerThread {
             let diagnostics_results = self.join_and_clear_workers();
             let diagnostics_cancelled =
                 controller_cancelled || diagnostics_results.contains(&TaskResult::Cancelled);
-
+            self.clear_active_diagnostics_db(&input.db);
             self.analysis_progress_controller.diagnostic_end(diagnostics_cancelled);
         }
     }
 
     /// Runs a single tick of the diagnostics controller's event loop.
     #[tracing::instrument(skip_all)]
-    fn diagnostics_controller_tick(&mut self, state: &StateSnapshot) {
-        let primary_set = find_primary_files(&state.db, &state.open_files);
-        let secondary = find_secondary_files(&state.db, &primary_set);
+    fn diagnostics_controller_tick(&mut self, input: &DiagnosticsRunInput) {
+        let primary_set = find_primary_files(&input.db, &input.open_files);
+        let secondary = find_secondary_files(&input.db, &primary_set);
         // Event meaning that all generate_code() calls from this tick were called.
         // This is true because `find_primary_files`/`find_secondary_files` calls `db.file_modules()` and it does all generate_code() calls.
         let _ = self.generate_code_complete_sender.send(());
 
         let primary: Vec<_> = primary_set.iter().copied().collect();
-        self.spawn_refresh_workers(&primary, state);
-        self.spawn_refresh_workers(&secondary, state);
+        self.spawn_refresh_workers(&primary, input);
+        self.spawn_refresh_workers(&secondary, input);
 
         let files_to_preserve: HashSet<Url> = primary
             .into_iter()
             .chain(secondary)
-            .flat_map(|file| state.db.url_for_file(file))
+            .flat_map(|file| input.db.url_for_file(file))
             .collect();
 
         self.spawn_worker(move |project_diagnostics, notifier| {
@@ -296,20 +351,22 @@ impl DiagnosticsControllerThread {
     }
 
     /// Makes batches out of `files` and spawns workers to run [`refresh_diagnostics`] on them.
-    fn spawn_refresh_workers<'db>(&mut self, files: &[FileId<'db>], state: &StateSnapshot) {
+    fn spawn_refresh_workers<'db>(&mut self, files: &[FileId<'db>], input: &DiagnosticsRunInput) {
         // TODO(#869)
         let files: &[FileId<'static>] = unsafe { std::mem::transmute(files) };
         let files_batches =
             batches(files, self.pool.parallelism()).into_iter().filter(|v| !v.is_empty());
 
         for batch in files_batches {
+            let db = input.db.clone();
+            let config = input.config.clone();
+            let configs_registry = input.configs_registry.clone();
             let scarb_toolchain = self.scarb_toolchain.clone();
-            let state = state.clone();
             self.spawn_worker(move |project_diagnostics, notifier| {
                 refresh_diagnostics(
-                    &state.db,
-                    &state.config,
-                    &state.configs_registry,
+                    &db,
+                    &config,
+                    &configs_registry,
                     batch,
                     project_diagnostics,
                     notifier,
@@ -321,5 +378,26 @@ impl DiagnosticsControllerThread {
 
     fn join_and_clear_workers(&mut self) -> Vec<TaskResult> {
         self.worker_handles.drain(..).map(|handle| handle.join()).collect()
+    }
+
+    fn set_active_diagnostics_db(&self, db: AnalysisDatabase) {
+        *self
+            .active_diagnostics_db
+            .lock()
+            .expect("active diagnostics db mutex should never be poisoned") = Some(db);
+    }
+
+    fn clear_active_diagnostics_db(&self, current_db: &AnalysisDatabase) {
+        let mut active_diagnostics_db = self
+            .active_diagnostics_db
+            .lock()
+            .expect("active diagnostics db mutex should never be poisoned");
+
+        if active_diagnostics_db
+            .as_ref()
+            .is_some_and(|active_db| current_revision(active_db) == current_revision(current_db))
+        {
+            *active_diagnostics_db = None;
+        }
     }
 }

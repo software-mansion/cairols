@@ -4,23 +4,14 @@ use std::mem;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::time::{Duration, SystemTime};
 
-use cairo_lang_defs::db::{DefsGroup, defs_group_input};
-use cairo_lang_filesystem::db::{FilesGroup, files_group_input};
-use cairo_lang_semantic::db::{SemanticGroup, semantic_group_input};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use crossbeam::channel::Sender;
 use lsp_types::Url;
-use salsa::Setter;
 use serde::Serialize;
-use tracing::{error, trace, warn};
+use tracing::{error, trace};
 
 use crate::env_config;
 use crate::ide::analysis_progress::AnalysisEvent;
-use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::LsProtoGroup;
-use crate::lang::proc_macros::controller::ProcMacroClientController;
-use crate::lang::proc_macros::db::ProcMacroGroup;
-use crate::project::ProjectController;
+use crate::lang::db::{AnalysisDatabase, migrate_to_fresh_database};
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub enum SwapReason {
@@ -98,8 +89,6 @@ impl AnalysisDatabaseSwapper {
         &mut self,
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
-        project_controller: &mut ProjectController,
-        proc_macro_client_controller: &ProcMacroClientController,
     ) -> Option<SwapReason> {
         let reason = self.check_for_swap()?;
 
@@ -107,7 +96,7 @@ impl AnalysisDatabaseSwapper {
             error!("Could not send swap status: {err:?}");
         };
 
-        self.swap(db, open_files, project_controller, proc_macro_client_controller);
+        self.swap(db, open_files);
 
         self.mutations_since_last_replace = 0;
         self.stopwatch.reset();
@@ -133,94 +122,15 @@ impl AnalysisDatabaseSwapper {
 
     /// Swaps the database.
     #[tracing::instrument(skip_all)]
-    fn swap(
-        &self,
-        db: &mut AnalysisDatabase,
-        open_files: &HashSet<Url>,
-        project_controller: &mut ProjectController,
-        proc_macro_client_controller: &ProcMacroClientController,
-    ) {
-        let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
-            let mut new_db = AnalysisDatabase::new();
-
-            self.migrate_default_plugins(&mut new_db, db);
-            self.migrate_proc_macro_state(&mut new_db, db);
-            self.migrate_file_overrides(&mut new_db, db, open_files);
-
-            project_controller.migrate_crates_to_new_db(&mut new_db, proc_macro_client_controller);
-
-            new_db
-        })) else {
+    fn swap(&self, db: &mut AnalysisDatabase, open_files: &HashSet<Url>) {
+        let Ok(new_db) =
+            catch_unwind(AssertUnwindSafe(|| migrate_to_fresh_database(db, open_files)))
+        else {
             error!("caught panic when preparing new db for swap");
             return;
         };
 
         *db = new_db;
-    }
-
-    /// Copies current default macro plugins into new db.
-    fn migrate_default_plugins(&self, new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
-        defs_group_input(new_db).set_default_macro_plugins(new_db).to(Some(
-            old_db.default_macro_plugins().iter().map(|&id| id.long(old_db).clone()).collect(),
-        ));
-        defs_group_input(new_db).set_default_inline_macro_plugins(new_db).to(Some(
-            old_db
-                .default_inline_macro_plugins()
-                .iter()
-                .map(|(name, &id)| (name.clone(), id.long(old_db).clone()))
-                .collect(),
-        ));
-        semantic_group_input(new_db).set_default_analyzer_plugins(new_db).to(Some(
-            old_db.default_analyzer_plugins().iter().map(|&id| id.long(old_db).clone()).collect(),
-        ));
-    }
-
-    /// Copies current proc macro state into new db.
-    fn migrate_proc_macro_state(&self, new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
-        let old_db_input = old_db.proc_macro_input();
-        new_db
-            .proc_macro_input()
-            .set_proc_macro_server_status(new_db)
-            .to(old_db_input.proc_macro_server_status(old_db));
-
-        // TODO(#6646): Probably this should not be part of migration as it will be ever growing,
-        // but diagnostics going crazy every 5 minutes are no better.
-        new_db
-            .proc_macro_input()
-            .set_attribute_macro_resolution(new_db)
-            .to(old_db_input.attribute_macro_resolution(old_db).clone());
-        new_db
-            .proc_macro_input()
-            .set_derive_macro_resolution(new_db)
-            .to(old_db_input.derive_macro_resolution(old_db).clone());
-        new_db
-            .proc_macro_input()
-            .set_inline_macro_resolution(new_db)
-            .to(old_db_input.inline_macro_resolution(old_db).clone());
-    }
-
-    /// Makes sure that all open files exist in the new db, with their current changes.
-    fn migrate_file_overrides(
-        &self,
-        new_db: &mut AnalysisDatabase,
-        old_db: &AnalysisDatabase,
-        open_files: &HashSet<Url>,
-    ) {
-        let overrides = old_db.file_overrides();
-        let mut new_overrides: OrderedHashMap<_, _> = Default::default();
-        for uri in open_files {
-            let Some(file_id) = old_db.file_for_url(uri) else {
-                // This branch is hit for open files that have never been seen by the old db.
-                // This is a strange condition, but it is OK to just not think about such files
-                // here.
-                continue;
-            };
-            let file_input = file_id.long(old_db).into_file_input(old_db);
-            if let Some(content) = overrides.get(&file_id) {
-                new_overrides.insert(file_input, content.to_string().into());
-            }
-        }
-        files_group_input(new_db).set_file_overrides(new_db).to(Some(new_overrides));
     }
 }
 
