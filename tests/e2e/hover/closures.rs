@@ -210,3 +210,91 @@ fn closure_nested_inner_param_usage() {
     """
     "#)
 }
+
+#[test]
+fn closure_param_u32_type() {
+    test_transform_plain!(Hover, r#"
+    fn main() {
+        let closure = |ab<caret>c: u32| abc + 1;
+    }
+    "#, @r#"
+    source_context = """
+        let closure = |ab<caret>c: u32| abc + 1;
+    """
+    highlight = """
+        let closure = |<sel>abc</sel>: u32| abc + 1;
+    """
+    popover = """
+    ```cairo
+    abc: u32
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn closure_param_bool_type() {
+    test_transform_plain!(Hover, r#"
+    fn main() {
+        let closure = |ab<caret>c: bool| abc;
+    }
+    "#, @r#"
+    source_context = """
+        let closure = |ab<caret>c: bool| abc;
+    """
+    highlight = """
+        let closure = |<sel>abc</sel>: bool| abc;
+    """
+    popover = """
+    ```cairo
+    abc: bool
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn closure_param_snapshot_type() {
+    test_transform_plain!(Hover, r#"
+    fn main() {
+        let closure = |ab<caret>c: @felt252| *abc + 1;
+    }
+    "#, @r#"
+    source_context = """
+        let closure = |ab<caret>c: @felt252| *abc + 1;
+    """
+    highlight = """
+        let closure = |<sel>abc</sel>: @felt252| *abc + 1;
+    """
+    popover = """
+    ```cairo
+    abc: @felt252
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn closure_param_struct_type() {
+    test_transform_plain!(Hover, r#"
+    #[derive(Drop)]
+    struct Point {
+        x: felt252,
+    }
+    fn main() {
+        let closure = |p<caret>oint: Point| point.x;
+    }
+    "#, @r#"
+    source_context = """
+        let closure = |p<caret>oint: Point| point.x;
+    """
+    highlight = """
+        let closure = |<sel>point</sel>: Point| point.x;
+    """
+    popover = """
+    ```cairo
+    point: Point
+    ```
+    """
+    "#)
+}
