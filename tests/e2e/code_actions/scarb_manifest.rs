@@ -1,0 +1,235 @@
+use indoc::indoc;
+use lsp_types::{
+    CodeAction, CodeActionContext, CodeActionOrCommand, CodeActionParams, Diagnostic,
+    NumberOrString, Position, Range, lsp_request,
+};
+
+use crate::support::sandbox;
+
+#[test]
+fn manifest_unknown_field_code_action_endpoint_returns_fix() {
+    assert_manifest_quick_fix(
+        indoc! {r#"
+            [package]
+            name = "test_package"
+            version = "0.1.0"
+            edition = "2025_12"
+            typo_field = "oops"
+        "#},
+        "unknown manifest field `package.typo_field`",
+        "SE0002",
+        "Remove unknown manifest field `package.typo_field`",
+        "typo_field",
+        r#"edition = "2025_12""#,
+    );
+}
+
+#[test]
+fn manifest_profile_inheritance_invalid_code_action_endpoint_returns_fix() {
+    assert_manifest_quick_fix(
+        indoc! {r#"
+            [package]
+            name = "test_package"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [profile.custom]
+            inherits = "invalid"
+        "#},
+        "profile can inherit from `dev` or `release` only, found `invalid`",
+        "SE0004",
+        "Remove invalid `inherits` field",
+        r#"inherits = "invalid""#,
+        "[profile.custom]",
+    );
+}
+
+#[test]
+fn manifest_dependency_git_ref_without_git_code_action_endpoint_returns_fix() {
+    assert_manifest_quick_fix(
+        indoc! {r#"
+            [package]
+            name = "test_package"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [dependencies]
+            foo = { path = "../foo", branch = "main" }
+        "#},
+        "dependency (foo) is non-Git, but provides `branch`, `tag` or `rev`",
+        "SE0007",
+        "Remove unsupported `branch` field",
+        r#"branch = "main""#,
+        r#"path = "../foo""#,
+    );
+}
+
+#[test]
+fn manifest_dependency_git_reference_ambiguous_code_action_endpoint_returns_fix() {
+    assert_manifest_quick_fix(
+        indoc! {r#"
+            [package]
+            name = "test_package"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [dependencies]
+            foo = { git = "https://example.com", branch = "main", tag = "v1" }
+        "#},
+        "dependency (foo) specification is ambiguous, only one of `branch`, `tag` or `rev` is allowed",
+        "SE0008",
+        "Remove conflicting `branch` field",
+        r#"branch = "main""#,
+        r#"tag = "v1""#,
+    );
+}
+
+#[test]
+fn manifest_dependency_git_path_ambiguous_code_action_endpoint_returns_fix() {
+    assert_manifest_quick_fix(
+        indoc! {r#"
+            [package]
+            name = "test_package"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [dependencies]
+            foo = { git = "https://example.com", path = "../foo" }
+        "#},
+        "dependency (foo) specification is ambiguous, only one of `git` or `path` is allowed",
+        "SE0010",
+        "Remove conflicting `git` field",
+        r#"git = "https://example.com""#,
+        r#"path = "../foo""#,
+    );
+}
+
+#[test]
+fn manifest_dependency_git_registry_ambiguous_code_action_endpoint_returns_fix() {
+    assert_manifest_quick_fix(
+        indoc! {r#"
+            [package]
+            name = "test_package"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [dependencies]
+            foo = { git = "https://example.com", registry = "custom" }
+        "#},
+        "dependency (foo) specification is ambiguous, only one of `git` or `registry` is allowed",
+        "SE0011",
+        "Remove conflicting `git` field",
+        r#"git = "https://example.com""#,
+        r#"registry = "custom""#,
+    );
+}
+
+fn assert_manifest_quick_fix(
+    manifest: &str,
+    diagnostic_message: &str,
+    code: &str,
+    expected_title: &str,
+    removed_text: &str,
+    kept_text: &str,
+) {
+    let mut ls = sandbox! {
+        files {
+            "Scarb.toml" => manifest,
+        }
+    };
+
+    ls.open_and_wait_for_project_update("Scarb.toml");
+
+    let diagnostic = manifest_diagnostic(manifest, diagnostic_message, code);
+
+    let code_actions = ls
+        .send_request::<lsp_request!("textDocument/codeAction")>(CodeActionParams {
+            text_document: ls.doc_id("Scarb.toml"),
+            range: Range { start: diagnostic.range.start, end: diagnostic.range.end },
+            context: CodeActionContext {
+                diagnostics: vec![diagnostic],
+                only: None,
+                trigger_kind: None,
+            },
+            work_done_progress_params: Default::default(),
+            partial_result_params: Default::default(),
+        })
+        .expect("code actions request failed");
+
+    let action = find_code_action(code_actions, expected_title);
+
+    let new_text = only_manifest_edit(&action);
+    assert!(!new_text.contains(removed_text), "{new_text}");
+    assert!(new_text.contains(kept_text), "{new_text}");
+}
+
+fn manifest_diagnostic(manifest: &str, message: &str, code: &str) -> Diagnostic {
+    let anchor = diagnostic_anchor(code);
+    let start = manifest
+        .find(anchor)
+        .unwrap_or_else(|| panic!("missing anchor `{anchor}` in:\n{manifest}"));
+    let end = start + anchor.len();
+
+    Diagnostic {
+        range: Range { start: position_at(manifest, start), end: position_at(manifest, end) },
+        severity: None,
+        code: Some(NumberOrString::String(code.to_string())),
+        code_description: None,
+        source: Some("scarb".to_string()),
+        message: message.to_string(),
+        related_information: None,
+        tags: None,
+        data: None,
+    }
+}
+
+fn diagnostic_anchor(code: &str) -> &'static str {
+    match code {
+        "SE0002" => "typo_field",
+        "SE0004" => "inherits",
+        "SE0007" => "branch",
+        "SE0008" => "branch",
+        "SE0010" => "git",
+        "SE0011" => "git",
+        _ => panic!("unsupported manifest diagnostic code: {code}"),
+    }
+}
+
+fn position_at(text: &str, offset: usize) -> Position {
+    let mut line = 0;
+    let mut character = 0;
+
+    for ch in text[..offset].chars() {
+        if ch == '\n' {
+            line += 1;
+            character = 0;
+        } else {
+            character += 1;
+        }
+    }
+
+    Position::new(line, character)
+}
+
+fn find_code_action(code_actions: Vec<CodeActionOrCommand>, expected_title: &str) -> CodeAction {
+    code_actions
+        .into_iter()
+        .map(|item| match item {
+            CodeActionOrCommand::CodeAction(action) => action,
+            CodeActionOrCommand::Command(command) => {
+                panic!("expected code action, got command: {command:#?}")
+            }
+        })
+        .find(|action| action.title == expected_title)
+        .unwrap_or_else(|| panic!("missing code action `{expected_title}`"))
+}
+
+fn only_manifest_edit(action: &CodeAction) -> String {
+    let changes = action.edit.as_ref().and_then(|edit| edit.changes.as_ref()).unwrap();
+    assert_eq!(changes.len(), 1, "{changes:#?}");
+
+    let edits = changes.values().next().unwrap();
+    assert_eq!(edits.len(), 1, "{edits:#?}");
+
+    edits[0].new_text.clone()
+}

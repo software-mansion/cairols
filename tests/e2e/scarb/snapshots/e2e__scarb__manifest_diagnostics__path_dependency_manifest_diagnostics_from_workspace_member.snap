@@ -2,7 +2,6 @@
 source: tests/e2e/scarb/manifest_diagnostics.rs
 description: "// → Scarb.toml\n[workspace]\nmembers = [\"app\"]\n\n// → app/Scarb.toml\n[package]\nname = \"app\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\ndep = { path = \"../dep\" }\n\n// → app/src/lib.cairo\nfn main() {}\n\n// → dep/Scarb.toml\n[package]\nname = 1\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n// → dep/src/lib.cairo\nfn main() {}"
 expression: "diagnostics_report(&mut ls,\n&[\"Scarb.toml\", \"app/Scarb.toml\", \"dep/Scarb.toml\"])"
-snapshot_kind: text
 ---
 diagnostics:
 - url: '[ROOT_URL]Scarb.toml'
@@ -63,6 +62,7 @@ diagnostics:
           line: 1
           character: 8
       severity: 1
+      code: SE0001
       source: scarb
       message: |
         TOML parse error at line 2, column 8

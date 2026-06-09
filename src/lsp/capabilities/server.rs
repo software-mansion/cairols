@@ -200,6 +200,11 @@ pub fn collect_dynamic_registrations(
         TextDocumentRegistrationOptions { document_selector: Some(cairo_files_filters.clone()) };
     let open_text_document_registration_options =
         TextDocumentRegistrationOptions { document_selector: sync_document_selector.clone() };
+    let scarb_toml_filter = DocumentFilter {
+        language: Some("toml".to_string()),
+        scheme: Some("file".into()),
+        pattern: Some("**/Scarb.toml".into()),
+    };
 
     if client_capabilities.did_change_watched_files_dynamic_registration() {
         // Register patterns for the client file watcher.
@@ -305,29 +310,14 @@ pub fn collect_dynamic_registrations(
         registrations.push(create_registration(Formatting::METHOD, registration_options));
     }
 
-    let hover_text_document_registration_options = TextDocumentRegistrationOptions {
-        document_selector: Some(vec![
-            DocumentFilter {
-                language: Some("cairo".to_string()),
-                scheme: Some("file".to_string()),
-                pattern: None,
-            },
-            DocumentFilter {
-                language: Some("cairo".to_string()),
-                scheme: Some("vfs".to_string()),
-                pattern: None,
-            },
-            DocumentFilter {
-                language: Some("toml".to_string()),
-                scheme: Some("file".into()),
-                pattern: Some("**/Scarb.toml".into()),
-            },
-        ]),
-    };
-
     if client_capabilities.hover_dynamic_registration() {
         let registration_options = HoverRegistrationOptions {
-            text_document_registration_options: hover_text_document_registration_options,
+            text_document_registration_options: TextDocumentRegistrationOptions {
+                document_selector: Some(
+                    chain!(cairo_files_filters.clone(), vec![scarb_toml_filter.clone()])
+                        .collect_vec(),
+                ),
+            },
             hover_options: Default::default(),
         };
 
@@ -347,7 +337,11 @@ pub fn collect_dynamic_registrations(
 
     if client_capabilities.code_action_dynamic_registration() {
         let registration_options = CodeActionRegistrationOptions {
-            text_document_registration_options: text_document_registration_options.clone(),
+            text_document_registration_options: TextDocumentRegistrationOptions {
+                document_selector: Some(
+                    chain!(cairo_files_filters.clone(), vec![scarb_toml_filter]).collect_vec(),
+                ),
+            },
             code_action_options: Default::default(),
         };
 
