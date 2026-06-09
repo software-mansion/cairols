@@ -23,7 +23,7 @@ use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
-use cairo_lang_semantic::{Binding, GenericParam};
+use cairo_lang_semantic::{Binding, Expr, GenericParam};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
@@ -183,11 +183,22 @@ fn lookup_binding<'db>(
             // Get the function which contains the variable/parameter.
             let function_id = db.find_lookup_item(param)?.function_with_body()?;
 
-            // Get function signature.
+            // Check regular function signature first.
             let signature = db.function_with_body_signature(function_id).ok()?;
+            if let Some(binding) = signature.params.iter().find(|p| p.id == param_id) {
+                return Some(binding.clone().into());
+            }
 
-            // Find the binding in the function's signature.
-            signature.params.iter().find(|p| p.id == param_id).map(|p| p.clone().into())
+            // The param belongs to a closure — closures are absent from LookupItemId,
+            // so find_lookup_item returned the enclosing function instead.
+            // Walk up the AST to find the nearest enclosing closure expression.
+            let closure_ast = param.ancestor_of_type::<ast::ExprClosure>(db)?;
+            let closure_expr_id =
+                db.lookup_expr_by_ptr(function_id, closure_ast.stable_ptr(db).into()).ok()?;
+            let Expr::ExprClosure(closure) = db.expr_semantic(function_id, closure_expr_id) else {
+                return None;
+            };
+            closure.params.iter().find(|p| p.id == param_id).map(|p| p.clone().into())
         }
 
         VarId::Local(local_var_id) => {
