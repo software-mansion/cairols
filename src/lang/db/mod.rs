@@ -44,6 +44,12 @@ pub struct AnalysisDatabase {
     storage: salsa::Storage<Self>,
 }
 
+impl Default for AnalysisDatabase {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AnalysisDatabase {
     /// Creates a new instance of the database.
     pub fn new() -> Self {
