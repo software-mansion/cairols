@@ -12,7 +12,6 @@ use std::time::Duration;
 
 use tracing::debug;
 
-pub const CAIRO_LS_DB_REPLACE_INACTIVE_INTERVAL: &'_ str = "CAIRO_LS_DB_REPLACE_INACTIVE_INTERVAL";
 pub const CAIRO_LS_DB_REPLACE_INTERVAL: &'_ str = "CAIRO_LS_DB_REPLACE_INTERVAL";
 pub const CAIRO_LS_DB_REPLACE_MUTATIONS: &'_ str = "CAIRO_LS_DB_REPLACE_MUTATIONS";
 pub const CAIRO_LS_LOG: &'_ str = "CAIRO_LS_LOG";
@@ -20,20 +19,6 @@ pub const CAIRO_LS_PROFILE: &'_ str = "CAIRO_LS_PROFILE";
 pub const SCARB: &'_ str = "SCARB";
 pub const SCARB_CACHE: &'_ str = "SCARB_CACHE";
 pub const SCARB_TARGET_DIR: &'_ str = "SCARB_TARGET_DIR";
-
-/// Wall-clock inactivity time after which a database swap is triggered (to free unused memory).
-///
-/// Unlike [`db_replace_interval`], this counts real elapsed time regardless of whether analysis
-/// is running, so it catches long idle sessions (e.g. leaving the editor open overnight).
-pub fn db_replace_inactive_interval() -> Duration {
-    const DEFAULT: u64 = 3 * 60;
-
-    env::var(CAIRO_LS_DB_REPLACE_INACTIVE_INTERVAL)
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .map(Duration::from_secs)
-        .unwrap_or_else(|| Duration::from_secs(DEFAULT))
-}
 
 /// Time interval between compiler database regenerations (to free unused memory).
 pub fn db_replace_interval() -> Duration {
@@ -80,7 +65,6 @@ pub fn scarb_target_path() -> Option<PathBuf> {
 
 /// Print all environment variables values (or defaults) as debug messages in logs.
 pub fn report_to_logs() {
-    debug!("{CAIRO_LS_DB_REPLACE_INACTIVE_INTERVAL}={:?}", db_replace_inactive_interval());
     debug!("{CAIRO_LS_DB_REPLACE_INTERVAL}={:?}", db_replace_interval());
     debug!("{CAIRO_LS_LOG}={}", log_env_filter());
     debug!("{CAIRO_LS_PROFILE}={}", tracing_profile());

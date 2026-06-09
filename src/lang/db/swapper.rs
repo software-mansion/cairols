@@ -2,19 +2,16 @@ use std::collections::HashSet;
 use std::fmt::Display;
 use std::mem;
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, SystemTime};
 
-use crossbeam::channel::{Receiver, RecvTimeoutError, Sender, TrySendError};
+use crossbeam::channel::Sender;
 use lsp_types::Url;
 use serde::Serialize;
-use tracing::{error, trace, warn};
+use tracing::{error, trace};
 
 use crate::env_config;
 use crate::ide::analysis_progress::AnalysisEvent;
 use crate::lang::db::{AnalysisDatabase, migrate_to_fresh_database};
-use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub enum SwapReason {
@@ -87,20 +84,6 @@ impl AnalysisDatabaseSwapper {
         );
     }
 
-    /// Swaps the database unconditionally, triggered by the inactivity monitor.
-    pub fn swap_on_inactivity(&mut self, db: &mut AnalysisDatabase, open_files: &HashSet<Url>) {
-        if let Err(err) = self.analysis_event_sender.send(AnalysisEvent::DatabaseSwap) {
-            error!("Could not send swap status: {err:?}");
-        }
-
-        self.swap(db, open_files);
-
-        self.mutations_since_last_replace = 0;
-        self.stopwatch.reset();
-
-        trace!("Database swapped due to inactivity");
-    }
-
     /// Checks for the swap criteria and swaps the database if they have been met.
     pub fn maybe_swap(
         &mut self,
@@ -148,119 +131,6 @@ impl AnalysisDatabaseSwapper {
         };
 
         *db = new_db;
-    }
-}
-
-/// Monitors wall-clock inactivity and sends swap requests to the main event loop.
-///
-/// Unlike the active-time stopwatch in [`AnalysisDatabaseSwapper`], this tracks real elapsed time
-/// since the last user activity (mutations or analysis starts). When the server sits idle for
-/// longer than the configured threshold, it signals the main loop to swap the database, freeing
-/// memory that would otherwise accumulate during long idle sessions.
-pub struct InactivitySwapMonitor {
-    last_activity_at: Arc<AtomicU64>,
-    /// `true` while the user is considered active (i.e. no inactivity swap has fired yet).
-    /// Flipped to `false` when an inactivity swap fires; restored to `true` on any real activity.
-    /// Prevents repeated swaps during a single continuous idle session.
-    user_active: Arc<AtomicBool>,
-    swap_request_receiver: Receiver<()>,
-    /// Dropped to signal the monitor thread to stop.
-    _shutdown_sender: Sender<()>,
-    _thread: JoinHandle<()>,
-}
-
-impl InactivitySwapMonitor {
-    /// How often the monitor thread wakes up to check inactivity.
-    const POLL_INTERVAL: Duration = Duration::from_secs(60);
-
-    pub fn new() -> Self {
-        let inactivity_threshold = env_config::db_replace_inactive_interval();
-        let last_activity_at = Arc::new(AtomicU64::new(Self::unix_secs_now()));
-        let user_active = Arc::new(AtomicBool::new(true));
-        let (swap_request_sender, swap_request_receiver) = crossbeam::channel::bounded(1);
-        let (shutdown_sender, shutdown_receiver) = crossbeam::channel::bounded::<()>(0);
-
-        let thread = thread::Builder::new(ThreadPriority::Worker)
-            .name("cairo-ls:inactivity-swap-monitor".into())
-            .spawn({
-                let last_activity_at = last_activity_at.clone();
-                let user_active = user_active.clone();
-                move || {
-                    Self::monitor_loop(
-                        last_activity_at,
-                        user_active,
-                        swap_request_sender,
-                        shutdown_receiver,
-                        inactivity_threshold,
-                    );
-                }
-            })
-            .expect("failed to spawn inactivity swap monitor thread");
-
-        Self {
-            last_activity_at,
-            user_active,
-            swap_request_receiver,
-            _shutdown_sender: shutdown_sender,
-            _thread: thread,
-        }
-    }
-
-    /// Resets the inactivity timer and marks the user as active.
-    ///
-    /// Call this on any user-visible activity so a fresh idle period is acquired before the next
-    /// inactivity swap.
-    pub fn notify_activity(&self) {
-        self.last_activity_at.store(Self::unix_secs_now(), Ordering::Relaxed);
-        self.user_active.store(true, Ordering::Relaxed);
-    }
-
-    /// Marks that an inactivity swap has just occurred, suppressing further swaps until
-    /// user activity is detected.
-    pub fn notify_swap_triggered(&self) {
-        self.user_active.store(false, Ordering::Relaxed);
-    }
-
-    /// Returns a receiver that fires when the inactivity threshold has been exceeded.
-    pub fn swap_request_receiver(&self) -> Receiver<()> {
-        self.swap_request_receiver.clone()
-    }
-
-    fn monitor_loop(
-        last_activity_at: Arc<AtomicU64>,
-        user_active: Arc<AtomicBool>,
-        swap_request_sender: Sender<()>,
-        shutdown_receiver: Receiver<()>,
-        inactivity_threshold: Duration,
-    ) {
-        loop {
-            match shutdown_receiver.recv_timeout(Self::POLL_INTERVAL) {
-                Ok(()) => unreachable!(),
-                Err(RecvTimeoutError::Disconnected) => break,
-                Err(RecvTimeoutError::Timeout) => {}
-            }
-
-            if !user_active.load(Ordering::Relaxed) {
-                continue;
-            }
-
-            let inactive_secs =
-                Self::unix_secs_now().saturating_sub(last_activity_at.load(Ordering::Relaxed));
-
-            if inactive_secs >= inactivity_threshold.as_secs() {
-                match swap_request_sender.try_send(()) {
-                    Ok(()) => trace!("inactivity swap requested after {inactive_secs}s of idle"),
-                    Err(TrySendError::Full(_)) => {
-                        warn!("inactivity swap request dropped: channel full")
-                    }
-                    Err(TrySendError::Disconnected(_)) => break,
-                }
-            }
-        }
-    }
-
-    fn unix_secs_now() -> u64 {
-        SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap_or_default().as_secs()
     }
 }
 
