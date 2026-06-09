@@ -69,10 +69,6 @@ static GLOBAL: MiMalloc = MiMalloc;
 ///
 /// [lib]: crate#running-vanilla
 pub fn start() -> ExitCode {
-    // Return freed pages to OS immediately. mimalloc reads this env var on first allocation,
-    // so it must be set before any significant work begins.
-    unsafe { std::env::set_var("MIMALLOC_PURGE_DELAY", "0") };
-
     let _log_guard = init_logging();
     set_panic_hook();
 
@@ -449,21 +445,17 @@ impl Backend {
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
     fn maybe_swap_database(state: &mut State, meta_state: MetaState, _notifier: Notifier) {
-        meta_state
-            .lock()
-            .expect("should be able to acquire the MetaState")
-            .db_swapper
-            .maybe_swap(&mut state.db, &state.open_files);
+        meta_state.lock().expect("should be able to acquire the MetaState").db_swapper.maybe_swap(
+            &mut state.db,
+            &state.open_files,
+            &mut state.project_controller,
+            &state.proc_macro_controller,
+        );
     }
 
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
     fn refresh_diagnostics(state: &mut State, _meta_state: MetaState, _notifier: Notifier) {
-        state.diagnostics_controller.refresh(
-            &state.db,
-            &state.open_files,
-            &state.config,
-            &state.project_controller.configs_registry(),
-        );
+        state.diagnostics_controller.refresh(state);
     }
 
     /// Reload config and update project model for all open files.

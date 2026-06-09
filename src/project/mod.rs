@@ -25,6 +25,7 @@ use self::scarb_manifest_diagnostics::{
 };
 use crate::ide::code_lens::FileChange;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::model::ProjectModel;
 use crate::project::scarb::extract_crates;
@@ -225,6 +226,14 @@ impl ProjectController {
 
         #[cfg(feature = "testing")]
         notifier.notify::<crate::lsp::ext::testing::ProjectUpdatingFinished>(());
+    }
+
+    pub fn migrate_crates_to_new_db(
+        &self,
+        new_db: &mut AnalysisDatabase,
+        proc_macro_controller: &ProcMacroClientController,
+    ) {
+        self.model.apply_changes_to_db(new_db, proc_macro_controller);
     }
 
     /// Sends an action request to the background thread.

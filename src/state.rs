@@ -75,6 +75,7 @@ impl State {
         StateSnapshot {
             db: self.db.clone(),
             scarb_toolchain: self.scarb_toolchain.clone(),
+            open_files: self.open_files.snapshot(),
             config: self.config.snapshot(),
             client_capabilities: self.client_capabilities.snapshot(),
             configs_registry: self.project_controller.configs_registry(),
@@ -107,6 +108,7 @@ pub type MetaState = Arc<Mutex<MetaStateInner>>;
 pub struct StateSnapshot {
     pub db: AnalysisDatabase,
     pub scarb_toolchain: ScarbToolchain,
+    pub open_files: Snapshot<HashSet<Url>>,
     pub config: Snapshot<Config>,
     pub client_capabilities: Snapshot<ClientCapabilities>,
     pub configs_registry: Snapshot<ConfigsRegistry>,
