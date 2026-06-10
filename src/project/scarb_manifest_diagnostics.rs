@@ -9,6 +9,9 @@ use serde_json::Value;
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::Utf8Span;
+use crate::toolchain::scarb::{
+    SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE, SCARB_METADATA_FAILED_MESSAGE,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ScarbMetadataMessage {
@@ -33,9 +36,23 @@ fn diagnostics_to_display(all_messages: Vec<ScarbMetadataMessage>) -> Vec<ScarbM
     if !metadata_diagnostics.is_empty() { metadata_diagnostics } else { all_messages }
 }
 
-pub fn scarb_metadata_messages_contain_only_errors(messages: &[ScarbMetadataMessage]) -> bool {
-    !messages.is_empty()
-        && messages.iter().all(|message| matches!(message, ScarbMetadataMessage::MetadataError(_)))
+/// Picks the most specific user-facing message for a failed `scarb metadata` invocation.
+///
+/// When the failure is caused by a Cairo version requirement mismatch, returns a dedicated
+/// message pointing the user at the root cause instead of the generic one.
+pub fn scarb_metadata_failed_message(messages: &[ScarbMetadataMessage]) -> &'static str {
+    if messages.iter().any(scarb_metadata_message_is_cairo_version_mismatch) {
+        SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE
+    } else {
+        SCARB_METADATA_FAILED_MESSAGE
+    }
+}
+
+fn scarb_metadata_message_is_cairo_version_mismatch(message: &ScarbMetadataMessage) -> bool {
+    match message {
+        ScarbMetadataMessage::MetadataError(message) => message.contains("required Cairo version"),
+        ScarbMetadataMessage::MetadataDiagnostic { .. } => false,
+    }
 }
 
 pub fn scarb_metadata_messages_to_diagnostics(
@@ -271,6 +288,46 @@ mod tests {
                 span: Some(Utf8Span::new(4, 11)),
             }]
         );
+    }
+
+    #[test]
+    fn cairo_version_mismatch_errors_get_dedicated_message() {
+        let stdout = "{\"type\":\"error\",\"message\":\"the required Cairo version of package \
+                      sphincs_plus is not compatible with current version\\nCairo version \
+                      required: =2.1.0\\nCairo version of Scarb: 2.18.0\\n\"}\n{\"type\":\"error\",\
+                      \"message\":\"the required Cairo version of each package must match the \
+                      current Cairo version\\nhelp: pass `--ignore-cairo-version` to ignore Cairo \
+                      version mismatch\"}";
+
+        let messages = collect_scarb_manifest_diagnostics(MetadataCommandError::ScarbError {
+            stdout: stdout.to_string(),
+            stderr: String::new(),
+        });
+
+        assert_eq!(
+            scarb_metadata_failed_message(&messages),
+            SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE
+        );
+    }
+
+    #[test]
+    fn generic_metadata_errors_get_generic_message() {
+        let messages =
+            vec![ScarbMetadataMessage::MetadataError("something else went wrong".to_string())];
+
+        assert_eq!(scarb_metadata_failed_message(&messages), SCARB_METADATA_FAILED_MESSAGE);
+    }
+
+    #[test]
+    fn located_manifest_diagnostics_get_generic_message() {
+        let messages = vec![ScarbMetadataMessage::MetadataDiagnostic {
+            path: PathBuf::from("/tmp/Scarb.toml"),
+            message: "profile name `test` is not allowed".to_string(),
+            error_code: None,
+            span: Some(Utf8Span::new(4, 11)),
+        }];
+
+        assert_eq!(scarb_metadata_failed_message(&messages), SCARB_METADATA_FAILED_MESSAGE);
     }
 
     #[test]
