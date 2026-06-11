@@ -21,6 +21,7 @@ const getSidebar = () => ({
                 p("Quick start", "/docs"),
                 p("Troubleshooting", "/docs/troubleshooting"),
                 p("Settings", "/docs/settings"),
+                p("Language Server Binary Discovery", "/docs/language-server-binary-discovery"),
             ],
         },
     ],
