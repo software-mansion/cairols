@@ -1,5 +1,9 @@
 # Language Server Binary Discovery
 
+> [!NOTE]
+> This page describes how the [Visual Studio Code Cairo extension](https://marketplace.visualstudio.com/items?itemName=starkware.cairo1)
+> discovers the Language Server binary. Other editors may use different mechanisms.
+
 Commonly, the Cairo Language Server is distributed with [Scarb](https://docs.swmansion.com/scarb/)
 and can be accessed using the `scarb cairo-language-server` command. However, settings are
 available to use a standalone binary.
@@ -24,13 +28,10 @@ If `cairo1.scarbPath` is unset, then it searches in your system's `PATH` environ
 > [!NOTE]
 > There is no `asdf` for Windows, so this step will not occur there.
 
-> [!WARNING]
-> You should **not** rely on this behavior; use configuration or the `PATH` environment variable
-> instead!
-
-Should the search in `PATH` fail, the extension employs a more involved logic to locate the `asdf`
-version manager tool on your machine. This step accounts for instances where
-[Scarb](https://docs.swmansion.com/scarb/) is installed via `asdf` but `asdf` is not available in
-the system `PATH`.
-The extension attempts to execute `asdf` directly to determine the installed path of
-[Scarb](https://docs.swmansion.com/scarb/) and to use the associated Language Server binary.
+If [Scarb](https://docs.swmansion.com/scarb/) is not found in `PATH`, the extension falls back to
+looking for the Scarb shim directly in the `asdf` shims directory. This is
+the default behavior when Scarb is installed via `asdf` (e.g. using
+[starkup](https://github.com/software-mansion/starkup)) but the shims directory is not on the
+shell `PATH` — for example, when the editor's environment does not source the `asdf` init script.
+The extension checks the path given by the `ASDF_DATA_DIR` environment variable, or
+`~/.asdf/shims/scarb` by default.
