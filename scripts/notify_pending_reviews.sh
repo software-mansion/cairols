@@ -52,6 +52,8 @@ REPOS="${REPOS:-$DEFAULT_REPOS}"
 IGNORE_TEAMS="${IGNORE_TEAMS:-$DEFAULT_TEAMS}"
 PR_FETCH_LIMIT="${PR_FETCH_LIMIT:-50}"
 SLACK_WEBHOOK_URL="${SLACK_WEBHOOK_URL:-}"
+GH_API_MAX_ATTEMPTS="${GH_API_MAX_ATTEMPTS:-3}"
+GH_API_RETRY_DELAY_S="${GH_API_RETRY_DELAY_S:-2}"
 
 # --- Dependency check --------------------------------------------------------
 
@@ -65,6 +67,32 @@ for cmd in "${REQUIRED[@]}"; do
         exit 1
     fi
 done
+
+gh_api_graphql_with_retry() {
+    local repo="$1"
+    local owner="${repo%/*}"
+    local name="${repo#*/}"
+    local attempt=1
+    local delay="$GH_API_RETRY_DELAY_S"
+
+    while [ "$attempt" -le "$GH_API_MAX_ATTEMPTS" ]; do
+        if gh api graphql -f query="$QUERY" \
+            -F owner="$owner" -F name="$name" -F prFetchLimit="$PR_FETCH_LIMIT" 2>/dev/null; then
+            return 0
+        fi
+
+        if [ "$attempt" -eq "$GH_API_MAX_ATTEMPTS" ]; then
+            break
+        fi
+
+        echo "⚠️  GitHub API query failed for $repo (attempt $attempt/$GH_API_MAX_ATTEMPTS); retrying in ${delay}s..." >&2
+        sleep "$delay"
+        attempt=$((attempt + 1))
+        delay=$((delay * 2))
+    done
+
+    return 1
+}
 
 # --- Query -------------------------------------------------------------------
 
@@ -148,9 +176,8 @@ echo "Fetching pending review requests..." >&2
 ALL_ROWS='[]'
 for repo in $REPOS; do
     [ -z "$repo" ] && continue
-    if ! resp=$(gh api graphql -f query="$QUERY" \
-            -F owner="${repo%/*}" -F name="${repo#*/}" -F prFetchLimit="$PR_FETCH_LIMIT" 2>/dev/null); then
-        echo "⚠️  Skipping $repo (query failed — missing access?)" >&2
+    if ! resp=$(gh_api_graphql_with_retry "$repo"); then
+        echo "⚠️  Skipping $repo (query failed after retries — missing access or transient API failure?)" >&2
         continue
     fi
     rows=$(jq --arg repo "$repo" --arg ignore_teams "$IGNORE_TEAMS" \
