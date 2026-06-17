@@ -1,0 +1,23 @@
+---
+source: tests/e2e/macros/user_inline/mod.rs
+assertion_line: 131
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\nexperimental-features = [\"user_defined_inline_macros\"]\n\n// → test_package/src/a.cairo\nmacro define_fn_and_struct {\n    ($name:ident) => {\n        expose! {\n            fn $name() -> felt252 {\n                42\n            }\n\n            struct Wrapper {\n                pub value: felt252,\n            }\n\n            fn get_value(s: Wrapper) -> felt252 {\n                s.value\n            }\n        }\n    };\n}\n\ndefine_fn_and_struct!(the_answer);\n\nfn foo() -> felt252 {\n    let w = Wrapper { value: the_answer() };\n    get_value(w)\n}\n\n// → test_package/src/lib.cairo\nmod a;\n\nmacro add_one {\n    ($x:expr) => {\n        $x + 1\n    };\n}\n\nmacro add_many {\n    ($x:expr, $y:expr) => {\n        $x + $y\n    };\n    ($x:expr, $y:expr, $z:expr) => {\n        $x + $y + $z\n    };\n}\n\nmacro build_array {\n    ($($x:expr), *) => {\n        {\n            let mut result = $defsite::ArrayTrait::new();\n            $(result.append($x);)*\n            result\n        }\n    };\n}\n\nmacro declare_two {\n    ($x:expr) => {\n        let first = $x;\n        let _second = first + 1;\n    };\n}\n\nmacro append_twice {\n    ($arr:ident, $value:expr) => {\n        $arr.append($value);\n        $arr.append($value + 1);\n    };\n}"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+define_fn_an<caret>d_struct!(the_answer);
+"""
+generated_code = """
+fn the_answer() -> felt252 {
+    42
+}
+
+struct Wrapper {
+    pub value: felt252,
+}
+
+fn get_value(s: Wrapper) -> felt252 {
+    s.value
+}
+"""
