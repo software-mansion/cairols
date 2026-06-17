@@ -64,23 +64,39 @@ fn manifest_inlining_strategy_conflict_code_action_endpoint_returns_fixes() {
 }
 
 #[test]
-fn manifest_profile_inheritance_invalid_code_action_endpoint_returns_fix() {
-    assert_manifest_quick_fix(
-        indoc! {r#"
-            [package]
-            name = "test_package"
-            version = "0.1.0"
-            edition = "2025_12"
+fn manifest_profile_inheritance_invalid_code_action_endpoint_returns_fixes() {
+    let manifest = indoc! {r#"
+        [package]
+        name = "test_package"
+        version = "0.1.0"
+        edition = "2025_12"
 
-            [profile.custom]
-            inherits = "invalid"
-        "#},
+        [profile.custom]
+        inherits = "invalid"
+    "#};
+
+    let diagnostic = manifest_diagnostic(
+        manifest,
         "profile can inherit from `dev` or `release` only, found `invalid`",
         "SE0004",
-        "Remove invalid `inherits` field",
-        r#"inherits = "invalid""#,
-        "[profile.custom]",
     );
+
+    let code_actions = manifest_code_actions(manifest, diagnostic);
+
+    let remove_action = find_code_action(code_actions.clone(), "Remove invalid `inherits` field");
+    let remove_text = only_manifest_edit(&remove_action);
+    assert!(!remove_text.contains("inherits"), "{remove_text}");
+    assert!(remove_text.contains("[profile.custom]"), "{remove_text}");
+
+    let dev_action = find_code_action(code_actions.clone(), "Set `inherits` to `\"dev\"`");
+    let dev_text = only_manifest_edit(&dev_action);
+    assert!(dev_text.contains(r#"inherits = "dev""#), "{dev_text}");
+    assert!(!dev_text.contains(r#"inherits = "invalid""#), "{dev_text}");
+
+    let release_action = find_code_action(code_actions, "Set `inherits` to `\"release\"`");
+    let release_text = only_manifest_edit(&release_action);
+    assert!(release_text.contains(r#"inherits = "release""#), "{release_text}");
+    assert!(!release_text.contains(r#"inherits = "invalid""#), "{release_text}");
 }
 
 #[test]
