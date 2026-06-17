@@ -91,10 +91,12 @@ fn manifest_profile_inheritance_invalid_code_action_endpoint_returns_fixes() {
     let dev_action = find_code_action(code_actions.clone(), "Set `inherits` to `\"dev\"`");
     let dev_text = only_manifest_edit(&dev_action);
     assert!(dev_text.contains(r#"inherits = "dev""#), "{dev_text}");
+    assert!(!dev_text.contains(r#"inherits = "invalid""#), "{dev_text}");
 
     let release_action = find_code_action(code_actions, "Set `inherits` to `\"release\"`");
     let release_text = only_manifest_edit(&release_action);
     assert!(release_text.contains(r#"inherits = "release""#), "{release_text}");
+    assert!(!release_text.contains(r#"inherits = "invalid""#), "{release_text}");
 }
 
 #[test]
