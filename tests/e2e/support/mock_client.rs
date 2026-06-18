@@ -23,10 +23,8 @@ use crate::support::mock_client::Action::{NoOp, RemoveFromTrace};
 ///
 /// ## Termination
 ///
-/// The language server is terminated abruptly upon dropping of this struct.
-/// The `shutdown` request and `exit` notifications are not sent at all.
-/// Instead, the thread executing the server is being shut down and any running
-/// blocking tasks are given a small period of time to complete.
+/// Upon dropping of this struct an `exit` notification is sent to the server and its thread is
+/// joined, so the server's analysis database is fully dropped before the next test starts.
 pub struct MockClient {
     pub fixture: Fixture,
     // Keeps last diagnostics generation for each file
@@ -39,6 +37,23 @@ pub struct MockClient {
     // This enforces only one request matcher per method at a time
     // (can be extended eventually to a custom matcher logic with param parsing etc.)
     expect_request_handlers: HashMap<String, ExpectRequestHandler>,
+    // Handle to the language server thread, joined on `Drop` so that the server (and its
+    // analysis database) is fully torn down before the next test starts. Without this, every
+    // test leaves a detached server thread alive — each holding a full corelib database — and
+    // the suite's memory grows unbounded.
+    server_thread: Option<std::thread::JoinHandle<()>>,
+}
+
+impl Drop for MockClient {
+    fn drop(&mut self) {
+        // Tell the server to exit so its event loop breaks (see `Backend::event_loop`), then
+        // wait for the thread to finish dropping its database before this test returns.
+        let exit = Notification::new("exit".to_owned(), Value::Null);
+        let _ = self.client.sender.send(exit.into());
+        if let Some(handle) = self.server_thread.take() {
+            let _ = handle.join();
+        }
+    }
 }
 
 impl MockClient {
@@ -60,6 +75,14 @@ impl MockClient {
         let root_path = fixture.root_path();
         let cwd = cwd.map(|cwd| root_path.join(cwd)).unwrap_or_else(|| root_path.join("./"));
 
+        // Run the server on its own thread, and keep its handle so the server is joined (and its
+        // database dropped) when this `MockClient` is dropped. The inner `join()` blocks until the
+        // event loop ends, so joining `server_thread` waits for full teardown.
+        let server_thread = std::thread::spawn(move || {
+            let handle = init(cwd).run_for_tests().expect("failed to start the language server");
+            let _ = handle.join();
+        });
+
         let mut this = Self {
             fixture,
             client,
@@ -68,9 +91,8 @@ impl MockClient {
             workspace_configuration,
             expect_request_handlers: Default::default(),
             diagnostics: Default::default(),
+            server_thread: Some(server_thread),
         };
-
-        std::thread::spawn(|| init(cwd).run_for_tests());
 
         this.initialize(capabilities);
 
