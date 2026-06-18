@@ -978,3 +978,296 @@ fn with_nested_binary_expressions_and_caret_after_with_macro() {
     insert_text = "make(${1:a})"
     "#);
 }
+
+
+// Regression tests for https://github.com/software-mansion/cairols/issues/1314
+
+#[test]
+fn pub_impl_method_dot_completion() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Foo {}
+
+    trait Greet<T> {
+        fn hello(self: T) -> felt252;
+    }
+
+    pub impl FooGreet of Greet<Foo> {
+        fn hello(self: Foo) -> felt252 { 0 }
+    }
+
+    fn test() {
+        let f = Foo {};
+        f.he<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        f.he<caret>
+    """
+
+    [[completions]]
+    completion_label = "hello()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "hello()"
+    "#);
+}
+
+#[test]
+fn pub_impl_method_dot_completion_from_submodule() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    mod impls {
+        pub struct Foo {}
+
+        pub trait Greet<T> {
+            fn hello(self: T) -> felt252;
+        }
+
+        pub impl FooGreet of Greet<Foo> {
+            fn hello(self: Foo) -> felt252 { 0 }
+        }
+    }
+
+    fn test() {
+        let f = impls::Foo {};
+        f.he<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        f.he<caret>
+    """
+
+    [[completions]]
+    completion_label = "hello()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "hello()"
+    text_edits = ["""
+    use impls::Greet;
+
+    """]
+    "#);
+}
+
+#[test]
+fn pub_impl_method_dot_completion_multiple_methods() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Counter {}
+
+    trait CounterTrait<T> {
+        fn increment(self: T) -> felt252;
+        fn decrement(self: T) -> felt252;
+        fn reset(self: T) -> felt252;
+    }
+
+    pub impl CounterImpl of CounterTrait<Counter> {
+        fn increment(self: Counter) -> felt252 { 1 }
+        fn decrement(self: Counter) -> felt252 { 2 }
+        fn reset(self: Counter) -> felt252 { 0 }
+    }
+
+    fn test() {
+        let c = Counter {};
+        c.<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        c.<caret>
+    """
+
+    [[completions]]
+    completion_label = "decrement()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "decrement()"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
+
+    [[completions]]
+    completion_label = "increment()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "increment()"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into()"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs()"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
+
+    [[completions]]
+    completion_label = "reset()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "reset()"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+    "#);
+}
+
+#[test]
+fn pub_impl_generic_with_constraints_dot_completion() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    trait Sortable<T> {
+        fn sort(self: T) -> felt252;
+    }
+
+    pub impl SortImpl<T, +Copy<T>, +Drop<T>> of Sortable<T> {
+        fn sort(self: T) -> felt252 { 0 }
+    }
+
+    fn test() {
+        let x: felt252 = 5;
+        x.so<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        x.so<caret>
+    """
+
+    [[completions]]
+    completion_label = "is_non_one()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_non_one()"
+    text_edits = ["""
+    use core::num::traits::One;
+
+    """]
+
+    [[completions]]
+    completion_label = "is_non_zero()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_non_zero()"
+    text_edits = ["""
+    use core::num::traits::Zero;
+
+    """]
+
+    [[completions]]
+    completion_label = "is_non_zero()"
+    completion_label_type_info = "fn(self: T) -> bool"
+    insert_text = "is_non_zero()"
+
+    [[completions]]
+    completion_label = "is_one()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_one()"
+    text_edits = ["""
+    use core::num::traits::One;
+
+    """]
+
+    [[completions]]
+    completion_label = "sort()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "sort()"
+    "#);
+}
+
+#[test]
+fn impl_generic_with_constraints_dot_completion() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    trait Sortable<T> {
+        fn sort(self: T) -> felt252;
+    }
+
+    impl SortImpl<T, +Copy<T>, +Drop<T>> of Sortable<T> {
+        fn sort(self: T) -> felt252 { 0 }
+    }
+
+    fn test() {
+        let x: felt252 = 5;
+        x.so<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        x.so<caret>
+    """
+
+    [[completions]]
+    completion_label = "is_non_one()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_non_one()"
+    text_edits = ["""
+    use core::num::traits::One;
+
+    """]
+
+    [[completions]]
+    completion_label = "is_non_zero()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_non_zero()"
+    text_edits = ["""
+    use core::num::traits::Zero;
+
+    """]
+
+    [[completions]]
+    completion_label = "is_non_zero()"
+    completion_label_type_info = "fn(self: T) -> bool"
+    insert_text = "is_non_zero()"
+
+    [[completions]]
+    completion_label = "is_one()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_one()"
+    text_edits = ["""
+    use core::num::traits::One;
+
+    """]
+
+    [[completions]]
+    completion_label = "sort()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "sort()"
+    "#);
+}
+
+#[test]
+fn pub_impl_concrete_dot_completion() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Foo {}
+
+    trait Sortable {
+        fn sort(self: Foo) -> felt252;
+    }
+
+    pub impl SortImpl of Sortable {
+        fn sort(self: Foo) -> felt252 { 0 }
+    }
+
+    fn test() {
+        let x = Foo {};
+        x.so<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        x.so<caret>
+    """
+
+    [[completions]]
+    completion_label = "sort()"
+    completion_label_type_info = "fn(self: Foo) -> felt252"
+    insert_text = "sort()"
+    "#);
+}

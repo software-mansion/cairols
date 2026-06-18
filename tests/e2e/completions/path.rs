@@ -1,5 +1,8 @@
+use indoc::indoc;
 use lsp_types::request::Completion;
 
+use crate::support::fixture;
+use crate::support::fixture::Fixture;
 use crate::{
     completions::completion_fixture,
     support::insta::{test_transform_plain, test_transform_with_macros},
@@ -885,5 +888,221 @@ fn trait_name_suffix_from_other_module() {
     use core::internal::bounded_int::UnitInt;
 
     """]
+    "#);
+}
+
+// Regression tests for https://github.com/software-mansion/cairols/issues/1314
+
+#[test]
+fn pub_impl_prefix_with_all_items() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        fn my_func() -> u32;
+        type MyType;
+        const MY_CONST: u32;
+    }
+
+    pub impl MyImpl of MyTrait {
+        fn my_func() -> u32 { 0 }
+        type MyType = u32;
+        const MY_CONST: u32 = 5;
+    }
+
+    fn test() {
+        MyImpl::<caret>
+    }
+    ",@r#"
+    caret = """
+        MyImpl::<caret>
+    """
+
+    [[completions]]
+    completion_label = "MY_CONST"
+    completion_label_type_info = "u32"
+
+    [[completions]]
+    completion_label = "MyType"
+
+    [[completions]]
+    completion_label = "my_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "my_func()"
+    "#);
+}
+
+#[test]
+fn pub_impl_prefix_in_submodule() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod impls {
+        pub trait MyTrait {
+            fn my_func() -> u32;
+        }
+
+        pub impl MyImpl of MyTrait {
+            fn my_func() -> u32 { 0 }
+        }
+    }
+
+    fn test() {
+        impls::MyImpl::<caret>
+    }
+    ",@r#"
+    caret = """
+        impls::MyImpl::<caret>
+    """
+
+    [[completions]]
+    completion_label = "my_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "my_func()"
+    "#);
+}
+
+fn sorting_dep_fixture() -> Fixture {
+    fixture! {
+        "cairo_project.toml" => indoc!(r#"
+            [crate_roots]
+            hello = "src"
+            alexandria_sorting = "sorting/src"
+            alexandria_data_structures = "data_structures/src"
+
+            [config.override.hello]
+            edition = "2025_12"
+            [config.override.alexandria_sorting]
+            edition = "2023_11"
+            [config.override.alexandria_data_structures]
+            edition = "2023_11"
+
+            [config.override.hello.dependencies]
+            alexandria_sorting = { discriminator = "alexandria_sorting" }
+
+            [config.override.alexandria_sorting.dependencies]
+            alexandria_data_structures = { discriminator = "alexandria_data_structures" }
+        "#),
+        "data_structures/src/lib.cairo" => indoc!("
+            pub mod vec;
+        "),
+        "data_structures/src/vec.cairo" => indoc!("
+            pub struct Felt252Vec<T> {
+                pub items: Felt252Dict<Nullable<T>>,
+                pub len: usize,
+            }
+        "),
+        "sorting/src/lib.cairo" => indoc!("
+            pub mod interface;
+            pub mod merge_sort;
+
+            pub use interface::{Sortable, SortableVec};
+            pub use merge_sort::MergeSort;
+        "),
+        "sorting/src/interface.cairo" => indoc!("
+            use alexandria_data_structures::vec::Felt252Vec;
+
+            pub trait Sortable {
+                fn sort<T, +Copy<T>, +Drop<T>, +PartialOrd<T>>(array: Span<T>) -> Array<T>;
+            }
+
+            pub trait SortableVec {
+                fn sort<T, +Copy<T>, +Drop<T>, +PartialOrd<T>, +Felt252DictValue<T>>(
+                    array: Felt252Vec<T>,
+                ) -> Felt252Vec<T>;
+            }
+        "),
+        "sorting/src/merge_sort.cairo" => indoc!("
+            use super::Sortable;
+
+            pub impl MergeSort of Sortable {
+                fn sort<T, +Copy<T>, +Drop<T>, +PartialOrd<T>>(mut array: Span<T>) -> Array<T> {
+                    let len = array.len();
+                    if len == 0 {
+                        return array![];
+                    }
+                    if len == 1 {
+                        return array![*array[0]];
+                    }
+                    let middle = len / 2;
+                    let left_arr = array.slice(0, middle);
+                    let right_arr = array.slice(middle, len - middle);
+                    let sorted_left = Self::sort(left_arr);
+                    let sorted_right = Self::sort(right_arr);
+                    let mut result_arr = array![];
+                    merge_recursive(sorted_left, sorted_right, ref result_arr, 0, 0);
+                    result_arr
+                }
+            }
+
+            fn merge_recursive<T, +Copy<T>, +Drop<T>, +PartialOrd<T>>(
+                mut left_arr: Array<T>,
+                mut right_arr: Array<T>,
+                ref result_arr: Array<T>,
+                left_arr_ix: usize,
+                right_arr_ix: usize,
+            ) {
+                if result_arr.len() == left_arr.len() + right_arr.len() {
+                    return;
+                }
+                if left_arr_ix == left_arr.len() {
+                    result_arr.append(*right_arr[right_arr_ix]);
+                    return merge_recursive(left_arr, right_arr, ref result_arr, left_arr_ix, right_arr_ix + 1);
+                }
+                if right_arr_ix == right_arr.len() {
+                    result_arr.append(*left_arr[left_arr_ix]);
+                    return merge_recursive(left_arr, right_arr, ref result_arr, left_arr_ix + 1, right_arr_ix);
+                }
+                if *left_arr[left_arr_ix] < *right_arr[right_arr_ix] {
+                    result_arr.append(*left_arr[left_arr_ix]);
+                    merge_recursive(left_arr, right_arr, ref result_arr, left_arr_ix + 1, right_arr_ix)
+                } else {
+                    result_arr.append(*right_arr[right_arr_ix]);
+                    merge_recursive(left_arr, right_arr, ref result_arr, left_arr_ix, right_arr_ix + 1)
+                }
+            }
+        ")
+    }
+}
+
+#[test]
+fn pub_impl_generic_method_empty_prefix() {
+    test_transform_plain!(Completion, sorting_dep_fixture(), "
+    use alexandria_sorting::MergeSort;
+
+    #[test]
+    fn merge_sort_test_empty() {
+        let data: Span<u8> = array![].span();
+        let correct: Array<u8> = array![];
+        let sorted = MergeSort::<caret>
+    }
+    ",@r#"
+    caret = """
+        let sorted = MergeSort::<caret>
+    """
+
+    [[completions]]
+    completion_label = "sort(...)"
+    completion_label_type_info = "fn(array: Span<T>) -> Array<T>"
+    insert_text = "sort(${1:array})"
+    "#);
+}
+
+#[test]
+fn pub_impl_generic_method_partial_prefix() {
+    test_transform_plain!(Completion, sorting_dep_fixture(), "
+    use alexandria_sorting::MergeSort;
+
+    #[test]
+    fn merge_sort_test_empty() {
+        let data: Span<u8> = array![].span();
+        let correct: Array<u8> = array![];
+        let sorted = MergeSort::s<caret>
+    }
+    ",@r#"
+    caret = """
+        let sorted = MergeSort::s<caret>
+    """
+
+    [[completions]]
+    completion_label = "sort(...)"
+    completion_label_type_info = "fn(array: Span<T>) -> Array<T>"
+    insert_text = "sort(${1:array})"
     "#);
 }
