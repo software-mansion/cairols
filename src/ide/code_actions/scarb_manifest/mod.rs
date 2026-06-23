@@ -14,6 +14,7 @@ mod dependency_git_ref_without_git;
 mod dependency_git_reference_ambiguous;
 mod dependency_git_registry_ambiguous;
 mod inlining_strategy_conflict;
+mod patch_source_conflict;
 mod profile_inheritance_invalid;
 mod toml;
 mod unknown_field;
@@ -38,6 +39,7 @@ enum ScarbManifestCode {
     DependencyGitReferenceAmbiguous,
     DependencyGitPathAmbiguous,
     DependencyGitRegistryAmbiguous,
+    PatchSourceConflict,
 }
 
 impl ScarbManifestCode {
@@ -50,6 +52,7 @@ impl ScarbManifestCode {
             "SE0008" => Some(Self::DependencyGitReferenceAmbiguous),
             "SE0010" => Some(Self::DependencyGitPathAmbiguous),
             "SE0011" => Some(Self::DependencyGitRegistryAmbiguous),
+            "SE0013" => Some(Self::PatchSourceConflict),
             _ => None,
         }
     }
@@ -67,6 +70,7 @@ impl ScarbManifestCode {
             Self::DependencyGitReferenceAmbiguous => dependency_git_reference_ambiguous::build(ctx),
             Self::DependencyGitPathAmbiguous => dependency_git_path_ambiguous::build(ctx),
             Self::DependencyGitRegistryAmbiguous => dependency_git_registry_ambiguous::build(ctx),
+            Self::PatchSourceConflict => patch_source_conflict::build(ctx),
         }
     }
 }
@@ -121,10 +125,20 @@ fn replace_manifest_action(
     title: String,
     diagnostic: Diagnostic,
 ) -> CodeAction {
+    replace_manifest_action_with_preference(ctx, new_text, title, diagnostic, true)
+}
+
+fn replace_manifest_action_with_preference(
+    ctx: &ManifestActionContext<'_>,
+    new_text: String,
+    title: String,
+    diagnostic: Diagnostic,
+    is_preferred: bool,
+) -> CodeAction {
     CodeAction {
         title,
         kind: Some(CodeActionKind::QUICKFIX),
-        is_preferred: Some(true),
+        is_preferred: Some(is_preferred),
         edit: Some(WorkspaceEdit {
             changes: Some(HashMap::from_iter([(
                 ctx.uri.clone(),
