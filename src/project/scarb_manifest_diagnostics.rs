@@ -308,6 +308,28 @@ mod tests {
     }
 
     #[test]
+    fn manifest_diagnostics_from_ndjson_preserves_patch_source_conflict_data() {
+        let stdout = r#"{"kind":"manifest_diagnostic","message":"the `[patch]` section cannot specify both `scarbs-xyz` and `https://scarbs.xyz/`","error_code":"SE0013","file":"/tmp/Scarb.toml","span":{"start":10,"end":20},"data":{"sources":["scarbs-xyz","https://scarbs.xyz/"]}}"#;
+
+        let diagnostics = manifest_diagnostics_from_ndjson(stdout);
+
+        assert_eq!(
+            diagnostics,
+            vec![ScarbMetadataMessage::MetadataDiagnostic {
+                path: PathBuf::from("/tmp/Scarb.toml"),
+                message:
+                    "the `[patch]` section cannot specify both `scarbs-xyz` and `https://scarbs.xyz/`"
+                        .to_string(),
+                error_code: Some("SE0013".to_string()),
+                span: Some(Utf8Span::new(10, 20)),
+                data: Some(serde_json::json!({
+                    "sources": ["scarbs-xyz", "https://scarbs.xyz/"],
+                })),
+            }]
+        );
+    }
+
+    #[test]
     fn build_diagnostic_sets_lsp_code_from_manifest_error_code() {
         let diagnostic = build_diagnostic(
             "profile name `test` is not allowed".to_string(),

@@ -179,6 +179,44 @@ fn manifest_dependency_git_registry_ambiguous_code_action_endpoint_returns_fix()
     );
 }
 
+#[test]
+fn manifest_patch_source_conflict_code_action_endpoint_returns_fixes() {
+    // `SE0013` only fires when the default registry is patched under both its alias
+    // (`scarbs-xyz`) and its full URL (`https://scarbs.xyz/`, written as a quoted key).
+    let manifest = indoc! {r#"
+        [package]
+        name = "test_package"
+        version = "0.1.0"
+        edition = "2025_12"
+
+        [patch.scarbs-xyz]
+        foo = { path = "../foo" }
+
+        [patch."https://scarbs.xyz/"]
+        foo = { path = "../foo2" }
+    "#};
+
+    let diagnostic = manifest_diagnostic(
+        manifest,
+        "the `[patch]` section cannot specify both `scarbs-xyz` and `https://scarbs.xyz/`",
+        "SE0013",
+    );
+
+    let code_actions = manifest_code_actions(manifest, diagnostic);
+
+    let remove_a = find_code_action(code_actions.clone(), "Remove `scarbs-xyz` patch source");
+    assert_eq!(remove_a.is_preferred, Some(false));
+    let remove_a_text = only_manifest_edit(&remove_a);
+    assert!(!remove_a_text.contains("[patch.scarbs-xyz]"), "{remove_a_text}");
+    assert!(remove_a_text.contains(r#"[patch."https://scarbs.xyz/"]"#), "{remove_a_text}");
+
+    let remove_b = find_code_action(code_actions, "Remove `https://scarbs.xyz/` patch source");
+    assert_eq!(remove_b.is_preferred, Some(false));
+    let remove_b_text = only_manifest_edit(&remove_b);
+    assert!(!remove_b_text.contains(r#"[patch."https://scarbs.xyz/"]"#), "{remove_b_text}");
+    assert!(remove_b_text.contains("[patch.scarbs-xyz]"), "{remove_b_text}");
+}
+
 fn assert_manifest_quick_fix(
     manifest: &str,
     diagnostic_message: &str,
@@ -283,6 +321,9 @@ fn diagnostic_data(code: &str) -> Option<serde_json::Value> {
             "field_path": ["dependencies", "foo", "git"],
             "fields": ["git", "registry"],
         })),
+        "SE0013" => Some(serde_json::json!({
+            "sources": ["scarbs-xyz", "https://scarbs.xyz/"],
+        })),
         _ => None,
     }
 }
@@ -296,6 +337,7 @@ fn diagnostic_anchor(code: &str) -> &'static str {
         "SE0008" => "branch",
         "SE0010" => "git",
         "SE0011" => "git",
+        "SE0013" => "[patch.scarbs-xyz]",
         _ => panic!("unsupported manifest diagnostic code: {code}"),
     }
 }
