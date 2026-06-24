@@ -57,6 +57,14 @@ pub struct DiagnosticsController {
     _thread: JoinHandle,
 }
 
+impl Drop for DiagnosticsController {
+    fn drop(&mut self) {
+        // Cancel any diagnostics run that is still in flight so the controller thread can stop
+        // without hanging on the in-progress analysis which is no longer needed anyway.
+        self.cancel_and_drop_active_diagnostics_db();
+    }
+}
+
 impl DiagnosticsController {
     /// Creates a new diagnostics controller.
     pub fn new(
