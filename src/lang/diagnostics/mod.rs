@@ -299,6 +299,8 @@ impl DiagnosticsControllerThread {
                 controller_cancelled || diagnostics_results.contains(&TaskResult::Cancelled);
             self.clear_active_diagnostics_db(&input.db);
             self.analysis_progress_controller.diagnostic_end(diagnostics_cancelled);
+            drop(input);
+            self.analysis_progress_controller.diagnostics_db_freed();
         }
     }
 

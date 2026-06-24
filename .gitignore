@@ -1,4 +1,5 @@
 /target
+/target-linux
 /.vscode
 /.idea
 .spr.yml

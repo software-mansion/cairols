@@ -112,6 +112,7 @@ pub enum ServerStatusEvent {
     AnalysisFinished,
     MacrosBuildingStarted,
     MacrosBuildingFinished,
+    DiagnosticsDbFreed,
 }
 
 #[derive(Serialize, Deserialize)]

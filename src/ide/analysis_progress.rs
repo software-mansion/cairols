@@ -95,6 +95,10 @@ impl AnalysisProgressController {
         });
     }
 
+    pub fn diagnostics_db_freed(&self) {
+        self.send(AnalysisEvent::DiagnosticsDbFreed);
+    }
+
     pub fn mutation(&self) {
         self.send(AnalysisEvent::Mutation);
     }
@@ -133,6 +137,7 @@ pub enum AnalysisEvent {
         /// Number of all requests sent to this point from the moment PMS was started. It is NOT only from this tick.
         all_request_count: u64,
     },
+    DiagnosticsDbFreed,
     PMSStatusChange(ProcMacroServerStatus),
     DatabaseSwap,
     ProjectLoaded,
@@ -244,6 +249,11 @@ impl AnalysisProgressThread {
                 AnalysisEvent::DefinedMacrosResponseReceived => {
                     self.notifier.notify::<ServerStatus>(ServerStatusParams {
                         event: ServerStatusEvent::MacrosBuildingFinished,
+                    });
+                }
+                AnalysisEvent::DiagnosticsDbFreed => {
+                    self.notifier.notify::<ServerStatus>(ServerStatusParams {
+                        event: ServerStatusEvent::DiagnosticsDbFreed,
                     });
                 }
             }

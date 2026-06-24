@@ -7,7 +7,7 @@ use std::time::{Duration, SystemTime};
 
 use crossbeam::channel::{Receiver, RecvTimeoutError, Sender, TrySendError};
 use lsp_types::Url;
-use tracing::{error, trace, warn};
+use tracing::{error, info, trace, warn};
 
 use crate::env_config;
 use crate::ide::analysis_progress::AnalysisEvent;
@@ -180,6 +180,9 @@ impl InactivitySwapMonitor {
     /// Marks that an inactivity swap has just occurred, suppressing further swaps until
     /// user activity is detected.
     pub fn notify_swap_triggered(&self) {
+        info!(
+            "inactivity swap triggered, suppressing further swaps until user activity is detected"
+        );
         self.user_active.store(false, Ordering::Relaxed);
     }
 
