@@ -59,6 +59,7 @@ fn test_code_lens_snforge(cairo_code: &str) -> Report {
             skip-optimizations = true
             unstable-add-statements-code-locations-debug-info = true
             add-statements-functions-debug-info = true
+            add-types-debug-info = true
             "#
         ),
         json!({

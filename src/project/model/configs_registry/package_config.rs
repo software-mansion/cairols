@@ -68,5 +68,6 @@ fn check_compiler_config_for_debugging(config: &Value) -> bool {
     bool_field("add_functions_debug_info")
         && bool_field("add_statements_code_locations_debug_info")
         && bool_field("add_statements_functions_debug_info")
+        && bool_field("add_types_debug_info")
         && str_field("compiler_optimizations") == "Disabled"
 }
