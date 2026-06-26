@@ -427,10 +427,11 @@ fn debug_with_incorrect_compiler_config() {
     Cannot launch debugger: the Cairo compiler is not configured for debugging.
     Add the following key-value pairs your Scarb.toml to `[profile.dev.cairo]` section:
 
-    unstable-add-statements-code-locations-debug-info = true
-    unstable-add-statements-functions-debug-info = true
-    add-functions-debug-info = true
     skip-optimizations = true
+    add-statements-code-locations-debug-info = true
+    add-statements-functions-debug-info = true
+    add-functions-debug-info = true
+    add-types-debug-info = true
     """
 
     [[execute_in_terminal]]
