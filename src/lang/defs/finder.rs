@@ -9,6 +9,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{SemanticGroup, get_resolver_data_options};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
+use cairo_lang_semantic::expr::objects::MemberAccessKind;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::TraitOrImplContext;
 use cairo_lang_semantic::items::enm::EnumSemantic;
@@ -449,7 +450,10 @@ fn try_member<'db>(
         current_node = current_node.parent(db).unwrap();
     }
 
-    let member_id = expr_member_access.member;
+    let member_id = match expr_member_access.kind {
+        MemberAccessKind::Struct { member_id, .. } => member_id,
+        MemberAccessKind::Index { .. } => return None,
+    };
     Some(ResolvedItem::Member(member_id))
 }
 

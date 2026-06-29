@@ -3,6 +3,7 @@ use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_formatter::FormatterConfig;
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_parser::utils::SimpleParserDatabase;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::Intern;
@@ -22,8 +23,9 @@ pub fn format_output(output: &str, kind: SyntaxKind) -> String {
 
     let syntax_root = match kind {
         SyntaxKind::ExprInlineMacro => {
-            Parser::parse_file_expr(db, &mut DiagnosticsBuilder::default(), virtual_file, output)
-                .as_syntax_node()
+            let green =
+                Parser::parse_file_expr_green(db, &mut DiagnosticsBuilder::default(), virtual_file, output);
+            SyntaxNode::new_detached_root(db, virtual_file, green.0)
         }
         _ => Parser::parse_file(db, &mut DiagnosticsBuilder::default(), virtual_file, output)
             .as_syntax_node(),
