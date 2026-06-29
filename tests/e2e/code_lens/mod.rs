@@ -23,6 +23,7 @@ mod custom;
 mod executable;
 mod no_runners;
 mod other_file;
+mod proc_macro;
 mod snforge;
 
 fn test_code_lens_scarb_execute(args: (&str, &str)) -> Report {
@@ -61,6 +62,40 @@ fn test_code_lens_snforge(cairo_code: &str) -> Report {
             add-statements-functions-debug-info = true
             add-types-debug-info = true
             "#
+        ),
+        json!({
+            "cairo1": {
+                "enableProcMacros": true
+            }
+        }),
+    )
+}
+
+fn test_code_lens_snforge_with_macros(cairo_code: &str) -> Report {
+    test_code_lens(
+        cairo_code,
+        &formatdoc!(
+            r#"
+            [package]
+            name = "hello"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [dependencies]
+            snforge_std = "0.50.0"
+            cairols_test_macros_v2 = {{ path = "{}" }}
+
+            [tool.scarb]
+            allow-prebuilt-plugins = ["snforge_std"]
+
+            [cairo]
+            add-functions-debug-info = true
+            skip-optimizations = true
+            unstable-add-statements-code-locations-debug-info = true
+            add-statements-functions-debug-info = true
+            add-types-debug-info = true
+            "#,
+            crate::macros::SCARB_TEST_MACROS_V2_PACKAGE.display()
         ),
         json!({
             "cairo1": {
