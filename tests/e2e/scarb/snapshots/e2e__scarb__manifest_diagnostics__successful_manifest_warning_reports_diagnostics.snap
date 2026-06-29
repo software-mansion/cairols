@@ -19,3 +19,7 @@ diagnostics:
       code: SE0002
       source: scarb
       message: unknown manifest field `package.typo_field`
+      data:
+        field_path:
+        - package
+        - typo_field
