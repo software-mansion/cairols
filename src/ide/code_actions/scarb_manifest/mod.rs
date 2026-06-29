@@ -7,7 +7,7 @@ use lsp_types::{
 };
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
+use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
 mod dependency_git_path_ambiguous;
 mod dependency_git_ref_without_git;
@@ -18,7 +18,7 @@ mod profile_inheritance_invalid;
 mod toml;
 mod unknown_field;
 
-use self::toml::{find_key_path_at_offset, remove_key_path};
+use self::toml::remove_key_path;
 use super::extract_code;
 
 struct ManifestActionContext<'a> {
@@ -99,13 +99,11 @@ pub fn is_manifest_diagnostic(diagnostic: &Diagnostic) -> bool {
     ScarbManifestCode::from_diagnostic(diagnostic).is_some()
 }
 
-fn remove_key_at_range_action(
+fn remove_key_from_diagnostic_data_action(
     ctx: &ManifestActionContext<'_>,
     title_prefix: &str,
 ) -> Option<CodeAction> {
-    let offset = ctx.diagnostic.range.start.to_cairo().offset_in_file(ctx.db, ctx.file_id)?.as_u32()
-        as usize;
-    let path = find_key_path_at_offset(ctx.raw_toml, offset)?;
+    let path = diagnostic_string_array(ctx.diagnostic, "field_path")?;
     let key = path.last()?.clone();
     let new_text = remove_key_path(ctx.raw_toml, &path)?;
 
@@ -154,19 +152,13 @@ fn full_document_range(
         .unwrap_or_default()
 }
 
-fn unknown_field_path(message: &str) -> Option<Vec<String>> {
-    let path = message.strip_prefix("unknown manifest field `")?.strip_suffix('`')?;
-
-    Some(path.split('.').map(str::to_string).collect())
-}
-
-fn sibling_key_path(path: &[String], key: &str) -> Option<Vec<String>> {
-    let (last, parent) = path.split_last()?;
-    if last == key {
-        return Some(path.to_vec());
-    }
-
-    let mut sibling = parent.to_vec();
-    sibling.push(key.to_string());
-    Some(sibling)
+fn diagnostic_string_array(diagnostic: &Diagnostic, key: &str) -> Option<Vec<String>> {
+    diagnostic
+        .data
+        .as_ref()?
+        .get(key)?
+        .as_array()?
+        .iter()
+        .map(|value| value.as_str().map(str::to_string))
+        .collect()
 }

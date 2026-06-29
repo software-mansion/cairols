@@ -20,6 +20,7 @@ pub enum ScarbMetadataMessage {
         message: String,
         error_code: Option<String>,
         span: Option<Utf8Span>,
+        data: Option<Value>,
     },
 }
 
@@ -112,6 +113,7 @@ fn manifest_diagnostic_from_value(value: &Value) -> Option<ScarbMetadataMessage>
             message,
             error_code: diagnostic_error_code(value),
             span: diagnostic_span(value),
+            data: diagnostic_data(value),
         });
     }
 
@@ -163,6 +165,10 @@ fn diagnostic_span(value: &Value) -> Option<Utf8Span> {
     Some(Utf8Span::new(start as usize, end as usize))
 }
 
+fn diagnostic_data(value: &Value) -> Option<Value> {
+    value.get("data").cloned()
+}
+
 fn scarb_metadata_message_to_diagnostic(
     db: &AnalysisDatabase,
     message: ScarbMetadataMessage,
@@ -178,10 +184,11 @@ fn scarb_metadata_message_to_diagnostic(
                     None,
                     Range::default(),
                     DiagnosticSeverity::ERROR,
+                    None,
                 ),
             })
         }
-        ScarbMetadataMessage::MetadataDiagnostic { path, message, error_code, span } => {
+        ScarbMetadataMessage::MetadataDiagnostic { path, message, error_code, span, data } => {
             let range = manifest_diagnostic_range(db, &path, span);
             Url::from_file_path(path).ok().map(|uri| LspScarbDiagnostic {
                 uri,
@@ -190,6 +197,7 @@ fn scarb_metadata_message_to_diagnostic(
                     error_code,
                     range,
                     manifest_diagnostic_severity,
+                    data,
                 ),
             })
         }
@@ -210,6 +218,7 @@ fn build_diagnostic(
     error_code: Option<String>,
     range: Range,
     severity: DiagnosticSeverity,
+    data: Option<Value>,
 ) -> Diagnostic {
     Diagnostic {
         range,
@@ -220,7 +229,7 @@ fn build_diagnostic(
         message,
         related_information: None,
         tags: None,
-        data: None,
+        data,
     }
 }
 
@@ -249,6 +258,7 @@ mod tests {
                 message: "unknown manifest field `package.typo_field`".to_string(),
                 error_code: None,
                 span: Some(Utf8Span::new(10, 20)),
+                data: None,
             }]
         );
     }
@@ -269,6 +279,30 @@ mod tests {
                 message: "profile name `test` is not allowed".to_string(),
                 error_code: None,
                 span: Some(Utf8Span::new(4, 11)),
+                data: None,
+            }]
+        );
+    }
+
+    #[test]
+    fn manifest_diagnostics_from_ndjson_preserves_data() {
+        let stdout = r#"{"kind":"manifest_diagnostic","message":"the `[patch]` section can only be defined in the workspace root manifests","error_code":"SE0012","file":"/tmp/member/Scarb.toml","span":{"start":10,"end":20},"data":{"manifest_path":"/tmp/member/Scarb.toml","workspace_manifest_path":"/tmp/Scarb.toml"}}"#;
+
+        let diagnostics = manifest_diagnostics_from_ndjson(stdout);
+
+        assert_eq!(
+            diagnostics,
+            vec![ScarbMetadataMessage::MetadataDiagnostic {
+                path: PathBuf::from("/tmp/member/Scarb.toml"),
+                message:
+                    "the `[patch]` section can only be defined in the workspace root manifests"
+                        .to_string(),
+                error_code: Some("SE0012".to_string()),
+                span: Some(Utf8Span::new(10, 20)),
+                data: Some(serde_json::json!({
+                    "manifest_path": "/tmp/member/Scarb.toml",
+                    "workspace_manifest_path": "/tmp/Scarb.toml",
+                })),
             }]
         );
     }
@@ -280,6 +314,7 @@ mod tests {
             Some("SE0003".to_string()),
             Range::default(),
             DiagnosticSeverity::ERROR,
+            None,
         );
 
         assert_eq!(diagnostic.code, Some(NumberOrString::String("SE0003".to_string())));

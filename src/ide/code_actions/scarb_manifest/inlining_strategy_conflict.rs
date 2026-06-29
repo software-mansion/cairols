@@ -3,18 +3,24 @@ use toml_edit::value;
 
 use super::toml::replace_key_path_value;
 use super::{
-    ManifestActionContext, remove_key_at_range_action, replace_manifest_action, sibling_key_path,
+    ManifestActionContext, diagnostic_string_array, remove_key_path, replace_manifest_action,
 };
-use crate::lang::lsp::ToCairo;
 
 pub fn build(ctx: &ManifestActionContext<'_>) -> Vec<CodeAction> {
-    let Some(inlining_strategy_path) = inlining_strategy_path(ctx) else {
+    let Some(inlining_strategy_path) =
+        diagnostic_string_array(ctx.diagnostic, "inlining_strategy_path")
+    else {
+        return Vec::new();
+    };
+    let Some(skip_optimizations_path) =
+        diagnostic_string_array(ctx.diagnostic, "skip_optimizations_path")
+    else {
         return Vec::new();
     };
 
     let mut actions = Vec::new();
 
-    if let Some(action) = remove_inlining_strategy_action(ctx) {
+    if let Some(action) = remove_inlining_strategy_action(ctx, &inlining_strategy_path) {
         actions.push(action);
     }
 
@@ -22,28 +28,26 @@ pub fn build(ctx: &ManifestActionContext<'_>) -> Vec<CodeAction> {
         actions.push(action);
     }
 
-    if let Some(action) = set_skip_optimizations_to_false_action(ctx, &inlining_strategy_path) {
+    if let Some(action) = set_skip_optimizations_to_false_action(ctx, &skip_optimizations_path) {
         actions.push(action);
     }
 
     actions
 }
 
-fn inlining_strategy_path(ctx: &ManifestActionContext<'_>) -> Option<Vec<String>> {
-    let offset = ctx
-        .diagnostic
-        .range
-        .start
-        .to_cairo()
-        .offset_in_file(ctx.db, ctx.file_id)
-        .map(|offset| offset.as_u32() as usize)?;
-
-    super::find_key_path_at_offset(ctx.raw_toml, offset)
-}
-
 /// Generates the quick fix that removes the conflicting `inlining-strategy` field.
-fn remove_inlining_strategy_action(ctx: &ManifestActionContext<'_>) -> Option<CodeAction> {
-    remove_key_at_range_action(ctx, "Remove conflicting")
+fn remove_inlining_strategy_action(
+    ctx: &ManifestActionContext<'_>,
+    inlining_strategy_path: &[String],
+) -> Option<CodeAction> {
+    let new_text = remove_key_path(ctx.raw_toml, inlining_strategy_path)?;
+
+    Some(replace_manifest_action(
+        ctx,
+        new_text,
+        "Remove conflicting `inlining-strategy` field".to_string(),
+        ctx.diagnostic.clone(),
+    ))
 }
 
 /// Generates the quick fix that rewrites `inlining-strategy` to `"avoid"`.
@@ -68,13 +72,11 @@ fn set_inlining_strategy_to_avoid_action(
 /// Generates the quick fix that rewrites `skip-optimizations` to `false`.
 fn set_skip_optimizations_to_false_action(
     ctx: &ManifestActionContext<'_>,
-    inlining_strategy_path: &[String],
+    skip_optimizations_path: &[String],
 ) -> Option<CodeAction> {
-    let skip_optimizations_path = sibling_key_path(inlining_strategy_path, "skip-optimizations")?;
-
     let new_text = replace_key_path_value(
         ctx.raw_toml,
-        &skip_optimizations_path,
+        skip_optimizations_path,
         value(false).into_value().expect("bool literal should build a TOML value"),
     )?;
 
