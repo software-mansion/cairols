@@ -28,7 +28,7 @@ use cairo_lang_semantic::resolve::{
     ResolverData,
 };
 use cairo_lang_semantic::substitution::SemanticRewriter;
-use cairo_lang_semantic::{ConcreteImplId, Expr, GenericParam, TypeLongId};
+use cairo_lang_semantic::{ConcreteImplId, Expr, GenericParam, MemberAccessKind, TypeLongId};
 use cairo_lang_syntax::node::ast::{
     ExprPathInner, GenericArgUnnamed, PathSegment, TerminalIdentifier, TypeClause,
 };
@@ -449,7 +449,9 @@ fn try_member<'db>(
         current_node = current_node.parent(db).unwrap();
     }
 
-    let member_id = expr_member_access.member;
+    let MemberAccessKind::Struct { member_id, .. } = expr_member_access.kind else {
+        return None;
+    };
     Some(ResolvedItem::Member(member_id))
 }
 
