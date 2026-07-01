@@ -75,9 +75,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.102"
+version = "1.0.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
+checksum = "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3"
 
 [[package]]
 name = "arrayvec"
@@ -317,7 +317,7 @@ dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-syntax",
  "cairo-lang-utils",
- "itertools",
+ "itertools 0.14.0",
  "postcard",
  "salsa",
  "serde",
@@ -335,7 +335,7 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
- "itertools",
+ "itertools 0.14.0",
  "salsa",
 ]
 
@@ -353,7 +353,7 @@ dependencies = [
  "cairo-lang-semantic",
  "cairo-lang-syntax",
  "cairo-lang-utils",
- "itertools",
+ "itertools 0.14.0",
  "pulldown-cmark",
  "salsa",
 ]
@@ -377,7 +377,7 @@ dependencies = [
  "cairo-lang-semantic",
  "cairo-lang-syntax",
  "indoc",
- "itertools",
+ "itertools 0.14.0",
  "salsa",
 ]
 
@@ -389,7 +389,7 @@ dependencies = [
  "cairo-lang-debug",
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
- "itertools",
+ "itertools 0.14.0",
  "path-clean",
  "salsa",
  "semver",
@@ -411,7 +411,7 @@ dependencies = [
  "cairo-lang-utils",
  "diffy",
  "ignore",
- "itertools",
+ "itertools 0.14.0",
  "salsa",
  "serde",
  "thiserror",
@@ -433,7 +433,7 @@ dependencies = [
  "cairo-lang-utils",
  "id-arena",
  "indent",
- "itertools",
+ "itertools 0.14.0",
  "log",
  "num-bigint",
  "num-integer",
@@ -546,7 +546,7 @@ dependencies = [
  "cairo-lang-syntax-codegen",
  "cairo-lang-utils",
  "colored",
- "itertools",
+ "itertools 0.14.0",
  "num-bigint",
  "num-traits",
  "salsa",
@@ -566,7 +566,7 @@ dependencies = [
  "cairo-lang-utils",
  "indent",
  "indoc",
- "itertools",
+ "itertools 0.14.0",
  "salsa",
 ]
 
@@ -654,7 +654,7 @@ dependencies = [
  "cairo-lang-utils",
  "id-arena",
  "indoc",
- "itertools",
+ "itertools 0.14.0",
  "num-bigint",
  "num-integer",
  "num-traits",
@@ -676,7 +676,7 @@ dependencies = [
  "const-fnv1a-hash",
  "convert_case",
  "derivative",
- "itertools",
+ "itertools 0.14.0",
  "lalrpop",
  "lalrpop-util",
  "num-bigint",
@@ -700,7 +700,7 @@ dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-sierra-type-size",
  "cairo-lang-utils",
- "itertools",
+ "itertools 0.14.0",
  "num-bigint",
  "num-traits",
  "thiserror",
@@ -715,7 +715,7 @@ dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-sierra-type-size",
  "cairo-lang-utils",
- "itertools",
+ "itertools 0.14.0",
  "num-bigint",
  "num-traits",
  "thiserror",
@@ -736,7 +736,7 @@ dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-syntax",
  "cairo-lang-utils",
- "itertools",
+ "itertools 0.14.0",
  "num-traits",
  "rayon",
  "salsa",
@@ -758,7 +758,7 @@ dependencies = [
  "cairo-lang-sierra-type-size",
  "cairo-lang-utils",
  "indoc",
- "itertools",
+ "itertools 0.14.0",
  "num-bigint",
  "num-traits",
  "starknet-types-core",
@@ -796,7 +796,7 @@ dependencies = [
  "const_format",
  "indent",
  "indoc",
- "itertools",
+ "itertools 0.14.0",
  "rayon",
  "salsa",
  "serde",
@@ -817,7 +817,7 @@ dependencies = [
  "cairo-lang-sierra-type-size",
  "cairo-lang-utils",
  "convert_case",
- "itertools",
+ "itertools 0.14.0",
  "num-bigint",
  "num-integer",
  "num-traits",
@@ -839,7 +839,7 @@ dependencies = [
  "cairo-lang-primitive-token",
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
- "itertools",
+ "itertools 0.14.0",
  "num-bigint",
  "num-traits",
  "salsa",
@@ -876,7 +876,7 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-utils",
  "indoc",
- "itertools",
+ "itertools 0.14.0",
  "num-bigint",
  "num-traits",
  "salsa",
@@ -904,7 +904,7 @@ source = "git+https://github.com/starkware-libs/cairo?rev=01d0364#01d0364dde575b
 dependencies = [
  "hashbrown 0.17.1",
  "indexmap",
- "itertools",
+ "itertools 0.14.0",
  "num-bigint",
  "num-traits",
  "salsa",
@@ -971,7 +971,7 @@ dependencies = [
  "governor",
  "indoc",
  "insta",
- "itertools",
+ "itertools 0.15.0",
  "jaro_winkler",
  "jod-thread",
  "libc",
@@ -1020,7 +1020,7 @@ dependencies = [
  "cairo-language-common",
  "if_chain",
  "indoc",
- "itertools",
+ "itertools 0.14.0",
  "log",
  "num-bigint",
  "salsa",
@@ -2067,6 +2067,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b4baf93f58d4425749ca49a51c50ebab072c5df6994d08fed93541c331481dc"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2138,7 +2147,7 @@ dependencies = [
  "ascii-canvas",
  "bit-set",
  "ena",
- "itertools",
+ "itertools 0.14.0",
  "lalrpop-util",
  "petgraph",
  "pico-args",
@@ -2273,9 +2282,9 @@ dependencies = [
 
 [[package]]
 name = "lsp-server"
-version = "0.7.9"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d6ada348dbc2703cbe7637b2dda05cff84d3da2819c24abcb305dd613e0ba2e"
+checksum = "0ad8be6fe0ca81b8298bfbbe8a77e9fcd8895ad6c84cd7794d5ebadcbb09ae43"
 dependencies = [
  "crossbeam-channel",
  "log",
