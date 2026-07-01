@@ -11,6 +11,7 @@ pub struct ProjectWithSnforgeIntegrationTest;
 pub struct ProjectWithCairoProjectToml;
 pub struct ProjectWithCustomMacrosV2;
 pub struct ProjectWithCustomMacrosV1AndV2;
+pub struct ProjectWithUserDefinedInlineMacros;
 
 impl MacroTest for ProjectWithCustomMacros {
     fn fixture() -> Fixture {
@@ -209,5 +210,62 @@ impl MacroTest for ProjectWithCairoProjectToml {
             "enableProcMacros": false,
             "traceMacroDiagnostics": false,
         })
+    }
+}
+
+impl MacroTest for ProjectWithUserDefinedInlineMacros {
+    fn fixture() -> Fixture {
+        fixture! {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                mod a;
+
+                macro add_one {
+                    ($x:expr) => {
+                        $x + 1
+                    };
+                }
+
+                macro add_many {
+                    ($x:expr, $y:expr) => {
+                        $x + $y
+                    };
+                    ($x:expr, $y:expr, $z:expr) => {
+                        $x + $y + $z
+                    };
+                }
+
+                macro build_array {
+                    ($($x:expr), *) => {
+                        {
+                            let mut result = $defsite::ArrayTrait::new();
+                            $(result.append($x);)*
+                            result
+                        }
+                    };
+                }
+
+                macro declare_two {
+                    ($x:expr) => {
+                        let first = $x;
+                        let _second = first + 1;
+                    };
+                }
+
+                macro append_twice {
+                    ($arr:ident, $value:expr) => {
+                        $arr.append($value);
+                        $arr.append($value + 1);
+                    };
+                }
+            "#),
+
+            "test_package/Scarb.toml" => indoc!(r#"
+                [package]
+                name = "test_package"
+                version = "0.1.0"
+                edition = "2025_12"
+                experimental-features = ["user_defined_inline_macros"]
+            "#),
+        }
     }
 }
