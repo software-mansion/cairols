@@ -28,7 +28,7 @@ pub struct DebuggerCodeLens {
 impl CodeLensInterface for DebuggerCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
         let (full_qualified_path, _) =
-            get_full_path_and_module_id(&file_url, state, &self.lens, &self.full_path)?;
+            get_full_path_and_module_id(&file_url, state, &self.lens, &self.full_path, false)?;
         let full_path = sanitize_test_case_name(full_qualified_path.as_ref());
 
         let file_path = file_url.to_file_path().ok()?;

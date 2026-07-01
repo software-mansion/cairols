@@ -10,6 +10,7 @@ use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_filesystem::span::TextPositionSpan;
@@ -42,12 +43,18 @@ const TEST_CASE_ATTR: &str = "test_case";
 pub struct TestCodeLens {
     lens: CodeLens,
     full_path: String,
+    is_on_mod: bool,
 }
 
 impl CodeLensInterface for TestCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
-        let (full_qualified_path, module_id) =
-            get_full_path_and_module_id(&file_url, state, &self.lens, &self.full_path)?;
+        let (full_qualified_path, module_id) = get_full_path_and_module_id(
+            &file_url,
+            state,
+            &self.lens,
+            &self.full_path,
+            self.is_on_mod,
+        )?;
 
         let db = &state.db;
         let command = state.config.test_runner.command(
@@ -72,26 +79,50 @@ pub fn get_full_path_and_module_id<'db>(
     state: &'db State,
     lens: &CodeLens,
     full_path: &str,
+    is_on_mod: bool,
 ) -> Option<(TestFullQualifiedPath, ModuleId<'db>)> {
     let db = &state.db;
 
     let file = db.file_for_url(file_url)?;
+
+    if let Some(resolved) = resolve_lens_node(db, lens, full_path, file) {
+        return Some(resolved);
+    }
+
+    // Fallback for a click on a macro-generated `mod` itself: `get_node_resultants` returns the
+    // items *inside* the generated module (so the inner tests re-resolve above) but never the
+    // generated `mod` node itself, so a mod-level lens cannot be re-resolved. Use the path computed
+    // at discovery time and the file's owning crate (all the runner detection below needs).
+    let module_id = *db.file_modules(file).ok()?.first()?;
+    let path = if is_on_mod {
+        TestFullQualifiedPath::Module(full_path.to_string())
+    } else {
+        TestFullQualifiedPath::Function(full_path.to_string())
+    };
+
+    Some((path, module_id))
+}
+
+/// Resolves the node of the clicked lens to recover the (possibly updated) path and its module.
+fn resolve_lens_node<'db>(
+    db: &'db AnalysisDatabase,
+    lens: &CodeLens,
+    full_path: &str,
+    file: FileId<'db>,
+) -> Option<(TestFullQualifiedPath, ModuleId<'db>)> {
     let span = TextPositionSpan::offset_in_file(lens.range.to_cairo(), db, file)?;
     // When creating range we have to use [`SyntaxNode::span_without_trivia`] to place lens next to attribute
     let node = db.widest_node_within_span_without_trivia(file, span)?;
 
-    let (full_qualified_path, module_id) =
-        db.get_node_resultants(node).as_ref()?.iter().find_map(|resultant| {
-            let module_item =
-                resultant.ancestors_with_self(db).find_map(|node| ModuleItem::cast(db, node))?;
-            let module_id = db.find_module_containing_node(module_item.as_syntax_node())?;
-            let path = TestFullQualifiedPath::new(db, module_item, module_id)?;
+    db.get_node_resultants(node).as_ref()?.iter().find_map(|resultant| {
+        let module_item =
+            resultant.ancestors_with_self(db).find_map(|node| ModuleItem::cast(db, node))?;
+        let module_id = db.find_module_containing_node(module_item.as_syntax_node())?;
+        let path = TestFullQualifiedPath::new(db, module_item, module_id)?;
 
-            // Find resultant that produced this codelens earlier by comparing full paths
-            (sanitize_test_case_name(path.as_ref()) == full_path).then_some((path, module_id))
-        })?;
-
-    Some((full_qualified_path, module_id))
+        // Find resultant that produced this code lens earlier by comparing full paths
+        (sanitize_test_case_name(path.as_ref()) == full_path).then_some((path, module_id))
+    })
 }
 
 pub struct TestCodeLensInternal {
@@ -137,6 +168,7 @@ impl CodeLensInternal for TestCodeLensInternal {
         LSCodeLens::Test(TestCodeLens {
             lens: CodeLens { range: self.range, command: Some(command), data: None },
             full_path: self.full_path,
+            is_on_mod: self.is_on_mod,
         })
     }
 }
