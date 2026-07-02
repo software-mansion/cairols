@@ -1,9 +1,11 @@
 use lsp_types::CodeAction;
 
-use super::{ManifestActionContext, remove_key_path, replace_manifest_action, unknown_field_path};
+use super::{
+    ManifestActionContext, diagnostic_string_array, remove_key_path, replace_manifest_action,
+};
 
 pub fn build(ctx: &ManifestActionContext<'_>) -> Vec<CodeAction> {
-    let Some(path) = unknown_field_path(&ctx.diagnostic.message) else {
+    let Some(path) = diagnostic_string_array(ctx.diagnostic, "field_path") else {
         return vec![];
     };
     let field = path.join(".");
