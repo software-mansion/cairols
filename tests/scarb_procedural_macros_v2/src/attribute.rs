@@ -64,3 +64,37 @@ pub fn mod_attribute_macro_v2(_args: TokenStream, item: TokenStream) -> ProcMacr
     };
     ProcMacroResult::new(ts)
 }
+
+#[attribute_macro]
+pub fn test_generating_attribute_macro_v2(
+    _args: TokenStream,
+    item: TokenStream,
+) -> ProcMacroResult {
+    let ts = quote! {
+        #item
+
+        #[test]
+        fn generated_test_v2() {}
+    };
+    ProcMacroResult::new(ts)
+}
+
+#[attribute_macro]
+pub fn multiple_tests_generating_attribute_macro_v2(
+    _args: TokenStream,
+    item: TokenStream,
+) -> ProcMacroResult {
+    let ts = quote! {
+        #item
+
+        #[test]
+        fn generated_test_1_v2() {}
+
+        #[test]
+        fn generated_test_2_v2() {}
+
+        #[test]
+        fn generated_test_3_v2() {}
+    };
+    ProcMacroResult::new(ts)
+}
