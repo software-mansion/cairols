@@ -42,12 +42,18 @@ const TEST_CASE_ATTR: &str = "test_case";
 pub struct TestCodeLens {
     lens: CodeLens,
     full_path: String,
+    is_on_mod: bool,
 }
 
 impl CodeLensInterface for TestCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
-        let (full_qualified_path, module_id) =
-            get_full_path_and_module_id(&file_url, state, &self.lens, &self.full_path)?;
+        let (full_qualified_path, module_id) = get_full_path_and_module_id(
+            &file_url,
+            state,
+            &self.lens,
+            &self.full_path,
+            self.is_on_mod,
+        )?;
 
         let db = &state.db;
         let command = state.config.test_runner.command(
@@ -72,15 +78,19 @@ pub fn get_full_path_and_module_id<'db>(
     state: &'db State,
     lens: &CodeLens,
     full_path: &str,
+    is_on_mod: bool,
 ) -> Option<(TestFullQualifiedPath, ModuleId<'db>)> {
     let db = &state.db;
 
     let file = db.file_for_url(file_url)?;
-    let span = TextPositionSpan::offset_in_file(lens.range.to_cairo(), db, file)?;
-    // When creating range we have to use [`SyntaxNode::span_without_trivia`] to place lens next to attribute
-    let node = db.widest_node_within_span_without_trivia(file, span)?;
 
-    let (full_qualified_path, module_id) =
+    // Re-resolve the clicked node to recover the (possibly updated) path and its module. This
+    // works for hand-written tests and for proc-macro-generated functions (expanded in place).
+    let resolved = (|| {
+        let span = TextPositionSpan::offset_in_file(lens.range.to_cairo(), db, file)?;
+        // When creating range we have to use [`SyntaxNode::span_without_trivia`] to place lens next to attribute
+        let node = db.widest_node_within_span_without_trivia(file, span)?;
+
         db.get_node_resultants(node).as_ref()?.iter().find_map(|resultant| {
             let module_item =
                 resultant.ancestors_with_self(db).find_map(|node| ModuleItem::cast(db, node))?;
@@ -89,9 +99,25 @@ pub fn get_full_path_and_module_id<'db>(
 
             // Find resultant that produced this codelens earlier by comparing full paths
             (sanitize_test_case_name(path.as_ref()) == full_path).then_some((path, module_id))
-        })?;
+        })
+    })();
 
-    Some((full_qualified_path, module_id))
+    if let Some(resolved) = resolved {
+        return Some(resolved);
+    }
+
+    // Fallback for items inside a macro-generated `mod`: `get_node_resultants` does not descend
+    // into the generated module's contents, so the click cannot be re-resolved to the `mod` (or
+    // the tests inside it). Use the path computed at discovery time and the file's owning crate
+    // (all the runner detection below needs).
+    let module_id = *db.file_modules(file).ok()?.first()?;
+    let path = if is_on_mod {
+        TestFullQualifiedPath::Module(full_path.to_string())
+    } else {
+        TestFullQualifiedPath::Function(full_path.to_string())
+    };
+
+    Some((path, module_id))
 }
 
 pub struct TestCodeLensInternal {
@@ -137,6 +163,7 @@ impl CodeLensInternal for TestCodeLensInternal {
         LSCodeLens::Test(TestCodeLens {
             lens: CodeLens { range: self.range, command: Some(command), data: None },
             full_path: self.full_path,
+            is_on_mod: self.is_on_mod,
         })
     }
 }
