@@ -20,6 +20,7 @@ use crate::support::{cursors, sandbox};
 mod both_runners;
 mod cairo_test;
 mod custom;
+mod declarative_macro;
 mod executable;
 mod no_runners;
 mod other_file;
@@ -96,6 +97,39 @@ fn test_code_lens_snforge_with_macros(cairo_code: &str) -> Report {
             add-types-debug-info = true
             "#,
             crate::macros::SCARB_TEST_MACROS_V2_PACKAGE.display()
+        ),
+        json!({
+            "cairo1": {
+                "enableProcMacros": true
+            }
+        }),
+    )
+}
+
+fn test_code_lens_snforge_with_user_defined_macros(cairo_code: &str) -> Report {
+    test_code_lens(
+        cairo_code,
+        indoc!(
+            r#"
+            [package]
+            name = "hello"
+            version = "0.1.0"
+            edition = "2025_12"
+            experimental-features = ["user_defined_inline_macros"]
+
+            [dependencies]
+            snforge_std = "0.50.0"
+
+            [tool.scarb]
+            allow-prebuilt-plugins = ["snforge_std"]
+
+            [cairo]
+            add-functions-debug-info = true
+            skip-optimizations = true
+            unstable-add-statements-code-locations-debug-info = true
+            add-statements-functions-debug-info = true
+            add-types-debug-info = true
+            "#
         ),
         json!({
             "cairo1": {

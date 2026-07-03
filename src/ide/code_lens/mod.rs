@@ -9,6 +9,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ModuleId, ModuleItemId, TopLevelLanguageElementId};
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::{FileId, SpanInFile};
+use cairo_lang_semantic::items::macro_call::MacroCallSemantic;
 use cairo_lang_syntax::node::ast::ModuleItem;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -377,6 +378,20 @@ fn collect_functions_with_attrs<'db>(
     }
 
     result
+}
+
+/// Direct user-defined-inline-macro ([`ModuleId::MacroCall`]) modules generated in `module`.
+///
+/// These modules hold the items produced by user-defined inline macros. They are invisible to
+/// [`DefsGroup::module_submodules_ids`], so callers that want to discover macro-generated tests
+/// or executables must reach them via the macro-call queries.
+fn declarative_macro_call_modules<'db>(
+    db: &'db AnalysisDatabase,
+    module: ModuleId<'db>,
+) -> Vec<ModuleId<'db>> {
+    db.module_macro_calls_ids(module)
+        .map(|calls| calls.iter().filter_map(|&call| db.macro_call_module_id(call).ok()).collect())
+        .unwrap_or_default()
 }
 
 fn get_original_module_item_and_file<'db>(
