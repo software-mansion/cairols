@@ -2,7 +2,10 @@ use std::fmt::Display;
 
 use indoc::indoc;
 use lsp_types::request::Completion;
-use lsp_types::{CompletionParams, TextDocumentPositionParams, lsp_request};
+use lsp_types::{
+    CompletionContext, CompletionParams, CompletionTriggerKind, TextDocumentPositionParams,
+    lsp_request,
+};
 use serde::Serialize;
 
 use crate::support::cursor::{Cursors, peek_caret};
@@ -84,7 +87,33 @@ fn completion_fixture_with_pub_dep_items() -> Fixture {
     }
 }
 
-fn transform(mut ls: MockClient, cursors: Cursors, main_file: &str) -> String {
+fn transform(ls: MockClient, cursors: Cursors, main_file: &str) -> String {
+    transform_with_context(ls, cursors, main_file, None)
+}
+
+fn transform_triggered_by_char(
+    ls: MockClient,
+    cursors: Cursors,
+    main_file: &str,
+    trigger_char: char,
+) -> String {
+    transform_with_context(
+        ls,
+        cursors,
+        main_file,
+        Some(CompletionContext {
+            trigger_kind: CompletionTriggerKind::TRIGGER_CHARACTER,
+            trigger_character: Some(trigger_char.to_string()),
+        }),
+    )
+}
+
+fn transform_with_context(
+    mut ls: MockClient,
+    cursors: Cursors,
+    main_file: &str,
+    context: Option<CompletionContext>,
+) -> String {
     let cairo = ls.fixture.read_file(main_file);
     let position = cursors.assert_single_caret();
 
@@ -97,7 +126,7 @@ fn transform(mut ls: MockClient, cursors: Cursors, main_file: &str) -> String {
         },
         work_done_progress_params: Default::default(),
         partial_result_params: Default::default(),
-        context: None,
+        context,
     };
 
     let caret_completions =

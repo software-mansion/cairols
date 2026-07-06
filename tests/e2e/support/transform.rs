@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use indoc::formatdoc;
 use lsp_types::ClientCapabilities;
 use serde_json::json;
@@ -19,6 +21,10 @@ pub fn conduct_transformation<T: Transformer>(
     let mut fixture = initial_fixture;
     fixture.add_file(T::main_file(), cairo.clone());
 
+    // If the fixture already provides a Scarb.toml, don't add cairo_project.toml — it would
+    // take precedence over Scarb.toml and hide the dependency crates from the LS.
+    let has_scarb_toml = fixture.files().iter().any(|f| f == Path::new("Scarb.toml"));
+
     if with_macros {
         fixture.add_file_if_not_exists(
             "Scarb.toml",
@@ -36,7 +42,7 @@ pub fn conduct_transformation<T: Transformer>(
                 SCARB_TEST_MACROS_V2_PACKAGE.display()
             ),
         );
-    } else {
+    } else if !has_scarb_toml {
         fixture.add_file_if_not_exists("cairo_project.toml", CAIRO_PROJECT_TOML_2025_12);
     };
 
