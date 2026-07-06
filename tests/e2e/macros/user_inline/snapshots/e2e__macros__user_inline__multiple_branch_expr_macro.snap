@@ -1,0 +1,20 @@
+---
+source: tests/e2e/macros/user_inline/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\nexperimental-features = [\"user_defined_inline_macros\"]\n\n// → test_package/src/a.cairo\nuse test_package::add_many;\n\nfn foo() {\n    let x = 1;\n    let y = 1;\n    let z = add_many!(x, y);\n    let _ = add_many!(x, y, z);\n}\n\n// → test_package/src/lib.cairo\nmod a;\n\nmacro add_one {\n    ($x:expr) => {\n        $x + 1\n    };\n}\n\nmacro add_many {\n    ($x:expr, $y:expr) => {\n        $x + $y\n    };\n    ($x:expr, $y:expr, $z:expr) => {\n        $x + $y + $z\n    };\n}\n\nmacro build_array {\n    ($($x:expr), *) => {\n        {\n            let mut result = $defsite::ArrayTrait::new();\n            $(result.append($x);)*\n            result\n        }\n    };\n}\n\nmacro declare_two {\n    ($x:expr) => {\n        let first = $x;\n        let _second = first + 1;\n    };\n}\n\nmacro append_twice {\n    ($arr:ident, $value:expr) => {\n        $arr.append($value);\n        $arr.append($value + 1);\n    };\n}"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+    let z = add_many<caret>!(x, y);
+"""
+generated_code = """
+x + y
+"""
+
+[[expansions]]
+analyzed_lines = """
+    let _ = add_many<caret>!(x, y, z);
+"""
+generated_code = """
+x + y + z
+"""
