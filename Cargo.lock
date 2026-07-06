@@ -1003,7 +1003,7 @@ dependencies = [
 [[package]]
 name = "cairo-lint"
 version = "2.15.0"
-source = "git+https://github.com/software-mansion/cairo-lint?rev=0a1da498777125b8f0d6291509c85f6502299da7#0a1da498777125b8f0d6291509c85f6502299da7"
+source = "git+https://github.com/software-mansion/cairo-lint?branch=fix%2Fassert-on-const-performance#b03bf78e1eee93515f650e64e4e1d58a02be8d02"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",

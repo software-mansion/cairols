@@ -132,7 +132,7 @@ cairo-lang-test-plugin = { git = "https://github.com/starkware-libs/cairo", rev 
 cairo-lang-test-utils = { git = "https://github.com/starkware-libs/cairo", rev = "4315590" }
 cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", rev = "4315590" }
 cairo-language-common = { git = "https://github.com/software-mansion/cairo-language-common", rev = "94ef8ef" }
-cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "0a1da498777125b8f0d6291509c85f6502299da7" }
+cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", branch = "fix/assert-on-const-performance" }
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,
 # while crates in this workspace are built with `dev` profile and full debug info.
