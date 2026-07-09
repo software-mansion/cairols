@@ -81,6 +81,5 @@ fn get_typed_segment_text<'db>(
     match segment {
         PathSegment::Simple(simple) => Some(simple.as_syntax_node().get_text(db).to_string()),
         PathSegment::WithGenericArgs(_) => None,
-        PathSegment::Missing(_) => Some(String::new()),
     }
 }
