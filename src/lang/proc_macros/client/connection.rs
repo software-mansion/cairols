@@ -28,7 +28,19 @@ impl ProcMacroServerConnection {
         let server_input =
             proc_macro_server.stdin.take().expect("proc-macro-server must use pipe on stdin");
 
-        let (requester, receiver) = crossbeam::channel::bounded(0);
+        // Use an unbounded channel rather than a `bounded(0)` rendezvous.
+        //
+        // With a rendezvous channel, `requester.send()` blocks until `write_requests` takes the
+        // item. If the proc-macro-server stops draining its stdin (alive but unresponsive), the
+        // OS pipe fills, `write_requests`' `write_all` blocks, and every `send()` blocks with it.
+        // Those sends happen inside salsa expansion queries (`db.rs`) on diagnostics worker
+        // threads while holding the `requests_params` write lock — a park that salsa cancellation
+        // cannot interrupt. That pins a database snapshot and holds the lock, which in turn
+        // deadlocks the main event loop (it needs the same lock in `available_responses`, and
+        // blocks on `cancel_all` waiting for the pinned snapshot to drop). Decoupling request
+        // submission from PMS drain keeps `send()` non-blocking, so a stalled PMS degrades to
+        // "responses never arrive" (handled by callers) instead of freezing the whole server.
+        let (requester, receiver) = crossbeam::channel::unbounded();
         let (server_killed_sender, server_killed_receiver) = trigger::trigger();
 
         let responses: Arc<Mutex<VecDeque<RpcResponse>>> = Default::default();
