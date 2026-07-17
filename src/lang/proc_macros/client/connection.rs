@@ -28,7 +28,7 @@ impl ProcMacroServerConnection {
         let server_input =
             proc_macro_server.stdin.take().expect("proc-macro-server must use pipe on stdin");
 
-        let (requester, receiver) = crossbeam::channel::bounded(0);
+        let (requester, receiver) = crossbeam::channel::unbounded();
         let (server_killed_sender, server_killed_receiver) = trigger::trigger();
 
         let responses: Arc<Mutex<VecDeque<RpcResponse>>> = Default::default();
