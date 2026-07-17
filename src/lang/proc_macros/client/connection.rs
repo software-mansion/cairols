@@ -91,16 +91,23 @@ fn read_responses(
 
 fn write_requests(mut server_input: ChildStdin, receiver: Receiver<RpcRequest>) {
     for request in receiver {
+        // hangdbg: `write_all` blocks when the PMS stdin pipe fills (server alive but not
+        // reading). "write_all begin" with no "end" confirms that backpressure — the trigger.
+        let id = format!("{:?}", request.id);
         let mut request = serde_json::to_vec(&request).unwrap();
 
         request.push(b'\n');
 
+        tracing::info!(target: "hangdbg", "pms write_all begin id={id} len={}", request.len());
         if let Err(err) = server_input.write_all(&request) {
+            tracing::info!(target: "hangdbg", "pms write_all error id={id}: {err:?}");
             error!("error occurred while writing to proc-macro-server: {err:?}");
 
             break;
         }
+        tracing::info!(target: "hangdbg", "pms write_all end id={id}");
     }
+    tracing::info!(target: "hangdbg", "pms write_requests loop exited");
 }
 
 struct KillOnDrop(Child);

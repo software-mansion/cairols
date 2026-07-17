@@ -112,14 +112,21 @@ impl ProcMacroClient {
     }
 
     fn send_request_untracked<M: Method>(&self, id: RequestId, params: &M::Params) -> Result<()> {
-        self.connection
+        // hangdbg: the rendezvous `send` below blocks if the PMS stops draining its stdin.
+        // A "pms send begin" with no matching "end" pinpoints the parked thread (Route A).
+        let thread = std::thread::current().name().unwrap_or("?").to_string();
+        tracing::info!(target: "hangdbg", "pms send begin id={id} method={} thread={thread}", M::METHOD);
+        let result = self
+            .connection
             .requester
             .send(RpcRequest {
                 id,
                 method: M::METHOD.to_string(),
                 value: serde_json::to_value(params).unwrap(),
             })
-            .with_context(|| anyhow!("sending request {id} failed"))
+            .with_context(|| anyhow!("sending request {id} failed"));
+        tracing::info!(target: "hangdbg", "pms send end id={id} thread={thread} ok={}", result.is_ok());
+        result
     }
 
     fn send_request<M: Method>(

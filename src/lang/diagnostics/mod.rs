@@ -385,7 +385,12 @@ impl DiagnosticsControllerThread {
     }
 
     fn join_and_clear_workers(&mut self) -> Vec<TaskResult> {
-        self.worker_handles.drain(..).map(|handle| handle.join()).collect()
+        // hangdbg: an unbounded join on a parked diagnostics worker (Route B / teardown).
+        let n = self.worker_handles.len();
+        tracing::info!(target: "hangdbg", "join_workers begin n={n}");
+        let results = self.worker_handles.drain(..).map(|handle| handle.join()).collect();
+        tracing::info!(target: "hangdbg", "join_workers end n={n}");
+        results
     }
 
     fn set_active_diagnostics_db(&self, db: AnalysisDatabase) {

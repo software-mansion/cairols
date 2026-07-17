@@ -132,7 +132,13 @@ impl AnalysisDatabase {
     /// Trigger cancellation in any background tasks that might still be running.
     /// This method will block until all db snapshots are dropped.
     pub fn cancel_all(&mut self) {
+        // hangdbg: this blocks until every db snapshot is dropped. If a worker is parked
+        // uninterruptibly (Route B / teardown), a "cancel_all begin" on thread=cairols:main
+        // with no matching "end" is the smoking gun for the main-loop freeze.
+        let thread = std::thread::current().name().unwrap_or("?").to_string();
+        tracing::info!(target: "hangdbg", "cancel_all begin thread={thread}");
         self.synthetic_write(Durability::LOW);
+        tracing::info!(target: "hangdbg", "cancel_all end thread={thread}");
     }
 
     /// Removes the plugins from [`PluginSuite`] for a crate with [`CrateInput`] if this
