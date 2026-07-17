@@ -318,7 +318,29 @@ impl Backend {
         let incoming = connection.incoming();
         let (retry_sender, retry_receiver) = channel::unbounded();
 
+        // hangdbg: main-loop watchdog. The loop bumps `heartbeat` each iteration; a background
+        // thread logs (at warn, so it shows even without a verbose filter) whenever the loop has
+        // not ticked for >5s, and keeps logging the growing stall age until the process is killed.
+        let hb_base = std::time::Instant::now();
+        let heartbeat = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+        {
+            let heartbeat = heartbeat.clone();
+            let _ = std::thread::Builder::new().name("hangdbg-watchdog".into()).spawn(move || {
+                loop {
+                    std::thread::sleep(std::time::Duration::from_secs(3));
+                    let now = hb_base.elapsed().as_millis() as u64;
+                    let age =
+                        now.saturating_sub(heartbeat.load(std::sync::atomic::Ordering::Relaxed));
+                    if age > 5_000 {
+                        tracing::warn!(target: "hangdbg", "MAIN LOOP STALLED age_ms={age}");
+                    }
+                }
+            });
+        }
+
         loop {
+            heartbeat
+                .store(hb_base.elapsed().as_millis() as u64, std::sync::atomic::Ordering::Relaxed);
             select_biased! {
                 // Project updates may significantly change the state, therefore
                 // they should be handled first in case of multiple operations being ready at once.
@@ -331,6 +353,11 @@ impl Backend {
                 recv(incoming) -> msg => {
                     let Ok(msg) = msg else { break };
 
+                    tracing::info!(target: "hangdbg", "event-loop incoming: {}", match &msg {
+                        Message::Request(r) => format!("request {} id={:?}", r.method, r.id),
+                        Message::Notification(n) => format!("notification {}", n.method),
+                        Message::Response(r) => format!("response id={:?}", r.id),
+                    });
                     if connection.handle_shutdown(&msg)? {
                         break;
                     }
@@ -349,6 +376,10 @@ impl Backend {
                 recv(proc_macro_channels.poll_responses_receiver) -> response => {
                     let Ok(()) = response else { break };
 
+                    // hangdbg: this runs on_proc_macro_response -> available_responses(), which
+                    // takes the requests_params write lock. If the log stops right after this line,
+                    // the main thread is blocked on that lock (Route A).
+                    tracing::info!(target: "hangdbg", "event-loop poll_responses -> on_proc_macro_response");
                     scheduler.local_mut(Self::on_proc_macro_response);
                 }
                 recv(proc_macro_channels.error_receiver) -> error => {
