@@ -236,7 +236,54 @@ fn manifest_diagnostic(manifest: &str, message: &str, code: &str) -> Diagnostic 
         message: message.to_string(),
         related_information: None,
         tags: None,
-        data: None,
+        data: diagnostic_data(code),
+    }
+}
+
+fn diagnostic_data(code: &str) -> Option<serde_json::Value> {
+    match code {
+        "SE0002" => Some(serde_json::json!({
+            "field_path": ["package", "typo_field"],
+        })),
+        "SE0004" => Some(serde_json::json!({
+            "profile": "custom",
+            "field_path": ["profile", "custom", "inherits"],
+            "valid_values": ["dev", "release"],
+        })),
+        "SE0005" => Some(serde_json::json!({
+            "profile": "dev",
+            "inlining_strategy_path": ["profile", "dev", "cairo", "inlining-strategy"],
+            "skip_optimizations_path": ["profile", "dev", "cairo", "skip-optimizations"],
+        })),
+        "SE0007" => Some(serde_json::json!({
+            "name": "foo",
+            "table": "dependencies",
+            "field": "branch",
+            "field_path": ["dependencies", "foo", "branch"],
+            "fields": ["branch"],
+        })),
+        "SE0008" => Some(serde_json::json!({
+            "name": "foo",
+            "table": "dependencies",
+            "field": "branch",
+            "field_path": ["dependencies", "foo", "branch"],
+            "fields": ["branch", "tag"],
+        })),
+        "SE0010" => Some(serde_json::json!({
+            "name": "foo",
+            "table": "dependencies",
+            "field": "git",
+            "field_path": ["dependencies", "foo", "git"],
+            "fields": ["git", "path"],
+        })),
+        "SE0011" => Some(serde_json::json!({
+            "name": "foo",
+            "table": "dependencies",
+            "field": "git",
+            "field_path": ["dependencies", "foo", "git"],
+            "fields": ["git", "registry"],
+        })),
+        _ => None,
     }
 }
 
