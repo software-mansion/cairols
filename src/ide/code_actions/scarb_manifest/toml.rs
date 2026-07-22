@@ -1,4 +1,4 @@
-use toml_edit::{Document, Item, Value};
+use toml_edit::{Document, DocumentMut, Item, Value};
 
 // Remove `[patch]` from a member manifest and merge it into the workspace root manifest.
 pub fn move_patch_to_workspace_root(
@@ -37,19 +37,46 @@ fn merge_patch_items(target: &mut Item, patch: &Item) -> Option<()> {
     let target = target.as_table_mut()?;
     let patch = patch.as_table()?;
 
-    for (key, source_child) in patch.iter() {
-        if let Some(target_child) = target.get_mut(key) {
-            if target_child.as_table().is_some() && source_child.as_table().is_some() {
-                merge_patch_items(target_child, source_child)?;
-            } else {
-                return None;
-            }
+    for (source, source_patches) in patch.iter() {
+        if let Some(target_patches) = target.get_mut(source) {
+            merge_patch_source(target_patches, source_patches)?;
         } else {
-            target.insert(key, source_child.clone());
+            target.insert(source, source_patches.clone());
         }
     }
 
     Some(())
+}
+
+// Merge entries for the same patch source, rejecting conflicting dependencies. Dependency
+// specifications can be written as inline tables or regular TOML tables; compare their parsed
+// values instead of descending into them and combining mutually exclusive fields such as `git`
+// and `path`.
+fn merge_patch_source(target: &mut Item, patch: &Item) -> Option<()> {
+    let target = target.as_table_mut()?;
+    let patch = patch.as_table()?;
+
+    for (dependency, specification) in patch.iter() {
+        if let Some(existing) = target.get(dependency) {
+            if !patch_specifications_equal(existing, specification) {
+                return None;
+            }
+        } else {
+            target.insert(dependency, specification.clone());
+        }
+    }
+
+    Some(())
+}
+
+fn patch_specifications_equal(left: &Item, right: &Item) -> bool {
+    fn as_toml_value(item: &Item) -> Option<toml::Value> {
+        let mut document = DocumentMut::new();
+        document.as_table_mut().insert("dependency", item.clone());
+        toml::from_str::<toml::Table>(&document.to_string()).ok()?.remove("dependency")
+    }
+
+    as_toml_value(left).zip(as_toml_value(right)).is_some_and(|(left, right)| left == right)
 }
 
 // Remove the last segment from either a regular table or an inline table.
