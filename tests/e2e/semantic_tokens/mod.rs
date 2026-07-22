@@ -10,6 +10,7 @@ use crate::support::cursor::{Cursors, render_text_with_annotations};
 use crate::support::transform::Transformer;
 
 mod complex;
+mod declarative_macros;
 mod proc_macros;
 
 impl Transformer for SemanticTokens {
