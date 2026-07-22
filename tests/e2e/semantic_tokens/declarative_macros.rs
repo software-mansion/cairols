@@ -63,8 +63,6 @@ fn inline_macro_content_operators_and_literals() {
     "#)
 }
 
-// Bug: the field access `x` inside the invocation is colored as the macro instead
-// of a field.
 #[test]
 fn inline_macro_content_field_and_method() {
     test_transform_plain!(SemanticTokens, r#"
@@ -97,7 +95,7 @@ fn inline_macro_content_field_and_method() {
 
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>p</token> = <token=struct>Point</token> { <token=property>x</token>: <token=number>5</token> };
-        <token=macro>array</token><token=macro>!</token>[<token=variable>p</token>.<token=macro>x</token>, <token=variable>p</token>.<token=function>get</token>()];
+        <token=macro>array</token><token=macro>!</token>[<token=variable>p</token>.<token=property>x</token>, <token=variable>p</token>.<token=function>get</token>()];
     }
     ")
 }
