@@ -2,7 +2,6 @@ use lsp_types::SemanticTokens;
 
 use crate::support::insta::test_transform_with_macros;
 
-// Bug: `x` inside the invocation is colored as the macro instead of a variable.
 #[test]
 fn inline_proc_macro_content_variable() {
     test_transform_with_macros!(SemanticTokens, r#"
@@ -13,13 +12,11 @@ fn inline_proc_macro_content_variable() {
     "#, @r"
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>x</token> = <token=number>5</token>;
-        <token=macro>simple_inline_macro_v2</token><token=macro>!</token>(<token=macro>x</token>);
+        <token=macro>simple_inline_macro_v2</token><token=macro>!</token>(<token=variable>x</token>);
     }
     ")
 }
 
-// Bug: the variable and function inside the invocation are colored as the macro
-// instead of their real kinds.
 #[test]
 fn inline_proc_macro_content_expressions() {
     test_transform_with_macros!(SemanticTokens, r#"
@@ -46,12 +43,11 @@ fn inline_proc_macro_content_expressions() {
 
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>x</token> = <token=number>5</token>;
-        <token=macro>simple_inline_macro_v2</token><token=macro>!</token>(<token=macro>x</token> <token=operator>+</token> <token=macro>make</token>());
+        <token=macro>simple_inline_macro_v2</token><token=macro>!</token>(<token=variable>x</token> <token=operator>+</token> <token=function>make</token>());
     }
     ")
 }
 
-// Bug: `x` in the annotated function's body is not highlighted as a variable.
 #[test]
 fn attribute_proc_macro() {
     test_transform_with_macros!(SemanticTokens, r#"
@@ -62,7 +58,7 @@ fn attribute_proc_macro() {
     "#, @r"
     #[<token=decorator>complex_attribute_macro_v2</token>]
     <token=keyword>fn</token> <token=function>main</token>() {
-        <token=keyword>let</token> x = <token=number>5</token>;
+        <token=keyword>let</token> <token=variable>x</token> = <token=number>5</token>;
     }
     ")
 }
