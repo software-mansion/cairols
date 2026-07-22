@@ -1,9 +1,10 @@
-use crate::semantic_tokens::semantic_tokens;
-use crate::support::insta::test_transform;
+use lsp_types::SemanticTokens;
+
+use crate::support::insta::test_transform_plain;
 
 #[test]
 fn complex() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     enum Foo {
         Bar,
         Baz,
@@ -60,7 +61,7 @@ fn complex() {
 
 #[test]
 fn multiline() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     fn main() {
         let _ = "
         ";
@@ -75,7 +76,7 @@ fn multiline() {
 
 #[test]
 fn on_mod() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     #[cfg(test, 1234)]
     mod rectangle { }
     "#, @r"
@@ -86,7 +87,7 @@ fn on_mod() {
 
 #[test]
 fn on_fn() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     #[cfg(test, 1234)]
     fn rectangle() { }
     "#, @r"
@@ -97,7 +98,7 @@ fn on_fn() {
 
 #[test]
 fn consts() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     const STANDALONE: u32 = 3;
 
     trait Shape<T> {
@@ -132,7 +133,7 @@ fn consts() {
 
 #[test]
 fn inline_macro_with_same_name_as_module() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     use core::array;
 
     fn main() {
@@ -149,7 +150,7 @@ fn inline_macro_with_same_name_as_module() {
 
 #[test]
 fn inline_macro_with_same_name_as_enum() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     enum array {
         Abc
     }
@@ -170,7 +171,7 @@ fn inline_macro_with_same_name_as_enum() {
 
 #[test]
 fn inline_macro_with_same_name_as_trait() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     trait array { }
 
     fn main() {
@@ -187,7 +188,7 @@ fn inline_macro_with_same_name_as_trait() {
 
 #[test]
 fn doc_comment_with_link() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     //! Doc header comment
     //! And a one with a [`Link`]
     //! Plz refer to this external [source](https://zal.pl)
