@@ -7,7 +7,9 @@ use super::{ManifestActionContext, move_patch_to_workspace_root_action};
 use crate::lang::lsp::LsProtoGroup;
 
 pub fn build(ctx: &ManifestActionContext<'_>) -> Vec<CodeAction> {
-    let Some(member_manifest_path) = ctx.uri.to_file_path().ok() else {
+    let Some(member_manifest_path) =
+        ctx.uri.to_file_path().ok().and_then(|path| path.canonicalize().ok())
+    else {
         return vec![];
     };
     let Some((diagnostic_manifest_path, workspace_root_manifest_path)) =
@@ -46,5 +48,8 @@ fn diagnostic_manifest_paths(ctx: &ManifestActionContext<'_>) -> Option<(PathBuf
     let manifest_path = data.get("manifest_path")?.as_str()?;
     let workspace_manifest_path = data.get("workspace_manifest_path")?.as_str()?;
 
-    Some((PathBuf::from(manifest_path), PathBuf::from(workspace_manifest_path)))
+    Some((
+        PathBuf::from(manifest_path).canonicalize().ok()?,
+        PathBuf::from(workspace_manifest_path).canonicalize().ok()?,
+    ))
 }

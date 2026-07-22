@@ -300,9 +300,14 @@ fn patch_move_code_actions(
         "the `[patch]` section can only be defined in the workspace root manifests",
         "SE0012",
     );
+    // Scarb and the editor may represent the same manifest with lexically different paths.
+    // Keep both diagnostic paths non-canonical to cover comparisons and workspace lookup.
+    let fixture_root = ls.fixture.root_path();
+    let diagnostic_manifest_path = fixture_root.join("member/./Scarb.toml");
+    let diagnostic_workspace_manifest_path = fixture_root.join("member/../Scarb.toml");
     diagnostic.data = Some(serde_json::json!({
-        "manifest_path": ls.fixture.file_absolute_path("member/Scarb.toml"),
-        "workspace_manifest_path": ls.fixture.file_absolute_path("Scarb.toml"),
+        "manifest_path": diagnostic_manifest_path,
+        "workspace_manifest_path": diagnostic_workspace_manifest_path,
     }));
 
     ls.send_request::<lsp_request!("textDocument/codeAction")>(CodeActionParams {
