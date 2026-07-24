@@ -15,7 +15,7 @@ pub trait LsSyntaxGroup: Database {
         file: FileId<'db>,
         span: TextSpan,
     ) -> Option<SyntaxNode<'db>> {
-        widest_node_within_span(self.as_dyn_database(), file, span)
+        *widest_node_within_span(self.as_dyn_database(), file, span)
     }
 
     /// Like [`LsSyntaxGroup::widest_node_within_span`] but uses [`SyntaxNode::span_without_trivia`] instead of [`SyntaxNode::span`]
@@ -35,7 +35,7 @@ pub trait LsSyntaxGroup: Database {
         file: FileId<'db>,
         position: TextPosition,
     ) -> Option<SyntaxNode<'db>> {
-        find_syntax_node_at_position(self.as_dyn_database(), file, position)
+        *find_syntax_node_at_position(self.as_dyn_database(), file, position)
     }
 
     /// Finds a [`TerminalIdentifier`] at the given [`TextPosition`] in the file.
