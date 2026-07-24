@@ -138,7 +138,8 @@ impl ProcMacroClientController {
         client_capabilities: &ClientCapabilities,
         requester: &mut Requester,
     ) {
-        let ServerStatus::Connected(client) = db.proc_macro_input().proc_macro_server_status(db)
+        let ServerStatus::Connected(client) =
+            db.proc_macro_input().proc_macro_server_status(db).clone()
         else {
             return;
         };
@@ -410,7 +411,8 @@ impl ProcMacroClientController {
 
         // At this point we are the only thread with access to the db and therefore
         // to the proc macro client.
-        if let ServerStatus::Connected(client) = db.proc_macro_input().proc_macro_server_status(db)
+        if let ServerStatus::Connected(client) =
+            db.proc_macro_input().proc_macro_server_status(db).clone()
         {
             // Make the db drop the strong reference to the proc macro client.
             self.set_proc_macro_server_status(db, ServerStatus::Pending);

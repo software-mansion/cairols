@@ -30,9 +30,9 @@ fn file_url() {
     check("file:///", FileLongId::OnDisk("/".into()));
 
     // NOTE: We expect that Salsa is assigning sequential numeric ids to files,
-    //   hence numbers 9218 and 9219 appear further down.
+    //   hence numbers 1154 and 1155 appear further down.
     check(
-        "vfs://9218/foo.cairo",
+        "vfs://1154/foo.cairo",
         FileLongId::Virtual(VirtualFile {
             parent: None,
             name: SmolStrId::from(db, "foo"),
@@ -43,7 +43,7 @@ fn file_url() {
         }),
     );
     check(
-        "vfs://9219/foo%2Fbar.cairo",
+        "vfs://1155/foo%2Fbar.cairo",
         FileLongId::Virtual(VirtualFile {
             parent: None,
             name: SmolStrId::from(db, "foo/bar"),

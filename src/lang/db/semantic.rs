@@ -38,7 +38,7 @@ pub trait LsSemanticGroup: Database {
     /// This method is a shortcut for getting the first item out of `collect_lookup_items_leaf`.
     /// Returns `None` if there is missing data in the compiler database.
     fn find_lookup_item<'db>(&'db self, node: SyntaxNode<'db>) -> Option<LookupItemId<'db>> {
-        find_lookup_item(self.as_dyn_database(), (), node)
+        *find_lookup_item(self.as_dyn_database(), (), node)
     }
 
     /// Returns [`LookupItemId`]s corresponding to the node or its first parent all the way up to
@@ -67,7 +67,7 @@ pub trait LsSemanticGroup: Database {
         &'db self,
         node: SyntaxNode<'db>,
     ) -> Option<SyntaxNode<'db>> {
-        corresponding_node_in_parent_file(self.as_dyn_database(), (), node)
+        *corresponding_node_in_parent_file(self.as_dyn_database(), (), node)
     }
 
     /// Returns [`LookupItemId`]s corresponding to the node and its parents all the way up to syntax
