@@ -15,7 +15,7 @@ jobs:
         with:
           scarb-version: ${{ github.event.client_payload.tag_name }}
           cache: false
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@v2.85.4
         with:
           tool: nextest@0.9.98
       - name: nextest archive
@@ -45,7 +45,7 @@ jobs:
       - uses: foundry-rs/setup-snfoundry@v6
         with:
           starknet-foundry-version: nightly-2026-04-06
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@v2.85.4
         with:
           tool: nextest@0.9.98
       - uses: actions/download-artifact@v8
@@ -60,7 +60,7 @@ jobs:
     needs: test
     steps:
       - name: Notify the team about workflow failure
-        uses: slackapi/slack-github-action@v3.0.3
+        uses: slackapi/slack-github-action@v4.0.0
         with:
           webhook: ${{ secrets.SLACK_SCARB_NIGHTLY_CHECK_FAILURE_WEBHOOK_URL }}
           webhook-type: webhook-trigger
