@@ -1,6 +1,8 @@
 use toml_edit::{Document, DocumentMut, Item, Value};
 
-// Remove `[patch]` from a member manifest and merge it into the workspace root manifest.
+/// Removes `[patch]` from a member manifest and merges it into the workspace root manifest.
+///
+/// Returns the rewritten member manifest first and the rewritten workspace root manifest second.
 pub fn move_patch_to_workspace_root(
     member_raw_toml: &str,
     workspace_root_raw_toml: &str,
@@ -33,6 +35,10 @@ pub fn replace_key_path_value(raw_toml: &str, path: &[String], new_value: Value)
     replace_key_value_in_item(doc.as_item_mut(), path, new_value).then(|| doc.to_string())
 }
 
+/// Merges all sources and dependencies from `patch` into the target `[patch]` table.
+///
+/// Returns `None` when either item is not a table or conflicting dependency specifications make
+/// the merge ambiguous.
 fn merge_patch_items(target: &mut Item, patch: &Item) -> Option<()> {
     let target = target.as_table_mut()?;
     let patch = patch.as_table()?;
