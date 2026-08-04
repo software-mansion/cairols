@@ -979,8 +979,6 @@ fn with_nested_binary_expressions_and_caret_after_with_macro() {
     "#);
 }
 
-// Regression tests for https://github.com/software-mansion/cairols/issues/1314
-
 #[test]
 fn pub_impl_method_dot_completion() {
     test_transform_plain!(Completion, completion_fixture(),
