@@ -8,7 +8,8 @@ use lsp_types::{CodeLens, Command, Position, Range, Url};
 
 use crate::ide::code_lens::{
     AnnotatedNode, CodeLensInterface, CodeLensInternal, LSCodeLens, collect_functions_with_attrs,
-    get_original_module_item_and_file, make_lens_args, send_execute_in_terminal,
+    declarative_macro_call_modules, get_original_module_item_and_file, make_lens_args,
+    send_execute_in_terminal,
 };
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
@@ -99,6 +100,15 @@ fn get_executable_lenses_builders_in_mod(
                 command: format!("scarb execute --executable-function {full_path}"),
             });
         }
+    }
+
+    for macro_module in declarative_macro_call_modules(db, module) {
+        get_executable_lenses_builders_in_mod(
+            file_code_lenses_builders,
+            db,
+            macro_module,
+            file_url.clone(),
+        );
     }
 
     let Ok(modules) = db.module_submodules_ids(module) else { return };
