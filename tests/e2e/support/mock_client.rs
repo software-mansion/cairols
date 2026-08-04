@@ -142,7 +142,7 @@ impl MockClient {
         {
             if let Message::Response(res) = response_message {
                 let res_id = res.id;
-                let result = res.result.ok_or_else(|| res.error.unwrap());
+                let result = res.response_result;
 
                 assert_eq!(res_id, id);
 

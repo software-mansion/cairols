@@ -5,13 +5,11 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69    |
 // +-----------------------------------------------------+
 
-use std::any::TypeId;
 use std::collections::HashMap;
 
 use anyhow::Result;
 use lsp_server::{Notification, RequestId, Response};
 use lsp_types::notification::Notification as NotificationTrait;
-use serde_json::Value;
 use tracing::error;
 
 use crate::lsp::result::LSPError;
@@ -113,33 +111,18 @@ impl<'s> Requester<'s> {
         self.response_handlers.insert(
             self.next_request_id.into(),
             Box::new(move |response: lsp_server::Response| {
-                match (response.error, response.result) {
-                    (Some(err), _) => {
+                match response.response_result {
+                    Err(err) => {
                         error!("got an error from the client (code {}): {}", err.code, err.message);
                         Task::nothing()
                     }
-                    (None, Some(response)) => match serde_json::from_value(response) {
+                    Ok(response) => match serde_json::from_value(response) {
                         Ok(response) => response_handler(response),
                         Err(error) => {
                             error!("failed to deserialize response from server: {error}");
                             Task::nothing()
                         }
                     },
-                    (None, None) => {
-                        if TypeId::of::<R::Result>() == TypeId::of::<()>() {
-                            // We can't call `response_handler(())` directly here, but
-                            // since we _know_ the type expected is `()`, we can use
-                            // `from_value(Value::Null)`. `R::Result` implements `DeserializeOwned`,
-                            // so this branch works in the general case but we'll only
-                            // hit it if the concrete type is `()`, so the `unwrap()` is safe here.
-                            response_handler(serde_json::from_value(Value::Null).unwrap());
-                        } else {
-                            error!(
-                                "server response was invalid: did not contain a result or error"
-                            );
-                        }
-                        Task::nothing()
-                    }
                 }
             }),
         );
