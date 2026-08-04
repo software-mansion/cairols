@@ -2,7 +2,6 @@ use lsp_types::SemanticTokens;
 
 use crate::support::insta::test_transform_plain;
 
-// Bug: `x` inside the invocation is colored as the macro instead of a variable.
 #[test]
 fn inline_macro_content_variable() {
     test_transform_plain!(SemanticTokens, r#"
@@ -13,13 +12,11 @@ fn inline_macro_content_variable() {
     "#, @r"
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>x</token> = <token=number>5</token>;
-        <token=macro>array</token><token=macro>!</token>[<token=macro>x</token>];
+        <token=macro>array</token><token=macro>!</token>[<token=variable>x</token>];
     }
     ")
 }
 
-// Bug: the variable, enum, variant and function inside the invocation are all
-// colored as the macro instead of their real kinds.
 #[test]
 fn inline_macro_content_expressions() {
     test_transform_plain!(SemanticTokens, r#"
@@ -46,12 +43,11 @@ fn inline_macro_content_expressions() {
 
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>x</token> = <token=number>5</token>;
-        <token=macro>array</token><token=macro>!</token>[<token=macro>x</token>, <token=macro>Foo</token>::<token=macro>Bar</token>, <token=macro>make</token>()];
+        <token=macro>array</token><token=macro>!</token>[<token=variable>x</token>, <token=enum>Foo</token>::<token=enumMember>Bar</token>, <token=function>make</token>()];
     }
     ")
 }
 
-// Bug: `x` inside the invocation is colored as the macro instead of a variable.
 #[test]
 fn inline_macro_content_operators_and_literals() {
     test_transform_plain!(SemanticTokens, r#"
@@ -62,13 +58,13 @@ fn inline_macro_content_operators_and_literals() {
     "#, @r#"
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>x</token> = <token=number>5</token>;
-        <token=macro>array</token><token=macro>!</token>[<token=macro>x</token> <token=operator>+</token> <token=number>1</token>, <token=string>"abc"</token>];
+        <token=macro>array</token><token=macro>!</token>[<token=variable>x</token> <token=operator>+</token> <token=number>1</token>, <token=string>"abc"</token>];
     }
     "#)
 }
 
-// Bug: the field access and method call inside the invocation are colored as the
-// macro instead of their real kinds.
+// Bug: the field access `x` inside the invocation is colored as the macro instead
+// of a field.
 #[test]
 fn inline_macro_content_field_and_method() {
     test_transform_plain!(SemanticTokens, r#"
@@ -101,13 +97,11 @@ fn inline_macro_content_field_and_method() {
 
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>p</token> = <token=struct>Point</token> { <token=property>x</token>: <token=number>5</token> };
-        <token=macro>array</token><token=macro>!</token>[<token=macro>p</token>.<token=macro>x</token>, <token=macro>p</token>.<token=macro>get</token>()];
+        <token=macro>array</token><token=macro>!</token>[<token=variable>p</token>.<token=macro>x</token>, <token=variable>p</token>.<token=function>get</token>()];
     }
     ")
 }
 
-// Bug: the module path and function call inside the invocation are colored as the
-// macro instead of a namespace and a function.
 #[test]
 fn inline_macro_content_path_and_call() {
     test_transform_plain!(SemanticTokens, r#"
@@ -128,13 +122,11 @@ fn inline_macro_content_path_and_call() {
     }
 
     <token=keyword>fn</token> <token=function>main</token>() {
-        <token=macro>array</token><token=macro>!</token>[<token=macro>utils</token>::<token=macro>helper</token>()];
+        <token=macro>array</token><token=macro>!</token>[<token=namespace>utils</token>::<token=function>helper</token>()];
     }
     ")
 }
 
-// Bug: the struct name and field inside the invocation are colored as the macro
-// instead of a struct and a field.
 #[test]
 fn inline_macro_content_struct_literal() {
     test_transform_plain!(SemanticTokens, r#"
@@ -153,13 +145,12 @@ fn inline_macro_content_struct_literal() {
 
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>x</token> = <token=number>5</token>;
-        <token=macro>array</token><token=macro>!</token>[<token=macro>Point</token> { <token=macro>x</token> }];
+        <token=macro>array</token><token=macro>!</token>[<token=struct>Point</token> { <token=variable>x</token> }];
     }
     ")
 }
 
-// Bug: the inner macro's `!` is colored as an operator, and its content is colored
-// as the macro.
+// Bug: the inner macro's `!` is colored as an operator instead of the macro.
 #[test]
 fn nested_inline_macros() {
     test_transform_plain!(SemanticTokens, r#"
@@ -170,12 +161,11 @@ fn nested_inline_macros() {
     "#, @r"
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>x</token> = <token=number>5</token>;
-        <token=macro>array</token><token=macro>!</token>[<token=macro>array</token><token=operator>!</token>[<token=macro>x</token>]];
+        <token=macro>array</token><token=macro>!</token>[<token=macro>array</token><token=operator>!</token>[<token=variable>x</token>]];
     }
     ")
 }
 
-// Bug: the interpolated variable is colored as the macro instead of a variable.
 #[test]
 fn format_macro_content() {
     test_transform_plain!(SemanticTokens, r#"
@@ -186,13 +176,12 @@ fn format_macro_content() {
     "#, @r#"
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>x</token> = <token=number>5</token>;
-        <token=macro>println</token><token=macro>!</token>(<token=string>"{}"</token>, <token=macro>x</token>);
+        <token=macro>println</token><token=macro>!</token>(<token=string>"{}"</token>, <token=variable>x</token>);
     }
     "#)
 }
 
-// Bug: the macro name in its definition is colored as a class, and the variable in
-// the invocation is colored as the macro.
+// Bug: the macro name in its definition is colored as a class.
 #[test]
 fn user_defined_macro() {
     test_transform_plain!(SemanticTokens, r#"
@@ -211,7 +200,7 @@ fn user_defined_macro() {
 
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>x</token> = <token=number>5</token>;
-        <token=macro>add_one</token><token=macro>!</token>(<token=macro>x</token>);
+        <token=macro>add_one</token><token=macro>!</token>(<token=variable>x</token>);
     }
     ")
 }
