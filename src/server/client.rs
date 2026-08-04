@@ -110,20 +110,18 @@ impl<'s> Requester<'s> {
 
         self.response_handlers.insert(
             self.next_request_id.into(),
-            Box::new(move |response: lsp_server::Response| {
-                match response.response_result {
-                    Err(err) => {
-                        error!("got an error from the client (code {}): {}", err.code, err.message);
+            Box::new(move |response: lsp_server::Response| match response.response_result {
+                Err(err) => {
+                    error!("got an error from the client (code {}): {}", err.code, err.message);
+                    Task::nothing()
+                }
+                Ok(response) => match serde_json::from_value(response) {
+                    Ok(response) => response_handler(response),
+                    Err(error) => {
+                        error!("failed to deserialize response from server: {error}");
                         Task::nothing()
                     }
-                    Ok(response) => match serde_json::from_value(response) {
-                        Ok(response) => response_handler(response),
-                        Err(error) => {
-                            error!("failed to deserialize response from server: {error}");
-                            Task::nothing()
-                        }
-                    },
-                }
+                },
             }),
         );
 
