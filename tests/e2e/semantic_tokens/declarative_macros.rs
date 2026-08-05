@@ -180,7 +180,6 @@ fn format_macro_content() {
     "#)
 }
 
-// Bug: the macro name in its definition is colored as a class.
 #[test]
 fn user_defined_macro() {
     test_transform_plain!(SemanticTokens, r#"
@@ -193,7 +192,7 @@ fn user_defined_macro() {
         add_one!(x);
     }
     "#, @r"
-    <token=keyword>pub</token> <token=keyword>macro</token> <token=class>add_one</token> {
+    <token=keyword>pub</token> <token=keyword>macro</token> <token=macro>add_one</token> {
         ($x: expr) => { $x <token=operator>+</token> <token=number>1</token> };
     }
 
@@ -242,7 +241,7 @@ fn module_level_user_macro() {
         the_answer()
     }
     "#, @r"
-    <token=keyword>macro</token> <token=class>define_fn</token> {
+    <token=keyword>macro</token> <token=macro>define_fn</token> {
         ($name:ident) => {
             expose<token=macro>!</token> {
                 <token=keyword>fn</token> $name() -> felt252 {
@@ -271,7 +270,7 @@ fn nested_bangs_in_macro_definition() {
         };
     }
     "#, @r"
-    <token=keyword>pub</token> <token=keyword>macro</token> <token=class>outer</token> {
+    <token=keyword>pub</token> <token=keyword>macro</token> <token=macro>outer</token> {
         () => {
             paren<token=macro>!</token>(<token=number>1</token>);
             bracket<token=macro>!</token>[<token=number>2</token>];

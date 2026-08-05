@@ -181,7 +181,9 @@ impl SemanticTokenKind {
         let parent_kind = parent_node.kind(db);
         let grandparent_kind = parent_node.grandparent_kind(db);
         match parent_kind {
-            SyntaxKind::ItemInlineMacro => Some(SemanticTokenKind::InlineMacro),
+            SyntaxKind::ItemInlineMacro | SyntaxKind::ItemMacroDeclaration => {
+                Some(SemanticTokenKind::InlineMacro)
+            }
             SyntaxKind::AliasClause => Some(SemanticTokenKind::Class),
             SyntaxKind::ItemConstant | SyntaxKind::TraitItemConstant => {
                 Some(SemanticTokenKind::EnumMember)
