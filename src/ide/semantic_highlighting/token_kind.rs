@@ -140,7 +140,7 @@ impl SemanticTokenKind {
                 if matches!(
                     grandparent_kind,
                     Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
-                ) =>
+                ) || is_token_tree_macro_bang(db, node) =>
             {
                 Some(SemanticTokenKind::InlineMacro)
             }
@@ -307,6 +307,43 @@ fn find_closest_terminal_ancestor_or_self<'db>(
         None
     }?;
     Some(TerminalIdentifier::cast(db, terminal)?.stable_ptr(db))
+}
+
+/// Checks whether a `!` token nested inside a token tree is the bang of a (nested) macro call.
+///
+/// A nested macro invocation like `array![array![x]]` is not parsed as an [`ast::ExprInlineMacro`];
+/// its inner `!` lives in the outer macro's token tree (or, inside a `macro` declaration body, in
+/// that rule's macro elements). We recognize it structurally: the `!` is preceded by an identifier
+/// and followed by a subtree wrapper of any delimiter (`()`, `[]` or `{}`).
+fn is_token_tree_macro_bang<'db>(db: &'db AnalysisDatabase, not_token: &SyntaxNode<'db>) -> bool {
+    let Some(leaf) = not_token.parent(db).and_then(|terminal| terminal.parent(db)) else {
+        return false;
+    };
+    if leaf.kind(db) != SyntaxKind::TokenTreeLeaf {
+        return false;
+    }
+    let Some(list) = leaf.parent(db) else {
+        return false;
+    };
+
+    let children = list.get_children(db);
+    let Some(position) = children.iter().position(|child| child.offset(db) == leaf.offset(db))
+    else {
+        return false;
+    };
+
+    let preceded_by_identifier = position
+        .checked_sub(1)
+        .and_then(|index| children.get(index))
+        .and_then(|previous| previous.get_children(db).first().copied())
+        .is_some_and(|token| token.kind(db) == SyntaxKind::TerminalIdentifier);
+    // The subtree after `!` is a `TokenTreeNode` inside inline-macro arguments, or a `MacroWrapper`
+    // inside a `macro` declaration body. Both wrap any delimiter (`()`, `[]`, `{}`).
+    let followed_by_subtree = children.get(position + 1).is_some_and(|next| {
+        matches!(next.kind(db), SyntaxKind::TokenTreeNode | SyntaxKind::MacroWrapper)
+    });
+
+    preceded_by_identifier && followed_by_subtree
 }
 
 /// Checks whether the given node is an inline macro invocation and not just the simple path segment.

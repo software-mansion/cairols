@@ -150,7 +150,6 @@ fn inline_macro_content_struct_literal() {
     ")
 }
 
-// Bug: the inner macro's `!` is colored as an operator instead of the macro.
 #[test]
 fn nested_inline_macros() {
     test_transform_plain!(SemanticTokens, r#"
@@ -161,7 +160,7 @@ fn nested_inline_macros() {
     "#, @r"
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>x</token> = <token=number>5</token>;
-        <token=macro>array</token><token=macro>!</token>[<token=macro>array</token><token=operator>!</token>[<token=variable>x</token>]];
+        <token=macro>array</token><token=macro>!</token>[<token=macro>array</token><token=macro>!</token>[<token=variable>x</token>]];
     }
     ")
 }
@@ -245,7 +244,7 @@ fn module_level_user_macro() {
     "#, @r"
     <token=keyword>macro</token> <token=class>define_fn</token> {
         ($name:ident) => {
-            expose<token=operator>!</token> {
+            expose<token=macro>!</token> {
                 <token=keyword>fn</token> $name() -> felt252 {
                     <token=number>42</token>
                 }
@@ -257,6 +256,27 @@ fn module_level_user_macro() {
 
     <token=keyword>fn</token> <token=function>main</token>() -> <token=type>felt252</token> {
         <token=function>the_answer</token>()
+    }
+    ")
+}
+
+#[test]
+fn nested_bangs_in_macro_definition() {
+    test_transform_plain!(SemanticTokens, r#"
+    pub macro outer {
+        () => {
+            paren!(1);
+            bracket![2];
+            brace!{3}
+        };
+    }
+    "#, @r"
+    <token=keyword>pub</token> <token=keyword>macro</token> <token=class>outer</token> {
+        () => {
+            paren<token=macro>!</token>(<token=number>1</token>);
+            bracket<token=macro>!</token>[<token=number>2</token>];
+            brace<token=macro>!</token>{<token=number>3</token>}
+        };
     }
     ")
 }
