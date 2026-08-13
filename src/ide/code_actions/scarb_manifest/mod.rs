@@ -14,6 +14,7 @@ mod dependency_git_ref_without_git;
 mod dependency_git_reference_ambiguous;
 mod dependency_git_registry_ambiguous;
 mod inlining_strategy_conflict;
+mod patch_not_in_workspace_root;
 mod patch_source_conflict;
 mod profile_inheritance_invalid;
 mod toml;
@@ -39,6 +40,7 @@ enum ScarbManifestCode {
     DependencyGitReferenceAmbiguous,
     DependencyGitPathAmbiguous,
     DependencyGitRegistryAmbiguous,
+    PatchNotInWorkspaceRoot,
     PatchSourceConflict,
 }
 
@@ -52,6 +54,7 @@ impl ScarbManifestCode {
             "SE0008" => Some(Self::DependencyGitReferenceAmbiguous),
             "SE0010" => Some(Self::DependencyGitPathAmbiguous),
             "SE0011" => Some(Self::DependencyGitRegistryAmbiguous),
+            "SE0012" => Some(Self::PatchNotInWorkspaceRoot),
             "SE0013" => Some(Self::PatchSourceConflict),
             _ => None,
         }
@@ -70,6 +73,7 @@ impl ScarbManifestCode {
             Self::DependencyGitReferenceAmbiguous => dependency_git_reference_ambiguous::build(ctx),
             Self::DependencyGitPathAmbiguous => dependency_git_path_ambiguous::build(ctx),
             Self::DependencyGitRegistryAmbiguous => dependency_git_registry_ambiguous::build(ctx),
+            Self::PatchNotInWorkspaceRoot => patch_not_in_workspace_root::build(ctx),
             Self::PatchSourceConflict => patch_source_conflict::build(ctx),
         }
     }

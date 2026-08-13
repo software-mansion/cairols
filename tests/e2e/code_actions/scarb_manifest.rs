@@ -217,6 +217,122 @@ fn manifest_patch_source_conflict_code_action_endpoint_returns_fixes() {
     assert!(remove_b_text.contains("[patch.scarbs-xyz]"), "{remove_b_text}");
 }
 
+#[test]
+fn manifest_patch_not_in_workspace_root_offers_fix_for_distinct_dependencies() {
+    let code_actions = patch_move_code_actions(
+        indoc! {r#"
+            [patch.scarbs-xyz]
+            member_dep = { path = "../member_dep" }
+        "#},
+        indoc! {r#"
+            [patch.scarbs-xyz]
+            root_dep = { git = "https://example.com/root_dep" }
+        "#},
+    );
+
+    assert!(has_move_patch_action(&code_actions), "{code_actions:#?}");
+}
+
+#[test]
+fn manifest_patch_not_in_workspace_root_offers_fix_for_identical_dependency() {
+    let code_actions = patch_move_code_actions(
+        indoc! {r#"
+            [patch.scarbs-xyz.dep]
+            version = "1.0.0"
+            path = "../dep"
+        "#},
+        indoc! {r#"
+            [patch.scarbs-xyz]
+            dep = { path = "../dep", version = "1.0.0" }
+        "#},
+    );
+
+    assert!(has_move_patch_action(&code_actions), "{code_actions:#?}");
+}
+
+#[test]
+fn manifest_patch_not_in_workspace_root_does_not_offer_fix_for_conflicting_dependency() {
+    let code_actions = patch_move_code_actions(
+        indoc! {r#"
+            [patch.scarbs-xyz]
+            dep = { path = "../dep" }
+        "#},
+        indoc! {r#"
+            [patch.scarbs-xyz]
+            dep = { git = "https://example.com/dep" }
+        "#},
+    );
+
+    assert!(!has_move_patch_action(&code_actions), "{code_actions:#?}");
+}
+
+fn patch_move_code_actions(
+    member_patch: &str,
+    workspace_root_patch: &str,
+) -> Vec<CodeActionOrCommand> {
+    let member_manifest = format!(
+        "{}\n{member_patch}",
+        indoc! {r#"
+            [package]
+            name = "member"
+            version = "0.1.0"
+            edition = "2025_12"
+        "#}
+    );
+    let workspace_root_manifest = format!(
+        "{}\n{workspace_root_patch}",
+        indoc! {r#"
+            [workspace]
+            members = ["member"]
+        "#}
+    );
+    let mut ls = sandbox! {
+        files {
+            "Scarb.toml" => workspace_root_manifest,
+            "member/Scarb.toml" => &member_manifest,
+        }
+    };
+
+    ls.open_and_wait_for_project_update("member/Scarb.toml");
+
+    let mut diagnostic = manifest_diagnostic(
+        &member_manifest,
+        "the `[patch]` section can only be defined in the workspace root manifests",
+        "SE0012",
+    );
+    // Scarb and the editor may represent the same manifest with lexically different paths.
+    // Keep both diagnostic paths non-canonical to cover comparisons and workspace lookup.
+    let fixture_root = ls.fixture.root_path();
+    let diagnostic_manifest_path = fixture_root.join("member/./Scarb.toml");
+    let diagnostic_workspace_manifest_path = fixture_root.join("member/../Scarb.toml");
+    diagnostic.data = Some(serde_json::json!({
+        "manifest_path": diagnostic_manifest_path,
+        "workspace_manifest_path": diagnostic_workspace_manifest_path,
+    }));
+
+    ls.send_request::<lsp_request!("textDocument/codeAction")>(CodeActionParams {
+        text_document: ls.doc_id("member/Scarb.toml"),
+        range: diagnostic.range,
+        context: CodeActionContext {
+            diagnostics: vec![diagnostic],
+            only: None,
+            trigger_kind: None,
+        },
+        work_done_progress_params: Default::default(),
+        partial_result_params: Default::default(),
+    })
+    .expect("code actions request failed")
+}
+
+fn has_move_patch_action(code_actions: &[CodeActionOrCommand]) -> bool {
+    code_actions.iter().any(|action| match action {
+        CodeActionOrCommand::CodeAction(action) => {
+            action.title == "Move `[patch]` to workspace root manifest"
+        }
+        CodeActionOrCommand::Command(_) => false,
+    })
+}
+
 fn assert_manifest_quick_fix(
     manifest: &str,
     diagnostic_message: &str,
@@ -337,6 +453,7 @@ fn diagnostic_anchor(code: &str) -> &'static str {
         "SE0008" => "branch",
         "SE0010" => "git",
         "SE0011" => "git",
+        "SE0012" => "[patch.",
         "SE0013" => "[patch.scarbs-xyz]",
         _ => panic!("unsupported manifest diagnostic code: {code}"),
     }
