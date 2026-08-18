@@ -155,7 +155,7 @@ fn complete_ex<'db>(
     completions.extend(top_level_inline_macro_completions(db, &ctx, was_node_corrected));
     completions.extend(doc_link_completions(db, &ctx, cursor_position));
 
-    if trigger_kind == CompletionTriggerKind::INVOKED
+    if trigger_kind != CompletionTriggerKind::TRIGGER_FOR_INCOMPLETE_COMPLETIONS
         && ctx.node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
     {
         completions.extend(path_suffix_completions(db, &ctx, was_node_corrected));

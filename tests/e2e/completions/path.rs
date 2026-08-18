@@ -1,8 +1,15 @@
+use indoc::indoc;
 use lsp_types::request::Completion;
 
+use crate::support::cursor::cursors;
+use crate::support::fixture;
+use crate::support::fixture::Fixture;
 use crate::{
-    completions::completion_fixture,
-    support::insta::{test_transform_plain, test_transform_with_macros},
+    completions::{completion_fixture, sorting_dep_fixture},
+    support::{
+        insta::{test_transform_plain, test_transform_with_macros},
+        sandbox,
+    },
 };
 
 #[test]
@@ -886,4 +893,313 @@ fn trait_name_suffix_from_other_module() {
 
     """]
     "#);
+}
+
+#[test]
+fn pub_impl_prefix_with_all_items() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        fn my_func() -> u32;
+        type MyType;
+        const MY_CONST: u32;
+    }
+
+    pub impl MyImpl of MyTrait {
+        fn my_func() -> u32 { 0 }
+        type MyType = u32;
+        const MY_CONST: u32 = 5;
+    }
+
+    fn test() {
+        MyImpl::<caret>
+    }
+    ",@r#"
+    caret = """
+        MyImpl::<caret>
+    """
+
+    [[completions]]
+    completion_label = "MY_CONST"
+    completion_label_type_info = "u32"
+
+    [[completions]]
+    completion_label = "MyType"
+
+    [[completions]]
+    completion_label = "my_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "my_func()"
+    "#);
+}
+
+#[test]
+fn pub_impl_prefix_in_submodule() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod impls {
+        pub trait MyTrait {
+            fn my_func() -> u32;
+        }
+
+        pub impl MyImpl of MyTrait {
+            fn my_func() -> u32 { 0 }
+        }
+    }
+
+    fn test() {
+        impls::MyImpl::<caret>
+    }
+    ",@r#"
+    caret = """
+        impls::MyImpl::<caret>
+    """
+
+    [[completions]]
+    completion_label = "my_func(...)"
+    completion_label_type_info = "fn() -> u32"
+    insert_text = "my_func()"
+    "#);
+}
+
+#[test]
+fn pub_impl_generic_method_empty_prefix() {
+    test_transform_plain!(Completion, sorting_dep_fixture(), "
+    use alexandria_sorting::MergeSort;
+
+    fn merge_sort_test_empty() {
+        let data: Span<u8> = array![].span();
+        let correct: Array<u8> = array![];
+        let sorted = MergeSort::<caret>
+    }
+    ",@r#"
+    caret = """
+        let sorted = MergeSort::<caret>
+    """
+
+    [[completions]]
+    completion_label = "sort(...)"
+    completion_label_type_info = "fn(array: Span<T>) -> Array<T>"
+    insert_text = "sort(${1:array})"
+    "#);
+}
+
+#[test]
+fn pub_impl_generic_method_partial_prefix() {
+    test_transform_plain!(Completion, sorting_dep_fixture(), "
+    use alexandria_sorting::MergeSort;
+
+    #[test]
+    fn merge_sort_test_empty() {
+        let data: Span<u8> = array![].span();
+        let correct: Array<u8> = array![];
+        let sorted = MergeSort::s<caret>
+    }
+    ",@r#"
+    caret = """
+        let sorted = MergeSort::s<caret>
+    """
+
+    [[completions]]
+    completion_label = "sort(...)"
+    completion_label_type_info = "fn(array: Span<T>) -> Array<T>"
+    insert_text = "sort(${1:array})"
+    "#);
+}
+
+#[test]
+fn scarb_pub_impl_generic_method_empty_prefix() {
+    test_transform_plain!(Completion, sorting_scarb_fixture(), "
+    use alexandria_sorting::MergeSort;
+
+    fn merge_sort_test_empty() {
+        let sorted = MergeSort::<caret>
+    }
+    ",@r#"
+    caret = """
+        let sorted = MergeSort::<caret>
+    """
+
+    [[completions]]
+    completion_label = "sort(...)"
+    completion_label_type_info = "fn(array: Span<T>) -> Array<T>"
+    insert_text = "sort(${1:array})"
+    "#);
+}
+
+// Same as `scarb_pub_impl_generic_method_empty_prefix` but the test file lives in tests/ (a Scarb
+// integration test CU with group-id) — the exact code path Alexandria's tests/merge_sort_test.cairo
+// goes through in real usage.
+#[test]
+fn scarb_integration_test_pub_impl_generic_method_empty_prefix() {
+    let test_cairo = "
+    use alexandria_sorting::MergeSort;
+
+    fn merge_sort_test_empty() {
+        let sorted = MergeSort::<caret>
+    }
+    ";
+
+    let (cairo, cursors) = cursors(test_cairo);
+
+    let mut fixture = sorting_scarb_self_fixture();
+    fixture.add_file("tests/merge_sort_test.cairo", cairo);
+
+    let mut ls = sandbox! {
+        fixture = fixture;
+        cwd = "./";
+        client_capabilities = |c| c;
+        workspace_configuration = serde_json::json!({});
+    };
+
+    ls.open_all_cairo_files_and_wait_for_project_update();
+
+    let result = super::transform(ls, cursors, "tests/merge_sort_test.cairo");
+
+    insta::assert_snapshot!(result, @r#"
+    caret = """
+            let sorted = MergeSort::<caret>
+    """
+
+    [[completions]]
+    completion_label = "sort(...)"
+    completion_label_type_info = "fn(array: Span<T>) -> Array<T>"
+    insert_text = "sort(${1:array})"
+    "#);
+}
+
+// The live file in Alexandria has `let sorted = MergeSort::;` (semicolon after ::).
+// Test that completion still works with the trailing semicolon.
+#[test]
+fn scarb_pub_impl_generic_method_with_trailing_semicolon() {
+    test_transform_plain!(Completion, sorting_scarb_fixture(), "
+    use alexandria_sorting::MergeSort;
+
+    fn merge_sort_test_empty() {
+        let sorted = MergeSort::<caret>;
+    }
+    ",@r#"
+    caret = """
+        let sorted = MergeSort::<caret>;
+    """
+
+    [[completions]]
+    completion_label = "sort(...)"
+    completion_label_type_info = "fn(array: Span<T>) -> Array<T>"
+    insert_text = "sort(${1:array})"
+    "#);
+}
+
+// Regression test: completion triggered by typing ':' (TriggerCharacter) was broken because
+// path_suffix_completions was gated on INVOKED only. VS Code sends TriggerCharacter when
+// the user types '::'.
+#[test]
+fn scarb_pub_impl_trigger_char_completion() {
+    let test_cairo = "
+    use alexandria_sorting::MergeSort;
+
+    fn merge_sort_test_empty() {
+        let sorted = MergeSort::<caret>
+    }
+    ";
+
+    let (cairo, cursors) = cursors(test_cairo);
+
+    let mut fixture = sorting_scarb_fixture();
+    fixture.add_file("src/lib.cairo", cairo);
+
+    let mut ls = sandbox! {
+        fixture = fixture;
+        cwd = "./";
+        client_capabilities = |c| c;
+        workspace_configuration = serde_json::json!({});
+    };
+
+    ls.open_all_cairo_files_and_wait_for_project_update();
+
+    let result = super::transform_triggered_by_char(ls, cursors, "src/lib.cairo", ':');
+
+    insta::assert_snapshot!(result, @r#"
+    caret = """
+            let sorted = MergeSort::<caret>
+    """
+
+    [[completions]]
+    completion_label = "sort(...)"
+    completion_label_type_info = "fn(array: Span<T>) -> Array<T>"
+    insert_text = "sort(${1:array})"
+    "#);
+}
+
+fn sorting_scarb_fixture() -> Fixture {
+    fixture! {
+        "Scarb.toml" => indoc!(r#"
+            [package]
+            name = "hello"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [dependencies]
+            alexandria_sorting = { path = "alexandria_sorting" }
+        "#),
+        "alexandria_sorting/Scarb.toml" => indoc!(r#"
+            [package]
+            name = "alexandria_sorting"
+            version = "0.1.0"
+            edition = "2023_11"
+        "#),
+        "alexandria_sorting/src/lib.cairo" => indoc!("
+            pub mod interface;
+            pub mod merge_sort;
+
+            pub use interface::Sortable;
+            pub use merge_sort::MergeSort;
+        "),
+        "alexandria_sorting/src/interface.cairo" => indoc!("
+            pub trait Sortable {
+                fn sort<T, +Copy<T>, +Drop<T>, +PartialOrd<T>>(array: Span<T>) -> Array<T>;
+            }
+        "),
+        "alexandria_sorting/src/merge_sort.cairo" => indoc!("
+            use super::Sortable;
+
+            pub impl MergeSort of Sortable {
+                pub fn sort<T, +Copy<T>, +Drop<T>, +PartialOrd<T>>(mut array: Span<T>) -> Array<T> {
+                    array![]
+                }
+            }
+        ")
+    }
+}
+
+// Same as `sorting_scarb_fixture` but the package IS `alexandria_sorting` (no separate consumer).
+// Useful for testing the `tests/` directory compilation unit (group-id) code path.
+fn sorting_scarb_self_fixture() -> Fixture {
+    fixture! {
+        "Scarb.toml" => indoc!(r#"
+            [package]
+            name = "alexandria_sorting"
+            version = "0.1.0"
+            edition = "2023_11"
+        "#),
+        "src/interface.cairo" => indoc!("
+            pub trait Sortable {
+                fn sort<T, +Copy<T>, +Drop<T>, +PartialOrd<T>>(array: Span<T>) -> Array<T>;
+            }
+        "),
+        "src/merge_sort.cairo" => indoc!("
+            use super::Sortable;
+
+            pub impl MergeSort of Sortable {
+                pub fn sort<T, +Copy<T>, +Drop<T>, +PartialOrd<T>>(mut array: Span<T>) -> Array<T> {
+                    array![]
+                }
+            }
+        "),
+        "src/lib.cairo" => indoc!("
+            pub mod interface;
+            pub mod merge_sort;
+
+            pub use interface::Sortable;
+            pub use merge_sort::MergeSort;
+        ")
+    }
 }
