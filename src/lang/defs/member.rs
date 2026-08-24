@@ -62,16 +62,19 @@ pub fn resolve_accessed_member<'db>(
     let expr_id =
         db.lookup_expr_by_ptr(function_with_body, binary_expr.stable_ptr(db).into()).ok()?;
 
-    // Desnap the binary expression to the member access expression.
-    let expr_member_access = match db.expr_semantic(function_with_body, expr_id) {
-        Expr::MemberAccess(expr_member_access) => expr_member_access,
-        Expr::Snapshot(expr_snapshot) => {
-            match db.expr_semantic(function_with_body, expr_snapshot.inner) {
-                Expr::MemberAccess(expr_member_access) => expr_member_access,
-                _ => return None,
+    // Accessing a member through a snapshot wraps the member access in snapshot and desnap
+    // expressions (e.g. `self.x` where `self: @Point` is a desnap of the member access),
+    // so unwrap them to get to the member access itself.
+    let mut semantic_expr = db.expr_semantic(function_with_body, expr_id);
+    let expr_member_access = loop {
+        semantic_expr = match semantic_expr {
+            Expr::MemberAccess(expr_member_access) => break expr_member_access,
+            Expr::Snapshot(expr_snapshot) => {
+                db.expr_semantic(function_with_body, expr_snapshot.inner)
             }
-        }
-        _ => return None,
+            Expr::Desnap(expr_desnap) => db.expr_semantic(function_with_body, expr_desnap.inner),
+            _ => return None,
+        };
     };
 
     let pointer_to_rhs = binary_expr.rhs(db).stable_ptr(db).untyped();

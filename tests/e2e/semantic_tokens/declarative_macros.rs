@@ -89,13 +89,40 @@ fn inline_macro_content_field_and_method() {
     #[<token=decorator>generate_trait</token>]
     <token=keyword>impl</token> <token=class>PointImpl</token> <token=keyword>of</token> <token=interface>PointTrait</token> {
         <token=keyword>fn</token> <token=function>get</token>(<token=parameter>self</token>: @<token=struct>Point</token>) -> <token=type>felt252</token> {
-            <token=operator>*</token><token=variable>self</token>.x
+            <token=operator>*</token><token=variable>self</token>.<token=property>x</token>
         }
     }
 
     <token=keyword>fn</token> <token=function>main</token>() {
         <token=keyword>let</token> <token=variable>p</token> = <token=struct>Point</token> { <token=property>x</token>: <token=number>5</token> };
         <token=macro>array</token><token=macro>!</token>[<token=variable>p</token>.<token=property>x</token>, <token=variable>p</token>.<token=function>get</token>()];
+    }
+    ")
+}
+
+#[test]
+fn inline_macro_content_field_through_snapshot() {
+    test_transform_plain!(SemanticTokens, r#"
+    #[derive(Drop)]
+    struct Point {
+        x: felt252,
+    }
+
+    fn main() {
+        let p = Point { x: 5 };
+        let snapshot = @p;
+        array![*snapshot.x, @p.x];
+    }
+    "#, @r"
+    #[<token=decorator>derive</token>(<token=decorator>Drop</token>)]
+    <token=keyword>struct</token> <token=struct>Point</token> {
+        <token=variable>x</token>: <token=type>felt252</token>,
+    }
+
+    <token=keyword>fn</token> <token=function>main</token>() {
+        <token=keyword>let</token> <token=variable>p</token> = <token=struct>Point</token> { <token=property>x</token>: <token=number>5</token> };
+        <token=keyword>let</token> <token=variable>snapshot</token> = @<token=variable>p</token>;
+        <token=macro>array</token><token=macro>!</token>[<token=operator>*</token><token=variable>snapshot</token>.<token=property>x</token>, @<token=variable>p</token>.<token=property>x</token>];
     }
     ")
 }
