@@ -1,19 +1,18 @@
 use cairo_lang_defs::ids::{GenericTypeId, LookupItemId, TraitItemId};
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::function_with_body::{
-    FunctionWithBodySemantic, SemanticExprLookup,
-};
+use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::keyword::{CRATE_KW, SELF_TYPE_KW, SUPER_KW};
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{ConcreteTypeId, Expr, MemberAccessKind, TypeLongId};
+use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::ast::{TerminalIdentifier, TerminalIdentifierPtr};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_language_common::CommonGroup;
 use lsp_types::SemanticTokenType;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::defs::resolve_accessed_member;
 
 #[derive(Clone, Copy)]
 pub enum SemanticTokenKind {
@@ -302,36 +301,14 @@ impl SemanticTokenKind {
 
     /// Resolves the right-hand side of a struct member access expression (e.g. the `x` in `p.x`)
     /// to a [`SemanticTokenKind::Field`].
-    fn from_member_access(
-        db: &AnalysisDatabase,
-        resultant: SyntaxNode,
-        lookup_item_id: LookupItemId,
+    fn from_member_access<'db>(
+        db: &'db AnalysisDatabase,
+        resultant: SyntaxNode<'db>,
+        lookup_item_id: LookupItemId<'db>,
     ) -> Option<SemanticTokenKind> {
         let function_id = lookup_item_id.function_with_body()?;
-        let binary_expr = resultant.ancestor_of_type::<ast::ExprBinary>(db)?;
 
-        let expr_id = db.lookup_expr_by_ptr(function_id, binary_expr.stable_ptr(db).into()).ok()?;
-        let member_access = match db.expr_semantic(function_id, expr_id) {
-            Expr::MemberAccess(member_access) => member_access,
-            Expr::Snapshot(snapshot) => match db.expr_semantic(function_id, snapshot.inner) {
-                Expr::MemberAccess(member_access) => member_access,
-                _ => return None,
-            },
-            _ => return None,
-        };
-
-        // Make sure the resultant is the accessed member (the rhs), not the accessed value (lhs).
-        let rhs_ptr = binary_expr.rhs(db).stable_ptr(db).untyped();
-        let mut node = resultant;
-        while node.stable_ptr(db) != rhs_ptr {
-            if node.stable_ptr(db) == binary_expr.stable_ptr(db).untyped() {
-                return None;
-            }
-            node = node.parent(db)?;
-        }
-
-        matches!(member_access.kind, MemberAccessKind::Struct { .. })
-            .then_some(SemanticTokenKind::Field)
+        resolve_accessed_member(db, resultant, function_id).map(|_| SemanticTokenKind::Field)
     }
 }
 
