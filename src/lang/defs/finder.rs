@@ -28,7 +28,7 @@ use cairo_lang_semantic::resolve::{
     ResolverData,
 };
 use cairo_lang_semantic::substitution::SemanticRewriter;
-use cairo_lang_semantic::{ConcreteImplId, Expr, GenericParam, MemberAccessKind, TypeLongId};
+use cairo_lang_semantic::{ConcreteImplId, Expr, GenericParam, TypeLongId};
 use cairo_lang_syntax::node::ast::{
     ExprPathInner, GenericArgUnnamed, PathSegment, TerminalIdentifier, TypeClause,
 };
@@ -40,7 +40,7 @@ use cairo_lang_utils::Intern;
 use itertools::Itertools;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::lang::defs::resolve_macro_call_module;
+use crate::lang::defs::{resolve_accessed_member, resolve_macro_call_module};
 
 /// A language element that can be a result of name resolution performed by CairoLS.
 ///
@@ -411,48 +411,10 @@ fn try_member<'db>(
     identifier: &ast::TerminalIdentifier<'db>,
     lookup_items: &[LookupItemId<'db>],
 ) -> Option<ResolvedItem<'db>> {
-    let syntax_node = identifier.as_syntax_node();
-    let binary_expr = syntax_node.ancestor_of_type::<ast::ExprBinary>(db)?;
-
     let function_with_body = lookup_items.first()?.function_with_body()?;
 
-    let expr_id =
-        db.lookup_expr_by_ptr(function_with_body, binary_expr.stable_ptr(db).into()).ok()?;
-    let semantic_db: &dyn SemanticGroup = db;
-    let semantic_expr = semantic_db.expr_semantic(function_with_body, expr_id);
-
-    // Desnap the binary expression to the member access expression.
-    let expr_member_access = match semantic_expr {
-        Expr::MemberAccess(expr_member_access) => Some(expr_member_access),
-        Expr::Snapshot(expr_snapshot) => {
-            if let Expr::MemberAccess(expr_member_access) =
-                semantic_db.expr_semantic(function_with_body, expr_snapshot.inner)
-            {
-                Some(expr_member_access)
-            } else {
-                None
-            }
-        }
-        _ => None,
-    }?;
-
-    let pointer_to_rhs = binary_expr.rhs(db).stable_ptr(db).untyped();
-
-    let mut current_node = syntax_node;
-    // Check if the terminal identifier points to a member, not a struct variable.
-    while pointer_to_rhs != current_node.stable_ptr(db) {
-        // If we found the node with the binary expression, then we're sure we won't find the
-        // node with the member.
-        if current_node.stable_ptr(db) == binary_expr.stable_ptr(db).untyped() {
-            return None;
-        }
-        current_node = current_node.parent(db).unwrap();
-    }
-
-    let MemberAccessKind::Struct { member_id, .. } = expr_member_access.kind else {
-        return None;
-    };
-    Some(ResolvedItem::Member(member_id))
+    resolve_accessed_member(db, identifier.as_syntax_node(), function_with_body)
+        .map(ResolvedItem::Member)
 }
 
 /// Resolve `struct Foo { <ident>: ... }` syntax.

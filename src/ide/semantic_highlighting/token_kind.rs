@@ -12,6 +12,7 @@ use cairo_language_common::CommonGroup;
 use lsp_types::SemanticTokenType;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::defs::resolve_accessed_member;
 
 #[derive(Clone, Copy)]
 pub enum SemanticTokenKind {
@@ -93,6 +94,10 @@ impl SemanticTokenKind {
                     }
 
                     if let Some(kind) = Self::from_expr_path(db, *resultant, *lookup_item_id) {
+                        return Some(kind);
+                    }
+
+                    if let Some(kind) = Self::from_member_access(db, *resultant, *lookup_item_id) {
                         return Some(kind);
                     }
                 }
@@ -292,6 +297,18 @@ impl SemanticTokenKind {
         db.lookup_pattern_by_ptr(function_id, expr_path_ptr.into()).ok()?;
 
         Some(SemanticTokenKind::Variable)
+    }
+
+    /// Resolves the right-hand side of a struct member access expression (e.g. the `x` in `p.x`)
+    /// to a [`SemanticTokenKind::Field`].
+    fn from_member_access<'db>(
+        db: &'db AnalysisDatabase,
+        resultant: SyntaxNode<'db>,
+        lookup_item_id: LookupItemId<'db>,
+    ) -> Option<SemanticTokenKind> {
+        let function_id = lookup_item_id.function_with_body()?;
+
+        resolve_accessed_member(db, resultant, function_id).map(|_| SemanticTokenKind::Field)
     }
 }
 

@@ -262,3 +262,69 @@ fn doc_comment_with_link() {
     }
     ")
 }
+
+#[test]
+fn field_access() {
+    test_transform_plain!(SemanticTokens, r#"
+    #[derive(Drop)]
+    struct Point {
+        x: felt252,
+    }
+
+    fn main() {
+        let point = Point { x: 5 };
+        let _ = point.x;
+    }
+    "#, @r"
+    #[<token=decorator>derive</token>(<token=decorator>Drop</token>)]
+    <token=keyword>struct</token> <token=struct>Point</token> {
+        <token=variable>x</token>: <token=type>felt252</token>,
+    }
+
+    <token=keyword>fn</token> <token=function>main</token>() {
+        <token=keyword>let</token> <token=variable>point</token> = <token=struct>Point</token> { <token=property>x</token>: <token=number>5</token> };
+        <token=keyword>let</token> _ = <token=variable>point</token>.<token=property>x</token>;
+    }
+    ")
+}
+
+#[test]
+fn field_access_through_snapshot() {
+    test_transform_plain!(SemanticTokens, r#"
+    #[derive(Drop)]
+    struct Point {
+        x: felt252,
+    }
+
+    #[generate_trait]
+    impl PointImpl of PointTrait {
+        fn get(self: @Point) -> felt252 {
+            *self.x
+        }
+    }
+
+    fn main() {
+        let point = Point { x: 5 };
+        let snapshot = @point;
+        let _ = *snapshot.x;
+    }
+    "#, @r"
+    #[<token=decorator>derive</token>(<token=decorator>Drop</token>)]
+    <token=keyword>struct</token> <token=struct>Point</token> {
+        <token=variable>x</token>: <token=type>felt252</token>,
+    }
+
+    #[<token=decorator>generate_trait</token>]
+    <token=keyword>impl</token> <token=class>PointImpl</token> <token=keyword>of</token> <token=interface>PointTrait</token> {
+        <token=keyword>fn</token> <token=function>get</token>(<token=parameter>self</token>: @<token=struct>Point</token>) -> <token=type>felt252</token> {
+            <token=operator>*</token><token=variable>self</token>.<token=property>x</token>
+        }
+    }
+
+    <token=keyword>fn</token> <token=function>main</token>() {
+        <token=keyword>let</token> <token=variable>point</token> = <token=struct>Point</token> { <token=property>x</token>: <token=number>5</token> };
+        <token=keyword>let</token> <token=variable>snapshot</token> = @<token=variable>point</token>;
+        <token=keyword>let</token> _ = <token=operator>*</token><token=variable>snapshot</token>.<token=property>x</token>;
+    }
+    ")
+}
