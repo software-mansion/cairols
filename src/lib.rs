@@ -389,7 +389,7 @@ impl Backend {
                             .lock()
                             .expect("should be able to acquire the MetaState");
                         ms.inactivity_monitor.notify_swap_triggered();
-                        ms.db_swapper.swap_on_inactivity(
+                        ms.db_swapper.maybe_swap_on_inactivity(
                             &mut state.db,
                             &state.open_files,
                         );
