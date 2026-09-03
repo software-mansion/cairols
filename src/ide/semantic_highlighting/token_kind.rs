@@ -89,11 +89,14 @@ impl SemanticTokenKind {
                     continue;
                 };
                 for lookup_item_id in lookup_items {
-                    if let Some(kind) = Self::from_resultant(db, *resultant, *lookup_item_id) {
+                    // A local binding can shadow a crate or module with the same name. Prefer the
+                    // function body's pattern lookup before the resolved item so the binding is
+                    // highlighted as a variable rather than as the shadowed namespace.
+                    if let Some(kind) = Self::from_expr_path(db, *resultant, *lookup_item_id) {
                         return Some(kind);
                     }
 
-                    if let Some(kind) = Self::from_expr_path(db, *resultant, *lookup_item_id) {
+                    if let Some(kind) = Self::from_resultant(db, *resultant, *lookup_item_id) {
                         return Some(kind);
                     }
 
