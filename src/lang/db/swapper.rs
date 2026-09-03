@@ -50,8 +50,8 @@ pub struct AnalysisDatabaseSwapper {
     mutations_since_last_replace: u64,
     db_replace_min_mutations: u64,
     analysis_event_sender: Sender<AnalysisEvent>,
-    /// Revision of the database produced by the last swap.
-    ///
+    /// Revision of the database produced by the last swap
+    /// (i.e.. the revision of the freshly swapped database).
     /// Used to tell whether anything has actually been written since then, which decides both
     /// whether a new swap can reclaim anything and whether the scheduler will run the
     /// `sync_mut_task` hooks for it.
@@ -73,7 +73,12 @@ impl AnalysisDatabaseSwapper {
     }
 
     /// Swaps the database, triggered by the inactivity monitor.
-    pub fn swap_on_inactivity(&mut self, db: &mut AnalysisDatabase, open_files: &HashSet<Url>) {
+    /// Swap will only be performed if the database has been mutated since the last swap.
+    pub fn maybe_swap_on_inactivity(
+        &mut self,
+        db: &mut AnalysisDatabase,
+        open_files: &HashSet<Url>,
+    ) {
         if self.last_swap_revision == Some(current_revision(db)) {
             trace!("skipping inactivity swap: nothing was written since the last swap");
             return;
