@@ -93,7 +93,6 @@ assert_fs = "1.1"
 cairo-language-server = { path = ".", features = ["testing"] }
 insta = { version = "1.47", features = ["toml", "json", "redactions"] }
 pathdiff = "0.2"
-regex = "1.12.3"
 similar = "3.1"
 
 # Here we specify real dependency specifications for Cairo crates *if* currently we want to use
