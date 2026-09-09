@@ -120,17 +120,15 @@ fn test_target_execute(
     let file_path = file_url.to_file_path().ok()?;
     let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
 
-    // Gas policy:
-    // If the test (or ant test in the module run) fails, we show an error instead of a gas number
-    // If the test is a fuzzer, we report the max L2 gas across all its runs.
-    // If the lens targets a module, we report the sum of L2 gas across all tests in it.
+    // Running `snforge` can take several seconds, so we let it run in the
+    // background and report the result later via `ShowMessage` instead of blocking.
     std::thread::spawn(move || {
         let mut parts = command.split_whitespace();
         let program = parts.next().expect("command should not be empty");
         let output = std::process::Command::new(program).args(parts).current_dir(&cwd).output();
 
         let Ok(output) = output else {
-            let message = "Failed to run snforge".to_string();
+            let message = format!("Failed to run snforge: {}", output.unwrap_err());
             notifier.notify::<ShowMessage>(ShowMessageParams { typ: MessageType::ERROR, message });
             return;
         };
