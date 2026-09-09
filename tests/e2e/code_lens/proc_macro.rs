@@ -25,6 +25,10 @@ fn attribute_macro_generates_test() {
     file_path = "src/lib.cairo"
     index = 2
 
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::generated_test_v2 Gas: 10000"
+
     [[execute_in_terminal]]
     command = "snforge test hello::generated_test_v2 --exact --launch-debugger"
     cwd = "./"
@@ -57,6 +61,10 @@ fn inline_macro_generates_test() {
     command = "⛽ Calculate Gas"
     file_path = "src/lib.cairo"
     index = 2
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::inline_generated_test_v2 Gas: 10000"
 
     [[execute_in_terminal]]
     command = "snforge test hello::inline_generated_test_v2 --exact --launch-debugger"
@@ -98,6 +106,10 @@ fn handwritten_module_aggregates_generated_test() {
     command = "⛽ Calculate Gas"
     file_path = "src/lib.cairo"
     index = 3
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::tests Gas: 10000"
 
     [[execute_in_terminal]]
     command = "snforge test hello::tests"
@@ -183,6 +195,10 @@ fn attribute_macro_generates_test_in_handwritten_module() {
     file_path = "src/lib.cairo"
     index = 3
 
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::tests::generated_test_v2 Gas: 10000"
+
     [[execute_in_terminal]]
     command = "snforge test hello::tests::generated_test_v2 --exact --launch-debugger"
     cwd = "./"
@@ -252,6 +268,18 @@ fn attribute_macro_generates_multiple_tests() {
     command = "⛽ Calculate Gas"
     file_path = "src/lib.cairo"
     index = 8
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::generated_test_1_v2 Gas: 10000"
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::generated_test_2_v2 Gas: 10000"
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::generated_test_3_v2 Gas: 10000"
 
     [[execute_in_terminal]]
     command = "snforge test hello::generated_test_1_v2 --exact --launch-debugger"
@@ -337,6 +365,18 @@ fn inline_macro_generates_multiple_tests() {
     command = "⛽ Calculate Gas"
     file_path = "src/lib.cairo"
     index = 8
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::inline_generated_test_1_v2 Gas: 10000"
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::inline_generated_test_2_v2 Gas: 10000"
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::inline_generated_test_3_v2 Gas: 10000"
 
     [[execute_in_terminal]]
     command = "snforge test hello::inline_generated_test_1_v2 --exact --launch-debugger"

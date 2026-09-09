@@ -39,6 +39,10 @@ fn declarative_macro_generates_test() {
     file_path = "src/lib.cairo"
     index = 2
 
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::generate_test!_#126::expose!_#0::generated_test Gas: 10000"
+
     [[execute_in_terminal]]
     command = "snforge test hello::generate_test!_#126::expose!_#0::generated_test --exact --launch-debugger"
     cwd = "./"
@@ -90,6 +94,10 @@ fn handwritten_module_aggregates_generated_test() {
     command = "⛽ Calculate Gas"
     file_path = "src/lib.cairo"
     index = 3
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::tests Gas: 10000"
 
     [[execute_in_terminal]]
     command = "snforge test hello::tests"
@@ -224,6 +232,18 @@ fn declarative_macro_generates_multiple_tests() {
     command = "⛽ Calculate Gas"
     file_path = "src/lib.cairo"
     index = 8
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::generate_multiple_tests!_#254::expose!_#0::generated_test_1 Gas: 10000"
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::generate_multiple_tests!_#254::expose!_#0::generated_test_2 Gas: 10000"
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::generate_multiple_tests!_#254::expose!_#0::generated_test_3 Gas: 10000"
 
     [[execute_in_terminal]]
     command = "snforge test hello::generate_multiple_tests!_#254::expose!_#0::generated_test_1 --exact --launch-debugger"
@@ -483,6 +503,10 @@ fn two_declarative_macro_invocations_generate_tests() {
     file_path = "src/lib.cairo"
     index = 5
 
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::generate_test!_#128::expose!_#0::first_generated_test Gas: 10000"
+
     [[execute_in_terminal]]
     command = "snforge test hello::generate_test!_#128::expose!_#0::first_generated_test --exact --launch-debugger"
     cwd = "./"
@@ -598,6 +622,10 @@ fn identical_invocations_produce_colliding_run_commands() {
     command = "⛽ Calculate Gas"
     file_path = "src/lib.cairo"
     index = 5
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::generate_test!_#109::generated_test Gas: 10000"
 
     [[execute_in_terminal]]
     command = "snforge test hello::generate_test!_#109::generated_test --exact --launch-debugger"
