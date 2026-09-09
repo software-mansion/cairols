@@ -67,6 +67,10 @@ fn only_functions() {
     file_path = "src/lib.cairo"
     index = 8
 
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::b Gas: 10000"
+
     [[execute_in_terminal]]
     command = "snforge test hello::b --exact --launch-debugger"
     cwd = "./"
@@ -109,6 +113,10 @@ fn fn_in_mod() {
     file_path = "src/lib.cairo"
     index = 3
 
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::b::a Gas: 10000"
+
     [[execute_in_terminal]]
     command = "snforge test hello::b::a --exact --launch-debugger"
     cwd = "./"
@@ -150,6 +158,10 @@ fn run_for_mod() {
     command = "⛽ Calculate Gas"
     file_path = "src/lib.cairo"
     index = 3
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::b Gas: 10000"
 
     [[execute_in_terminal]]
     command = "snforge test hello::b"
@@ -273,6 +285,10 @@ fn test_case_1() {
     file_path = "src/lib.cairo"
     index = 5
 
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::a_1 Gas: 10000"
+
     [[execute_in_terminal]]
     command = "snforge test hello::a_1 --exact --launch-debugger"
     cwd = "./"
@@ -326,6 +342,10 @@ fn test_case_2() {
     command = "⛽ Calculate Gas"
     file_path = "src/lib.cairo"
     index = 5
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::a_2 Gas: 10000"
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_2 --exact --launch-debugger"
@@ -394,6 +414,10 @@ fn test_case_with_fuzzer() {
     file_path = "src/lib.cairo"
     index = 7
 
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::a_1 Gas: 10000"
+
     [[execute_in_terminal]]
     command = "snforge test hello::a_1 --exact --launch-debugger"
     cwd = "./"
@@ -461,6 +485,10 @@ fn fuzzer_with_test_case() {
     file_path = "src/lib.cairo"
     index = 7
 
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::a Gas: 3187400"
+
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
     cwd = "./"
@@ -486,6 +514,10 @@ fn fuzzer_without_test_case() {
     file_path = "src/lib.cairo"
     index = 1
 
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::a Gas: 3187400"
+
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
     cwd = "./"
@@ -510,6 +542,10 @@ fn fuzzer_before_test() {
     command = "⛽ Calculate Gas"
     file_path = "src/lib.cairo"
     index = 1
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::a Gas: 3187400"
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
@@ -553,6 +589,10 @@ fn debug_with_incorrect_compiler_config() {
     add-functions-debug-info = true
     add-types-debug-info = true
     """
+
+    [[show_messages]]
+    typ = "Info"
+    message = "hello::a Gas: 13620"
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
