@@ -33,9 +33,9 @@ pub struct GasCodeLens {
 impl CodeLensInterface for GasCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
         match &self.target {
-            GasTarget::Test { full_path, is_on_mod } => {
-                test_target_execute(full_path.clone(), *is_on_mod, file_url, state, notifier)
-            } // TODO(hakiers) GasTarget::Executable
+            GasTarget::Test { full_path, is_fuzzer } => {
+                test_target_execute(full_path.clone(), *is_fuzzer, file_url, state, notifier)
+            }
         }
     }
     fn lens(&self) -> CodeLens {
@@ -68,11 +68,15 @@ impl TryFrom<&TestCodeLensInternal> for GasCodeLensInternal {
     type Error = ();
 
     fn try_from(value: &TestCodeLensInternal) -> Result<Self, Self::Error> {
-        Ok(Self {
-            range: value.range,
-            file_url: value.file_url.clone(),
-            target: GasTarget::from(value),
-        })
+        if value.is_on_mod {
+            Err(())
+        } else {
+            Ok(Self {
+                range: value.range,
+                file_url: value.file_url.clone(),
+                target: GasTarget::from(value),
+            })
+        }
     }
 }
 
@@ -103,18 +107,14 @@ pub fn get_gas_code_lenses(
 
 fn test_target_execute(
     full_path: String,
-    is_on_mod: bool,
+    is_fuzzer: bool,
     file_url: Url,
     state: &State,
     notifier: &Notifier,
 ) -> Option<()> {
     let notifier = notifier.clone();
 
-    let path = if is_on_mod {
-        TestFullQualifiedPath::Module(full_path.clone())
-    } else {
-        TestFullQualifiedPath::Function(full_path.clone())
-    };
+    let path = TestFullQualifiedPath::Function(full_path.clone());
     let command = path.snforge_command();
 
     let file_path = file_url.to_file_path().ok()?;
@@ -135,63 +135,81 @@ fn test_target_execute(
 
         // All-or-nothing: if any test in the batch failed, show error
         if !output.status.success() {
-            let message = "One or more tests failed — gas usage not reported.".to_string();
+            let message = "Test failed or gas disabled".to_string();
             notifier.notify::<ShowMessage>(ShowMessageParams { typ: MessageType::ERROR, message });
             return;
         }
         let stdout = String::from_utf8_lossy(&output.stdout);
 
-        let gas = sum_l2_gas(&stdout);
-        let message = format!("{full_path} Gas: {gas}");
+        let message = match is_fuzzer {
+            false => {
+                let gas = parse_test_l2_gas(&stdout).unwrap_or_default();
+                format!(
+                    "
+                    L2 Gas: ~{gas} \n
+                    Test: {full_path}
+                "
+                )
+            }
+            true => {
+                let (max, min, mean) = parse_fuzzer_test_l2_gas(&stdout).unwrap_or_default();
+                format!(
+                    "
+                    L2 Gas: max: ~{max}, min: ~{min}, mean: ~{mean} \n
+                    Test: {full_path}
+                "
+                )
+            }
+        };
+
         notifier.notify::<ShowMessage>(ShowMessageParams { typ: MessageType::INFO, message });
     });
 
     Some(())
 }
 
-fn sum_l2_gas(stdout: &str) -> u64 {
-    let re = Regex::new(r"l2_gas:\s*(?:~(\d+)|\{[^}]*?max:\s*~(\d+))").unwrap();
+fn parse_test_l2_gas(stdout: &str) -> Option<u64> {
+    let re = Regex::new(r"l2_gas:\s*~(\d+)").unwrap();
 
-    re.captures_iter(stdout)
-        .filter_map(|caps| caps.get(1).or_else(|| caps.get(2)))
-        .filter_map(|m| m.as_str().parse::<u64>().ok())
-        .sum()
+    re.captures(stdout)?.get(1)?.as_str().parse::<u64>().ok()
+}
+
+fn parse_fuzzer_test_l2_gas(stdout: &str) -> Option<(u64, u64, u64)> {
+    let re = Regex::new(r"l2_gas:\s*\{max:\s*~(\d+),\s*min:\s*~(\d+),\s*mean:\s*~(\d+)").unwrap();
+
+    let caps = re.captures(stdout)?;
+    let max = caps.get(1)?.as_str().parse::<u64>().ok()?;
+    let min = caps.get(2)?.as_str().parse::<u64>().ok()?;
+    let mean = caps.get(3)?.as_str().parse::<u64>().ok()?;
+
+    Some((max, min, mean))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::sum_l2_gas;
+    use super::{parse_fuzzer_test_l2_gas, parse_test_l2_gas};
 
     #[test]
-    fn sums_plain_gas_values() {
+    fn test_parse_test_l2_gas() {
         let stdout = indoc::indoc! {r#"
             [PASS] playground::tests::test_one (l1_gas: ~0, l1_data_gas: ~0, l2_gas: ~13620)
         "#};
 
-        assert_eq!(sum_l2_gas(stdout), 13620);
+        assert_eq!(parse_test_l2_gas(stdout).unwrap_or_default(), 13620);
     }
 
     #[test]
-    fn sums_fuzz_gas_values() {
+    fn test_parse_fuzzer_test_l2_gas() {
         let stdout = indoc::indoc! {r#"
             [PASS] playground::tests::test_one (runs: 256, (l1_gas: {max: ~0, min: ~0, mean: ~0, std deviation: ~0}, l1_data_gas: {max: ~0, min: ~0, mean: ~0, std deviation: ~0}, l2_gas: {max: ~54300, min: ~42660, mean: ~51686, std deviation: ~3360}))
         "#};
 
-        assert_eq!(sum_l2_gas(stdout), 54300);
-    }
-
-    #[test]
-    fn sums_plain_and_fuzz_gas_values() {
-        let stdout = indoc::indoc! {r#"
-            [PASS] playground::tests::test_one (l1_gas: ~0, l1_data_gas: ~0, l2_gas: ~13620)
-            [PASS] playground::tests::test_two (runs: 256, (l1_gas: {max: ~0, min: ~0, mean: ~0, std deviation: ~0}, l1_data_gas: {max: ~0, min: ~0, mean: ~0, std deviation: ~0}, l2_gas: {max: ~54300, min: ~42660, mean: ~51686, std deviation: ~3360}))
-        "#};
-
-        assert_eq!(sum_l2_gas(stdout), 13620 + 54300);
+        assert_eq!(parse_fuzzer_test_l2_gas(stdout).unwrap_or_default(), (54300, 42660, 51686));
     }
 
     #[test]
     fn return_zero_when_no_gas_info() {
-        assert_eq!(sum_l2_gas("no gas info here"), 0);
+        assert!(parse_test_l2_gas("no gas info here").is_none());
+        assert!(parse_fuzzer_test_l2_gas("no gas info here").is_none());
     }
 }
