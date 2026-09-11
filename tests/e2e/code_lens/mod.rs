@@ -313,20 +313,20 @@ fn test_code_lens_impl(
         for code_lens in lenses.iter().filter(|l| l.range.start.line == position.line) {
             let command = code_lens.command.clone().unwrap();
 
-            // The gas lens does not send any notification back yet
-            if command.title.contains("Calculate Gas") {
-                continue;
-            }
-
             ls.send_request::<ExecuteCommand>(ExecuteCommandParams {
                 command: command.command,
                 arguments: command.arguments.unwrap().clone(),
                 work_done_progress_params: Default::default(),
             });
 
+            let is_gas_lens = command.title.contains("Calculate Gas");
             let is_debug_lens = command.title.contains("Debug");
 
-            if is_debug_lens && expect_wrong_compiler_config_for_debug {
+            if is_gas_lens {
+                let ShowMessageParams { typ, message } =
+                    ls.wait_for_notification::<ShowMessage>(|_| true);
+                show_messages.push(ShowMessageReport { typ: format!("{typ:?}"), message })
+            } else if is_debug_lens && expect_wrong_compiler_config_for_debug {
                 let ShowMessageParams { typ, message } =
                     ls.wait_for_notification::<ShowMessage>(|_| true);
                 show_messages.push(ShowMessageReport { typ: format!("{typ:?}"), message });
