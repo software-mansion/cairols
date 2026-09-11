@@ -92,12 +92,6 @@ fn fn_in_mod() {
     index = 1
 
     [[lenses]]
-    line = 0
-    command = "⛽ Calculate Gas"
-    file_path = "src/lib.cairo"
-    index = 4
-
-    [[lenses]]
     line = 1
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
@@ -138,12 +132,6 @@ fn run_for_mod() {
     command = "▶ Run tests"
     file_path = "src/lib.cairo"
     index = 1
-
-    [[lenses]]
-    line = 0
-    command = "⛽ Calculate Gas"
-    file_path = "src/lib.cairo"
-    index = 4
 
     [[lenses]]
     line = 1
@@ -202,12 +190,6 @@ fn complex() {
     command = "▶ Run tests"
     file_path = "src/lib.cairo"
     index = 2
-
-    [[lenses]]
-    line = 4
-    command = "⛽ Calculate Gas"
-    file_path = "src/lib.cairo"
-    index = 7
 
     [[lenses]]
     line = 5

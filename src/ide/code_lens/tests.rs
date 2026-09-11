@@ -209,7 +209,7 @@ impl TestFullQualifiedPath {
         format!("scarb cairo-test --filter {}", self.as_ref())
     }
 
-    fn snforge_command(&self) -> String {
+    pub fn snforge_command(&self) -> String {
         match self {
             TestFullQualifiedPath::Function(path) => {
                 format!("snforge test {path} --exact", path = sanitize_test_case_name(path))
