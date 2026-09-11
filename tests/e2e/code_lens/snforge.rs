@@ -71,10 +71,9 @@ fn only_functions() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
-
-                        Test: hello::b
-                    """
+                    L2 Gas: ~10000
+                    Test: hello::b
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::b --exact --launch-debugger"
@@ -122,10 +121,9 @@ fn fn_in_mod() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
-
-                        Test: hello::b::a
-                    """
+                    L2 Gas: ~10000
+                    Test: hello::b::a
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::b::a --exact --launch-debugger"
@@ -295,10 +293,9 @@ fn test_case_1() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
-
-                        Test: hello::a_1
-                    """
+                    L2 Gas: ~10000
+                    Test: hello::a_1
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_1 --exact --launch-debugger"
@@ -358,10 +355,9 @@ fn test_case_2() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
-
-                        Test: hello::a_2
-                    """
+                    L2 Gas: ~10000
+                    Test: hello::a_2
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_2 --exact --launch-debugger"
@@ -434,10 +430,9 @@ fn test_case_with_fuzzer() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
-
-                        Test: hello::a_1
-                    """
+                    L2 Gas: ~10000
+                    Test: hello::a_1
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_1 --exact --launch-debugger"
@@ -510,10 +505,9 @@ fn fuzzer_with_test_case() {
     typ = "Info"
     message = """
 
-                        L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
-
-                        Test: hello::a
-                    """
+                    L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
+                    Test: hello::a
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
@@ -544,10 +538,9 @@ fn fuzzer_without_test_case() {
     typ = "Info"
     message = """
 
-                        L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
-
-                        Test: hello::a
-                    """
+                    L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
+                    Test: hello::a
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
@@ -578,10 +571,9 @@ fn fuzzer_before_test() {
     typ = "Info"
     message = """
 
-                        L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
-
-                        Test: hello::a
-                    """
+                    L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
+                    Test: hello::a
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
@@ -630,10 +622,9 @@ fn debug_with_incorrect_compiler_config() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~13620 
-
-                        Test: hello::a
-                    """
+                    L2 Gas: ~13620
+                    Test: hello::a
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
