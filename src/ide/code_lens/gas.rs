@@ -133,33 +133,30 @@ fn test_target_execute(
             return;
         };
 
-        // All-or-nothing: if any test in the batch failed, show error
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
         if !output.status.success() {
-            let message = "Test failed or gas disabled".to_string();
+            let message = format!("Failed to calculate gas for {full_path}.\n{stdout}");
             notifier.notify::<ShowMessage>(ShowMessageParams { typ: MessageType::ERROR, message });
             return;
         }
-        let stdout = String::from_utf8_lossy(&output.stdout);
 
-        let message = match is_fuzzer {
-            false => {
-                let gas = parse_test_l2_gas(&stdout).unwrap_or_default();
-                format!(
-                    "
-                    L2 Gas: ~{gas} \n
-                    Test: {full_path}
+        let message = if is_fuzzer {
+            let (max, min, mean) = parse_fuzzer_test_l2_gas(&stdout).unwrap_or_default();
+            format!(
                 "
-                )
-            }
-            true => {
-                let (max, min, mean) = parse_fuzzer_test_l2_gas(&stdout).unwrap_or_default();
-                format!(
-                    "
-                    L2 Gas: max: ~{max}, min: ~{min}, mean: ~{mean} \n
-                    Test: {full_path}
+                L2 Gas: max: ~{max}, min: ~{min}, mean: ~{mean}\n
+                Test: {full_path}
+            "
+            )
+        } else {
+            let gas = parse_test_l2_gas(&stdout).unwrap_or_default();
+            format!(
                 "
-                )
-            }
+                L2 Gas: ~{gas}\n
+                Test: {full_path}
+            "
+            )
         };
 
         notifier.notify::<ShowMessage>(ShowMessageParams { typ: MessageType::INFO, message });
@@ -208,7 +205,7 @@ mod tests {
     }
 
     #[test]
-    fn return_zero_when_no_gas_info() {
+    fn return_none_when_no_gas_info() {
         assert!(parse_test_l2_gas("no gas info here").is_none());
         assert!(parse_fuzzer_test_l2_gas("no gas info here").is_none());
     }
