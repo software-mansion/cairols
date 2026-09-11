@@ -17,7 +17,7 @@ pub use self::finder::ResolvedItem;
 pub use self::finder::{find_declaration, find_definition};
 pub use self::generic_param::GenericParamDef;
 pub use self::item::ItemDef;
-pub use self::member::MemberDef;
+pub use self::member::{MemberDef, resolve_accessed_member};
 pub use self::module::ModuleDef;
 pub use self::variable::VariableDef;
 pub use self::variant::VariantDef;

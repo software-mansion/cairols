@@ -57,7 +57,7 @@ mapped_diagnostics:
       severity: 1
       code: E2041
       message: |-
-        Unexpected argument type. Expected: "core::integer::u8", found: "core::integer::u32".
+        Unexpected argument type. Expected: "u8", found: "u32".
         note: this error originates in the attribute macro: `complex_attribute_macro_v2`
       relatedInformation:
       - location:

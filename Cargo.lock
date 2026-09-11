@@ -459,19 +459,6 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-macro"
-version = "0.2.0-rc.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=5f11cee9f8c9420917835d7cd2fe428b33fb6aea#5f11cee9f8c9420917835d7cd2fe428b33fb6aea"
-dependencies = [
- "bumpalo",
- "cairo-lang-macro-attributes 0.2.0-rc.0",
- "cairo-lang-macro-stable 2.0.0-rc.0",
- "cairo-lang-primitive-token",
- "cairo-lang-quote 0.1.0-rc.0",
- "linkme",
-]
-
-[[package]]
-name = "cairo-lang-macro"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "825620f583a897969ef54fe3c5364a6fee01b293720b53428a066049a88d6813"
@@ -480,7 +467,7 @@ dependencies = [
  "cairo-lang-macro-attributes 0.2.1",
  "cairo-lang-macro-stable 2.0.0",
  "cairo-lang-primitive-token",
- "cairo-lang-quote 0.2.0",
+ "cairo-lang-quote",
  "linkme",
  "serde",
 ]
@@ -490,16 +477,6 @@ name = "cairo-lang-macro-attributes"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e32e958decd95ae122ee64daa26721da2f76e83231047f947fd9cdc5d3c90cc6"
-dependencies = [
- "quote",
- "scarb-stable-hash",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "cairo-lang-macro-attributes"
-version = "0.2.0-rc.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=5f11cee9f8c9420917835d7cd2fe428b33fb6aea#5f11cee9f8c9420917835d7cd2fe428b33fb6aea"
 dependencies = [
  "quote",
  "scarb-stable-hash",
@@ -522,11 +499,6 @@ name = "cairo-lang-macro-stable"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c49906d6b1c215e5814be7c5c65ecf2328898b335bee8c2409ec07cfb5530daf"
-
-[[package]]
-name = "cairo-lang-macro-stable"
-version = "2.0.0-rc.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=5f11cee9f8c9420917835d7cd2fe428b33fb6aea#5f11cee9f8c9420917835d7cd2fe428b33fb6aea"
 
 [[package]]
 name = "cairo-lang-macro-stable"
@@ -602,15 +574,6 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-quote"
-version = "0.1.0-rc.0"
-source = "git+https://github.com/software-mansion/scarb.git?rev=5f11cee9f8c9420917835d7cd2fe428b33fb6aea#5f11cee9f8c9420917835d7cd2fe428b33fb6aea"
-dependencies = [
- "proc-macro2",
- "quote",
-]
-
-[[package]]
-name = "cairo-lang-quote"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0476b3528ba25d371ebeebe6a55816702984b23feea46d4b8751114ef3157779"
@@ -674,7 +637,7 @@ dependencies = [
  "anyhow",
  "cairo-lang-utils",
  "const-fnv1a-hash",
- "convert_case 0.12.0",
+ "convert_case",
  "derivative",
  "itertools 0.15.0",
  "lalrpop",
@@ -817,7 +780,7 @@ dependencies = [
  "cairo-lang-sierra-to-casm",
  "cairo-lang-sierra-type-size",
  "cairo-lang-utils",
- "convert_case 0.12.0",
+ "convert_case",
  "itertools 0.15.0",
  "num-bigint",
  "num-integer",
@@ -967,7 +930,7 @@ dependencies = [
  "cairo-language-server",
  "cairo-lint",
  "colored",
- "convert_case 0.11.0",
+ "convert_case",
  "create-output-dir",
  "crossbeam",
  "governor",
@@ -1087,7 +1050,7 @@ dependencies = [
 name = "cairols_test_macros_v2"
 version = "1.0.0"
 dependencies = [
- "cairo-lang-macro 0.2.0-rc.0",
+ "cairo-lang-macro 0.2.2",
  "cairo-lang-primitive-token",
 ]
 
@@ -1228,15 +1191,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-xid",
-]
-
-[[package]]
-name = "convert_case"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "affbf0190ed2caf063e3def54ff444b449371d55c58e513a95ab98eca50adb49"
-dependencies = [
- "unicode-segmentation",
 ]
 
 [[package]]
