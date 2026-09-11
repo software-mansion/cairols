@@ -1,5 +1,5 @@
 use crate::code_lens::{test_code_lens_snforge, test_code_lens_snforge_wrong_debug_config};
-use crate::support::insta::test_transform;
+use crate::support::insta::{test_transform, test_transform_redact_gas};
 
 #[test]
 fn only_functions() {
@@ -69,7 +69,12 @@ fn only_functions() {
 
     [[show_messages]]
     typ = "Info"
-    message = "hello::b Gas: 10000"
+    message = """
+
+                        L2 Gas: ~10000 
+
+                        Test: hello::b
+                    """
 
     [[execute_in_terminal]]
     command = "snforge test hello::b --exact --launch-debugger"
@@ -115,7 +120,12 @@ fn fn_in_mod() {
 
     [[show_messages]]
     typ = "Info"
-    message = "hello::b::a Gas: 10000"
+    message = """
+
+                        L2 Gas: ~10000 
+
+                        Test: hello::b::a
+                    """
 
     [[execute_in_terminal]]
     command = "snforge test hello::b::a --exact --launch-debugger"
@@ -158,10 +168,6 @@ fn run_for_mod() {
     command = "⛽ Calculate Gas"
     file_path = "src/lib.cairo"
     index = 3
-
-    [[show_messages]]
-    typ = "Info"
-    message = "hello::b Gas: 10000"
 
     [[execute_in_terminal]]
     command = "snforge test hello::b"
@@ -287,7 +293,12 @@ fn test_case_1() {
 
     [[show_messages]]
     typ = "Info"
-    message = "hello::a_1 Gas: 10000"
+    message = """
+
+                        L2 Gas: ~10000 
+
+                        Test: hello::a_1
+                    """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_1 --exact --launch-debugger"
@@ -345,7 +356,12 @@ fn test_case_2() {
 
     [[show_messages]]
     typ = "Info"
-    message = "hello::a_2 Gas: 10000"
+    message = """
+
+                        L2 Gas: ~10000 
+
+                        Test: hello::a_2
+                    """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_2 --exact --launch-debugger"
@@ -416,7 +432,12 @@ fn test_case_with_fuzzer() {
 
     [[show_messages]]
     typ = "Info"
-    message = "hello::a_1 Gas: 10000"
+    message = """
+
+                        L2 Gas: ~10000 
+
+                        Test: hello::a_1
+                    """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_1 --exact --launch-debugger"
@@ -430,7 +451,7 @@ fn test_case_with_fuzzer() {
 
 #[test]
 fn fuzzer_with_test_case() {
-    test_transform!(test_code_lens_snforge, r#"
+    test_transform_redact_gas!(test_code_lens_snforge, r#"
     #[test]<caret>
     #[fuzzer]
     #[test_case(1)]
@@ -487,7 +508,12 @@ fn fuzzer_with_test_case() {
 
     [[show_messages]]
     typ = "Info"
-    message = "hello::a Gas: 3187400"
+    message = """
+
+                        L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
+
+                        Test: hello::a
+                    """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
@@ -497,7 +523,7 @@ fn fuzzer_with_test_case() {
 
 #[test]
 fn fuzzer_without_test_case() {
-    test_transform!(test_code_lens_snforge, r#"
+    test_transform_redact_gas!(test_code_lens_snforge, r#"
     #[test]<caret>
     #[fuzzer]
     fn a(_a: felt252) {}
@@ -516,7 +542,12 @@ fn fuzzer_without_test_case() {
 
     [[show_messages]]
     typ = "Info"
-    message = "hello::a Gas: 3187400"
+    message = """
+
+                        L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
+
+                        Test: hello::a
+                    """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
@@ -526,7 +557,7 @@ fn fuzzer_without_test_case() {
 
 #[test]
 fn fuzzer_before_test() {
-    test_transform!(test_code_lens_snforge, r#"
+    test_transform_redact_gas!(test_code_lens_snforge, r#"
     #[fuzzer]
     #[test]<caret>
     fn a(_a: felt252) {}
@@ -545,7 +576,12 @@ fn fuzzer_before_test() {
 
     [[show_messages]]
     typ = "Info"
-    message = "hello::a Gas: 3187400"
+    message = """
+
+                        L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
+
+                        Test: hello::a
+                    """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
@@ -592,7 +628,12 @@ fn debug_with_incorrect_compiler_config() {
 
     [[show_messages]]
     typ = "Info"
-    message = "hello::a Gas: 13620"
+    message = """
+
+                        L2 Gas: ~13620 
+
+                        Test: hello::a
+                    """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
