@@ -13,8 +13,10 @@ macro_rules! test_transform {
     }};
 }
 
-/// Like [`test_transform`], but redacts `~<digits>` (e.g. `~54300`)
-/// to a fixed placeholder before snapshotting.
+/// Like [`test_transform`], but redacts `~<digits>` (e.g. `~54300`) to a fixed placeholder
+/// before snapshotting. Needed because `snforge`'s fuzz tests use a random seed each run, so
+/// their reported gas figures (min/max/mean) vary between runs and can never be pinned to an
+/// exact value in a snapshot.
 macro_rules! test_transform_redact_gas {
     ($transform:expr, $before:literal, @$after:literal) => {{
         let before = ::indoc::indoc!($before);

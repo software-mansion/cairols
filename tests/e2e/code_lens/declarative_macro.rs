@@ -43,10 +43,10 @@ fn declarative_macro_generates_test() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
+                    L2 Gas: ~10000
 
-                        Test: hello::generate_test!_#126::expose!_#0::generated_test
-                    """
+                    Test: hello::generate_test!_#126::expose!_#0::generated_test
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::generate_test!_#126::expose!_#0::generated_test --exact --launch-debugger"
@@ -150,10 +150,10 @@ fn declarative_macro_generates_test_module() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
+                    L2 Gas: ~10000
 
-                        Test: hello::generate_test_module!_#199::expose!_#0::generated_test_mod::test_in_generated_mod
-                    """
+                    Test: hello::generate_test_module!_#199::expose!_#0::generated_test_mod::test_in_generated_mod
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::generate_test_module!_#199::expose!_#0::generated_test_mod::test_in_generated_mod --exact --launch-debugger"
@@ -247,28 +247,28 @@ fn declarative_macro_generates_multiple_tests() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
+                    L2 Gas: ~10000
 
-                        Test: hello::generate_multiple_tests!_#254::expose!_#0::generated_test_1
-                    """
-
-    [[show_messages]]
-    typ = "Info"
-    message = """
-
-                        L2 Gas: ~10000 
-
-                        Test: hello::generate_multiple_tests!_#254::expose!_#0::generated_test_2
-                    """
+                    Test: hello::generate_multiple_tests!_#254::expose!_#0::generated_test_1
+                """
 
     [[show_messages]]
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
+                    L2 Gas: ~10000
 
-                        Test: hello::generate_multiple_tests!_#254::expose!_#0::generated_test_3
-                    """
+                    Test: hello::generate_multiple_tests!_#254::expose!_#0::generated_test_2
+                """
+
+    [[show_messages]]
+    typ = "Info"
+    message = """
+
+                    L2 Gas: ~10000
+
+                    Test: hello::generate_multiple_tests!_#254::expose!_#0::generated_test_3
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::generate_multiple_tests!_#254::expose!_#0::generated_test_1 --exact --launch-debugger"
@@ -369,19 +369,19 @@ fn declarative_macro_generates_multiple_test_modules() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
+                    L2 Gas: ~10000
 
-                        Test: hello::generate_multiple_test_modules!_#357::expose!_#0::first_generated_test_mod::test_in_first_generated_mod
-                    """
+                    Test: hello::generate_multiple_test_modules!_#357::expose!_#0::first_generated_test_mod::test_in_first_generated_mod
+                """
 
     [[show_messages]]
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
+                    L2 Gas: ~10000
 
-                        Test: hello::generate_multiple_test_modules!_#357::expose!_#0::second_generated_test_mod::test_in_second_generated_mod
-                    """
+                    Test: hello::generate_multiple_test_modules!_#357::expose!_#0::second_generated_test_mod::test_in_second_generated_mod
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::generate_multiple_test_modules!_#357::expose!_#0::first_generated_test_mod::test_in_first_generated_mod --exact --launch-debugger"
@@ -550,10 +550,10 @@ fn two_declarative_macro_invocations_generate_tests() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
+                    L2 Gas: ~10000
 
-                        Test: hello::generate_test!_#128::expose!_#0::first_generated_test
-                    """
+                    Test: hello::generate_test!_#128::expose!_#0::first_generated_test
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::generate_test!_#128::expose!_#0::first_generated_test --exact --launch-debugger"
@@ -675,10 +675,10 @@ fn identical_invocations_produce_colliding_run_commands() {
     typ = "Info"
     message = """
 
-                        L2 Gas: ~10000 
+                    L2 Gas: ~10000
 
-                        Test: hello::generate_test!_#109::generated_test
-                    """
+                    Test: hello::generate_test!_#109::generated_test
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::generate_test!_#109::generated_test --exact --launch-debugger"
