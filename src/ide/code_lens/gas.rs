@@ -14,13 +14,12 @@ use crate::state::State;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum GasTarget {
-    Test { full_path: String, is_on_mod: bool },
-    // TODO(hakiers) Calculate gas for #[executable] functions
+    Test { full_path: String, is_fuzzer: bool },
 }
 
 impl From<&TestCodeLensInternal> for GasTarget {
     fn from(value: &TestCodeLensInternal) -> Self {
-        GasTarget::Test { full_path: value.full_path.clone(), is_on_mod: value.is_on_mod }
+        GasTarget::Test { full_path: value.full_path.clone(), is_fuzzer: value.is_fuzzer }
     }
 }
 
