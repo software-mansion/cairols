@@ -19,6 +19,12 @@ fn attribute_macro_generates_test() {
     file_path = "src/lib.cairo"
     index = 0
 
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 2
+
     [[execute_in_terminal]]
     command = "snforge test hello::generated_test_v2 --exact --launch-debugger"
     cwd = "./"
@@ -46,6 +52,12 @@ fn inline_macro_generates_test() {
     file_path = "src/lib.cairo"
     index = 0
 
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 2
+
     [[execute_in_terminal]]
     command = "snforge test hello::inline_generated_test_v2 --exact --launch-debugger"
     cwd = "./"
@@ -70,6 +82,12 @@ fn handwritten_module_aggregates_generated_test() {
     index = 1
 
     [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 4
+
+    [[lenses]]
     line = 1
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
@@ -80,6 +98,12 @@ fn handwritten_module_aggregates_generated_test() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
+
+    [[lenses]]
+    line = 1
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 3
 
     [[execute_in_terminal]]
     command = "snforge test hello::tests"
@@ -113,6 +137,18 @@ fn inline_macro_generates_test_module() {
     file_path = "src/lib.cairo"
     index = 1
 
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 3
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 4
+
     [[execute_in_terminal]]
     command = "snforge test hello::generated_test_mod_v2::test_in_generated_mod_v2 --exact --launch-debugger"
     cwd = "./"
@@ -142,6 +178,12 @@ fn attribute_macro_generates_test_in_handwritten_module() {
     index = 1
 
     [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 4
+
+    [[lenses]]
     line = 1
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
@@ -152,6 +194,12 @@ fn attribute_macro_generates_test_in_handwritten_module() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
+
+    [[lenses]]
+    line = 1
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 3
 
     [[execute_in_terminal]]
     command = "snforge test hello::tests::generated_test_v2 --exact --launch-debugger"
@@ -204,6 +252,24 @@ fn attribute_macro_generates_multiple_tests() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 2
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 6
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 7
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 8
 
     [[execute_in_terminal]]
     command = "snforge test hello::generated_test_1_v2 --exact --launch-debugger"
@@ -271,6 +337,24 @@ fn inline_macro_generates_multiple_tests() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 2
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 6
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 7
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 8
 
     [[execute_in_terminal]]
     command = "snforge test hello::inline_generated_test_1_v2 --exact --launch-debugger"
@@ -342,6 +426,30 @@ fn inline_macro_generates_multiple_test_modules() {
     file_path = "src/lib.cairo"
     index = 3
 
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 6
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 7
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 8
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 9
+
     [[execute_in_terminal]]
     command = "snforge test hello::first_generated_test_mod_v2::test_in_first_generated_mod_v2 --exact --launch-debugger"
     cwd = "./"
@@ -400,6 +508,24 @@ fn inline_macro_generates_nested_test_module() {
     command = "▶ Run tests"
     file_path = "src/lib.cairo"
     index = 2
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 4
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 5
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 6
 
     [[execute_in_terminal]]
     command = "snforge test hello::outer_generated_test_mod_v2::inner_generated_test_mod_v2::test_in_nested_generated_mod_v2 --exact --launch-debugger"
@@ -470,5 +596,29 @@ fn inline_macro_generates_test_module_with_multiple_tests() {
     command = "▶ Run tests"
     file_path = "src/lib.cairo"
     index = 3
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 7
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 8
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 9
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 10
     "#)
 }
