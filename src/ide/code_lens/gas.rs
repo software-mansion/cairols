@@ -5,6 +5,8 @@ use lsp_types::{Command, MessageType, Range, ShowMessageParams, Url};
 use regex::Regex;
 
 use super::LSCodeLens;
+use crate::ide::code_lens::tests::get_full_path_and_module_id;
+use crate::ide::code_lens::tests::sanitize_test_case_name;
 use crate::ide::code_lens::tests::{TestCodeLensInternal, TestFullQualifiedPath};
 use crate::ide::code_lens::{CodeLens, CodeLensInterface, CodeLensInternal, make_lens_args};
 use crate::lang::db::AnalysisDatabase;
@@ -34,7 +36,12 @@ impl CodeLensInterface for GasCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
         match &self.target {
             GasTarget::Test { full_path, is_fuzzer } => {
-                test_target_execute(full_path.clone(), *is_fuzzer, file_url, state, notifier)
+                let (full_qualified_path, _) =
+                    get_full_path_and_module_id(&file_url, state, &self.lens, full_path, false)?;
+
+                let full_path = sanitize_test_case_name(full_qualified_path.as_ref());
+
+                test_target_execute(full_path, *is_fuzzer, file_url, state, notifier)
             }
         }
     }
@@ -133,27 +140,34 @@ fn test_target_execute(
             return;
         };
 
-        let stdout = String::from_utf8_lossy(&output.stdout);
-
         if !output.status.success() {
-            let message = format!("Failed to calculate gas for {full_path}.\n{stdout}");
+            let message = format!(
+                "
+                Failed to calculate gas for {full_path}.
+                Command: {command}.
+                Try to rerun command manually.
+                "
+            );
             notifier.notify::<ShowMessage>(ShowMessageParams { typ: MessageType::ERROR, message });
             return;
         }
 
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
         let message = if is_fuzzer {
-            let (max, min, mean) = parse_fuzzer_test_l2_gas(&stdout).unwrap_or_default();
+            let (max, min, mean) =
+                parse_fuzzer_test_l2_gas(&stdout).expect("Snforge should return the gas info.");
             format!(
                 "
-                L2 Gas: max: ~{max}, min: ~{min}, mean: ~{mean}\n
+                L2 Gas: max: ~{max}, min: ~{min}, mean: ~{mean}
                 Test: {full_path}
             "
             )
         } else {
-            let gas = parse_test_l2_gas(&stdout).unwrap_or_default();
+            let gas = parse_test_l2_gas(&stdout).expect("Snforge should return the gas info.");
             format!(
                 "
-                L2 Gas: ~{gas}\n
+                L2 Gas: ~{gas}
                 Test: {full_path}
             "
             )
