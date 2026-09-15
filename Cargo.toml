@@ -91,7 +91,7 @@ libc = "0.2.186"
 [dev-dependencies]
 assert_fs = "1.1"
 cairo-language-server = { path = ".", features = ["testing"] }
-insta = { version = "1.47", features = ["toml", "json", "redactions"] }
+insta = { version = "1.47", features = ["toml", "json", "redactions", "filters"] }
 pathdiff = "0.2"
 similar = "3.1"
 
