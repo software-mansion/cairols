@@ -454,14 +454,11 @@ dependencies = [
  "cairo-lang-macro-attributes 0.1.0",
  "cairo-lang-macro-stable 1.0.0",
  "linkme",
- "serde",
 ]
 
 [[package]]
 name = "cairo-lang-macro"
 version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "825620f583a897969ef54fe3c5364a6fee01b293720b53428a066049a88d6813"
 dependencies = [
  "bumpalo",
  "cairo-lang-macro-attributes 0.2.1",
@@ -479,19 +476,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e32e958decd95ae122ee64daa26721da2f76e83231047f947fd9cdc5d3c90cc6"
 dependencies = [
  "quote",
- "scarb-stable-hash",
+ "scarb-stable-hash 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 2.0.119",
 ]
 
 [[package]]
 name = "cairo-lang-macro-attributes"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "261c5f0436c8d3e7e0b0c992115d875e2256454b6d0efd769d40dd80509f2d33"
 dependencies = [
  "quote",
- "scarb-stable-hash",
- "syn 2.0.119",
+ "scarb-stable-hash 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 3.0.5",
 ]
 
 [[package]]
@@ -503,8 +498,6 @@ checksum = "c49906d6b1c215e5814be7c5c65ecf2328898b335bee8c2409ec07cfb5530daf"
 [[package]]
 name = "cairo-lang-macro-stable"
 version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "414b7ba40b5ec3f26101b5c76df5739190832834b95689a723f3f88ec1695fe3"
 
 [[package]]
 name = "cairo-lang-parser"
@@ -575,13 +568,11 @@ dependencies = [
 [[package]]
 name = "cairo-lang-quote"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0476b3528ba25d371ebeebe6a55816702984b23feea46d4b8751114ef3157779"
 dependencies = [
  "proc-macro2",
  "quote",
  "ra-ap-rustc_parse_format",
- "syn 2.0.119",
+ "syn 3.0.5",
 ]
 
 [[package]]
@@ -914,7 +905,6 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-formatter",
  "cairo-lang-lowering",
- "cairo-lang-macro 0.1.1",
  "cairo-lang-macro 0.2.2",
  "cairo-lang-parser",
  "cairo-lang-plugins",
@@ -949,8 +939,8 @@ dependencies = [
  "salsa",
  "scarb-manifest-schema",
  "scarb-metadata",
+ "scarb-proc-macro-host",
  "scarb-proc-macro-server-types",
- "scarb-stable-hash",
  "semver",
  "serde",
  "serde_json",
@@ -3096,15 +3086,40 @@ dependencies = [
 ]
 
 [[package]]
-name = "scarb-proc-macro-server-types"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aacfafcd4d6600217d13521afeaf37ffd5c3ea5348161a3334c6b12fa38b3393"
+name = "scarb-proc-macro-host"
+version = "0.1.0"
 dependencies = [
- "cairo-lang-macro 0.1.1",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-macro 0.2.2",
+ "cairo-lang-semantic",
+ "cairo-lang-syntax",
+ "convert_case",
+ "itertools 0.15.0",
+ "salsa",
+ "scarb-stable-hash 1.0.0",
+ "serde",
+ "serde_json",
+ "smol_str",
+ "tracing",
+]
+
+[[package]]
+name = "scarb-proc-macro-server-types"
+version = "0.6.0"
+dependencies = [
  "cairo-lang-macro 0.2.2",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "scarb-stable-hash"
+version = "1.0.0"
+dependencies = [
+ "data-encoding",
+ "xxhash-rust",
 ]
 
 [[package]]

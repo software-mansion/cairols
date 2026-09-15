@@ -16,7 +16,7 @@ pub struct PlainExpandAttributeParams {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, SalsaValue)]
 pub struct PlainExpandDeriveParams {
     pub context: ProcMacroScope,
-    pub derives: Vec<String>,
+    pub derive: String,
     pub item: String,
 }
 
@@ -39,7 +39,7 @@ impl From<ExpandAttributeParams> for PlainExpandAttributeParams {
 }
 impl From<ExpandDeriveParams> for PlainExpandDeriveParams {
     fn from(value: ExpandDeriveParams) -> Self {
-        Self { context: value.context, derives: value.derives, item: value.item.to_string() }
+        Self { context: value.context, derive: value.derive, item: value.item.to_string() }
     }
 }
 impl From<ExpandInlineMacroParams> for PlainExpandInlineParams {
