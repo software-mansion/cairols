@@ -25,6 +25,7 @@ use serde_json::{Number, Value};
 use crate::config::Config;
 use crate::ide::code_lens::debugger::{DebuggerCodeLens, get_debugger_code_lenses};
 use crate::ide::code_lens::executables::{ExecutableCodeLens, get_executable_code_lenses};
+use crate::ide::code_lens::gas::{GasCodeLens, get_gas_code_lenses};
 use crate::ide::code_lens::tests::{TestCodeLens, get_test_code_lenses};
 use crate::lang::db::AnalysisDatabase;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
@@ -36,6 +37,7 @@ use crate::state::State;
 
 mod debugger;
 mod executables;
+mod gas;
 mod tests;
 
 trait CodeLensInternal {
@@ -52,6 +54,7 @@ pub enum LSCodeLens {
     Test(TestCodeLens),
     Executable(ExecutableCodeLens),
     Debugger(DebuggerCodeLens),
+    Gas(GasCodeLens),
 }
 
 impl CodeLensInterface for LSCodeLens {
@@ -64,6 +67,7 @@ impl CodeLensInterface for LSCodeLens {
             LSCodeLens::Debugger(debugger_code_lens) => {
                 debugger_code_lens.execute(file_url, state, notifier)
             }
+            LSCodeLens::Gas(gas_code_lens) => gas_code_lens.execute(file_url, state, notifier),
         }
     }
 
@@ -72,6 +76,7 @@ impl CodeLensInterface for LSCodeLens {
             LSCodeLens::Test(test_code_lens) => test_code_lens.lens(),
             LSCodeLens::Executable(executable_code_lens) => executable_code_lens.lens(),
             LSCodeLens::Debugger(debugger_code_lens) => debugger_code_lens.lens(),
+            LSCodeLens::Gas(gas_code_lens) => gas_code_lens.lens(),
         }
     }
 }
@@ -316,11 +321,13 @@ fn calculate_code_lens(url: Url, db: &AnalysisDatabase, config: &Config) -> Opti
 
     let test_lens = get_test_code_lenses(db, url.clone(), config).unwrap_or_default();
     let executable_lens = get_executable_code_lenses(db, url.clone()).unwrap_or_default();
-    let debugger_lens = get_debugger_code_lenses(db, url, &test_lens).unwrap_or_default();
+    let debugger_lens = get_debugger_code_lenses(db, url.clone(), &test_lens).unwrap_or_default();
+    let gas_lens = get_gas_code_lenses(db, url, &test_lens).unwrap_or_default();
 
     push_lens(&mut result, test_lens);
     push_lens(&mut result, executable_lens);
     push_lens(&mut result, debugger_lens);
+    push_lens(&mut result, gas_lens);
 
     Some(result)
 }

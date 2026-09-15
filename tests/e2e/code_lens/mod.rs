@@ -313,6 +313,11 @@ fn test_code_lens_impl(
         for code_lens in lenses.iter().filter(|l| l.range.start.line == position.line) {
             let command = code_lens.command.clone().unwrap();
 
+            // The gas lens does not send any notification back yet
+            if command.title.contains("Calculate Gas") {
+                continue;
+            }
+
             ls.send_request::<ExecuteCommand>(ExecuteCommandParams {
                 command: command.command,
                 arguments: command.arguments.unwrap().clone(),
