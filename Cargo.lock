@@ -1051,7 +1051,9 @@ name = "cairols_test_macros_v2"
 version = "1.0.0"
 dependencies = [
  "cairo-lang-macro 0.2.2",
+ "cairo-lang-parser",
  "cairo-lang-primitive-token",
+ "cairo-lang-syntax",
 ]
 
 [[package]]
