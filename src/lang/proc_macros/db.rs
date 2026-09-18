@@ -250,7 +250,7 @@ impl SpansStabilizer {
                     // back with `span.start == STABLE_CALL_SITE_START`. Such tokens are produced by the
                     // macro call, not copies of any user code, so mark them as `CodeOrigin::CallSite` instead of
                     // `CodeOrigin::Span`. Otherwise resultants lookup would treat them as generated
-                    // counterparts of the call site node (e.g. the derive name). 
+                    // counterparts of the call site node (e.g. the derive name).
                     CodeOrigin::Span(ref span) if self.is_stable_call_site(span) => {
                         mapping.origin = CodeOrigin::CallSite(self.original_call_site.clone())
                     }

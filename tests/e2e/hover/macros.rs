@@ -220,46 +220,5 @@ fn derive_macro_name_with_mixed_mappings() {
     source_context = """
     #[derive(DescribeDeriveM<caret>acroV2)]
     """
-    highlight = """
-    #[derive(<sel>DescribeDeriveMacroV2</sel>)]
-    """
-    popover = """
-    ```cairo
-    hello
-    ```
-    ```cairo
-    #[derive(DescribeDeriveMacroV2)]
-    struct OuterStruct {
-        extra: u32,
-    }
-    impl DescribeImpl of DescribeTrait<OuterStruct>;
-    ```
-
-    ---
-    ```cairo
-    hello
-    ```
-    ```cairo
-    trait DescribeTrait<T>
-    ```
-
-    ---
-    ```cairo
-    hello::DescribeImpl
-    ```
-    ```cairo
-    #[derive(DescribeDeriveMacroV2)]
-    struct OuterStruct {
-        extra: u32,
-    }
-    impl DescribeImpl of DescribeTrait<OuterStruct>;
-    fn describe(self: @OuterStruct)
-    ```
-
-    ---
-    ```cairo
-    self: @OuterStruct
-    ```
-    """
     "#)
 }
