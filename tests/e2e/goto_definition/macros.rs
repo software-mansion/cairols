@@ -194,3 +194,36 @@ fn top_level_declarative_macro_on_usage() {
     declare_mod!(modzik);
     ")
 }
+
+#[test]
+fn derive_macro_name_with_call_site_only_mappings() {
+    test_transform_with_macros!(GotoDefinition, r#"
+    #[derive(SimpleDeriveM<caret>acroV2)]
+    struct OuterStruct {
+        extra: u32,
+    }
+    "#, @"none response")
+}
+
+#[test]
+fn derive_macro_name_with_mixed_mappings() {
+    test_transform_with_macros!(GotoDefinition, r#"
+    trait DescribeTrait<T> {
+        fn describe(self: @T) -> felt252;
+    }
+
+    #[derive(DescribeDeriveM<caret>acroV2)]
+    struct OuterStruct {
+        extra: u32,
+    }
+    "#, @"
+    trait <sel>DescribeTrait</sel><T> {
+        fn <sel>describe</sel>(self: @T) -> felt252;
+    }
+
+    #[derive(<sel>DescribeDeriveMacroV2</sel>)]
+    struct OuterStruct {
+        extra: u32,
+    }
+    ")
+}

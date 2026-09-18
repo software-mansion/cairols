@@ -1,6 +1,6 @@
 use lsp_types::Hover;
 
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn println() {
@@ -186,6 +186,79 @@ fn top_level_declarative_macro_on_usage() {
     macro declare_mod {
         ($name:ident) => { ... };
     }
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn derive_macro_name_with_call_site_only_mappings() {
+    test_transform_with_macros!(Hover, r#"
+    #[derive(SimpleDeriveM<caret>acroV2)]
+    struct OuterStruct {
+        extra: u32,
+    }
+    "#, @r#"
+    source_context = """
+    #[derive(SimpleDeriveM<caret>acroV2)]
+    """
+    "#)
+}
+
+#[test]
+fn derive_macro_name_with_mixed_mappings() {
+    test_transform_with_macros!(Hover, r#"
+    trait DescribeTrait<T> {
+        fn describe(self: @T) -> felt252;
+    }
+
+    #[derive(DescribeDeriveM<caret>acroV2)]
+    struct OuterStruct {
+        extra: u32,
+    }
+    "#, @r#"
+    source_context = """
+    #[derive(DescribeDeriveM<caret>acroV2)]
+    """
+    highlight = """
+    #[derive(<sel>DescribeDeriveMacroV2</sel>)]
+    """
+    popover = """
+    ```cairo
+    hello
+    ```
+    ```cairo
+    #[derive(DescribeDeriveMacroV2)]
+    struct OuterStruct {
+        extra: u32,
+    }
+    impl DescribeImpl of DescribeTrait<OuterStruct>;
+    ```
+
+    ---
+    ```cairo
+    hello
+    ```
+    ```cairo
+    trait DescribeTrait<T>
+    ```
+
+    ---
+    ```cairo
+    hello::DescribeImpl
+    ```
+    ```cairo
+    #[derive(DescribeDeriveMacroV2)]
+    struct OuterStruct {
+        extra: u32,
+    }
+    impl DescribeImpl of DescribeTrait<OuterStruct>;
+    fn describe(self: @OuterStruct)
+    ```
+
+    ---
+    ```cairo
+    self: @OuterStruct
     ```
     """
     "#)
