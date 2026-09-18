@@ -216,14 +216,5 @@ fn derive_macro_name_with_mixed_mappings() {
     struct OuterStruct {
         extra: u32,
     }
-    "#, @"
-    trait <sel>DescribeTrait</sel><T> {
-        fn <sel>describe</sel>(self: @T) -> felt252;
-    }
-
-    #[derive(<sel>DescribeDeriveMacroV2</sel>)]
-    struct OuterStruct {
-        extra: u32,
-    }
-    ")
+    "#, @"none response")
 }

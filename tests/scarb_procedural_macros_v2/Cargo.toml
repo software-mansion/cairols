@@ -9,8 +9,8 @@ crate-type = ["rlib", "cdylib"]
 [dependencies]
 cairo-lang-macro = "0.2.1"
 cairo-lang-primitive-token = "1"
-cairo-lang-parser = "2.20.0"
-cairo-lang-syntax = "2.20.0"
+cairo-lang-parser = "*"
+cairo-lang-syntax = "*"
 
 [package.metadata.cargo-machete]
 ignored = ["cairo-lang-primitive-token"]
