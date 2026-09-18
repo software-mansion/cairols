@@ -235,12 +235,24 @@ impl SpansStabilizer {
         Self { original_call_site, original_item_offset }
     }
 
+    fn is_stable_call_site(&self, span: &TextSpan) -> bool {
+        span.start == Self::STABLE_CALL_SITE_START
+    }
+
     pub fn apply_original_offsets_to_result(self, mut result: ProcMacroResult) -> ProcMacroResult {
         if let Some(code_mappings) = &mut result.code_mappings {
             for mapping in code_mappings.iter_mut() {
                 match mapping.origin {
                     CodeOrigin::Start(_) => {
                         // Should be unreachable
+                    }
+                    // Tokens created with `TextSpan::call_site()` (e.g. all literal tokens in `quote!`) come
+                    // back with `span.start == STABLE_CALL_SITE_START`. Such tokens are produced by the
+                    // macro call, not copies of any user code, so mark them as `CodeOrigin::CallSite` instead of
+                    // `CodeOrigin::Span`. Otherwise resultants lookup would treat them as generated
+                    // counterparts of the call site node (e.g. the derive name). 
+                    CodeOrigin::Span(ref span) if self.is_stable_call_site(span) => {
+                        mapping.origin = CodeOrigin::CallSite(self.original_call_site.clone())
                     }
                     CodeOrigin::Span(ref mut span) | CodeOrigin::CallSite(ref mut span) => {
                         self.apply_original_offset_to_span(span);
@@ -261,7 +273,7 @@ impl SpansStabilizer {
     }
 
     fn apply_original_offset_to_span(&self, span: &mut TextSpan) {
-        if span.start == Self::STABLE_CALL_SITE_START {
+        if self.is_stable_call_site(span) {
             *span = self.original_call_site.clone();
         } else {
             *span = TextSpan {
