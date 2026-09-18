@@ -1,4 +1,8 @@
 use cairo_lang_macro::{Diagnostic, ProcMacroResult, TokenStream, TokenTree, derive_macro, quote};
+use cairo_lang_parser::utils::SimpleParserDatabase;
+use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::ast::{ModuleItem, SyntaxFile};
+use cairo_lang_syntax::node::with_db::SyntaxNodeWithDb;
 
 #[derive_macro]
 pub fn simple_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
@@ -65,4 +69,26 @@ pub fn mod_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
         }
     };
     ProcMacroResult::new(ts)
+}
+
+#[derive_macro]
+pub fn describe_derive_macro_v2(item: TokenStream) -> ProcMacroResult {
+    let db = SimpleParserDatabase::default();
+    let (root, _diagnostics) = db.parse_token_stream(&item);
+
+    let file = SyntaxFile::from_syntax_node(&db, root);
+    let Some(ModuleItem::Struct(item_struct)) = file.items(&db).elements(&db).next() else {
+        return ProcMacroResult::new(TokenStream::empty()).with_diagnostics(
+            Diagnostic::error("`DescribeDeriveMacroV2` can be derived only on structs").into(),
+        );
+    };
+
+    let name = item_struct.name(&db).as_syntax_node();
+    let name = SyntaxNodeWithDb::new(&name, &db);
+
+    ProcMacroResult::new(quote! {
+        impl DescribeImpl of DescribeTrait<#name> {
+            fn describe(self: @#name) {}
+        }
+    })
 }
