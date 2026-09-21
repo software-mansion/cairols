@@ -195,7 +195,9 @@ impl TryFrom<MacroPluginLongId> for Plugin {
         let plugin_any: &dyn Any = plugin;
         let plugin: &ProcMacroPlugin = plugin_any.downcast_ref().ok_or(())?;
 
-        Ok(Self::ProcMacro(ProcMacro { source_packages: plugin.backend().source_packages().to_vec() }))
+        Ok(Self::ProcMacro(ProcMacro {
+            source_packages: plugin.backend().source_packages().to_vec(),
+        }))
     }
 }
 
@@ -212,7 +214,9 @@ impl TryFrom<InlineMacroExprPluginLongId> for Plugin {
         let plugin_any: &dyn Any = plugin;
         let plugin: &InlineProcMacroPlugin = plugin_any.downcast_ref().ok_or(())?;
 
-        Ok(Self::ProcMacro(ProcMacro { source_packages: plugin.backend().source_packages().to_vec() }))
+        Ok(Self::ProcMacro(ProcMacro {
+            source_packages: plugin.backend().source_packages().to_vec(),
+        }))
     }
 }
 

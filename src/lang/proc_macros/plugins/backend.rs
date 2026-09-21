@@ -84,12 +84,7 @@ impl PmsBackend {
             .chain(named(derives, ExpansionKind::Derive))
             .collect();
 
-        Self {
-            scope,
-            source_packages: debug_info.source_packages,
-            expansions,
-            executables,
-        }
+        Self { scope, source_packages: debug_info.source_packages, expansions, executables }
     }
 
     /// Serialized ids of the Scarb packages that define these macros. Shown by the crate
@@ -114,10 +109,7 @@ impl ProcMacroBackend for PmsBackend {
     type AuxData = ();
 
     fn find_expansion(&self, query: &ExpansionQuery) -> Option<PmsMacroId> {
-        self.expansions
-            .iter()
-            .find(|id| id.expansion.matches_query(query))
-            .cloned()
+        self.expansions.iter().find(|id| id.expansion.matches_query(query)).cloned()
     }
 
     fn inline_macros(&self) -> Vec<PmsMacroId> {
@@ -168,23 +160,13 @@ impl ProcMacroBackend for PmsBackend {
             ),
             ExpansionKind::Derive => get_derive_expansion(
                 db,
-                ExpandDeriveParams {
-                    context,
-                    derive: name,
-                    item,
-                    call_site,
-                },
+                ExpandDeriveParams { context, derive: name, item, call_site },
                 fingerprint,
             ),
             // The host hands inline macro arguments over as the item.
             ExpansionKind::Inline => get_inline_macros_expansion(
                 db,
-                ExpandInlineMacroParams {
-                    context,
-                    name,
-                    args: item,
-                    call_site,
-                },
+                ExpandInlineMacroParams { context, name, args: item, call_site },
                 fingerprint,
             ),
             ExpansionKind::Executable => {
@@ -214,9 +196,7 @@ mod tests {
 
     fn backend() -> PmsBackend {
         let scope = ProcMacroScope {
-            workspace: Workspace {
-                manifest_path: PathBuf::from("/tmp/Scarb.toml"),
-            },
+            workspace: Workspace { manifest_path: PathBuf::from("/tmp/Scarb.toml") },
             component: CompilationUnitComponent {
                 name: "test_package".to_string(),
                 discriminator: None,
@@ -229,22 +209,11 @@ mod tests {
                     name: "test_package".to_string(),
                     discriminator: None,
                 },
-                attributes: vec![MacroWithHash {
-                    name: "some_attr".to_string(),
-                    hash: 1,
-                }],
-                inline_macros: vec![MacroWithHash {
-                    name: "some_inline".to_string(),
-                    hash: 2,
-                }],
-                derives: vec![MacroWithHash {
-                    name: "some_derive".to_string(),
-                    hash: 3,
-                }],
+                attributes: vec![MacroWithHash { name: "some_attr".to_string(), hash: 1 }],
+                inline_macros: vec![MacroWithHash { name: "some_inline".to_string(), hash: 2 }],
+                derives: vec![MacroWithHash { name: "some_derive".to_string(), hash: 3 }],
                 executables: vec!["some_executable".to_string()],
-                debug_info: DebugInfo {
-                    source_packages: vec!["some_package".to_string()],
-                },
+                debug_info: DebugInfo { source_packages: vec!["some_package".to_string()] },
             },
         )
     }
@@ -265,10 +234,7 @@ mod tests {
             backend.declared_attributes(),
             vec!["some_attr".to_string(), "some_executable".to_string()]
         );
-        assert_eq!(
-            backend.executable_attributes(),
-            vec!["some_executable".to_string()]
-        );
+        assert_eq!(backend.executable_attributes(), vec!["some_executable".to_string()]);
     }
 
     #[test]
@@ -285,10 +251,7 @@ mod tests {
         let backend = backend();
 
         let found = backend
-            .find_expansion(&ExpansionQuery::with_cairo_name(
-                "SomeDerive",
-                ExpansionKind::Derive,
-            ))
+            .find_expansion(&ExpansionQuery::with_cairo_name("SomeDerive", ExpansionKind::Derive))
             .expect("derive should be found by its Cairo name");
         // The request sent to the server uses the expansion name, not the Cairo one.
         assert_eq!(found.expansion.expansion_name.as_str(), "some_derive");

@@ -27,10 +27,8 @@ pub fn proc_macro_plugin_suites(
         .into_iter()
         .map(|component_macros| {
             let component = component_macros.component.clone();
-            let scope = ProcMacroScope {
-                component: component.clone(),
-                workspace: workspace.clone(),
-            };
+            let scope =
+                ProcMacroScope { component: component.clone(), workspace: workspace.clone() };
             let backend = Arc::new(PmsBackend::new(scope, component_macros));
             let plugin_suite =
                 ProcMacroPlugin::build_plugin_suite(Arc::new(ProcMacroPlugin::new(backend)));
