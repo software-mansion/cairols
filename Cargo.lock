@@ -885,7 +885,7 @@ dependencies = [
 [[package]]
 name = "cairo-language-common"
 version = "2.20.0"
-source = "git+https://github.com/software-mansion/cairo-language-common?rev=c48194d467bba425da5a3a1b1322049db32316c1#c48194d467bba425da5a3a1b1322049db32316c1"
+source = "git+https://github.com/software-mansion/cairo-language-common?rev=a54f89c0d837541a74bdeba898f294e14c1b2046#a54f89c0d837541a74bdeba898f294e14c1b2046"
 dependencies = [
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
@@ -1051,7 +1051,9 @@ name = "cairols_test_macros_v2"
 version = "1.0.0"
 dependencies = [
  "cairo-lang-macro 0.2.2",
+ "cairo-lang-parser",
  "cairo-lang-primitive-token",
+ "cairo-lang-syntax",
 ]
 
 [[package]]
