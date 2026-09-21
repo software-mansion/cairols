@@ -1,9 +1,6 @@
 use cairo_lang_macro::{AllocationContext, ProcMacroResult, TextSpan, TokenStream};
-use convert_case::{Case, Casing};
 use salsa::Database;
-use scarb_proc_macro_host::{
-    Expansion, ExpansionId, ExpansionKind, ExpansionQuery, ProcMacroBackend,
-};
+use scarb_proc_macro_host::{Expansion, ExpansionId, ExpansionKind, ProcMacroBackend};
 use scarb_proc_macro_server_types::methods::defined_macros::{
     CompilationUnitComponentMacros, MacroWithHash,
 };
@@ -42,9 +39,6 @@ pub struct PmsBackend {
     scope: ProcMacroScope,
     source_packages: Vec<String>,
     expansions: Vec<PmsMacroId>,
-    /// Attributes that only mark code for later processing. They are declared to the compiler so
-    /// it does not report them as unknown, but they are never expanded.
-    executables: Vec<String>,
 }
 
 impl PmsBackend {
@@ -59,46 +53,40 @@ impl PmsBackend {
         } = macros;
 
         let named = |macros: Vec<MacroWithHash>, kind: ExpansionKind| {
-            macros.into_iter().map(move |MacroWithHash { name, hash }| {
-                // Derives are written in Cairo code in upper camel case, everything else under
-                // the name of the expansion itself. This mirrors what Scarb does when it reads
-                // the expansions out of a macro package.
-                let cairo_name = if kind == ExpansionKind::Derive {
-                    name.to_case(Case::Pascal)
-                } else {
-                    name.clone()
-                };
-                PmsMacroId {
-                    expansion: Expansion {
-                        expansion_name: name.into(),
-                        cairo_name: cairo_name.into(),
-                        kind: kind.clone(),
-                    },
-                    fingerprint: hash,
-                }
+            macros.into_iter().map(move |MacroWithHash { name, cairo_name, hash }| PmsMacroId {
+                expansion: Expansion {
+                    expansion_name: name.into(),
+                    cairo_name: cairo_name.into(),
+                    kind: kind.clone(),
+                },
+                fingerprint: hash,
             })
         };
+
+        // Executable attributes only mark code for later processing and are never expanded, so
+        // they need no fingerprint.
+        let executables = executables.into_iter().map(|name| PmsMacroId {
+            expansion: Expansion {
+                expansion_name: name.clone().into(),
+                cairo_name: name.into(),
+                kind: ExpansionKind::Executable,
+            },
+            fingerprint: 0,
+        });
 
         let expansions = named(attributes, ExpansionKind::Attr)
             .chain(named(inline_macros, ExpansionKind::Inline))
             .chain(named(derives, ExpansionKind::Derive))
+            .chain(executables)
             .collect();
 
-        Self { scope, source_packages: debug_info.source_packages, expansions, executables }
+        Self { scope, source_packages: debug_info.source_packages, expansions }
     }
 
     /// Serialized ids of the Scarb packages that define these macros. Shown by the crate
     /// introspection view.
     pub fn source_packages(&self) -> &[String] {
         &self.source_packages
-    }
-
-    fn names_of(&self, kind: ExpansionKind) -> Vec<String> {
-        self.expansions
-            .iter()
-            .filter(|id| id.expansion.kind == kind)
-            .map(|id| id.expansion.cairo_name.to_string())
-            .collect()
     }
 }
 
@@ -108,30 +96,8 @@ impl ProcMacroBackend for PmsBackend {
     /// server neither requests nor stores it.
     type AuxData = ();
 
-    fn find_expansion(&self, query: &ExpansionQuery) -> Option<PmsMacroId> {
-        self.expansions.iter().find(|id| id.expansion.matches_query(query)).cloned()
-    }
-
-    fn inline_macros(&self) -> Vec<PmsMacroId> {
-        self.expansions
-            .iter()
-            .filter(|id| id.expansion.kind == ExpansionKind::Inline)
-            .cloned()
-            .collect()
-    }
-
-    fn declared_attributes(&self) -> Vec<String> {
-        let mut names = self.names_of(ExpansionKind::Attr);
-        names.extend(self.executables.iter().cloned());
-        names
-    }
-
-    fn executable_attributes(&self) -> Vec<String> {
-        self.executables.clone()
-    }
-
-    fn declared_derives(&self) -> Vec<String> {
-        self.names_of(ExpansionKind::Derive)
+    fn expansions(&self) -> Vec<PmsMacroId> {
+        self.expansions.clone()
     }
 
     fn expand(
@@ -189,10 +155,15 @@ impl ProcMacroBackend for PmsBackend {
 mod tests {
     use std::path::PathBuf;
 
+    use scarb_proc_macro_host::ExpansionQuery;
     use scarb_proc_macro_server_types::methods::defined_macros::DebugInfo;
     use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, Workspace};
 
     use super::*;
+
+    fn macro_with_hash(name: &str, cairo_name: &str, hash: u64) -> MacroWithHash {
+        MacroWithHash { name: name.to_string(), cairo_name: cairo_name.to_string(), hash }
+    }
 
     fn backend() -> PmsBackend {
         let scope = ProcMacroScope {
@@ -209,9 +180,9 @@ mod tests {
                     name: "test_package".to_string(),
                     discriminator: None,
                 },
-                attributes: vec![MacroWithHash { name: "some_attr".to_string(), hash: 1 }],
-                inline_macros: vec![MacroWithHash { name: "some_inline".to_string(), hash: 2 }],
-                derives: vec![MacroWithHash { name: "some_derive".to_string(), hash: 3 }],
+                attributes: vec![macro_with_hash("some_attr", "some_attr", 1)],
+                inline_macros: vec![macro_with_hash("some_inline", "some_inline", 2)],
+                derives: vec![macro_with_hash("some_derive", "SomeDerive", 3)],
                 executables: vec!["some_executable".to_string()],
                 debug_info: DebugInfo { source_packages: vec!["some_package".to_string()] },
             },
@@ -219,20 +190,24 @@ mod tests {
     }
 
     #[test]
-    fn derives_are_exposed_to_cairo_code_in_upper_camel_case() {
-        // The server reports derives under the name of the expansion function, but Cairo code
-        // writes them as `#[derive(SomeDerive)]`.
+    fn derives_are_declared_under_the_cairo_name_reported_by_the_server() {
+        // Cairo code writes derives as `#[derive(SomeDerive)]`. The server decides that name, so
+        // the language server never has to repeat Scarb's casing rules.
         assert_eq!(backend().declared_derives(), vec!["SomeDerive".to_string()]);
     }
 
     #[test]
     fn attributes_and_executables_are_both_declared_as_attributes() {
-        // The compiler has to know about executable attributes so it does not report them as
-        // unknown, even though they are never expanded.
+        // The compiler has to know about executable attributes and the full path marker so it
+        // does not report them as unknown, even though they are never expanded.
         let backend = backend();
         assert_eq!(
             backend.declared_attributes(),
-            vec!["some_attr".to_string(), "some_executable".to_string()]
+            vec![
+                "some_attr".to_string(),
+                "some_executable".to_string(),
+                scarb_proc_macro_host::FULL_PATH_MARKER_KEY.to_string(),
+            ]
         );
         assert_eq!(backend.executable_attributes(), vec!["some_executable".to_string()]);
     }
