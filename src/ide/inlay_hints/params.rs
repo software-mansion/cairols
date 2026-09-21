@@ -1,12 +1,9 @@
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_semantic::Expr;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::function_with_body::{
-    FunctionWithBodySemantic, SemanticExprLookup,
-};
 use cairo_lang_semantic::items::functions::FunctionsSemantic;
-use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_semantic::resolve::ResolvedConcreteItem;
 use cairo_lang_syntax::node::ast::{self, ArgClause, BinaryOperator, ExprBinary, ExprFunctionCall};
+use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_language_common::CommonGroup;
 use lsp_types::{InlayHint, InlayHintKind, InlayHintLabel};
@@ -25,8 +22,19 @@ pub fn param_inlay_hints<'db>(
     };
 
     let syntax_args: Vec<_> = call_syntax.arguments(db).arguments(db).elements(db).collect();
-    let params: Vec<_> =
-        signature.params.iter().filter(|p| p.name.to_string(db) != "self").collect();
+
+    let call_node = call_syntax.as_syntax_node();
+
+    let is_method_call = call_node
+        .parent(db)
+        .and_then(|parent| ExprBinary::cast(db, parent))
+        .is_some_and(|binary| matches!(binary.op(db), BinaryOperator::Dot(_)));
+
+    let params: Vec<_> = signature
+        .params
+        .iter()
+        .filter(|p| !(is_method_call && p.name.to_string(db) == "self"))
+        .collect();
 
     syntax_args
         .iter()
@@ -42,35 +50,21 @@ fn resolve_call_signature<'db>(
 ) -> Option<cairo_lang_semantic::Signature<'db>> {
     let call_node = call_syntax.as_syntax_node();
 
-    let is_method_call = call_node
-        .parent(db)
-        .and_then(|parent| ExprBinary::cast(db, parent))
-        .is_some_and(|binary| matches!(binary.op(db), BinaryOperator::Dot(_)));
-
-    let semantic_db: &dyn SemanticGroup = db;
-
     db.get_node_resultants(call_node)?
         .iter()
         .find_map(|resultant| {
             let resultant_call = ExprFunctionCall::cast(db, *resultant)?;
             let lookup_item = db.find_lookup_item(resultant_call.as_syntax_node())?;
-            let function_with_body = lookup_item.function_with_body()?;
 
-            let stable_ptr = if is_method_call {
-                let parent = resultant_call.as_syntax_node().parent(db)?;
-                ExprBinary::cast(db, parent)?.stable_ptr(db).into()
-            } else {
-                resultant_call.stable_ptr(db).into()
-            };
+            let last_segment = resultant_call.path(db).segments(db).elements(db).last()?;
+            let indentifier_ptr = last_segment.identifier_ast(db).stable_ptr(db);
 
-            let expr_id = db.lookup_expr_by_ptr(function_with_body, stable_ptr).ok()?;
-            let Expr::FunctionCall(func_call) =
-                semantic_db.expr_semantic(function_with_body, expr_id)
-            else {
-                return None;
-            };
-
-            db.concrete_function_signature(func_call.function).ok()
+            match db.lookup_resolved_concrete_item_by_ptr(lookup_item, indentifier_ptr)? {
+                ResolvedConcreteItem::Function(function_id) => {
+                    db.concrete_function_signature(function_id).ok()
+                }
+                _ => None,
+            }
         })
         .cloned()
 }

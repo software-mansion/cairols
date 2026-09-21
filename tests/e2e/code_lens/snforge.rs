@@ -1,5 +1,5 @@
 use crate::code_lens::{test_code_lens_snforge, test_code_lens_snforge_wrong_debug_config};
-use crate::support::insta::test_transform;
+use crate::support::insta::{test_transform, test_transform_redact_gas};
 
 #[test]
 fn only_functions() {
@@ -26,6 +26,12 @@ fn only_functions() {
     index = 0
 
     [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 6
+
+    [[lenses]]
     line = 2
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
@@ -38,6 +44,12 @@ fn only_functions() {
     index = 1
 
     [[lenses]]
+    line = 2
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 7
+
+    [[lenses]]
     line = 6
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
@@ -48,6 +60,20 @@ fn only_functions() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 2
+
+    [[lenses]]
+    line = 6
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 8
+
+    [[show_messages]]
+    typ = "Info"
+    message = """
+
+                    L2 Gas: ~10000
+                    Test: hello::b
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::b --exact --launch-debugger"
@@ -85,6 +111,20 @@ fn fn_in_mod() {
     file_path = "src/lib.cairo"
     index = 0
 
+    [[lenses]]
+    line = 1
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 3
+
+    [[show_messages]]
+    typ = "Info"
+    message = """
+
+                    L2 Gas: ~10000
+                    Test: hello::b::a
+                """
+
     [[execute_in_terminal]]
     command = "snforge test hello::b::a --exact --launch-debugger"
     cwd = "./"
@@ -120,6 +160,12 @@ fn run_for_mod() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
+
+    [[lenses]]
+    line = 1
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 3
 
     [[execute_in_terminal]]
     command = "snforge test hello::b"
@@ -174,6 +220,12 @@ fn complex() {
     index = 1
 
     [[lenses]]
+    line = 5
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 6
+
+    [[lenses]]
     line = 11
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
@@ -184,6 +236,12 @@ fn complex() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
+
+    [[lenses]]
+    line = 11
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 5
     "#)
 }
 
@@ -208,6 +266,12 @@ fn test_case_1() {
     index = 0
 
     [[lenses]]
+    line = 1
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 4
+
+    [[lenses]]
     line = 2
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
@@ -218,6 +282,20 @@ fn test_case_1() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 1
+
+    [[lenses]]
+    line = 2
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 5
+
+    [[show_messages]]
+    typ = "Info"
+    message = """
+
+                    L2 Gas: ~10000
+                    Test: hello::a_1
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_1 --exact --launch-debugger"
@@ -250,6 +328,12 @@ fn test_case_2() {
     index = 0
 
     [[lenses]]
+    line = 1
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 4
+
+    [[lenses]]
     line = 2
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
@@ -260,6 +344,20 @@ fn test_case_2() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 1
+
+    [[lenses]]
+    line = 2
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 5
+
+    [[show_messages]]
+    typ = "Info"
+    message = """
+
+                    L2 Gas: ~10000
+                    Test: hello::a_2
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_2 --exact --launch-debugger"
@@ -287,6 +385,12 @@ fn test_case_with_fuzzer() {
     index = 0
 
     [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 5
+
+    [[lenses]]
     line = 2
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
@@ -299,6 +403,12 @@ fn test_case_with_fuzzer() {
     index = 1
 
     [[lenses]]
+    line = 2
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 6
+
+    [[lenses]]
     line = 3
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
@@ -309,6 +419,20 @@ fn test_case_with_fuzzer() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 2
+
+    [[lenses]]
+    line = 3
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 7
+
+    [[show_messages]]
+    typ = "Info"
+    message = """
+
+                    L2 Gas: ~10000
+                    Test: hello::a_1
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a_1 --exact --launch-debugger"
@@ -322,7 +446,7 @@ fn test_case_with_fuzzer() {
 
 #[test]
 fn fuzzer_with_test_case() {
-    test_transform!(test_code_lens_snforge, r#"
+    test_transform_redact_gas!(test_code_lens_snforge, r#"
     #[test]<caret>
     #[fuzzer]
     #[test_case(1)]
@@ -334,6 +458,12 @@ fn fuzzer_with_test_case() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
+
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 5
 
     [[lenses]]
     line = 2
@@ -348,6 +478,12 @@ fn fuzzer_with_test_case() {
     index = 1
 
     [[lenses]]
+    line = 2
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 6
+
+    [[lenses]]
     line = 3
     command = "▶ Debug test"
     file_path = "src/lib.cairo"
@@ -359,6 +495,20 @@ fn fuzzer_with_test_case() {
     file_path = "src/lib.cairo"
     index = 2
 
+    [[lenses]]
+    line = 3
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 7
+
+    [[show_messages]]
+    typ = "Info"
+    message = """
+
+                    L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
+                    Test: hello::a
+                """
+
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
     cwd = "./"
@@ -367,7 +517,7 @@ fn fuzzer_with_test_case() {
 
 #[test]
 fn fuzzer_without_test_case() {
-    test_transform!(test_code_lens_snforge, r#"
+    test_transform_redact_gas!(test_code_lens_snforge, r#"
     #[test]<caret>
     #[fuzzer]
     fn a(_a: felt252) {}
@@ -378,6 +528,20 @@ fn fuzzer_without_test_case() {
     file_path = "src/lib.cairo"
     index = 0
 
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 1
+
+    [[show_messages]]
+    typ = "Info"
+    message = """
+
+                    L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
+                    Test: hello::a
+                """
+
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
     cwd = "./"
@@ -386,7 +550,7 @@ fn fuzzer_without_test_case() {
 
 #[test]
 fn fuzzer_before_test() {
-    test_transform!(test_code_lens_snforge, r#"
+    test_transform_redact_gas!(test_code_lens_snforge, r#"
     #[fuzzer]
     #[test]<caret>
     fn a(_a: felt252) {}
@@ -396,6 +560,20 @@ fn fuzzer_before_test() {
     command = "▶ Run test"
     file_path = "src/lib.cairo"
     index = 0
+
+    [[lenses]]
+    line = 1
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 1
+
+    [[show_messages]]
+    typ = "Info"
+    message = """
+
+                    L2 Gas: max: ~[GAS], min: ~[GAS], mean: ~[GAS]
+                    Test: hello::a
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
@@ -421,6 +599,12 @@ fn debug_with_incorrect_compiler_config() {
     file_path = "src/lib.cairo"
     index = 0
 
+    [[lenses]]
+    line = 0
+    command = "⛽ Calculate Gas"
+    file_path = "src/lib.cairo"
+    index = 2
+
     [[show_messages]]
     typ = "Error"
     message = """
@@ -433,6 +617,14 @@ fn debug_with_incorrect_compiler_config() {
     add-functions-debug-info = true
     add-types-debug-info = true
     """
+
+    [[show_messages]]
+    typ = "Info"
+    message = """
+
+                    L2 Gas: ~13620
+                    Test: hello::a
+                """
 
     [[execute_in_terminal]]
     command = "snforge test hello::a --exact"
