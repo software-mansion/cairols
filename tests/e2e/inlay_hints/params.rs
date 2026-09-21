@@ -210,7 +210,7 @@ fn nested_calls() {
 }
 
 #[test]
-fn arity_overflow_no_hints() {
+fn arity_overflow() {
     test_transform!(inlay_hint, r#"
     fn foo(a: felt252, b: felt252) -> felt252 { a + b }
 
@@ -227,7 +227,7 @@ fn arity_overflow_no_hints() {
 }
 
 #[test]
-fn arity_underflow_no_hints() {
+fn arity_underflow() {
     test_transform!(inlay_hint, r#"
     fn foo(a: felt252, b: felt252) -> felt252 { a + b }
 
