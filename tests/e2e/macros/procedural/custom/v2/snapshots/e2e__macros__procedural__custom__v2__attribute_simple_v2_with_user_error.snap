@@ -35,7 +35,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `simple_attribute_macro_v2`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_simple_attribute_macro_v2.cairo
+          uri: vfs://proc_simple_attribute_macro_v2.cairo
           range:
             start:
               line: 0
@@ -60,7 +60,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `simple_attribute_macro_v2`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_simple_attribute_macro_v2.cairo
+          uri: vfs://proc_simple_attribute_macro_v2.cairo
           range:
             start:
               line: 0
