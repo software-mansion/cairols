@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
@@ -7,7 +9,7 @@ use salsa::{Database, Setter};
 use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
 use scarb_proc_macro_server_types::methods::{
     CodeOrigin, ProcMacroResult,
-    expand::{ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams},
+    expand::{Derive, ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams},
 };
 
 use super::client::{RequestParams, ServerStatus};
@@ -144,7 +146,7 @@ pub fn get_derive_expansion(
     mut params: ExpandDeriveParams,
     fingerprint: u64,
 ) -> ProcMacroResult {
-    let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.item);
+    let stabilizer = SpansStabilizer::new_for_derives(&mut params.derives, &mut params.item);
 
     let result =
         db.get_stored_derive_expansion(params.clone().into(), fingerprint).unwrap_or_else(|| {
@@ -198,7 +200,7 @@ pub fn get_inline_macros_expansion(
 /// We then submit the request using these adjusted parameters as usual for caching.
 /// Upon receiving a response, we modify the result (both token stream and call site) to replace spans using the original offsets and call site, as handled by [`Self::apply_original_offset_to_span`].
 struct SpansStabilizer {
-    original_call_site: TextSpan,
+    original_call_sites: HashMap<u32, TextSpan>,
     original_item_offset: u32,
 }
 
@@ -209,13 +211,33 @@ impl SpansStabilizer {
     /// This is high enough to make sure there should be no collision with item mappings and diagnostics.
     const STABLE_CALL_SITE_START: u32 = 3000000000;
 
+    /// Single call site: attribute and inline macros.
     pub fn new(call_site: &mut TextSpan, token_stream: &mut TokenStream) -> Self {
-        let stable_call_site = TextSpan {
-            // Hack: Use arbitrary high number for call site, this way there should be no collision with item.
-            start: Self::STABLE_CALL_SITE_START,
-            end: call_site.end - call_site.start,
-        };
-        let original_call_site = std::mem::replace(call_site, stable_call_site);
+        Self::new_many(vec![call_site], token_stream)
+    }
+
+    /// One call site per derive.
+    pub fn new_for_derives(derives: &mut [Derive], token_stream: &mut TokenStream) -> Self {
+        Self::new_many(
+            derives.iter_mut().map(|derive| &mut derive.call_site).collect(),
+            token_stream,
+        )
+    }
+
+    fn new_many(call_sites: Vec<&mut TextSpan>, token_stream: &mut TokenStream) -> Self {
+        let original_call_sites = call_sites
+            .into_iter()
+            .enumerate()
+            .map(|(index, call_site)| {
+                let stable_start = Self::STABLE_CALL_SITE_START + index as u32;
+                let stable_call_site = TextSpan {
+                    // Hack: Use arbitrary high number for call site, this way there should be no collision with item.
+                    start: stable_start,
+                    end: call_site.end - call_site.start,
+                };
+                (stable_start, std::mem::replace(call_site, stable_call_site))
+            })
+            .collect();
 
         // First token start is offset of whole item.
         let original_item_offset = match &token_stream.tokens[0] {
@@ -232,7 +254,7 @@ impl SpansStabilizer {
             }
         }
 
-        Self { original_call_site, original_item_offset }
+        Self { original_call_sites, original_item_offset }
     }
 
     pub fn apply_original_offsets_to_result(self, mut result: ProcMacroResult) -> ProcMacroResult {
@@ -261,8 +283,8 @@ impl SpansStabilizer {
     }
 
     fn apply_original_offset_to_span(&self, span: &mut TextSpan) {
-        if span.start == Self::STABLE_CALL_SITE_START {
-            *span = self.original_call_site.clone();
+        if let Some(original) = self.original_call_sites.get(&span.start) {
+            *span = original.clone();
         } else {
             *span = TextSpan {
                 start: span.start + self.original_item_offset,
