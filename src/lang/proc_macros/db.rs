@@ -229,9 +229,9 @@ impl SpansStabilizer {
             .into_iter()
             .enumerate()
             .map(|(index, call_site)| {
+                // Hack: Use arbitrary high number for call site, this way there should be no collision with item.
                 let stable_start = Self::STABLE_CALL_SITE_START + index as u32;
                 let stable_call_site = TextSpan {
-                    // Hack: Use arbitrary high number for call site, this way there should be no collision with item.
                     start: stable_start,
                     end: call_site.end - call_site.start,
                 };
