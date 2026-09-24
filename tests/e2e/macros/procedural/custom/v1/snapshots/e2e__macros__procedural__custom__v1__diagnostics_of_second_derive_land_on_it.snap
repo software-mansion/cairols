@@ -1,0 +1,54 @@
+---
+source: tests/e2e/macros/procedural/custom/v1/mod.rs
+description: "// → test_package/Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n[dependencies]\ncairols_test_macros = { path = \"/scarb_procedural_macros\" }\n\n// → test_package/src/lib.cairo\n#[derive(SimpleDeriveMacro, ErroneousDeriveMacro)]\nstruct NoDebug {\n    x: u32,\n}"
+expression: report
+---
+[[expansions]]
+analyzed_lines = """
+#[derive(SimpleDeriveMacro, ErroneousDeriveMacro)]<caret>
+"""
+generated_code = """
+#[derive(SimpleDeriveMacro, ErroneousDeriveMacro)]
+struct NoDebug {
+    x: u32,
+}
+fn erroneous_generated_fn_v1() {
+    let _x: felt252 = 1_u32;
+}
+trait MyTrait<T> {
+    fn foo(t: T);
+}
+
+impl MyTraitImpl of MyTrait<felt252> {
+    fn foo(t: felt252) {}
+}
+"""
+
+mapped_diagnostics:
+- url: '[ROOT_URL]test_package/src/lib.cairo'
+  diagnostics:
+  - related_code: ErroneousDeriveMacro
+    diagnostic:
+      range:
+        start:
+          line: 0
+          character: 28
+        end:
+          line: 0
+          character: 48
+      severity: 1
+      code: E2041
+      message: |-
+        Unexpected argument type. Expected: "felt252", found: "u32".
+        note: this error originates in one of the derive macros: `erroneous_derive_macro`, `simple_derive_macro`
+      relatedInformation:
+      - location:
+          uri: vfs://proc_macro_derive.cairo
+          range:
+            start:
+              line: 1
+              character: 22
+            end:
+              line: 1
+              character: 27
+        message: Diagnostic mapped from here.
