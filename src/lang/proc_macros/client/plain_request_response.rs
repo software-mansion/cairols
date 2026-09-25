@@ -39,7 +39,12 @@ impl From<ExpandAttributeParams> for PlainExpandAttributeParams {
 }
 impl From<ExpandDeriveParams> for PlainExpandDeriveParams {
     fn from(value: ExpandDeriveParams) -> Self {
-        Self { context: value.context, derives: value.derives, item: value.item.to_string() }
+        Self {
+            context: value.context,
+            // Call sites are stabilised before this point, so names are enough for the key.
+            derives: value.derives.into_iter().map(|derive| derive.name).collect(),
+            item: value.item.to_string(),
+        }
     }
 }
 impl From<ExpandInlineMacroParams> for PlainExpandInlineParams {

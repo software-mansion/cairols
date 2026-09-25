@@ -66,3 +66,12 @@ pub fn mod_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
     };
     ProcMacroResult::new(ts)
 }
+
+#[derive_macro]
+pub fn erroneous_derive_macro_v2(_item: TokenStream) -> ProcMacroResult {
+    ProcMacroResult::new(quote! {
+        fn erroneous_generated_fn_v2() {
+            let _x: felt252 = 1_u32;
+        }
+    })
+}
