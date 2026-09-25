@@ -99,27 +99,36 @@ impl ProcMacroClient {
         Responses { responses, requests }
     }
 
-    /// Waits for the proc macro server to be killed.
-    pub(super) fn kill_proc_macro_server(self) {
+    /// Kills the proc macro server and waits for it to exit.
+    ///
+    /// This does not require exclusive ownership of the client: other databases, such as the
+    /// disposable one used for diagnostics, may still hold a reference to it. Once killed, the
+    /// client silently ignores any further requests.
+    pub(super) fn kill_proc_macro_server(&self) {
         // Dropping this causes the thread responsible for writing requests to PMS to finish.
         // Consequently, the handler to PMS' stdin will be dropped.
         // Due to the way PMS is implemented, this will result in its death.
-        drop(self.connection.requester);
+        drop(self.connection.requester.lock().unwrap().take());
 
         if self.connection.server_killed_receiver.wait().is_none() {
             error!("failed to receive information that proc macro server was killed");
         }
     }
 
-    fn send_request_untracked<M: Method>(&self, id: RequestId, params: &M::Params) -> Result<()> {
-        self.connection
-            .requester
+    /// Sends a request, returning `Ok(false)` if the server has already been killed on purpose.
+    fn send_request_untracked<M: Method>(&self, id: RequestId, params: &M::Params) -> Result<bool> {
+        let requester = self.connection.requester.lock().unwrap();
+        let Some(requester) = requester.as_ref() else {
+            return Ok(false);
+        };
+        requester
             .send(RpcRequest {
                 id,
                 method: M::METHOD.to_string(),
                 value: serde_json::to_value(params).unwrap(),
             })
-            .with_context(|| anyhow!("sending request {id} failed"))
+            .with_context(|| anyhow!("sending request {id} failed"))?;
+        Ok(true)
     }
 
     fn send_request<M: Method>(
@@ -133,10 +142,13 @@ impl ProcMacroClient {
         let mut requests_params = self.requests_params.write().unwrap();
 
         match self.send_request_untracked::<M>(id, &params) {
-            Ok(()) => {
+            Ok(true) => {
                 self.proc_macro_server_tracker.register_procmacro_request();
                 requests_params.insert(id, map(params));
             }
+            // The server was killed on purpose, and a new client has replaced this one. This is
+            // not a failure, and reporting it as one would restart the new server.
+            Ok(false) => {}
             Err(err) => {
                 error!("Sending request to proc-macro-server failed: {err:?}");
 

@@ -4,9 +4,8 @@ use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
 use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_syntax::node::SyntaxNode;
 use salsa::{Database, Setter};
-use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
 use scarb_proc_macro_server_types::methods::{
-    CodeOrigin, ProcMacroResult,
+    ProcMacroResult, SpannedTokenStream,
     expand::{ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams},
 };
 
@@ -16,6 +15,10 @@ use crate::lang::proc_macros::client::plain_request_response::{
     PlainExpandAttributeParams, PlainExpandDeriveParams, PlainExpandInlineParams,
 };
 use crate::proc_macros::cache::ProcMacroCache;
+
+#[cfg(test)]
+#[path = "db_test.rs"]
+mod test;
 
 /// A set of queries that enable access to proc macro client from compiler plugins
 /// `.generate_code()` methods.
@@ -131,7 +134,7 @@ pub fn get_attribute_expansion(
             }
 
             ProcMacroResult {
-                token_stream: token_stream_v2_to_v1(&token_stream),
+                token_stream: SpannedTokenStream::from_token_stream(&token_stream),
                 ..Default::default()
             }
         });
@@ -171,17 +174,24 @@ pub fn get_inline_macros_expansion(
     let result = db
         .get_stored_inline_macros_expansion(params.clone().into(), fingerprint)
         .unwrap_or_else(|| {
-            // We can't return the original node because it will make us fall into infinite recursion.
-            let unit = "()".to_string();
-
             if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
                 && !client.was_requested(RequestParams::ExpandInline(params.clone().into()))
             {
                 client.request_inline_macros(params);
             }
 
+            // We can't return the original node because it will make us fall into infinite
+            // recursion. The placeholder is attributed to the stable call site, so that once the
+            // offsets are restored below it points at the macro call in the original file.
+            const UNIT: &str = "()";
             ProcMacroResult {
-                token_stream: cairo_lang_macro_v1::TokenStream::new(unit),
+                token_stream: SpannedTokenStream::unspanned(
+                    UNIT,
+                    TextSpan::new(
+                        SpansStabilizer::STABLE_CALL_SITE_START,
+                        SpansStabilizer::STABLE_CALL_SITE_START + UNIT.len() as u32,
+                    ),
+                ),
                 ..Default::default()
             }
         });
@@ -196,7 +206,7 @@ pub fn get_inline_macros_expansion(
 /// Such recalculations can lead to failures in expanding macros due to a new 'analysis in progress' status.
 /// To prevent this, we adjust the input parameters (input token stream, call site) by setting their offsets to stable values (0 for the token stream and [`Self::STABLE_CALL_SITE_START`] for the call site).
 /// We then submit the request using these adjusted parameters as usual for caching.
-/// Upon receiving a response, we modify the result (both token stream and call site) to replace spans using the original offsets and call site, as handled by [`Self::apply_original_offset_to_span`].
+/// Upon receiving a response, we move the spans of its tokens and diagnostics back onto the original file, as handled by [`Self::apply_original_offset_to_span`].
 struct SpansStabilizer {
     original_call_site: TextSpan,
     original_item_offset: u32,
@@ -205,9 +215,9 @@ struct SpansStabilizer {
 impl SpansStabilizer {
     /// Arbitrary number that must be bigger than anyting macro should produce.
     ///
-    /// We use trick here to set call site for const value, then all mappings and diagnostics that points to this offest will be remaped to call site, instead of being increased by item offset.
+    /// We use a trick here and set the call site to a constant value, so that every token and diagnostic pointing at this offset is remapped to the call site, instead of being shifted by the item offset.
     /// This is high enough to make sure there should be no collision with item mappings and diagnostics.
-    const STABLE_CALL_SITE_START: u32 = 3000000000;
+    pub(crate) const STABLE_CALL_SITE_START: u32 = 3000000000;
 
     pub fn new(call_site: &mut TextSpan, token_stream: &mut TokenStream) -> Self {
         let stable_call_site = TextSpan {
@@ -218,8 +228,9 @@ impl SpansStabilizer {
         let original_call_site = std::mem::replace(call_site, stable_call_site);
 
         // First token start is offset of whole item.
-        let original_item_offset = match &token_stream.tokens[0] {
-            TokenTree::Ident(token) => token.span.start,
+        let original_item_offset = match token_stream.tokens.first() {
+            Some(TokenTree::Ident(token)) => token.span.start,
+            None => 0,
         };
 
         // Reduce all tokens spans by item offset.
@@ -236,17 +247,8 @@ impl SpansStabilizer {
     }
 
     pub fn apply_original_offsets_to_result(self, mut result: ProcMacroResult) -> ProcMacroResult {
-        if let Some(code_mappings) = &mut result.code_mappings {
-            for mapping in code_mappings.iter_mut() {
-                match mapping.origin {
-                    CodeOrigin::Start(_) => {
-                        // Should be unreachable
-                    }
-                    CodeOrigin::Span(ref mut span) | CodeOrigin::CallSite(ref mut span) => {
-                        self.apply_original_offset_to_span(span);
-                    }
-                };
-            }
+        for token in &mut result.token_stream.0 {
+            self.apply_original_offset_to_span(&mut token.span);
         }
 
         for diagnostic in &mut result.diagnostics {

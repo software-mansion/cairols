@@ -151,8 +151,6 @@ impl ProcMacroClientController {
 
         error!("proc macro server returned an error response: {:?}", error);
 
-        // Safety: Arc with the client has been moved to `apply_responses`.
-        // No references to the client other than in the database should exist at this point.
         self.force_restart(db, config);
     }
 
@@ -187,10 +185,6 @@ impl ProcMacroClientController {
     ///
     /// A new server instance is started only if there are available restart attempts left.
     /// This ensures that a fresh proc-macro-server is used.
-    ///
-    /// # Safety
-    /// Don't call this function if any reference to the [`ProcMacroClient`] exist,
-    /// except the one in the [`ProcMacroInput`].
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn force_restart(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         self.reset_proc_macro_state(db);
@@ -399,27 +393,21 @@ impl ProcMacroClientController {
     }
 
     /// Kills proc-macro-server, clears the connection channels and resets the request counter.
-    ///
-    /// # Safety
-    /// Don't call this function if any reference to the [`ProcMacroClient`] exist,
-    /// except the one in the [`ProcMacroInput`].
     #[tracing::instrument(level = "trace", skip_all)]
     fn clean_up_previous_proc_macro_server(&mut self, db: &mut AnalysisDatabase) {
         // We have to make sure that snapshots will not report errors from the previous client after
         // we create a new one.
         db.cancel_all();
 
-        // At this point we are the only thread with access to the db and therefore
-        // to the proc macro client.
         if let ServerStatus::Connected(client) =
             db.proc_macro_input().proc_macro_server_status(db).clone()
         {
-            // Make the db drop the strong reference to the proc macro client.
             self.set_proc_macro_server_status(db, ServerStatus::Pending);
 
-            let client = Arc::try_unwrap(client)
-                .expect("only one strong reference to client is expected at this point");
-
+            // The client may still be referenced from outside this database, e.g. by the
+            // disposable database used for diagnostics, so it cannot be unwrapped here. Killing it
+            // through the shared reference also makes any such leftover copy inert.
+            //
             // This has to be done *before* clearing channels, so we don't receive a response signal
             // from the old proc macro server when we come back to the main event loop.
             client.kill_proc_macro_server();

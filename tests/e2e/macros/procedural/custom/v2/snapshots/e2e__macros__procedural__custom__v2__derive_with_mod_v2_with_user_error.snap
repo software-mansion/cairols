@@ -34,7 +34,7 @@ mapped_diagnostics:
       code: E1000
       message: |-
         Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
-        note: this error originates in the derive macro: `mod_derive_macro_v2`
+        note: this error originates in the derive macro: `ModDeriveMacroV2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -59,7 +59,7 @@ mapped_diagnostics:
       code: E1000
       message: |-
         Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
-        note: this error originates in the derive macro: `mod_derive_macro_v2`
+        note: this error originates in the derive macro: `ModDeriveMacroV2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
