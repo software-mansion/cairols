@@ -231,8 +231,8 @@ impl SpansStabilizer {
             .map(|(index, call_site)| {
                 // Hack: Use arbitrary high number for call site, this way there should be no collision with item.
                 let stable_start = Self::STABLE_CALL_SITE_START + index as u32;
-                let stable_call_site =
-                    TextSpan { start: stable_start, end: call_site.end - call_site.start };
+                let width = call_site.end - call_site.start;
+                let stable_call_site = TextSpan { start: stable_start, end: stable_start + width };
                 (stable_start, std::mem::replace(call_site, stable_call_site))
             })
             .collect();
