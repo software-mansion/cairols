@@ -36,15 +36,11 @@ fn backend() -> PmsBackend {
 
 #[test]
 fn derives_are_declared_under_the_cairo_name_reported_by_the_server() {
-    // Cairo code writes derives as `#[derive(SomeDerive)]`. The server decides that name, so
-    // the language server never has to repeat Scarb's casing rules.
     assert_eq!(backend().declared_derives(), vec!["SomeDerive".to_string()]);
 }
 
 #[test]
 fn attributes_and_executables_are_both_declared_as_attributes() {
-    // The compiler has to know about executable attributes and the full path marker so it
-    // does not report them as unknown, even though they are never expanded.
     let backend = backend();
     assert_eq!(
         backend.declared_attributes(),

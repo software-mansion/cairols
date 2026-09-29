@@ -100,10 +100,6 @@ impl ProcMacroClient {
     }
 
     /// Kills the proc macro server and waits for it to exit.
-    ///
-    /// This does not require exclusive ownership of the client: other databases, such as the
-    /// disposable one used for diagnostics, may still hold a reference to it. Once killed, the
-    /// client silently ignores any further requests.
     pub(super) fn kill_proc_macro_server(&self) {
         // Dropping this causes the thread responsible for writing requests to PMS to finish.
         // Consequently, the handler to PMS' stdin will be dropped.
@@ -115,7 +111,7 @@ impl ProcMacroClient {
         }
     }
 
-    /// Sends a request, returning `Ok(false)` if the server has already been killed on purpose.
+    /// Returns `Ok(false)` if the server has already been killed.
     fn send_request_untracked<M: Method>(&self, id: RequestId, params: &M::Params) -> Result<bool> {
         let requester = self.connection.requester.lock().unwrap();
         let Some(requester) = requester.as_ref() else {
@@ -146,8 +142,7 @@ impl ProcMacroClient {
                 self.proc_macro_server_tracker.register_procmacro_request();
                 requests_params.insert(id, map(params));
             }
-            // The server was killed on purpose, and a new client has replaced this one. This is
-            // not a failure, and reporting it as one would restart the new server.
+            // The server was killed on purpose, so this is not a failure.
             Ok(false) => {}
             Err(err) => {
                 error!("Sending request to proc-macro-server failed: {err:?}");

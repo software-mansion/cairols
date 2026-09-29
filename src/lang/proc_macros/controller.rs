@@ -404,10 +404,6 @@ impl ProcMacroClientController {
         {
             self.set_proc_macro_server_status(db, ServerStatus::Pending);
 
-            // The client may still be referenced from outside this database, e.g. by the
-            // disposable database used for diagnostics, so it cannot be unwrapped here. Killing it
-            // through the shared reference also makes any such leftover copy inert.
-            //
             // This has to be done *before* clearing channels, so we don't receive a response signal
             // from the old proc macro server when we come back to the main event loop.
             client.kill_proc_macro_server();

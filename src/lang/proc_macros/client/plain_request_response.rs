@@ -1,3 +1,4 @@
+use cairo_lang_macro::TextSpan;
 use salsa::SalsaValue;
 use scarb_proc_macro_server_types::methods::expand::{
     ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
@@ -11,6 +12,7 @@ pub struct PlainExpandAttributeParams {
     pub attr: String,
     pub args: String,
     pub item: String,
+    pub call_site: TextSpan,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, SalsaValue)]
@@ -18,6 +20,7 @@ pub struct PlainExpandDeriveParams {
     pub context: ProcMacroScope,
     pub derive: String,
     pub item: String,
+    pub call_site: TextSpan,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, SalsaValue)]
@@ -25,6 +28,7 @@ pub struct PlainExpandInlineParams {
     pub context: ProcMacroScope,
     pub name: String,
     pub args: String,
+    pub call_site: TextSpan,
 }
 
 impl From<ExpandAttributeParams> for PlainExpandAttributeParams {
@@ -34,16 +38,27 @@ impl From<ExpandAttributeParams> for PlainExpandAttributeParams {
             attr: value.attr,
             args: value.args.to_string(),
             item: value.item.to_string(),
+            call_site: value.adapted_call_site,
         }
     }
 }
 impl From<ExpandDeriveParams> for PlainExpandDeriveParams {
     fn from(value: ExpandDeriveParams) -> Self {
-        Self { context: value.context, derive: value.derive, item: value.item.to_string() }
+        Self {
+            context: value.context,
+            derive: value.derive,
+            item: value.item.to_string(),
+            call_site: value.call_site,
+        }
     }
 }
 impl From<ExpandInlineMacroParams> for PlainExpandInlineParams {
     fn from(value: ExpandInlineMacroParams) -> Self {
-        Self { context: value.context, name: value.name, args: value.args.to_string() }
+        Self {
+            context: value.context,
+            name: value.name,
+            args: value.args.to_string(),
+            call_site: value.call_site,
+        }
     }
 }

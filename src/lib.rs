@@ -415,8 +415,7 @@ impl Backend {
         requester: &mut Requester<'_>,
         _: Responder,
     ) {
-        // Check for responses without keeping them locked past this block, because
-        // `handle_response` locks them again.
+        // Release the responses lock before `handle_response` takes it again.
         let has_responses = match state.db.proc_macro_input().proc_macro_server_status(&state.db) {
             ServerStatus::Connected(client) => client.available_responses().len() != 0,
             _ => false,

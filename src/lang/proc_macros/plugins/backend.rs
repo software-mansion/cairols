@@ -17,10 +17,7 @@ use crate::lang::proc_macros::db::{
 #[path = "backend_test.rs"]
 mod test;
 
-/// Identifies a single expansion of a single macro advertised by the proc-macro-server.
-///
-/// The fingerprint is the hash of the plugin package providing the macro. It is part of every
-/// expansion cache key, so that a rebuilt macro invalidates the results it produced earlier.
+/// A macro expansion advertised by the proc-macro-server.
 #[derive(Clone, Debug)]
 pub struct PmsMacroId {
     expansion: Expansion,
@@ -34,10 +31,6 @@ impl ExpansionId for PmsMacroId {
 }
 
 /// Expands procedural macros by asking `scarb proc-macro-server`.
-///
-/// Expansion is asynchronous: a request the server has not answered yet resolves to a placeholder,
-/// and the analysis is redone once the response lands in the database. See
-/// [`crate::lang::proc_macros::db`] for the request and caching logic.
 #[derive(Debug)]
 pub struct PmsBackend {
     scope: ProcMacroScope,
@@ -67,8 +60,7 @@ impl PmsBackend {
             })
         };
 
-        // Executable attributes only mark code for later processing and are never expanded, so
-        // they need no fingerprint.
+        // Executable attributes are never expanded, so they need no fingerprint.
         let executables = executables.into_iter().map(|name| PmsMacroId {
             expansion: Expansion {
                 expansion_name: name.clone().into(),
@@ -87,8 +79,7 @@ impl PmsBackend {
         Self { scope, source_packages: debug_info.source_packages, expansions }
     }
 
-    /// Serialized ids of the Scarb packages that define these macros. Shown by the crate
-    /// introspection view.
+    /// Serialized ids of the Scarb packages that define these macros.
     pub fn source_packages(&self) -> &[String] {
         &self.source_packages
     }
@@ -96,8 +87,7 @@ impl PmsBackend {
 
 impl ProcMacroBackend for PmsBackend {
     type Id = PmsMacroId;
-    /// Auxiliary data is only consumed by Scarb at the end of a compilation, so the language
-    /// server neither requests nor stores it.
+    /// The language server does not use auxiliary data.
     type AuxData = ();
 
     fn expansions(&self) -> Vec<PmsMacroId> {
@@ -133,7 +123,7 @@ impl ProcMacroBackend for PmsBackend {
                 ExpandDeriveParams { context, derive: name, item, call_site },
                 fingerprint,
             ),
-            // The host hands inline macro arguments over as the item.
+            // The host passes inline macro arguments as the item.
             ExpansionKind::Inline => get_inline_macros_expansion(
                 db,
                 ExpandInlineMacroParams { context, name, args: item, call_site },
@@ -144,7 +134,6 @@ impl ProcMacroBackend for PmsBackend {
             }
         };
 
-        // The cached result is plain data; the host works with the macro api token stream.
         let ctx = AllocationContext::default();
         ProcMacroResult {
             token_stream: result.token_stream.to_token_stream(&ctx),
