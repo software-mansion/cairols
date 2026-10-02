@@ -173,3 +173,19 @@ fn derive_with_error() {
         }
     );
 }
+
+#[test]
+fn diagnostics_of_second_derive_land_on_it() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacros,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                #[derive(SimpleDeriveMacro, ErroneousDeriveMacro)]<caret>
+                struct NoDebug {
+                    x: u32,
+                }
+            "#)
+        }
+    );
+}

@@ -6,7 +6,7 @@ use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResul
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan as CairoTextSpan};
-use cairo_lang_macro::{AllocationContext, TextSpan, TokenStream, TokenStreamMetadata};
+use cairo_lang_macro::{AllocationContext, TokenStream, TokenStreamMetadata};
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::ast::{
     self, Expr, ImplItem, MaybeImplBody, MaybeTraitBody, PathSegment,
@@ -17,11 +17,11 @@ use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxN
 use convert_case::{Case, Casing};
 use itertools::Itertools;
 use salsa::Database;
-use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use scarb_proc_macro_server_types::methods::defined_macros::MacroWithHash;
 use scarb_proc_macro_server_types::methods::expand::{
-    ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
+    Derive, ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
 };
+use scarb_proc_macro_server_types::methods::{ProcMacroResult, TextSpan};
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
 use scarb_stable_hash::StableHasher;
 
@@ -707,8 +707,6 @@ fn expand_derives<'db>(
     }
 
     let stable_ptr = derives[0].1.stable_ptr;
-    let span_db = stable_ptr.lookup(db).span(db);
-    let call_site = TextSpan { start: span_db.start.as_u32(), end: span_db.end.as_u32() };
 
     // We resolve all derives in a single batch rather than per plugin as the compiler does.
     // This may involve multiple proc-macro binaries for a single request.
@@ -723,16 +721,22 @@ fn expand_derives<'db>(
         m.hash.hash(&mut hasher);
     });
 
-    let derive_names: Vec<String> = derives.into_iter().map(|a| a.0.name).collect();
+    let derive_names: Vec<String> = derives.iter().map(|(m, _)| m.name.clone()).collect();
+    // Each derive is expanded with its own call site.
+    let derives: Vec<Derive> = derives
+        .into_iter()
+        .map(|(m, call_site_location)| {
+            let stable_ptr = call_site_location.stable_ptr;
+            let span_db = stable_ptr.lookup(db).span(db);
+            let call_site = TextSpan { start: span_db.start.as_u32(), end: span_db.end.as_u32() };
+
+            Derive { name: m.name, call_site }
+        })
+        .collect();
     // region: Modified scarb code
     let result = get_derive_expansion(
         db,
-        ExpandDeriveParams {
-            context: expansion_context,
-            derives: derive_names.clone(),
-            item: token_stream,
-            call_site,
-        },
+        ExpandDeriveParams { context: expansion_context, derives, item: token_stream },
         hasher.finish(),
     );
     // endregion

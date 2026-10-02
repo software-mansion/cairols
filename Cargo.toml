@@ -71,7 +71,7 @@ regex = "1.12.3"
 salsa = "0.28.2"
 scarb-manifest-schema = "1.0.0"
 scarb-metadata = "1.15.1"
-scarb-proc-macro-server-types = "0.5.0"
+scarb-proc-macro-server-types = "0.6.0"
 scarb-stable-hash = "1"
 semver = "1"
 serde = { version = "1", default-features = false, features = ["derive"] }
@@ -133,6 +133,9 @@ cairo-lang-test-utils = { git = "https://github.com/starkware-libs/cairo", rev =
 cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo", rev = "6530c2d86df234ba0023ff64a0669f69a23567e9" }
 cairo-language-common = { git = "https://github.com/software-mansion/cairo-language-common", rev = "c48194d467bba425da5a3a1b1322049db32316c1" }
 cairo-lint = { git = "https://github.com/software-mansion/cairo-lint", rev = "181b170d033b073871c08f087f31c06de21373f7" }
+# temporary until scarb-proc-macro-server-types 0.6.0 is published
+scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb", rev = "5113000d732f6f92b9d2e567742eb8076cf580f6" }
+cairo-lang-macro = { git = "https://github.com/software-mansion/scarb", rev = "5113000d732f6f92b9d2e567742eb8076cf580f6"}
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,
 # while crates in this workspace are built with `dev` profile and full debug info.
