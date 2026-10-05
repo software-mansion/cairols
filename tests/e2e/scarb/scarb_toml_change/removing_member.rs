@@ -71,5 +71,5 @@ fn test_removing_member() {
             .context_radius(15)
             .to_string();
 
-    insta::assert_toml_snapshot!(AnalyzedCratesResult { analyzed_crates, analyzed_crates_diff })
+    insta::assert_toml_snapshot!(AnalyzedCratesResult { analyzed_crates, analyzed_crates_diff });
 }
