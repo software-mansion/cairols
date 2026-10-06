@@ -3099,9 +3099,9 @@ dependencies = [
 
 [[package]]
 name = "scarb-proc-macro-server-types"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aacfafcd4d6600217d13521afeaf37ffd5c3ea5348161a3334c6b12fa38b3393"
+checksum = "c15daad8b0fc7eedf3676e4298aa6c66edb6bb309da3e710dd50020b01841fc2"
 dependencies = [
  "cairo-lang-macro 0.1.1",
  "cairo-lang-macro 0.2.2",
