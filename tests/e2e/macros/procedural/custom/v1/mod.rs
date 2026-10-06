@@ -189,3 +189,19 @@ fn diagnostics_of_second_derive_land_on_it() {
         }
     );
 }
+
+#[test]
+fn spanless_diagnostic_of_second_derive() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacros,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                #[derive(SimpleDeriveMacro, ErrorDeriveMacro)]<caret>
+                struct NoDebug {
+                    x: u32,
+                }
+            "#)
+        }
+    );
+}
