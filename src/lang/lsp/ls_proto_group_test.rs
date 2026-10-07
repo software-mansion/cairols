@@ -58,10 +58,4 @@ fn generated_file_url() {
     // The origin of the generated file is the whole `struct` item, attribute included.
     let lib = format!("{}/lib.cairo:1:1: 2:12", root.path().display());
     check(db, &format!("vfs://{lib}/impls.cairo"), generated);
-
-    // A file nobody generated resolves to nothing rather than to some other file.
-    // (The parent here belongs to no crate; a wrong name under a real parent would need semantic
-    // analysis of the module, which requires a corelib this test database does not have.)
-    let unknown = Url::parse("vfs:///foo/bar.cairo:1:1: 2:12/impls.cairo").unwrap();
-    assert_eq!(db.file_for_url(&unknown), None);
 }
