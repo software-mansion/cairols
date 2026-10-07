@@ -33,7 +33,7 @@ fn generated_file_url_from_diagnostics_opens_in_main_database() {
         .map(|related| related.location.uri.clone())
         .find(|uri| uri.scheme() == "vfs")
         .expect("diagnostic should link into the generated file");
-    
+
     let content = ls
         .send_request::<ProvideVirtualFile>(ProvideVirtualFileRequest { uri: vfs_url.clone() })
         .content;
