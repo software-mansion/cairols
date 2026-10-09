@@ -42,14 +42,24 @@ impl From<ExpandAttributeParams> for PlainExpandAttributeParams {
         }
     }
 }
-impl From<ExpandDeriveParams> for PlainExpandDeriveParams {
-    fn from(value: ExpandDeriveParams) -> Self {
-        Self {
-            context: value.context,
-            derive: value.derive,
-            item: value.item.to_string(),
-            call_site: value.call_site,
-        }
+impl PlainExpandDeriveParams {
+    /// One key per derive of the request, in the same order.
+    ///
+    /// Derives of a single item are requested together, but cached one by one, so that rebuilding
+    /// one macro does not invalidate the derives provided by the others.
+    pub fn of_request(params: &ExpandDeriveParams) -> Vec<Self> {
+        let item = params.item.to_string();
+
+        params
+            .derives
+            .iter()
+            .map(|derive| Self {
+                context: params.context.clone(),
+                derive: derive.name.clone(),
+                item: item.clone(),
+                call_site: derive.call_site.clone(),
+            })
+            .collect()
     }
 }
 impl From<ExpandInlineMacroParams> for PlainExpandInlineParams {

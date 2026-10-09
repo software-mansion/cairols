@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Once};
 use std::time::Duration;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, ensure};
 use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -252,9 +252,19 @@ impl ProcMacroClientController {
                     attribute_resolutions_changed = true;
                 }
                 RequestParams::ExpandDerive(params) => {
-                    let proc_macro_result = parse_response::<ProcMacroResult>(response)?;
-                    derive_resolutions
-                        .insert((params, proc_macro_result.fingerprint), proc_macro_result);
+                    // One result per requested derive, in the same order.
+                    let results = parse_response::<Vec<ProcMacroResult>>(response)?;
+
+                    ensure!(
+                        results.len() == params.len(),
+                        "proc macro server answered {} of {} requested derives",
+                        results.len(),
+                        params.len()
+                    );
+
+                    for (params, result) in params.into_iter().zip(results) {
+                        derive_resolutions.insert((params, result.fingerprint), result);
+                    }
                     derive_resolutions_changed = true;
                 }
                 RequestParams::ExpandInline(params) => {

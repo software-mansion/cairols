@@ -30,7 +30,8 @@ pub mod status;
 pub enum RequestParams {
     DefinedMacros(DefinedMacrosParams),
     ExpandAttribute(PlainExpandAttributeParams),
-    ExpandDerive(PlainExpandDeriveParams),
+    /// One entry per derive of the request, in the same order as the response.
+    ExpandDerive(Vec<PlainExpandDeriveParams>),
     ExpandInline(PlainExpandInlineParams),
 }
 
@@ -76,9 +77,10 @@ impl ProcMacroClient {
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
+    /// Requests all derives of one item at once.
     pub fn request_derives(&self, params: ExpandDeriveParams) {
         self.send_request::<ExpandDerive>(params, |params| {
-            RequestParams::ExpandDerive(params.into())
+            RequestParams::ExpandDerive(PlainExpandDeriveParams::of_request(&params))
         })
     }
 

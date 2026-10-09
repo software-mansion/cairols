@@ -1,16 +1,17 @@
 use cairo_lang_macro::{AllocationContext, ProcMacroResult, TextSpan, TokenStream};
 use salsa::Database;
 use scarb_proc_macro_host::{Expansion, ExpansionId, ExpansionKind, ProcMacroBackend};
+use scarb_proc_macro_server_types::methods::ProcMacroResult as StoredProcMacroResult;
 use scarb_proc_macro_server_types::methods::defined_macros::{
     CompilationUnitComponentMacros, MacroWithHash,
 };
 use scarb_proc_macro_server_types::methods::expand::{
-    ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
+    Derive, ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
 };
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
 
 use crate::lang::proc_macros::db::{
-    get_attribute_expansion, get_derive_expansion, get_inline_macros_expansion,
+    get_attribute_expansion, get_derive_expansions, get_inline_macros_expansion,
 };
 
 #[cfg(test)]
@@ -90,8 +91,8 @@ impl ProcMacroBackend for PmsBackend {
     /// The language server does not use auxiliary data.
     type AuxData = ();
 
-    fn expansions(&self) -> Vec<PmsMacroId> {
-        self.expansions.clone()
+    fn expansions(&self) -> &[PmsMacroId] {
+        &self.expansions
     }
 
     fn expand(
@@ -118,11 +119,15 @@ impl ProcMacroBackend for PmsBackend {
                 },
                 fingerprint,
             ),
-            ExpansionKind::Derive => get_derive_expansion(
-                db,
-                ExpandDeriveParams { context, derive: name, item, call_site },
-                fingerprint,
-            ),
+            // The host expands derives in batches, so this is only reached if someone expands one
+            // on its own. Correct only because `expand_derives` below does not call back into here.
+            ExpansionKind::Derive => {
+                return self
+                    .expand_derives(db, &[(id.clone(), call_site)], item)
+                    .into_iter()
+                    .next()
+                    .expect("one result is returned for one derive");
+            }
             // The host passes inline macro arguments as the item.
             ExpansionKind::Inline => get_inline_macros_expansion(
                 db,
@@ -134,12 +139,47 @@ impl ProcMacroBackend for PmsBackend {
             }
         };
 
-        let ctx = AllocationContext::default();
-        ProcMacroResult {
-            token_stream: result.token_stream.to_token_stream(&ctx),
-            aux_data: None,
-            diagnostics: result.diagnostics,
-            full_path_markers: Vec::new(),
-        }
+        into_macro_result(result)
+    }
+
+    /// All derives of an item are expanded in a single request to the server.
+    fn expand_derives(
+        &self,
+        db: &dyn Database,
+        derives: &[(PmsMacroId, TextSpan)],
+        item: TokenStream,
+    ) -> Vec<ProcMacroResult> {
+        let (derives, fingerprints): (Vec<_>, Vec<_>) = derives
+            .iter()
+            .map(|(id, call_site)| {
+                (
+                    Derive {
+                        name: id.expansion.expansion_name.to_string(),
+                        call_site: call_site.clone(),
+                    },
+                    id.fingerprint,
+                )
+            })
+            .unzip();
+
+        get_derive_expansions(
+            db,
+            ExpandDeriveParams { context: self.scope.clone(), derives, item },
+            &fingerprints,
+        )
+        .into_iter()
+        .map(into_macro_result)
+        .collect()
+    }
+}
+
+/// Converts a cached result, which is plain data, into what the macro api uses.
+fn into_macro_result(result: StoredProcMacroResult) -> ProcMacroResult {
+    let ctx = AllocationContext::default();
+    ProcMacroResult {
+        token_stream: result.token_stream.to_token_stream(&ctx),
+        aux_data: None,
+        diagnostics: result.diagnostics,
+        full_path_markers: Vec::new(),
     }
 }

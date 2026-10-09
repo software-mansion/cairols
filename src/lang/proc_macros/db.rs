@@ -131,21 +131,63 @@ pub fn get_attribute_expansion(
     })
 }
 
-pub fn get_derive_expansion(
+/// Returns the expansion of every derive applied to an item, in the order they were given.
+///
+/// `fingerprints` holds the fingerprint of the macro providing each derive.
+pub fn get_derive_expansions(
     db: &dyn Database,
     params: ExpandDeriveParams,
-    fingerprint: u64,
-) -> ProcMacroResult {
-    db.get_stored_derive_expansion(params.clone().into(), fingerprint).unwrap_or_else(|| {
-        if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
-            && !client.was_requested(RequestParams::ExpandDerive(params.clone().into()))
-        {
-            client.request_derives(params);
-        }
+    fingerprints: &[u64],
+) -> Vec<ProcMacroResult> {
+    assert_eq!(
+        params.derives.len(),
+        fingerprints.len(),
+        "every derive needs the fingerprint of the macro providing it"
+    );
 
-        // We don't remove the original item for derive macros, so return nothing.
-        Default::default()
-    })
+    let stored: Vec<_> = PlainExpandDeriveParams::of_request(&params)
+        .into_iter()
+        .zip(fingerprints)
+        .map(|(key, &fingerprint)| db.get_stored_derive_expansion(key, fingerprint))
+        .collect();
+
+    request_missing_derives(db, &params, &stored);
+
+    // We don't remove the original item for derive macros, so a missing result returns nothing.
+    stored.into_iter().map(Option::unwrap_or_default).collect()
+}
+
+/// Requests the derives that are not cached yet, all of them in a single request.
+fn request_missing_derives(
+    db: &dyn Database,
+    params: &ExpandDeriveParams,
+    stored: &[Option<ProcMacroResult>],
+) {
+    let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected() else {
+        return;
+    };
+
+    let missing = ExpandDeriveParams {
+        context: params.context.clone(),
+        derives: params
+            .derives
+            .iter()
+            .zip(stored)
+            .filter(|(_, result)| result.is_none())
+            .map(|(derive, _)| derive.clone())
+            .collect(),
+        item: params.item.clone(),
+    };
+
+    if missing.derives.is_empty()
+        || client.was_requested(RequestParams::ExpandDerive(PlainExpandDeriveParams::of_request(
+            &missing,
+        )))
+    {
+        return;
+    }
+
+    client.request_derives(missing);
 }
 
 pub fn get_inline_macros_expansion(
