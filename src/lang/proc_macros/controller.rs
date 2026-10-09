@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Once};
 use std::time::Duration;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, ensure};
 use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -151,8 +151,6 @@ impl ProcMacroClientController {
 
         error!("proc macro server returned an error response: {:?}", error);
 
-        // Safety: Arc with the client has been moved to `apply_responses`.
-        // No references to the client other than in the database should exist at this point.
         self.force_restart(db, config);
     }
 
@@ -187,10 +185,6 @@ impl ProcMacroClientController {
     ///
     /// A new server instance is started only if there are available restart attempts left.
     /// This ensures that a fresh proc-macro-server is used.
-    ///
-    /// # Safety
-    /// Don't call this function if any reference to the [`ProcMacroClient`] exist,
-    /// except the one in the [`ProcMacroInput`].
     #[tracing::instrument(level = "trace", skip_all)]
     pub fn force_restart(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         self.reset_proc_macro_state(db);
@@ -258,9 +252,19 @@ impl ProcMacroClientController {
                     attribute_resolutions_changed = true;
                 }
                 RequestParams::ExpandDerive(params) => {
-                    let proc_macro_result = parse_response::<ProcMacroResult>(response)?;
-                    derive_resolutions
-                        .insert((params, proc_macro_result.fingerprint), proc_macro_result);
+                    // One result per requested derive, in the same order.
+                    let results = parse_response::<Vec<ProcMacroResult>>(response)?;
+
+                    ensure!(
+                        results.len() == params.len(),
+                        "proc macro server answered {} of {} requested derives",
+                        results.len(),
+                        params.len()
+                    );
+
+                    for (params, result) in params.into_iter().zip(results) {
+                        derive_resolutions.insert((params, result.fingerprint), result);
+                    }
                     derive_resolutions_changed = true;
                 }
                 RequestParams::ExpandInline(params) => {
@@ -399,26 +403,16 @@ impl ProcMacroClientController {
     }
 
     /// Kills proc-macro-server, clears the connection channels and resets the request counter.
-    ///
-    /// # Safety
-    /// Don't call this function if any reference to the [`ProcMacroClient`] exist,
-    /// except the one in the [`ProcMacroInput`].
     #[tracing::instrument(level = "trace", skip_all)]
     fn clean_up_previous_proc_macro_server(&mut self, db: &mut AnalysisDatabase) {
         // We have to make sure that snapshots will not report errors from the previous client after
         // we create a new one.
         db.cancel_all();
 
-        // At this point we are the only thread with access to the db and therefore
-        // to the proc macro client.
         if let ServerStatus::Connected(client) =
             db.proc_macro_input().proc_macro_server_status(db).clone()
         {
-            // Make the db drop the strong reference to the proc macro client.
             self.set_proc_macro_server_status(db, ServerStatus::Pending);
-
-            let client = Arc::try_unwrap(client)
-                .expect("only one strong reference to client is expected at this point");
 
             // This has to be done *before* clearing channels, so we don't receive a response signal
             // from the old proc macro server when we come back to the main event loop.

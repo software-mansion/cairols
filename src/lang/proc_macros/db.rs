@@ -1,15 +1,11 @@
-use std::collections::HashMap;
-
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::SpanInFile;
-use cairo_lang_macro::{Diagnostic, TextSpan, TokenStream, TokenTree};
 use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_syntax::node::SyntaxNode;
 use salsa::{Database, Setter};
-use scarb_proc_macro_server_types::conversions::token_stream_v2_to_v1;
 use scarb_proc_macro_server_types::methods::{
-    CodeOrigin, ProcMacroResult,
-    expand::{Derive, ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams},
+    ProcMacroResult, SpannedTokenStream,
+    expand::{ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams},
 };
 
 use super::client::{RequestParams, ServerStatus};
@@ -116,180 +112,104 @@ fn get_stored_inline_macros_expansion(
 
 pub fn get_attribute_expansion(
     db: &dyn Database,
-    mut params: ExpandAttributeParams,
+    params: ExpandAttributeParams,
     fingerprint: u64,
 ) -> ProcMacroResult {
-    let stabilizer = SpansStabilizer::new(&mut params.adapted_call_site, &mut params.item);
+    db.get_stored_attribute_expansion(params.clone().into(), fingerprint).unwrap_or_else(|| {
+        let token_stream = params.item.clone();
 
-    let result = db
-        .get_stored_attribute_expansion(params.clone().into(), fingerprint)
-        .unwrap_or_else(|| {
-            let token_stream = params.item.clone();
+        if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
+            && !client.was_requested(RequestParams::ExpandAttribute(params.clone().into()))
+        {
+            client.request_attribute(params);
+        }
 
-            if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
-                && !client.was_requested(RequestParams::ExpandAttribute(params.clone().into()))
-            {
-                client.request_attribute(params);
-            }
-
-            ProcMacroResult {
-                token_stream: token_stream_v2_to_v1(&token_stream),
-                ..Default::default()
-            }
-        });
-
-    stabilizer.apply_original_offsets_to_result(result)
+        ProcMacroResult {
+            token_stream: SpannedTokenStream::from_token_stream(&token_stream),
+            ..Default::default()
+        }
+    })
 }
 
-pub fn get_derive_expansion(
+/// Returns the expansion of every derive applied to an item, in the order they were given.
+///
+/// `fingerprints` holds the fingerprint of the macro providing each derive.
+pub fn get_derive_expansions(
     db: &dyn Database,
-    mut params: ExpandDeriveParams,
-    fingerprint: u64,
-) -> ProcMacroResult {
-    let stabilizer = SpansStabilizer::new_for_derives(&mut params.derives, &mut params.item);
+    params: ExpandDeriveParams,
+    fingerprints: &[u64],
+) -> Vec<ProcMacroResult> {
+    assert_eq!(
+        params.derives.len(),
+        fingerprints.len(),
+        "every derive needs the fingerprint of the macro providing it"
+    );
 
-    let result =
-        db.get_stored_derive_expansion(params.clone().into(), fingerprint).unwrap_or_else(|| {
-            if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
-                && !client.was_requested(RequestParams::ExpandDerive(params.clone().into()))
-            {
-                client.request_derives(params);
-            }
+    let stored: Vec<_> = PlainExpandDeriveParams::of_request(&params)
+        .into_iter()
+        .zip(fingerprints)
+        .map(|(key, &fingerprint)| db.get_stored_derive_expansion(key, fingerprint))
+        .collect();
 
-            // We don't remove the original item for derive macros, so return nothing.
-            Default::default()
-        });
+    request_missing_derives(db, &params, &stored);
 
-    stabilizer.apply_original_offsets_to_result(result)
+    // We don't remove the original item for derive macros, so a missing result returns nothing.
+    stored.into_iter().map(Option::unwrap_or_default).collect()
+}
+
+/// Requests the derives that are not cached yet, all of them in a single request.
+fn request_missing_derives(
+    db: &dyn Database,
+    params: &ExpandDeriveParams,
+    stored: &[Option<ProcMacroResult>],
+) {
+    let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected() else {
+        return;
+    };
+
+    let missing = ExpandDeriveParams {
+        context: params.context.clone(),
+        derives: params
+            .derives
+            .iter()
+            .zip(stored)
+            .filter(|(_, result)| result.is_none())
+            .map(|(derive, _)| derive.clone())
+            .collect(),
+        item: params.item.clone(),
+    };
+
+    if missing.derives.is_empty()
+        || client.was_requested(RequestParams::ExpandDerive(PlainExpandDeriveParams::of_request(
+            &missing,
+        )))
+    {
+        return;
+    }
+
+    client.request_derives(missing);
 }
 
 pub fn get_inline_macros_expansion(
     db: &dyn Database,
-    mut params: ExpandInlineMacroParams,
+    params: ExpandInlineMacroParams,
     fingerprint: u64,
 ) -> ProcMacroResult {
-    let stabilizer = SpansStabilizer::new(&mut params.call_site, &mut params.args);
+    db.get_stored_inline_macros_expansion(params.clone().into(), fingerprint).unwrap_or_else(|| {
+        let call_site = params.call_site.clone();
 
-    let result = db
-        .get_stored_inline_macros_expansion(params.clone().into(), fingerprint)
-        .unwrap_or_else(|| {
-            // We can't return the original node because it will make us fall into infinite recursion.
-            let unit = "()".to_string();
-
-            if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
-                && !client.was_requested(RequestParams::ExpandInline(params.clone().into()))
-            {
-                client.request_inline_macros(params);
-            }
-
-            ProcMacroResult {
-                token_stream: cairo_lang_macro_v1::TokenStream::new(unit),
-                ..Default::default()
-            }
-        });
-
-    stabilizer.apply_original_offsets_to_result(result)
-}
-
-/// When storing a procedural macro result, parameters are used as the cache key.
-/// However, this approach is insufficient because the macro result's token stream may include spans from the input token stream.
-/// Input spans can change if, for example, a user makes edits earlier in the file than where the item is defined.
-/// This might result in situations where the input token stream remains identical, but its spans have shifted, triggering unnecessary macro recalculations.
-/// Such recalculations can lead to failures in expanding macros due to a new 'analysis in progress' status.
-/// To prevent this, we adjust the input parameters (input token stream, call site) by setting their offsets to stable values (0 for the token stream and [`Self::STABLE_CALL_SITE_START`] for the call site).
-/// We then submit the request using these adjusted parameters as usual for caching.
-/// Upon receiving a response, we modify the result (both token stream and call site) to replace spans using the original offsets and call site, as handled by [`Self::apply_original_offset_to_span`].
-struct SpansStabilizer {
-    original_call_sites: HashMap<u32, TextSpan>,
-    original_item_offset: u32,
-}
-
-impl SpansStabilizer {
-    /// Arbitrary number that must be bigger than anyting macro should produce.
-    ///
-    /// We use trick here to set call site for const value, then all mappings and diagnostics that points to this offest will be remaped to call site, instead of being increased by item offset.
-    /// This is high enough to make sure there should be no collision with item mappings and diagnostics.
-    const STABLE_CALL_SITE_START: u32 = 3000000000;
-
-    /// Single call site: attribute and inline macros.
-    pub fn new(call_site: &mut TextSpan, token_stream: &mut TokenStream) -> Self {
-        Self::new_many(vec![call_site], token_stream)
-    }
-
-    /// One call site per derive.
-    pub fn new_for_derives(derives: &mut [Derive], token_stream: &mut TokenStream) -> Self {
-        Self::new_many(
-            derives.iter_mut().map(|derive| &mut derive.call_site).collect(),
-            token_stream,
-        )
-    }
-
-    fn new_many(call_sites: Vec<&mut TextSpan>, token_stream: &mut TokenStream) -> Self {
-        let original_call_sites = call_sites
-            .into_iter()
-            .enumerate()
-            .map(|(index, call_site)| {
-                // Hack: Use arbitrary high number for call site, this way there should be no collision with item.
-                let stable_start = Self::STABLE_CALL_SITE_START + index as u32;
-                let width = call_site.end - call_site.start;
-                let stable_call_site = TextSpan { start: stable_start, end: stable_start + width };
-                (stable_start, std::mem::replace(call_site, stable_call_site))
-            })
-            .collect();
-
-        // First token start is offset of whole item.
-        let original_item_offset = match &token_stream.tokens[0] {
-            TokenTree::Ident(token) => token.span.start,
-        };
-
-        // Reduce all tokens spans by item offset.
-        for token in &mut token_stream.tokens {
-            match token {
-                TokenTree::Ident(token) => {
-                    token.span.start -= original_item_offset;
-                    token.span.end -= original_item_offset;
-                }
-            }
+        if let Some(client) = db.proc_macro_input().proc_macro_server_status(db).connected()
+            && !client.was_requested(RequestParams::ExpandInline(params.clone().into()))
+        {
+            client.request_inline_macros(params);
         }
 
-        Self { original_call_sites, original_item_offset }
-    }
-
-    pub fn apply_original_offsets_to_result(self, mut result: ProcMacroResult) -> ProcMacroResult {
-        if let Some(code_mappings) = &mut result.code_mappings {
-            for mapping in code_mappings.iter_mut() {
-                match mapping.origin {
-                    CodeOrigin::Start(_) => {
-                        // Should be unreachable
-                    }
-                    CodeOrigin::Span(ref mut span) | CodeOrigin::CallSite(ref mut span) => {
-                        self.apply_original_offset_to_span(span);
-                    }
-                };
-            }
+        // We can't return the original node because it will make us fall into infinite recursion.
+        ProcMacroResult {
+            token_stream: SpannedTokenStream::unspanned("()", call_site),
+            ..Default::default()
         }
-
-        for diagnostic in &mut result.diagnostics {
-            if let Some(mut span) = diagnostic.span() {
-                self.apply_original_offset_to_span(&mut span);
-                *diagnostic =
-                    Diagnostic::spanned(span, diagnostic.severity(), diagnostic.message());
-            }
-        }
-
-        result
-    }
-
-    fn apply_original_offset_to_span(&self, span: &mut TextSpan) {
-        if let Some(original) = self.original_call_sites.get(&span.start) {
-            *span = original.clone();
-        } else {
-            *span = TextSpan {
-                start: span.start + self.original_item_offset,
-                end: span.end + self.original_item_offset,
-            };
-        }
-    }
+    })
 }
 
 /// Retrieves the widest matching original node in user code, which corresponds to passed node.

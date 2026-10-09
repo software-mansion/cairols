@@ -30,7 +30,8 @@ pub mod status;
 pub enum RequestParams {
     DefinedMacros(DefinedMacrosParams),
     ExpandAttribute(PlainExpandAttributeParams),
-    ExpandDerive(PlainExpandDeriveParams),
+    /// One entry per derive of the request, in the same order as the response.
+    ExpandDerive(Vec<PlainExpandDeriveParams>),
     ExpandInline(PlainExpandInlineParams),
 }
 
@@ -76,9 +77,10 @@ impl ProcMacroClient {
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
+    /// Requests all derives of one item at once.
     pub fn request_derives(&self, params: ExpandDeriveParams) {
         self.send_request::<ExpandDerive>(params, |params| {
-            RequestParams::ExpandDerive(params.into())
+            RequestParams::ExpandDerive(PlainExpandDeriveParams::of_request(&params))
         })
     }
 
@@ -99,27 +101,32 @@ impl ProcMacroClient {
         Responses { responses, requests }
     }
 
-    /// Waits for the proc macro server to be killed.
-    pub(super) fn kill_proc_macro_server(self) {
+    /// Kills the proc macro server and waits for it to exit.
+    pub(super) fn kill_proc_macro_server(&self) {
         // Dropping this causes the thread responsible for writing requests to PMS to finish.
         // Consequently, the handler to PMS' stdin will be dropped.
         // Due to the way PMS is implemented, this will result in its death.
-        drop(self.connection.requester);
+        drop(self.connection.requester.lock().unwrap().take());
 
         if self.connection.server_killed_receiver.wait().is_none() {
             error!("failed to receive information that proc macro server was killed");
         }
     }
 
-    fn send_request_untracked<M: Method>(&self, id: RequestId, params: &M::Params) -> Result<()> {
-        self.connection
-            .requester
+    /// Returns `Ok(false)` if the server has already been killed.
+    fn send_request_untracked<M: Method>(&self, id: RequestId, params: &M::Params) -> Result<bool> {
+        let requester = self.connection.requester.lock().unwrap();
+        let Some(requester) = requester.as_ref() else {
+            return Ok(false);
+        };
+        requester
             .send(RpcRequest {
                 id,
                 method: M::METHOD.to_string(),
                 value: serde_json::to_value(params).unwrap(),
             })
-            .with_context(|| anyhow!("sending request {id} failed"))
+            .with_context(|| anyhow!("sending request {id} failed"))?;
+        Ok(true)
     }
 
     fn send_request<M: Method>(
@@ -133,10 +140,12 @@ impl ProcMacroClient {
         let mut requests_params = self.requests_params.write().unwrap();
 
         match self.send_request_untracked::<M>(id, &params) {
-            Ok(()) => {
+            Ok(true) => {
                 self.proc_macro_server_tracker.register_procmacro_request();
                 requests_params.insert(id, map(params));
             }
+            // The server was killed on purpose, so this is not a failure.
+            Ok(false) => {}
             Err(err) => {
                 error!("Sending request to proc-macro-server failed: {err:?}");
 

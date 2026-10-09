@@ -56,7 +56,7 @@ mapped_diagnostics:
       code: E2118
       message: |-
         The name `MyTrait` is defined multiple times.
-        note: this error originates in the derive macro: `simple_derive_macro_v2`
+        note: this error originates in the derive macro: `SimpleDeriveMacroV2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
@@ -81,7 +81,7 @@ mapped_diagnostics:
       code: E2118
       message: |-
         The name `MyTraitImpl` is defined multiple times.
-        note: this error originates in the derive macro: `simple_derive_macro_v2`
+        note: this error originates in the derive macro: `SimpleDeriveMacroV2`
       relatedInformation:
       - location:
           uri: vfs://proc_macro_derive.cairo
