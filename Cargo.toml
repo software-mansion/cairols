@@ -100,10 +100,9 @@ similar = "3.1"
 # This ensures no duplicate instances of Cairo crates are pulled in by mistake.
 [patch.crates-io]
 # Take all three crates from the same Scarb revision, so the macro api crate stays a single instance.
-# TODO: Point these back at a Scarb revision once the matching Scarb changes are pushed.
-cairo-lang-macro = { path = "../scarb/plugins/cairo-lang-macro" }
-scarb-proc-macro-host = { path = "../scarb/utils/scarb-proc-macro-host" }
-scarb-proc-macro-server-types = { path = "../scarb/utils/scarb-proc-macro-server-types" }
+cairo-lang-macro = { git = "https://github.com/software-mansion/scarb", rev = "c328b5174d6bb862027f5501319df77c5acc7c0f" }
+scarb-proc-macro-host = { git = "https://github.com/software-mansion/scarb", rev = "c328b5174d6bb862027f5501319df77c5acc7c0f" }
+scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb", rev = "c328b5174d6bb862027f5501319df77c5acc7c0f" }
 cairo-lang-casm = { git = "https://github.com/starkware-libs/cairo", rev = "6530c2d86df234ba0023ff64a0669f69a23567e9" }
 cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo", rev = "6530c2d86df234ba0023ff64a0669f69a23567e9" }
 cairo-lang-debug = { git = "https://github.com/starkware-libs/cairo", rev = "6530c2d86df234ba0023ff64a0669f69a23567e9" }
