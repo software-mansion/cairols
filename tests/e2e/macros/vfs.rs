@@ -36,10 +36,11 @@ fn generated_file_url_from_diagnostics_opens_in_main_database() {
 
     let content = ls
         .send_request::<ProvideVirtualFile>(ProvideVirtualFileRequest { uri: vfs_url.clone() })
-        .content;
+        .content
+        .expect("Content can not be empty.");
 
     assert!(
-        content.as_deref().is_some_and(|content| content.contains("fn generated_function_v2")),
+        content.contains("fn generated_function_v2"),
         "{vfs_url} should open the generated file, got {content:?}"
     );
 }

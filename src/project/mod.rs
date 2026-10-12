@@ -28,7 +28,7 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::model::ProjectModel;
 use crate::project::scarb::extract_crates;
-use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core_if_not_present;
+pub(crate) use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core_if_not_present;
 use crate::server::client::Notifier;
 use crate::server::is_cairo_file_path;
 use crate::server::schedule::thread;
