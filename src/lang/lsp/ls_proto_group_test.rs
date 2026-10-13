@@ -1,15 +1,18 @@
 use assert_fs::TempDir;
 use assert_fs::prelude::*;
-use cairo_lang_filesystem::db::{CrateSettings, ExperimentalFeaturesConfig};
+use cairo_lang_filesystem::db::{CrateSettings, ExperimentalFeaturesConfig, init_dev_corelib};
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_utils::Intern;
 use lsp_types::Url;
 
-use crate::config::Config;
 use crate::lang::{db::AnalysisDatabase, lsp::LsProtoGroup};
-use crate::project::{Crate, try_to_init_unmanaged_core_if_not_present};
-use crate::server::client::Notifier;
-use crate::toolchain::scarb::ScarbToolchain;
+use crate::project::Crate;
+
+/// Shares the Scarb-managed `core` lookup with the e2e tests.
+#[path = "../../../tests/e2e/support/scarb.rs"]
+#[allow(dead_code)]
+mod scarb;
+use scarb::scarb_core_path;
 
 /// Asserts that `file` and `url` convert into each other.
 fn check(db: &AnalysisDatabase, url: &str, file: FileId<'_>) {
@@ -41,11 +44,7 @@ fn db_with_crate(lib_cairo: &str, settings: CrateSettings) -> (TempDir, Analysis
     };
     let mut db = AnalysisDatabase::new();
     // Resolving a vfs URL semantically analyses the crate, which needs `core`. Take Scarb's.
-    try_to_init_unmanaged_core_if_not_present(
-        &mut db,
-        &Config::default(),
-        &ScarbToolchain::new(Notifier::black_hole()),
-    );
+    init_dev_corelib(&mut db, scarb_core_path().to_path_buf());
     crate_.apply(&mut db, None);
     (root, db)
 }

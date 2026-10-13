@@ -139,8 +139,7 @@ fn position(line: &str, col: &str) -> Option<TextPosition> {
 /// Every generated file is a descendant of the on-disk file its origin ultimately comes from,
 /// and [`CommonGroup::file_and_subfiles_with_corresponding_modules`] collects all of them:
 /// plugin expansions (attributes, derives) and inline macro expansions (item-level or inside
-/// function bodies). It is a tracked query, so the files are generated on demand and only files
-/// that exist are ever returned.
+/// function bodies).
 fn find_generated_file<'db>(
     db: &'db dyn Database,
     origin: SpanInFile<'db>,
