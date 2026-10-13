@@ -99,7 +99,6 @@ similar = "3.1"
 # on some of them directly.
 # This ensures no duplicate instances of Cairo crates are pulled in by mistake.
 [patch.crates-io]
-# Take all three crates from the same Scarb revision, so the macro api crate stays a single instance.
 cairo-lang-macro = { git = "https://github.com/software-mansion/scarb", rev = "c328b5174d6bb862027f5501319df77c5acc7c0f" }
 scarb-proc-macro-host = { git = "https://github.com/software-mansion/scarb", rev = "c328b5174d6bb862027f5501319df77c5acc7c0f" }
 scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb", rev = "c328b5174d6bb862027f5501319df77c5acc7c0f" }
