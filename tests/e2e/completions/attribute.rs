@@ -137,12 +137,12 @@ fn derive_caret_before_existing_text() {
     """
 
     [[completions]]
-    completion_label = "Copy"
-    applied = "#[derive(Copy)]"
+    completion_label = "Destruct"
+    applied = "#[derive(DestructCopy)]"
 
     [[completions]]
     completion_label = "Drop"
-    applied = "#[derive(Drop)]"
+    applied = "#[derive(DropCopy)]"
     "##);
 }
 
@@ -157,8 +157,12 @@ fn derive_caret_before_next_arg_with_space() {
     """
 
     [[completions]]
+    completion_label = "Destruct"
+    applied = "#[derive(Destruct Copy)]"
+
+    [[completions]]
     completion_label = "Drop"
-    applied = "#[derive(DropCopy)]"
+    applied = "#[derive(Drop Copy)]"
     "##);
 }
 
@@ -173,8 +177,12 @@ fn derive_trailing_whitespace() {
     """
 
     [[completions]]
+    completion_label = "Destruct"
+    applied = "#[derive(Copy, Destruct   )]"
+
+    [[completions]]
     completion_label = "Drop"
-    applied = "#[derive(Copy, Drop)]"
+    applied = "#[derive(Copy, Drop   )]"
     "##);
 }
 
@@ -189,8 +197,12 @@ fn derive_unclosed_parenthesis() {
     """
 
     [[completions]]
+    completion_label = "Destruct"
+    applied = "#[derive(Copy, Destruct"
+
+    [[completions]]
     completion_label = "Drop"
-    applied = "#[derive(Copy, Droppub struct Struct {}"
+    applied = "#[derive(Copy, Drop"
     "##);
 }
 
@@ -225,7 +237,11 @@ fn attribute_caret_inside_name() {
     """
 
     [[completions]]
+    completion_label = "default"
+    applied = "#[defaultive]"
+
+    [[completions]]
     completion_label = "derive"
-    applied = "#[derive]"
+    applied = "#[deriveive]"
     "##);
 }
