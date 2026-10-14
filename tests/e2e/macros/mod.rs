@@ -22,6 +22,7 @@ mod builtin;
 mod fixtures;
 mod procedural;
 mod user_inline;
+mod vfs;
 
 pub const SCARB_TEST_MACROS_PACKAGE_NAME: &str = "scarb_procedural_macros";
 
