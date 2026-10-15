@@ -1203,3 +1203,45 @@ fn sorting_scarb_self_fixture() -> Fixture {
         ")
     }
 }
+
+#[test]
+fn function_with_existing_arguments() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    fn my_function(a: felt252, b: felt252) -> felt252 { a + b }
+
+    fn a() {
+        my_func<caret>(1, 2);
+    }
+    ",@r#"
+    caret = """
+        my_func<caret>(1, 2);
+    """
+
+    [[completions]]
+    completion_label = "my_function(...)"
+    completion_label_path = "(use my_function)"
+    completion_label_type_info = "fn(a: felt252, b: felt252) -> felt252"
+    insert_text = "my_function"
+    "#);
+}
+
+#[test]
+fn function_without_arguments() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    fn my_function(a: felt252, b: felt252) -> felt252 { a + b }
+
+    fn a() {
+        my_func<caret>
+    }
+    ",@r#"
+    caret = """
+        my_func<caret>
+    """
+
+    [[completions]]
+    completion_label = "my_function(...)"
+    completion_label_path = "(use my_function)"
+    completion_label_type_info = "fn(a: felt252, b: felt252) -> felt252"
+    insert_text = "my_function(${1:a}, ${2:b})"
+    "#);
+}
