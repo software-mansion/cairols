@@ -30,8 +30,11 @@ fn normalize_well_known_paths(fixture: &Fixture, data: String) -> String {
 
     data = data.replace(&normalize_path(scarb_registry_std_path()), "[SCARB_REGISTRY_STD]");
 
-    let re = Regex::new(r"vfs://(\d+)/").unwrap();
-    data = re.replace_all(&data, "vfs://").to_string();
+    // Virtual file URLs describe the file by its origin (parent location and name), which depends
+    // on the fixture location and the exact code. Keep only the file name. Note that the root path
+    // inside the URL has already been replaced with `[ROOT]` above.
+    let re = Regex::new(r#"vfs://[^"\s]*/([^/"\s]+\.cairo)"#).unwrap();
+    data = re.replace_all(&data, "vfs://$1").to_string();
 
     data
 }
