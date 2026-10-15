@@ -276,7 +276,7 @@ fn transform_with_context(
                 applied: completion.text_edit.map(|edit| match edit {
                     lsp_types::CompletionTextEdit::Edit(edit) => apply_text_edit(&cairo, &edit),
                     lsp_types::CompletionTextEdit::InsertAndReplace(_) => {
-                        unimplemented!("InsertReplaceEdit is not used by cairols")
+                        unreachable!("InsertReplaceEdit is not used by cairols")
                     }
                 }),
             })
@@ -293,7 +293,11 @@ fn apply_text_edit(source: &str, edit: &lsp_types::TextEdit) -> String {
     let end = index_in_text(&result, edit.range.end);
     result.replace_range(start..end, &edit.new_text);
 
-    result.lines().nth(edit.range.start.line as usize).unwrap_or_default().to_string()
+    result
+        .lines()
+        .nth(edit.range.start.line as usize)
+        .expect("text edit should start within the document")
+        .to_string()
 }
 
 #[derive(Serialize)]

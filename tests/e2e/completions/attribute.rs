@@ -227,6 +227,30 @@ fn derive_followed_by_comma() {
 }
 
 #[test]
+fn derive_multiline_with_comment() {
+    test_transform_plain!(Completion, completion_fixture(),"
+    #[derive(
+        Copy,
+        // comment
+        Dr<caret>
+    )]
+    pub struct Struct {}
+    ",@r##"
+    caret = """
+        Dr<caret>
+    """
+
+    [[completions]]
+    completion_label = "Destruct"
+    applied = "    Destruct"
+
+    [[completions]]
+    completion_label = "Drop"
+    applied = "    Drop"
+    "##);
+}
+
+#[test]
 fn attribute_caret_inside_name() {
     test_transform_plain!(Completion, completion_fixture(),"
     #[der<caret>ive]
@@ -243,5 +267,30 @@ fn attribute_caret_inside_name() {
     [[completions]]
     completion_label = "derive"
     applied = "#[deriveive]"
+    "##);
+}
+
+#[test]
+fn attribute_multiline() {
+    test_transform_plain!(Completion, completion_fixture(),"
+    #[
+        d<caret>]
+    pub struct Struct {}
+    ",@r##"
+    caret = """
+        d<caret>]
+    """
+
+    [[completions]]
+    completion_label = "default"
+    applied = "    default]"
+
+    [[completions]]
+    completion_label = "derive"
+    applied = "    derive]"
+
+    [[completions]]
+    completion_label = "doc"
+    applied = "    doc]"
     "##);
 }
