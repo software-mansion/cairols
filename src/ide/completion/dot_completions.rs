@@ -56,7 +56,7 @@ fn dot_completions_ex<'db>(
     }
 
     // If the only thing on the rhs are parentheses, make typed empty, so anything will match.
-    let typed = if matches!(expr.rhs(db), Expr::Tuple(_)) {
+    let typed = if matches!(expr.rhs(db), Expr::Tuple(_) | Expr::Parenthesized(_)) {
         "".to_string()
     } else {
         rhs.unwrap_or(expr.rhs(db).as_syntax_node()).get_text_without_trivia(db).to_string(db)
@@ -153,7 +153,8 @@ fn completion_for_method<'db>(
     if let Some(edit) = import_edit_for_trait_if_needed(db, ctx, trait_id) {
         additional_text_edits.push(edit);
     }
-    let function_call_snippet = TypedSnippet::function_call(db, &name, signature, Some(trait_id));
+    let function_call_snippet =
+        TypedSnippet::function_call(db, ctx, &name, signature, Some(trait_id));
 
     let completion = CompletionItemOrderable {
         item: CompletionItem {
