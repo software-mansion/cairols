@@ -10,7 +10,8 @@ use tracing::error;
 use crate::server::trigger;
 
 pub struct ProcMacroServerConnection {
-    pub(super) requester: Sender<RpcRequest>,
+    /// `None` once the server has been killed.
+    pub(super) requester: Mutex<Option<Sender<RpcRequest>>>,
     pub(super) responses: Arc<Mutex<VecDeque<RpcResponse>>>,
     pub(super) server_killed_receiver: trigger::Receiver<()>,
 }
@@ -40,7 +41,7 @@ impl ProcMacroServerConnection {
 
         std::thread::spawn(move || write_requests(server_input, receiver));
 
-        Self { requester, responses, server_killed_receiver }
+        Self { requester: Mutex::new(Some(requester)), responses, server_killed_receiver }
     }
 }
 

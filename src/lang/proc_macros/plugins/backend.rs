@@ -1,0 +1,185 @@
+use cairo_lang_macro::{AllocationContext, ProcMacroResult, TextSpan, TokenStream};
+use salsa::Database;
+use scarb_proc_macro_host::{Expansion, ExpansionId, ExpansionKind, ProcMacroBackend};
+use scarb_proc_macro_server_types::methods::ProcMacroResult as StoredProcMacroResult;
+use scarb_proc_macro_server_types::methods::defined_macros::{
+    CompilationUnitComponentMacros, MacroWithHash,
+};
+use scarb_proc_macro_server_types::methods::expand::{
+    Derive, ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
+};
+use scarb_proc_macro_server_types::scope::ProcMacroScope;
+
+use crate::lang::proc_macros::db::{
+    get_attribute_expansion, get_derive_expansions, get_inline_macros_expansion,
+};
+
+#[cfg(test)]
+#[path = "backend_test.rs"]
+mod test;
+
+/// A macro expansion advertised by the proc-macro-server.
+#[derive(Clone, Debug)]
+pub struct PmsMacroId {
+    expansion: Expansion,
+    fingerprint: u64,
+}
+
+impl ExpansionId for PmsMacroId {
+    fn expansion(&self) -> &Expansion {
+        &self.expansion
+    }
+}
+
+/// Expands procedural macros by asking `scarb proc-macro-server`.
+#[derive(Debug)]
+pub struct PmsBackend {
+    scope: ProcMacroScope,
+    source_packages: Vec<String>,
+    expansions: Vec<PmsMacroId>,
+}
+
+impl PmsBackend {
+    pub fn new(scope: ProcMacroScope, macros: CompilationUnitComponentMacros) -> Self {
+        let CompilationUnitComponentMacros {
+            attributes,
+            inline_macros,
+            derives,
+            executables,
+            debug_info,
+            ..
+        } = macros;
+
+        let named = |macros: Vec<MacroWithHash>, kind: ExpansionKind| {
+            macros.into_iter().map(move |MacroWithHash { name, cairo_name, hash }| PmsMacroId {
+                expansion: Expansion {
+                    expansion_name: name.into(),
+                    cairo_name: cairo_name.into(),
+                    kind: kind.clone(),
+                },
+                fingerprint: hash,
+            })
+        };
+
+        // Executable attributes are never expanded, so they need no fingerprint.
+        let executables = executables.into_iter().map(|name| PmsMacroId {
+            expansion: Expansion {
+                expansion_name: name.clone().into(),
+                cairo_name: name.into(),
+                kind: ExpansionKind::Executable,
+            },
+            fingerprint: 0,
+        });
+
+        let expansions = named(attributes, ExpansionKind::Attr)
+            .chain(named(inline_macros, ExpansionKind::Inline))
+            .chain(named(derives, ExpansionKind::Derive))
+            .chain(executables)
+            .collect();
+
+        Self { scope, source_packages: debug_info.source_packages, expansions }
+    }
+
+    /// Serialized ids of the Scarb packages that define these macros.
+    pub fn source_packages(&self) -> &[String] {
+        &self.source_packages
+    }
+}
+
+impl ProcMacroBackend for PmsBackend {
+    type Id = PmsMacroId;
+    /// The language server does not use auxiliary data.
+    type AuxData = ();
+
+    fn expansions(&self) -> &[PmsMacroId] {
+        &self.expansions
+    }
+
+    fn expand(
+        &self,
+        db: &dyn Database,
+        id: &PmsMacroId,
+        call_site: TextSpan,
+        args: TokenStream,
+        item: TokenStream,
+    ) -> ProcMacroResult {
+        let context = self.scope.clone();
+        let name = id.expansion.expansion_name.to_string();
+        let fingerprint = id.fingerprint;
+
+        let result = match id.expansion.kind {
+            ExpansionKind::Attr => get_attribute_expansion(
+                db,
+                ExpandAttributeParams {
+                    context,
+                    attr: name,
+                    args,
+                    item,
+                    adapted_call_site: call_site,
+                },
+                fingerprint,
+            ),
+            // The host expands derives in batches, so this is only reached if someone expands one
+            // on its own. Correct only because `expand_derives` below does not call back into here.
+            ExpansionKind::Derive => {
+                return self
+                    .expand_derives(db, &[(id.clone(), call_site)], item)
+                    .into_iter()
+                    .next()
+                    .expect("one result is returned for one derive");
+            }
+            // The host passes inline macro arguments as the item.
+            ExpansionKind::Inline => get_inline_macros_expansion(
+                db,
+                ExpandInlineMacroParams { context, name, args: item, call_site },
+                fingerprint,
+            ),
+            ExpansionKind::Executable => {
+                unreachable!("executable attributes are not registered as expansions")
+            }
+        };
+
+        into_macro_result(result)
+    }
+
+    /// All derives of an item are expanded in a single request to the server.
+    fn expand_derives(
+        &self,
+        db: &dyn Database,
+        derives: &[(PmsMacroId, TextSpan)],
+        item: TokenStream,
+    ) -> Vec<ProcMacroResult> {
+        let (derives, fingerprints): (Vec<_>, Vec<_>) = derives
+            .iter()
+            .map(|(id, call_site)| {
+                (
+                    Derive {
+                        name: id.expansion.expansion_name.to_string(),
+                        call_site: call_site.clone(),
+                    },
+                    id.fingerprint,
+                )
+            })
+            .unzip();
+
+        get_derive_expansions(
+            db,
+            ExpandDeriveParams { context: self.scope.clone(), derives, item },
+            &fingerprints,
+        )
+        .into_iter()
+        .map(into_macro_result)
+        .collect()
+    }
+}
+
+/// Converts a cached result, which is plain data, into what the macro api uses.
+fn into_macro_result(result: StoredProcMacroResult) -> ProcMacroResult {
+    let ctx = AllocationContext::default();
+    ProcMacroResult {
+        token_stream: result.token_stream.to_token_stream(&ctx),
+        aux_data: None,
+        diagnostics: result.diagnostics,
+        full_path_markers: Vec::new(),
+    }
+}
