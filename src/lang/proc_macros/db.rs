@@ -225,7 +225,7 @@ pub fn get_inline_macros_expansion(
 
             // We can't return the original node because it will make us fall into infinite recursion.
             ProcMacroResult {
-                token_stream: SpannedTokenStream::unspanned("()", call_site),
+                token_stream: SpannedTokenStream::from_unspanned("()", call_site),
                 ..Default::default()
             }
         });
