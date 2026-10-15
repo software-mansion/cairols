@@ -1,6 +1,9 @@
 use lsp_types::request::Completion;
 
-use crate::{completions::completion_fixture, support::insta::test_transform_plain};
+use crate::{
+    completions::completion_fixture,
+    support::insta::{test_transform_plain, test_transform_with_macros},
+};
 
 #[test]
 fn derive() {
@@ -292,5 +295,32 @@ fn attribute_multiline() {
     [[completions]]
     completion_label = "doc"
     applied = "    doc]"
+    "##);
+}
+
+#[test]
+fn derive_inside_attribute_macro_with_offset() {
+    test_transform_with_macros!(Completion,"
+    fn some_code_so_there_is_offset() {}
+
+    #[simple_attribute_macro_v2]
+    #[derive(Co<caret>Drop)]
+    struct Foo {}
+    ",@r##"
+    caret = """
+    #[derive(Co<caret>Drop)]
+    """
+
+    [[completions]]
+    completion_label = "Clone"
+    applied = "#[derive(CloneDrop)]"
+
+    [[completions]]
+    completion_label = "ComplexDeriveMacroV2"
+    applied = "#[derive(ComplexDeriveMacroV2Drop)]"
+
+    [[completions]]
+    completion_label = "Copy"
+    applied = "#[derive(CopyDrop)]"
     "##);
 }
