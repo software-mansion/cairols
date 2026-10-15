@@ -278,7 +278,13 @@ impl CompletionParams {
             }
             ImportableId::FreeFunction(id) => {
                 let snippet = db.free_function_signature(*id).ok().map(|signature| {
-                    TypedSnippet::function_call(db, &id.name(db).to_string(db), signature, None)
+                    TypedSnippet::function_call(
+                        db,
+                        ctx,
+                        &id.name(db).to_string(db),
+                        signature,
+                        None,
+                    )
                 });
 
                 let label = if snippet.is_some() {
@@ -291,7 +297,13 @@ impl CompletionParams {
             }
             ImportableId::ExternFunction(id) => {
                 let snippet = db.extern_function_signature(*id).ok().map(|signature| {
-                    TypedSnippet::function_call(db, &id.name(db).to_string(db), signature, None)
+                    TypedSnippet::function_call(
+                        db,
+                        ctx,
+                        &id.name(db).to_string(db),
+                        signature,
+                        None,
+                    )
                 });
 
                 let label = if snippet.is_some() {
