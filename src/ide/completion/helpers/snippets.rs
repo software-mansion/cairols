@@ -4,7 +4,11 @@ use cairo_lang_semantic::diagnostic::SemanticDiagnostics;
 use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::{ExprPath, ItemStruct, StatementExpr, StatementLet, TypeClause};
+use cairo_lang_syntax::node::ast::{
+    Expr, ExprBinary, ExprFunctionCall, ExprPath, ItemStruct, StatementExpr, StatementLet,
+    TypeClause,
+};
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use itertools::Itertools;
 
 use crate::ide::completion::helpers::formatting::generate_abbreviated_signature;
@@ -104,12 +108,21 @@ impl TypedSnippet {
     /// fn xyz(a: u8, b: ByteArray) -> felt252 {}
     /// ```
     /// returns a string "xyz({$1:a}, {$2:b})".
-    pub fn function_call(
-        db: &AnalysisDatabase,
+    /// If the call already has an argument list (e.g. `xy<caret>(1, 2)`), returns only "xyz",
+    /// so the existing parentheses and arguments are left untouched.
+    pub fn function_call<'db>(
+        db: &'db AnalysisDatabase,
+        ctx: &AnalysisContext<'db>,
         function_name: &str,
         signature: &Signature,
         trait_id: Option<TraitId>,
     ) -> TypedSnippet {
+        let type_hint = Some(generate_abbreviated_signature(db, signature, trait_id));
+
+        if has_argument_list(db, ctx) {
+            return TypedSnippet { lsp_snippet: function_name.to_string(), type_hint };
+        }
+
         let params_snippet = signature
             .params
             .iter()
@@ -118,13 +131,30 @@ impl TypedSnippet {
             .enumerate()
             .map(|(index, name)| format!("${{{}:{}}}", index + 1, name))
             .join(", ");
-        TypedSnippet {
-            lsp_snippet: format!("{function_name}({params_snippet})"),
-            type_hint: Some(generate_abbreviated_signature(db, signature, trait_id)),
-        }
+        TypedSnippet { lsp_snippet: format!("{function_name}({params_snippet})"), type_hint }
     }
 
     pub fn macro_call(last_segment: &str) -> TypedSnippet {
         TypedSnippet { lsp_snippet: format!("{}!($1)", last_segment), type_hint: None }
     }
+}
+
+/// Checks if the function being completed already has an argument list after it.
+fn has_argument_list<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>) -> bool {
+    // `fo<caret>(1, 2)` or `foo.ba<caret>(1, 2)`.
+    let is_function_of_call = ctx
+        .node
+        .ancestor_of_type::<ExprPath>(db)
+        .and_then(|path| path.as_syntax_node().parent_of_type::<ExprFunctionCall>(db))
+        .is_some();
+
+    // `foo.<caret>()` or `foo.<caret>(x)` - with no method name typed, the parentheses are parsed
+    // as a tuple or a parenthesized expression on the rhs of the dot.
+    let is_parens_after_dot = ctx.node.kind(db) == SyntaxKind::TerminalDot
+        && ctx
+            .node
+            .parent_of_type::<ExprBinary>(db)
+            .is_some_and(|expr| matches!(expr.rhs(db), Expr::Tuple(_) | Expr::Parenthesized(_)));
+
+    is_function_of_call || is_parens_after_dot
 }
