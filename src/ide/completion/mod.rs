@@ -144,8 +144,8 @@ fn complete_ex<'db>(
     completions.extend(struct_constructor_completions(db, &ctx));
     completions.extend(use_completions(db, &ctx));
     completions.extend(self_completions(db, &ctx));
-    completions.extend(attribute_completions(db, node, crate_id));
-    completions.extend(derive_completions(db, node, crate_id));
+    completions.extend(attribute_completions(db, node, crate_id, cursor_position));
+    completions.extend(derive_completions(db, node, crate_id, cursor_position));
     completions.extend(mod_completions(db, node));
     completions.extend(params_completions(db, &ctx, was_node_corrected));
     completions.extend(variables_completions(db, &ctx, was_node_corrected));
