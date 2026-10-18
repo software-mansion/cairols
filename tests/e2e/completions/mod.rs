@@ -8,7 +8,7 @@ use lsp_types::{
 };
 use serde::Serialize;
 
-use crate::support::cursor::{Cursors, peek_caret};
+use crate::support::cursor::{Cursors, apply_text_edit, peek_caret};
 use crate::support::fixture::Fixture;
 use crate::support::transform::Transformer;
 use crate::support::{MockClient, fixture};
@@ -273,10 +273,29 @@ fn transform_with_context(
                     .into_iter()
                     .map(|edit| edit.new_text)
                     .collect(),
+                applied: completion.text_edit.map(|edit| match edit {
+                    lsp_types::CompletionTextEdit::Edit(edit) => render_applied_line(&cairo, &edit),
+                    lsp_types::CompletionTextEdit::InsertAndReplace(_) => {
+                        unreachable!("InsertReplaceEdit is not used by cairols")
+                    }
+                }),
             })
             .collect(),
     }
     .to_string()
+}
+
+/// Applies the completion's main `text_edit` to `source` and returns the line on which
+/// the edit starts.
+fn render_applied_line(source: &str, edit: &lsp_types::TextEdit) -> String {
+    let mut result = source.to_string();
+    apply_text_edit(&mut result, edit);
+
+    result
+        .lines()
+        .nth(edit.range.start.line as usize)
+        .expect("text edit should start within the document")
+        .to_string()
 }
 
 #[derive(Serialize)]
@@ -306,4 +325,6 @@ struct Completions {
     insert_text: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     text_edits: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    applied: Option<String>,
 }
