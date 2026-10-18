@@ -8,7 +8,7 @@ use lsp_types::{
 };
 use serde::Serialize;
 
-use crate::support::cursor::{Cursors, index_in_text, peek_caret};
+use crate::support::cursor::{Cursors, apply_text_edit, peek_caret};
 use crate::support::fixture::Fixture;
 use crate::support::transform::Transformer;
 use crate::support::{MockClient, fixture};
@@ -274,7 +274,7 @@ fn transform_with_context(
                     .map(|edit| edit.new_text)
                     .collect(),
                 applied: completion.text_edit.map(|edit| match edit {
-                    lsp_types::CompletionTextEdit::Edit(edit) => apply_text_edit(&cairo, &edit),
+                    lsp_types::CompletionTextEdit::Edit(edit) => render_applied_line(&cairo, &edit),
                     lsp_types::CompletionTextEdit::InsertAndReplace(_) => {
                         unreachable!("InsertReplaceEdit is not used by cairols")
                     }
@@ -287,11 +287,9 @@ fn transform_with_context(
 
 /// Applies the completion's main `text_edit` to `source` and returns the line on which
 /// the edit starts.
-fn apply_text_edit(source: &str, edit: &lsp_types::TextEdit) -> String {
+fn render_applied_line(source: &str, edit: &lsp_types::TextEdit) -> String {
     let mut result = source.to_string();
-    let start = index_in_text(&result, edit.range.start);
-    let end = index_in_text(&result, edit.range.end);
-    result.replace_range(start..end, &edit.new_text);
+    apply_text_edit(&mut result, edit);
 
     result
         .lines()

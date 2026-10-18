@@ -285,9 +285,7 @@ pub fn render_text_edits_and_file_renames(
             let mut content = content.to_owned();
 
             for edit in edits {
-                let start_idx = index_in_text(&content, edit.range.start);
-                let stop_idx = index_in_text(&content, edit.range.end);
-                content.replace_range(start_idx..stop_idx, &edit.new_text);
+                apply_text_edit(&mut content, &edit);
             }
 
             if let Some(new_path) = file_renames.remove(&uri) {
@@ -313,6 +311,13 @@ pub fn render_text_edits_and_file_renames(
     } else {
         result
     }
+}
+
+/// Applies a single text edit to `text` in place.
+pub fn apply_text_edit(text: &mut String, edit: &TextEdit) {
+    let start_idx = index_in_text(text, edit.range.start);
+    let stop_idx = index_in_text(text, edit.range.end);
+    text.replace_range(start_idx..stop_idx, &edit.new_text);
 }
 
 /// Converts a [`Position`] to a char-bounded index in the text.
