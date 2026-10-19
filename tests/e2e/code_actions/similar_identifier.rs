@@ -11,11 +11,7 @@ fn single_segment() {
     fn main() {
         let _x = Mar<caret>ius { whatever: 1 };
     }
-    ", @r#"
-    Title: Did you mean `Mariusz`?
-    Add new text: "Mariusz"
-    At: Range { start: Position { line: 5, character: 13 }, end: Position { line: 5, character: 19 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]

@@ -121,3 +121,41 @@ fn felt_in_struct_with_macros() {
     struct Foo { field: RENAMED }
     ")
 }
+
+#[test]
+fn struct_member_via_definition_with_shorthand() {
+    test_transform_plain!(Rename, r"
+    #[derive(Drop)]
+    struct Foo { fie<caret>ld: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { field };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { RENAMED: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { RENAMED };
+    }
+    ")
+}
+
+#[test]
+fn struct_member_via_constructor_shorthand() {
+    test_transform_plain!(Rename, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { fie<caret>ld };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { RENAMED: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { RENAMED };
+    }
+    ")
+}

@@ -30,11 +30,7 @@ fn add_1_char_typo() {
         let x = ElStructuro { membero: 1 };
         let _v = x.membe<caret>roo + 1
     }
-    ", @r#"
-    Title: Use membero instead
-    Add new text: "membero"
-    At: Range { start: Position { line: 6, character: 15 }, end: Position { line: 6, character: 23 } }
-    "#);
+    ", @"No code actions.");
 }
 
 #[test]

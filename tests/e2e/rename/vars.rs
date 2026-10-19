@@ -251,3 +251,22 @@ fn var_via_binding_with_macros() {
     }
     ")
 }
+
+#[test]
+fn var_via_binding_with_struct_shorthand() {
+    test_transform_plain!(Rename, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let fie<caret>ld = 42;
+        let x = Foo { field };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let RENAMED = 42;
+        let x = Foo { field: RENAMED };
+    }
+    ")
+}

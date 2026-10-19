@@ -132,3 +132,41 @@ fn struct_member_via_field_access_with_macros() {
     }
     ")
 }
+
+#[test]
+fn struct_member_via_constructor_shorthand() {
+    test_transform_plain!(References, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { fie<caret>ld };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { <sel=declaration>field</sel>: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { <sel>field</sel> };
+    }
+    ")
+}
+
+#[test]
+fn struct_member_via_definition_with_shorthand() {
+    test_transform_plain!(References, r"
+    #[derive(Drop)]
+    struct Foo { fie<caret>ld: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { field };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { <sel=declaration>field</sel>: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { <sel>field</sel> };
+    }
+    ")
+}
