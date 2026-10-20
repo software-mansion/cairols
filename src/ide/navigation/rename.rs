@@ -100,17 +100,18 @@ pub fn rename(
         }
     }
 
-    let locations = symbols
+    let new_name = &new_name;
+    let changes: HashMap<_, Vec<TextEdit>> = symbols
         .into_iter()
-        .flat_map(|symbol| find_usages(db, symbol))
-        .filter_map(|loc| db.lsp_location(loc))
-        .collect::<Vec<_>>();
-
-    let changes: HashMap<_, Vec<TextEdit>> =
-        locations.into_iter().fold(HashMap::new(), |mut acc, Location { uri, range }| {
-            acc.entry(uri).or_default().push(TextEdit { range, new_text: new_name.clone() });
-            acc
-        });
+        .flat_map(|symbol| {
+            let def = symbol.def.clone();
+            find_usages(db, symbol).into_iter().filter_map(move |loc| {
+                let new_text = new_text_for_usage(db, loc, &def, new_name);
+                let Location { uri, range } = db.lsp_location(loc)?;
+                Some((uri, TextEdit { range, new_text }))
+            })
+        })
+        .into_group_map();
 
     let workspace_edit = if client_capabilities.workspace_edit_rename_resource_support() {
         WorkspaceEdit {
@@ -134,6 +135,33 @@ fn declaration_from_resultant<'db>(
     // Declaration is used here because rename without changing the declaration would break the compilation,
     // e.g. when renaming trait usage - we also rename the trait
     SymbolSearch::find_declaration(db, &identifier)
+}
+
+/// Returns the text replacing a usage of the renamed symbol.
+///
+/// A shorthand is expanded, keeping the name of the symbol which is not renamed:
+/// `Struct { x }` becomes `Struct { new_name: x }` (label renamed)
+/// or `Struct { x: new_name }` (value renamed).
+fn new_text_for_usage<'db>(
+    db: &'db AnalysisDatabase,
+    SpanInFile { file_id, span }: SpanInFile<'db>,
+    renamed: &SymbolDef<'db>,
+    new_name: &str,
+) -> String {
+    let shorthand = db
+        .find_syntax_node_at_offset(file_id, span.start)
+        .and_then(|node| TerminalIdentifier::cast_token(db, node))
+        .and_then(|identifier| SymbolSearch::find_shorthand(db, &identifier));
+
+    match shorthand {
+        Some((label, value)) if label.def == *renamed => {
+            format!("{new_name}: {}", value.def.name(db))
+        }
+        Some((label, value)) if value.def == *renamed => {
+            format!("{}: {new_name}", label.def.name(db))
+        }
+        _ => new_name.to_string(),
+    }
 }
 
 fn find_usages<'db>(db: &'db AnalysisDatabase, symbol: SymbolSearch<'db>) -> Vec<SpanInFile<'db>> {

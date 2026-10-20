@@ -40,13 +40,15 @@ fn highlights<'db>(
 ) -> Option<Vec<lsp_types::Range>> {
     let identifier =
         syntax_node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
-    let symbol_search = SymbolSearch::find_definition(db, &identifier)?;
-
-    let highlights = symbol_search
-        .usages(db)
-        .include_declaration(true)
-        .in_scope(SearchScope::file_with_subfiles(db, file))
-        .originating_locations(db)
+    let highlights = SymbolSearch::find_definitions(db, &identifier)
+        .into_iter()
+        .flat_map(|symbol| {
+            symbol
+                .usages(db)
+                .include_declaration(true)
+                .in_scope(SearchScope::file_with_subfiles(db, file))
+                .originating_locations(db)
+        })
         .filter(|found| found.file_id == file)
         .filter_map(|SpanInFile { file_id, span }: SpanInFile<'_>| {
             span.position_in_file(db, file_id).as_ref().map(ToLsp::to_lsp)

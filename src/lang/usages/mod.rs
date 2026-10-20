@@ -188,13 +188,12 @@ impl<'db> FindUsages<'db> {
 
         // Declaration search is used here to ensure that all appropriate impl items are included
         // when looking for usages of trait items.
-        let found_symbol_definition =
-            SymbolSearch::find_definition(self.db, &identifier).map(|ss| ss.def);
+        let found_symbol_definitions = SymbolSearch::find_definitions(self.db, &identifier);
         let found_symbol_declaration =
             SymbolSearch::find_declaration(self.db, &identifier).map(|ss| ss.def);
 
-        // Check if declaration or definition matches
-        if found_symbol_definition.as_ref() == Some(&self.symbol)
+        // Check if declaration or any definition matches
+        if found_symbol_definitions.iter().any(|ss| ss.def == self.symbol)
             || found_symbol_declaration.as_ref() == Some(&self.symbol)
         {
             let usage = FoundUsage::from_syntax_node(self.db, identifier.as_syntax_node());

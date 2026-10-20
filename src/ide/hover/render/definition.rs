@@ -27,8 +27,29 @@ pub fn definition<'db>(
     file_id: FileId<'db>,
     importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
-    let search = SymbolSearch::find_definition(db, identifier)?;
+    SymbolSearch::find_definitions(db, identifier)
+        .into_iter()
+        .filter_map(|search| symbol_definition(db, search, file_id, importables))
+        .reduce(|mut md, next| {
+            // Markdown requires a blank line before a rule, otherwise the preceding text
+            // becomes a heading. Sections may end without a newline, e.g. after documentation.
+            if !md.ends_with('\n') {
+                md += "\n";
+            }
+            md += "\n";
+            md += RULE;
+            md += &next;
+            md
+        })
+}
 
+/// Get declaration and documentation "definition" of a single symbol.
+fn symbol_definition<'db>(
+    db: &'db AnalysisDatabase,
+    search: SymbolSearch<'db>,
+    file_id: FileId<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
+) -> Option<String> {
     let md = match &search.def {
         SymbolDef::Item(item) => {
             let mut md = String::new();
