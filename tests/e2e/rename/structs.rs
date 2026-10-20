@@ -136,7 +136,7 @@ fn struct_member_via_definition_with_shorthand() {
     struct Foo { RENAMED: felt252 }
     fn main() {
         let field = 42;
-        let x = Foo { RENAMED };
+        let x = Foo { RENAMED: field };
     }
     ")
 }
@@ -152,10 +152,10 @@ fn struct_member_via_constructor_shorthand() {
     }
     ", @"
     #[derive(Drop)]
-    struct Foo { RENAMED: felt252 }
+    struct Foo { field: felt252 }
     fn main() {
-        let field = 42;
-        let x = Foo { RENAMED };
+        let RENAMED = 42;
+        let x = Foo { field: RENAMED };
     }
     ")
 }

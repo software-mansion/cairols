@@ -144,9 +144,9 @@ fn struct_member_via_constructor_shorthand() {
     }
     ", @"
     #[derive(Drop)]
-    struct Foo { <sel=declaration>field</sel>: felt252 }
+    struct Foo { field: felt252 }
     fn main() {
-        let field = 42;
+        let <sel=declaration>field</sel> = 42;
         let x = Foo { <sel>field</sel> };
     }
     ")

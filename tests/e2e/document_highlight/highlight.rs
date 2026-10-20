@@ -139,7 +139,7 @@ fn struct_constructor_shorthand() {
     #[derive(Drop)]
     struct Foo { <sel>field</sel>: felt252 }
     fn main() {
-        let field = 42;
+        let <sel>field</sel> = 42;
         let x = Foo { <sel>field</sel> };
     }
     ")

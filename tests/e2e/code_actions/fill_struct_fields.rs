@@ -57,7 +57,11 @@ fn fill_two_fields() {
         fn build_struct() {
             let _b = Struct { x: 0x0, <caret> };
         }
-    "#, @"No code actions."
+    "#, @r#"
+    Title: Fill struct fields
+    Add new text: " y: (), z: ()"
+    At: Range { start: Position { line: 6, character: 29 }, end: Position { line: 6, character: 29 } }
+    "#
     )
 }
 
@@ -84,7 +88,11 @@ fn imported_struct_fill_all() {
         fn build_struct() {
             let s = Struct { <caret> };
         }
-    "#, @"No code actions."
+    "#, @r#"
+    Title: Fill struct fields
+    Add new text: " y: (), z: ()"
+    At: Range { start: Position { line: 11, character: 20 }, end: Position { line: 11, character: 20 } }
+    "#
     )
 }
 

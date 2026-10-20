@@ -266,7 +266,7 @@ fn var_via_binding_with_struct_shorthand() {
     struct Foo { field: felt252 }
     fn main() {
         let RENAMED = 42;
-        let x = Foo { field };
+        let x = Foo { field: RENAMED };
     }
     ")
 }
@@ -287,7 +287,7 @@ fn param_with_shadowed_struct_shorthand() {
     #[derive(Drop)]
     struct Foo { field: felt252 }
     fn make(RENAMED: felt252) -> Foo {
-        let x = Foo { field };
+        let x = Foo { field: RENAMED };
         {
             let field = 0;
             Foo { field }
