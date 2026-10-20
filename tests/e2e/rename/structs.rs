@@ -159,3 +159,26 @@ fn struct_member_via_constructor_shorthand() {
     }
     ")
 }
+
+#[test]
+fn struct_member_with_shorthand_of_other_struct() {
+    test_transform_plain!(Rename, r"
+    #[derive(Drop)]
+    struct Foo { fie<caret>ld: felt252 }
+    #[derive(Drop)]
+    struct Bar { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Bar { field };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { RENAMED: felt252 }
+    #[derive(Drop)]
+    struct Bar { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Bar { field };
+    }
+    ")
+}
