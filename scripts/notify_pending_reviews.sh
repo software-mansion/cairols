@@ -39,11 +39,24 @@ software-mansion/asdf-cairo-profiler
 software-mansion/asdf-cairo-coverage
 software-mansion/setup-scarb
 software-mansion-labs/cairo-toolchain-xtasks
+foundry-rs/starknet-foundry
+foundry-rs/setup-snfoundry
+software-mansion-labs/starknet-foundry-nightlies
+software-mansion/universal-sierra-compiler
+software-mansion/setup-universal-sierra-compiler
+software-mansion/starknet-rust
+software-mansion/starknet.py
+software-mansion/starknet-jvm
+software-mansion/starknet.swift
+software-mansion/pathfinder
+software-mansion/pathfinder-infra
 '
 
 DEFAULT_TEAMS='
 cairo-ls
 scarb-maintainers
+starknet-foundry
+pathfinder
 '
 
 REPOS="${REPOS:-$DEFAULT_REPOS}"
