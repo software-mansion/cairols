@@ -272,6 +272,9 @@ impl<'db> SymbolDef<'db> {
                             &[SyntaxKind::AttributeList, SyntaxKind::ExprInlineMacro],
                         )
                         .is_some()
+                        || owning_function
+                            .descendants(db)
+                            .any(|node| node.kind(db) == SyntaxKind::ExprInlineMacro)
                     {
                         let file_id = owning_function.stable_ptr(db).file_id(db);
                         if let Some((subfiles, _)) =

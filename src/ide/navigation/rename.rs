@@ -142,6 +142,7 @@ fn declaration_from_resultant<'db>(
 /// A shorthand is expanded, keeping the name of the symbol which is not renamed:
 /// `Struct { x }` becomes `Struct { new_name: x }` (label renamed)
 /// or `Struct { x: new_name }` (value renamed).
+/// This also covers shorthands inside macro calls, which are recognized in the expanded code.
 fn new_text_for_usage<'db>(
     db: &'db AnalysisDatabase,
     SpanInFile { file_id, span }: SpanInFile<'db>,
@@ -150,8 +151,13 @@ fn new_text_for_usage<'db>(
 ) -> String {
     let shorthand = db
         .find_syntax_node_at_offset(file_id, span.start)
-        .and_then(|node| TerminalIdentifier::cast_token(db, node))
-        .and_then(|identifier| SymbolSearch::find_shorthand(db, &identifier));
+        .and_then(|node| db.get_node_resultants(node))
+        .into_iter()
+        .flatten()
+        .filter_map(|node| {
+            node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))
+        })
+        .find_map(|identifier| SymbolSearch::find_shorthand(db, &identifier));
 
     match shorthand {
         Some((label, value)) if label.def == *renamed => {
