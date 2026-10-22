@@ -251,7 +251,7 @@ fn struct_constructor_shorthand_in_plugin_inline_macro() {
     struct Foo { field: felt252 }
     fn main() {
         let RENAMED = 42;
-        let x = array![Foo { field }];
+        let x = array![Foo { field: RENAMED }];
     }
     ")
 }

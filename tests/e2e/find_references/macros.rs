@@ -289,7 +289,7 @@ fn var_via_binding_with_shorthand_in_declarative_macro() {
 
     fn main() {
         let <sel=declaration>field</sel> = 42;
-        let x = my_macro!(Foo { field });
+        let x = my_macro!(<sel>Foo</sel> { field });
     }
     ")
 }
@@ -308,7 +308,7 @@ fn struct_constructor_shorthand_in_plugin_inline_macro() {
     struct Foo { field: felt252 }
     fn main() {
         let <sel=declaration>field</sel> = 42;
-        let x = array![Foo { field }];
+        let x = array![Foo { <sel>field</sel> }];
     }
     ")
 }
