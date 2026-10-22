@@ -125,7 +125,15 @@ fn test_target_execute(
     let command = path.snforge_command();
 
     let file_path = file_url.to_file_path().ok()?;
-    let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
+    let Some(cwd) = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)
+    else {
+        notifier.notify::<ShowMessage>(ShowMessageParams {
+            typ: MessageType::ERROR,
+            message: "Cannot calculate gas: could not find the Scarb package for this file."
+                .to_string(),
+        });
+        return Some(());
+    };
 
     // Running `snforge` can take several seconds, so we let it run in the
     // background and report the result later via `ShowMessage` instead of blocking.
