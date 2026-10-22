@@ -165,6 +165,7 @@ fn struct_init_first_member_shorthand() {
     ```
     ---
     Docstring of member1.
+    ---
     ```cairo
     let member1: felt252
     ```
@@ -205,6 +206,7 @@ fn struct_init_second_member_shorthand_after() {
     member2: u256
     ```
 
+    ---
     ```cairo
     let member2: u256
     ```

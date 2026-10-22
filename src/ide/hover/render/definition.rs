@@ -30,11 +30,7 @@ pub fn definition<'db>(
     SymbolSearch::find_definitions(db, identifier)
         .into_iter()
         .filter_map(|search| symbol_definition(db, search, file_id, importables))
-        .reduce(|mut md, next| {
-            md += "\n";
-            md += &next;
-            md
-        })
+        .reduce(|value1, value2| format!("{value1}\n{RULE}{value2}"))
 }
 
 /// Get declaration and documentation "definition" of a single symbol.
