@@ -222,3 +222,78 @@ fn derive_macro_name_with_mixed_mappings() {
     """
     "#)
 }
+
+#[test]
+fn struct_constructor_shorthand_in_declarative_macro() {
+    test_transform_plain!(Hover, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { fie<caret>ld });
+    }
+    ", @r#"
+    source_context = """
+        let x = my_macro!(Foo { fie<caret>ld });
+    """
+    "#)
+}
+
+#[test]
+fn struct_constructor_shorthand_in_plugin_inline_macro() {
+    test_transform_plain!(Hover, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = array![Foo { fie<caret>ld }];
+    }
+    ", @r#"
+    source_context = """
+        let x = array![Foo { fie<caret>ld }];
+    """
+    highlight = """
+        let x = array![Foo { <sel>field</sel> }];
+    """
+    popover = """
+    ```cairo
+    hello::Foo
+    ```
+    ```cairo
+    field: felt252
+    ```
+
+    ---
+    ```cairo
+    let field: felt252
+    ```
+    """
+    "#)
+}
+
+#[test]
+fn struct_constructor_shorthand_in_declarative_macro_with_macros() {
+    test_transform_with_macros!(Hover, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { fie<caret>ld });
+    }
+    ", @r#"
+    source_context = """
+        let x = my_macro!(Foo { fie<caret>ld });
+    """
+    "#)
+}

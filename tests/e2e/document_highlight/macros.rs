@@ -67,3 +67,51 @@ fn declarative_macros() {
     "#
     );
 }
+
+#[test]
+fn struct_constructor_shorthand_in_declarative_macro() {
+    test_transform_plain!(DocumentHighlight, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { fie<caret>ld });
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { field });
+    }
+    ")
+}
+
+#[test]
+fn struct_constructor_shorthand_in_plugin_inline_macro() {
+    test_transform_plain!(DocumentHighlight, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = array![Foo { fie<caret>ld }];
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { <sel>field</sel>: felt252 }
+    fn main() {
+        let <sel>field</sel> = 42;
+        let x = array![Foo { <sel>field</sel> }];
+    }
+    ")
+}
