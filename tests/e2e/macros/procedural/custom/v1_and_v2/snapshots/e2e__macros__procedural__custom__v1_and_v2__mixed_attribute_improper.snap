@@ -34,17 +34,15 @@ fn added_fun_v2() {
 mapped_diagnostics:
 - url: '[ROOT_URL]test_package/src/lib.cairo'
   diagnostics:
-  - related_code: |-
-      #[improper_attribute_macro]
-      fn foo() {}
+  - related_code: '#[improper_attribute_macro]'
     diagnostic:
       range:
         start:
           line: 0
           character: 0
         end:
-          line: 1
-          character: 11
+          line: 0
+          character: 27
       severity: 1
       code: E0006
       message: |-
@@ -52,7 +50,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `improper_attribute_macro`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_improper_attribute_macro.cairo
+          uri: vfs://proc_improper_attribute_macro.cairo
           range:
             start:
               line: 1
@@ -61,17 +59,15 @@ mapped_diagnostics:
               line: 1
               character: 19
         message: Diagnostic mapped from here.
-  - related_code: |-
-      #[improper_attribute_macro]
-      fn foo() {}
+  - related_code: '#[improper_attribute_macro]'
     diagnostic:
       range:
         start:
           line: 0
           character: 0
         end:
-          line: 1
-          character: 11
+          line: 0
+          character: 27
       severity: 1
       code: E0006
       message: |-
@@ -79,7 +75,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `improper_attribute_macro`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_improper_attribute_macro.cairo
+          uri: vfs://proc_improper_attribute_macro.cairo
           range:
             start:
               line: 1
@@ -88,17 +84,15 @@ mapped_diagnostics:
               line: 1
               character: 23
         message: Diagnostic mapped from here.
-  - related_code: |-
-      #[improper_attribute_macro]
-      fn foo() {}
+  - related_code: '#[improper_attribute_macro]'
     diagnostic:
       range:
         start:
           line: 0
           character: 0
         end:
-          line: 1
-          character: 11
+          line: 0
+          character: 27
       severity: 1
       code: E2084
       message: |-
@@ -106,7 +100,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `improper_attribute_macro`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_improper_attribute_macro.cairo
+          uri: vfs://proc_improper_attribute_macro.cairo
           range:
             start:
               line: 1
@@ -131,7 +125,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `improper_attribute_macro_v2`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
+          uri: vfs://proc_improper_attribute_macro_v2.cairo
           range:
             start:
               line: 0
@@ -156,7 +150,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `improper_attribute_macro_v2`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
+          uri: vfs://proc_improper_attribute_macro_v2.cairo
           range:
             start:
               line: 0
@@ -181,7 +175,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `improper_attribute_macro_v2`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
+          uri: vfs://proc_improper_attribute_macro_v2.cairo
           range:
             start:
               line: 0
