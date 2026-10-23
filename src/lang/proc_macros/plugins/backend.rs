@@ -119,14 +119,8 @@ impl ProcMacroBackend for PmsBackend {
                 },
                 fingerprint,
             ),
-            // The host expands derives in batches, so this is only reached if someone expands one
-            // on its own. Correct only because `expand_derives` below does not call back into here.
             ExpansionKind::Derive => {
-                return self
-                    .expand_derives(db, &[(id.clone(), call_site)], item)
-                    .into_iter()
-                    .next()
-                    .expect("one result is returned for one derive");
+                unreachable!("the host expands derives through `expand_derives`")
             }
             // The host passes inline macro arguments as the item.
             ExpansionKind::Inline => get_inline_macros_expansion(
