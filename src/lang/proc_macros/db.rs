@@ -140,7 +140,7 @@ pub fn get_attribute_expansion(
 
 /// Returns the expansion of every derive applied to an item, in the order they were given.
 ///
-/// `fingerprints` holds the fingerprint of the macro providing each derive.
+/// `fingerprints` holds the fingerprints of the macros providing each derive.
 pub fn get_derive_expansions(
     db: &dyn Database,
     mut params: ExpandDeriveParams,
@@ -164,11 +164,15 @@ pub fn get_derive_expansions(
 
     request_missing_derives(db, &params, &stored);
 
-    // We don't remove the original item for derive macros, so a missing result returns nothing.
     stored
         .into_iter()
         .enumerate()
-        .map(|(index, result)| stabilizer.restore(index, result.unwrap_or_default()))
+        .map(|(index, result)| {
+            // We don't remove the original item for derive macros,
+            // so return nothing for just requested expansions.
+            let result = result.unwrap_or_default();
+            stabilizer.restore(index, result)
+        })
         .collect()
 }
 
