@@ -11,6 +11,9 @@ use crate::server::trigger;
 
 pub struct ProcMacroServerConnection {
     /// `None` once the server has been killed.
+    ///
+    /// Behind a `Mutex` so the server can be killed through a shared reference,
+    /// as the disposable diagnostics database holds another copy of the client.
     pub(super) requester: Mutex<Option<Sender<RpcRequest>>>,
     pub(super) responses: Arc<Mutex<VecDeque<RpcResponse>>>,
     pub(super) server_killed_receiver: trigger::Receiver<()>,
