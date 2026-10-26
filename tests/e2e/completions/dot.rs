@@ -726,7 +726,7 @@ fn with_already_typed_incomplete_parens_and_caret_before() {
     [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make"
+    insert_text = "make(${1:a})"
     "#);
 }
 
@@ -957,7 +957,7 @@ fn with_already_typed_incomplete_parens_and_caret_before_with_macro() {
     [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make"
+    insert_text = "make(${1:a})"
     "#);
 }
 
