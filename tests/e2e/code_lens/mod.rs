@@ -268,12 +268,7 @@ fn test_code_lens_no_scarb_package(cairo_code: &str) -> Report {
     test_code_lens_impl(
         cairo_code,
         ("cairo_project.toml", CAIRO_PROJECT_TOML_2025_12),
-        json!({
-            "cairo1": {
-                "runTestCommand": "some random template ->{{TEST_PATH}}<- string",
-                "testRunner": "custom"
-            }
-        }),
+        json!({}),
         false,
     )
 }
