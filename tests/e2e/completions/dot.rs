@@ -1268,3 +1268,26 @@ fn pub_impl_concrete_dot_completion() {
     insert_text = "sort()"
     "#);
 }
+
+#[test]
+fn struct_member_partially_typed() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    #[derive(Drop)]
+    struct S { alpha: felt252, beta: felt252 }
+    fn f(s: S) {
+        s.be<caret>
+    }
+    ",@r#"
+    caret = """
+        s.be<caret>
+    """
+
+    [[completions]]
+    completion_label = "alpha"
+    completion_label_type_info = "felt252"
+
+    [[completions]]
+    completion_label = "beta"
+    completion_label_type_info = "felt252"
+    "#);
+}

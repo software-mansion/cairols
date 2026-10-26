@@ -575,3 +575,55 @@ fn declarative_macro() {
     completion_label = "my_own_macro"
     "#);
 }
+
+#[test]
+fn partially_typed_segment() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod helper_module {
+        pub const CONST: felt252 = 0x0;
+        pub fn bar() {}
+        pub fn baz() {}
+    }
+    use helper_module::ba<caret>;
+    ",@r#"
+    caret = """
+    use helper_module::ba<caret>;
+    """
+
+    [[completions]]
+    completion_label = "CONST"
+    completion_label_type_info = "felt252"
+
+    [[completions]]
+    completion_label = "bar"
+    completion_label_type_info = "fn() -> ()"
+
+    [[completions]]
+    completion_label = "baz"
+    completion_label_type_info = "fn() -> ()"
+    "#);
+}
+
+#[test]
+fn partially_typed_segment_in_use_path_multi() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod helper_module {
+        pub const CONST: felt252 = 0x0;
+        pub fn bar() {}
+        pub fn baz() {}
+    }
+    use helper_module::{CONST, ba<caret>};
+    ",@r#"
+    caret = """
+    use helper_module::{CONST, ba<caret>};
+    """
+
+    [[completions]]
+    completion_label = "bar"
+    completion_label_type_info = "fn() -> ()"
+
+    [[completions]]
+    completion_label = "baz"
+    completion_label_type_info = "fn() -> ()"
+    "#);
+}

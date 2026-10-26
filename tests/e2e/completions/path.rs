@@ -1203,3 +1203,30 @@ fn sorting_scarb_self_fixture() -> Fixture {
         ")
     }
 }
+
+#[test]
+fn trait_items_partially_typed() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait AbMaker<T> {
+        fn alpha() -> T;
+        fn beta(c: T) -> T;
+    }
+    fn f() {
+        AbMaker::be<caret>
+    }
+    ",@r#"
+    caret = """
+        AbMaker::be<caret>
+    """
+
+    [[completions]]
+    completion_label = "alpha(...)"
+    completion_label_type_info = "fn() -> T"
+    insert_text = "alpha()"
+
+    [[completions]]
+    completion_label = "beta(...)"
+    completion_label_type_info = "fn(c: T) -> T"
+    insert_text = "beta(${1:c})"
+    "#);
+}
