@@ -1353,3 +1353,37 @@ fn method_with_existing_arguments() {
     insert_text = "do_something"
     "#);
 }
+
+#[test]
+fn trait_method_with_existing_arguments() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Foo {}
+
+    trait MyTrait {
+        fn some_method(&self) -> felt252;
+    }
+
+    impl MyTrait for Foo {
+        fn some_method(&self) -> felt252 {
+            0
+        }
+    }
+
+    fn test() {
+        let x = Foo {};
+        let y = MyTrait::<caret>(x);
+    }
+    ",
+    @r#"
+    caret = """
+        let y = MyTrait::<caret>(x);
+    """
+
+    [[completions]]
+    completion_label = "some_method(...)"
+    completion_label_type_info = "fn(self: ?) -> felt252"
+    insert_text = "some_method"
+    "#
+    );
+}
