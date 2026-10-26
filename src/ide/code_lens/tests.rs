@@ -21,7 +21,8 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast::Attribute, a
 use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::Intern;
 use cairo_language_common::CommonGroup;
-use lsp_types::{CodeLens, Command, Range, Url};
+use lsp_types::notification::ShowMessage;
+use lsp_types::{CodeLens, Command, MessageType, Range, ShowMessageParams, Url};
 
 use super::{
     AnnotatedNode, CodeLensInterface, CodeLensInternal, LSCodeLens, collect_functions_with_attrs,
@@ -64,7 +65,16 @@ impl CodeLensInterface for TestCodeLens {
         )?;
 
         let file_path = file_url.to_file_path().ok()?;
-        let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
+        let Some(cwd) =
+            state.project_controller.configs_registry().manifest_dir_for_file(&file_path)
+        else {
+            notifier.notify::<ShowMessage>(ShowMessageParams {
+                typ: MessageType::ERROR,
+                message: "Cannot run tests: could not find the Scarb package for this file."
+                    .to_string(),
+            });
+            return Some(());
+        };
         send_execute_in_terminal(state, notifier, command, cwd);
         Some(())
     }
