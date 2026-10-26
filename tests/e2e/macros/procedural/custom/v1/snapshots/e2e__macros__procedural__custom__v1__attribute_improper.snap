@@ -19,15 +19,17 @@ fn added_fun() {
 mapped_diagnostics:
 - url: '[ROOT_URL]test_package/src/lib.cairo'
   diagnostics:
-  - related_code: '#[improper_attribute_macro]'
+  - related_code: |-
+      #[improper_attribute_macro]
+      fn foo() {}
     diagnostic:
       range:
         start:
           line: 0
           character: 0
         end:
-          line: 0
-          character: 27
+          line: 1
+          character: 11
       severity: 1
       code: E0006
       message: |-
@@ -44,15 +46,17 @@ mapped_diagnostics:
               line: 0
               character: 30
         message: Diagnostic mapped from here.
-  - related_code: '#[improper_attribute_macro]'
+  - related_code: |-
+      #[improper_attribute_macro]
+      fn foo() {}
     diagnostic:
       range:
         start:
           line: 0
           character: 0
         end:
-          line: 0
-          character: 27
+          line: 1
+          character: 11
       severity: 1
       code: E0006
       message: |-
@@ -69,15 +73,17 @@ mapped_diagnostics:
               line: 0
               character: 34
         message: Diagnostic mapped from here.
-  - related_code: '#[improper_attribute_macro]'
+  - related_code: |-
+      #[improper_attribute_macro]
+      fn foo() {}
     diagnostic:
       range:
         start:
           line: 0
           character: 0
         end:
-          line: 0
-          character: 27
+          line: 1
+          character: 11
       severity: 1
       code: E2084
       message: |-

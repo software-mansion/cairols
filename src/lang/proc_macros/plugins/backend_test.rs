@@ -7,10 +7,19 @@ use scarb_proc_macro_server_types::scope::{CompilationUnitComponent, Workspace};
 use super::*;
 
 fn macro_with_hash(name: &str, cairo_name: &str, hash: u64) -> MacroWithHash {
-    MacroWithHash { name: name.to_string(), cairo_name: cairo_name.to_string(), hash }
+    MacroWithHash {
+        name: name.to_string(),
+        cairo_name: cairo_name.to_string(),
+        hash,
+        has_spans: true,
+    }
 }
 
 fn backend() -> PmsBackend {
+    backend_with_attributes(vec![macro_with_hash("some_attr", "some_attr", 1)])
+}
+
+fn backend_with_attributes(attributes: Vec<MacroWithHash>) -> PmsBackend {
     let scope = ProcMacroScope {
         workspace: Workspace { manifest_path: PathBuf::from("/tmp/Scarb.toml") },
         component: CompilationUnitComponent {
@@ -25,7 +34,7 @@ fn backend() -> PmsBackend {
                 name: "test_package".to_string(),
                 discriminator: None,
             },
-            attributes: vec![macro_with_hash("some_attr", "some_attr", 1)],
+            attributes,
             inline_macros: vec![macro_with_hash("some_inline", "some_inline", 2)],
             derives: vec![macro_with_hash("some_derive", "SomeDerive", 3)],
             executables: vec!["some_executable".to_string()],
@@ -89,6 +98,22 @@ fn expansions_of_a_different_kind_do_not_match() {
             .find_expansion(&ExpansionQuery::with_cairo_name("some_attr", ExpansionKind::Inline))
             .is_none()
     );
+}
+
+#[test]
+fn whether_expansions_have_spans_comes_from_the_server() {
+    let v1_attr = MacroWithHash { has_spans: false, ..macro_with_hash("v1_attr", "v1_attr", 4) };
+    let backend =
+        backend_with_attributes(vec![macro_with_hash("some_attr", "some_attr", 1), v1_attr]);
+    let has_spans = |name: &str| {
+        let id = backend
+            .find_expansion(&ExpansionQuery::with_cairo_name(name, ExpansionKind::Attr))
+            .expect("attribute should be found");
+        backend.has_spans(&id)
+    };
+
+    assert!(has_spans("some_attr"));
+    assert!(!has_spans("v1_attr"));
 }
 
 #[test]
