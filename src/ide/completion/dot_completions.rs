@@ -56,6 +56,8 @@ fn dot_completions_ex<'db>(
     }
 
     // If the only thing on the rhs are parentheses, make typed empty, so anything will match.
+    // `foo.<caret>()` and `foo.<caret>(x, y)` are parsed as `Expr::Tuple`,
+    // `foo.<caret>(x)` as `Expr::Parenthesized`.
     let typed = if matches!(expr.rhs(db), Expr::Tuple(_) | Expr::Parenthesized(_)) {
         "".to_string()
     } else {
