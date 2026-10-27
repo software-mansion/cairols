@@ -272,10 +272,6 @@ fn enum_pattern_partially_typed() {
     """
 
     [[completions]]
-    completion_label = "Abc"
-    completion_label_type_info = "Foo::Abc"
-
-    [[completions]]
     completion_label = "Qwerty"
     completion_label_type_info = "Foo::Qwerty"
     "#);
