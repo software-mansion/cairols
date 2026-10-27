@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use cairo_lang_defs::ids::ImportableId;
 use cairo_lang_semantic::items::us::get_use_path_segments;
 use cairo_lang_syntax::node::ast::{ItemUse, UsePathLeaf, UsePathMulti, UsePathSingle};
+use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind::{
     UsePathLeaf as UsePathLeafKind, UsePathMulti as UsePathMultiKind,
     UsePathSingle as UsePathSingleKind, UsePathStar,
@@ -16,6 +17,7 @@ use super::{helpers::item::first_segment_completion_candidates, path::path_prefi
 use crate::ide::completion::CompletionItemOrderable;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::text_matching::text_matches;
 
 pub fn use_completions<'db>(
     db: &'db AnalysisDatabase,
@@ -54,12 +56,22 @@ fn use_statement<'db>(
     use_path_single: UsePathSingle<'db>,
     ctx: &AnalysisContext<'db>,
 ) -> Option<Vec<CompletionItemOrderable>> {
+    let typed = ctx
+        .node
+        .ancestor_of_type::<UsePathLeaf>(db)
+        .map(|leaf| leaf.ident(db).identifier(db).to_string(db))
+        .unwrap_or_default();
+
     get_use_path_segments(db, UsePath::Single(use_path_single))
         .ok()
         .and_then(|segments| path_prefix_completions(db, ctx, segments.segments))
         .map(|items| {
             let excluded = already_imported_in_multi(db, ctx);
-            items.into_iter().filter(|item| !excluded.contains(&item.item.label)).collect()
+            items
+                .into_iter()
+                .filter(|item| !excluded.contains(&item.item.label))
+                .filter(|item| text_matches(&item.item.label, &typed))
+                .collect()
         })
 }
 

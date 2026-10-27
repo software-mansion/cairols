@@ -7,13 +7,14 @@ use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::ast::ExprStructCtorCall;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::text_matching::text_matches;
 use crate::lang::visibility::peek_visible_in_with_edition;
 
 /// Discovers struct members missing in the constructor call and returns completions containing
@@ -22,7 +23,20 @@ pub fn struct_constructor_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
 ) -> Vec<CompletionItemOrderable> {
-    struct_constructor_completions_ex(db, ctx).unwrap_or_default()
+    // The member name being typed at the cursor, e.g. `MyStruct { na<caret> }`.
+    let typed = ctx
+        .node
+        .ancestor_of_type::<ast::StructArgSingle>(db)
+        .map(|arg| arg.identifier(db))
+        .filter(|identifier| identifier.as_syntax_node() == ctx.node)
+        .map(|identifier| identifier.text(db).to_string(db))
+        .unwrap_or_default();
+
+    struct_constructor_completions_ex(db, ctx)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|item| text_matches(&item.item.label, &typed))
+        .collect()
 }
 
 fn struct_constructor_completions_ex<'db>(
