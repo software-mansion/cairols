@@ -103,7 +103,7 @@ impl ProcMacroClient {
 
     /// Kills the proc macro server and waits for it to exit.
     pub(super) fn kill_proc_macro_server(&self) {
-        // Dropping this causes the thread responsible for writing requests to PMS to finish.
+        // Taking and dropping the requester causes the thread responsible for writing requests to PMS to finish.
         // Consequently, the handler to PMS' stdin will be dropped.
         // Due to the way PMS is implemented, this will result in its death.
         drop(self.connection.requester.lock().unwrap().take());
