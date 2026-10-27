@@ -37,7 +37,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `improper_attribute_macro_v2`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
+          uri: vfs://proc_improper_attribute_macro_v2.cairo
           range:
             start:
               line: 0
@@ -62,7 +62,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `improper_attribute_macro_v2`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
+          uri: vfs://proc_improper_attribute_macro_v2.cairo
           range:
             start:
               line: 0
@@ -87,7 +87,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `improper_attribute_macro_v2`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_improper_attribute_macro_v2.cairo
+          uri: vfs://proc_improper_attribute_macro_v2.cairo
           range:
             start:
               line: 0
