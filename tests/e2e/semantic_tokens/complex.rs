@@ -1,5 +1,7 @@
+use indoc::indoc;
 use lsp_types::SemanticTokens;
 
+use crate::support::fixture;
 use crate::support::insta::test_transform_plain;
 
 #[test]
@@ -61,7 +63,25 @@ fn complex() {
 
 #[test]
 fn local_variable_shadows_crate_name() {
-    test_transform_plain!(SemanticTokens, r#"
+    let fixture = fixture! {
+        "Scarb.toml" => indoc! {r#"
+            [package]
+            name = "hello"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [dependencies]
+            snforge_std = { path = "snforge_std" }
+        "#},
+        "snforge_std/Scarb.toml" => indoc! {r#"
+            [package]
+            name = "snforge_std"
+            version = "0.1.0"
+            edition = "2025_12"
+        "#},
+        "snforge_std/src/lib.cairo" => "",
+    };
+    test_transform_plain!(SemanticTokens, fixture, r#"
     #[test]
     fn test() {
         let snforge_std = 10;
