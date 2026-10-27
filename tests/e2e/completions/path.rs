@@ -1206,11 +1206,6 @@ fn trait_items_partially_typed() {
     """
 
     [[completions]]
-    completion_label = "alpha(...)"
-    completion_label_type_info = "fn() -> T"
-    insert_text = "alpha()"
-
-    [[completions]]
     completion_label = "beta(...)"
     completion_label_type_info = "fn(c: T) -> T"
     insert_text = "beta(${1:c})"
