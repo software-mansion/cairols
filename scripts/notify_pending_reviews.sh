@@ -50,6 +50,24 @@ software-mansion/starknet-jvm
 software-mansion/starknet.swift
 software-mansion/pathfinder
 software-mansion/pathfinder-infra
+software-mansion/cairo-annotations
+software-mansion/cairo-debugger
+software-mansion-labs/cairovm.codes
+software-mansion-labs/cairovm.codes-server
+software-mansion-labs/cairo-intro
+software-mansion-labs/crypto-cpp
+software-mansion/starknet-validator-attestation
+software-mansion-labs/starknet-jsonrpc-codegen
+software-mansion/starkloupe-infra
+software-mansion-labs/starkloupe-app
+software-mansion-labs/starkloupe-server
+software-mansion-labs/starkloupe-docs
+software-mansion-labs/starknet-foundry-starkloupe
+software-mansion/starkstream-infra
+software-mansion-labs/starkstream-dna
+software-mansion-labs/starkstream-web
+software-mansion-labs/starkstream-documentation
+software-mansion-labs/apibara-typescript-sdk
 '
 
 DEFAULT_TEAMS='
