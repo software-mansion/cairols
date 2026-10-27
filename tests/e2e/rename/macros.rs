@@ -256,6 +256,7 @@ fn struct_constructor_shorthand_in_plugin_inline_macro() {
     ")
 }
 
+// FIXME(#1431). Rename, goto definition and references don't work properly in declarative macros.
 #[test]
 fn struct_constructor_shorthand_in_declarative_macro_with_macros() {
     test_transform_with_macros!(Rename, r"
