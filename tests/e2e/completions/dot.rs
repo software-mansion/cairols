@@ -1711,10 +1711,6 @@ fn struct_member_partially_typed() {
     """
 
     [[completions]]
-    completion_label = "alpha"
-    completion_label_type_info = "felt252"
-
-    [[completions]]
     completion_label = "beta"
     completion_label_type_info = "felt252"
     "#);
