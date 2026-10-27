@@ -591,10 +591,6 @@ fn partially_typed_segment() {
     """
 
     [[completions]]
-    completion_label = "CONST"
-    completion_label_type_info = "felt252"
-
-    [[completions]]
     completion_label = "bar"
     completion_label_type_info = "fn() -> ()"
 

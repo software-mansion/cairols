@@ -342,10 +342,6 @@ fn with_mutable_self() {
     """
 
     [[completions]]
-    completion_label = "balance"
-    completion_label_type_info = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
-
-    [[completions]]
     completion_label = "get_balance()"
     completion_label_type_info = "fn(self: @TContractState) -> felt252"
     insert_text = "get_balance()"

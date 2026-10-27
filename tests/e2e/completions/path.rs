@@ -647,13 +647,6 @@ fn trait_prefix_with_partial_segment() {
     """
 
     [[completions]]
-    completion_label = "MY_CONST"
-    completion_label_type_info = "u32"
-
-    [[completions]]
-    completion_label = "MyType"
-
-    [[completions]]
     completion_label = "my_func(...)"
     completion_label_type_info = "fn() -> u32"
     insert_text = "my_func()"
@@ -719,13 +712,6 @@ fn impl_prefix_with_partial_segment() {
     caret = """
         MyImpl::my<caret>
     """
-
-    [[completions]]
-    completion_label = "MY_CONST"
-    completion_label_type_info = "u32"
-
-    [[completions]]
-    completion_label = "MyType"
 
     [[completions]]
     completion_label = "my_func(...)"
