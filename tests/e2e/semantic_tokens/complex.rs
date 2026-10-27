@@ -1,5 +1,7 @@
+use indoc::indoc;
 use lsp_types::SemanticTokens;
 
+use crate::support::fixture;
 use crate::support::insta::test_transform_plain;
 
 #[test]
@@ -57,6 +59,41 @@ fn complex() {
         }
     }
     ")
+}
+
+#[test]
+fn local_variable_shadows_crate_name() {
+    let fixture = fixture! {
+        "Scarb.toml" => indoc! {r#"
+            [package]
+            name = "hello"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [dependencies]
+            snforge_std = { path = "snforge_std" }
+        "#},
+        "snforge_std/Scarb.toml" => indoc! {r#"
+            [package]
+            name = "snforge_std"
+            version = "0.1.0"
+            edition = "2025_12"
+        "#},
+        "snforge_std/src/lib.cairo" => "",
+    };
+    test_transform_plain!(SemanticTokens, fixture, r#"
+    #[test]
+    fn test() {
+        let snforge_std = 10;
+        assert(snforge_std == 10, '');
+    }
+    "#, @r#"
+    #[<token=decorator>test</token>]
+    <token=keyword>fn</token> <token=function>test</token>() {
+        <token=keyword>let</token> <token=variable>snforge_std</token> = <token=number>10</token>;
+        <token=function>assert</token>(<token=variable>snforge_std</token> <token=operator>==</token> <token=number>10</token>, <token=string>''</token>);
+    }
+    "#)
 }
 
 #[test]
