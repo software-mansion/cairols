@@ -206,3 +206,140 @@ fn top_level_declarative_macro_on_usage() {
     <sel>declare_mod</sel>!(modzik);
     ")
 }
+
+#[test]
+fn struct_constructor_shorthand_in_declarative_macro() {
+    test_transform_plain!(References, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { fie<caret>ld });
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { field });
+    }
+    ")
+}
+
+#[test]
+fn struct_member_via_definition_with_shorthand_in_declarative_macro() {
+    test_transform_plain!(References, r"
+    #[derive(Drop)]
+    struct Foo { fie<caret>ld: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { field });
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { <sel=declaration>field</sel>: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    fn main() {
+        let field = 42;
+        let x = my_macro!(<sel>Foo</sel> { field });
+    }
+    ")
+}
+
+#[test]
+fn var_via_binding_with_shorthand_in_declarative_macro() {
+    test_transform_plain!(References, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    fn main() {
+        let fie<caret>ld = 42;
+        let x = my_macro!(Foo { field });
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    fn main() {
+        let <sel=declaration>field</sel> = 42;
+        let x = my_macro!(<sel>Foo</sel> { field });
+    }
+    ")
+}
+
+#[test]
+fn struct_constructor_shorthand_in_plugin_inline_macro() {
+    test_transform_plain!(References, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = array![Foo { fie<caret>ld }];
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let <sel=declaration>field</sel> = 42;
+        let x = array![Foo { <sel>field</sel> }];
+    }
+    ")
+}
+
+#[test]
+fn struct_constructor_shorthand_in_declarative_macro_with_macros() {
+    test_transform_with_macros!(References, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { fie<caret>ld });
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { field });
+    }
+    ")
+}

@@ -27,8 +27,19 @@ pub fn definition<'db>(
     file_id: FileId<'db>,
     importables: &OrderedHashMap<ImportableId<'db>, String>,
 ) -> Option<String> {
-    let search = SymbolSearch::find_definition(db, identifier)?;
+    SymbolSearch::find_definitions(db, identifier)
+        .into_iter()
+        .filter_map(|search| symbol_definition(db, search, file_id, importables))
+        .reduce(|value1, value2| format!("{value1}\n{RULE}{value2}"))
+}
 
+/// Get declaration and documentation "definition" of a single symbol.
+fn symbol_definition<'db>(
+    db: &'db AnalysisDatabase,
+    search: SymbolSearch<'db>,
+    file_id: FileId<'db>,
+    importables: &OrderedHashMap<ImportableId<'db>, String>,
+) -> Option<String> {
     let md = match &search.def {
         SymbolDef::Item(item) => {
             let mut md = String::new();

@@ -77,6 +77,7 @@ pub fn find_definition<'db>(
         .or_else(|| try_top_level_declarative_inline_macro(db, identifier))
         .or_else(|| try_submodule_name(db, identifier))
         .or_else(|| try_member(db, identifier, lookup_items))
+        .or_else(|| try_shorthand_value(db, identifier, lookup_items, resolver_data))
         .or_else(|| try_member_from_constructor(db, identifier, lookup_items))
         .or_else(|| try_member_declaration(db, identifier))
         .or_else(|| try_variant_declaration(db, identifier))
@@ -88,6 +89,16 @@ pub fn find_definition<'db>(
         .or_else(|| try_generic_arg(db, identifier, lookup_items))
         .or_else(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))
         .or_else(|| lookup_item_name(db, identifier, lookup_items))
+}
+
+pub fn find_shorthand<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+) -> Option<(ResolvedItem<'db>, ResolvedItem<'db>)> {
+    let label = try_shorthand_label(db, identifier, lookup_items)?;
+    let value = try_shorthand_value(db, identifier, lookup_items, &mut None)?;
+    Some((label, value))
 }
 
 pub fn find_declaration<'db>(
@@ -403,6 +414,38 @@ fn try_member_from_constructor<'db>(
         .find_map(|(_, id)| struct_member_name.eq(&id.name(db)).then_some(*id))?;
 
     Some(ResolvedItem::Member(member_id))
+}
+
+/// Resolves the label of shorthand syntax: the struct member that receives the value,
+/// e.g. the member `x` in `Struct { x }`.
+fn try_shorthand_label<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+) -> Option<ResolvedItem<'db>> {
+    is_shorthand(db, identifier)
+        .then(|| try_member_from_constructor(db, identifier, lookup_items))?
+}
+
+/// Resolves the value of shorthand syntax, e.g. the variable `x` in `Struct { x }`.
+fn try_shorthand_value<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+    lookup_items: &[LookupItemId<'db>],
+    resolver_data: &mut Option<ResolverData<'db>>,
+) -> Option<ResolvedItem<'db>> {
+    is_shorthand(db, identifier)
+        .then(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))?
+}
+
+/// Checks if the identifier is shorthand syntax, which refers to both a label and a value,
+/// e.g. `Struct { <ident> }`.
+fn is_shorthand<'db>(db: &'db AnalysisDatabase, identifier: &ast::TerminalIdentifier<'db>) -> bool {
+    identifier
+        .as_syntax_node()
+        .parent(db)
+        .and_then(|parent| ast::StructArgSingle::cast(db, parent))
+        .is_some_and(|arg| matches!(arg.arg_expr(db), ast::OptionStructArgExpr::Empty(_)))
 }
 
 /// Resolve the right-hand side of access member expression e.g. `self.<ident>`.

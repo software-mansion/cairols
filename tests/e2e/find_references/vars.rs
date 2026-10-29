@@ -249,3 +249,41 @@ fn var_via_binding_with_macros() {
     }
     ")
 }
+
+#[test]
+fn var_via_binding_with_struct_shorthand() {
+    test_transform_plain!(References, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let fie<caret>ld = 42;
+        let x = Foo { field };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let <sel=declaration>field</sel> = 42;
+        let x = Foo { <sel>field</sel> };
+    }
+    ")
+}
+
+#[test]
+fn var_via_struct_shorthand() {
+    test_transform_plain!(References, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { fie<caret>ld };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let <sel=declaration>field</sel> = 42;
+        let x = Foo { <sel>field</sel> };
+    }
+    ")
+}
