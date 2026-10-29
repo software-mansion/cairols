@@ -288,12 +288,9 @@ fn impl_alias_at_path<'db>(
     // Nothing typed yet, the cursor is right after `=`.
     let is_after_eq = ctx.node == impl_alias.eq(db).as_syntax_node();
     // Generic args of the aliased impl (e.g. `impl A = B<<caret>>;`) are not impls.
-    let impl_path = impl_alias.impl_path(db).as_syntax_node();
-    let is_on_impl_path = ctx
-        .node
-        .ancestors_with_self(db)
-        .find(|node| *node == impl_path || node.kind(db) == SyntaxKind::GenericArgs)
-        .is_some_and(|node| node == impl_path);
+    let is_in_generic_args = ctx.node.ancestor_of_kind(db, SyntaxKind::GenericArgs).is_some();
+    let is_on_impl_path = !is_in_generic_args
+        && impl_alias.impl_path(db).as_syntax_node().is_ancestor_or_self(db, &ctx.node);
 
     (is_after_eq || is_on_impl_path).then_some(impl_alias)
 }
