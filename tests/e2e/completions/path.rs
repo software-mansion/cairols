@@ -1245,3 +1245,24 @@ fn function_without_arguments() {
     insert_text = "my_function(${1:a}, ${2:b})"
     "#);
 }
+
+#[test]
+fn function_with_unclosed_arguments() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    fn my_function(a: felt252, b: felt252) -> felt252 { a + b }
+
+    fn a() {
+        my_func<caret>(1
+    }
+    ",@r#"
+    caret = """
+        my_func<caret>(1
+    """
+
+    [[completions]]
+    completion_label = "my_function(...)"
+    completion_label_path = "(use my_function)"
+    completion_label_type_info = "fn(a: felt252, b: felt252) -> felt252"
+    insert_text = "my_function"
+    "#);
+}

@@ -726,7 +726,7 @@ fn with_already_typed_incomplete_parens_and_caret_before() {
     [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make(${1:a})"
+    insert_text = "make"
     "#);
 }
 
@@ -957,7 +957,7 @@ fn with_already_typed_incomplete_parens_and_caret_before_with_macro() {
     [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make(${1:a})"
+    insert_text = "make"
     "#);
 }
 
@@ -1386,4 +1386,136 @@ fn trait_method_with_existing_arguments() {
     insert_text = "some_method"
     "#
     );
+}
+
+#[test]
+fn method_after_dot_with_unclosed_empty_arguments() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    #[generate_trait]
+    impl FooImpl of FooTrait {
+        fn do_something(self: @Foo, x: felt252) -> felt252 { x }
+    }
+
+    struct Foo {}
+
+    fn test() {
+        let foo = Foo {};
+        foo.<caret>(
+    }
+    ",
+    @r#"
+    caret = """
+        foo.<caret>(
+    """
+
+    [[completions]]
+    completion_label = "do_something()"
+    completion_label_type_info = "fn(self: @Foo, x: felt252) -> felt252"
+    insert_text = "do_something"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into"
+    "#);
+}
+
+#[test]
+fn method_after_dot_with_unclosed_arguments() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    #[generate_trait]
+    impl FooImpl of FooTrait {
+        fn do_something(self: @Foo, x: felt252) -> felt252 { x }
+    }
+
+    struct Foo {}
+
+    fn test() {
+        let foo = Foo {};
+        foo.<caret>(5
+    }
+    ",
+    @r#"
+    caret = """
+        foo.<caret>(5
+    """
+
+    [[completions]]
+    completion_label = "do_something()"
+    completion_label_type_info = "fn(self: @Foo, x: felt252) -> felt252"
+    insert_text = "do_something"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into"
+    "#);
+}
+
+#[test]
+fn method_with_unclosed_arguments() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    #[generate_trait]
+    impl FooImpl of FooTrait {
+        fn do_something(self: @Foo, x: felt252) -> felt252 { x }
+    }
+
+    struct Foo {}
+
+    fn test() {
+        let foo = Foo {};
+        foo.do_som<caret>(5
+    }
+    ",
+    @r#"
+    caret = """
+        foo.do_som<caret>(5
+    """
+
+    [[completions]]
+    completion_label = "do_something()"
+    completion_label_type_info = "fn(self: @Foo, x: felt252) -> felt252"
+    insert_text = "do_something"
+    "#);
 }

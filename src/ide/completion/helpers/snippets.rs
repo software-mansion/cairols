@@ -146,7 +146,7 @@ fn has_argument_list<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>)
         .node
         .ancestor_of_type::<ExprPath>(db)
         .and_then(|path| path.as_syntax_node().parent_of_type::<ExprFunctionCall>(db))
-        .is_some_and(|call| !call.arguments(db).rparen(db).as_syntax_node().contains_missing(db));
+        .is_some();
 
     // With no method name typed after the dot, the parentheses become the rhs of the dot
     // expression: `foo.<caret>()` and `foo.<caret>(x, y)` are parsed as `Expr::Tuple`,
