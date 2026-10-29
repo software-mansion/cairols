@@ -108,7 +108,7 @@ impl TypedSnippet {
     /// fn xyz(a: u8, b: ByteArray) -> felt252 {}
     /// ```
     /// returns a string "xyz({$1:a}, {$2:b})".
-    /// If the call already has an argument list (e.g. `xy<caret>(1, 2)`), returns only "xyz",
+    /// If the call is already started (e.g. `xy<caret>(` or `xy<caret>(1, 2)`), returns only "xyz",
     /// so the existing parentheses and arguments are left untouched.
     pub fn function_call<'db>(
         db: &'db AnalysisDatabase,
@@ -119,7 +119,7 @@ impl TypedSnippet {
     ) -> TypedSnippet {
         let type_hint = Some(generate_abbreviated_signature(db, signature, trait_id));
 
-        if has_argument_list(db, ctx) {
+        if is_call_already_started(db, ctx) {
             return TypedSnippet { lsp_snippet: function_name.to_string(), type_hint };
         }
 
@@ -139,8 +139,10 @@ impl TypedSnippet {
     }
 }
 
-/// Checks if the function being completed already has an argument list after it.
-fn has_argument_list<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>) -> bool {
+/// Checks if the function being completed is already followed by an opening parenthesis,
+/// i.e. the call expression has already been started, regardless of whether it has arguments
+/// or a closing parenthesis: `fo<caret>(`, `fo<caret>()`, `fo<caret>(1, 2)`, `foo.<caret>(x)`.
+fn is_call_already_started<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>) -> bool {
     // `fo<caret>(1, 2)` or `foo.ba<caret>(1, 2)`.
     let is_function_of_call = ctx
         .node
