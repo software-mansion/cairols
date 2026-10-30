@@ -581,3 +581,27 @@ fn type_bound_user_trait() {
     """]
     "#);
 }
+
+#[test]
+fn self_completions_partially_typed() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait AbMaker<T> {
+        fn alpha() -> T;
+        fn beta(c: T) -> T;
+    }
+    impl AbMakerFelt252 of AbMaker<felt252> {
+        fn alpha() -> felt252 {
+            Self::be<caret>
+        }
+    }
+    ",@r#"
+    caret = """
+            Self::be<caret>
+    """
+
+    [[completions]]
+    completion_label = "beta(...)"
+    completion_label_type_info = "fn(c: T) -> T"
+    insert_text = "beta(${1:c})"
+    "#);
+}

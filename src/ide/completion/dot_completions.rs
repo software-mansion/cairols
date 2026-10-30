@@ -102,8 +102,11 @@ fn dot_completions_ex<'db>(
         // Find members of the type.
         let (_, long_ty) = peel_snapshots(db, ty);
         if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
-            db.concrete_struct_members(concrete_struct_id).ok()?.iter().for_each(
-                |(name, member)| {
+            db.concrete_struct_members(concrete_struct_id)
+                .ok()?
+                .iter()
+                .filter(|(name, _)| text_matches(name.to_string(db), &typed))
+                .for_each(|(name, member)| {
                     let completion = CompletionItemOrderable {
                         item: CompletionItem {
                             label: name.to_string(db),
@@ -120,8 +123,7 @@ fn dot_completions_ex<'db>(
                         relevance: CompletionRelevance::High,
                     };
                     completions.push(completion);
-                },
-            );
+                });
         }
     }
     Some(completions)

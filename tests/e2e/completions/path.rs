@@ -647,13 +647,6 @@ fn trait_prefix_with_partial_segment() {
     """
 
     [[completions]]
-    completion_label = "MY_CONST"
-    completion_label_type_info = "u32"
-
-    [[completions]]
-    completion_label = "MyType"
-
-    [[completions]]
     completion_label = "my_func(...)"
     completion_label_type_info = "fn() -> u32"
     insert_text = "my_func()"
@@ -719,13 +712,6 @@ fn impl_prefix_with_partial_segment() {
     caret = """
         MyImpl::my<caret>
     """
-
-    [[completions]]
-    completion_label = "MY_CONST"
-    completion_label_type_info = "u32"
-
-    [[completions]]
-    completion_label = "MyType"
 
     [[completions]]
     completion_label = "my_func(...)"
@@ -1202,4 +1188,26 @@ fn sorting_scarb_self_fixture() -> Fixture {
             pub use merge_sort::MergeSort;
         ")
     }
+}
+
+#[test]
+fn trait_items_partially_typed() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait AbMaker<T> {
+        fn alpha() -> T;
+        fn beta(c: T) -> T;
+    }
+    fn f() {
+        AbMaker::be<caret>
+    }
+    ",@r#"
+    caret = """
+        AbMaker::be<caret>
+    """
+
+    [[completions]]
+    completion_label = "beta(...)"
+    completion_label_type_info = "fn(c: T) -> T"
+    insert_text = "beta(${1:c})"
+    "#);
 }

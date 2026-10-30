@@ -735,3 +735,22 @@ fn no_initialization_completion_for_types_in_closures() {
     """]
     "#);
 }
+
+#[test]
+fn constructor_member_partially_typed() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    #[derive(Drop)]
+    struct S { alpha: felt252, beta: felt252 }
+    fn f() {
+        let s = S { be<caret> };
+    }
+    ",@r#"
+    caret = """
+        let s = S { be<caret> };
+    """
+
+    [[completions]]
+    completion_label = "beta"
+    completion_label_type_info = "felt252"
+    "#);
+}

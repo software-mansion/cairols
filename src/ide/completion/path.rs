@@ -35,6 +35,7 @@ use crate::ide::completion::helpers::snippets::TypedSnippet;
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::text_matching::text_matches;
 use crate::lang::visibility::peek_visible_in_with_edition;
 
 /// Proposes importable items whose full path ends with the typed text.
@@ -117,16 +118,14 @@ pub fn path_suffix_completions<'db>(
 
     // In expression blocks, when the cursor is after `::` with non-empty preceding segments
     // (including when the user has already typed a partial segment), propose bare item names
-    // from traits/impls whose path matches. The LSP client handles prefix filtering.
+    // from traits/impls whose path matches.
     if ctx.node.ancestor_of_kind(db, SyntaxKind::ExprBlock).is_some() && !typed_segments.is_empty()
     {
-        extend_with_trait_items_for_matching_paths(
-            db,
-            ctx,
-            &importables,
-            &typed_segments,
-            current_crate,
-            &mut result,
+        let last_typed_segment = last_typed_segment.to_string(db);
+        result.extend(
+            trait_items_for_matching_paths(db, ctx, &importables, &typed_segments, current_crate)
+                .into_iter()
+                .filter(|completion| text_matches(&completion.item.label, &last_typed_segment)),
         );
     }
 
@@ -254,7 +253,7 @@ pub fn path_prefix_completions<'db>(
 ///
 /// Returns `None` when neither condition holds (i.e. there is no path at the cursor and the
 /// context is not an empty body).
-fn resolve_typed_segments<'db>(
+pub fn resolve_typed_segments<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
 ) -> Option<(Vec<SmolStrId<'db>>, SmolStrId<'db>)> {
@@ -418,16 +417,17 @@ fn trait_items_prefix_completions<'db>(
     functions.chain(types).chain(constants).collect()
 }
 
-/// For each trait or impl in `importables` whose path ends with `typed_segments`, extends
-/// `result` with completion items for all of that trait's items (functions, types, constants).
-fn extend_with_trait_items_for_matching_paths<'db>(
+/// For each trait or impl in `importables` whose path ends with `typed_segments`, returns
+/// completion items for all of that trait's items (functions, types, constants).
+fn trait_items_for_matching_paths<'db>(
     db: &'db AnalysisDatabase,
     ctx: &'db AnalysisContext<'db>,
     importables: &OrderedHashMap<ImportableId<'db>, String>,
     typed_segments: &[SmolStrId<'db>],
     current_crate: CrateId<'db>,
-    result: &mut Vec<CompletionItemOrderable>,
-) {
+) -> Vec<CompletionItemOrderable> {
+    let mut result = vec![];
+
     for (importable, item_path) in importables.iter() {
         let trait_id = match importable {
             ImportableId::Trait(trait_id) => *trait_id,
@@ -463,4 +463,6 @@ fn extend_with_trait_items_for_matching_paths<'db>(
             crate_id,
         ));
     }
+
+    result
 }

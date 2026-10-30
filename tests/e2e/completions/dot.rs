@@ -342,10 +342,6 @@ fn with_mutable_self() {
     """
 
     [[completions]]
-    completion_label = "balance"
-    completion_label_type_info = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
-
-    [[completions]]
     completion_label = "get_balance()"
     completion_label_type_info = "fn(self: @TContractState) -> felt252"
     insert_text = "get_balance()"
@@ -1266,5 +1262,24 @@ fn pub_impl_concrete_dot_completion() {
     completion_label = "sort()"
     completion_label_type_info = "fn(self: Foo) -> felt252"
     insert_text = "sort()"
+    "#);
+}
+
+#[test]
+fn struct_member_partially_typed() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    #[derive(Drop)]
+    struct S { alpha: felt252, beta: felt252 }
+    fn f(s: S) {
+        s.be<caret>
+    }
+    ",@r#"
+    caret = """
+        s.be<caret>
+    """
+
+    [[completions]]
+    completion_label = "beta"
+    completion_label_type_info = "felt252"
     "#);
 }
