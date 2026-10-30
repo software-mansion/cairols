@@ -362,7 +362,7 @@ fn trait_items_prefix_completions<'db>(
             let name_str = name.to_string(db);
             let signature = db.trait_function_signature(trait_function_id).ok();
             let snippet = signature
-                .map(|sig| TypedSnippet::function_call(db, &name_str, sig, Some(trait_id)));
+                .map(|sig| TypedSnippet::function_call(db, ctx, &name_str, sig, Some(trait_id)));
             let label = if snippet.is_some() { format!("{}(...)", name_str) } else { name_str };
             CompletionItemOrderable {
                 item: CompletionItem {
