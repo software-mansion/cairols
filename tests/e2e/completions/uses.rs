@@ -623,3 +623,52 @@ fn partially_typed_segment_in_use_path_multi() {
     completion_label_type_info = "fn() -> ()"
     "#);
 }
+
+#[test]
+fn partially_typed_first_segment_before_other_segment() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod foo {
+        pub fn bar() {}
+    }
+    use fo<caret>::bar;
+    ",@r#"
+    caret = """
+    use fo<caret>::bar;
+    """
+    completions = []
+    "#);
+}
+
+#[test]
+fn partially_typed_middle_segment() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod helper_module {
+        mod foo {
+            pub fn bar() {}
+        }
+    }
+    use helper_module::fo<caret>::bar;
+    ",@r#"
+    caret = """
+    use helper_module::fo<caret>::bar;
+    """
+    completions = []
+    "#);
+}
+
+#[test]
+fn partially_typed_segment_before_other_segment_in_use_path_multi() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod helper_module {
+        mod foo {
+            pub fn bar() {}
+        }
+    }
+    use helper_module::{fo<caret>::bar};
+    ",@r#"
+    caret = """
+    use helper_module::{fo<caret>::bar};
+    """
+    completions = []
+    "#);
+}
