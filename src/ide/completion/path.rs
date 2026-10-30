@@ -14,7 +14,7 @@ use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::{ExprPath, ItemImpl, ItemImplAlias, PathSegment};
+use cairo_lang_syntax::node::ast::{ItemImpl, ItemImplAlias, PathSegment};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::OptionFrom;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -26,12 +26,12 @@ use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use crate::ide::completion::helpers::formatting::{
     format_enum_variant, generate_abbreviated_signature,
 };
-use crate::ide::completion::helpers::is_empty_body_context;
 use crate::ide::completion::helpers::item::{
     CompletionItemOrderable, ImportableCompletionItem, ImportableCompletionItemHashable,
     get_item_relevance,
 };
 use crate::ide::completion::helpers::snippets::TypedSnippet;
+use crate::ide::completion::resolve_typed_segments;
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
@@ -256,28 +256,6 @@ pub fn path_prefix_completions<'db>(
     })
 }
 
-/// Returns the typed path segments and the last (potentially partial) segment, falling back to
-/// empty values when the cursor is in an empty body context (no path typed yet).
-/// `is_on_impl_alias_path` enables the same fallback right after `impl A =`.
-///
-/// Returns `None` when neither condition holds (i.e. there is no path at the cursor and the
-/// context is not an empty body).
-pub fn resolve_typed_segments<'db>(
-    db: &'db AnalysisDatabase,
-    ctx: &AnalysisContext<'db>,
-    is_on_impl_alias_path: bool,
-) -> Option<(Vec<SmolStrId<'db>>, SmolStrId<'db>)> {
-    match get_typed_text_and_last_segment(db, ctx) {
-        (Some(typed_segments), Some(last_typed_segment)) => {
-            Some((typed_segments, last_typed_segment))
-        }
-        _ if is_empty_body_context(db, &ctx.node) || is_on_impl_alias_path => {
-            Some((vec![], SmolStrId::from(db, "")))
-        }
-        _ => None,
-    }
-}
-
 /// Returns the impl alias whose aliased path is under the cursor, e.g. `impl A = <caret>;`.
 fn impl_alias_at_path<'db>(
     db: &'db AnalysisDatabase,
@@ -325,44 +303,6 @@ fn get_importables_for_path_suffix_completions<'db>(
     } else {
         None
     }
-}
-
-fn get_typed_text_and_last_segment<'db>(
-    db: &'db AnalysisDatabase,
-    ctx: &AnalysisContext<'db>,
-) -> (Option<Vec<SmolStrId<'db>>>, Option<SmolStrId<'db>>) {
-    let typed_text = match ctx
-        .node
-        .ancestor_of_type::<ExprPath>(db)
-        .map(|path| path.segments(db).elements(db).collect_vec())
-    {
-        Some(segments) if !segments.is_empty() => segments,
-        _ => return (None, None),
-    };
-
-    let mut typed_text_as_smol_str = typed_text
-        .into_iter()
-        .map(|segment| segment.as_syntax_node())
-        // Allow proposing items in the middle of the existing path by filtering out the nodes which lie after the cursor:
-        .filter_map(|segment_node| {
-            if segment_node.offset(db) <= ctx.node.offset(db) {
-                Some(segment_node.get_text_without_trivia(db))
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<_>>();
-
-    // After `::`, we want to propose all importables available at the preceding path.
-    let last_typed_segment: SmolStrId<'db> = if ctx.node.kind(db) == SyntaxKind::TerminalColonColon
-    {
-        SmolStrId::from(db, "")
-    } else {
-        // Otherwise, the last segment is a partial identifier we want to complete using fuzzy search.
-        typed_text_as_smol_str.pop().expect("typed path should not be empty")
-    };
-
-    (Some(typed_text_as_smol_str), Some(last_typed_segment))
 }
 
 fn module_item_completion_detail<'db>(
