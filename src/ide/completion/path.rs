@@ -14,7 +14,7 @@ use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::{ExprPath, PathSegment};
+use cairo_lang_syntax::node::ast::{ExprPath, ItemImpl, ItemImplAlias, PathSegment};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::OptionFrom;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -52,7 +52,7 @@ pub fn importable_path_suffix_completions<'db>(
     else {
         return Default::default();
     };
-    let Some((typed_segments, last_typed_segment)) = resolve_typed_segments(db, ctx) else {
+    let Some((typed_segments, last_typed_segment)) = resolve_typed_segments(db, ctx, false) else {
         return Default::default();
     };
     let current_crate = ctx.module_id.owning_crate(db);
@@ -83,6 +83,8 @@ pub fn importable_path_suffix_completions<'db>(
 /// - **Trait/impl item expansion** (expression blocks only): when the cursor is directly after
 ///   `::`, e.g. `MyTrait::<caret>`, proposes bare `item_name` completions for all items of
 ///   traits/impls whose path matches the typed prefix.
+///
+/// On the aliased path of an impl alias, only impls and the modules leading to them are proposed.
 pub fn path_suffix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &'db AnalysisContext<'db>,
@@ -93,13 +95,19 @@ pub fn path_suffix_completions<'db>(
     else {
         return Default::default();
     };
-    let Some((typed_segments, last_typed_segment)) = resolve_typed_segments(db, ctx) else {
+    let impl_alias = impl_alias_at_path(db, ctx);
+    let Some((typed_segments, last_typed_segment)) =
+        resolve_typed_segments(db, ctx, impl_alias.is_some())
+    else {
         return Default::default();
     };
     let current_crate = ctx.module_id.owning_crate(db);
 
     let mut result: Vec<CompletionItemOrderable> = importables
         .iter()
+        .filter(|(importable, _)| {
+            impl_alias.as_ref().is_none_or(|alias| is_allowed_in_impl_alias(db, importable, alias))
+        })
         .filter_map(|(importable, path_str)| {
             ImportableCompletionItem::get_completion_item_for_importable(
                 db,
@@ -251,19 +259,57 @@ pub fn path_prefix_completions<'db>(
 
 /// Returns the typed path segments and the last (potentially partial) segment, falling back to
 /// empty values when the cursor is in an empty body context (no path typed yet).
+/// `is_on_impl_alias_path` enables the same fallback right after `impl A =`.
 ///
 /// Returns `None` when neither condition holds (i.e. there is no path at the cursor and the
 /// context is not an empty body).
 fn resolve_typed_segments<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
+    is_on_impl_alias_path: bool,
 ) -> Option<(Vec<SmolStrId<'db>>, SmolStrId<'db>)> {
     match get_typed_text_and_last_segment(db, ctx) {
         (Some(typed_segments), Some(last_typed_segment)) => {
             Some((typed_segments, last_typed_segment))
         }
-        _ if is_empty_body_context(db, &ctx.node) => Some((vec![], SmolStrId::from(db, ""))),
+        _ if is_empty_body_context(db, &ctx.node) || is_on_impl_alias_path => {
+            Some((vec![], SmolStrId::from(db, "")))
+        }
         _ => None,
+    }
+}
+
+/// Returns the impl alias whose aliased path is under the cursor, e.g. `impl A = <caret>;`.
+fn impl_alias_at_path<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+) -> Option<ItemImplAlias<'db>> {
+    let impl_alias = ctx.node.ancestor_of_type::<ItemImplAlias>(db)?;
+    // Nothing typed yet, the cursor is right after `=`.
+    let is_after_eq = ctx.node == impl_alias.eq(db).as_syntax_node();
+    // Generic args of the aliased impl (e.g. `impl A = B<<caret>>;`) are not impls.
+    let is_in_generic_args = ctx.node.ancestor_of_kind(db, SyntaxKind::GenericArgs).is_some();
+    let is_on_impl_path = !is_in_generic_args
+        && impl_alias.impl_path(db).as_syntax_node().is_ancestor_or_self(db, &ctx.node);
+
+    (is_after_eq || is_on_impl_path).then_some(impl_alias)
+}
+
+/// Returns `true` if `importable` is a module, crate or impl other than the one being defined.
+fn is_allowed_in_impl_alias<'db>(
+    db: &'db AnalysisDatabase,
+    importable: &ImportableId<'db>,
+    impl_alias: &ItemImplAlias<'db>,
+) -> bool {
+    match importable {
+        ImportableId::Submodule(_) | ImportableId::Crate(_) => true,
+        // Excludes the impl containing an associated impl alias.
+        ImportableId::Impl(id) => impl_alias
+            .as_syntax_node()
+            .ancestor_of_type::<ItemImpl>(db)
+            .is_none_or(|item_impl| item_impl.stable_ptr(db) != id.stable_ptr(db)),
+        ImportableId::ImplAlias(id) => id.stable_ptr(db) != impl_alias.stable_ptr(db),
+        _ => false,
     }
 }
 
