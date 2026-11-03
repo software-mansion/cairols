@@ -698,6 +698,35 @@ fn with_already_typed_parens_and_caret_after() {
 }
 
 #[test]
+fn with_already_typed_parens_and_no_method_chars_and_caret_inside() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.(<caret>);
+    }
+    ",
+    @r#"
+    caret = """
+        s.(<caret>);
+    """
+    completions = []
+    "#);
+}
+
+#[test]
 fn with_already_typed_parens_and_no_method_chars_and_caret_after() {
     test_transform_plain!(Completion, completion_fixture(),
     "
@@ -722,35 +751,36 @@ fn with_already_typed_parens_and_no_method_chars_and_caret_after() {
     caret = """
         s.()<caret>;
     """
+    completions = []
+    "#);
+}
 
-    [[completions]]
-    completion_label = "get_descriptor()"
-    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor()"
+#[test]
+fn with_already_typed_parens_and_no_method_chars_and_caret_before_identifier() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
 
-    [[completions]]
-    completion_label = "into()"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "into()"
+    struct S {}
 
-    [[completions]]
-    completion_label = "make()"
-    completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make(${1:a})"
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
 
-    [[completions]]
-    completion_label = "new_inputs()"
-    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
-    insert_text = "new_inputs()"
-    text_edits = ["""
-    use core::circuit::CircuitInputs;
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
 
-    """]
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into()"
+    fn test() {
+        let s = S{};
+        s.()<caret>foo;
+    }
+    ",
+    @r#"
+    caret = """
+        s.()<caret>foo;
+    """
+    completions = []
     "#);
 }
 
