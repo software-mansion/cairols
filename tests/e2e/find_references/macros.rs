@@ -236,6 +236,7 @@ fn struct_constructor_shorthand_in_declarative_macro() {
     ")
 }
 
+// FIXME(#1431). Rename, goto definition and references don't work properly in declarative macros.
 #[test]
 fn struct_member_via_definition_with_shorthand_in_declarative_macro() {
     test_transform_plain!(References, r"
@@ -265,6 +266,7 @@ fn struct_member_via_definition_with_shorthand_in_declarative_macro() {
     ")
 }
 
+// FIXME(#1431). Rename, goto definition and references don't work properly in declarative macros.
 #[test]
 fn var_via_binding_with_shorthand_in_declarative_macro() {
     test_transform_plain!(References, r"

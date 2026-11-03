@@ -219,6 +219,7 @@ fn derive_macro_name_with_mixed_mappings() {
     "#, @"none response")
 }
 
+// FIXME(#1431). Rename, goto definition and references don't work properly in declarative macros.
 #[test]
 fn struct_constructor_shorthand_in_declarative_macro() {
     test_transform_plain!(GotoDefinition, r"
