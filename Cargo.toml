@@ -100,9 +100,9 @@ similar = "3.1"
 # on some of them directly.
 # This ensures no duplicate instances of Cairo crates are pulled in by mistake.
 [patch.crates-io]
-cairo-lang-macro = { git = "https://github.com/software-mansion/scarb", rev = "47d8c6edd82d57f9976e16f9b19bccb8b951d1b4" }
-scarb-proc-macro-host = { git = "https://github.com/software-mansion/scarb", rev = "47d8c6edd82d57f9976e16f9b19bccb8b951d1b4" }
-scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb", rev = "47d8c6edd82d57f9976e16f9b19bccb8b951d1b4" }
+cairo-lang-macro = { git = "https://github.com/software-mansion/scarb", rev = "bdba44f46c6fa845388713c1543e0010551e28a1" }
+scarb-proc-macro-host = { git = "https://github.com/software-mansion/scarb", rev = "bdba44f46c6fa845388713c1543e0010551e28a1" }
+scarb-proc-macro-server-types = { git = "https://github.com/software-mansion/scarb", rev = "bdba44f46c6fa845388713c1543e0010551e28a1" }
 # The profile used for CI in pull requests.
 # External dependencies are built with optimisation enabled,
 # while crates in this workspace are built with `dev` profile and full debug info.

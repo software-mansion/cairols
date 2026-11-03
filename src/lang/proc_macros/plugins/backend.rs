@@ -23,7 +23,6 @@ mod test;
 pub struct PmsMacroId {
     expansion: Expansion,
     fingerprint: u64,
-    has_spans: bool,
 }
 
 impl ExpansionId for PmsMacroId {
@@ -52,16 +51,13 @@ impl PmsBackend {
         } = macros;
 
         let named = |macros: Vec<MacroWithHash>, kind: ExpansionKind| {
-            macros.into_iter().map(move |MacroWithHash { name, cairo_name, hash, has_spans }| {
-                PmsMacroId {
-                    expansion: Expansion {
-                        expansion_name: name.into(),
-                        cairo_name: cairo_name.into(),
-                        kind: kind.clone(),
-                    },
-                    fingerprint: hash,
-                    has_spans,
-                }
+            macros.into_iter().map(move |MacroWithHash { name, cairo_name, hash }| PmsMacroId {
+                expansion: Expansion {
+                    expansion_name: name.into(),
+                    cairo_name: cairo_name.into(),
+                    kind: kind.clone(),
+                },
+                fingerprint: hash,
             })
         };
 
@@ -73,7 +69,6 @@ impl PmsBackend {
                 kind: ExpansionKind::Executable,
             },
             fingerprint: 0,
-            has_spans: true,
         });
 
         let expansions = named(attributes, ExpansionKind::Attr)
@@ -98,10 +93,6 @@ impl ProcMacroBackend for PmsBackend {
 
     fn expansions(&self) -> &[PmsMacroId] {
         &self.expansions
-    }
-
-    fn has_spans(&self, id: &PmsMacroId) -> bool {
-        id.has_spans
     }
 
     fn expand(
