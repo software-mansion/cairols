@@ -8,7 +8,6 @@ use super::path::path_prefix_completions;
 use crate::ide::doc_links::{DocLinkCursorContext, parse_doc_link_path};
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::text_matching::text_matches;
 
 pub fn doc_link_completions<'db>(
     db: &'db AnalysisDatabase,
@@ -48,18 +47,7 @@ fn doc_link_completions_ex<'db>(
         );
     }
 
-    let completions: Vec<CompletionItemOrderable> =
-        path_prefix_completions(db, ctx, prefix_segments)?
-            .into_iter()
-            .filter(|completion| {
-                text_matches(
-                    completion.item.filter_text.as_deref().unwrap_or(&completion.item.label),
-                    typed_segment.as_str(),
-                )
-            })
-            .collect();
-
-    Some(completions)
+    path_prefix_completions(db, ctx, prefix_segments, &typed_segment)
 }
 
 fn resolve_prefix_and_typed_segment<'db>(

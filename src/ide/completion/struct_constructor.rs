@@ -23,20 +23,7 @@ pub fn struct_constructor_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
 ) -> Vec<CompletionItemOrderable> {
-    // The member name being typed at the cursor, e.g. `MyStruct { na<caret> }`.
-    let typed = ctx
-        .node
-        .ancestor_of_type::<ast::StructArgSingle>(db)
-        .map(|arg| arg.identifier(db))
-        .filter(|identifier| identifier.as_syntax_node() == ctx.node)
-        .map(|identifier| identifier.text(db).to_string(db))
-        .unwrap_or_default();
-
-    struct_constructor_completions_ex(db, ctx)
-        .unwrap_or_default()
-        .into_iter()
-        .filter(|item| text_matches(&item.item.label, &typed))
-        .collect()
+    struct_constructor_completions_ex(db, ctx).unwrap_or_default()
 }
 
 fn struct_constructor_completions_ex<'db>(
@@ -68,6 +55,15 @@ fn struct_constructor_completions_ex<'db>(
         })
         .collect::<Vec<_>>();
 
+    // The member name being typed at the cursor, e.g. `MyStruct { na<caret> }`.
+    let typed = ctx
+        .node
+        .ancestor_of_type::<ast::StructArgSingle>(db)
+        .map(|arg| arg.identifier(db))
+        .filter(|identifier| identifier.as_syntax_node() == ctx.node)
+        .map(|identifier| identifier.text(db).to_string(db))
+        .unwrap_or_default();
+
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor.stable_ptr(db).into()).ok()?;
 
@@ -94,7 +90,9 @@ fn struct_constructor_completions_ex<'db>(
     let completions = struct_members
         .iter()
         .filter_map(|(name, data)| {
-            if already_present_members.contains(&name.to_string(db)) {
+            if already_present_members.contains(&name.to_string(db))
+                || !text_matches(name.to_string(db), &typed)
+            {
                 None
             } else {
                 Some(CompletionItemOrderable {

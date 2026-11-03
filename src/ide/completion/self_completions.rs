@@ -5,7 +5,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use super::{expr::selector::expr_selector, path::path_prefix_completions, resolve_typed_segments};
 use crate::{
     ide::completion::CompletionItemOrderable,
-    lang::{analysis_context::AnalysisContext, db::AnalysisDatabase, text_matching::text_matches},
+    lang::{analysis_context::AnalysisContext, db::AnalysisDatabase},
 };
 
 pub fn self_completions<'db>(
@@ -22,17 +22,12 @@ pub fn self_completions<'db>(
         }
         && let Some(first_segment) = segments.first()
         && first_segment.as_syntax_node().get_text_without_trivia(db) == SmolStrId::from(db, "Self")
-        && let Some(result) = path_prefix_completions(db, ctx, segments)
-    {
-        let typed = resolve_typed_segments(db, ctx, false)
+        && let typed = resolve_typed_segments(db, ctx, false)
             .map(|(_, last_typed_segment)| last_typed_segment.to_string(db))
-            .unwrap_or_default();
+            .unwrap_or_default()
+        && let Some(result) = path_prefix_completions(db, ctx, segments, &typed)
+    {
         result
-            .into_iter()
-            .filter(|item| {
-                text_matches(item.item.filter_text.as_deref().unwrap_or(&item.item.label), &typed)
-            })
-            .collect()
     } else {
         Default::default()
     }

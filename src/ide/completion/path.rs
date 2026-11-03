@@ -129,16 +129,14 @@ pub fn path_suffix_completions<'db>(
     // from traits/impls whose path matches.
     if ctx.node.ancestor_of_kind(db, SyntaxKind::ExprBlock).is_some() && !typed_segments.is_empty()
     {
-        let last_typed_segment = last_typed_segment.to_string(db);
-        result.extend(
-            trait_items_for_matching_paths(db, ctx, &importables, &typed_segments, current_crate)
-                .into_iter()
-                .filter(|completion| {
-                    text_matches(
-                        completion.item.filter_text.as_deref().unwrap_or(&completion.item.label),
-                        &last_typed_segment,
-                    )
-                }),
+        extend_with_trait_items_for_matching_paths(
+            db,
+            ctx,
+            &importables,
+            &typed_segments,
+            &last_typed_segment.to_string(db),
+            current_crate,
+            &mut result,
         );
     }
 
@@ -149,11 +147,12 @@ pub fn path_suffix_completions<'db>(
 ///
 /// "Prefix" means the typed path is successfully resolved as the beginning of a longer path,
 /// and this function returns what can legally follow it. e.g. typing `core::array::` resolves
-/// that module and proposes its members.
+/// that module and proposes its members. Only members whose name matches `typed` are proposed.
 pub fn path_prefix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     segments: Vec<PathSegment<'db>>,
+    typed: &str,
 ) -> Option<Vec<CompletionItemOrderable>> {
     let is_current_scope = segments.len() == 1;
     let mut resolver = ctx.resolver(db);
@@ -171,6 +170,7 @@ pub fn path_prefix_completions<'db>(
             .ok()?
             .items(db)
             .iter()
+            .filter(|item| text_matches(item.name(db).to_string(db), typed))
             .filter_map(|item| {
                 let resolved_item = ResolvedGenericItem::from_module_item(db, *item).ok()?;
                 let item_info = db.module_item_info_by_name(module_id, item.name(db)).ok()??;
@@ -206,6 +206,7 @@ pub fn path_prefix_completions<'db>(
                 db,
                 ctx,
                 trait_id,
+                typed,
                 is_current_scope,
                 current_crate,
                 crate_id,
@@ -220,6 +221,7 @@ pub fn path_prefix_completions<'db>(
                     db,
                     ctx,
                     trait_id,
+                    typed,
                     is_current_scope,
                     current_crate,
                     crate_id,
@@ -232,6 +234,7 @@ pub fn path_prefix_completions<'db>(
                 .cloned()
                 .unwrap_or_default()
                 .iter()
+                .filter(|(name, _)| text_matches(name.to_string(db), typed))
                 .map(|(name, variant_id)| {
                     let formatted_enum_variant =
                         format_enum_variant(db, &enum_id.enum_id(db), variant_id);
@@ -332,11 +335,13 @@ fn module_item_completion_detail<'db>(
     }
 }
 
-/// Generates prefix completion items for all items (functions, types, constants) of a trait.
+/// Generates prefix completion items for items (functions, types, constants) of a trait whose
+/// name matches `typed`.
 fn trait_items_prefix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     trait_id: TraitId<'db>,
+    typed: &str,
     is_current_scope: bool,
     current_crate: CrateId<'db>,
     crate_id: CrateId<'db>,
@@ -347,18 +352,21 @@ fn trait_items_prefix_completions<'db>(
         *crate_id.long(db) == CrateLongId::core(db),
     );
 
-    let functions = db.trait_functions(trait_id).cloned().unwrap_or_default().into_iter().map(
-        |(name, trait_function_id)| {
+    let functions = db
+        .trait_functions(trait_id)
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(name, _)| text_matches(name.to_string(db), typed))
+        .map(|(name, trait_function_id)| {
             let name_str = name.to_string(db);
             let signature = db.trait_function_signature(trait_function_id).ok();
             let snippet = signature
                 .map(|sig| TypedSnippet::function_call(db, ctx, &name_str, sig, Some(trait_id)));
-            let label =
-                if snippet.is_some() { format!("{}(...)", name_str) } else { name_str.clone() };
+            let label = if snippet.is_some() { format!("{}(...)", name_str) } else { name_str };
             CompletionItemOrderable {
                 item: CompletionItem {
                     label,
-                    filter_text: Some(name_str),
                     insert_text: snippet.clone().map(|s| s.lsp_snippet),
                     insert_text_format: snippet.clone().map(|_| InsertTextFormat::SNIPPET),
                     label_details: Some(CompletionItemLabelDetails {
@@ -370,27 +378,31 @@ fn trait_items_prefix_completions<'db>(
                 },
                 relevance,
             }
-        },
-    );
-
-    let types =
-        db.trait_types(trait_id).cloned().unwrap_or_default().into_iter().map(|(name, _)| {
-            CompletionItemOrderable {
-                item: CompletionItem {
-                    label: name.to_string(db),
-                    label_details: Some(CompletionItemLabelDetails {
-                        detail: None,
-                        description: None,
-                    }),
-                    kind: Some(CompletionItemKind::CLASS),
-                    ..CompletionItem::default()
-                },
-                relevance,
-            }
         });
 
-    let constants = db.trait_constants(trait_id).cloned().unwrap_or_default().into_iter().map(
-        |(name, trait_constant_id)| {
+    let types = db
+        .trait_types(trait_id)
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(name, _)| text_matches(name.to_string(db), typed))
+        .map(|(name, _)| CompletionItemOrderable {
+            item: CompletionItem {
+                label: name.to_string(db),
+                label_details: Some(CompletionItemLabelDetails { detail: None, description: None }),
+                kind: Some(CompletionItemKind::CLASS),
+                ..CompletionItem::default()
+            },
+            relevance,
+        });
+
+    let constants = db
+        .trait_constants(trait_id)
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(name, _)| text_matches(name.to_string(db), typed))
+        .map(|(name, trait_constant_id)| {
             let description = db.trait_constant_type(trait_constant_id).ok().and_then(|ty| {
                 db.visible_importables_from_module(ctx.module_id)
                     .map(|importables| format_type(db, ty, &importables, None))
@@ -404,23 +416,23 @@ fn trait_items_prefix_completions<'db>(
                 },
                 relevance,
             }
-        },
-    );
+        });
 
     functions.chain(types).chain(constants).collect()
 }
 
-/// For each trait or impl in `importables` whose path ends with `typed_segments`, returns
-/// completion items for all of that trait's items (functions, types, constants).
-fn trait_items_for_matching_paths<'db>(
+/// For each trait or impl in `importables` whose path ends with `typed_segments`, extends
+/// `result` with completion items for that trait's items (functions, types, constants) matching
+/// `typed`.
+fn extend_with_trait_items_for_matching_paths<'db>(
     db: &'db AnalysisDatabase,
     ctx: &'db AnalysisContext<'db>,
     importables: &OrderedHashMap<ImportableId<'db>, String>,
     typed_segments: &[SmolStrId<'db>],
+    typed: &str,
     current_crate: CrateId<'db>,
-) -> Vec<CompletionItemOrderable> {
-    let mut result = vec![];
-
+    result: &mut Vec<CompletionItemOrderable>,
+) {
     for (importable, item_path) in importables.iter() {
         let trait_id = match importable {
             ImportableId::Trait(trait_id) => *trait_id,
@@ -451,11 +463,10 @@ fn trait_items_for_matching_paths<'db>(
             db,
             ctx,
             trait_id,
+            typed,
             true,
             current_crate,
             crate_id,
         ));
     }
-
-    result
 }

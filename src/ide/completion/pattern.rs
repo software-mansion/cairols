@@ -107,17 +107,12 @@ pub fn enum_pattern_completions<'db>(
                 segments.pop();
             }
         }
-        && let Some(result) = path_prefix_completions(db, ctx, segments)
-    {
-        let typed = resolve_typed_segments(db, ctx, false)
+        && let typed = resolve_typed_segments(db, ctx, false)
             .map(|(_, last_typed_segment)| last_typed_segment.to_string(db))
-            .unwrap_or_default();
+            .unwrap_or_default()
+        && let Some(result) = path_prefix_completions(db, ctx, segments, &typed)
+    {
         result
-            .into_iter()
-            .filter(|item| {
-                text_matches(item.item.filter_text.as_deref().unwrap_or(&item.item.label), &typed)
-            })
-            .collect()
     } else {
         Default::default()
     }
