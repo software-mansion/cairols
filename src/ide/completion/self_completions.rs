@@ -27,7 +27,12 @@ pub fn self_completions<'db>(
         let typed = resolve_typed_segments(db, ctx, false)
             .map(|(_, last_typed_segment)| last_typed_segment.to_string(db))
             .unwrap_or_default();
-        result.into_iter().filter(|item| text_matches(&item.item.label, &typed)).collect()
+        result
+            .into_iter()
+            .filter(|item| {
+                text_matches(item.item.filter_text.as_deref().unwrap_or(&item.item.label), &typed)
+            })
+            .collect()
     } else {
         Default::default()
     }

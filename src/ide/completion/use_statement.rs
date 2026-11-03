@@ -79,7 +79,12 @@ fn use_statement<'db>(
             items
                 .into_iter()
                 .filter(|item| !excluded.contains(&item.item.label))
-                .filter(|item| text_matches(&item.item.label, &typed))
+                .filter(|item| {
+                    text_matches(
+                        item.item.filter_text.as_deref().unwrap_or(&item.item.label),
+                        &typed,
+                    )
+                })
                 .collect()
         })
 }

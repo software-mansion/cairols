@@ -133,7 +133,12 @@ pub fn path_suffix_completions<'db>(
         result.extend(
             trait_items_for_matching_paths(db, ctx, &importables, &typed_segments, current_crate)
                 .into_iter()
-                .filter(|completion| text_matches(&completion.item.label, &last_typed_segment)),
+                .filter(|completion| {
+                    text_matches(
+                        completion.item.filter_text.as_deref().unwrap_or(&completion.item.label),
+                        &last_typed_segment,
+                    )
+                }),
         );
     }
 
@@ -348,10 +353,12 @@ fn trait_items_prefix_completions<'db>(
             let signature = db.trait_function_signature(trait_function_id).ok();
             let snippet = signature
                 .map(|sig| TypedSnippet::function_call(db, ctx, &name_str, sig, Some(trait_id)));
-            let label = if snippet.is_some() { format!("{}(...)", name_str) } else { name_str };
+            let label =
+                if snippet.is_some() { format!("{}(...)", name_str) } else { name_str.clone() };
             CompletionItemOrderable {
                 item: CompletionItem {
                     label,
+                    filter_text: Some(name_str),
                     insert_text: snippet.clone().map(|s| s.lsp_snippet),
                     insert_text_format: snippet.clone().map(|_| InsertTextFormat::SNIPPET),
                     label_details: Some(CompletionItemLabelDetails {

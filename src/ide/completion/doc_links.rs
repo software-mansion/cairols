@@ -52,7 +52,10 @@ fn doc_link_completions_ex<'db>(
         path_prefix_completions(db, ctx, prefix_segments)?
             .into_iter()
             .filter(|completion| {
-                text_matches(completion.item.label.clone(), typed_segment.as_str())
+                text_matches(
+                    completion.item.filter_text.as_deref().unwrap_or(&completion.item.label),
+                    typed_segment.as_str(),
+                )
             })
             .collect();
 
