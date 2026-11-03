@@ -23,16 +23,25 @@ pub fn use_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
 ) -> Vec<CompletionItemOrderable> {
-    if let Some(single) = ctx.node.ancestor_of_type::<UsePathSingle>(db)
-        && let Some(use_completions) = use_statement(db, single, ctx)
+    // The closest single that is fully typed before the caret, i.e. the path prefix to complete in.
+    // E.g. in `use a::b<caret>::c` it is `a::…`, not `b::c`. `None` if typing the first segment.
+    let prefix_single = ctx
+        .node
+        .ancestors(db)
+        .filter_map(|node| UsePathSingle::cast(db, node))
+        .find(|single| !ctx.node.is_descendant(db, &single.ident(db).as_syntax_node()));
+
+    // If we are on the first segment of use e.g. `use co<caret>` or `use co<caret>::foo`.
+    if prefix_single.is_none()
+        && ctx.node.ancestor_of_kinds(db, &[UsePathLeafKind, UsePathSingleKind]).is_some()
+        && let Some(segment) = ctx.node.ancestor_of_type::<PathSegment>(db)
+        && let Some(use_completions) = first_segment(db, &segment.identifier(db).to_string(db), ctx)
     {
         return use_completions;
     }
 
-    // If we are on the first segment of use e.g. `use co<caret>`.
-    if ctx.node.ancestor_of_type::<UsePathSingle>(db).is_none()
-        && let Some(leaf) = ctx.node.ancestor_of_type::<UsePathLeaf>(db)
-        && let Some(use_completions) = use_statement_first_segment(db, leaf, ctx)
+    if let Some(single) = prefix_single
+        && let Some(use_completions) = use_statement(db, single, ctx)
     {
         return use_completions;
     }
@@ -58,8 +67,8 @@ fn use_statement<'db>(
 ) -> Option<Vec<CompletionItemOrderable>> {
     let typed = ctx
         .node
-        .ancestor_of_type::<UsePathLeaf>(db)
-        .map(|leaf| leaf.ident(db).identifier(db).to_string(db))
+        .ancestor_of_type::<PathSegment>(db)
+        .map(|segment| segment.identifier(db).to_string(db))
         .unwrap_or_default();
 
     get_use_path_segments(db, UsePath::Single(use_path_single))
@@ -98,29 +107,6 @@ fn already_imported_in_multi<'db>(
             Some(simple.ident(db).token(db).text(db).to_string(db))
         })
         .collect()
-}
-
-/// Invariant: `use_path_leaf` is the first and only one element of the use path.
-/// Therefore, it is not a descendant of [`UsePathSingle`].
-fn use_statement_first_segment<'db>(
-    db: &'db AnalysisDatabase,
-    use_path_leaf: UsePathLeaf<'db>,
-    ctx: &AnalysisContext<'db>,
-) -> Option<Vec<CompletionItemOrderable>> {
-    get_use_path_segments(db, UsePath::Leaf(use_path_leaf)).ok().and_then(|mut segments| {
-        let typed = segments.segments.pop()?;
-
-        // Should be always true if invariant is not violated.
-        if segments.segments.is_empty() {
-            if let PathSegment::Simple(typed) = typed {
-                first_segment(db, &typed.ident(db).token(db).text(db).to_string(db), ctx)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    })
 }
 
 fn first_segment<'db>(

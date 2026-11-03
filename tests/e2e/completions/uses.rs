@@ -635,7 +635,9 @@ fn partially_typed_first_segment_before_other_segment() {
     caret = """
     use fo<caret>::bar;
     """
-    completions = []
+
+    [[completions]]
+    completion_label = "foo"
     "#);
 }
 
@@ -643,7 +645,7 @@ fn partially_typed_first_segment_before_other_segment() {
 fn partially_typed_middle_segment() {
     test_transform_plain!(Completion, completion_fixture(), "
     mod helper_module {
-        mod foo {
+        pub mod foo {
             pub fn bar() {}
         }
     }
@@ -652,7 +654,9 @@ fn partially_typed_middle_segment() {
     caret = """
     use helper_module::fo<caret>::bar;
     """
-    completions = []
+
+    [[completions]]
+    completion_label = "foo"
     "#);
 }
 
@@ -660,7 +664,7 @@ fn partially_typed_middle_segment() {
 fn partially_typed_segment_before_other_segment_in_use_path_multi() {
     test_transform_plain!(Completion, completion_fixture(), "
     mod helper_module {
-        mod foo {
+        pub mod foo {
             pub fn bar() {}
         }
     }
@@ -669,6 +673,8 @@ fn partially_typed_segment_before_other_segment_in_use_path_multi() {
     caret = """
     use helper_module::{fo<caret>::bar};
     """
-    completions = []
+
+    [[completions]]
+    completion_label = "foo"
     "#);
 }
