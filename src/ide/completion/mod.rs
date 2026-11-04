@@ -144,7 +144,7 @@ fn complete_ex<'db>(
     let mut completions = vec![];
 
     completions.extend(dot_completions(db, &ctx, was_node_corrected));
-    completions.extend(struct_constructor_completions(db, &ctx));
+    completions.extend(struct_constructor_completions(db, &ctx, cursor_position));
     completions.extend(use_completions(db, &ctx));
     completions.extend(self_completions(db, &ctx));
     completions.extend(attribute_completions(db, node, crate_id, cursor_position));
