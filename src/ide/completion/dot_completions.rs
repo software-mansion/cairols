@@ -56,7 +56,13 @@ fn dot_completions_ex<'db>(
     }
 
     // If the only thing on the rhs are parentheses, make typed empty, so anything will match.
-    let typed = if matches!(expr.rhs(db), Expr::Tuple(_)) {
+    // `foo.<caret>()` and `foo.<caret>(x, y)` are parsed as `Expr::Tuple`,
+    // `foo.<caret>(x)` as `Expr::Parenthesized`.
+    let typed = if matches!(expr.rhs(db), Expr::Tuple(_) | Expr::Parenthesized(_)) {
+        // Ignore `foo.(<caret>)` and `foo.()<caret>` cases, as there is no method name to complete.
+        if ctx.node.is_descendant_or_self(db, &expr.rhs(db).as_syntax_node()) {
+            return None;
+        }
         "".to_string()
     } else {
         rhs.unwrap_or(expr.rhs(db).as_syntax_node()).get_text_without_trivia(db).to_string(db)
@@ -153,7 +159,8 @@ fn completion_for_method<'db>(
     if let Some(edit) = import_edit_for_trait_if_needed(db, ctx, trait_id) {
         additional_text_edits.push(edit);
     }
-    let function_call_snippet = TypedSnippet::function_call(db, &name, signature, Some(trait_id));
+    let function_call_snippet =
+        TypedSnippet::function_call(db, ctx, &name, signature, Some(trait_id));
 
     let completion = CompletionItemOrderable {
         item: CompletionItem {
