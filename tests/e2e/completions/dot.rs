@@ -1537,6 +1537,39 @@ fn trait_method_with_existing_arguments() {
 }
 
 #[test]
+fn partial_trait_method_with_existing_arguments() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Foo {}
+
+    trait MyTrait {
+        fn some_method(self: @Foo) -> felt252;
+    }
+
+    impl MyTraitImpl of MyTrait {
+        fn some_method(self: @Foo) -> felt252 {
+            0
+        }
+    }
+
+    fn test() {
+        let x = Foo {};
+        let y = MyTrait::some_met<caret>(x);
+    }
+    ",
+    @r#"
+    caret = """
+        let y = MyTrait::some_met<caret>(x);
+    """
+
+    [[completions]]
+    completion_label = "some_method(...)"
+    completion_label_type_info = "fn(self: @Foo) -> felt252"
+    insert_text = "some_method"
+    "#);
+}
+
+#[test]
 fn method_after_dot_with_unclosed_empty_arguments() {
     test_transform_plain!(Completion, completion_fixture(),
     "
