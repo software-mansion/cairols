@@ -162,6 +162,7 @@ fn top_level_declarative_macro_on_usage() {
     ")
 }
 
+// FIXME(#1431). Rename, goto definition and references don't work properly in declarative macros.
 #[test]
 fn struct_constructor_shorthand_in_declarative_macro() {
     test_transform_plain!(Rename, r"
@@ -179,6 +180,7 @@ fn struct_constructor_shorthand_in_declarative_macro() {
     ", @"")
 }
 
+// FIXME(#1431). Rename, goto definition and references don't work properly in declarative macros.
 #[test]
 fn struct_member_via_definition_with_shorthand_in_declarative_macro() {
     test_transform_plain!(Rename, r"
