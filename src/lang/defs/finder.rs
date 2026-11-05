@@ -97,9 +97,11 @@ pub fn find_shorthand<'db>(
     db: &'db AnalysisDatabase,
     identifier: &ast::TerminalIdentifier<'db>,
     lookup_items: &[LookupItemId<'db>],
+    resolver_data: &mut Option<ResolverData<'db>>,
 ) -> Option<(ResolvedItem<'db>, ResolvedItem<'db>)> {
     let label = try_struct_constructor_shorthand_member(db, identifier, lookup_items)?;
-    let value = try_struct_constructor_shorthand_variable(db, identifier, lookup_items, &mut None)?;
+    let value =
+        try_struct_constructor_shorthand_variable(db, identifier, lookup_items, resolver_data)?;
     Some((label, value))
 }
 

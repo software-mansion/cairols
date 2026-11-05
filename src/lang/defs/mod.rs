@@ -102,11 +102,12 @@ impl<'db> SymbolSearch<'db> {
     ) -> Option<(Self, Self)> {
         let lookup_items =
             db.collect_lookup_items_with_parent_files(identifier.as_syntax_node())?;
-        let (label, value) = find_shorthand(db, identifier, lookup_items)?;
+        let mut resolver_data = None;
+        let (label, value) = find_shorthand(db, identifier, lookup_items, &mut resolver_data)?;
 
         Some((
             Self::from_resolved_item(db, label, None)?,
-            Self::from_resolved_item(db, value, None)?,
+            Self::from_resolved_item(db, value, resolver_data)?,
         ))
     }
 
