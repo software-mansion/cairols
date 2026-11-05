@@ -14,7 +14,7 @@ use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_language_common::CommonGroup;
 
 pub use self::finder::ResolvedItem;
-pub use self::finder::{find_declaration, find_definition, find_shorthand};
+pub use self::finder::{find_declaration, find_definition, find_shorthand, is_shorthand};
 pub use self::generic_param::GenericParamDef;
 pub use self::item::ItemDef;
 pub use self::member::{MemberDef, resolve_accessed_member};

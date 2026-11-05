@@ -19,6 +19,7 @@ use lsp_types::{
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::{NonMacroModuleId, SymbolDef, SymbolSearch};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lang::usages::FoundUsage;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::result::{LSPError, LSPResult};
 
@@ -105,9 +106,9 @@ pub fn rename(
         .into_iter()
         .flat_map(|symbol| {
             let def = symbol.def.clone();
-            find_usages(db, symbol).into_iter().filter_map(move |loc| {
-                let new_text = new_text_for_usage(db, loc, &def, new_name);
-                let Location { uri, range } = db.lsp_location(loc)?;
+            find_usages(db, symbol).into_iter().filter_map(move |usage| {
+                let new_text = new_text_for_usage(db, usage, &def, new_name);
+                let Location { uri, range } = db.lsp_location(usage.location())?;
                 Some((uri, TextEdit { range, new_text }))
             })
         })
@@ -145,39 +146,31 @@ fn declaration_from_resultant<'db>(
 /// This also covers shorthands inside macro calls, which are recognized in the expanded code.
 fn new_text_for_usage<'db>(
     db: &'db AnalysisDatabase,
-    SpanInFile { file_id, span }: SpanInFile<'db>,
+    usage: FoundUsage<'db>,
     renamed: &SymbolDef<'db>,
     new_name: &str,
 ) -> String {
-    let shorthand = db
-        .find_syntax_node_at_offset(file_id, span.start)
-        .and_then(|node| db.get_node_resultants(node))
-        .into_iter()
-        .flatten()
-        .filter_map(|node| {
-            node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))
-        })
-        .find_map(|identifier| SymbolSearch::find_shorthand(db, &identifier));
+    if !usage.is_shorthand() {
+        return new_name.to_string();
+    }
 
-    match shorthand {
-        Some((label, value)) if label.def == *renamed => {
-            format!("{new_name}: {}", value.def.name(db))
-        }
-        Some((label, value)) if value.def == *renamed => {
-            format!("{}: {new_name}", label.def.name(db))
-        }
-        _ => new_name.to_string(),
+    // Both symbols of a shorthand have the same name, and the label is always a member.
+    let old_name = renamed.name(db);
+    match renamed {
+        SymbolDef::Member(_) => format!("{new_name}: {old_name}"),
+        _ => format!("{old_name}: {new_name}"),
     }
 }
 
-fn find_usages<'db>(db: &'db AnalysisDatabase, symbol: SymbolSearch<'db>) -> Vec<SpanInFile<'db>> {
+fn find_usages<'db>(db: &'db AnalysisDatabase, symbol: SymbolSearch<'db>) -> Vec<FoundUsage<'db>> {
     let symbol_name = Some(symbol.def.name(db));
 
     symbol
         .usages(db)
         .include_declaration(true)
-        .originating_locations(db)
-        .filter(|&SpanInFile { file_id, span }| {
+        .originating_usages(db)
+        .filter(|usage| {
+            let SpanInFile { file_id, span } = usage.location();
             db.find_syntax_node_at_offset(file_id, span.start)
                 // 1. Sanity check: `span` is a span of a terminal identifier without trivia.
                 //    It should be the same as the span of a token at offset `span.start`.
@@ -189,7 +182,7 @@ fn find_usages<'db>(db: &'db AnalysisDatabase, symbol: SymbolSearch<'db>) -> Vec
                     node.span(db) == span && node.text(db).map(|t| t.to_string(db)) == symbol_name
                 })
         })
-        .unique()
+        .unique_by(|usage| usage.location())
         .collect()
 }
 

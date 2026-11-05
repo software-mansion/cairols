@@ -444,7 +444,10 @@ fn try_struct_constructor_shorthand_variable<'db>(
 
 /// Checks if the identifier is shorthand syntax, which refers to both a label and a value,
 /// e.g. `Struct { <ident> }`.
-fn is_shorthand<'db>(db: &'db AnalysisDatabase, identifier: &ast::TerminalIdentifier<'db>) -> bool {
+pub fn is_shorthand<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier<'db>,
+) -> bool {
     identifier
         .as_syntax_node()
         .parent(db)

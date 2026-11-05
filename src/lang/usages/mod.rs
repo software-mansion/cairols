@@ -14,7 +14,7 @@ use memchr::memmem::Finder;
 use search_scope::SearchScope;
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch};
+use crate::lang::defs::{ResolvedItem, SymbolDef, SymbolSearch, is_shorthand};
 
 pub mod search_scope;
 
@@ -42,11 +42,15 @@ pub struct FindUsages<'db> {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct FoundUsage<'db>(SpanInFile<'db>);
+pub struct FoundUsage<'db> {
+    location: SpanInFile<'db>,
+    /// Whether the usage is a shorthand, e.g. `Struct { x }`, as seen in the expanded code.
+    is_shorthand: bool,
+}
 
 impl<'db> FoundUsage<'db> {
     fn originating_location(&self, db: &'db AnalysisDatabase) -> Self {
-        Self(get_originating_location(db, self.0, None))
+        Self { location: get_originating_location(db, self.location, None), ..*self }
     }
 }
 
@@ -86,12 +90,20 @@ impl<'db> FindUsages<'db> {
         result
     }
 
+    /// Collects all found usages, with locations mapped to the originating ones.
+    pub fn originating_usages(
+        self,
+        db: &'db AnalysisDatabase,
+    ) -> impl Iterator<Item = FoundUsage<'db>> {
+        self.collect().into_iter().map(|usage| usage.originating_location(db))
+    }
+
     /// Collects just the originating locations of all found usages.
     pub fn originating_locations(
         self,
         db: &'db AnalysisDatabase,
     ) -> impl Iterator<Item = SpanInFile<'db>> {
-        self.collect().into_iter().map(|usage| usage.originating_location(db).location())
+        self.originating_usages(db).map(FoundUsage::location)
     }
 
     /// Executes this search and calls the given sink for each found usage.
@@ -196,7 +208,10 @@ impl<'db> FindUsages<'db> {
         if found_symbol_definitions.iter().any(|ss| ss.def == self.symbol)
             || found_symbol_declaration.as_ref() == Some(&self.symbol)
         {
-            let usage = FoundUsage::from_syntax_node(self.db, identifier.as_syntax_node());
+            let usage = FoundUsage {
+                is_shorthand: is_shorthand(self.db, &identifier),
+                ..FoundUsage::from_syntax_node(self.db, identifier.as_syntax_node())
+            };
             sink(usage)
         } else {
             ControlFlow::Continue(())
@@ -206,10 +221,13 @@ impl<'db> FindUsages<'db> {
 
 impl<'db> FoundUsage<'db> {
     fn from_syntax_node(db: &'db AnalysisDatabase, syntax_node: SyntaxNode<'db>) -> Self {
-        Self(SpanInFile {
-            file_id: syntax_node.stable_ptr(db).file_id(db),
-            span: syntax_node.span_without_trivia(db),
-        })
+        Self {
+            location: SpanInFile {
+                file_id: syntax_node.stable_ptr(db).file_id(db),
+                span: syntax_node.span_without_trivia(db),
+            },
+            is_shorthand: false,
+        }
     }
 
     fn from_stable_ptr(db: &'db AnalysisDatabase, stable_ptr: SyntaxStablePtrId<'db>) -> Self {
@@ -218,6 +236,10 @@ impl<'db> FoundUsage<'db> {
 
     /// Converts this object to a file-span tuple, losing any extra carried information.
     pub fn location(self) -> SpanInFile<'db> {
-        self.0
+        self.location
+    }
+
+    pub fn is_shorthand(self) -> bool {
+        self.is_shorthand
     }
 }
