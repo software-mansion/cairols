@@ -295,3 +295,28 @@ fn param_with_shadowed_struct_shorthand() {
     }
     ")
 }
+
+#[test]
+fn param_via_struct_shorthand_with_shadowing() {
+    test_transform_plain!(Rename, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn make(field: felt252) -> Foo {
+        let x = Foo { fie<caret>ld };
+        {
+            let field = 0;
+            Foo { field }
+        }
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn make(RENAMED: felt252) -> Foo {
+        let x = Foo { field: RENAMED };
+        {
+            let field = 0;
+            Foo { field }
+        }
+    }
+    ")
+}
