@@ -66,7 +66,7 @@ impl<'db> SymbolSearch<'db> {
     /// Gets you to the "nearest" point upwards in terms of top-down code breakdown
     /// (most likely you would use it to get this: usage -> impl)
     ///
-    /// For a struct constructor member shorthand, this is the value, e.g. the variable in `Struct { x }`.
+    /// For a struct constructor member shorthand, this is the variable, e.g. `x` in `Struct { x }`.
     /// Use [`Self::find_definitions`] to also get the member.
     pub fn find_definition(
         db: &'db AnalysisDatabase,
@@ -89,12 +89,12 @@ impl<'db> SymbolSearch<'db> {
         identifier: &ast::TerminalIdentifier<'db>,
     ) -> Vec<Self> {
         match Self::find_shorthand(db, identifier) {
-            Some((label, value)) => vec![label, value],
+            Some((member, variable)) => vec![member, variable],
             None => Self::find_definition(db, identifier).into_iter().collect(),
         }
     }
 
-    /// Finds both symbols referred to by a shorthand identifier, as a `(label, value)` pair,
+    /// Finds both symbols referred to by a shorthand identifier, as a `(member, variable)` pair,
     /// e.g. the member and the variable in `Struct { x }`.
     pub fn find_shorthand(
         db: &'db AnalysisDatabase,
@@ -103,11 +103,11 @@ impl<'db> SymbolSearch<'db> {
         let lookup_items =
             db.collect_lookup_items_with_parent_files(identifier.as_syntax_node())?;
         let mut resolver_data = None;
-        let (label, value) = find_shorthand(db, identifier, lookup_items, &mut resolver_data)?;
+        let (member, variable) = find_shorthand(db, identifier, lookup_items, &mut resolver_data)?;
 
         Some((
-            Self::from_resolved_item(db, label, None)?,
-            Self::from_resolved_item(db, value, resolver_data)?,
+            Self::from_resolved_item(db, member, None)?,
+            Self::from_resolved_item(db, variable, resolver_data)?,
         ))
     }
 

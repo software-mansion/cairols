@@ -141,9 +141,8 @@ fn declaration_from_resultant<'db>(
 /// Returns the text replacing a usage of the renamed symbol.
 ///
 /// A shorthand is expanded, keeping the name of the symbol which is not renamed:
-/// `Struct { x }` becomes `Struct { new_name: x }` (label renamed)
-/// or `Struct { x: new_name }` (value renamed).
-/// This also covers shorthands inside macro calls, which are recognized in the expanded code.
+/// `Struct { x }` becomes `Struct { new_name: x }` (member renamed)  
+/// or `Struct { x: new_name }` (variable renamed).
 fn new_text_for_usage<'db>(
     db: &'db AnalysisDatabase,
     usage: FoundUsage<'db>,
@@ -154,11 +153,12 @@ fn new_text_for_usage<'db>(
         return new_name.to_string();
     }
 
-    // Both symbols of a shorthand have the same name, and the label is always a member.
+    // Both symbols of a shorthand have the same name.
     let old_name = renamed.name(db);
     match renamed {
         SymbolDef::Member(_) => format!("{new_name}: {old_name}"),
-        _ => format!("{old_name}: {new_name}"),
+        SymbolDef::Variable(_) => format!("{old_name}: {new_name}"),
+        _ => unreachable!("a shorthand refers only to a member and a variable"),
     }
 }
 

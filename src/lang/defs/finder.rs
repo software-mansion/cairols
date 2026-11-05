@@ -99,10 +99,10 @@ pub fn find_shorthand<'db>(
     lookup_items: &[LookupItemId<'db>],
     resolver_data: &mut Option<ResolverData<'db>>,
 ) -> Option<(ResolvedItem<'db>, ResolvedItem<'db>)> {
-    let label = try_struct_constructor_shorthand_member(db, identifier, lookup_items)?;
-    let value =
+    let member = try_struct_constructor_shorthand_member(db, identifier, lookup_items)?;
+    let variable =
         try_struct_constructor_shorthand_variable(db, identifier, lookup_items, resolver_data)?;
-    Some((label, value))
+    Some((member, variable))
 }
 
 pub fn find_declaration<'db>(
@@ -420,7 +420,7 @@ fn try_member_from_constructor<'db>(
     Some(ResolvedItem::Member(member_id))
 }
 
-/// Resolves the label of shorthand syntax: the struct member that receives the value,
+/// Resolves the member of shorthand syntax: the struct member that receives the variable,
 /// e.g. the member `x` in `Struct { x }`.
 fn try_struct_constructor_shorthand_member<'db>(
     db: &'db AnalysisDatabase,
@@ -431,7 +431,7 @@ fn try_struct_constructor_shorthand_member<'db>(
         .then(|| try_member_from_constructor(db, identifier, lookup_items))?
 }
 
-/// Resolves the value of shorthand syntax, e.g. the variable `x` in `Struct { x }`.
+/// Resolves the variable of shorthand syntax, e.g. `x` in `Struct { x }`.
 fn try_struct_constructor_shorthand_variable<'db>(
     db: &'db AnalysisDatabase,
     identifier: &ast::TerminalIdentifier<'db>,
@@ -442,7 +442,7 @@ fn try_struct_constructor_shorthand_variable<'db>(
         .then(|| lookup_resolved_items(db, identifier, lookup_items, resolver_data))?
 }
 
-/// Checks if the identifier is shorthand syntax, which refers to both a label and a value,
+/// Checks if the identifier is shorthand syntax, which refers to both a member and a variable,  
 /// e.g. `Struct { <ident> }`.
 pub fn is_shorthand<'db>(
     db: &'db AnalysisDatabase,
