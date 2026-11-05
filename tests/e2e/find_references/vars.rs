@@ -280,7 +280,7 @@ fn var_via_struct_shorthand() {
     }
     ", @"
     #[derive(Drop)]
-    struct Foo { field: felt252 }
+    struct Foo { <sel=declaration>field</sel>: felt252 }
     fn main() {
         let <sel=declaration>field</sel> = 42;
         let x = Foo { <sel>field</sel> };

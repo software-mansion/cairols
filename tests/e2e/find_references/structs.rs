@@ -151,3 +151,26 @@ fn struct_member_via_definition_with_shorthand() {
     }
     ")
 }
+
+#[test]
+fn struct_member_and_var_via_shorthand() {
+    test_transform_plain!(References, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { fie<caret>ld };
+        let _ = x.field;
+        let _ = Foo { field: 0 };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { <sel=declaration>field</sel>: felt252 }
+    fn main() {
+        let <sel=declaration>field</sel> = 42;
+        let x = Foo { <sel>field</sel> };
+        let _ = x.<sel>field</sel>;
+        let _ = Foo { <sel>field</sel>: 0 };
+    }
+    ")
+}

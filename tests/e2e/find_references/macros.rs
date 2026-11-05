@@ -307,7 +307,7 @@ fn struct_constructor_shorthand_in_plugin_inline_macro() {
     }
     ", @"
     #[derive(Drop)]
-    struct Foo { field: felt252 }
+    struct Foo { <sel=declaration>field</sel>: felt252 }
     fn main() {
         let <sel=declaration>field</sel> = 42;
         let x = array![Foo { <sel>field</sel> }];
