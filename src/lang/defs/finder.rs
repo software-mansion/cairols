@@ -77,7 +77,9 @@ pub fn find_definition<'db>(
         .or_else(|| try_top_level_declarative_inline_macro(db, identifier))
         .or_else(|| try_submodule_name(db, identifier))
         .or_else(|| try_member(db, identifier, lookup_items))
-        .or_else(|| try_shorthand_value(db, identifier, lookup_items, resolver_data))
+        .or_else(|| {
+            try_struct_constructor_shorthand_variable(db, identifier, lookup_items, resolver_data)
+        })
         .or_else(|| try_member_from_constructor(db, identifier, lookup_items))
         .or_else(|| try_member_declaration(db, identifier))
         .or_else(|| try_variant_declaration(db, identifier))
@@ -96,8 +98,8 @@ pub fn find_shorthand<'db>(
     identifier: &ast::TerminalIdentifier<'db>,
     lookup_items: &[LookupItemId<'db>],
 ) -> Option<(ResolvedItem<'db>, ResolvedItem<'db>)> {
-    let label = try_shorthand_label(db, identifier, lookup_items)?;
-    let value = try_shorthand_value(db, identifier, lookup_items, &mut None)?;
+    let label = try_struct_constructor_shorthand_member(db, identifier, lookup_items)?;
+    let value = try_struct_constructor_shorthand_variable(db, identifier, lookup_items, &mut None)?;
     Some((label, value))
 }
 
@@ -418,7 +420,7 @@ fn try_member_from_constructor<'db>(
 
 /// Resolves the label of shorthand syntax: the struct member that receives the value,
 /// e.g. the member `x` in `Struct { x }`.
-fn try_shorthand_label<'db>(
+fn try_struct_constructor_shorthand_member<'db>(
     db: &'db AnalysisDatabase,
     identifier: &ast::TerminalIdentifier<'db>,
     lookup_items: &[LookupItemId<'db>],
@@ -428,7 +430,7 @@ fn try_shorthand_label<'db>(
 }
 
 /// Resolves the value of shorthand syntax, e.g. the variable `x` in `Struct { x }`.
-fn try_shorthand_value<'db>(
+fn try_struct_constructor_shorthand_variable<'db>(
     db: &'db AnalysisDatabase,
     identifier: &ast::TerminalIdentifier<'db>,
     lookup_items: &[LookupItemId<'db>],

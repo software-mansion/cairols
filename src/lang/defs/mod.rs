@@ -66,7 +66,7 @@ impl<'db> SymbolSearch<'db> {
     /// Gets you to the "nearest" point upwards in terms of top-down code breakdown
     /// (most likely you would use it to get this: usage -> impl)
     ///
-    /// For a shorthand, this is the value, e.g. the variable in `Struct { x }`.
+    /// For a struct constructor member shorthand, this is the value, e.g. the variable in `Struct { x }`.
     /// Use [`Self::find_definitions`] to also get the member.
     pub fn find_definition(
         db: &'db AnalysisDatabase,
@@ -82,7 +82,7 @@ impl<'db> SymbolSearch<'db> {
     }
 
     /// Finds definitions of all symbols referred to by the given identifier.
-    /// This is the same as [`Self::find_definition`] except for a shorthand, which refers to
+    /// This is the same as [`Self::find_definition`] except for a struct constructor member shorthand, which refers to  
     /// both the member and the variable, e.g. `Struct { x }`.
     pub fn find_definitions(
         db: &'db AnalysisDatabase,
