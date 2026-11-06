@@ -151,3 +151,25 @@ fn cursor_outside_markdown_link_has_no_completions() {
     completions = []
     "#);
 }
+
+#[test]
+fn trait_function_with_typo_in_doc_link() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait AbMaker {
+        fn bar() -> felt252;
+        fn foo(c: felt252) -> felt252;
+    }
+
+    /// See [`AbMaker::bxr<caret>`].
+    fn f() {}
+    ", @r#"
+    caret = """
+    /// See [`AbMaker::bxr<caret>`].
+    """
+
+    [[completions]]
+    completion_label = "bar(...)"
+    completion_label_type_info = "fn() -> felt252"
+    insert_text = "bar()"
+    "#);
+}

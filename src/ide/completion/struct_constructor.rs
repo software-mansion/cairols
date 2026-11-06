@@ -1,4 +1,5 @@
 use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_filesystem::span::TextPosition;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::{
     FunctionWithBodySemantic, SemanticExprLookup,
@@ -10,10 +11,12 @@ use cairo_lang_syntax::node::ast::ExprStructCtorCall;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
+use crate::ide::completion::helpers::span::get_range_and_text_before_cursor;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::text_matching::text_matches;
 use crate::lang::visibility::peek_visible_in_with_edition;
 
 /// Discovers struct members missing in the constructor call and returns completions containing
@@ -21,13 +24,15 @@ use crate::lang::visibility::peek_visible_in_with_edition;
 pub fn struct_constructor_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
+    cursor: TextPosition,
 ) -> Vec<CompletionItemOrderable> {
-    struct_constructor_completions_ex(db, ctx).unwrap_or_default()
+    struct_constructor_completions_ex(db, ctx, cursor).unwrap_or_default()
 }
 
 fn struct_constructor_completions_ex<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
+    cursor: TextPosition,
 ) -> Option<Vec<CompletionItemOrderable>> {
     let constructor = ctx.node.ancestor_of_type::<ExprStructCtorCall>(db)?;
     let module_id = ctx.module_id;
@@ -40,19 +45,27 @@ fn struct_constructor_completions_ex<'db>(
         .arguments(db)
         .elements(db)
         .filter_map(|member| match member {
-            ast::StructArg::StructArgSingle(struct_arg_single) => Some(
-                struct_arg_single
-                    .identifier(db)
-                    .token(db)
-                    .as_syntax_node()
-                    .get_text(db)
-                    .to_string(),
-            ),
+            ast::StructArg::StructArgSingle(struct_arg_single) => {
+                let identifier = struct_arg_single.identifier(db);
+                // The member being typed is not present yet.
+                (identifier.as_syntax_node() != ctx.node)
+                    .then(|| identifier.token(db).as_syntax_node().get_text(db).to_string())
+            }
             // although tail covers all remaining unspecified members, we still want to show them in
             // completion.
             ast::StructArg::StructArgTail(_) => None,
         })
         .collect::<Vec<_>>();
+
+    // The member name typed before the cursor, e.g. `al` in `MyStruct { al<caret>pha }`.
+    let typed = ctx
+        .node
+        .ancestor_of_type::<ast::StructArgSingle>(db)
+        .map(|arg| arg.identifier(db).as_syntax_node())
+        .filter(|identifier| *identifier == ctx.node)
+        .and_then(|identifier| get_range_and_text_before_cursor(db, identifier, cursor))
+        .map(|(_, text)| text)
+        .unwrap_or_default();
 
     let constructor_expr_id =
         db.lookup_expr_by_ptr(function_id, constructor.stable_ptr(db).into()).ok()?;
@@ -80,7 +93,9 @@ fn struct_constructor_completions_ex<'db>(
     let completions = struct_members
         .iter()
         .filter_map(|(name, data)| {
-            if already_present_members.contains(&name.to_string(db)) {
+            if already_present_members.contains(&name.to_string(db))
+                || !text_matches(name.to_string(db), typed)
+            {
                 None
             } else {
                 Some(CompletionItemOrderable {
