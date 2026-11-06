@@ -125,3 +125,22 @@ fn multiple_resultants_with_macros() {
     "
     );
 }
+
+#[test]
+fn struct_constructor_shorthand() {
+    test_transform_plain!(DocumentHighlight, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { fie<caret>ld };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { <sel>field</sel>: felt252 }
+    fn main() {
+        let <sel>field</sel> = 42;
+        let x = Foo { <sel>field</sel> };
+    }
+    ")
+}

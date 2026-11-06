@@ -14,7 +14,7 @@ use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_language_common::CommonGroup;
 
 pub use self::finder::ResolvedItem;
-pub use self::finder::{find_declaration, find_definition};
+pub use self::finder::{find_declaration, find_definition, find_shorthand, is_shorthand};
 pub use self::generic_param::GenericParamDef;
 pub use self::item::ItemDef;
 pub use self::member::{MemberDef, resolve_accessed_member};
@@ -65,6 +65,9 @@ impl<'db> SymbolSearch<'db> {
     /// Finds definition of the symbol referred to by the given identifier.
     /// Gets you to the "nearest" point upwards in terms of top-down code breakdown
     /// (most likely you would use it to get this: usage -> impl)
+    ///
+    /// For a struct constructor member shorthand, this is the variable, e.g. `x` in `Struct { x }`.
+    /// Use [`Self::find_definitions`] to also get the member.
     pub fn find_definition(
         db: &'db AnalysisDatabase,
         identifier: &ast::TerminalIdentifier<'db>,
@@ -76,6 +79,36 @@ impl<'db> SymbolSearch<'db> {
         let resolved_item = find_definition(db, identifier, lookup_items, &mut resolver_data)?;
 
         Self::from_resolved_item(db, resolved_item, resolver_data)
+    }
+
+    /// Finds definitions of all symbols referred to by the given identifier.
+    /// This is the same as [`Self::find_definition`] except for a struct constructor member shorthand, which refers to  
+    /// both the member and the variable, e.g. `Struct { x }`.
+    pub fn find_definitions(
+        db: &'db AnalysisDatabase,
+        identifier: &ast::TerminalIdentifier<'db>,
+    ) -> Vec<Self> {
+        match Self::find_shorthand(db, identifier) {
+            Some((member, variable)) => vec![member, variable],
+            None => Self::find_definition(db, identifier).into_iter().collect(),
+        }
+    }
+
+    /// Finds both symbols referred to by a shorthand identifier, as a `(member, variable)` pair,
+    /// e.g. the member and the variable in `Struct { x }`.
+    pub fn find_shorthand(
+        db: &'db AnalysisDatabase,
+        identifier: &ast::TerminalIdentifier<'db>,
+    ) -> Option<(Self, Self)> {
+        let lookup_items =
+            db.collect_lookup_items_with_parent_files(identifier.as_syntax_node())?;
+        let mut resolver_data = None;
+        let (member, variable) = find_shorthand(db, identifier, lookup_items, &mut resolver_data)?;
+
+        Some((
+            Self::from_resolved_item(db, member, None)?,
+            Self::from_resolved_item(db, variable, resolver_data)?,
+        ))
     }
 
     /// Finds declaration of the symbol referred to by given identifier.
@@ -240,6 +273,9 @@ impl<'db> SymbolDef<'db> {
                             &[SyntaxKind::AttributeList, SyntaxKind::ExprInlineMacro],
                         )
                         .is_some()
+                        || owning_function
+                            .descendants(db)
+                            .any(|node| node.kind(db) == SyntaxKind::ExprInlineMacro)
                     {
                         let file_id = owning_function.stable_ptr(db).file_id(db);
                         if let Some((subfiles, _)) =

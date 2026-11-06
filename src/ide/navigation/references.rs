@@ -35,24 +35,29 @@ fn find_references<'db>(
 ) -> Option<Vec<Location>> {
     let identifier =
         syntax_node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
-    let symbol = SymbolSearch::find_definition(db, &identifier)?;
-    let def = symbol.def.clone();
+    // A shorthand, e.g. `Struct { x }`, refers to both the member and the variable.
+    let locations = SymbolSearch::find_definitions(db, &identifier)
+        .into_iter()
+        .flat_map(|symbol| {
+            let def = symbol.def.clone();
 
-    Some(
-        symbol
-            .usages(db)
-            .include_declaration(include_declaration)
-            .originating_locations(db)
-            .filter(|loc| {
-                !is_in_derive_attribute(db, loc)
-                    // We want to show definition location (if requested),
-                    // even if it comes from a derive macro.
-                    // Common case - impl declared in the derive macro.
-                    || (include_declaration && Some(loc) == def.definition_originating_location(db).as_ref())
-            })
-            .filter_map(|loc| db.lsp_location( loc))
-            .collect(),
-    )
+            symbol
+                .usages(db)
+                .include_declaration(include_declaration)
+                .originating_locations(db)
+                .filter(|loc| {
+                    !is_in_derive_attribute(db, loc)
+                        // We want to show definition location (if requested),
+                        // even if it comes from a derive macro.
+                        // Common case - impl declared in the derive macro.
+                        || (include_declaration && Some(loc) == def.definition_originating_location(db).as_ref())
+                })
+                .filter_map(|loc| db.lsp_location(loc))
+                .collect::<Vec<_>>()
+        })
+        .collect();
+
+    Some(locations)
 }
 
 /// Used to filter out references mapped to derives.
