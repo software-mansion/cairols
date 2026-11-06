@@ -1,3 +1,4 @@
+use crate::support::insta::test_transform_with_macros;
 use lsp_types::request::Completion;
 
 use crate::{completions::completion_fixture, support::insta::test_transform_plain};
@@ -799,7 +800,7 @@ fn constructor_member_partially_typed_after_other_member() {
 
 #[test]
 fn constructor_member_partially_typed_with_macro() {
-    test_transform_plain!(Completion, completion_fixture(), "
+    test_transform_with_macros!(Completion, completion_fixture(), "
     #[derive(Drop)]
     struct S { alpha: felt252, alcohol: felt252, beta: felt252 }
 
@@ -824,7 +825,7 @@ fn constructor_member_partially_typed_with_macro() {
 
 #[test]
 fn constructor_member_partially_typed_before_existing_text_with_macro() {
-    test_transform_plain!(Completion, completion_fixture(), "
+    test_transform_with_macros!(Completion, completion_fixture(), "
     #[derive(Drop)]
     struct S { alpha: felt252, alcohol: felt252, beta: felt252 }
 
