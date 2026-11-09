@@ -17,10 +17,33 @@ use crate::server::client::Notifier;
 pub const SCARB_TOML: &str = "Scarb.toml";
 pub const SCARB_METADATA_FAILED_MESSAGE: &str =
     "`scarb metadata` failed. Check if your project builds correctly via `scarb build`.";
+const SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE: &str = "`scarb metadata` failed due to a Cairo version requirement mismatch. The Cairo version \
+     required by your project is not compatible with the version of Scarb in use. Adjust the \
+     `cairo-version` field in your `Scarb.toml` or switch to a matching Scarb toolchain.";
 
 pub struct MetadataOutput {
     pub metadata: Metadata,
     pub stdout: String,
+}
+
+pub struct MetadataFailure {
+    pub error: MetadataCommandError,
+    pub message: &'static str,
+}
+
+impl From<MetadataCommandError> for MetadataFailure {
+    fn from(error: MetadataCommandError) -> Self {
+        let is_cairo_version_mismatch = matches!(
+            &error,
+            MetadataCommandError::ScarbError { stdout, .. } if stdout.contains("required Cairo version")
+        );
+        let message = if is_cairo_version_mismatch {
+            SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE
+        } else {
+            SCARB_METADATA_FAILED_MESSAGE
+        };
+        Self { error, message }
+    }
 }
 
 /// The ultimate object for invoking Scarb.
@@ -162,7 +185,7 @@ impl ScarbToolchain {
         &self,
         manifest_path: &Path,
         scarb_path: &Path,
-    ) -> Result<MetadataOutput, MetadataCommandError> {
+    ) -> Result<MetadataOutput, MetadataFailure> {
         let output = Command::new(scarb_path)
             .arg("--json")
             .arg("--manifest-path")
@@ -170,7 +193,8 @@ impl ScarbToolchain {
             .arg("metadata")
             .arg("--format-version")
             .arg(VersionPin.numeric().to_string())
-            .output()?;
+            .output()
+            .map_err(MetadataCommandError::from)?;
 
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
 
@@ -185,6 +209,7 @@ impl ScarbToolchain {
         .inspect_err(|err| {
             error!("{err:?}");
         })
+        .map_err(MetadataFailure::from)
     }
 
     pub fn notify_error(&self, message: &str) {
@@ -269,4 +294,38 @@ fn parse_metadata_from_ndjson(stdout: &str) -> Result<Metadata, MetadataCommandE
         .filter_map(|line| serde_json::from_str::<Metadata>(line).ok())
         .next()
         .ok_or_else(|| MetadataCommandError::NotFound { stdout: stdout.to_string() })
+}
+
+#[cfg(test)]
+mod tests {
+    use scarb_metadata::MetadataCommandError;
+
+    use super::{
+        MetadataFailure, SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE,
+        SCARB_METADATA_FAILED_MESSAGE,
+    };
+
+    fn failure_message(stdout: &str) -> &'static str {
+        MetadataFailure::from(MetadataCommandError::ScarbError {
+            stdout: stdout.to_string(),
+            stderr: String::new(),
+        })
+        .message
+    }
+
+    #[test]
+    fn cairo_version_mismatch_gets_dedicated_message() {
+        let stdout = "{\"type\":\"error\",\"message\":\"the required Cairo version of package \
+                      sphincs_plus is not compatible with current version\\nCairo version \
+                      required: =2.1.0\\nCairo version of Scarb: 2.18.0\\n\"}";
+
+        assert_eq!(failure_message(stdout), SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE);
+    }
+
+    #[test]
+    fn other_errors_get_generic_message() {
+        let stdout = "{\"type\":\"error\",\"message\":\"something else went wrong\"}";
+
+        assert_eq!(failure_message(stdout), SCARB_METADATA_FAILED_MESSAGE);
+    }
 }

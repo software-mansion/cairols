@@ -21,7 +21,6 @@ pub use self::scarb_manifest_diagnostics::{
 };
 use self::scarb_manifest_diagnostics::{
     collect_scarb_manifest_diagnostics, manifest_diagnostics_from_ndjson,
-    scarb_metadata_popup_message,
 };
 use crate::ide::code_lens::FileChange;
 use crate::lang::db::AnalysisDatabase;
@@ -319,15 +318,13 @@ impl ProjectControllerThread {
                             .into_std_path_buf(),
                         diagnostics: manifest_diagnostics_from_ndjson(&output.stdout),
                     })
-                    .unwrap_or_else(|error| {
-                        let metadata_messages = collect_scarb_manifest_diagnostics(error);
-
+                    .unwrap_or_else(|failure| {
                         // A failed `scarb metadata` means the project could not be loaded, so we
-                        // always inform the user with a popup - the message is tailored to the
-                        // cause (e.g. a Cairo version mismatch) when we can recognize it.
+                        // always inform the user with a popup.
                         // Located manifest diagnostics are additionally surfaced inline.
-                        self.scarb_toolchain
-                            .notify_error(scarb_metadata_popup_message(&metadata_messages));
+                        self.scarb_toolchain.notify_error(failure.message);
+
+                        let metadata_messages = collect_scarb_manifest_diagnostics(failure.error);
 
                         ProjectUpdate::ScarbMetadataFailed {
                             manifest_path,
