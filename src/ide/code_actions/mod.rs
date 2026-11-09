@@ -27,6 +27,7 @@ mod scarb_manifest;
 mod suggest_similar_identifier;
 mod suggest_similar_member;
 mod suggest_similar_method;
+mod suggest_similar_variant;
 
 /// Compute commands for a given text document and range. These commands are typically code fixes to
 /// either fix problems or to beautify/refactor code.
@@ -138,6 +139,8 @@ fn get_code_actions_for_diagnostics(
                 }
             }
             Some("E0007") => suggest_similar_member::suggest_similar_member(db, ctx, uri.clone())
+                .unwrap_or_default(),
+            Some("E2060") => suggest_similar_variant::suggest_similar_variant(db, ctx, uri.clone())
                 .unwrap_or_default(),
             Some("E2083") => {
                 make_variable_mutable::make_variable_mutable(db, ctx.node, uri.clone()).to_vec()
