@@ -1,6 +1,6 @@
-use crate::support::insta::test_transform_with_macros;
 use lsp_types::request::Completion;
 
+use crate::support::insta::test_transform_with_macros;
 use crate::{completions::completion_fixture, support::insta::test_transform_plain};
 
 #[test]
