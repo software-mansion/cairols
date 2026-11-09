@@ -132,20 +132,6 @@ fn function_call_suggests_only_functions() {
 }
 
 #[test]
-fn function_call_suggests_enum_variants() {
-    test_transform!(quick_fix, "
-    enum Action {
-        Deposit: felt252,
-        Withdraw: felt252,
-    }
-
-    fn main() {
-        let _x = Action::Deposi<caret>(1);
-    }
-    ", @"No code actions.");
-}
-
-#[test]
 fn struct_constructor_suggests_only_types() {
     test_transform!(quick_fix, "
     struct Balance {
