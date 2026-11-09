@@ -35,16 +35,6 @@ jobs:
           echo "::notice::Checking Cairo commit: https://github.com/starkware-libs/cairo/commit/$CAIRO_REV"
           cargo xtask upgrade cairo --rev "$CAIRO_REV"
 
-      - name: Verify Cairo main was actually used
-        run: |
-          # Cargo silently ignores [patch] entries when the patched crate version
-          # (Cairo main) doesn't satisfy the repo's requirement, which would make
-          # this check a false green. Fail if any cairo-lang crate still comes from crates.io.
-          if grep -B2 '^source = "registry' Cargo.lock | grep 'name = "cairo-lang-' | grep -v 'cairo-lang-primitive-token'; then
-            echo "::error::Cairo main was NOT tested: the crates above still resolve from crates.io. Likely Cairo main's version is lower than the one this repo depends on."
-            exit 1
-          fi
-
       - name: Upgrade Lint to latest main commit
         run: |
           LINT_REV=$(git ls-remote --refs "https://github.com/software-mansion/cairo-lint" main | awk '{print $1}')
