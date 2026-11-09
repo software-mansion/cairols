@@ -17,9 +17,6 @@ use crate::server::client::Notifier;
 pub const SCARB_TOML: &str = "Scarb.toml";
 pub const SCARB_METADATA_FAILED_MESSAGE: &str =
     "`scarb metadata` failed. Check if your project builds correctly via `scarb build`.";
-pub const SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE: &str = "`scarb metadata` failed due to a Cairo version requirement mismatch. The Cairo version \
-     required by your project is not compatible with the version of Scarb in use. Adjust the \
-     `cairo-version` field in your `Scarb.toml` or switch to a matching Scarb toolchain.";
 
 pub struct MetadataOutput {
     pub metadata: Metadata,
@@ -155,7 +152,7 @@ impl ScarbToolchain {
             .context("failed to execute: scarb metadata");
 
         if !self.is_silent && result.is_err() {
-            self.notify_metadata_failed(SCARB_METADATA_FAILED_MESSAGE);
+            self.notify_error(SCARB_METADATA_FAILED_MESSAGE);
         }
 
         result
@@ -190,7 +187,7 @@ impl ScarbToolchain {
         })
     }
 
-    pub fn notify_metadata_failed(&self, message: &str) {
+    pub fn notify_error(&self, message: &str) {
         self.notifier.notify::<ShowMessage>(ShowMessageParams {
             typ: MessageType::ERROR,
             message: message.to_string(),

@@ -9,9 +9,11 @@ use serde_json::Value;
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::Utf8Span;
-use crate::toolchain::scarb::{
-    SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE, SCARB_METADATA_FAILED_MESSAGE,
-};
+use crate::toolchain::scarb::SCARB_METADATA_FAILED_MESSAGE;
+
+const SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE: &str = "`scarb metadata` failed due to a Cairo version requirement mismatch. The Cairo version \
+     required by your project is not compatible with the version of Scarb in use. Adjust the \
+     `cairo-version` field in your `Scarb.toml` or switch to a matching Scarb toolchain.";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ScarbMetadataMessage {
@@ -40,7 +42,7 @@ fn diagnostics_to_display(all_messages: Vec<ScarbMetadataMessage>) -> Vec<ScarbM
 ///
 /// When the failure is caused by a Cairo version requirement mismatch, returns a dedicated
 /// message pointing the user at the root cause instead of the generic one.
-pub fn scarb_metadata_failed_message(messages: &[ScarbMetadataMessage]) -> &'static str {
+pub fn scarb_metadata_popup_message(messages: &[ScarbMetadataMessage]) -> &'static str {
     if messages.iter().any(scarb_metadata_message_is_cairo_version_mismatch) {
         SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE
     } else {
@@ -49,9 +51,10 @@ pub fn scarb_metadata_failed_message(messages: &[ScarbMetadataMessage]) -> &'sta
 }
 
 fn scarb_metadata_message_is_cairo_version_mismatch(message: &ScarbMetadataMessage) -> bool {
-    match message {
-        ScarbMetadataMessage::MetadataError(message) => message.contains("required Cairo version"),
-        ScarbMetadataMessage::MetadataDiagnostic { .. } => false,
+    if let ScarbMetadataMessage::MetadataError(message) = message {
+        message.contains("required Cairo version")
+    } else {
+        false
     }
 }
 
@@ -305,7 +308,7 @@ mod tests {
         });
 
         assert_eq!(
-            scarb_metadata_failed_message(&messages),
+            scarb_metadata_popup_message(&messages),
             SCARB_METADATA_CAIRO_VERSION_MISMATCH_MESSAGE
         );
     }
@@ -315,7 +318,7 @@ mod tests {
         let messages =
             vec![ScarbMetadataMessage::MetadataError("something else went wrong".to_string())];
 
-        assert_eq!(scarb_metadata_failed_message(&messages), SCARB_METADATA_FAILED_MESSAGE);
+        assert_eq!(scarb_metadata_popup_message(&messages), SCARB_METADATA_FAILED_MESSAGE);
     }
 
     #[test]
@@ -327,7 +330,7 @@ mod tests {
             span: Some(Utf8Span::new(4, 11)),
         }];
 
-        assert_eq!(scarb_metadata_failed_message(&messages), SCARB_METADATA_FAILED_MESSAGE);
+        assert_eq!(scarb_metadata_popup_message(&messages), SCARB_METADATA_FAILED_MESSAGE);
     }
 
     #[test]
