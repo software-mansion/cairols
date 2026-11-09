@@ -14,7 +14,7 @@ use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::{ExprPath, ItemImpl, ItemImplAlias, PathSegment};
+use cairo_lang_syntax::node::ast::{ItemImpl, ItemImplAlias, PathSegment};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::OptionFrom;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -26,15 +26,16 @@ use crate::ide::completion::helpers::binary_expr::dot_rhs::dot_expr_rhs;
 use crate::ide::completion::helpers::formatting::{
     format_enum_variant, generate_abbreviated_signature,
 };
-use crate::ide::completion::helpers::is_empty_body_context;
 use crate::ide::completion::helpers::item::{
     CompletionItemOrderable, ImportableCompletionItem, ImportableCompletionItemHashable,
     get_item_relevance,
 };
 use crate::ide::completion::helpers::snippets::TypedSnippet;
+use crate::ide::completion::resolve_typed_segments;
 use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
+use crate::lang::text_matching::text_matches;
 use crate::lang::visibility::peek_visible_in_with_edition;
 
 /// Proposes importable items whose full path ends with the typed text.
@@ -125,7 +126,7 @@ pub fn path_suffix_completions<'db>(
 
     // In expression blocks, when the cursor is after `::` with non-empty preceding segments
     // (including when the user has already typed a partial segment), propose bare item names
-    // from traits/impls whose path matches. The LSP client handles prefix filtering.
+    // from traits/impls whose path matches.
     if ctx.node.ancestor_of_kind(db, SyntaxKind::ExprBlock).is_some() && !typed_segments.is_empty()
     {
         extend_with_trait_items_for_matching_paths(
@@ -133,6 +134,7 @@ pub fn path_suffix_completions<'db>(
             ctx,
             &importables,
             &typed_segments,
+            &last_typed_segment.to_string(db),
             current_crate,
             &mut result,
         );
@@ -145,11 +147,12 @@ pub fn path_suffix_completions<'db>(
 ///
 /// "Prefix" means the typed path is successfully resolved as the beginning of a longer path,
 /// and this function returns what can legally follow it. e.g. typing `core::array::` resolves
-/// that module and proposes its members.
+/// that module and proposes its members. Only members whose name matches `typed` are proposed.
 pub fn path_prefix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     segments: Vec<PathSegment<'db>>,
+    typed: &str,
 ) -> Option<Vec<CompletionItemOrderable>> {
     let is_current_scope = segments.len() == 1;
     let mut resolver = ctx.resolver(db);
@@ -167,6 +170,7 @@ pub fn path_prefix_completions<'db>(
             .ok()?
             .items(db)
             .iter()
+            .filter(|item| text_matches(item.name(db).to_string(db), typed))
             .filter_map(|item| {
                 let resolved_item = ResolvedGenericItem::from_module_item(db, *item).ok()?;
                 let item_info = db.module_item_info_by_name(module_id, item.name(db)).ok()??;
@@ -202,6 +206,7 @@ pub fn path_prefix_completions<'db>(
                 db,
                 ctx,
                 trait_id,
+                typed,
                 is_current_scope,
                 current_crate,
                 crate_id,
@@ -216,6 +221,7 @@ pub fn path_prefix_completions<'db>(
                     db,
                     ctx,
                     trait_id,
+                    typed,
                     is_current_scope,
                     current_crate,
                     crate_id,
@@ -228,6 +234,7 @@ pub fn path_prefix_completions<'db>(
                 .cloned()
                 .unwrap_or_default()
                 .iter()
+                .filter(|(name, _)| text_matches(name.to_string(db), typed))
                 .map(|(name, variant_id)| {
                     let formatted_enum_variant =
                         format_enum_variant(db, &enum_id.enum_id(db), variant_id);
@@ -255,28 +262,6 @@ pub fn path_prefix_completions<'db>(
         },
         _ => vec![],
     })
-}
-
-/// Returns the typed path segments and the last (potentially partial) segment, falling back to
-/// empty values when the cursor is in an empty body context (no path typed yet).
-/// `is_on_impl_alias_path` enables the same fallback right after `impl A =`.
-///
-/// Returns `None` when neither condition holds (i.e. there is no path at the cursor and the
-/// context is not an empty body).
-fn resolve_typed_segments<'db>(
-    db: &'db AnalysisDatabase,
-    ctx: &AnalysisContext<'db>,
-    is_on_impl_alias_path: bool,
-) -> Option<(Vec<SmolStrId<'db>>, SmolStrId<'db>)> {
-    match get_typed_text_and_last_segment(db, ctx) {
-        (Some(typed_segments), Some(last_typed_segment)) => {
-            Some((typed_segments, last_typed_segment))
-        }
-        _ if is_empty_body_context(db, &ctx.node) || is_on_impl_alias_path => {
-            Some((vec![], SmolStrId::from(db, "")))
-        }
-        _ => None,
-    }
 }
 
 /// Returns the impl alias whose aliased path is under the cursor, e.g. `impl A = <caret>;`.
@@ -328,44 +313,6 @@ fn get_importables_for_path_suffix_completions<'db>(
     }
 }
 
-fn get_typed_text_and_last_segment<'db>(
-    db: &'db AnalysisDatabase,
-    ctx: &AnalysisContext<'db>,
-) -> (Option<Vec<SmolStrId<'db>>>, Option<SmolStrId<'db>>) {
-    let typed_text = match ctx
-        .node
-        .ancestor_of_type::<ExprPath>(db)
-        .map(|path| path.segments(db).elements(db).collect_vec())
-    {
-        Some(segments) if !segments.is_empty() => segments,
-        _ => return (None, None),
-    };
-
-    let mut typed_text_as_smol_str = typed_text
-        .into_iter()
-        .map(|segment| segment.as_syntax_node())
-        // Allow proposing items in the middle of the existing path by filtering out the nodes which lie after the cursor:
-        .filter_map(|segment_node| {
-            if segment_node.offset(db) <= ctx.node.offset(db) {
-                Some(segment_node.get_text_without_trivia(db))
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<_>>();
-
-    // After `::`, we want to propose all importables available at the preceding path.
-    let last_typed_segment: SmolStrId<'db> = if ctx.node.kind(db) == SyntaxKind::TerminalColonColon
-    {
-        SmolStrId::from(db, "")
-    } else {
-        // Otherwise, the last segment is a partial identifier we want to complete using fuzzy search.
-        typed_text_as_smol_str.pop().expect("typed path should not be empty")
-    };
-
-    (Some(typed_text_as_smol_str), Some(last_typed_segment))
-}
-
 fn module_item_completion_detail<'db>(
     db: &'db AnalysisDatabase,
     item: ModuleItemId<'db>,
@@ -388,11 +335,13 @@ fn module_item_completion_detail<'db>(
     }
 }
 
-/// Generates prefix completion items for all items (functions, types, constants) of a trait.
+/// Generates prefix completion items for items (functions, types, constants) of a trait whose
+/// name matches `typed`.
 fn trait_items_prefix_completions<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     trait_id: TraitId<'db>,
+    typed: &str,
     is_current_scope: bool,
     current_crate: CrateId<'db>,
     crate_id: CrateId<'db>,
@@ -403,8 +352,13 @@ fn trait_items_prefix_completions<'db>(
         *crate_id.long(db) == CrateLongId::core(db),
     );
 
-    let functions = db.trait_functions(trait_id).cloned().unwrap_or_default().into_iter().map(
-        |(name, trait_function_id)| {
+    let functions = db
+        .trait_functions(trait_id)
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(name, _)| text_matches(name.to_string(db), typed))
+        .map(|(name, trait_function_id)| {
             let name_str = name.to_string(db);
             let signature = db.trait_function_signature(trait_function_id).ok();
             let snippet = signature
@@ -424,27 +378,31 @@ fn trait_items_prefix_completions<'db>(
                 },
                 relevance,
             }
-        },
-    );
-
-    let types =
-        db.trait_types(trait_id).cloned().unwrap_or_default().into_iter().map(|(name, _)| {
-            CompletionItemOrderable {
-                item: CompletionItem {
-                    label: name.to_string(db),
-                    label_details: Some(CompletionItemLabelDetails {
-                        detail: None,
-                        description: None,
-                    }),
-                    kind: Some(CompletionItemKind::CLASS),
-                    ..CompletionItem::default()
-                },
-                relevance,
-            }
         });
 
-    let constants = db.trait_constants(trait_id).cloned().unwrap_or_default().into_iter().map(
-        |(name, trait_constant_id)| {
+    let types = db
+        .trait_types(trait_id)
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(name, _)| text_matches(name.to_string(db), typed))
+        .map(|(name, _)| CompletionItemOrderable {
+            item: CompletionItem {
+                label: name.to_string(db),
+                label_details: Some(CompletionItemLabelDetails { detail: None, description: None }),
+                kind: Some(CompletionItemKind::CLASS),
+                ..CompletionItem::default()
+            },
+            relevance,
+        });
+
+    let constants = db
+        .trait_constants(trait_id)
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(name, _)| text_matches(name.to_string(db), typed))
+        .map(|(name, trait_constant_id)| {
             let description = db.trait_constant_type(trait_constant_id).ok().and_then(|ty| {
                 db.visible_importables_from_module(ctx.module_id)
                     .map(|importables| format_type(db, ty, &importables, None))
@@ -458,19 +416,20 @@ fn trait_items_prefix_completions<'db>(
                 },
                 relevance,
             }
-        },
-    );
+        });
 
     functions.chain(types).chain(constants).collect()
 }
 
 /// For each trait or impl in `importables` whose path ends with `typed_segments`, extends
-/// `result` with completion items for all of that trait's items (functions, types, constants).
+/// `result` with completion items for that trait's items (functions, types, constants) matching
+/// `typed`.
 fn extend_with_trait_items_for_matching_paths<'db>(
     db: &'db AnalysisDatabase,
     ctx: &'db AnalysisContext<'db>,
     importables: &OrderedHashMap<ImportableId<'db>, String>,
     typed_segments: &[SmolStrId<'db>],
+    typed: &str,
     current_crate: CrateId<'db>,
     result: &mut Vec<CompletionItemOrderable>,
 ) {
@@ -504,6 +463,7 @@ fn extend_with_trait_items_for_matching_paths<'db>(
             db,
             ctx,
             trait_id,
+            typed,
             true,
             current_crate,
             crate_id,

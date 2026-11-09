@@ -581,3 +581,73 @@ fn type_bound_user_trait() {
     """]
     "#);
 }
+
+#[test]
+fn self_completions_partially_typed() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait AbMaker<T> {
+        fn alpha() -> T;
+        fn beta(c: T) -> T;
+    }
+    impl AbMakerFelt252 of AbMaker<felt252> {
+        fn alpha() -> felt252 {
+            Self::be<caret>
+        }
+    }
+    ",@r#"
+    caret = """
+            Self::be<caret>
+    """
+
+    [[completions]]
+    completion_label = "beta(...)"
+    completion_label_type_info = "fn(c: T) -> T"
+    insert_text = "beta(${1:c})"
+    "#);
+}
+
+#[test]
+fn self_completions_function_with_typo() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait AbMaker<T> {
+        fn bar() -> T;
+        fn foo(c: T) -> T;
+    }
+    impl AbMakerFelt252 of AbMaker<felt252> {
+        fn foo(c: felt252) -> felt252 {
+            Self::bxr<caret>
+        }
+    }
+    ",@r#"
+    caret = """
+            Self::bxr<caret>
+    """
+
+    [[completions]]
+    completion_label = "bar(...)"
+    completion_label_type_info = "fn() -> T"
+    insert_text = "bar()"
+    "#);
+}
+
+#[test]
+fn trait_path_function_with_typo() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait AbMaker {
+        fn bar() -> felt252;
+        fn foo(c: felt252) -> felt252;
+    }
+    fn f() {
+        AbMaker::bxr<caret>
+    }
+    ",@r#"
+    caret = """
+        AbMaker::bxr<caret>
+    """
+
+    [[completions]]
+    completion_label = "bar(...)"
+    completion_label_type_info = "fn() -> felt252"
+    insert_text = "bar()"
+    "#);
+}

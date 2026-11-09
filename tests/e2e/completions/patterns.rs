@@ -258,3 +258,21 @@ fn enum_pattern() {
     completion_label_type_info = "Foo::Qwerty"
     "#);
 }
+
+#[test]
+fn enum_pattern_partially_typed() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    enum Foo { Abc, Qwerty }
+    fn a() {
+        let Foo::Qw<caret> = 1234567;
+    }
+    ",@r#"
+    caret = """
+        let Foo::Qw<caret> = 1234567;
+    """
+
+    [[completions]]
+    completion_label = "Qwerty"
+    completion_label_type_info = "Foo::Qwerty"
+    "#);
+}

@@ -34,8 +34,7 @@ pub fn goto_definition(
     };
 
     let resultants = db.get_node_resultants(node.as_syntax_node())?;
-    let locations: OrderedHashSet<_> =
-        resultants.iter().filter_map(|node| goto(db, *node)).collect();
+    let locations: OrderedHashSet<_> = resultants.iter().flat_map(|node| goto(db, *node)).collect();
     let mut locations: Vec<_> = locations.into_iter().collect();
 
     match locations.len() {
@@ -85,14 +84,33 @@ fn try_goto_doc_link_def(
         .ok()?;
 
     let resolved_node = ResolvedItem::Generic(resolved_item).definition_node(db)?;
-    goto(db, resolved_node)
+    let identifier = resolved_node
+        .ancestors_with_self(db)
+        .find_map(|node| TerminalIdentifier::cast(db, node))?;
+    let symbol = SymbolSearch::find_definition(db, &identifier)?.def;
+    goto_symbol(db, &identifier, symbol)
 }
 
-fn goto<'db>(db: &'db AnalysisDatabase, syntax_node: SyntaxNode<'db>) -> Option<Location> {
-    let identifier =
-        syntax_node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))?;
-    let symbol = SymbolSearch::find_definition(db, &identifier)?.def;
+/// Gets definition locations of all symbols referred to by the given node.
+fn goto<'db>(db: &'db AnalysisDatabase, syntax_node: SyntaxNode<'db>) -> Vec<Location> {
+    let Some(identifier) =
+        syntax_node.ancestors_with_self(db).find_map(|node| TerminalIdentifier::cast(db, node))
+    else {
+        return vec![];
+    };
 
+    SymbolSearch::find_definitions(db, &identifier)
+        .into_iter()
+        .filter_map(|symbol| goto_symbol(db, &identifier, symbol.def))
+        .collect()
+}
+
+/// Gets the definition location of a single symbol.
+fn goto_symbol<'db>(
+    db: &'db AnalysisDatabase,
+    identifier: &TerminalIdentifier<'db>,
+    symbol: SymbolDef<'db>,
+) -> Option<Location> {
     let og_location = SpanInFile {
         file_id: identifier.as_syntax_node().stable_ptr(db).file_id(db),
         span: identifier.as_syntax_node().span_without_trivia(db),
@@ -103,7 +121,7 @@ fn goto<'db>(db: &'db AnalysisDatabase, syntax_node: SyntaxNode<'db>) -> Option<
     /// It is done to ensure better UX when finding references of impl items.
     /// For details, refer to [`SymbolSearch::find_declaration`].
     let symbol = if Some(og_location) == symbol.definition_location(db) {
-        SymbolSearch::find_declaration(db, &identifier)?.def
+        SymbolSearch::find_declaration(db, identifier)?.def
     } else {
         symbol
     };

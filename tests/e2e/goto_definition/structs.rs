@@ -168,3 +168,22 @@ fn struct_item_in_constructor_with_macros() {
     }
     ")
 }
+
+#[test]
+fn struct_member_in_constructor_shorthand() {
+    test_transform_plain!(GotoDefinition, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { fie<caret>ld };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { <sel>field</sel>: felt252 }
+    fn main() {
+        let <sel>field</sel> = 42;
+        let x = Foo { field };
+    }
+    ")
+}
