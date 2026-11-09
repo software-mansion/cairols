@@ -270,10 +270,6 @@ fn type_annotation_with_dangling_path() {
     """
 
     [[completions]]
-    completion_label = "CONST"
-    completion_label_path = "(use module::CONST)"
-
-    [[completions]]
     completion_label = "felt"
     completion_label_path = "(use module::felt)"
 
