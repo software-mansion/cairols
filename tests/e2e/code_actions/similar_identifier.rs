@@ -122,20 +122,11 @@ fn function_call_suggests_only_functions() {
         let _x = balanc<caret>();
     }
     ", @r#"
-    Title: Did you mean `Panic`?
-    Add new text: "Panic"
-    At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
     Title: Did you mean `panic`?
     Add new text: "panic"
     At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
-    Title: Did you mean `balances`?
-    Add new text: "balances"
-    At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
     Title: Did you mean `balance`?
     Add new text: "balance"
-    At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
-    Title: Did you mean `Balance`?
-    Add new text: "Balance"
     At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
     "#);
 }
@@ -174,15 +165,6 @@ fn struct_constructor_suggests_only_structs() {
     Title: Did you mean `Panic`?
     Add new text: "Panic"
     At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
-    Title: Did you mean `panic`?
-    Add new text: "panic"
-    At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
-    Title: Did you mean `Balances`?
-    Add new text: "Balances"
-    At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
-    Title: Did you mean `Balanced`?
-    Add new text: "Balanced"
-    At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
     Title: Did you mean `Balance`?
     Add new text: "Balance"
     At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
@@ -208,15 +190,6 @@ fn type_clause_suggests_only_types() {
     ", @r#"
     Title: Did you mean `Panic`?
     Add new text: "Panic"
-    At: Range { start: Position { line: 11, character: 12 }, end: Position { line: 11, character: 18 } }
-    Title: Did you mean `panic`?
-    Add new text: "panic"
-    At: Range { start: Position { line: 11, character: 12 }, end: Position { line: 11, character: 18 } }
-    Title: Did you mean `Balances`?
-    Add new text: "Balances"
-    At: Range { start: Position { line: 11, character: 12 }, end: Position { line: 11, character: 18 } }
-    Title: Did you mean `Balanced`?
-    Add new text: "Balanced"
     At: Range { start: Position { line: 11, character: 12 }, end: Position { line: 11, character: 18 } }
     Title: Did you mean `Balance`?
     Add new text: "Balance"
@@ -244,15 +217,6 @@ fn generic_argument_suggests_only_types() {
     Title: Did you mean `Panic`?
     Add new text: "Panic"
     At: Range { start: Position { line: 11, character: 18 }, end: Position { line: 11, character: 24 } }
-    Title: Did you mean `panic`?
-    Add new text: "panic"
-    At: Range { start: Position { line: 11, character: 18 }, end: Position { line: 11, character: 24 } }
-    Title: Did you mean `Balances`?
-    Add new text: "Balances"
-    At: Range { start: Position { line: 11, character: 18 }, end: Position { line: 11, character: 24 } }
-    Title: Did you mean `Balanced`?
-    Add new text: "Balanced"
-    At: Range { start: Position { line: 11, character: 18 }, end: Position { line: 11, character: 24 } }
     Title: Did you mean `Balance`?
     Add new text: "Balance"
     At: Range { start: Position { line: 11, character: 18 }, end: Position { line: 11, character: 24 } }
@@ -278,15 +242,6 @@ fn struct_pattern_suggests_only_structs() {
     ", @r#"
     Title: Did you mean `Panic`?
     Add new text: "Panic"
-    At: Range { start: Position { line: 11, character: 8 }, end: Position { line: 11, character: 14 } }
-    Title: Did you mean `panic`?
-    Add new text: "panic"
-    At: Range { start: Position { line: 11, character: 8 }, end: Position { line: 11, character: 14 } }
-    Title: Did you mean `Balances`?
-    Add new text: "Balances"
-    At: Range { start: Position { line: 11, character: 8 }, end: Position { line: 11, character: 14 } }
-    Title: Did you mean `Balanced`?
-    Add new text: "Balanced"
     At: Range { start: Position { line: 11, character: 8 }, end: Position { line: 11, character: 14 } }
     Title: Did you mean `Balance`?
     Add new text: "Balance"
