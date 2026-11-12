@@ -24,11 +24,11 @@ jobs:
       run:
         working-directory: ./website
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: "22.x"
-      - uses: actions/configure-pages@v6
+      - uses: actions/configure-pages@v6.0.0
 
       - run: npm ci
       - run: npm run build
@@ -46,7 +46,7 @@ jobs:
           fi
           echo "llms.txt lists $count pages"
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: website/.vitepress/dist
 
@@ -59,4 +59,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v5.0.1
