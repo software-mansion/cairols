@@ -1,10 +1,11 @@
 use std::fmt::{self, Display};
 
 use indoc::indoc;
-use lsp_types::notification::DidChangeWatchedFiles;
+use lsp_server::Message;
+use lsp_types::notification::{DidChangeWatchedFiles, Notification, ShowMessage};
 use lsp_types::{
     ClientCapabilities, DidChangeWatchedFilesClientCapabilities, DidChangeWatchedFilesParams,
-    FileChangeType, FileEvent, WorkspaceClientCapabilities,
+    FileChangeType, FileEvent, MessageType, ShowMessageParams, WorkspaceClientCapabilities,
 };
 use serde::Serialize;
 
@@ -358,6 +359,57 @@ fn watched_manifest_fix_clears_manifest_diagnostics() {
     let after_changes = diagnostics_report(&mut ls, &["Scarb.toml"]);
 
     insta::assert_snapshot!(DiagnosticsChangeReport { before_changes, after_changes });
+}
+
+#[test]
+fn metadata_failure_popup_is_shown_once_for_multiple_open_files() {
+    let mut ls = sandbox! {
+        files {
+            "Scarb.toml" => indoc! {r#"
+                [package]
+                name = "test_package"
+                version = "0.1.0"
+                edition = "2025_12"
+            "#},
+            "src/lib.cairo" => "mod a;\nmod b;\n",
+            "src/a.cairo" => "fn a() {}\n",
+            "src/b.cairo" => "fn b() {}\n",
+        }
+        client_capabilities = caps;
+    };
+
+    ls.open_all_cairo_files_and_wait_for_project_update();
+
+    ls.edit_file(
+        "Scarb.toml",
+        indoc! {r#"
+            [package]
+            name = 1
+            version = "0.1.0"
+            edition = "2025_12"
+        "#},
+    );
+    ls.send_notification::<DidChangeWatchedFiles>(DidChangeWatchedFilesParams {
+        changes: vec![FileEvent { uri: ls.doc_id("Scarb.toml").uri, typ: FileChangeType::CHANGED }],
+    });
+    // Reload requests a project update for each of the 3 open files.
+    for _ in 0..3 {
+        ls.wait_for_project_update();
+    }
+
+    let error_popups = ls
+        .trace()
+        .iter()
+        .filter_map(|message| match message {
+            Message::Notification(notification) if notification.method == ShowMessage::METHOD => {
+                serde_json::from_value::<ShowMessageParams>(notification.params.clone()).ok()
+            }
+            _ => None,
+        })
+        .filter(|params| params.typ == MessageType::ERROR)
+        .count();
+
+    assert_eq!(error_popups, 1);
 }
 
 fn diagnostics_report(ls: &mut MockClient, paths: &[&str]) -> DiagnosticsReport {
