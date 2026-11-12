@@ -19,9 +19,11 @@ jobs:
     name: build tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: software-mansion/setup-scarb@v1
+      - uses: actions/checkout@v7.0.1
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - uses: software-mansion/setup-scarb@v1.6.2
       - uses: taiki-e/install-action@v2.88.0
         with:
           tool: nextest@0.9.98
@@ -43,7 +45,7 @@ jobs:
 
       - name: nextest archive
         run: cargo nextest archive --workspace --all-features --cargo-profile ci --archive-file 'nextest-archive.tar.zst'
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: nextest-archive
           path: nextest-archive.tar.zst
@@ -58,20 +60,22 @@ jobs:
       matrix:
         partition: [ 1, 2, 3, 4, 5, 6 ]
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: software-mansion/setup-scarb@v1
+      - uses: actions/checkout@v7.0.1
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - uses: software-mansion/setup-scarb@v1.6.2
         with:
           scarb-version: nightly
           cache: false
       # For debugger lens tests.
-      - uses: foundry-rs/setup-snfoundry@v6
+      - uses: foundry-rs/setup-snfoundry@v6.0.0
         with:
           starknet-foundry-version: nightly-2026-04-06
       - uses: taiki-e/install-action@v2.88.0
         with:
           tool: nextest@0.9.98
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v8.0.2
         with:
           name: nextest-archive
       - name: nextest partition ${{ matrix.partition }}/6
