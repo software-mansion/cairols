@@ -1,5 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
+use cairo_lang_defs::ids::{ImportableId, ModuleId};
+use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnosticKind};
 use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::ExprPath;
@@ -49,10 +52,14 @@ pub fn suggest_similar_identifier<'db>(
 
         let module_id = db.find_module_containing_node(*resultant_node)?;
         let items = db.visible_importables_from_module(module_id)?;
+        let expected_item_type = expected_item_type(db, module_id, &resultant_expression_path);
 
         let mut seen = HashSet::new();
         let suggestions: Vec<(String, TextEdit)> = items
             .iter()
+            .filter(|(item, _)| {
+                expected_item_type.is_none_or(|item_type| matches_item_type(item, item_type))
+            })
             .filter_map(|(_item, proposed_path)| {
                 segment_suggestion(proposed_path, &expression_path_segments).map(|suggestion| {
                     let edit =
@@ -93,4 +100,48 @@ fn segment_suggestion<'a>(proposed_path: &'a str, typed_segments: &[String]) -> 
         .zip(typed_segments)
         .find(|(p, t)| *p != *t)
         .and_then(|(p, t)| text_matches(p, t).then_some(*p))
+}
+
+/// Returns the kind of item the compiler expected at `path`, taken from its "path not found"
+/// diagnostic.
+fn expected_item_type<'db>(
+    db: &'db AnalysisDatabase,
+    module_id: ModuleId<'db>,
+    path: &ExprPath<'db>,
+) -> Option<NotFoundItemType> {
+    let path_node = path.as_syntax_node();
+    let diagnostics = db.module_semantic_diagnostics(module_id).ok()?;
+
+    diagnostics.get_all().into_iter().find_map(|diagnostic| {
+        let SemanticDiagnosticKind::PathNotFound(item_type) = diagnostic.kind else {
+            return None;
+        };
+
+        let diagnostic_node = diagnostic.stable_location.syntax_node(db);
+        diagnostic_node.is_descendant_or_self(db, &path_node).then_some(item_type)
+    })
+}
+
+fn matches_item_type(item: &ImportableId, item_type: NotFoundItemType) -> bool {
+    match item_type {
+        NotFoundItemType::Function => matches!(
+            item,
+            ImportableId::FreeFunction(_)
+                | ImportableId::ExternFunction(_)
+                | ImportableId::Variant(_)
+        ),
+        NotFoundItemType::Type => matches!(
+            item,
+            ImportableId::Struct(_)
+                | ImportableId::Enum(_)
+                | ImportableId::ExternType(_)
+                | ImportableId::TypeAlias(_)
+        ),
+        NotFoundItemType::Trait => matches!(item, ImportableId::Trait(_)),
+        NotFoundItemType::Impl => {
+            matches!(item, ImportableId::Impl(_) | ImportableId::ImplAlias(_))
+        }
+        NotFoundItemType::Macro => matches!(item, ImportableId::MacroDeclaration(_)),
+        NotFoundItemType::Identifier => true,
+    }
 }
