@@ -3083,19 +3083,7 @@ fn let_type_annotation_tuple() {
     """
 
     [[completions]]
-    completion_label = "FooConst"
-
-    [[completions]]
-    completion_label = "FooFn(...)"
-    completion_label_path = "(use FooFn)"
-    completion_label_type_info = "fn() -> ()"
-    insert_text = "FooFn()"
-
-    [[completions]]
     completion_label = "FooStruct"
-
-    [[completions]]
-    completion_label = "FooTrait"
 
     [[completions]]
     completion_label = "bool"
@@ -3105,14 +3093,6 @@ fn let_type_annotation_tuple() {
     completion_label_path = "(use dep::Foo)"
     text_edits = ["""
     use dep::Foo;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoContractAddress"
-    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
-    text_edits = ["""
-    use starknet::contract_address::Felt252TryIntoContractAddress;
 
     """]
 
@@ -3141,19 +3121,7 @@ fn return_type_tuple() {
     """
 
     [[completions]]
-    completion_label = "FooConst"
-
-    [[completions]]
-    completion_label = "FooFn(...)"
-    completion_label_path = "(use FooFn)"
-    completion_label_type_info = "fn() -> ()"
-    insert_text = "FooFn()"
-
-    [[completions]]
     completion_label = "FooStruct"
-
-    [[completions]]
-    completion_label = "FooTrait"
 
     [[completions]]
     completion_label = "bool"
@@ -3163,14 +3131,6 @@ fn return_type_tuple() {
     completion_label_path = "(use dep::Foo)"
     text_edits = ["""
     use dep::Foo;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoContractAddress"
-    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
-    text_edits = ["""
-    use starknet::contract_address::Felt252TryIntoContractAddress;
 
     """]
 
@@ -3199,19 +3159,7 @@ fn type_alias_tuple() {
     """
 
     [[completions]]
-    completion_label = "FooConst"
-
-    [[completions]]
-    completion_label = "FooFn(...)"
-    completion_label_path = "(use FooFn)"
-    completion_label_type_info = "fn() -> ()"
-    insert_text = "FooFn()"
-
-    [[completions]]
     completion_label = "FooStruct"
-
-    [[completions]]
-    completion_label = "FooTrait"
 
     [[completions]]
     completion_label = "bool"
@@ -3221,14 +3169,6 @@ fn type_alias_tuple() {
     completion_label_path = "(use dep::Foo)"
     text_edits = ["""
     use dep::Foo;
-
-    """]
-
-    [[completions]]
-    completion_label = "Felt252TryIntoContractAddress"
-    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
-    text_edits = ["""
-    use starknet::contract_address::Felt252TryIntoContractAddress;
 
     """]
 
