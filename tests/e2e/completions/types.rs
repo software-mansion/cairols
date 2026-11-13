@@ -3000,3 +3000,102 @@ fn return_type_empty() {
     """]
     "#);
 }
+
+#[test]
+fn type_alias_partial() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    struct FooStruct {}
+    const FooConst: u32 = 0;
+    fn FooFn() {}
+    trait FooTrait {}
+
+    type MyType = Foo<caret>;
+    ",@r#"
+    caret = """
+    type MyType = Foo<caret>;
+    """
+
+    [[completions]]
+    completion_label = "FooConst"
+
+    [[completions]]
+    completion_label = "FooFn(...)"
+    completion_label_path = "(use FooFn)"
+    completion_label_type_info = "fn() -> ()"
+    insert_text = "FooFn()"
+
+    [[completions]]
+    completion_label = "FooStruct"
+
+    [[completions]]
+    completion_label = "FooTrait"
+
+    [[completions]]
+    completion_label = "bool"
+
+    [[completions]]
+    completion_label = "Foo"
+    completion_label_path = "(use dep::Foo)"
+    text_edits = ["""
+    use dep::Foo;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoContractAddress"
+    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
+    text_edits = ["""
+    use starknet::contract_address::Felt252TryIntoContractAddress;
+
+    """]
+
+    [[completions]]
+    completion_label = "Formatter"
+    completion_label_path = "(use core::fmt::Formatter)"
+    text_edits = ["""
+    use core::fmt::Formatter;
+
+    """]
+    "#);
+}
+
+#[test]
+fn type_alias_module_path() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    mod module {
+        pub struct FooStruct {}
+        pub const FooConst: u32 = 0;
+        pub fn FooFn() {}
+        pub trait FooTrait {}
+        pub mod nested {}
+    }
+
+    type MyType = module::<caret>;
+    ",@r#"
+    caret = """
+    type MyType = module::<caret>;
+    """
+
+    [[completions]]
+    completion_label = "FooConst"
+    completion_label_path = "(use module::FooConst)"
+
+    [[completions]]
+    completion_label = "FooFn(...)"
+    completion_label_path = "(use module::FooFn)"
+    completion_label_type_info = "fn() -> ()"
+    insert_text = "FooFn()"
+
+    [[completions]]
+    completion_label = "FooStruct"
+    completion_label_path = "(use module::FooStruct)"
+
+    [[completions]]
+    completion_label = "FooTrait"
+    completion_label_path = "(use module::FooTrait)"
+
+    [[completions]]
+    completion_label = "nested"
+    completion_label_path = "(use module::nested)"
+    "#);
+}
