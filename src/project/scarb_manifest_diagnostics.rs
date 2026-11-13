@@ -34,11 +34,6 @@ fn diagnostics_to_display(all_messages: Vec<ScarbMetadataMessage>) -> Vec<ScarbM
     if !metadata_diagnostics.is_empty() { metadata_diagnostics } else { all_messages }
 }
 
-pub fn scarb_metadata_messages_contain_only_errors(messages: &[ScarbMetadataMessage]) -> bool {
-    !messages.is_empty()
-        && messages.iter().all(|message| matches!(message, ScarbMetadataMessage::MetadataError(_)))
-}
-
 pub fn scarb_metadata_messages_to_diagnostics(
     db: &AnalysisDatabase,
     messages: Vec<ScarbMetadataMessage>,

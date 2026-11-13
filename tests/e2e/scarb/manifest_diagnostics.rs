@@ -1,10 +1,11 @@
 use std::fmt::{self, Display};
 
 use indoc::indoc;
-use lsp_types::notification::DidChangeWatchedFiles;
+use lsp_server::Message;
+use lsp_types::notification::{DidChangeWatchedFiles, Notification, ShowMessage};
 use lsp_types::{
     ClientCapabilities, DidChangeWatchedFilesClientCapabilities, DidChangeWatchedFilesParams,
-    FileChangeType, FileEvent, WorkspaceClientCapabilities,
+    FileChangeType, FileEvent, MessageType, ShowMessageParams, WorkspaceClientCapabilities,
 };
 use serde::Serialize;
 
@@ -358,6 +359,115 @@ fn watched_manifest_fix_clears_manifest_diagnostics() {
     let after_changes = diagnostics_report(&mut ls, &["Scarb.toml"]);
 
     insta::assert_snapshot!(DiagnosticsChangeReport { before_changes, after_changes });
+}
+
+#[test]
+fn metadata_failure_popup_is_shown_once_for_multiple_open_files() {
+    let mut ls = sandbox! {
+        files {
+            "Scarb.toml" => indoc! {r#"
+                [package]
+                name = "test_package"
+                version = "0.1.0"
+                edition = "2025_12"
+            "#},
+            "src/lib.cairo" => "mod a;\nmod b;\n",
+            "src/a.cairo" => "fn a() {}\n",
+            "src/b.cairo" => "fn b() {}\n",
+        }
+        client_capabilities = caps;
+    };
+
+    ls.open_all_cairo_files_and_wait_for_project_update();
+
+    ls.edit_file(
+        "Scarb.toml",
+        indoc! {r#"
+            [package]
+            name = 1
+            version = "0.1.0"
+            edition = "2025_12"
+        "#},
+    );
+    ls.send_notification::<DidChangeWatchedFiles>(DidChangeWatchedFilesParams {
+        changes: vec![FileEvent { uri: ls.doc_id("Scarb.toml").uri, typ: FileChangeType::CHANGED }],
+    });
+    // Reload requests a project update for each of the 3 open files.
+    for _ in 0..3 {
+        ls.wait_for_project_update();
+    }
+
+    assert_eq!(count_error_popups(&ls), 1);
+}
+
+#[test]
+fn metadata_failure_popup_is_shown_again_after_reload() {
+    let mut ls = sandbox! {
+        files {
+            "Scarb.toml" => indoc! {r#"
+                [package]
+                name = 1
+                version = "0.1.0"
+                edition = "2025_12"
+            "#},
+            "src/lib.cairo" => "mod a;\n",
+            "src/a.cairo" => "fn a() {}\n",
+        }
+        client_capabilities = caps;
+    };
+
+    ls.open_all_cairo_files_and_wait_for_project_update();
+    assert_eq!(count_error_popups(&ls), 1);
+
+    ls.send_notification::<DidChangeWatchedFiles>(DidChangeWatchedFilesParams {
+        changes: vec![FileEvent { uri: ls.doc_id("Scarb.toml").uri, typ: FileChangeType::CHANGED }],
+    });
+    // Reload requests a project update for each of the 2 open files.
+    for _ in 0..2 {
+        ls.wait_for_project_update();
+    }
+
+    assert_eq!(count_error_popups(&ls), 2);
+}
+
+#[test]
+fn metadata_failure_popups_with_different_messages_are_all_shown() {
+    let mut ls = sandbox! {
+        files {
+            "version_mismatch/Scarb.toml" => indoc! {r#"
+                [package]
+                name = "version_mismatch"
+                version = "0.1.0"
+                edition = "2025_12"
+                cairo-version = "=2.1.0"
+            "#},
+            "version_mismatch/src/lib.cairo" => "fn main() {}\n",
+            "invalid_name/Scarb.toml" => indoc! {r#"
+                [package]
+                name = 1
+                version = "0.1.0"
+                edition = "2025_12"
+            "#},
+            "invalid_name/src/lib.cairo" => "fn main() {}\n",
+        }
+    };
+
+    ls.open_all_cairo_files_and_wait_for_project_update();
+
+    assert_eq!(count_error_popups(&ls), 2);
+}
+
+fn count_error_popups(ls: &MockClient) -> usize {
+    ls.trace()
+        .iter()
+        .filter_map(|message| match message {
+            Message::Notification(notification) if notification.method == ShowMessage::METHOD => {
+                serde_json::from_value::<ShowMessageParams>(notification.params.clone()).ok()
+            }
+            _ => None,
+        })
+        .filter(|params| params.typ == MessageType::ERROR)
+        .count()
 }
 
 fn diagnostics_report(ls: &mut MockClient, paths: &[&str]) -> DiagnosticsReport {

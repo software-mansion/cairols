@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
 use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
@@ -21,7 +22,6 @@ pub use self::scarb_manifest_diagnostics::{
 };
 use self::scarb_manifest_diagnostics::{
     collect_scarb_manifest_diagnostics, manifest_diagnostics_from_ndjson,
-    scarb_metadata_messages_contain_only_errors,
 };
 use crate::ide::code_lens::FileChange;
 use crate::lang::db::AnalysisDatabase;
@@ -47,6 +47,8 @@ mod unmanaged_core_crate;
 pub struct ProjectController {
     model: ProjectModel,
     scarb_toolchain: ScarbToolchain,
+    /// `scarb metadata` failure popup messages already shown since the last reload.
+    shown_metadata_failures: Arc<Mutex<HashSet<&'static str>>>,
     // NOTE: Member order matters here.
     //   The request sender MUST be dropped before controller's thread join handle.
     //   Otherwise, the controller thread will never stop, and the controller's
@@ -66,17 +68,20 @@ impl ProjectController {
     pub fn initialize(scarb_toolchain: ScarbToolchain, notifier: Notifier) -> Self {
         let (requests_sender, requests_receiver) = crossbeam::channel::unbounded();
         let (response_sender, response_receiver) = crossbeam::channel::unbounded();
+        let shown_metadata_failures = Arc::new(Mutex::new(HashSet::new()));
 
         let thread = ProjectControllerThread::spawn(
             requests_receiver,
             response_sender,
             scarb_toolchain.clone(),
             notifier,
+            shown_metadata_failures.clone(),
         );
 
         ProjectController {
             model: ProjectModel::new(),
             scarb_toolchain,
+            shown_metadata_failures,
             requests_sender,
             response_receiver,
             _thread: thread,
@@ -107,6 +112,7 @@ impl ProjectController {
 
     pub fn clear_loaded_workspaces(&mut self) {
         self.model.clear_loaded_workspaces();
+        self.shown_metadata_failures.lock().unwrap().clear();
     }
 
     /// Handles project update by applying necessary changes to the database.
@@ -258,6 +264,7 @@ struct ProjectControllerThread {
     response_sender: Sender<ProjectUpdate>,
     scarb_toolchain: ScarbToolchain,
     notifier: Notifier,
+    shown_metadata_failures: Arc<Mutex<HashSet<&'static str>>>,
 }
 
 impl ProjectControllerThread {
@@ -267,8 +274,15 @@ impl ProjectControllerThread {
         response_sender: Sender<ProjectUpdate>,
         scarb_toolchain: ScarbToolchain,
         notifier: Notifier,
+        shown_metadata_failures: Arc<Mutex<HashSet<&'static str>>>,
     ) -> JoinHandle {
-        let this = Self { requests_receiver, response_sender, scarb_toolchain, notifier };
+        let this = Self {
+            requests_receiver,
+            response_sender,
+            scarb_toolchain,
+            notifier,
+            shown_metadata_failures,
+        };
 
         thread::Builder::new(ThreadPriority::Worker)
             .name("cairo-ls:project-controller".into())
@@ -319,12 +333,15 @@ impl ProjectControllerThread {
                             .into_std_path_buf(),
                         diagnostics: manifest_diagnostics_from_ndjson(&output.stdout),
                     })
-                    .unwrap_or_else(|error| {
-                        let metadata_messages = collect_scarb_manifest_diagnostics(error);
-
-                        if scarb_metadata_messages_contain_only_errors(&metadata_messages) {
-                            self.scarb_toolchain.notify_metadata_failed();
+                    .unwrap_or_else(|failure| {
+                        // A failed `scarb metadata` means the project could not be loaded, so we
+                        // inform the user with a popup, once per distinct message per reload.
+                        // Located manifest diagnostics are additionally surfaced inline.
+                        if self.shown_metadata_failures.lock().unwrap().insert(failure.message) {
+                            self.scarb_toolchain.notify_error(failure.message);
                         }
+
+                        let metadata_messages = collect_scarb_manifest_diagnostics(failure.error);
 
                         ProjectUpdate::ScarbMetadataFailed {
                             manifest_path,
