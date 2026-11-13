@@ -60,7 +60,7 @@ mapped_diagnostics:
       severity: 1
       code: E1028
       message: |-
-        Consecutive comparison operators are not allowed: '<' followed by '>'
+        Consecutive comparison operators are not allowed: '<' followed by '>'. Did you mean to use `::<` for generic arguments?
         note: this error originates in the derive macro: `ImproperDeriveMacroV2`
       relatedInformation:
       - location:
@@ -85,7 +85,7 @@ mapped_diagnostics:
       severity: 1
       code: E1028
       message: |-
-        Consecutive comparison operators are not allowed: '>' followed by '<'
+        Consecutive comparison operators are not allowed: '>' followed by '<'. Comparisons can't be chained; use `&&` to combine them.
         note: this error originates in the derive macro: `ImproperDeriveMacroV2`
       relatedInformation:
       - location:
@@ -135,7 +135,7 @@ mapped_diagnostics:
       severity: 1
       code: E1028
       message: |-
-        Consecutive comparison operators are not allowed: '<' followed by '>'
+        Consecutive comparison operators are not allowed: '<' followed by '>'. Did you mean to use `::<` for generic arguments?
         note: this error originates in the derive macro: `ImproperDeriveMacroV2`
       relatedInformation:
       - location:

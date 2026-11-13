@@ -24,6 +24,7 @@ mod scarb_manifest;
 mod similar_identifier;
 mod similar_member;
 mod similar_method;
+mod similar_variant;
 
 fn caps(base: ClientCapabilities) -> ClientCapabilities {
     ClientCapabilities {

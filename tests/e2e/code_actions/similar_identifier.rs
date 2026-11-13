@@ -104,3 +104,75 @@ fn in_proc_macro_controlled_code() {
     At: Range { start: Position { line: 2, character: 17 }, end: Position { line: 2, character: 36 } }
     "#);
 }
+
+#[test]
+fn function_call_suggests_only_functions() {
+    test_transform!(quick_fix, "
+    struct Balance {
+        amount: felt252
+    }
+
+    mod balances {}
+
+    fn balance() -> felt252 {
+        1
+    }
+
+    fn main() {
+        let _x = balanc<caret>();
+    }
+    ", @r#"
+    Title: Did you mean `panic`?
+    Add new text: "panic"
+    At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
+    Title: Did you mean `balance`?
+    Add new text: "balance"
+    At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
+    "#);
+}
+
+#[test]
+fn struct_constructor_suggests_only_types() {
+    test_transform!(quick_fix, "
+    struct Balance {
+        amount: felt252
+    }
+
+    mod Balances {}
+
+    fn Balanced() -> felt252 {
+        1
+    }
+
+    fn main() {
+        let _x = Balanc<caret> { amount: 1 };
+    }
+    ", @r#"
+    Title: Did you mean `Panic`?
+    Add new text: "Panic"
+    At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
+    Title: Did you mean `Balance`?
+    Add new text: "Balance"
+    At: Range { start: Position { line: 11, character: 13 }, end: Position { line: 11, character: 19 } }
+    "#);
+}
+
+#[test]
+fn identifier_suggests_all_kinds() {
+    test_transform!(quick_fix, "
+    const LIMIT: felt252 = 1;
+
+    mod LIMITS {}
+
+    fn main() {
+        let _x = LIMI<caret>;
+    }
+    ", @r#"
+    Title: Did you mean `LIMITS`?
+    Add new text: "LIMITS"
+    At: Range { start: Position { line: 5, character: 13 }, end: Position { line: 5, character: 17 } }
+    Title: Did you mean `LIMIT`?
+    Add new text: "LIMIT"
+    At: Range { start: Position { line: 5, character: 13 }, end: Position { line: 5, character: 17 } }
+    "#);
+}
