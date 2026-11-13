@@ -14,7 +14,7 @@ use cairo_lang_semantic::lsp_helpers::LspHelpers;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::{ItemImpl, ItemImplAlias, PathSegment};
+use cairo_lang_syntax::node::ast::{ItemImpl, ItemImplAlias, ItemTypeAlias, PathSegment};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::OptionFrom;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -285,11 +285,34 @@ fn impl_alias_at_path<'db>(
 }
 
 /// Returns `true` if the cursor is on the type of a type clause, e.g. `let a: <caret>` or
-/// `fn f() -> <caret>`.
+/// `fn f() -> <caret>`, or on the aliased type, e.g. `type A = <caret>;`. Also matches when the
+/// cursor is on a tuple element of such a type, e.g. `let a: (u8, <caret>)`.
 fn is_on_type_clause_path<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>) -> bool {
-    // With nothing typed yet, the cursor is on the clause's `:` or `->`.
+    // With nothing typed yet, the cursor is on the clause's `:` or `->`, or on the alias's `=`.
     let node = ctx.node.ancestor_of_kind(db, SyntaxKind::ExprPath).unwrap_or(ctx.node);
-    matches!(node.parent_kind(db), Some(SyntaxKind::TypeClause | SyntaxKind::ReturnTypeClause))
+    // Tuple types are made of types, so climb up to the outermost tuple.
+    let node = node
+        .ancestors(db)
+        .take_while(|ancestor| {
+            matches!(
+                ancestor.kind(db),
+                SyntaxKind::ExprList
+                    | SyntaxKind::ExprListParenthesized
+                    | SyntaxKind::ExprParenthesized
+            )
+        })
+        .last()
+        .unwrap_or(node);
+
+    let Some(parent) = node.parent(db) else { return false };
+    match parent.kind(db) {
+        SyntaxKind::TypeClause | SyntaxKind::ReturnTypeClause => true,
+        SyntaxKind::ItemTypeAlias => {
+            let alias = ItemTypeAlias::from_syntax_node(db, parent);
+            node == alias.ty(db).as_syntax_node() || node == alias.eq(db).as_syntax_node()
+        }
+        _ => false,
+    }
 }
 
 /// Returns `true` if `importable` is a type or a module/crate leading to one.
