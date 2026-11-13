@@ -1,6 +1,6 @@
 use lsp_types::Hover;
 
-use crate::support::insta::test_transform_plain;
+use crate::support::insta::{test_transform_plain, test_transform_with_macros};
 
 #[test]
 fn println() {
@@ -187,6 +187,115 @@ fn top_level_declarative_macro_on_usage() {
         ($name:ident) => { ... };
     }
     ```
+    """
+    "#)
+}
+
+#[test]
+fn derive_macro_name_with_call_site_only_mappings() {
+    test_transform_with_macros!(Hover, r#"
+    #[derive(SimpleDeriveM<caret>acroV2)]
+    struct OuterStruct {
+        extra: u32,
+    }
+    "#, @r#"
+    source_context = """
+    #[derive(SimpleDeriveM<caret>acroV2)]
+    """
+    "#)
+}
+
+#[test]
+fn derive_macro_name_with_mixed_mappings() {
+    test_transform_with_macros!(Hover, r#"
+    trait DescribeTrait<T> {
+        fn describe(self: @T) -> felt252;
+    }
+
+    #[derive(DescribeDeriveM<caret>acroV2)]
+    struct OuterStruct {
+        extra: u32,
+    }
+    "#, @r#"
+    source_context = """
+    #[derive(DescribeDeriveM<caret>acroV2)]
+    """
+    "#)
+}
+
+// FIXME(#1431). Rename, goto definition and references don't work properly in declarative macros.
+#[test]
+fn struct_constructor_shorthand_in_declarative_macro() {
+    test_transform_plain!(Hover, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { fie<caret>ld });
+    }
+    ", @r#"
+    source_context = """
+        let x = my_macro!(Foo { fie<caret>ld });
+    """
+    "#)
+}
+
+#[test]
+fn struct_constructor_shorthand_in_plugin_inline_macro() {
+    test_transform_plain!(Hover, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = array![Foo { fie<caret>ld }];
+    }
+    ", @r#"
+    source_context = """
+        let x = array![Foo { fie<caret>ld }];
+    """
+    highlight = """
+        let x = array![Foo { <sel>field</sel> }];
+    """
+    popover = """
+    ```cairo
+    hello::Foo
+    ```
+    ```cairo
+    field: felt252
+    ```
+
+    ---
+    ```cairo
+    let field: felt252
+    ```
+    """
+    "#)
+}
+
+// FIXME(#1431). Rename, goto definition and references don't work properly in declarative macros.
+#[test]
+fn struct_constructor_shorthand_in_declarative_macro_with_macros() {
+    test_transform_with_macros!(Hover, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { fie<caret>ld });
+    }
+    ", @r#"
+    source_context = """
+        let x = my_macro!(Foo { fie<caret>ld });
     """
     "#)
 }

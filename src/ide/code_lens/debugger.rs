@@ -28,12 +28,19 @@ pub struct DebuggerCodeLens {
 impl CodeLensInterface for DebuggerCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
         let (full_qualified_path, _) =
-            get_full_path_and_module_id(&file_url, state, &self.lens, &self.full_path)?;
+            get_full_path_and_module_id(&file_url, state, &self.lens, &self.full_path, false)?;
         let full_path = sanitize_test_case_name(full_qualified_path.as_ref());
 
         let file_path = file_url.to_file_path().ok()?;
         let configs = state.project_controller.configs_registry();
-        let cwd = configs.manifest_dir_for_file(&file_path)?;
+        let Some(cwd) = configs.manifest_dir_for_file(&file_path) else {
+            notifier.notify::<ShowMessage>(ShowMessageParams {
+                typ: MessageType::ERROR,
+                message: "Cannot launch debugger: could not find the Scarb package for this file."
+                    .to_string(),
+            });
+            return Some(());
+        };
 
         if !configs.is_compiler_config_correct_for_debugging_for_file(&file_path)? {
             notifier.notify::<ShowMessage>(ShowMessageParams {
@@ -42,10 +49,11 @@ impl CodeLensInterface for DebuggerCodeLens {
                     Cannot launch debugger: the Cairo compiler is not configured for debugging.
                     Add the following key-value pairs your Scarb.toml to `[profile.dev.cairo]` section:
 
-                    unstable-add-statements-code-locations-debug-info = true
-                    unstable-add-statements-functions-debug-info = true
-                    add-functions-debug-info = true
                     skip-optimizations = true
+                    add-statements-code-locations-debug-info = true
+                    add-statements-functions-debug-info = true
+                    add-functions-debug-info = true
+                    add-types-debug-info = true
                 "#}
                     .to_string(),
             });

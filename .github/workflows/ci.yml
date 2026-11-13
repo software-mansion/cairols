@@ -17,12 +17,12 @@ jobs:
     name: build tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@v2.88.0
         with:
-          tool: nextest@0.9.98
+          tool: nextest@0.9.150
       - name: nextest archive
         run: cargo nextest archive --workspace --all-features --cargo-profile ci --archive-file 'nextest-archive.tar.zst'
       - uses: actions/upload-artifact@v7
@@ -40,7 +40,7 @@ jobs:
       matrix:
         partition: [ 1, 2, 3, 4, 5, 6 ]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: software-mansion/setup-scarb@v1
         with:
@@ -49,9 +49,9 @@ jobs:
       - uses: foundry-rs/setup-snfoundry@v6
         with:
           starknet-foundry-version: nightly-2026-04-06
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@v2.88.0
         with:
-          tool: nextest@0.9.98
+          tool: nextest@0.9.150
       - uses: actions/download-artifact@v8
         with:
           name: nextest-archive
@@ -61,7 +61,7 @@ jobs:
   fmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
@@ -71,7 +71,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy

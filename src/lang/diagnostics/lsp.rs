@@ -21,7 +21,7 @@ pub fn map_cairo_diagnostics_to_lsp<'db, T>(
     trace_macro_diagnostics: bool,
     plugin_file_notes: &PluginFileDiagnosticNotes<'db>,
 ) where
-    T: DiagnosticEntry<'db> + salsa::Update,
+    T: DiagnosticEntry<'db> + salsa::SalsaValue,
 {
     for diagnostic in if trace_macro_diagnostics {
         diagnostics.get_all()

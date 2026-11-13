@@ -10,6 +10,7 @@ use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_filesystem::span::TextPositionSpan;
@@ -20,11 +21,12 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast::Attribute, a
 use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::Intern;
 use cairo_language_common::CommonGroup;
-use lsp_types::{CodeLens, Command, Range, Url};
+use lsp_types::notification::ShowMessage;
+use lsp_types::{CodeLens, Command, MessageType, Range, ShowMessageParams, Url};
 
 use super::{
     AnnotatedNode, CodeLensInterface, CodeLensInternal, LSCodeLens, collect_functions_with_attrs,
-    make_lens_args, send_execute_in_terminal,
+    declarative_macro_call_modules, make_lens_args, send_execute_in_terminal,
 };
 use crate::config::{Config, TestRunner};
 use crate::lang::db::AnalysisDatabase;
@@ -42,12 +44,18 @@ const TEST_CASE_ATTR: &str = "test_case";
 pub struct TestCodeLens {
     lens: CodeLens,
     full_path: String,
+    is_on_mod: bool,
 }
 
 impl CodeLensInterface for TestCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
-        let (full_qualified_path, module_id) =
-            get_full_path_and_module_id(&file_url, state, &self.lens, &self.full_path)?;
+        let (full_qualified_path, module_id) = get_full_path_and_module_id(
+            &file_url,
+            state,
+            &self.lens,
+            &self.full_path,
+            self.is_on_mod,
+        )?;
 
         let db = &state.db;
         let command = state.config.test_runner.command(
@@ -57,7 +65,16 @@ impl CodeLensInterface for TestCodeLens {
         )?;
 
         let file_path = file_url.to_file_path().ok()?;
-        let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
+        let Some(cwd) =
+            state.project_controller.configs_registry().manifest_dir_for_file(&file_path)
+        else {
+            notifier.notify::<ShowMessage>(ShowMessageParams {
+                typ: MessageType::ERROR,
+                message: "Cannot run tests: could not find the Scarb package for this file."
+                    .to_string(),
+            });
+            return Some(());
+        };
         send_execute_in_terminal(state, notifier, command, cwd);
         Some(())
     }
@@ -72,26 +89,50 @@ pub fn get_full_path_and_module_id<'db>(
     state: &'db State,
     lens: &CodeLens,
     full_path: &str,
+    is_on_mod: bool,
 ) -> Option<(TestFullQualifiedPath, ModuleId<'db>)> {
     let db = &state.db;
 
     let file = db.file_for_url(file_url)?;
+
+    if let Some(resolved) = resolve_lens_node(db, lens, full_path, file) {
+        return Some(resolved);
+    }
+
+    // Fallback for a click on a macro-generated `mod` itself: `get_node_resultants` returns the
+    // items *inside* the generated module (so the inner tests re-resolve above) but never the
+    // generated `mod` node itself, so a mod-level lens cannot be re-resolved. Use the path computed
+    // at discovery time and the file's owning crate (all the runner detection below needs).
+    let module_id = *db.file_modules(file).ok()?.first()?;
+    let path = if is_on_mod {
+        TestFullQualifiedPath::Module(full_path.to_string())
+    } else {
+        TestFullQualifiedPath::Function(full_path.to_string())
+    };
+
+    Some((path, module_id))
+}
+
+/// Resolves the node of the clicked lens to recover the (possibly updated) path and its module.
+fn resolve_lens_node<'db>(
+    db: &'db AnalysisDatabase,
+    lens: &CodeLens,
+    full_path: &str,
+    file: FileId<'db>,
+) -> Option<(TestFullQualifiedPath, ModuleId<'db>)> {
     let span = TextPositionSpan::offset_in_file(lens.range.to_cairo(), db, file)?;
     // When creating range we have to use [`SyntaxNode::span_without_trivia`] to place lens next to attribute
     let node = db.widest_node_within_span_without_trivia(file, span)?;
 
-    let (full_qualified_path, module_id) =
-        db.get_node_resultants(node).as_ref()?.iter().find_map(|resultant| {
-            let module_item =
-                resultant.ancestors_with_self(db).find_map(|node| ModuleItem::cast(db, node))?;
-            let module_id = db.find_module_containing_node(module_item.as_syntax_node())?;
-            let path = TestFullQualifiedPath::new(db, module_item, module_id)?;
+    db.get_node_resultants(node).as_ref()?.iter().find_map(|resultant| {
+        let module_item =
+            resultant.ancestors_with_self(db).find_map(|node| ModuleItem::cast(db, node))?;
+        let module_id = db.find_module_containing_node(module_item.as_syntax_node())?;
+        let path = TestFullQualifiedPath::new(db, module_item, module_id)?;
 
-            // Find resultant that produced this codelens earlier by comparing full paths
-            (sanitize_test_case_name(path.as_ref()) == full_path).then_some((path, module_id))
-        })?;
-
-    Some((full_qualified_path, module_id))
+        // Find resultant that produced this code lens earlier by comparing full paths
+        (sanitize_test_case_name(path.as_ref()) == full_path).then_some((path, module_id))
+    })
 }
 
 pub struct TestCodeLensInternal {
@@ -137,6 +178,7 @@ impl CodeLensInternal for TestCodeLensInternal {
         LSCodeLens::Test(TestCodeLens {
             lens: CodeLens { range: self.range, command: Some(command), data: None },
             full_path: self.full_path,
+            is_on_mod: self.is_on_mod,
         })
     }
 }
@@ -177,7 +219,7 @@ impl TestFullQualifiedPath {
         format!("scarb cairo-test --filter {}", self.as_ref())
     }
 
-    fn snforge_command(&self) -> String {
+    pub fn snforge_command(&self) -> String {
         match self {
             TestFullQualifiedPath::Function(path) => {
                 format!("snforge test {path} --exact", path = sanitize_test_case_name(path))
@@ -295,6 +337,13 @@ fn collect_test_lenses<'db>(
         );
     }
 
+    // User-defined inline macros expand into `MacroCall` modules that `module_submodules_ids` does not enumerate.
+    // Descend into them: their tests (and any real submodules they generate) map back to the macro call site
+    // via `get_originating_location`, and we never emit a module-level lens for the anonymous module itself.
+    for macro_module in declarative_macro_call_modules(db, module) {
+        collect_test_lenses(file_code_lens, db, macro_module, file_url.clone());
+    }
+
     let Ok(modules) = db.module_submodules_ids(module) else { return };
 
     for submodule in modules.iter().copied() {
@@ -335,6 +384,16 @@ fn collect_test_lenses<'db>(
 
 fn has_any_test<'db>(db: &'db AnalysisDatabase, module: ModuleId<'db>) -> bool {
     if collect_test_functions(db, module).is_empty().not() {
+        return true;
+    }
+
+    // Tests generated by user-defined inline macros live in `MacroCall` modules that
+    // `module_submodules_ids` skips, so consult them too (e.g. an external-file `mod foo;` whose
+    // only tests come from a macro invocation still needs its `Run tests` lens).
+    if declarative_macro_call_modules(db, module)
+        .iter()
+        .any(|&macro_module| has_any_test(db, macro_module))
+    {
         return true;
     }
 

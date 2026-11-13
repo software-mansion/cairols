@@ -51,7 +51,7 @@ fn migrate_proc_macro_state(new_db: &mut AnalysisDatabase, old_db: &AnalysisData
     new_db
         .proc_macro_input()
         .set_proc_macro_server_status(new_db)
-        .to(old_db_input.proc_macro_server_status(old_db));
+        .to(old_db_input.proc_macro_server_status(old_db).clone());
 
     // TODO(#6646): Probably this should not be part of migration as it will be ever growing,
     // but diagnostics going crazy every 5 minutes are no better.

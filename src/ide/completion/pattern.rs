@@ -13,7 +13,9 @@ use itertools::Itertools;
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionItemLabelDetails};
 
 use crate::ide::completion::helpers::formatting::format_type_in_node_context;
-use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
+use crate::ide::completion::{
+    CompletionItemOrderable, CompletionRelevance, resolve_typed_segments,
+};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::text_matching::text_matches;
 use crate::lang::visibility::peek_visible_in_with_edition;
@@ -105,7 +107,10 @@ pub fn enum_pattern_completions<'db>(
                 segments.pop();
             }
         }
-        && let Some(result) = path_prefix_completions(db, ctx, segments)
+        && let typed = resolve_typed_segments(db, ctx, false)
+            .map(|(_, last_typed_segment)| last_typed_segment.to_string(db))
+            .unwrap_or_default()
+        && let Some(result) = path_prefix_completions(db, ctx, segments, &typed)
     {
         result
     } else {

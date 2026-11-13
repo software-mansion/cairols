@@ -2,7 +2,7 @@ use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::resolve::AsSegments;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 
-use super::{expr::selector::expr_selector, path::path_prefix_completions};
+use super::{expr::selector::expr_selector, path::path_prefix_completions, resolve_typed_segments};
 use crate::{
     ide::completion::CompletionItemOrderable,
     lang::{analysis_context::AnalysisContext, db::AnalysisDatabase},
@@ -22,7 +22,10 @@ pub fn self_completions<'db>(
         }
         && let Some(first_segment) = segments.first()
         && first_segment.as_syntax_node().get_text_without_trivia(db) == SmolStrId::from(db, "Self")
-        && let Some(result) = path_prefix_completions(db, ctx, segments)
+        && let typed = resolve_typed_segments(db, ctx, false)
+            .map(|(_, last_typed_segment)| last_typed_segment.to_string(db))
+            .unwrap_or_default()
+        && let Some(result) = path_prefix_completions(db, ctx, segments, &typed)
     {
         result
     } else {

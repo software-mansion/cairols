@@ -36,7 +36,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `mod_attribute_macro_v2`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_mod_attribute_macro_v2.cairo
+          uri: vfs://proc_mod_attribute_macro_v2.cairo
           range:
             start:
               line: 0
@@ -61,7 +61,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `mod_attribute_macro_v2`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_mod_attribute_macro_v2.cairo
+          uri: vfs://proc_mod_attribute_macro_v2.cairo
           range:
             start:
               line: 0
@@ -86,7 +86,7 @@ mapped_diagnostics:
         note: this error originates in the attribute macro: `mod_attribute_macro_v2`
       relatedInformation:
       - location:
-          uri: vfs://proc_macro_mod_attribute_macro_v2.cairo
+          uri: vfs://proc_mod_attribute_macro_v2.cairo
           range:
             start:
               line: 0

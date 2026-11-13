@@ -210,35 +210,80 @@ fn nested_calls() {
 }
 
 #[test]
-fn arity_overflow_no_hints() {
+fn arity_overflow() {
     test_transform!(inlay_hint, r#"
     fn foo(a: felt252, b: felt252) -> felt252 { a + b }
 
     fn main() {
         <sel>foo(1, 2, 3);</sel>
     }
-    "#, @r#"
+    "#, @"
     fn foo(a: felt252, b: felt252) -> felt252 { a + b }
 
     fn main() {
-        foo(1, 2, 3);
+        foo(a: 1, b: 2, 3);
     }
-    "#)
+    ")
 }
 
 #[test]
-fn arity_underflow_no_hints() {
+fn arity_underflow() {
     test_transform!(inlay_hint, r#"
     fn foo(a: felt252, b: felt252) -> felt252 { a + b }
 
     fn main() {
         <sel>foo(1);</sel>
     }
-    "#, @r#"
+    "#, @"
     fn foo(a: felt252, b: felt252) -> felt252 { a + b }
 
     fn main() {
-        foo(1);
+        foo(a: 1);
+    }
+    ")
+}
+
+#[test]
+fn method_called_with_path() {
+    test_transform!(inlay_hint, r#"
+    #[derive(Drop)]
+    struct Counter {
+        value: felt252,
+    }
+
+    trait CounterTrait {
+        fn add(self: Counter, amount: felt252) -> felt252;
+    }
+
+    impl CounterImpl of CounterTrait {
+        fn add(self: Counter, amount: felt252) -> felt252 {
+            self.value + amount
+        }
+    }
+
+    fn main() {
+        let c = Counter { value: 10 };
+        <sel>CounterImpl::add(c, 5);</sel>
+    }
+    "#, @r#"
+    #[derive(Drop)]
+    struct Counter {
+        value: felt252,
+    }
+
+    trait CounterTrait {
+        fn add(self: Counter, amount: felt252) -> felt252;
+    }
+
+    impl CounterImpl of CounterTrait {
+        fn add(self: Counter, amount: felt252) -> felt252 {
+            self.value + amount
+        }
+    }
+
+    fn main() {
+        let c = Counter { value: 10 };
+        CounterImpl::add(self: c, amount: 5);
     }
     "#)
 }

@@ -179,7 +179,7 @@ fn self_type_member_method_call() {
     ```
     ```cairo
     pub(crate) impl Felt252One of One<felt252>;
-    fn is_one(self: felt252) -> bool
+    fn is_one(self: @felt252) -> bool
     ```
     """
     "#)

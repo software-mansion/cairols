@@ -4,11 +4,13 @@ use cairo_lang_executable_plugin::EXECUTABLE_ATTR;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use lsp_types::{CodeLens, Command, Position, Range, Url};
+use lsp_types::notification::ShowMessage;
+use lsp_types::{CodeLens, Command, MessageType, Position, Range, ShowMessageParams, Url};
 
 use crate::ide::code_lens::{
     AnnotatedNode, CodeLensInterface, CodeLensInternal, LSCodeLens, collect_functions_with_attrs,
-    get_original_module_item_and_file, make_lens_args, send_execute_in_terminal,
+    declarative_macro_call_modules, get_original_module_item_and_file, make_lens_args,
+    send_execute_in_terminal,
 };
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
@@ -50,7 +52,16 @@ impl CodeLensInternal for ExecutableLensInternal {
 impl CodeLensInterface for ExecutableCodeLens {
     fn execute(&self, file_url: Url, state: &State, notifier: &Notifier) -> Option<()> {
         let file_path = file_url.to_file_path().ok()?;
-        let cwd = state.project_controller.configs_registry().manifest_dir_for_file(&file_path)?;
+        let Some(cwd) =
+            state.project_controller.configs_registry().manifest_dir_for_file(&file_path)
+        else {
+            notifier.notify::<ShowMessage>(ShowMessageParams {
+                typ: MessageType::ERROR,
+                message: "Cannot execute function: could not find the Scarb package for this file."
+                    .to_string(),
+            });
+            return Some(());
+        };
         send_execute_in_terminal(state, notifier, self.command.clone(), cwd);
         None
     }
@@ -99,6 +110,15 @@ fn get_executable_lenses_builders_in_mod(
                 command: format!("scarb execute --executable-function {full_path}"),
             });
         }
+    }
+
+    for macro_module in declarative_macro_call_modules(db, module) {
+        get_executable_lenses_builders_in_mod(
+            file_code_lenses_builders,
+            db,
+            macro_module,
+            file_url.clone(),
+        );
     }
 
     let Ok(modules) = db.module_submodules_ids(module) else { return };

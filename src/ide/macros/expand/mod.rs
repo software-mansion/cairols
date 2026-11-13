@@ -31,12 +31,14 @@ pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) 
     })?;
     let item_node_span = item_node.span(db);
 
-    let (files, _) = db.file_and_subfiles_with_corresponding_modules_without_inline(file_id)?;
+    let (files_without_inlines, _) =
+        db.file_and_subfiles_with_corresponding_modules_without_inline(file_id)?;
     let (files_with_inlines, _) = db.file_and_subfiles_with_corresponding_modules(file_id)?;
 
-    let mut inline_files: Vec<_> = (files_with_inlines - files).into_iter().collect();
+    let mut inline_files: Vec<_> =
+        (files_with_inlines - files_without_inlines).into_iter().collect();
 
-    // Filter out files pointing to main file or outside of interesting span.
+    // Filter out files pointing to main file and outside of interesting span.
     // This way macros from other ModuleItem/Expr will not be applied keeping prefix and suffix code constant.
     let filter = |file: &FileId<'_>| {
         file.maybe_as_virtual(db)
@@ -44,9 +46,9 @@ pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) 
             .is_some_and(|parent| parent.file_id != file_id || item_node_span.contains(parent.span))
     };
 
-    if let Some(syntax) = ExprInlineMacro::cast(db, item_node) {
-        inline_files.retain(filter);
+    inline_files.retain(filter);
 
+    if let Some(syntax) = ExprInlineMacro::cast(db, item_node) {
         // If there is no inline macro file pointing to origin file, then we can only expand with no context.
         if inline_files.iter().all(|file| file.as_virtual(db).parent.unwrap().file_id != file_id) {
             let module_id = db.find_module_containing_node(item_node)?;
@@ -54,11 +56,12 @@ pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) 
             return expand_inline_macro_no_context(db, syntax, module_id);
         }
     }
-    let files: Vec<_> = files.into_iter().copied().filter(filter).collect();
+    let files_without_inlines: Vec<_> =
+        files_without_inlines.into_iter().copied().filter(filter).collect();
 
     let file_end = db.file_syntax(file_id).unwrap().span(db).end;
     let suffix = file_end - item_node_span.end;
-    let expansion = expand(db, file_id, Some(suffix), &files, &inline_files)?;
+    let expansion = expand(db, file_id, Some(suffix), &files_without_inlines, &inline_files)?;
 
     let expansion_end = TextOffset::from_str(&expansion);
 

@@ -19,6 +19,7 @@ use lsp_types::{
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::defs::{NonMacroModuleId, SymbolDef, SymbolSearch};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
+use crate::lang::usages::FoundUsage;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::result::{LSPError, LSPResult};
 
@@ -100,17 +101,18 @@ pub fn rename(
         }
     }
 
-    let locations = symbols
+    let new_name = &new_name;
+    let changes: HashMap<_, Vec<TextEdit>> = symbols
         .into_iter()
-        .flat_map(|symbol| find_usages(db, symbol))
-        .filter_map(|loc| db.lsp_location(loc))
-        .collect::<Vec<_>>();
-
-    let changes: HashMap<_, Vec<TextEdit>> =
-        locations.into_iter().fold(HashMap::new(), |mut acc, Location { uri, range }| {
-            acc.entry(uri).or_default().push(TextEdit { range, new_text: new_name.clone() });
-            acc
-        });
+        .flat_map(|symbol| {
+            let def = symbol.def.clone();
+            find_usages(db, symbol).into_iter().filter_map(move |usage| {
+                let new_text = new_text_for_usage(db, usage, &def, new_name);
+                let Location { uri, range } = db.lsp_location(usage.location())?;
+                Some((uri, TextEdit { range, new_text }))
+            })
+        })
+        .into_group_map();
 
     let workspace_edit = if client_capabilities.workspace_edit_rename_resource_support() {
         WorkspaceEdit {
@@ -136,14 +138,39 @@ fn declaration_from_resultant<'db>(
     SymbolSearch::find_declaration(db, &identifier)
 }
 
-fn find_usages<'db>(db: &'db AnalysisDatabase, symbol: SymbolSearch<'db>) -> Vec<SpanInFile<'db>> {
+/// Returns the text replacing a usage of the renamed symbol.
+///
+/// A shorthand is expanded, keeping the name of the symbol which is not renamed:
+/// `Struct { x }` becomes `Struct { new_name: x }` (member renamed)  
+/// or `Struct { x: new_name }` (variable renamed).
+fn new_text_for_usage<'db>(
+    db: &'db AnalysisDatabase,
+    usage: FoundUsage<'db>,
+    renamed: &SymbolDef<'db>,
+    new_name: &str,
+) -> String {
+    if !usage.is_shorthand() {
+        return new_name.to_string();
+    }
+
+    // Both symbols of a shorthand have the same name.
+    let old_name = renamed.name(db);
+    match renamed {
+        SymbolDef::Member(_) => format!("{new_name}: {old_name}"),
+        SymbolDef::Variable(_) => format!("{old_name}: {new_name}"),
+        _ => unreachable!("a shorthand refers only to a member and a variable"),
+    }
+}
+
+fn find_usages<'db>(db: &'db AnalysisDatabase, symbol: SymbolSearch<'db>) -> Vec<FoundUsage<'db>> {
     let symbol_name = Some(symbol.def.name(db));
 
     symbol
         .usages(db)
         .include_declaration(true)
-        .originating_locations(db)
-        .filter(|&SpanInFile { file_id, span }| {
+        .originating_usages(db)
+        .filter(|usage| {
+            let SpanInFile { file_id, span } = usage.location();
             db.find_syntax_node_at_offset(file_id, span.start)
                 // 1. Sanity check: `span` is a span of a terminal identifier without trivia.
                 //    It should be the same as the span of a token at offset `span.start`.
@@ -155,7 +182,7 @@ fn find_usages<'db>(db: &'db AnalysisDatabase, symbol: SymbolSearch<'db>) -> Vec
                     node.span(db) == span && node.text(db).map(|t| t.to_string(db)) == symbol_name
                 })
         })
-        .unique()
+        .unique_by(|usage| usage.location())
         .collect()
 }
 

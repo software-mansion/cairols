@@ -1,12 +1,13 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::span::TextPosition;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::ast::Attribute;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use lsp_types::{CompletionItem, CompletionItemKind, CompletionTextEdit, Range, TextEdit};
 
-use crate::ide::completion::helpers::span::get_resultant_range;
+use crate::ide::completion::helpers::span::get_range_and_text_before_cursor;
 use crate::ide::completion::{CompletionItemOrderable, CompletionRelevance};
 use crate::lang::{db::AnalysisDatabase, text_matching::text_matches};
 
@@ -16,12 +17,13 @@ pub fn attribute_completions<'db>(
     db: &'db AnalysisDatabase,
     node: SyntaxNode<'db>,
     crate_id: CrateId<'db>,
+    cursor: TextPosition,
 ) -> Vec<CompletionItemOrderable> {
     // Check if cursor is on attribute name. `#[my_a<cursor>ttr(arg1, args2: 1234)]`
     if let Some(node) = node.ancestor_of_kind(db, SyntaxKind::ExprPath)
-        && let Some(attr) = node.parent_of_type::<Attribute>(db)
-        && let Some(span) = get_resultant_range(db, node)
-        && let Some(attr_completions) = attribute_completions_ex(db, attr, span, crate_id)
+        && let Some(_attr) = node.parent_of_type::<Attribute>(db)
+        && let Some((span, typed_text)) = get_range_and_text_before_cursor(db, node, cursor)
+        && let Some(attr_completions) = attribute_completions_ex(db, typed_text, span, crate_id)
     {
         return attr_completions;
     }
@@ -31,13 +33,11 @@ pub fn attribute_completions<'db>(
 
 fn attribute_completions_ex<'db>(
     db: &'db AnalysisDatabase,
-    attribute: Attribute<'db>,
+    attr_name: &str,
     span: Range,
     crate_id: CrateId<'db>,
 ) -> Option<Vec<CompletionItemOrderable>> {
     let plugins = db.crate_macro_plugins(crate_id);
-
-    let attr_name = attribute.attr(db).as_syntax_node().get_text(db);
 
     Some(
         plugins

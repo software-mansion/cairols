@@ -1,4 +1,5 @@
 import { defineConfig } from "vitepress";
+import { swmStructuredData, writeLlmsTxt } from "./swm-geo.mjs";
 import * as syntaxes from "./syntaxes.mjs";
 
 const base = "/cairols/";
@@ -21,6 +22,7 @@ const getSidebar = () => ({
                 p("Quick start", "/docs"),
                 p("Troubleshooting", "/docs/troubleshooting"),
                 p("Settings", "/docs/settings"),
+                p("Language Server Binary Discovery", "/docs/language-server-binary-discovery"),
             ],
         },
     ],
@@ -34,6 +36,8 @@ export default defineConfig({
     lang,
     base,
 
+    transformHead: (context) => [swmStructuredData(context)],
+    buildEnd: writeLlmsTxt,
     head: [
         ["meta", { httpEquiv: "Content-Language", content: lang }],
         ["link", { rel: "icon", href: `${base}favicon.svg`, type: "image/x-icon" }],

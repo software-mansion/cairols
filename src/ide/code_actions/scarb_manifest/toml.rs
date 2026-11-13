@@ -1,4 +1,25 @@
-use toml_edit::{Document, InlineTable, Item, Table, Value};
+use toml_edit::{Document, DocumentMut, Item, Value};
+
+/// Removes `[patch]` from a member manifest and merges it into the workspace root manifest.
+///
+/// Returns the rewritten member manifest first and the rewritten workspace root manifest second.
+pub fn move_patch_to_workspace_root(
+    member_raw_toml: &str,
+    workspace_root_raw_toml: &str,
+) -> Option<(String, String)> {
+    let mut member_doc = Document::parse(member_raw_toml.to_owned()).ok()?.into_mut();
+    let patch = member_doc.as_table_mut().remove("patch")?;
+
+    let mut workspace_root_doc =
+        Document::parse(workspace_root_raw_toml.to_owned()).ok()?.into_mut();
+    if let Some(existing_patch) = workspace_root_doc.as_table_mut().get_mut("patch") {
+        merge_patch_items(existing_patch, &patch)?;
+    } else {
+        workspace_root_doc.as_table_mut().insert("patch", patch);
+    }
+
+    Some((member_doc.to_string(), workspace_root_doc.to_string()))
+}
 
 // Remove a logical key path and return the rewritten manifest.
 // Example: ["dependencies", "dep", "git"] removes `git` from
@@ -14,13 +35,54 @@ pub fn replace_key_path_value(raw_toml: &str, path: &[String], new_value: Value)
     replace_key_value_in_item(doc.as_item_mut(), path, new_value).then(|| doc.to_string())
 }
 
-// Map a byte offset to the logical TOML key path at that location.
-// Example: an offset inside `git` in `dep = { git = "...", path = "../dep" }`
-// returns ["dependencies", "dep", "git"] when called from the `[dependencies]` table.
-pub fn find_key_path_at_offset(raw_toml: &str, offset: usize) -> Option<Vec<String>> {
-    let doc = Document::parse(raw_toml.to_owned()).ok()?;
-    let mut path = Vec::new();
-    find_key_path_in_item(doc.as_item(), offset, &mut path)
+/// Merges all sources and dependencies from `patch` into the target `[patch]` table.
+///
+/// Returns `None` when either item is not a table or conflicting dependency specifications make
+/// the merge ambiguous.
+fn merge_patch_items(target: &mut Item, patch: &Item) -> Option<()> {
+    let target = target.as_table_mut()?;
+    let patch = patch.as_table()?;
+
+    for (source, source_patches) in patch.iter() {
+        if let Some(target_patches) = target.get_mut(source) {
+            merge_patch_source(target_patches, source_patches)?;
+        } else {
+            target.insert(source, source_patches.clone());
+        }
+    }
+
+    Some(())
+}
+
+// Merge entries for the same patch source, rejecting conflicting dependencies. Dependency
+// specifications can be written as inline tables or regular TOML tables; compare their parsed
+// values instead of descending into them and combining mutually exclusive fields such as `git`
+// and `path`.
+fn merge_patch_source(target: &mut Item, patch: &Item) -> Option<()> {
+    let target = target.as_table_mut()?;
+    let patch = patch.as_table()?;
+
+    for (dependency, specification) in patch.iter() {
+        if let Some(existing) = target.get(dependency) {
+            if !patch_specifications_equal(existing, specification) {
+                return None;
+            }
+        } else {
+            target.insert(dependency, specification.clone());
+        }
+    }
+
+    Some(())
+}
+
+fn patch_specifications_equal(left: &Item, right: &Item) -> bool {
+    fn as_toml_value(item: &Item) -> Option<toml::Value> {
+        let mut document = DocumentMut::new();
+        document.as_table_mut().insert("dependency", item.clone());
+        toml::from_str::<toml::Table>(&document.to_string()).ok()?.remove("dependency")
+    }
+
+    as_toml_value(left).zip(as_toml_value(right)).is_some_and(|(left, right)| left == right)
 }
 
 // Remove the last segment from either a regular table or an inline table.
@@ -89,102 +151,4 @@ fn replace_key_value_in_item(item: &mut Item, path: &[String], new_value: Value)
     }
 
     false
-}
-
-// Only table-like nodes can contribute key segments.
-fn find_key_path_in_item(
-    item: &Item,
-    offset: usize,
-    path: &mut Vec<String>,
-) -> Option<Vec<String>> {
-    if let Some(table) = item.as_table() {
-        return find_key_path_in_table(table, offset, path);
-    }
-
-    if let Some(inline) = item.as_value().and_then(Value::as_inline_table) {
-        return find_key_path_in_inline_table(inline, offset, path);
-    }
-
-    None
-}
-
-// Walk a regular table and keep building the current logical path.
-fn find_key_path_in_table(
-    table: &Table,
-    offset: usize,
-    path: &mut Vec<String>,
-) -> Option<Vec<String>> {
-    for (k, child) in table.iter() {
-        let Some((key, value_item)) = table.get_key_value(k) else {
-            continue;
-        };
-        if let Some(found) = find_matching_key_path(key, offset, path) {
-            return Some(found);
-        }
-
-        if let Some(found) = find_nested_inline_key_path(value_item, key.get(), offset, path) {
-            return Some(found);
-        }
-
-        if let Some(inner) = child.as_table() {
-            path.push(key.get().to_string());
-            if let Some(found) = find_key_path_in_table(inner, offset, path) {
-                path.pop();
-                return Some(found);
-            }
-            path.pop();
-        }
-    }
-
-    None
-}
-
-// Walk an inline table using the same path rules as regular tables.
-fn find_key_path_in_inline_table(
-    table: &InlineTable,
-    offset: usize,
-    path: &mut Vec<String>,
-) -> Option<Vec<String>> {
-    for (k, _) in table.iter() {
-        let Some((key, value_item)) = table.get_key_value(k) else {
-            continue;
-        };
-        if let Some(found) = find_matching_key_path(key, offset, path) {
-            return Some(found);
-        }
-
-        if let Some(found) = find_nested_inline_key_path(value_item, key.get(), offset, path) {
-            return Some(found);
-        }
-    }
-
-    None
-}
-
-// Push the parent key, recurse into the nested inline table, then restore the path.
-fn find_nested_inline_key_path(
-    value_item: &Item,
-    key: &str,
-    offset: usize,
-    path: &mut Vec<String>,
-) -> Option<Vec<String>> {
-    let inline = value_item.as_value().and_then(Value::as_inline_table)?;
-
-    path.push(key.to_string());
-    let found = find_key_path_in_inline_table(inline, offset, path);
-    path.pop();
-    found
-}
-
-// If the offset points at this key token, return the full path to it.
-fn find_matching_key_path(
-    key: &toml_edit::Key,
-    offset: usize,
-    path: &[String],
-) -> Option<Vec<String>> {
-    key.span().filter(|span| span.contains(&offset)).map(|_| {
-        let mut full = path.to_vec();
-        full.push(key.get().to_string());
-        full
-    })
 }

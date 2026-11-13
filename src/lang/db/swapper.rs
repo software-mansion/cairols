@@ -7,6 +7,8 @@ use std::time::{Duration, SystemTime};
 
 use crossbeam::channel::{Receiver, RecvTimeoutError, Sender, TrySendError};
 use lsp_types::Url;
+use salsa::Revision;
+use salsa::plumbing::current_revision;
 use tracing::{error, trace, warn};
 
 use crate::env_config;
@@ -48,6 +50,12 @@ pub struct AnalysisDatabaseSwapper {
     mutations_since_last_replace: u64,
     db_replace_min_mutations: u64,
     analysis_event_sender: Sender<AnalysisEvent>,
+    /// Revision of the database produced by the last swap
+    /// (i.e.. the revision of the freshly swapped database).
+    /// Used to tell whether anything has actually been written since then, which decides both
+    /// whether a new swap can reclaim anything and whether the scheduler will run the
+    /// `sync_mut_task` hooks for it.
+    last_swap_revision: Option<Revision>,
 }
 
 impl AnalysisDatabaseSwapper {
@@ -56,6 +64,7 @@ impl AnalysisDatabaseSwapper {
             mutations_since_last_replace: 0,
             db_replace_min_mutations: env_config::db_replace_mutations(),
             analysis_event_sender,
+            last_swap_revision: None,
         }
     }
 
@@ -63,14 +72,25 @@ impl AnalysisDatabaseSwapper {
         self.mutations_since_last_replace += 1;
     }
 
-    /// Swaps the database unconditionally, triggered by the inactivity monitor.
-    pub fn swap_on_inactivity(&mut self, db: &mut AnalysisDatabase, open_files: &HashSet<Url>) {
+    /// Swaps the database, triggered by the inactivity monitor.
+    /// Swap will only be performed if the database has been mutated since the last swap.
+    pub fn maybe_swap_on_inactivity(
+        &mut self,
+        db: &mut AnalysisDatabase,
+        open_files: &HashSet<Url>,
+    ) {
+        if self.last_swap_revision == Some(current_revision(db)) {
+            trace!("skipping inactivity swap: nothing was written since the last swap");
+            return;
+        }
+
         if let Err(err) = self.analysis_event_sender.send(AnalysisEvent::DatabaseSwap) {
             error!("Could not send swap status: {err:?}");
         }
 
         self.swap(db, open_files);
         self.mutations_since_last_replace = 0;
+        self.last_swap_revision = Some(current_revision(db));
 
         trace!("Database swapped due to inactivity");
     }
@@ -89,6 +109,7 @@ impl AnalysisDatabaseSwapper {
 
         self.swap(db, open_files);
         self.mutations_since_last_replace = 0;
+        self.last_swap_revision = Some(current_revision(db));
 
         trace!("Database swapped - {reason}");
 

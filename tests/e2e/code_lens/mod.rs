@@ -14,15 +14,19 @@ use lsp_types::{
 use serde::Serialize;
 use serde_json::{Value, json};
 
+use crate::support::cairo_project_toml::CAIRO_PROJECT_TOML_2025_12;
 use crate::support::cursor::Cursor;
 use crate::support::{cursors, sandbox};
 
 mod both_runners;
 mod cairo_test;
 mod custom;
+mod declarative_macro;
 mod executable;
 mod no_runners;
+mod no_scarb_package;
 mod other_file;
+mod proc_macro;
 mod snforge;
 
 fn test_code_lens_scarb_execute(args: (&str, &str)) -> Report {
@@ -59,6 +63,74 @@ fn test_code_lens_snforge(cairo_code: &str) -> Report {
             skip-optimizations = true
             unstable-add-statements-code-locations-debug-info = true
             add-statements-functions-debug-info = true
+            add-types-debug-info = true
+            "#
+        ),
+        json!({
+            "cairo1": {
+                "enableProcMacros": true
+            }
+        }),
+    )
+}
+
+fn test_code_lens_snforge_with_macros(cairo_code: &str) -> Report {
+    test_code_lens(
+        cairo_code,
+        &formatdoc!(
+            r#"
+            [package]
+            name = "hello"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [dependencies]
+            snforge_std = "0.50.0"
+            cairols_test_macros_v2 = {{ path = "{}" }}
+
+            [tool.scarb]
+            allow-prebuilt-plugins = ["snforge_std"]
+
+            [cairo]
+            add-functions-debug-info = true
+            skip-optimizations = true
+            unstable-add-statements-code-locations-debug-info = true
+            add-statements-functions-debug-info = true
+            add-types-debug-info = true
+            "#,
+            crate::macros::SCARB_TEST_MACROS_V2_PACKAGE.display()
+        ),
+        json!({
+            "cairo1": {
+                "enableProcMacros": true
+            }
+        }),
+    )
+}
+
+fn test_code_lens_snforge_with_user_defined_macros(cairo_code: &str) -> Report {
+    test_code_lens(
+        cairo_code,
+        indoc!(
+            r#"
+            [package]
+            name = "hello"
+            version = "0.1.0"
+            edition = "2025_12"
+            experimental-features = ["user_defined_inline_macros"]
+
+            [dependencies]
+            snforge_std = "0.50.0"
+
+            [tool.scarb]
+            allow-prebuilt-plugins = ["snforge_std"]
+
+            [cairo]
+            add-functions-debug-info = true
+            skip-optimizations = true
+            unstable-add-statements-code-locations-debug-info = true
+            add-statements-functions-debug-info = true
+            add-types-debug-info = true
             "#
         ),
         json!({
@@ -72,25 +144,28 @@ fn test_code_lens_snforge(cairo_code: &str) -> Report {
 fn test_code_lens_snforge_wrong_debug_config(cairo_code: &str) -> Report {
     test_code_lens_impl(
         cairo_code,
-        &formatdoc!(
-            r#"
-            [package]
-            name = "hello"
-            version = "0.1.0"
-            edition = "2025_12"
+        (
+            "Scarb.toml",
+            &formatdoc!(
+                r#"
+                [package]
+                name = "hello"
+                version = "0.1.0"
+                edition = "2025_12"
 
-            [dependencies]
-            snforge_std = "0.50.0"
+                [dependencies]
+                snforge_std = "0.50.0"
 
-            [tool.scarb]
-            allow-prebuilt-plugins = ["snforge_std"]
+                [tool.scarb]
+                allow-prebuilt-plugins = ["snforge_std"]
 
-            [cairo]
-            add-functions-debug-info = true
-            skip-optimizations = false
-            add-statements-code-locations-debug-info = true
-            add-statements-functions-debug-info = true
-            "#
+                [cairo]
+                add-functions-debug-info = true
+                skip-optimizations = false
+                add-statements-code-locations-debug-info = true
+                add-statements-functions-debug-info = true
+                "#
+            ),
         ),
         json!({
             "cairo1": {
@@ -189,21 +264,32 @@ fn test_code_lens_custom_runner(cairo_code: &str) -> Report {
     )
 }
 
+fn test_code_lens_no_scarb_package(cairo_code: &str) -> Report {
+    test_code_lens_impl(
+        cairo_code,
+        ("cairo_project.toml", CAIRO_PROJECT_TOML_2025_12),
+        json!({}),
+        false,
+    )
+}
+
 fn test_code_lens(cairo_code: &str, scarb_toml: &str, config: Value) -> Report {
-    test_code_lens_impl(cairo_code, scarb_toml, config, false)
+    test_code_lens_impl(cairo_code, ("Scarb.toml", scarb_toml), config, false)
 }
 
 fn test_code_lens_impl(
     cairo_code: &str,
-    scarb_toml: &str,
+    (manifest_file, manifest_content): (&str, &str),
     config: Value,
     expect_wrong_compiler_config_for_debug: bool,
 ) -> Report {
     let (cairo, cursors) = cursors(cairo_code);
+    // Without a Scarb package, every code lens execution fails with an error message.
+    let has_scarb_package = manifest_file == "Scarb.toml";
 
     let mut ls = sandbox! {
         files {
-            "Scarb.toml" => scarb_toml,
+            manifest_file => manifest_content,
             "src/lib.cairo" => cairo.clone(),
             "src/foo.cairo" => r#"
                 #[test]
@@ -249,9 +335,16 @@ fn test_code_lens_impl(
                 work_done_progress_params: Default::default(),
             });
 
+            let is_gas_lens = command.title.contains("Calculate Gas");
             let is_debug_lens = command.title.contains("Debug");
 
-            if is_debug_lens && expect_wrong_compiler_config_for_debug {
+            if is_gas_lens {
+                let ShowMessageParams { typ, message } =
+                    ls.wait_for_notification::<ShowMessage>(|_| true);
+                show_messages.push(ShowMessageReport { typ: format!("{typ:?}"), message })
+            } else if (is_debug_lens && expect_wrong_compiler_config_for_debug)
+                || !has_scarb_package
+            {
                 let ShowMessageParams { typ, message } =
                     ls.wait_for_notification::<ShowMessage>(|_| true);
                 show_messages.push(ShowMessageReport { typ: format!("{typ:?}"), message });

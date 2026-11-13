@@ -194,3 +194,83 @@ fn top_level_declarative_macro_on_usage() {
     declare_mod!(modzik);
     ")
 }
+
+#[test]
+fn derive_macro_name_with_call_site_only_mappings() {
+    test_transform_with_macros!(GotoDefinition, r#"
+    #[derive(SimpleDeriveM<caret>acroV2)]
+    struct OuterStruct {
+        extra: u32,
+    }
+    "#, @"none response")
+}
+
+#[test]
+fn derive_macro_name_with_mixed_mappings() {
+    test_transform_with_macros!(GotoDefinition, r#"
+    trait DescribeTrait<T> {
+        fn describe(self: @T) -> felt252;
+    }
+
+    #[derive(DescribeDeriveM<caret>acroV2)]
+    struct OuterStruct {
+        extra: u32,
+    }
+    "#, @"none response")
+}
+
+// FIXME(#1431). Rename, goto definition and references don't work properly in declarative macros.
+#[test]
+fn struct_constructor_shorthand_in_declarative_macro() {
+    test_transform_plain!(GotoDefinition, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { fie<caret>ld });
+    }
+    ", @"none response")
+}
+
+#[test]
+fn struct_constructor_shorthand_in_plugin_inline_macro() {
+    test_transform_plain!(GotoDefinition, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = array![Foo { fie<caret>ld }];
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { <sel>field</sel>: felt252 }
+    fn main() {
+        let <sel>field</sel> = 42;
+        let x = array![Foo { field }];
+    }
+    ")
+}
+
+// FIXME(#1431). Rename, goto definition and references don't work properly in declarative macros.
+#[test]
+fn struct_constructor_shorthand_in_declarative_macro_with_macros() {
+    test_transform_with_macros!(GotoDefinition, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+
+    pub macro my_macro {
+        ($x:expr) => { $x };
+    }
+
+    #[complex_attribute_macro_v2]
+    fn main() {
+        let field = 42;
+        let x = my_macro!(Foo { fie<caret>ld });
+    }
+    ", @"none response")
+}

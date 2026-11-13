@@ -5,6 +5,7 @@ use std::collections::hash_map::Entry;
 use attribute::attribute_completions;
 use attribute::derive::derive_completions;
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_filesystem::span::TextPosition;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast;
@@ -15,6 +16,7 @@ use cairo_language_common::CommonGroup;
 use doc_links::doc_link_completions;
 use function::params::params_completions;
 use function::variables::variables_completions;
+use itertools::Itertools;
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
 use path::path_suffix_completions;
 use pattern::{enum_pattern_completions, struct_pattern_completions};
@@ -25,6 +27,7 @@ use self::dot_completions::dot_completions;
 use crate::ide::completion::expr::macro_call::{
     expr_inline_macro_completions, top_level_inline_macro_completions,
 };
+use crate::ide::completion::helpers::is_empty_body_context;
 use crate::ide::completion::helpers::item::{
     CompletionItemHashable, CompletionItemOrderable, CompletionRelevance,
 };
@@ -141,11 +144,11 @@ fn complete_ex<'db>(
     let mut completions = vec![];
 
     completions.extend(dot_completions(db, &ctx, was_node_corrected));
-    completions.extend(struct_constructor_completions(db, &ctx));
+    completions.extend(struct_constructor_completions(db, &ctx, cursor_position));
     completions.extend(use_completions(db, &ctx));
     completions.extend(self_completions(db, &ctx));
-    completions.extend(attribute_completions(db, node, crate_id));
-    completions.extend(derive_completions(db, node, crate_id));
+    completions.extend(attribute_completions(db, node, crate_id, cursor_position));
+    completions.extend(derive_completions(db, node, crate_id, cursor_position));
     completions.extend(mod_completions(db, node));
     completions.extend(params_completions(db, &ctx, was_node_corrected));
     completions.extend(variables_completions(db, &ctx, was_node_corrected));
@@ -155,7 +158,7 @@ fn complete_ex<'db>(
     completions.extend(top_level_inline_macro_completions(db, &ctx, was_node_corrected));
     completions.extend(doc_link_completions(db, &ctx, cursor_position));
 
-    if trigger_kind == CompletionTriggerKind::INVOKED
+    if trigger_kind != CompletionTriggerKind::TRIGGER_FOR_INCOMPLETE_COMPLETIONS
         && ctx.node.ancestor_of_kind(db, SyntaxKind::TriviumSkippedNode).is_none()
     {
         completions.extend(path_suffix_completions(db, &ctx, was_node_corrected));
@@ -229,4 +232,64 @@ fn compare_items_by_label_and_detail(
             let b_description = b.item.label_details.clone().unwrap_or_default().detail;
             a_description.cmp(&b_description)
         })
+}
+
+/// Returns the typed path segments and the last (potentially partial) segment, falling back to
+/// empty values when the cursor is in an empty body context (no path typed yet).
+/// `is_on_impl_alias_path` enables the same fallback right after `impl A =`.
+///
+/// Returns `None` when neither condition holds (i.e. there is no path at the cursor and the
+/// context is not an empty body).
+fn resolve_typed_segments<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+    is_on_impl_alias_path: bool,
+) -> Option<(Vec<SmolStrId<'db>>, SmolStrId<'db>)> {
+    match get_typed_text_and_last_segment(db, ctx) {
+        (Some(typed_segments), Some(last_typed_segment)) => {
+            Some((typed_segments, last_typed_segment))
+        }
+        _ if is_empty_body_context(db, &ctx.node) || is_on_impl_alias_path => {
+            Some((vec![], SmolStrId::from(db, "")))
+        }
+        _ => None,
+    }
+}
+
+fn get_typed_text_and_last_segment<'db>(
+    db: &'db AnalysisDatabase,
+    ctx: &AnalysisContext<'db>,
+) -> (Option<Vec<SmolStrId<'db>>>, Option<SmolStrId<'db>>) {
+    let typed_text = match ctx
+        .node
+        .ancestor_of_type::<ast::ExprPath>(db)
+        .map(|path| path.segments(db).elements(db).collect_vec())
+    {
+        Some(segments) if !segments.is_empty() => segments,
+        _ => return (None, None),
+    };
+
+    let mut typed_text_as_smol_str = typed_text
+        .into_iter()
+        .map(|segment| segment.as_syntax_node())
+        // Allow proposing items in the middle of the existing path by filtering out the nodes which lie after the cursor:
+        .filter_map(|segment_node| {
+            if segment_node.offset(db) <= ctx.node.offset(db) {
+                Some(segment_node.get_text_without_trivia(db))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+
+    // After `::`, we want to propose all importables available at the preceding path.
+    let last_typed_segment: SmolStrId<'db> = if ctx.node.kind(db) == SyntaxKind::TerminalColonColon
+    {
+        SmolStrId::from(db, "")
+    } else {
+        // Otherwise, the last segment is a partial identifier we want to complete using fuzzy search.
+        typed_text_as_smol_str.pop().expect("typed path should not be empty")
+    };
+
+    (Some(typed_text_as_smol_str), Some(last_typed_segment))
 }

@@ -1,9 +1,12 @@
-use crate::semantic_tokens::semantic_tokens;
-use crate::support::insta::test_transform;
+use indoc::indoc;
+use lsp_types::SemanticTokens;
+
+use crate::support::fixture;
+use crate::support::insta::test_transform_plain;
 
 #[test]
 fn complex() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     enum Foo {
         Bar,
         Baz,
@@ -59,8 +62,43 @@ fn complex() {
 }
 
 #[test]
+fn local_variable_shadows_crate_name() {
+    let fixture = fixture! {
+        "Scarb.toml" => indoc! {r#"
+            [package]
+            name = "hello"
+            version = "0.1.0"
+            edition = "2025_12"
+
+            [dependencies]
+            snforge_std = { path = "snforge_std" }
+        "#},
+        "snforge_std/Scarb.toml" => indoc! {r#"
+            [package]
+            name = "snforge_std"
+            version = "0.1.0"
+            edition = "2025_12"
+        "#},
+        "snforge_std/src/lib.cairo" => "",
+    };
+    test_transform_plain!(SemanticTokens, fixture, r#"
+    #[test]
+    fn test() {
+        let snforge_std = 10;
+        assert(snforge_std == 10, '');
+    }
+    "#, @r#"
+    #[<token=decorator>test</token>]
+    <token=keyword>fn</token> <token=function>test</token>() {
+        <token=keyword>let</token> <token=variable>snforge_std</token> = <token=number>10</token>;
+        <token=function>assert</token>(<token=variable>snforge_std</token> <token=operator>==</token> <token=number>10</token>, <token=string>''</token>);
+    }
+    "#)
+}
+
+#[test]
 fn multiline() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     fn main() {
         let _ = "
         ";
@@ -75,7 +113,7 @@ fn multiline() {
 
 #[test]
 fn on_mod() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     #[cfg(test, 1234)]
     mod rectangle { }
     "#, @r"
@@ -86,7 +124,7 @@ fn on_mod() {
 
 #[test]
 fn on_fn() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     #[cfg(test, 1234)]
     fn rectangle() { }
     "#, @r"
@@ -97,7 +135,7 @@ fn on_fn() {
 
 #[test]
 fn consts() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     const STANDALONE: u32 = 3;
 
     trait Shape<T> {
@@ -132,7 +170,7 @@ fn consts() {
 
 #[test]
 fn inline_macro_with_same_name_as_module() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     use core::array;
 
     fn main() {
@@ -149,7 +187,7 @@ fn inline_macro_with_same_name_as_module() {
 
 #[test]
 fn inline_macro_with_same_name_as_enum() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     enum array {
         Abc
     }
@@ -170,7 +208,7 @@ fn inline_macro_with_same_name_as_enum() {
 
 #[test]
 fn inline_macro_with_same_name_as_trait() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     trait array { }
 
     fn main() {
@@ -187,7 +225,7 @@ fn inline_macro_with_same_name_as_trait() {
 
 #[test]
 fn doc_comment_with_link() {
-    test_transform!(semantic_tokens, r#"
+    test_transform_plain!(SemanticTokens, r#"
     //! Doc header comment
     //! And a one with a [`Link`]
     //! Plz refer to this external [source](https://zal.pl)
@@ -258,6 +296,72 @@ fn doc_comment_with_link() {
                 <token=keyword>struct</token> <token=struct>Foo</token> {}
             }
         }
+    }
+    ")
+}
+
+#[test]
+fn field_access() {
+    test_transform_plain!(SemanticTokens, r#"
+    #[derive(Drop)]
+    struct Point {
+        x: felt252,
+    }
+
+    fn main() {
+        let point = Point { x: 5 };
+        let _ = point.x;
+    }
+    "#, @r"
+    #[<token=decorator>derive</token>(<token=decorator>Drop</token>)]
+    <token=keyword>struct</token> <token=struct>Point</token> {
+        <token=variable>x</token>: <token=type>felt252</token>,
+    }
+
+    <token=keyword>fn</token> <token=function>main</token>() {
+        <token=keyword>let</token> <token=variable>point</token> = <token=struct>Point</token> { <token=property>x</token>: <token=number>5</token> };
+        <token=keyword>let</token> _ = <token=variable>point</token>.<token=property>x</token>;
+    }
+    ")
+}
+
+#[test]
+fn field_access_through_snapshot() {
+    test_transform_plain!(SemanticTokens, r#"
+    #[derive(Drop)]
+    struct Point {
+        x: felt252,
+    }
+
+    #[generate_trait]
+    impl PointImpl of PointTrait {
+        fn get(self: @Point) -> felt252 {
+            *self.x
+        }
+    }
+
+    fn main() {
+        let point = Point { x: 5 };
+        let snapshot = @point;
+        let _ = *snapshot.x;
+    }
+    "#, @r"
+    #[<token=decorator>derive</token>(<token=decorator>Drop</token>)]
+    <token=keyword>struct</token> <token=struct>Point</token> {
+        <token=variable>x</token>: <token=type>felt252</token>,
+    }
+
+    #[<token=decorator>generate_trait</token>]
+    <token=keyword>impl</token> <token=class>PointImpl</token> <token=keyword>of</token> <token=interface>PointTrait</token> {
+        <token=keyword>fn</token> <token=function>get</token>(<token=parameter>self</token>: @<token=struct>Point</token>) -> <token=type>felt252</token> {
+            <token=operator>*</token><token=variable>self</token>.<token=property>x</token>
+        }
+    }
+
+    <token=keyword>fn</token> <token=function>main</token>() {
+        <token=keyword>let</token> <token=variable>point</token> = <token=struct>Point</token> { <token=property>x</token>: <token=number>5</token> };
+        <token=keyword>let</token> <token=variable>snapshot</token> = @<token=variable>point</token>;
+        <token=keyword>let</token> _ = <token=operator>*</token><token=variable>snapshot</token>.<token=property>x</token>;
     }
     ")
 }

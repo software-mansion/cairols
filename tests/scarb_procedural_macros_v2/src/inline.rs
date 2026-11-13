@@ -51,3 +51,78 @@ pub fn simple_module_level_inline_macro_v2(_item: TokenStream) -> ProcMacroResul
         }
     })
 }
+
+#[inline_macro]
+pub fn test_generating_inline_macro_v2(_item: TokenStream) -> ProcMacroResult {
+    ProcMacroResult::new(quote! {
+        #[test]
+        fn inline_generated_test_v2() {}
+    })
+}
+
+#[inline_macro]
+pub fn multiple_tests_generating_inline_macro_v2(_item: TokenStream) -> ProcMacroResult {
+    ProcMacroResult::new(quote! {
+        #[test]
+        fn inline_generated_test_1_v2() {}
+
+        #[test]
+        fn inline_generated_test_2_v2() {}
+
+        #[test]
+        fn inline_generated_test_3_v2() {}
+    })
+}
+
+#[inline_macro]
+pub fn test_module_generating_inline_macro_v2(_item: TokenStream) -> ProcMacroResult {
+    ProcMacroResult::new(quote! {
+        mod generated_test_mod_v2 {
+            #[test]
+            fn test_in_generated_mod_v2() {}
+        }
+    })
+}
+
+#[inline_macro]
+pub fn multiple_tests_module_generating_inline_macro_v2(_item: TokenStream) -> ProcMacroResult {
+    ProcMacroResult::new(quote! {
+        mod generated_tests_mod_v2 {
+            #[test]
+            fn test_1_in_generated_mod_v2() {}
+
+            #[test]
+            fn test_2_in_generated_mod_v2() {}
+
+            #[test]
+            fn test_3_in_generated_mod_v2() {}
+        }
+    })
+}
+
+#[inline_macro]
+pub fn multiple_test_modules_generating_inline_macro_v2(_item: TokenStream) -> ProcMacroResult {
+    ProcMacroResult::new(quote! {
+        mod first_generated_test_mod_v2 {
+            #[test]
+            fn test_in_first_generated_mod_v2() {}
+        }
+
+        mod second_generated_test_mod_v2 {
+            #[test]
+            fn test_in_second_generated_mod_v2() {}
+        }
+    })
+}
+
+#[inline_macro]
+pub fn nested_test_module_generating_inline_macro_v2(_item: TokenStream) -> ProcMacroResult {
+    ProcMacroResult::new(quote! {
+        mod outer_generated_test_mod_v2 {
+            mod inner_generated_test_mod_v2 {
+                #[test]
+                fn test_in_nested_generated_mod_v2() {}
+            }
+        }
+    })
+}

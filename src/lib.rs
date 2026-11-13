@@ -389,7 +389,7 @@ impl Backend {
                             .lock()
                             .expect("should be able to acquire the MetaState");
                         ms.inactivity_monitor.notify_swap_triggered();
-                        ms.db_swapper.swap_on_inactivity(
+                        ms.db_swapper.maybe_swap_on_inactivity(
                             &mut state.db,
                             &state.open_files,
                         );
@@ -415,10 +415,7 @@ impl Backend {
         requester: &mut Requester<'_>,
         _: Responder,
     ) {
-        // Check for responses without keeping the Arc alive past this block.
-        // The Arc must be dropped before calling `handle_response`, because `handle_response` may
-        // call `force_restart` which calls `Arc::try_unwrap` and panics if any extra strong
-        // references exist.
+        // Release the responses lock before `handle_response` takes it again.
         let has_responses = match state.db.proc_macro_input().proc_macro_server_status(&state.db) {
             ServerStatus::Connected(client) => client.available_responses().len() != 0,
             _ => false,

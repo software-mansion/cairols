@@ -342,10 +342,6 @@ fn with_mutable_self() {
     """
 
     [[completions]]
-    completion_label = "balance"
-    completion_label_type_info = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
-
-    [[completions]]
     completion_label = "get_balance()"
     completion_label_type_info = "fn(self: @TContractState) -> felt252"
     insert_text = "get_balance()"
@@ -492,7 +488,7 @@ fn with_already_typed_parens() {
     [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make(${1:a})"
+    insert_text = "make"
     "#);
 }
 
@@ -525,22 +521,22 @@ fn with_already_typed_parens_and_no_method_chars() {
     [[completions]]
     completion_label = "get_descriptor()"
     completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor()"
+    insert_text = "get_descriptor"
 
     [[completions]]
     completion_label = "into()"
     completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "into()"
+    insert_text = "into"
 
     [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make(${1:a})"
+    insert_text = "make"
 
     [[completions]]
     completion_label = "new_inputs()"
     completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
-    insert_text = "new_inputs()"
+    insert_text = "new_inputs"
     text_edits = ["""
     use core::circuit::CircuitInputs;
 
@@ -549,7 +545,64 @@ fn with_already_typed_parens_and_no_method_chars() {
     [[completions]]
     completion_label = "try_into()"
     completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into()"
+    insert_text = "try_into"
+    "#);
+}
+
+#[test]
+fn with_already_typed_parens_with_single_argument_and_no_method_chars() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.<caret>(5);
+    }
+    ",
+    @r#"
+    caret = """
+        s.<caret>(5);
+    """
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into"
+
+    [[completions]]
+    completion_label = "make()"
+    completion_label_type_info = "fn(self: T, a: u32) -> Long"
+    insert_text = "make"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into"
     "#);
 }
 
@@ -641,6 +694,155 @@ fn with_already_typed_parens_and_caret_after() {
 }
 
 #[test]
+fn with_already_typed_parens_and_no_method_chars_and_caret_inside() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.(<caret>);
+    }
+    ",
+    @r#"
+    caret = """
+        s.(<caret>);
+    """
+    completions = []
+    "#);
+}
+
+#[test]
+fn with_already_typed_parens_and_no_method_chars_and_caret_after() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.()<caret>;
+    }
+    ",
+    @r#"
+    caret = """
+        s.()<caret>;
+    """
+    completions = []
+    "#);
+}
+
+#[test]
+fn with_already_typed_parens_and_no_method_chars_and_caret_before_identifier() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn make(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn make(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.()<caret>foo;
+    }
+    ",
+    @r#"
+    caret = """
+        s.()<caret>foo;
+    """
+    completions = []
+    "#);
+}
+
+#[test]
+fn on_method_call_result() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Long {}
+
+    #[generate_trait]
+    impl LongImpl of LongTrait {
+        fn bar(self: Long) -> felt252 { 0 }
+    }
+
+    struct S {}
+
+    trait ReturnLong<T> {
+        fn foo(self: T, a: u32) -> Long;
+    }
+
+    impl SReturnLong of ReturnLong<S> {
+        fn foo(self: S, a: u32) -> Long { Long {} }
+    }
+
+    fn test() {
+        let s = S{};
+        s.foo(5).<caret>;
+    }
+    ",
+    @r#"
+    caret = """
+        s.foo(5).<caret>;
+    """
+
+    [[completions]]
+    completion_label = "bar()"
+    completion_label_type_info = "fn(self: Long) -> felt252"
+    insert_text = "bar()"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into()"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs()"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+    "#);
+}
+
+#[test]
 fn with_already_typed_incomplete_parens_and_caret_before() {
     test_transform_plain!(Completion, completion_fixture(),
     "
@@ -669,7 +871,7 @@ fn with_already_typed_incomplete_parens_and_caret_before() {
     [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make(${1:a})"
+    insert_text = "make"
     "#);
 }
 
@@ -742,7 +944,7 @@ fn with_nested_binary_expressions_and_caret_afterc() {
     [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make(${1:a})"
+    insert_text = "make"
     "#);
 }
 
@@ -776,7 +978,7 @@ fn with_already_typed_parens_with_macro() {
     [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make(${1:a})"
+    insert_text = "make"
     "#);
 }
 
@@ -900,7 +1102,7 @@ fn with_already_typed_incomplete_parens_and_caret_before_with_macro() {
     [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make(${1:a})"
+    insert_text = "make"
     "#);
 }
 
@@ -975,6 +1177,541 @@ fn with_nested_binary_expressions_and_caret_after_with_macro() {
     [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
-    insert_text = "make(${1:a})"
+    insert_text = "make"
+    "#);
+}
+
+#[test]
+fn pub_impl_method_dot_completion() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Foo {}
+
+    trait Greet<T> {
+        fn hello(self: T) -> felt252;
+    }
+
+    pub impl FooGreet of Greet<Foo> {
+        fn hello(self: Foo) -> felt252 { 0 }
+    }
+
+    fn test() {
+        let f = Foo {};
+        f.he<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        f.he<caret>
+    """
+
+    [[completions]]
+    completion_label = "hello()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "hello()"
+    "#);
+}
+
+#[test]
+fn pub_impl_method_dot_completion_from_submodule() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    mod impls {
+        pub struct Foo {}
+
+        pub trait Greet<T> {
+            fn hello(self: T) -> felt252;
+        }
+
+        pub impl FooGreet of Greet<Foo> {
+            fn hello(self: Foo) -> felt252 { 0 }
+        }
+    }
+
+    fn test() {
+        let f = impls::Foo {};
+        f.he<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        f.he<caret>
+    """
+
+    [[completions]]
+    completion_label = "hello()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "hello()"
+    text_edits = ["""
+    use impls::Greet;
+
+    """]
+    "#);
+}
+
+#[test]
+fn pub_impl_method_dot_completion_multiple_methods() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Counter {}
+
+    trait CounterTrait<T> {
+        fn increment(self: T) -> felt252;
+        fn decrement(self: T) -> felt252;
+        fn reset(self: T) -> felt252;
+    }
+
+    pub impl CounterImpl of CounterTrait<Counter> {
+        fn increment(self: Counter) -> felt252 { 1 }
+        fn decrement(self: Counter) -> felt252 { 2 }
+        fn reset(self: Counter) -> felt252 { 0 }
+    }
+
+    fn test() {
+        let c = Counter {};
+        c.<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        c.<caret>
+    """
+
+    [[completions]]
+    completion_label = "decrement()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "decrement()"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
+
+    [[completions]]
+    completion_label = "increment()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "increment()"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into()"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs()"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
+
+    [[completions]]
+    completion_label = "reset()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "reset()"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+    "#);
+}
+
+#[test]
+fn pub_impl_generic_with_constraints_dot_completion() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    trait Sortable<T> {
+        fn sort(self: T) -> felt252;
+    }
+
+    pub impl SortImpl<T, +Copy<T>, +Drop<T>> of Sortable<T> {
+        fn sort(self: T) -> felt252 { 0 }
+    }
+
+    fn test() {
+        let x: felt252 = 5;
+        x.so<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        x.so<caret>
+    """
+
+    [[completions]]
+    completion_label = "is_non_one()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_non_one()"
+    text_edits = ["""
+    use core::num::traits::One;
+
+    """]
+
+    [[completions]]
+    completion_label = "is_non_zero()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_non_zero()"
+    text_edits = ["""
+    use core::num::traits::Zero;
+
+    """]
+
+    [[completions]]
+    completion_label = "is_non_zero()"
+    completion_label_type_info = "fn(self: T) -> bool"
+    insert_text = "is_non_zero()"
+
+    [[completions]]
+    completion_label = "is_one()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_one()"
+    text_edits = ["""
+    use core::num::traits::One;
+
+    """]
+
+    [[completions]]
+    completion_label = "sort()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "sort()"
+    "#);
+}
+
+#[test]
+fn impl_generic_with_constraints_dot_completion() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    trait Sortable<T> {
+        fn sort(self: T) -> felt252;
+    }
+
+    impl SortImpl<T, +Copy<T>, +Drop<T>> of Sortable<T> {
+        fn sort(self: T) -> felt252 { 0 }
+    }
+
+    fn test() {
+        let x: felt252 = 5;
+        x.so<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        x.so<caret>
+    """
+
+    [[completions]]
+    completion_label = "is_non_one()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_non_one()"
+    text_edits = ["""
+    use core::num::traits::One;
+
+    """]
+
+    [[completions]]
+    completion_label = "is_non_zero()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_non_zero()"
+    text_edits = ["""
+    use core::num::traits::Zero;
+
+    """]
+
+    [[completions]]
+    completion_label = "is_non_zero()"
+    completion_label_type_info = "fn(self: T) -> bool"
+    insert_text = "is_non_zero()"
+
+    [[completions]]
+    completion_label = "is_one()"
+    completion_label_type_info = "fn(self: @T) -> bool"
+    insert_text = "is_one()"
+    text_edits = ["""
+    use core::num::traits::One;
+
+    """]
+
+    [[completions]]
+    completion_label = "sort()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "sort()"
+    "#);
+}
+
+#[test]
+fn pub_impl_concrete_dot_completion() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Foo {}
+
+    trait Sortable {
+        fn sort(self: Foo) -> felt252;
+    }
+
+    pub impl SortImpl of Sortable {
+        fn sort(self: Foo) -> felt252 { 0 }
+    }
+
+    fn test() {
+        let x = Foo {};
+        x.so<caret>
+    }
+    ",
+    @r#"
+    caret = """
+        x.so<caret>
+    """
+
+    [[completions]]
+    completion_label = "sort()"
+    completion_label_type_info = "fn(self: Foo) -> felt252"
+    insert_text = "sort()"
+    "#);
+}
+
+#[test]
+fn method_with_existing_arguments() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    #[generate_trait]
+    impl FooImpl of FooTrait {
+        fn do_something(self: @Foo, x: felt252) -> felt252 { x }
+    }
+
+    struct Foo {}
+
+    fn test() {
+        let foo = Foo {};
+        foo.do_som<caret>(5);
+    }
+    ",
+    @r#"
+    caret = """
+        foo.do_som<caret>(5);
+    """
+
+    [[completions]]
+    completion_label = "do_something()"
+    completion_label_type_info = "fn(self: @Foo, x: felt252) -> felt252"
+    insert_text = "do_something"
+    "#);
+}
+
+#[test]
+fn trait_method_with_existing_arguments() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Foo {}
+
+    trait MyTrait {
+        fn some_method(self: @Foo) -> felt252;
+    }
+
+    impl MyTraitImpl of MyTrait {
+        fn some_method(self: @Foo) -> felt252 {
+            0
+        }
+    }
+
+    fn test() {
+        let x = Foo {};
+        let y = MyTrait::<caret>(x);
+    }
+    ",
+    @r#"
+    caret = """
+        let y = MyTrait::<caret>(x);
+    """
+
+    [[completions]]
+    completion_label = "some_method(...)"
+    completion_label_type_info = "fn(self: @Foo) -> felt252"
+    insert_text = "some_method"
+    "#);
+}
+
+#[test]
+fn partial_trait_method_with_existing_arguments() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    struct Foo {}
+
+    trait MyTrait {
+        fn some_method(self: @Foo) -> felt252;
+    }
+
+    impl MyTraitImpl of MyTrait {
+        fn some_method(self: @Foo) -> felt252 {
+            0
+        }
+    }
+
+    fn test() {
+        let x = Foo {};
+        let y = MyTrait::some_met<caret>(x);
+    }
+    ",
+    @r#"
+    caret = """
+        let y = MyTrait::some_met<caret>(x);
+    """
+
+    [[completions]]
+    completion_label = "some_method(...)"
+    completion_label_type_info = "fn(self: @Foo) -> felt252"
+    insert_text = "some_method"
+    "#);
+}
+
+#[test]
+fn method_after_dot_with_unclosed_empty_arguments() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    #[generate_trait]
+    impl FooImpl of FooTrait {
+        fn do_something(self: @Foo, x: felt252) -> felt252 { x }
+    }
+
+    struct Foo {}
+
+    fn test() {
+        let foo = Foo {};
+        foo.<caret>(
+    }
+    ",
+    @r#"
+    caret = """
+        foo.<caret>(
+    """
+
+    [[completions]]
+    completion_label = "do_something()"
+    completion_label_type_info = "fn(self: @Foo, x: felt252) -> felt252"
+    insert_text = "do_something"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into"
+    "#);
+}
+
+#[test]
+fn method_after_dot_with_unclosed_arguments() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    #[generate_trait]
+    impl FooImpl of FooTrait {
+        fn do_something(self: @Foo, x: felt252) -> felt252 { x }
+    }
+
+    struct Foo {}
+
+    fn test() {
+        let foo = Foo {};
+        foo.<caret>(5
+    }
+    ",
+    @r#"
+    caret = """
+        foo.<caret>(5
+    """
+
+    [[completions]]
+    completion_label = "do_something()"
+    completion_label_type_info = "fn(self: @Foo, x: felt252) -> felt252"
+    insert_text = "do_something"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into"
+    "#);
+}
+
+#[test]
+fn method_with_unclosed_arguments() {
+    test_transform_plain!(Completion, completion_fixture(),
+    "
+    #[generate_trait]
+    impl FooImpl of FooTrait {
+        fn do_something(self: @Foo, x: felt252) -> felt252 { x }
+    }
+
+    struct Foo {}
+
+    fn test() {
+        let foo = Foo {};
+        foo.do_som<caret>(5
+    }
+    ",
+    @r#"
+    caret = """
+        foo.do_som<caret>(5
+    """
+
+    [[completions]]
+    completion_label = "do_something()"
+    completion_label_type_info = "fn(self: @Foo, x: felt252) -> felt252"
+    insert_text = "do_something"
+    "#);
+}
+
+#[test]
+fn struct_member_partially_typed() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    #[derive(Drop)]
+    struct S { alpha: felt252, beta: felt252 }
+    fn f(s: S) {
+        s.be<caret>
+    }
+    ",@r#"
+    caret = """
+        s.be<caret>
+    """
+
+    [[completions]]
+    completion_label = "beta"
+    completion_label_type_info = "felt252"
     "#);
 }

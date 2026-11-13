@@ -13,7 +13,7 @@
         "cairo-tm-grammar": "github:software-mansion-labs/cairo-tm-grammar",
         "prettier": "3.3.2",
         "vitepress": "1.2.3",
-        "vue": "3.4.30"
+        "vue": "3.5.43"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5"

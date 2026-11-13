@@ -56,3 +56,15 @@ pub fn error_derive_macro(_item: TokenStream) -> ProcMacroResult {
     ProcMacroResult::new(TokenStream::empty())
         .with_diagnostics(Diagnostic::error("Error from procedural macro").into())
 }
+
+#[derive_macro]
+pub fn erroneous_derive_macro(_item: TokenStream) -> ProcMacroResult {
+    let result = indoc!(
+        r#"
+        fn erroneous_generated_fn_v1() {
+            let _x: felt252 = 1_u32; 
+        } 
+        "#
+    );
+    ProcMacroResult::new(TokenStream::new(result.to_string()))
+}

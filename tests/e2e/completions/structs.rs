@@ -1,5 +1,6 @@
 use lsp_types::request::Completion;
 
+use crate::support::insta::test_transform_with_macros;
 use crate::{completions::completion_fixture, support::insta::test_transform_plain};
 
 #[test]
@@ -733,5 +734,116 @@ fn no_initialization_completion_for_types_in_closures() {
     use starknet::account::AccountContractSafeLibraryDispatcherSubPointersMut;
 
     """]
+    "#);
+}
+
+#[test]
+fn constructor_member_partially_typed() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    #[derive(Drop)]
+    struct S { alpha: felt252, beta: felt252 }
+    fn f() {
+        let s = S { be<caret> };
+    }
+    ",@r#"
+    caret = """
+        let s = S { be<caret> };
+    """
+
+    [[completions]]
+    completion_label = "beta"
+    completion_label_type_info = "felt252"
+    "#);
+}
+
+#[test]
+fn constructor_member_partially_typed_before_existing_text() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    #[derive(Drop)]
+    struct S { alpha: felt252, alcohol: felt252, beta: felt252 }
+    fn f() {
+        let s = S { al<caret>pha };
+    }
+    ",@r#"
+    caret = """
+        let s = S { al<caret>pha };
+    """
+
+    [[completions]]
+    completion_label = "alcohol"
+    completion_label_type_info = "felt252"
+
+    [[completions]]
+    completion_label = "alpha"
+    completion_label_type_info = "felt252"
+    "#);
+}
+
+#[test]
+fn constructor_member_partially_typed_after_other_member() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    #[derive(Drop)]
+    struct S { alpha: felt252, alcohol: felt252, beta: felt252 }
+    fn f() {
+        let s = S { alpha: 1, al<caret> };
+    }
+    ",@r#"
+    caret = """
+        let s = S { alpha: 1, al<caret> };
+    """
+
+    [[completions]]
+    completion_label = "alcohol"
+    completion_label_type_info = "felt252"
+    "#);
+}
+
+#[test]
+fn constructor_member_partially_typed_with_macro() {
+    test_transform_with_macros!(Completion, completion_fixture(), "
+    #[derive(Drop)]
+    struct S { alpha: felt252, alcohol: felt252, beta: felt252 }
+
+    #[complex_attribute_macro_v2]
+    fn f() {
+        let s = S { al<caret> };
+    }
+    ",@r#"
+    caret = """
+        let s = S { al<caret> };
+    """
+
+    [[completions]]
+    completion_label = "alcohol"
+    completion_label_type_info = "felt252"
+
+    [[completions]]
+    completion_label = "alpha"
+    completion_label_type_info = "felt252"
+    "#);
+}
+
+#[test]
+fn constructor_member_partially_typed_before_existing_text_with_macro() {
+    test_transform_with_macros!(Completion, completion_fixture(), "
+    #[derive(Drop)]
+    struct S { alpha: felt252, alcohol: felt252, beta: felt252 }
+
+    #[complex_attribute_macro_v2]
+    fn f() {
+        let s = S { al<caret>pha };
+    }
+    ",@r#"
+    caret = """
+        let s = S { al<caret>pha };
+    """
+
+    [[completions]]
+    completion_label = "alcohol"
+    completion_label_type_info = "felt252"
+
+    [[completions]]
+    completion_label = "alpha"
+    completion_label_type_info = "felt252"
     "#);
 }

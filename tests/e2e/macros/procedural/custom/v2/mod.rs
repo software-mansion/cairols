@@ -434,3 +434,35 @@ fn derive_with_mod_v2_with_user_error() {
         }
     );
 }
+
+#[test]
+fn diagnostics_of_second_derive_land_on_it() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacrosV2,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                #[derive(SimpleDeriveMacroV2, ErroneousDeriveMacroV2)]<caret>
+                struct NoDebug{
+                    x: u32,
+                }
+            "#)
+        }
+    );
+}
+
+#[test]
+fn spanless_diagnostic_of_second_derive() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacrosV2,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                #[derive(SimpleDeriveMacroV2, ErrorDeriveMacroV2)]<caret>
+                struct NoDebug {
+                    x: u32,
+                }
+            "#)
+        }
+    );
+}

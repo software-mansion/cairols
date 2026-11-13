@@ -9,7 +9,7 @@ use cairo_lang_semantic::{
     substitution::SemanticRewriter,
 };
 use cairo_lang_syntax::node::{
-    TypedSyntaxNode,
+    Terminal, TypedSyntaxNode,
     ast::{ExprPath, PathSegment, Pattern, TerminalUnderscore},
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -67,7 +67,12 @@ fn path<'db>(
 
     let mut segments = path.segments(db).elements(db).collect_vec();
 
-    while matches!(segments.last(), Some(PathSegment::Missing(_))) {
+    // A missing/incomplete trailing segment is now represented as a `Simple` segment with an
+    // empty (missing) identifier rather than a dedicated `Missing` variant.
+    while matches!(
+        segments.last(),
+        Some(PathSegment::Simple(simple)) if simple.ident(db).text(db).to_string(db).is_empty()
+    ) {
         segments.pop();
     }
 

@@ -46,6 +46,63 @@ fn struct_member_via_field_access() {
 }
 
 #[test]
+fn struct_member_via_field_access_on_snapshot() {
+    test_transform_plain!(GotoDefinition, r"
+    #[derive(Drop)]
+    struct Circle { radius: u64 }
+    fn foo(circle: @Circle) -> u64 {
+        *circle.rad<caret>ius
+    }
+    ", @r"
+    #[derive(Drop)]
+    struct Circle { <sel>radius</sel>: u64 }
+    fn foo(circle: @Circle) -> u64 {
+        *circle.radius
+    }
+    ")
+}
+
+#[test]
+fn struct_member_via_field_access_on_self_snapshot() {
+    test_transform_plain!(GotoDefinition, r"
+    #[derive(Drop)]
+    struct Circle { radius: u64 }
+    #[generate_trait]
+    impl CircleImpl of CircleTrait {
+        fn radius(self: @Circle) -> u64 {
+            *self.rad<caret>ius
+        }
+    }
+    ", @r"
+    #[derive(Drop)]
+    struct Circle { <sel>radius</sel>: u64 }
+    #[generate_trait]
+    impl CircleImpl of CircleTrait {
+        fn radius(self: @Circle) -> u64 {
+            *self.radius
+        }
+    }
+    ")
+}
+
+#[test]
+fn struct_member_via_snapshot_of_field_access() {
+    test_transform_plain!(GotoDefinition, r"
+    #[derive(Drop)]
+    struct Circle { radius: u64 }
+    fn foo(circle: Circle) -> @u64 {
+        @circle.rad<caret>ius
+    }
+    ", @r"
+    #[derive(Drop)]
+    struct Circle { <sel>radius</sel>: u64 }
+    fn foo(circle: Circle) -> @u64 {
+        @circle.radius
+    }
+    ")
+}
+
+#[test]
 fn struct_member_in_constructor() {
     test_transform_plain!(GotoDefinition, r"
     #[derive(Drop)]
@@ -108,6 +165,25 @@ fn struct_item_in_constructor_with_macros() {
     #[complex_attribute_macro_v2]
     fn main() {
         let foo = Foo {};
+    }
+    ")
+}
+
+#[test]
+fn struct_member_in_constructor_shorthand() {
+    test_transform_plain!(GotoDefinition, r"
+    #[derive(Drop)]
+    struct Foo { field: felt252 }
+    fn main() {
+        let field = 42;
+        let x = Foo { fie<caret>ld };
+    }
+    ", @"
+    #[derive(Drop)]
+    struct Foo { <sel>field</sel>: felt252 }
+    fn main() {
+        let <sel>field</sel> = 42;
+        let x = Foo { field };
     }
     ")
 }

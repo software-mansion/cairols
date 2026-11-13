@@ -207,3 +207,26 @@ fn mixed_derive_with_error() {
         }
     );
 }
+
+#[test]
+fn mixed_derive_diagnostics_land_on_own_derive() {
+    test_macro_expansion_and_diagnostics!(
+        project = ProjectWithCustomMacrosV1AndV2,
+        cwd = "test_package",
+        files {
+            "test_package/src/lib.cairo" => indoc!(r#"
+                // V1 first: the error inside the V2 expansion must land on the second derive.
+                #[derive(SimpleDeriveMacro, ErroneousDeriveMacroV2)]<caret>
+                struct A {
+                    x: u32,
+                }
+
+                // V2 first: the error inside the V1 expansion must land on the second derive.
+                #[derive(SimpleDeriveMacroV2, ErroneousDeriveMacro)]<caret>
+                struct B {
+                    x: u32,
+                }
+            "#)
+        }
+    );
+}

@@ -67,5 +67,5 @@ fn test_removing_dependency() {
             .context_radius(5)
             .to_string();
 
-    insta::assert_toml_snapshot!(AnalyzedCratesResult { analyzed_crates, analyzed_crates_diff })
+    insta::assert_toml_snapshot!(AnalyzedCratesResult { analyzed_crates, analyzed_crates_diff });
 }

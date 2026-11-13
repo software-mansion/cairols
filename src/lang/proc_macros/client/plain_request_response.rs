@@ -1,11 +1,13 @@
-use salsa::Update;
+use salsa::SalsaValue;
 use scarb_proc_macro_server_types::methods::expand::{
     ExpandAttributeParams, ExpandDeriveParams, ExpandInlineMacroParams,
 };
 use scarb_proc_macro_server_types::scope::ProcMacroScope;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Update)]
+// Call sites are stabilised before the request is keyed, so they are not part of the keys.
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, SalsaValue)]
 pub struct PlainExpandAttributeParams {
     pub context: ProcMacroScope,
     pub attr: String,
@@ -13,14 +15,14 @@ pub struct PlainExpandAttributeParams {
     pub item: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Update)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, SalsaValue)]
 pub struct PlainExpandDeriveParams {
     pub context: ProcMacroScope,
-    pub derives: Vec<String>,
+    pub derive: String,
     pub item: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Update)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, SalsaValue)]
 pub struct PlainExpandInlineParams {
     pub context: ProcMacroScope,
     pub name: String,
@@ -37,9 +39,23 @@ impl From<ExpandAttributeParams> for PlainExpandAttributeParams {
         }
     }
 }
-impl From<ExpandDeriveParams> for PlainExpandDeriveParams {
-    fn from(value: ExpandDeriveParams) -> Self {
-        Self { context: value.context, derives: value.derives, item: value.item.to_string() }
+impl PlainExpandDeriveParams {
+    /// One key per derive of the request, in the same order.
+    ///
+    /// Derives of a single item are requested together, but cached one by one, so that rebuilding
+    /// one macro does not invalidate the derives provided by the others.
+    pub fn of_request(params: &ExpandDeriveParams) -> Vec<Self> {
+        let item = params.item.to_string();
+
+        params
+            .derives
+            .iter()
+            .map(|derive| Self {
+                context: params.context.clone(),
+                derive: derive.name.clone(),
+                item: item.clone(),
+            })
+            .collect()
     }
 }
 impl From<ExpandInlineMacroParams> for PlainExpandInlineParams {
