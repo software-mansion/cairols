@@ -287,7 +287,7 @@ fn impl_alias_at_path<'db>(
 /// Returns `true` if the cursor is on the type of a type clause, e.g. `let a: <caret>` or
 /// `fn f() -> <caret>`, or on the aliased type, e.g. `type A = <caret>;`. Also matches when the
 /// cursor is on a tuple element of such a type, e.g. `let a: (u8, <caret>)`.
-fn is_on_type_clause_path<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>) -> bool {
+pub fn is_on_type_clause_path<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisContext<'db>) -> bool {
     // With nothing typed yet, the cursor is on the clause's `:` or `->`, or on the alias's `=`.
     let node = ctx.node.ancestor_of_kind(db, SyntaxKind::ExprPath).unwrap_or(ctx.node);
     // Tuple types are made of types, so climb up to the outermost tuple.

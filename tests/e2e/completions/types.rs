@@ -3181,3 +3181,53 @@ fn type_alias_tuple() {
     """]
     "#);
 }
+
+#[test]
+fn let_type_annotation_no_params_and_variables() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    fn a(foo: u32) {
+        let foo_bar = 1;
+        let x: fo<caret> = 1;
+    }
+    ",@r#"
+    caret = """
+        let x: fo<caret> = 1;
+    """
+    completions = []
+    "#);
+}
+
+#[test]
+fn let_type_annotation_no_inline_macros() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    fn a() {
+        let x: pani<caret> = 1;
+    }
+    ",@r#"
+    caret = """
+        let x: pani<caret> = 1;
+    """
+
+    [[completions]]
+    completion_label = "Panic"
+
+    [[completions]]
+    completion_label = "Span"
+
+    [[completions]]
+    completion_label = "SpanIter"
+    completion_label_path = "(use core::array::SpanIter)"
+    text_edits = ["""
+    use core::array::SpanIter;
+
+    """]
+
+    [[completions]]
+    completion_label = "panics"
+    completion_label_path = "(use core::panics)"
+    text_edits = ["""
+    use core::panics;
+
+    """]
+    "#);
+}
