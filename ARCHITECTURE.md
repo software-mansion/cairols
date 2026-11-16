@@ -9,7 +9,7 @@ flowchart LR
         direction TB
         server["server<br/>(event loop, scheduling, routing)"]
         ide["ide<br/>(LSP features)"]
-        lang["lang<br/>(analysis database & helpers)"]
+        lang["lang<br/>(analysis database, diagnostics, proc macros)"]
         project["project<br/>(workspace model)"]
         server --> ide --> lang
         server --> project --> lang
@@ -37,6 +37,7 @@ On top of that it adds:
 - procedural macro support through [Scarb]'s proc-macro-server,
 - LSP features (completion, hover, navigation, ...) implemented as queries on that database.
 
+Arrows in the diagram show the main direction of use, not strict layering.
 The server runtime (event loop, task scheduling, routing) is adapted from [ruff_server](https://github.com/astral-sh/ruff/tree/main/crates/ruff_server).
 
 ## Code map
@@ -57,6 +58,65 @@ The server runtime (event loop, task scheduling, routing) is adapted from [ruff_
 | `tests/scarb_*`     | Example procedural macros (v1 and v2 API) used by tests.                                                       |
 | `xtask/`            | Maintenance scripts (`cargo xtask upgrade`, `cargo xtask sync-version`).                                       |
 | `website/`          | User documentation site.                                                                                       |
+
+## Analysis database
+
+```mermaid
+flowchart TB
+    db[("AnalysisDatabase")]
+    subgraph ls ["CairoLS groups (src/lang)"]
+        lssyntax["LsSyntaxGroup"]
+        lssemantic["LsSemanticGroup"]
+        lsproto["LsProtoGroup"]
+        procmacro["ProcMacroGroup"]
+    end
+    common["CommonGroup<br/>(cairo-language-common)"]
+    lint["LinterGroup<br/>(cairo-lint)"]
+    subgraph compiler ["Cairo compiler (cairo-lang-*)"]
+        files["FilesGroup"] --> parser["ParserGroup"] --> defs["DefsGroup"] --> semantic["SemanticGroup"] --> lowering["LoweringGroup"]
+    end
+    db --> ls & common & lint
+    ls & common & lint --> compiler
+```
+
+`AnalysisDatabase` (`src/lang/db/`) is a single Salsa database that holds only storage.
+All functionality comes from extension traits ("groups") implemented for any Salsa database.
+Arrows mean "builds on".
+`CommonGroup` is shared with cairo-lint.
+The LS-specific groups are:
+
+- `LsSyntaxGroup`: finding syntax nodes at a position,
+- `LsSemanticGroup`: mapping syntax nodes to semantic items,
+- `LsProtoGroup`: mapping between LSP URLs and compiler files (including virtual ones),
+- `ProcMacroGroup`: proc-macro server state and cached expansions.
+
+New database functionality should be added as such a group, not as fields on `AnalysisDatabase`.
+
+### Compiler plugins
+
+Each [Scarb] crate gets the same compiler plugins, in the same order, as [Scarb] would use.
+`cairo_project.toml` projects and detached files use a default plugin set.
+Proc-macro plugins are added when the proc-macro server reports the available macros, and removed when it restarts.
+
+## `lang` and `ide`
+
+- `lang` is the semantic toolkit built on the database.
+  The most important parts:
+  - `lsp`: conversions between LSP and compiler types (positions, spans, locations),
+  - `defs`: resolving the symbol at a position (`SymbolSearch` → `SymbolDef`),
+  - `usages`: finding references of a `SymbolDef`,
+  - smaller helpers used by completion and code actions.
+- `ide` has one module per LSP feature.
+  A feature is mostly a function of request params and `&AnalysisDatabase` that returns the LSP response.
+  Features are mostly stateless; the few that keep state use a controller owned by `State`.
+
+A typical request, for example goto definition:
+
+1. Convert the LSP URL and position to a compiler file and offset (`LsProtoGroup`, `lang::lsp`).
+2. Find the syntax node at that offset (`LsSyntaxGroup`).
+3. Map it to its *resultants*: the matching nodes in macro-generated code (`CommonGroup`).
+4. Resolve the symbol (`lang::defs`), which uses compiler semantic queries.
+5. Map the result back to user code and convert it to an LSP location.
 
 ## Runtime
 
@@ -81,8 +141,9 @@ Project updates are handled first, because they change the state the most.
 
 All long-running work happens outside the main thread.
 Requests run on thread pools.
-Controller threads load projects, compute diagnostics and talk to the proc-macro server.
-Threads communicate only through channels.
+Controller threads load projects, compute diagnostics and poll for proc-macro responses.
+Threads communicate mostly through channels.
+Apart from that, they share database clones (see [Cancellation](#cancellation)) and a little state behind a mutex (`MetaState`).
 
 ### Tasks
 
@@ -112,19 +173,22 @@ sequenceDiagram
     participant C as Client
     participant M as Main thread
     participant W as Worker
-    C->>M: textDocument/hover
+    C->>M: textDocument/completion
     M->>W: Background task with StateSnapshot (db clone)
     C->>M: textDocument/didChange
     M->>M: SyncMut: write to db
     Note over W: Salsa cancels the task
     W->>M: retry
     M->>W: same request, fresh snapshot
-    W->>C: hover response
+    W->>C: completion response
 ```
 
 CairoLS cancels from the inside.
 Any write to the database makes Salsa cancel queries running on all snapshots.
-Handlers catch this, and either retry the request on a fresh snapshot or answer with `ServerCancelled`.
+The write waits until all other database clones are dropped.
+Handlers catch the cancellation:
+requests marked `RETRY = true` (e.g. completion, semantic tokens) are retried on a fresh snapshot,
+others answer with `ServerCancelled`.
 `$/cancelRequest` from the client is ignored.
 
 ### File changes
@@ -134,114 +198,41 @@ Document notifications run as `SyncMut` tasks:
 - `didOpen` / `didChange` set the editor content as a file override in the database (full sync).
 - `didOpen` also asks the project controller to load the project for the file.
 - `didSave` / `didClose` remove the override, so the database reads the file from disk again.
+- Salsa does not track reads from disk.
+  `didSave` and watched `.cairo` file changes do a synthetic write (`cancel_all`) to invalidate them.
 - Watched file changes to `Scarb.toml` / `cairo_project.toml` reload the config and the project model and restart the proc-macro server.
 
 ## Project model
 
 ```mermaid
 flowchart TB
-    open["didOpen / manifest change"] --> req["ProjectController<br/>(main thread)"]
-    req -- "request" --> thread["project controller thread"]
-    thread --> discover{"Find nearest manifest"}
-    discover -- "cairo_project.toml" --> cpt["CairoProjectToml"]
-    discover -- "Scarb.toml" --> sm["run scarb metadata"]
-    sm --> scarb["Scarb / ScarbMetadataFailed"]
-    discover -- "none" --> none["NoConfig<br/>(detached file)"]
-    cpt & scarb & none -- "ProjectUpdate" --> apply["handle_update (main thread)"]
+    open["didOpen / manifest change"] --> ctrl["project controller thread"]
+    ctrl --> discover{"Find manifest"}
+    discover -- "cairo_project.toml" --> cpt["cairo project"]
+    discover -- "Scarb.toml" --> sm["scarb metadata"] --> scarb["Scarb workspace"]
+    discover -- "none" --> none["detached file"]
+    cpt & scarb & none -- "ProjectUpdate" --> apply["main thread applies update"]
     apply --> db[("AnalysisDatabase<br/>crates, configs, plugins")]
 ```
 
-`src/project/` turns a file path into crates in the database:
+`src/project/` turns a file path into crates in the database.
+Loading runs on a separate thread because `scarb metadata` is slow.
+The result is applied to the database on the main thread.
 
-1. The project controller thread finds the nearest manifest for an opened file.
-   `cairo_project.toml` takes precedence over `Scarb.toml`.
-2. For [Scarb] projects it runs `scarb metadata` and extracts crates from it.
-   This is the expensive part, which is why it runs on its own thread.
-3. The result (`ProjectUpdate`) is sent back to the main loop.
-   It is applied to the database there: crate roots, crate settings, and the plugin list for each crate.
-4. `ProjectModel` keeps all loaded workspaces, because one LS session can have many of them.
-   `ConfigsRegistry` keeps per-package settings, such as `[tool.cairo-lint]`.
-
-Detached files and `cairo_project.toml` projects get an unmanaged corelib if no `core` crate is loaded.
-[Scarb] manifest errors are published as diagnostics on `Scarb.toml`.
-
-## Analysis database
-
-```mermaid
-flowchart BT
-    subgraph compiler ["Cairo compiler (cairo-lang-*)"]
-        files["FilesGroup"] --> parser["ParserGroup"] --> defs["DefsGroup"] --> semantic["SemanticGroup"] --> lowering["LoweringGroup"]
-        doc["DocGroup"]
-    end
-    common["CommonGroup<br/>(cairo-language-common, shared with cairo-lint)"]
-    lint["LinterGroup (cairo-lint)"]
-    subgraph ls ["CairoLS groups (src/lang)"]
-        lssyntax["LsSyntaxGroup"]
-        lssemantic["LsSemanticGroup"]
-        lsproto["LsProtoGroup"]
-        procmacro["ProcMacroGroup"]
-    end
-    db[("AnalysisDatabase")]
-    compiler --> common
-    compiler --> lint
-    compiler --> ls
-    common --> db
-    lint --> db
-    ls --> db
-```
-
-`AnalysisDatabase` (`src/lang/db/`) is a single Salsa database that holds only storage.
-All functionality comes from extension traits ("groups") implemented for any Salsa database:
-
-- the compiler groups, from `cairo-lang-*` crates,
-- `CommonGroup` from `cairo-language-common`, shared with cairo-lint,
-- LS-specific groups:
-  - `LsSyntaxGroup`: finding syntax nodes at a position,
-  - `LsSemanticGroup`: mapping syntax nodes to semantic items,
-  - `LsProtoGroup`: mapping between LSP URLs and compiler files (including virtual ones),
-  - `ProcMacroGroup`: proc-macro server state and cached expansions.
-
-New database functionality should be added as such a group, not as fields on `AnalysisDatabase`.
-
-### Compiler plugins
-
-Each crate gets a list of compiler plugins, in the same order as [Scarb] uses:
-config plugin, proc macros, default plugins, built-in plugins (Starknet, test, executable, ...) and cairo-lint's allow plugin.
-Proc-macro plugins are added and removed at runtime, when the proc-macro server reports which macros are available.
-
-## `lang` and `ide`
-
-```mermaid
-flowchart LR
-    handler["server/routing<br/>handler"] --> feature["ide::feature"]
-    feature --> helpers["lang helpers<br/>(defs, usages, analysis_context, lsp)"]
-    helpers --> groups["LS + compiler groups"]
-    feature --> groups
-```
-
-- `lang` is the semantic toolkit built on the database.
-  The most important parts:
-  - `lsp`: conversions between LSP and compiler types (positions, spans, locations),
-  - `defs`: resolving the symbol at a position (`SymbolSearch` → `SymbolDef`),
-  - `usages`: finding references of a `SymbolDef`,
-  - `analysis_context`, `importer`, `methods`, `visibility`, ...: helpers for completion and code actions.
-- `ide` has one module per LSP feature.
-  A feature is mostly a function of request params and `&AnalysisDatabase` that returns the LSP response.
-  It does not hold state (except `code_lens` and `analysis_progress`).
-
-A typical request, for example goto definition:
-
-1. Convert the LSP URL and position to a compiler file and offset (`LsProtoGroup`, `lang::lsp`).
-2. Find the syntax node at that offset (`LsSyntaxGroup`).
-3. Map it to nodes in macro-generated code, because user code may be expanded by macros (`CommonGroup`).
-4. Resolve the symbol (`lang::defs`), which uses compiler semantic queries.
-5. Map the result back to user code and convert it to an LSP location.
+- The controller looks in parent directories for `cairo_project.toml` and `Scarb.toml`.
+  If both exist, `cairo_project.toml` wins.
+- Workspaces that are already loaded and files from the [Scarb] cache are skipped.
+- `ProjectModel` keeps all loaded workspaces, because one LS session can have many of them.
+  `ConfigsRegistry` keeps per-package settings, such as `[tool.cairo-lint]`.
+- An unmanaged corelib is set up if no `core` crate is loaded:
+  for detached files, `cairo_project.toml` projects, or when `scarb metadata` fails.
+- [Scarb] manifest errors are published as diagnostics on `Scarb.toml`.
 
 ## Diagnostics
 
 ```mermaid
 flowchart LR
-    hook["mutation hook<br/>(main thread)"] -- "fresh db copy" --> ctrl["diagnostics<br/>controller"]
+    hook["mutation hook<br/>(main thread)"] -- "separate db" --> ctrl["diagnostics<br/>controller"]
     ctrl -- "batches of files" --> workers["worker pool"]
     workers -- "publishDiagnostics<br/>(changed files only)" --> client(["Client"])
     workers <--> pd[("ProjectDiagnostics")]
@@ -249,16 +240,18 @@ flowchart LR
 
 Diagnostics are computed for the whole project, not only for open files (`src/lang/diagnostics/`):
 
-1. After each mutation, the main thread gives the diagnostics controller a fresh copy of the database.
+1. After each mutation, the main thread builds a separate database from the current inputs
+   (see [Memory management](#memory-management)) and hands it to the diagnostics controller.
    A newer refresh cancels the one that is running.
 2. Open files are checked first, then all other files of the project.
    Files are split into batches processed by a small worker pool.
 3. Each file collects parser, semantic and lowering diagnostics.
    If the linter is enabled, cairo-lint diagnostics are added too.
    Dependencies from the [Scarb] cache only report errors.
-4. Only files whose diagnostics changed are published.
+4. `ProjectDiagnostics` keeps the last published diagnostics per file, so only changes are sent.
 
-When the whole analysis is finished, the main loop saves the proc-macro cache and asks the client to refresh code lenses and semantic tokens.
+When the whole analysis is finished, the main loop saves the proc-macro expansion cache
+(see [Procedural macros](#procedural-macros)) and asks the client to refresh code lenses and semantic tokens.
 
 ## Procedural macros
 
@@ -271,7 +264,7 @@ sequenceDiagram
     Q->>DB: expand macro
     DB->>PMS: send request (not cached yet)
     DB-->>Q: placeholder (code unchanged)
-    PMS-->>M: response ready
+    PMS-->>M: responses (polled in batches)
     M->>DB: store expansions (db mutation)
     Note over Q,M: diagnostics refresh, queries re-run
     Q->>DB: expand macro
@@ -284,7 +277,8 @@ sequenceDiagram
 - The server status and all expansion results are a Salsa input (`ProcMacroGroup`).
 - Compiler plugins never wait for the server.
   On a cache miss they send a request and return a placeholder.
-  When responses arrive, the main thread writes them into the database, and analysis runs again.
+- The main thread periodically collects responses and writes them into the database in one go.
+  This is a mutation, so analysis runs again.
 - Expansions are also cached on disk in the `target` directory, so a new LS session starts faster.
 
 ## Memory management
@@ -301,6 +295,7 @@ The diagnostics controller uses the same migration for each refresh.
 
 - E2E tests live in `tests/e2e/`, one directory per feature, all compiled into one test binary.
 - `sandbox!` creates a temporary project and starts the server with an in-memory connection and a `MockClient`.
+  It disables proc macros and the linter unless the test's workspace configuration enables them.
 - Most tests use inline [insta](https://insta.rs/) snapshots.
   A feature implements the `Transformer` trait, then tests use `test_transform_plain!` or `test_transform_with_macros!`.
 - `test_transform_with_macros!` runs against the example macros in `tests/scarb_procedural_macros_v2`.
@@ -319,13 +314,15 @@ The diagnostics controller uses the same migration for each refresh.
 
 - Only `SyncMut` tasks on the main thread mutate `State` or the database.
   They block the event loop, so keep them short.
-  Slow work (e.g. `scarb metadata`) goes to a controller thread and returns to the main loop through a channel.
+  Slow work goes to a controller thread and returns to the main loop through a channel.
+- A database write waits until all clones are dropped.
+  Do not keep database clones longer than needed.
 - Cancellation is not an error.
   If you catch panics, detect Salsa cancellation with `is_cancelled` and re-raise it.
 - IDs like `FileId` or `CrateId` belong to one database instance.
   They are invalid after a swap and in the diagnostics database.
   State kept outside the database uses stable keys, such as `Url` or `CrateInput`.
-- Database inputs set at runtime must be copied in `migration.rs`, otherwise they are lost on a swap.
+- Database inputs set at runtime must be copied in `migration.rs` ([why](#memory-management)).
 - Code may live in macro-generated virtual files.
   Map nodes and locations between user code and generated code (e.g. `get_node_resultants`, `get_originating_location`).
 - `Config` can change at runtime.
