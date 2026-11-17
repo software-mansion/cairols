@@ -3231,3 +3231,44 @@ fn let_type_annotation_no_inline_macros() {
     """]
     "#);
 }
+
+#[test]
+fn self_in_trait_return_type() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait Foo {
+        type Bar;
+        fn qux() -> Self::<caret>;
+    }
+    ",@r#"
+    caret = """
+        fn qux() -> Self::<caret>;
+    """
+
+    [[completions]]
+    completion_label = "Bar"
+    "#);
+}
+
+#[test]
+fn self_in_impl_let_type_annotation() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait Foo {
+        type Bar;
+        fn qux();
+    }
+
+    impl FooImpl of Foo {
+        type Bar = u32;
+        fn qux() {
+            let a: Self::<caret> = 1;
+        }
+    }
+    ",@r#"
+    caret = """
+            let a: Self::<caret> = 1;
+    """
+
+    [[completions]]
+    completion_label = "Bar"
+    "#);
+}

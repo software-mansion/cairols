@@ -466,6 +466,11 @@ fn trait_items_prefix_completions<'db>(
             }
         });
 
+    // Only types are allowed in type positions, e.g. `fn f() -> Self::<caret>`.
+    if is_on_type_clause_path(db, ctx) {
+        return types.collect();
+    }
+
     functions.chain(types).chain(constants).collect()
 }
 
