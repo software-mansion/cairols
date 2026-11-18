@@ -75,7 +75,6 @@ scarb-proc-macro-server-types = "0.7.0"
 semver = "1"
 serde = { version = "1", default-features = false, features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9.34"
 tempfile = "3"
 toml = "1.1.2"
 toml_edit = "0.25.12"
@@ -92,6 +91,7 @@ assert_fs = "1.1"
 cairo-language-server = { path = ".", features = ["testing"] }
 insta = { version = "1.47", features = ["toml", "json", "redactions", "filters"] }
 pathdiff = "0.2"
+serde_yaml = "0.9.34"
 similar = "3.1"
 
 # Here we specify real dependency specifications for Cairo crates *if* currently we want to use
