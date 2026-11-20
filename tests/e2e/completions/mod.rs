@@ -25,6 +25,7 @@ mod path;
 mod patterns;
 mod structs;
 mod traits;
+mod types;
 mod untyped;
 mod uses;
 mod vars_and_params;

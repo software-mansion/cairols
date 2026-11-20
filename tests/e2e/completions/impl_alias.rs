@@ -1113,34 +1113,6 @@ fn generic_arg_is_not_filtered() {
 }
 
 #[test]
-fn type_alias_is_not_filtered() {
-    test_transform_plain!(Completion, completion_fixture(), "
-    struct FooStruct {}
-    impl FooImpl of Drop<FooStruct> {}
-
-    type MyAlias = FooS<caret>;
-    ", @r#"
-    caret = """
-    type MyAlias = FooS<caret>;
-    """
-
-    [[completions]]
-    completion_label = "FooImpl"
-
-    [[completions]]
-    completion_label = "FooStruct"
-
-    [[completions]]
-    completion_label = "Foo"
-    completion_label_path = "(use dep::Foo)"
-    text_edits = ["""
-    use dep::Foo;
-
-    """]
-    "#);
-}
-
-#[test]
 fn associated_impl_in_impl_body() {
     test_transform_plain!(Completion, completion_fixture(), "
     trait Foo<T> {}
