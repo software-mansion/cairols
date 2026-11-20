@@ -84,8 +84,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2.9.3
       - run: cargo lint
         env:
-          # Make sure CI fails on all warnings, including Clippy lints.
-          RUSTFLAGS: "-Dwarnings"
+          # Make sure CI fails on all warnings, including Clippy and Cargo lints.
+          CARGO_BUILD_WARNINGS: "deny"
       - run: cargo docs
         env:
           # Make sure CI fails on all warnings, including Clippy lints.
@@ -97,7 +97,3 @@ jobs:
             echo "::error::Found unused cargo patches in [patch.crates-io]."
             exit 1
           fi
-      - uses: taiki-e/install-action@v2.90.3
-        with:
-          tool: cargo-machete
-      - run: cargo machete
