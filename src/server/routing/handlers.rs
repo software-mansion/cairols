@@ -484,9 +484,6 @@ impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
     }
 }
 
-// salsa 0.28.6: `memory_usage` takes `&mut self` and waits until this is the only database
-// handle. A (mutable) snapshot would wait forever on the main `State`'s handle, so this runs
-// on the main loop against `state.db`.
 impl SyncRequestHandler for ShowMemoryUsage {
     #[tracing::instrument(name = "cairo/showMemoryUsage", skip_all)]
     fn run(
