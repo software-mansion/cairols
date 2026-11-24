@@ -82,3 +82,23 @@ fn assert_macros_with_no_cairo_test() {
 
     insta::assert_snapshot!("view_analyzed_crates_assert_macros", normalize(&ls, output));
 }
+
+#[test]
+fn show_memory_usage() {
+    let mut ls = sandbox! {
+        files {
+            "cairo_project.toml" => CAIRO_PROJECT_TOML,
+            "src/lib.cairo" => "fn main() {}",
+        }
+    };
+
+    // Populate the db and leave background work (diagnostics) running against snapshots.
+    ls.open_all_cairo_files_and_wait_for_project_update();
+
+    let usage = ls.send_request::<lsp::ext::ShowMemoryUsage>(());
+
+    let structs = usage["structs"].as_array().expect("`structs` should be an array");
+    let queries = usage["queries"].as_array().expect("`queries` should be an array");
+    assert!(!structs.is_empty());
+    assert!(!queries.is_empty());
+}
