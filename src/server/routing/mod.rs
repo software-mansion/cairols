@@ -114,11 +114,7 @@ pub fn request<'a>(
             BackgroundSchedule::Worker,
             retry_sender,
         ),
-        ShowMemoryUsage::METHOD => background_request_task::<ShowMemoryUsage>(
-            request,
-            BackgroundSchedule::Worker,
-            retry_sender,
-        ),
+        ShowMemoryUsage::METHOD => local_request_task::<ShowMemoryUsage>(request),
         WillRenameFiles::METHOD => background_request_task::<WillRenameFiles>(
             request,
             BackgroundSchedule::LatencySensitive,

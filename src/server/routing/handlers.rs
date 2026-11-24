@@ -484,17 +484,17 @@ impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
     }
 }
 
-impl BackgroundDocumentRequestHandler for ShowMemoryUsage {
-    const RETRY: bool = false;
-
+// Runs on the main loop: `memory_usage` needs `&mut` and cancels all other database handles,
+// so calling it on a snapshot would block forever waiting for the main state's handle.
+impl SyncRequestHandler for ShowMemoryUsage {
     #[tracing::instrument(name = "cairo/showMemoryUsage", skip_all)]
-    fn run_with_snapshot(
-        snapshot: StateSnapshot,
-        _meta_state: MetaState,
+    fn run(
+        state: &mut State,
         _notifier: Notifier,
+        _requester: &mut Requester<'_>,
         _params: (),
     ) -> LSPResult<serde_json::Value> {
-        let db: &dyn Database = &snapshot.db;
+        let db: &mut dyn Database = &mut state.db;
         let memory_usage = db.memory_usage();
 
         let to_value = |info: IngredientInfo| {
