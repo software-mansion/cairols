@@ -75,6 +75,7 @@ cairo-ls
 scarb-maintainers
 starknet-foundry
 pathfinder
+starknet-sdks
 '
 
 REPOS="${REPOS:-$DEFAULT_REPOS}"
