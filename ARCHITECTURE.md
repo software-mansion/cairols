@@ -1,5 +1,41 @@
 # CairoLS Architecture
 
+CairoLS is a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) implementation for Cairo.
+It is shipped with [Scarb] and started by editors as `scarb cairo-language-server` or `cairo-language-server`.
+
+This document goes from general to specific:
+
+1. [Concepts](#concepts) explain the layers CairoLS is built from.
+2. [Module breakdown](#module-breakdown) shows where they live in the code.
+3. [Implementation details](#implementation-details) describe how the most important mechanisms work.
+
+## Table of contents
+
+- [Bird's eye view](#birds-eye-view)
+- [Concepts](#concepts)
+  - [Cairo compiler and Salsa](#cairo-compiler-and-salsa)
+  - [Analysis database](#analysis-database)
+  - [Project model](#project-model)
+  - [Macros and resultants](#macros-and-resultants)
+  - [Compiler plugins](#compiler-plugins)
+  - [Threads and the event loop](#threads-and-the-event-loop)
+  - [Tasks](#tasks)
+- [Module breakdown](#module-breakdown)
+  - [`server`](#server)
+  - [`project`](#project)
+  - [`lang`](#lang)
+  - [`ide`](#ide)
+- [Implementation details](#implementation-details)
+  - [Cancellation](#cancellation)
+  - [File changes](#file-changes)
+  - [Project loading](#project-loading)
+  - [Diagnostics](#diagnostics)
+  - [Procedural macros](#procedural-macros)
+  - [Memory management](#memory-management)
+- [Testing](#testing)
+- [Dependencies and versioning](#dependencies-and-versioning)
+- [Rules of thumb](#rules-of-thumb)
+
 ## Bird's eye view
 
 ```mermaid
@@ -26,9 +62,6 @@ flowchart LR
     lang <-- "JSON-RPC over stdio" --> pms
 ```
 
-CairoLS is a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) implementation for Cairo.
-It is shipped with [Scarb] and started by editors as `scarb cairo-language-server` or `cairo-language-server`.
-
 CairoLS does not have its own compiler front-end.
 It runs the Cairo compiler crates (`cairo-lang-*`) on a [Salsa](https://github.com/salsa-rs/salsa) database.
 On top of that it adds:
@@ -38,28 +71,24 @@ On top of that it adds:
 - LSP features (completion, hover, navigation, ...) implemented as queries on that database.
 
 Arrows in the diagram show the main direction of use, not strict layering.
-The server runtime (event loop, task scheduling, routing) is adapted from [ruff_server](https://github.com/astral-sh/ruff/tree/main/crates/ruff_server).
 
-## Code map
+## Concepts
 
-| Path                | Responsibility                                                                                                 |
-|---------------------|----------------------------------------------------------------------------------------------------------------|
-| `src/lib.rs`        | Entry point (`start()`), `Backend`, the main event loop.                                                       |
-| `src/state.rs`      | `State` (owned by the main thread), `StateSnapshot` (read-only, used by background tasks), `MetaState`.        |
-| `src/server/`       | LSP connection, scheduler and thread pools, request/notification routing and handlers.                         |
-| `src/lsp/`          | Server capabilities, CairoLS-specific LSP extensions (`ext.rs`).                                               |
-| `src/config.rs`     | Client configuration (`workspace/configuration`), can change at runtime.                                       |
-| `src/env_config.rs` | Configuration through environment variables (logging, profiling, tuning).                                      |
-| `src/project/`      | Discovering and loading workspaces, applying crates and their configs to the database.                         |
-| `src/toolchain/`    | Locating and running [Scarb].                                                                                  |
-| `src/lang/`         | `AnalysisDatabase`, symbol resolution, find usages, diagnostics, proc macros, LSP ↔ Cairo conversions.         |
-| `src/ide/`          | One module per LSP feature: completion, hover, navigation, code actions, code lens, formatting, inlay hints... |
-| `tests/e2e/`        | End-to-end test suite with a mock language client.                                                             |
-| `tests/scarb_*`     | Example procedural macros (v1 and v2 API) used by tests.                                                       |
-| `xtask/`            | Maintenance scripts (`cargo xtask upgrade`, `cargo xtask sync-version`).                                       |
-| `website/`          | User documentation site.                                                                                       |
+### Cairo compiler and Salsa
 
-## Analysis database
+The Cairo compiler is written as Salsa queries: functions of a database whose results are memoized.
+A query runs again only when something it read has changed.
+CairoLS sets the inputs (contents of open files, crates, plugins) and asks the compiler queries for results.
+Files that are not open are read from disk, which Salsa does not track (see [File changes](#file-changes)).
+
+Three facts about how Salsa is used here shape the rest of this document:
+
+- Background threads read the database through clones of it.
+- A write cancels the queries running on other clones and waits until those clones are dropped
+  (see [Cancellation](#cancellation)).
+- Memoized results stay in memory (see [Memory management](#memory-management)).
+
+### Analysis database
 
 ```mermaid
 flowchart TB
@@ -80,7 +109,7 @@ flowchart TB
     ls & common & lint --> compiler
 ```
 
-`AnalysisDatabase` (`src/lang/db/`) is a single Salsa database that holds only storage.
+`AnalysisDatabase` is a single Salsa database that holds only storage.
 All functionality comes from extension traits ("groups") implemented for any Salsa database.
 Arrows mean "builds on".
 The LS-specific groups are:
@@ -93,40 +122,62 @@ The LS-specific groups are:
 Two groups come from other crates:
 
 - `CommonGroup` (`cairo-language-common`): helpers that both CairoLS and cairo-lint need,
-  such as finding the syntax node at an offset or computing [resultants](#generated-code-and-resultants).
+  such as finding the syntax node at an offset or computing [resultants](#macros-and-resultants).
   They live in a separate crate, so both tools use one implementation.
 - `LinterGroup` (`cairo-lint`): the linter used as a library.
   CairoLS calls it to compute lint diagnostics and to offer their fixes as code actions.
 
 New database functionality should be added as such a group, not as fields on `AnalysisDatabase`.
 
+### Project model
+
+The database has to know which crates exist and how they are configured.
+The project model provides that.
+It is extended when a file is opened: CairoLS finds the project of that file, which is one of:
+
+- a [Scarb] workspace (`Scarb.toml`, read with `scarb metadata`),
+- a `cairo_project.toml` project,
+- nothing, for a detached file.
+
+One LS session can have many workspaces loaded at the same time.
+See [Project loading](#project-loading) for how the model is built.
+
+### Macros and resultants
+
+Macros rewrite the code before it is analysed.
+In Cairo they are compiler plugins: built-in ones (e.g. `#[derive]`, `#[generate_trait]`),
+inline macros (e.g. `println!`) and procedural macros loaded by [Scarb].
+
+A macro puts the code it generates into a virtual file.
+That file is a child of the file where the macro was used.
+Generated code can use macros too, so one user file can have a whole tree of virtual files.
+A macro can also remove the code it was applied to.
+
+The compiler has semantic information only for code that is left after expansion.
+So a node from a user file is first mapped to its *resultants*:
+the nodes it became after all expansions, without the removed ones.
+
+Two examples:
+
+- An attribute macro like snforge's `#[test]` replaces the function it is applied to.
+  The original function is removed, so its only resultant is the function in the generated file.
+- `#[generate_trait]` keeps the annotated `impl` and adds a trait in a virtual file.
+  The trait name in user code has two resultants: itself and the generated trait name.
+
+Features cross this boundary in both directions:
+
+- User code → generated code: `get_node_resultants` (`CommonGroup`) returns the resultants of a node,
+  and the feature analyses each of them.
+- Generated code → user code: `get_originating_location` maps a result found in a virtual file
+  back to a location in user code, before it is sent to the client.
+
+See [Procedural macros](#procedural-macros) for how procedural macros are expanded.
+
 ### Compiler plugins
 
 Each [Scarb] crate gets the same compiler plugins, in the same order, as [Scarb] would use.
 `cairo_project.toml` projects and detached files use a default plugin set.
 Proc-macro plugins are added when the proc-macro server reports the available macros, and removed when it restarts.
-
-## `lang` and `ide`
-
-- `lang` is the semantic toolkit built on the database.
-  The most important parts:
-  - `lsp`: conversions between LSP and compiler types (positions, spans, locations),
-  - `defs`: resolving the symbol at a position (`SymbolSearch` → `SymbolDef`),
-  - `usages`: finding references of a `SymbolDef`,
-  - smaller helpers used by completion and code actions.
-- `ide` has one module per LSP feature.
-  A feature is mostly a function of request params and `&AnalysisDatabase` that returns the LSP response.
-  Features are mostly stateless; the few that keep state use a controller owned by `State`.
-
-A typical request, for example goto definition:
-
-1. Convert the LSP URL and position to a compiler file and offset (`LsProtoGroup`, `lang::lsp`).
-2. Find the syntax node at that offset (`LsSyntaxGroup`).
-3. Map it to its [resultants](#generated-code-and-resultants): the nodes it became after macro expansion (`CommonGroup`).
-4. Resolve the symbol (`lang::defs`), which uses compiler semantic queries.
-5. Map the result back to user code and convert it to an LSP location.
-
-## Runtime
 
 ### Threads and the event loop
 
@@ -147,6 +198,9 @@ The main thread runs a single event loop which waits on several channels:
 LSP messages, project updates, proc-macro responses, analysis status, retries and a few others.
 Project updates are handled first, because they change the state the most.
 
+`State` holds everything the server knows, including the database, and belongs to the main thread.
+A `StateSnapshot` is a read-only view of it with its own database clone, made for a background task.
+
 Requests run on thread pools.
 Controller threads load projects, compute diagnostics and poll for proc-macro responses.
 Threads communicate mostly through channels.
@@ -154,7 +208,7 @@ Apart from that, they share database clones (see [Cancellation](#cancellation)) 
 
 ### Tasks
 
-Every incoming message becomes a `Task` (see `src/server/schedule/`):
+Every incoming message becomes a `Task`:
 
 | Task kind    | Runs on        | Access              | Used for                                                    |
 |--------------|----------------|---------------------|-------------------------------------------------------------|
@@ -163,8 +217,6 @@ Every incoming message becomes a `Task` (see `src/server/schedule/`):
 | `Background` | worker pool    | `StateSnapshot`     | Almost all LSP requests (hover, completion, ...).           |
 | `Fmt`        | fmt pool       | `StateSnapshot`     | Formatting, so it is never blocked by other requests.       |
 
-Request and notification handlers are registered in `src/server/routing/`.
-
 After every `SyncMut` task that changed the database or config, the scheduler runs hooks which:
 
 1. may swap the database (see [Memory management](#memory-management)),
@@ -172,6 +224,72 @@ After every `SyncMut` task that changed the database or config, the scheduler ru
 3. mark that analysis is in progress.
 
 Tasks do not need to schedule these themselves.
+
+## Module breakdown
+
+| Path                | Responsibility                                                                                                 |
+|---------------------|----------------------------------------------------------------------------------------------------------------|
+| `src/lib.rs`        | Entry point (`start()`), `Backend`, the main event loop.                                                       |
+| `src/state.rs`      | `State` (owned by the main thread), `StateSnapshot` (read-only, used by background tasks), `MetaState`.        |
+| `src/server/`       | LSP connection, scheduler and thread pools, request/notification routing and handlers.                         |
+| `src/lsp/`          | Server capabilities, CairoLS-specific LSP extensions (`ext.rs`).                                               |
+| `src/config.rs`     | Client configuration (`workspace/configuration`), can change at runtime.                                       |
+| `src/env_config.rs` | Configuration through environment variables (logging, profiling, tuning).                                      |
+| `src/project/`      | Discovering and loading workspaces, applying crates and their configs to the database.                         |
+| `src/toolchain/`    | Locating and running [Scarb].                                                                                  |
+| `src/lang/`         | `AnalysisDatabase`, symbol resolution, find usages, diagnostics, proc macros, LSP ↔ Cairo conversions.         |
+| `src/ide/`          | One module per LSP feature: completion, hover, navigation, code actions, code lens, formatting, inlay hints... |
+| `tests/e2e/`        | End-to-end test suite with a mock language client.                                                             |
+| `tests/scarb_*`     | Example procedural macros (v1 and v2 API) used by tests.                                                       |
+| `xtask/`            | Maintenance scripts (`cargo xtask upgrade`, `cargo xtask sync-version`).                                       |
+| `website/`          | User documentation site.                                                                                       |
+
+The four biggest modules are described below.
+
+### `server`
+
+The server runtime (task scheduling, routing and the event loop in `src/lib.rs`) is adapted from [ruff_server](https://github.com/astral-sh/ruff/tree/main/crates/ruff_server).
+
+- `schedule`: `Task`, the scheduler and the thread pools (see [Tasks](#tasks)).
+- `routing`: request and notification handlers are registered here.
+
+### `project`
+
+`project` finds the project of every opened file and loads its crates into the database
+(see [Project loading](#project-loading)).
+
+- `ProjectModel` keeps all loaded [Scarb] workspaces.
+- `ConfigsRegistry` keeps per-package settings, such as `[tool.cairo-lint]`.
+
+### `lang`
+
+`lang` is the semantic toolkit built on the database.
+The most important parts:
+
+- `db`: `AnalysisDatabase`, `LsSyntaxGroup` and `LsSemanticGroup` (see [Analysis database](#analysis-database)),
+  database swapping and migration (see [Memory management](#memory-management)),
+- `lsp`: `LsProtoGroup` and conversions between LSP and compiler types (positions, spans, locations),
+- `defs`: resolving the symbol at a position (`SymbolSearch` → `SymbolDef`),
+- `usages`: finding references of a `SymbolDef`,
+- `diagnostics`: computing and publishing diagnostics (see [Diagnostics](#diagnostics)),
+- `proc_macros`: the proc-macro server client and `ProcMacroGroup` (see [Procedural macros](#procedural-macros)),
+- smaller helpers used by completion and code actions.
+
+### `ide`
+
+`ide` has one module per LSP feature.
+A feature is mostly a function of request params and `&AnalysisDatabase` that returns the LSP response.
+Features are mostly stateless; the few that keep state use a controller owned by `State`.
+
+A typical request, for example goto definition:
+
+1. Convert the LSP URL and position to a compiler file and offset (`LsProtoGroup`, `lang::lsp`).
+2. Find the syntax node at that offset (`LsSyntaxGroup`).
+3. Map it to its [resultants](#macros-and-resultants): the nodes it became after macro expansion (`CommonGroup`).
+4. Resolve the symbol (`lang::defs`), which uses compiler semantic queries.
+5. Map the result back to user code and convert it to an LSP location.
+
+## Implementation details
 
 ### Cancellation
 
@@ -214,7 +332,7 @@ Document notifications run as `SyncMut` tasks:
   `didSave` and watched `.cairo` file changes do a synthetic write (`cancel_all`) to invalidate them.
 - Watched file changes to `Scarb.toml` / `cairo_project.toml` reload the config and the project model and restart the proc-macro server.
 
-## Project model
+### Project loading
 
 ```mermaid
 flowchart TB
@@ -227,20 +345,17 @@ flowchart TB
     apply --> db[("AnalysisDatabase<br/>crates, configs, plugins")]
 ```
 
-`src/project/` finds the project of every opened file and loads its crates into the database.
 Loading runs on a separate thread because `scarb metadata` is slow.
 The result is applied to the database on the main thread.
 
 - The controller looks in parent directories for `cairo_project.toml` and `Scarb.toml`.
   If both exist, `cairo_project.toml` wins.
 - Workspaces that are already loaded and files from the [Scarb] cache are skipped.
-- `ProjectModel` keeps all loaded workspaces, because one LS session can have many of them.
-  `ConfigsRegistry` keeps per-package settings, such as `[tool.cairo-lint]`.
 - An unmanaged corelib is set up if no `core` crate is loaded:
   for detached files, `cairo_project.toml` projects, or when `scarb metadata` fails.
 - [Scarb] manifest errors are published as diagnostics on `Scarb.toml`.
 
-## Diagnostics
+### Diagnostics
 
 ```mermaid
 flowchart LR
@@ -265,37 +380,6 @@ Diagnostics are computed for the whole project, not only for open files (`src/la
 
 When the whole analysis is finished, the main loop saves the proc-macro expansion cache
 (see [Procedural macros](#procedural-macros)) and asks the client to refresh code lenses and semantic tokens.
-
-## Macros
-
-Macros rewrite the code before it is analysed.
-In Cairo they are compiler plugins: built-in ones (e.g. `#[derive]`, `#[generate_trait]`),
-inline macros (e.g. `println!`) and procedural macros loaded by [Scarb].
-
-### Generated code and resultants
-
-A macro puts the code it generates into a virtual file.
-That file is a child of the file where the macro was used.
-Generated code can use macros too, so one user file can have a whole tree of virtual files.
-A macro can also remove the code it was applied to.
-
-The compiler has semantic information only for code that is left after expansion.
-So a node from a user file is first mapped to its *resultants*:
-the nodes it became after all expansions, without the removed ones.
-
-Two examples:
-
-- An attribute macro like snforge's `#[test]` replaces the function it is applied to.
-  The original function is removed, so its only resultant is the function in the generated file.
-- `#[generate_trait]` keeps the annotated `impl` and adds a trait in a virtual file.
-  The trait name in user code has two resultants: itself and the generated trait name.
-
-Features cross this boundary in both directions:
-
-- User code → generated code: `get_node_resultants` (`CommonGroup`) returns the resultants of a node,
-  and the feature analyses each of them.
-- Generated code → user code: `get_originating_location` maps a result found in a virtual file
-  back to a location in user code, before it is sent to the client.
 
 ### Procedural macros
 
@@ -325,7 +409,7 @@ sequenceDiagram
   This is a mutation, so analysis runs again.
 - Expansions are also cached on disk in the `target` directory, so a new LS session starts faster.
 
-## Memory management
+### Memory management
 
 Salsa never frees memoized results, so memory grows during long sessions.
 `AnalysisDatabaseSwapper` (`src/lang/db/swapper.rs`) replaces the whole database with a fresh one:
@@ -368,7 +452,7 @@ The diagnostics controller uses the same migration for each refresh.
   State kept outside the database uses stable keys, such as `Url` or `CrateInput`.
 - Database inputs set at runtime must be copied in `migration.rs` ([why](#memory-management)).
 - Code may live in macro-generated virtual files.
-  Map nodes and locations between user code and generated code ([how](#generated-code-and-resultants)).
+  Map nodes and locations between user code and generated code ([how](#macros-and-resultants)).
 - `Config` can change at runtime.
   Read it from `State` or `StateSnapshot` instead of keeping your own copy.
 
