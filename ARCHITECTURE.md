@@ -1,7 +1,7 @@
 # CairoLS Architecture
 
 CairoLS is a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) implementation for Cairo.
-It is shipped with [Scarb] and started by editors as `scarb cairo-language-server` or `cairo-language-server`.
+It is shipped with [Scarb] and started by editors as `scarb cairo-language-server`.
 
 This document goes from general to specific:
 
@@ -127,8 +127,6 @@ Two groups come from other crates:
 - `LinterGroup` (`cairo-lint`): the linter used as a library.
   CairoLS calls it to compute lint diagnostics and to offer their fixes as code actions.
 
-New database functionality should be added as such a group, not as fields on `AnalysisDatabase`.
-
 ### Project model
 
 The database has to know which crates exist and how they are configured.
@@ -210,14 +208,14 @@ Apart from that, they share database clones (see [Cancellation](#cancellation)) 
 
 Every incoming message becomes a `Task`:
 
-| Task kind    | Runs on        | Access              | Used for                                                    |
-|--------------|----------------|---------------------|-------------------------------------------------------------|
-| `SyncMut`    | main thread    | `&mut State`        | Notifications (`didOpen`, `didChange`, ...), state changes. |
-| `Sync`       | main thread    | `&State`            | Small read-only actions.                                    |
-| `Background` | worker pool    | `StateSnapshot`     | Almost all LSP requests (hover, completion, ...).           |
-| `Fmt`        | fmt pool       | `StateSnapshot`     | Formatting, so it is never blocked by other requests.       |
+| Task kind    | Runs on     | Access          | Used for                                                                                                         |
+|--------------|-------------|-----------------|------------------------------------------------------------------------------------------------------------------|
+| `SyncMut`    | main thread | `&mut State`    | Notifications (`didOpen`, `didChange`, ...) triggering state changes.                                            |
+| `Sync`       | main thread | `&State`        | Small read-only actions, used to enforce no state mutation and to skip the hooks that run after `SyncMut` tasks. |
+| `Background` | worker pool | `StateSnapshot` | Almost all LSP requests (hover, completion, ...).                                                                |
+| `Fmt`        | fmt pool    | `StateSnapshot` | Formatting, so it is never blocked by other requests.                                                            |
 
-After every `SyncMut` task that changed the database or config, the scheduler runs hooks which:
+After every `SyncMut` task that changed the database inputs or client config, the scheduler runs hooks which:
 
 1. may swap the database (see [Memory management](#memory-management)),
 2. refresh diagnostics,
@@ -338,14 +336,19 @@ Document notifications run as `SyncMut` tasks:
 flowchart TB
     open["didOpen / manifest change"] --> ctrl["project controller thread"]
     ctrl --> discover{"Find manifest"}
-    discover -- "cairo_project.toml" --> cpt["cairo project"]
-    discover -- "Scarb.toml" --> sm["scarb metadata"] --> scarb["Scarb workspace"]
-    discover -- "none" --> none["detached file"]
-    cpt & scarb & none -- "ProjectUpdate" --> apply["main thread applies update"]
+    subgraph update ["ProjectUpdate"]
+        cpt["cairo project"]
+        scarb["Scarb workspace"]
+        none["detached file"]
+    end
+    discover -- "cairo_project.toml" --> cpt
+    discover -- "Scarb.toml" --> sm["scarb metadata"] --> scarb
+    discover -- "none" --> none
+    update --> apply["main thread applies update"]
     apply --> db[("AnalysisDatabase<br/>crates, configs, plugins")]
 ```
 
-Loading runs on a separate thread because `scarb metadata` is slow.
+Loading runs on a separate thread because `scarb metadata` may be slow.
 The result is applied to the database on the main thread.
 
 - The controller looks in parent directories for `cairo_project.toml` and `Scarb.toml`.
