@@ -139,7 +139,6 @@ The main thread runs a single event loop which waits on several channels:
 LSP messages, project updates, proc-macro responses, analysis status, retries and a few others.
 Project updates are handled first, because they change the state the most.
 
-All long-running work happens outside the main thread.
 Requests run on thread pools.
 Controller threads load projects, compute diagnostics and poll for proc-macro responses.
 Threads communicate mostly through channels.
