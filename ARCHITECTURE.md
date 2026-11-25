@@ -178,17 +178,22 @@ sequenceDiagram
     C->>M: textDocument/didChange
     M->>M: SyncMut: write to db
     Note over W: Salsa cancels the task
-    W->>M: retry
-    M->>W: same request, fresh snapshot
-    W->>C: completion response
+    alt RETRY = true (e.g. completion)
+        W->>M: retry (handler with the original id and params)
+        M->>W: Background task with a fresh StateSnapshot
+        W->>C: completion response
+    else RETRY = false
+        W->>C: ServerCancelled error
+    end
 ```
 
 CairoLS cancels from the inside.
 Any write to the database makes Salsa cancel queries running on all snapshots.
 The write waits until all other database clones are dropped.
 Handlers catch the cancellation:
-requests marked `RETRY = true` (e.g. completion, semantic tokens) are retried on a fresh snapshot,
-others answer with `ServerCancelled`.
+requests marked `RETRY = true` (e.g. completion, semantic tokens) are retried by the server on a fresh snapshot,
+so the client does not have to send them again.
+Others answer with `ServerCancelled`.
 `$/cancelRequest` from the client is ignored.
 
 ### File changes
@@ -215,7 +220,7 @@ flowchart TB
     apply --> db[("AnalysisDatabase<br/>crates, configs, plugins")]
 ```
 
-`src/project/` turns a file path into crates in the database.
+`src/project/` finds the project of every opened file and loads its crates into the database.
 Loading runs on a separate thread because `scarb metadata` is slow.
 The result is applied to the database on the main thread.
 
@@ -232,7 +237,8 @@ The result is applied to the database on the main thread.
 
 ```mermaid
 flowchart LR
-    hook["mutation hook<br/>(main thread)"] -- "separate db" --> ctrl["diagnostics<br/>controller"]
+    main[("AnalysisDatabase<br/>(main thread)")] -- "mutation hook<br/>copies the inputs" --> copy[("diagnostics database<br/>(fresh copy)")]
+    copy --> ctrl["diagnostics<br/>controller"]
     ctrl -- "batches of files" --> workers["worker pool"]
     workers -- "publishDiagnostics<br/>(changed files only)" --> client(["Client"])
     workers <--> pd[("ProjectDiagnostics")]
@@ -240,8 +246,8 @@ flowchart LR
 
 Diagnostics are computed for the whole project, not only for open files (`src/lang/diagnostics/`):
 
-1. After each mutation, the main thread builds a separate database from the current inputs
-   (see [Memory management](#memory-management)) and hands it to the diagnostics controller.
+1. After each mutation, the main thread copies the inputs of its database into a fresh one
+   (see [Memory management](#memory-management)) and hands the copy to the diagnostics controller.
    A newer refresh cancels the one that is running.
 2. Open files are checked first, then all other files of the project.
    Files are split into batches processed by a small worker pool.
