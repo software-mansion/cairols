@@ -68,7 +68,7 @@ On top of that it adds:
 
 - a project model built from `Scarb.toml` (via `scarb metadata`) or `cairo_project.toml`,
 - procedural macro support through [Scarb]'s proc-macro-server,
-- LSP features (completion, hover, navigation, ...) implemented as queries on that database.
+- LSP features (completion, hover, navigation, ...) built on the queries of that database.
 
 Arrows in the diagram show the main direction of use, not strict layering.
 
@@ -142,7 +142,7 @@ See [Project loading](#project-loading) for how the model is built.
 
 ### Macros and resultants
 
-Macros rewrite the code before it is analysed.
+Macros rewrite the code before it is analyzed.
 In Cairo they are compiler plugins: built-in ones (e.g. `#[derive]`, `#[generate_trait]`),
 inline macros (e.g. `println!`) and procedural macros loaded by [Scarb].
 
@@ -165,7 +165,7 @@ Two examples:
 Features cross this boundary in both directions:
 
 - User code → generated code: `get_node_resultants` (`CommonGroup`) returns the resultants of a node,
-  and the feature analyses each of them.
+  and the feature analyzes each of them.
 - Generated code → user code: `get_originating_location` maps a result found in a virtual file
   back to a location in user code, before it is sent to the client.
 
@@ -339,8 +339,11 @@ Document notifications run as `SyncMut` tasks:
 - `didOpen` also asks the project controller to load the project for the file.
 - `didSave` / `didClose` remove the override, so the database reads the file from disk again.
 - Salsa does not track reads from disk.
-  `didSave` and watched `.cairo` file changes do a synthetic write (`cancel_all`) to invalidate them.
-- Watched file changes to `Scarb.toml` / `cairo_project.toml` reload the config and the project model and restart the proc-macro server.
+  The compiler query that reads a file (`priv_raw_file_content`) calls `db.report_untracked_read()`,
+  so it runs again in every new revision.
+  `didSave` and watched `.cairo` file changes do a synthetic write (`cancel_all`) to start a new revision.
+- Watched file changes to `Scarb.toml` / `cairo_project.toml` reload the client configuration (`workspace/configuration`)
+  and the project model, and restart the proc-macro server.
 
 ### Project loading
 
@@ -365,8 +368,16 @@ The result is applied to the database on the event loop thread.
 
 - The controller looks in parent directories for `cairo_project.toml` and `Scarb.toml`.
   If both exist, `cairo_project.toml` wins.
-- Workspaces that are already loaded and files from the [Scarb] cache are skipped.
-- An unmanaged corelib is set up if no `core` crate is loaded:
+- Workspaces that are already loaded are skipped.
+- Files from the [Scarb] cache (downloaded dependencies) never load a project of their own.
+  This is a deliberate decision.
+  Such a file is usually opened by goto definition, and it is already analyzed as a dependency of the user's project.
+  The consequence is that its `#[cfg(test)]` code is not analyzed, because dependencies do not get the `test` cfg.
+  We want that: it saves memory and time.
+- [Scarb] gives its workspaces the `core` crate (corelib).
+  Other projects do not get one, so CairoLS finds it on its own: this is the *unmanaged* corelib.
+  It comes from the `cairo1.corelibPath` setting, or else from the corelib shipped with [Scarb].
+  It is set up if no `core` crate is loaded:
   for detached files, `cairo_project.toml` projects, or when `scarb metadata` fails.
 - [Scarb] manifest errors are published as diagnostics on `Scarb.toml`.
 
@@ -393,8 +404,12 @@ Diagnostics are computed for the whole project, not only for open files (`src/la
    Dependencies from the [Scarb] cache only report errors.
 4. `ProjectDiagnostics` keeps the last published diagnostics per file, so only changes are sent.
 
-When the whole analysis is finished, the event loop saves the proc-macro expansion cache
-(see [Procedural macros](#procedural-macros)) and asks the client to refresh code lenses and semantic tokens.
+One run does not mean that the analysis is finished.
+Proc-macro responses that arrive during a run are written into the database, which starts a new run
+(see [Procedural macros](#procedural-macros)).
+`AnalysisProgressController` reports the analysis as finished only when a run ends without being cancelled
+and all proc-macro requests sent so far have been answered.
+Then the event loop saves the proc-macro expansion cache to disk and asks the client to refresh code lenses and semantic tokens.
 
 ### Procedural macros
 
@@ -420,7 +435,8 @@ sequenceDiagram
 - The server status and all expansion results are a Salsa input (`ProcMacroGroup`).
 - Compiler plugins never wait for the server.
   On a cache miss they send a request and return a placeholder.
-- The event loop thread periodically collects responses and writes them into the database in one go.
+- The event loop thread collects the ready responses and writes them into the database in one go.
+  It does so early in a diagnostics run, as soon as the run has requested all its macros, and at least every 3 seconds.
   This is a mutation, so analysis runs again.
 - Expansions are also cached on disk in the `target` directory, so a new LS session starts faster.
 
