@@ -76,19 +76,27 @@ flowchart TB
         files["FilesGroup"] --> parser["ParserGroup"] --> defs["DefsGroup"] --> semantic["SemanticGroup"] --> lowering["LoweringGroup"]
     end
     db --> ls & common & lint
+    ls & lint --> common
     ls & common & lint --> compiler
 ```
 
 `AnalysisDatabase` (`src/lang/db/`) is a single Salsa database that holds only storage.
 All functionality comes from extension traits ("groups") implemented for any Salsa database.
 Arrows mean "builds on".
-`CommonGroup` is shared with cairo-lint.
 The LS-specific groups are:
 
 - `LsSyntaxGroup`: finding syntax nodes at a position,
 - `LsSemanticGroup`: mapping syntax nodes to semantic items,
 - `LsProtoGroup`: mapping between LSP URLs and compiler files (including virtual ones),
 - `ProcMacroGroup`: proc-macro server state and cached expansions.
+
+Two groups come from other crates:
+
+- `CommonGroup` (`cairo-language-common`): helpers that both CairoLS and cairo-lint need,
+  such as finding the syntax node at an offset or computing [resultants](#generated-code-and-resultants).
+  They live in a separate crate, so both tools use one implementation.
+- `LinterGroup` (`cairo-lint`): the linter used as a library.
+  CairoLS calls it to compute lint diagnostics and to offer their fixes as code actions.
 
 New database functionality should be added as such a group, not as fields on `AnalysisDatabase`.
 
@@ -114,7 +122,7 @@ A typical request, for example goto definition:
 
 1. Convert the LSP URL and position to a compiler file and offset (`LsProtoGroup`, `lang::lsp`).
 2. Find the syntax node at that offset (`LsSyntaxGroup`).
-3. Map it to its *resultants*: the matching nodes in macro-generated code (`CommonGroup`).
+3. Map it to its [resultants](#generated-code-and-resultants): the nodes it became after macro expansion (`CommonGroup`).
 4. Resolve the symbol (`lang::defs`), which uses compiler semantic queries.
 5. Map the result back to user code and convert it to an LSP location.
 
@@ -258,7 +266,38 @@ Diagnostics are computed for the whole project, not only for open files (`src/la
 When the whole analysis is finished, the main loop saves the proc-macro expansion cache
 (see [Procedural macros](#procedural-macros)) and asks the client to refresh code lenses and semantic tokens.
 
-## Procedural macros
+## Macros
+
+Macros rewrite the code before it is analysed.
+In Cairo they are compiler plugins: built-in ones (e.g. `#[derive]`, `#[generate_trait]`),
+inline macros (e.g. `println!`) and procedural macros loaded by [Scarb].
+
+### Generated code and resultants
+
+A macro puts the code it generates into a virtual file.
+That file is a child of the file where the macro was used.
+Generated code can use macros too, so one user file can have a whole tree of virtual files.
+A macro can also remove the code it was applied to.
+
+The compiler has semantic information only for code that is left after expansion.
+So a node from a user file is first mapped to its *resultants*:
+the nodes it became after all expansions, without the removed ones.
+
+Two examples:
+
+- An attribute macro like snforge's `#[test]` replaces the function it is applied to.
+  The original function is removed, so its only resultant is the function in the generated file.
+- `#[generate_trait]` keeps the annotated `impl` and adds a trait in a virtual file.
+  The trait name in user code has two resultants: itself and the generated trait name.
+
+Features cross this boundary in both directions:
+
+- User code → generated code: `get_node_resultants` (`CommonGroup`) returns the resultants of a node,
+  and the feature analyses each of them.
+- Generated code → user code: `get_originating_location` maps a result found in a virtual file
+  back to a location in user code, before it is sent to the client.
+
+### Procedural macros
 
 ```mermaid
 sequenceDiagram
@@ -329,7 +368,7 @@ The diagnostics controller uses the same migration for each refresh.
   State kept outside the database uses stable keys, such as `Url` or `CrateInput`.
 - Database inputs set at runtime must be copied in `migration.rs` ([why](#memory-management)).
 - Code may live in macro-generated virtual files.
-  Map nodes and locations between user code and generated code (e.g. `get_node_resultants`, `get_originating_location`).
+  Map nodes and locations between user code and generated code ([how](#generated-code-and-resultants)).
 - `Config` can change at runtime.
   Read it from `State` or `StateSnapshot` instead of keeping your own copy.
 
