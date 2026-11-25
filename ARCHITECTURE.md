@@ -40,13 +40,13 @@ This document goes from general to specific:
 
 ```mermaid
 flowchart LR
-    editor(["Editor<br/>(e.g. VS Code extension)"])
+    editor(["Client<br/>(e.g. spawned by VS Code extension)"])
     subgraph LS ["CairoLS"]
         direction TB
-        server["server<br/>(event loop, scheduling, routing)"]
-        ide["ide<br/>(LSP features)"]
-        lang["lang<br/>(analysis database, diagnostics, proc macros)"]
-        project["project<br/>(workspace model)"]
+        server["Server runtime<br/>(event loop, scheduling, routing)"]
+        ide["LSP features<br/>(completion, hover, navigation, ...)"]
+        lang["Analysis<br/>(analysis database, diagnostics, proc macros)"]
+        project["Project model<br/>(opened Scarb/Cairo workspaces)"]
         server --> ide --> lang
         server --> project --> lang
     end
