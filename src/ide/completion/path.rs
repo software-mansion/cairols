@@ -129,9 +129,7 @@ pub fn path_suffix_completions<'db>(
     // In expression blocks, when the cursor is after `::` with non-empty preceding segments
     // (including when the user has already typed a partial segment), propose bare item names
     // from traits/impls whose path matches.
-    if ctx.node.ancestor_of_kind(db, SyntaxKind::ExprBlock).is_some()
-        && !typed_segments.is_empty()
-        && !is_on_type_clause
+    if ctx.node.ancestor_of_kind(db, SyntaxKind::ExprBlock).is_some() && !typed_segments.is_empty()
     {
         extend_with_trait_items_for_matching_paths(
             db,

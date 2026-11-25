@@ -3272,3 +3272,31 @@ fn self_in_impl_let_type_annotation() {
     completion_label = "Bar"
     "#);
 }
+
+#[test]
+fn impl_path_in_let_type_annotation() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        type Bar;
+        const BAZ: u32;
+        fn qux();
+    }
+
+    impl MyImpl of MyTrait {
+        type Bar = u32;
+        const BAZ: u32 = 1;
+        fn qux() {}
+    }
+
+    fn a() {
+        let a: MyImpl::<caret> = 1;
+    }
+    ",@r#"
+    caret = """
+        let a: MyImpl::<caret> = 1;
+    """
+
+    [[completions]]
+    completion_label = "Bar"
+    "#);
+}
