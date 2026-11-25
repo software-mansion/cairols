@@ -182,7 +182,7 @@ Proc-macro plugins are added when the proc-macro server reports the available ma
 ```mermaid
 flowchart LR
     client(["LSP client"])
-    evloop["Main thread<br/>event loop<br/>(owns &mut State)"]
+    evloop["Event loop thread<br/>(owns &mut State)"]
     pools["Thread pools<br/>(requests on StateSnapshot)"]
     controllers["Controller threads<br/>(project, diagnostics, proc macros, ...)"]
 
@@ -192,28 +192,40 @@ flowchart LR
     evloop <-- "channels" --> controllers
 ```
 
-The main thread runs a single event loop which waits on several channels:
+The event loop runs on its own thread, not on the main thread of the process.
+This document calls it the event loop thread.
+It waits on several channels:
 LSP messages, project updates, proc-macro responses, analysis status, retries and a few others.
 Project updates are handled first, because they change the state the most.
 
-`State` holds everything the server knows, including the database, and belongs to the main thread.
-A `StateSnapshot` is a read-only view of it with its own database clone, made for a background task.
+`State` holds everything the server knows, including the database, and belongs to the event loop thread.
+Other threads do not share it; they receive what they need on demand.
 
-Requests run on thread pools.
-Controller threads load projects, compute diagnostics and poll for proc-macro responses.
-Threads communicate mostly through channels.
-Apart from that, they share database clones (see [Cancellation](#cancellation)) and a little state behind a mutex (`MetaState`).
+Requests that only read the state are background requests: they run on thread pools.
+Each of them receives a `StateSnapshot` when it is scheduled:
+a read-only view of `State` with its own database clone (see [Cancellation](#cancellation)).
+The exception is `MetaState`, a little state behind a mutex, which background tasks can also change.
+
+Slow work that is not a request runs on controller threads.
+This pattern is used for project loading, diagnostics, proc-macro responses, analysis progress and code lenses:
+
+- A controller is a struct kept in `State`.
+- It owns a thread and stops it when it is dropped.
+- A controller method sends the work to that thread and returns at once.
+  It uses a channel, or a trigger when only the newest request matters (diagnostics).
+- Most threads report back through a channel that the event loop waits on,
+  and the result is applied there as a task (e.g. `ProjectUpdate`).
 
 ### Tasks
 
 Every incoming message becomes a `Task`:
 
-| Task kind    | Runs on     | Access          | Used for                                                                                                         |
-|--------------|-------------|-----------------|------------------------------------------------------------------------------------------------------------------|
-| `SyncMut`    | main thread | `&mut State`    | Notifications (`didOpen`, `didChange`, ...) triggering state changes.                                            |
-| `Sync`       | main thread | `&State`        | Small read-only actions, used to enforce no state mutation and to skip the hooks that run after `SyncMut` tasks. |
-| `Background` | worker pool | `StateSnapshot` | Almost all LSP requests (hover, completion, ...).                                                                |
-| `Fmt`        | fmt pool    | `StateSnapshot` | Formatting, so it is never blocked by other requests.                                                            |
+| Task kind    | Runs on           | Access          | Used for                                                                                                         |
+|--------------|-------------------|-----------------|------------------------------------------------------------------------------------------------------------------|
+| `SyncMut`    | event loop thread | `&mut State`    | Notifications (`didOpen`, `didChange`, ...) triggering state changes.                                            |
+| `Sync`       | event loop thread | `&State`        | Small read-only actions, used to enforce no state mutation and to skip the hooks that run after `SyncMut` tasks. |
+| `Background` | worker pool       | `StateSnapshot` | Almost all LSP requests (hover, completion, ...).                                                                |
+| `Fmt`        | fmt pool          | `StateSnapshot` | Formatting, so it is never blocked by other requests.                                                            |
 
 After every `SyncMut` task that changed the database inputs or client config, the scheduler runs hooks which:
 
@@ -227,8 +239,8 @@ Tasks do not need to schedule these themselves.
 
 | Path                | Responsibility                                                                                                 |
 |---------------------|----------------------------------------------------------------------------------------------------------------|
-| `src/lib.rs`        | Entry point (`start()`), `Backend`, the main event loop.                                                       |
-| `src/state.rs`      | `State` (owned by the main thread), `StateSnapshot` (read-only, used by background tasks), `MetaState`.        |
+| `src/lib.rs`        | Entry point (`start()`), `Backend`, the event loop.                                                            |
+| `src/state.rs`      | `State` (owned by the event loop thread), `StateSnapshot` (read-only, used by background tasks), `MetaState`.  |
 | `src/server/`       | LSP connection, scheduler and thread pools, request/notification routing and handlers.                         |
 | `src/lsp/`          | Server capabilities, CairoLS-specific LSP extensions (`ext.rs`).                                               |
 | `src/config.rs`     | Client configuration (`workspace/configuration`), can change at runtime.                                       |
@@ -294,7 +306,7 @@ A typical request, for example goto definition:
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant M as Main thread
+    participant M as Event loop thread
     participant W as Worker
     C->>M: textDocument/completion
     M->>W: Background task with StateSnapshot (db clone)
@@ -344,12 +356,12 @@ flowchart TB
     discover -- "cairo_project.toml" --> cpt
     discover -- "Scarb.toml" --> sm["scarb metadata"] --> scarb
     discover -- "none" --> none
-    update --> apply["main thread applies update"]
+    update --> apply["event loop thread applies update"]
     apply --> db[("AnalysisDatabase<br/>crates, configs, plugins")]
 ```
 
 Loading runs on a separate thread because `scarb metadata` may be slow.
-The result is applied to the database on the main thread.
+The result is applied to the database on the event loop thread.
 
 - The controller looks in parent directories for `cairo_project.toml` and `Scarb.toml`.
   If both exist, `cairo_project.toml` wins.
@@ -362,7 +374,7 @@ The result is applied to the database on the main thread.
 
 ```mermaid
 flowchart LR
-    main[("AnalysisDatabase<br/>(main thread)")] -- "mutation hook<br/>copies the inputs" --> copy[("diagnostics database<br/>(fresh copy)")]
+    main[("AnalysisDatabase<br/>(event loop thread)")] -- "mutation hook<br/>copies the inputs" --> copy[("diagnostics database<br/>(fresh copy)")]
     copy --> ctrl["diagnostics<br/>controller"]
     ctrl -- "batches of files" --> workers["worker pool"]
     workers -- "publishDiagnostics<br/>(changed files only)" --> client(["Client"])
@@ -371,7 +383,7 @@ flowchart LR
 
 Diagnostics are computed for the whole project, not only for open files (`src/lang/diagnostics/`):
 
-1. After each mutation, the main thread copies the inputs of its database into a fresh one
+1. After each mutation, the event loop thread copies the inputs of its database into a fresh one
    (see [Memory management](#memory-management)) and hands the copy to the diagnostics controller.
    A newer refresh cancels the one that is running.
 2. Open files are checked first, then all other files of the project.
@@ -381,7 +393,7 @@ Diagnostics are computed for the whole project, not only for open files (`src/la
    Dependencies from the [Scarb] cache only report errors.
 4. `ProjectDiagnostics` keeps the last published diagnostics per file, so only changes are sent.
 
-When the whole analysis is finished, the main loop saves the proc-macro expansion cache
+When the whole analysis is finished, the event loop saves the proc-macro expansion cache
 (see [Procedural macros](#procedural-macros)) and asks the client to refresh code lenses and semantic tokens.
 
 ### Procedural macros
@@ -391,7 +403,7 @@ sequenceDiagram
     participant Q as Salsa query<br/>(compiler plugin)
     participant DB as ProcMacroGroup
     participant PMS as scarb proc-macro-server
-    participant M as Main thread
+    participant M as Event loop thread
     Q->>DB: expand macro
     DB->>PMS: send request (not cached yet)
     DB-->>Q: placeholder (code unchanged)
@@ -408,7 +420,7 @@ sequenceDiagram
 - The server status and all expansion results are a Salsa input (`ProcMacroGroup`).
 - Compiler plugins never wait for the server.
   On a cache miss they send a request and return a placeholder.
-- The main thread periodically collects responses and writes them into the database in one go.
+- The event loop thread periodically collects responses and writes them into the database in one go.
   This is a mutation, so analysis runs again.
 - Expansions are also cached on disk in the `target` directory, so a new LS session starts faster.
 
@@ -443,9 +455,9 @@ The diagnostics controller uses the same migration for each refresh.
 
 ## Rules of thumb
 
-- Only `SyncMut` tasks on the main thread mutate `State` or the database.
+- Only `SyncMut` tasks on the event loop thread mutate `State` or the database.
   They block the event loop, so keep them short.
-  Slow work goes to a controller thread and returns to the main loop through a channel.
+  Slow work goes to a controller thread and returns to the event loop through a channel.
 - A database write waits until all clones are dropped.
   Do not keep database clones longer than needed.
 - Cancellation is not an error.
