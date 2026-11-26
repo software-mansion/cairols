@@ -20,37 +20,139 @@ fn let_type_annotation_empty() {
     completion_label = "hello"
 
     [[completions]]
+    completion_label = "Add"
+
+    [[completions]]
     completion_label = "Array"
+
+    [[completions]]
+    completion_label = "ArrayTrait"
 
     [[completions]]
     completion_label = "Box"
 
     [[completions]]
+    completion_label = "BoxTrait"
+
+    [[completions]]
     completion_label = "ByteArray"
+
+    [[completions]]
+    completion_label = "ByteArrayTrait"
+
+    [[completions]]
+    completion_label = "Bytes31Trait"
+
+    [[completions]]
+    completion_label = "Clone"
+
+    [[completions]]
+    completion_label = "Copy"
+
+    [[completions]]
+    completion_label = "Default"
+
+    [[completions]]
+    completion_label = "Deref"
+
+    [[completions]]
+    completion_label = "Destruct"
+
+    [[completions]]
+    completion_label = "Div"
+
+    [[completions]]
+    completion_label = "DivRem"
+
+    [[completions]]
+    completion_label = "Drop"
+
+    [[completions]]
+    completion_label = "Felt252DictTrait"
+
+    [[completions]]
+    completion_label = "Felt252DictValue"
+
+    [[completions]]
+    completion_label = "FromIterator"
+
+    [[completions]]
+    completion_label = "Into"
+
+    [[completions]]
+    completion_label = "IntoIterator"
+
+    [[completions]]
+    completion_label = "Iterator"
+
+    [[completions]]
+    completion_label = "Mul"
+
+    [[completions]]
+    completion_label = "Neg"
 
     [[completions]]
     completion_label = "NonZero"
 
     [[completions]]
+    completion_label = "Not"
+
+    [[completions]]
     completion_label = "Nullable"
+
+    [[completions]]
+    completion_label = "NullableTrait"
 
     [[completions]]
     completion_label = "Option"
 
     [[completions]]
+    completion_label = "OptionTrait"
+
+    [[completions]]
     completion_label = "Panic"
+
+    [[completions]]
+    completion_label = "PanicDestruct"
 
     [[completions]]
     completion_label = "PanicResult"
 
     [[completions]]
+    completion_label = "PartialEq"
+
+    [[completions]]
+    completion_label = "PartialOrd"
+
+    [[completions]]
+    completion_label = "Rem"
+
+    [[completions]]
     completion_label = "Result"
+
+    [[completions]]
+    completion_label = "ResultTrait"
+
+    [[completions]]
+    completion_label = "Serde"
 
     [[completions]]
     completion_label = "Span"
 
     [[completions]]
+    completion_label = "SpanTrait"
+
+    [[completions]]
+    completion_label = "Sub"
+
+    [[completions]]
     completion_label = "System"
+
+    [[completions]]
+    completion_label = "ToSpanTrait"
+
+    [[completions]]
+    completion_label = "TryInto"
 
     [[completions]]
     completion_label = "bool"
@@ -112,6 +214,14 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "AccountContract"
+    completion_label_path = "(use starknet::AccountContract)"
+    text_edits = ["""
+    use starknet::AccountContract;
+
+    """]
+
+    [[completions]]
     completion_label = "AccountContractDispatcher"
     completion_label_path = "(use starknet::account::AccountContractDispatcher)"
     text_edits = ["""
@@ -132,6 +242,14 @@ fn let_type_annotation_empty() {
     completion_label_path = "(use starknet::account::AccountContractDispatcherSubPointersMut)"
     text_edits = ["""
     use starknet::account::AccountContractDispatcherSubPointersMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractDispatcherTrait"
+    completion_label_path = "(use starknet::account::AccountContractDispatcherTrait)"
+    text_edits = ["""
+    use starknet::account::AccountContractDispatcherTrait;
 
     """]
 
@@ -184,6 +302,14 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "AccountContractSafeDispatcherTrait"
+    completion_label_path = "(use starknet::account::AccountContractSafeDispatcherTrait)"
+    text_edits = ["""
+    use starknet::account::AccountContractSafeDispatcherTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcher"
     completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcher)"
     text_edits = ["""
@@ -208,10 +334,50 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "AddAssign"
+    completion_label_path = "(use core::ops::AddAssign)"
+    text_edits = ["""
+    use core::ops::AddAssign;
+
+    """]
+
+    [[completions]]
+    completion_label = "AddEq"
+    completion_label_path = "(use core::traits::AddEq)"
+    text_edits = ["""
+    use core::traits::AddEq;
+
+    """]
+
+    [[completions]]
+    completion_label = "AddHelper"
+    completion_label_path = "(use core::internal::bounded_int::AddHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::AddHelper;
+
+    """]
+
+    [[completions]]
     completion_label = "AddInputResult"
     completion_label_path = "(use core::circuit::AddInputResult)"
     text_edits = ["""
     use core::circuit::AddInputResult;
+
+    """]
+
+    [[completions]]
+    completion_label = "AddInputResultImpl"
+    completion_label_path = "(use core::circuit::AddInputResultImpl)"
+    text_edits = ["""
+    use core::circuit::AddInputResultImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "AddInputResultTrait"
+    completion_label_path = "(use core::circuit::AddInputResultTrait)"
+    text_edits = ["""
+    use core::circuit::AddInputResultTrait;
 
     """]
 
@@ -224,10 +390,66 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "AppendFormattedToByteArray"
+    completion_label_path = "(use core::to_byte_array::AppendFormattedToByteArray)"
+    text_edits = ["""
+    use core::to_byte_array::AppendFormattedToByteArray;
+
+    """]
+
+    [[completions]]
+    completion_label = "ArrayImpl"
+    completion_label_path = "(use core::array::ArrayImpl)"
+    text_edits = ["""
+    use core::array::ArrayImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "ArrayIter"
     completion_label_path = "(use core::array::ArrayIter)"
     text_edits = ["""
     use core::array::ArrayIter;
+
+    """]
+
+    [[completions]]
+    completion_label = "BitAnd"
+    completion_label_path = "(use core::traits::BitAnd)"
+    text_edits = ["""
+    use core::traits::BitAnd;
+
+    """]
+
+    [[completions]]
+    completion_label = "BitNot"
+    completion_label_path = "(use core::traits::BitNot)"
+    text_edits = ["""
+    use core::traits::BitNot;
+
+    """]
+
+    [[completions]]
+    completion_label = "BitOr"
+    completion_label_path = "(use core::traits::BitOr)"
+    text_edits = ["""
+    use core::traits::BitOr;
+
+    """]
+
+    [[completions]]
+    completion_label = "BitSize"
+    completion_label_path = "(use core::num::traits::BitSize)"
+    text_edits = ["""
+    use core::num::traits::BitSize;
+
+    """]
+
+    [[completions]]
+    completion_label = "BitXor"
+    completion_label_path = "(use core::traits::BitXor)"
+    text_edits = ["""
+    use core::traits::BitXor;
 
     """]
 
@@ -248,6 +470,38 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "BoolImpl"
+    completion_label_path = "(use core::boolean::BoolImpl)"
+    text_edits = ["""
+    use core::boolean::BoolImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "BoolTrait"
+    completion_label_path = "(use core::boolean::BoolTrait)"
+    text_edits = ["""
+    use core::boolean::BoolTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Bounded"
+    completion_label_path = "(use core::num::traits::Bounded)"
+    text_edits = ["""
+    use core::num::traits::Bounded;
+
+    """]
+
+    [[completions]]
+    completion_label = "BoundedInt"
+    completion_label_path = "(use core::integer::BoundedInt)"
+    text_edits = ["""
+    use core::integer::BoundedInt;
+
+    """]
+
+    [[completions]]
     completion_label = "BoundedInt"
     completion_label_path = "(use core::internal::bounded_int::BoundedInt)"
     text_edits = ["""
@@ -256,10 +510,26 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "BoxImpl"
+    completion_label_path = "(use core::box::BoxImpl)"
+    text_edits = ["""
+    use core::box::BoxImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "BuiltinCosts"
     completion_label_path = "(use core::gas::BuiltinCosts)"
     text_edits = ["""
     use core::gas::BuiltinCosts;
+
+    """]
+
+    [[completions]]
+    completion_label = "ByteArrayImpl"
+    completion_label_path = "(use core::byte_array::ByteArrayImpl)"
+    text_edits = ["""
+    use core::byte_array::ByteArrayImpl;
 
     """]
 
@@ -280,10 +550,34 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "ByteSpanImpl"
+    completion_label_path = "(use core::byte_array::ByteSpanImpl)"
+    text_edits = ["""
+    use core::byte_array::ByteSpanImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "ByteSpanIter"
     completion_label_path = "(use core::byte_array::ByteSpanIter)"
     text_edits = ["""
     use core::byte_array::ByteSpanIter;
+
+    """]
+
+    [[completions]]
+    completion_label = "ByteSpanTrait"
+    completion_label_path = "(use core::byte_array::ByteSpanTrait)"
+    text_edits = ["""
+    use core::byte_array::ByteSpanTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Bytes31Impl"
+    completion_label_path = "(use core::bytes_31::Bytes31Impl)"
+    text_edits = ["""
+    use core::bytes_31::Bytes31Impl;
 
     """]
 
@@ -296,10 +590,42 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "CheckedAdd"
+    completion_label_path = "(use core::num::traits::CheckedAdd)"
+    text_edits = ["""
+    use core::num::traits::CheckedAdd;
+
+    """]
+
+    [[completions]]
+    completion_label = "CheckedMul"
+    completion_label_path = "(use core::num::traits::CheckedMul)"
+    text_edits = ["""
+    use core::num::traits::CheckedMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "CheckedSub"
+    completion_label_path = "(use core::num::traits::CheckedSub)"
+    text_edits = ["""
+    use core::num::traits::CheckedSub;
+
+    """]
+
+    [[completions]]
     completion_label = "Circuit"
     completion_label_path = "(use core::circuit::Circuit)"
     text_edits = ["""
     use core::circuit::Circuit;
+
+    """]
+
+    [[completions]]
+    completion_label = "CircuitDefinition"
+    completion_label_path = "(use core::circuit::CircuitDefinition)"
+    text_edits = ["""
+    use core::circuit::CircuitDefinition;
 
     """]
 
@@ -312,10 +638,50 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "CircuitElementCopy"
+    completion_label_path = "(use core::circuit::CircuitElementCopy)"
+    text_edits = ["""
+    use core::circuit::CircuitElementCopy;
+
+    """]
+
+    [[completions]]
+    completion_label = "CircuitElementDrop"
+    completion_label_path = "(use core::circuit::CircuitElementDrop)"
+    text_edits = ["""
+    use core::circuit::CircuitElementDrop;
+
+    """]
+
+    [[completions]]
+    completion_label = "CircuitElementTrait"
+    completion_label_path = "(use core::circuit::CircuitElementTrait)"
+    text_edits = ["""
+    use core::circuit::CircuitElementTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "CircuitInput"
     completion_label_path = "(use core::circuit::CircuitInput)"
     text_edits = ["""
     use core::circuit::CircuitInput;
+
+    """]
+
+    [[completions]]
+    completion_label = "CircuitInputs"
+    completion_label_path = "(use core::circuit::CircuitInputs)"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
+
+    [[completions]]
+    completion_label = "CircuitInputsImpl"
+    completion_label_path = "(use core::circuit::CircuitInputsImpl)"
+    text_edits = ["""
+    use core::circuit::CircuitInputsImpl;
 
     """]
 
@@ -328,10 +694,26 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "CircuitOutputsTrait"
+    completion_label_path = "(use core::circuit::CircuitOutputsTrait)"
+    text_edits = ["""
+    use core::circuit::CircuitOutputsTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "ClassHash"
     completion_label_path = "(use starknet::ClassHash)"
     text_edits = ["""
     use starknet::ClassHash;
+
+    """]
+
+    [[completions]]
+    completion_label = "ClassHashIntoFelt252"
+    completion_label_path = "(use starknet::class_hash::ClassHashIntoFelt252)"
+    text_edits = ["""
+    use starknet::class_hash::ClassHashIntoFelt252;
 
     """]
 
@@ -352,10 +734,42 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "ConstrainHelper"
+    completion_label_path = "(use core::internal::bounded_int::ConstrainHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::ConstrainHelper;
+
+    """]
+
+    [[completions]]
     completion_label = "ContractAddress"
     completion_label_path = "(use starknet::ContractAddress)"
     text_edits = ["""
     use starknet::ContractAddress;
+
+    """]
+
+    [[completions]]
+    completion_label = "ContractAddressIntoFelt252"
+    completion_label_path = "(use starknet::contract_address::ContractAddressIntoFelt252)"
+    text_edits = ["""
+    use starknet::contract_address::ContractAddressIntoFelt252;
+
+    """]
+
+    [[completions]]
+    completion_label = "Debug"
+    completion_label_path = "(use core::fmt::Debug)"
+    text_edits = ["""
+    use core::fmt::Debug;
+
+    """]
+
+    [[completions]]
+    completion_label = "DebugImpl"
+    completion_label_path = "(use core::fmt::into_felt252_based::DebugImpl)"
+    text_edits = ["""
+    use core::fmt::into_felt252_based::DebugImpl;
 
     """]
 
@@ -368,10 +782,74 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "DerefMut"
+    completion_label_path = "(use core::ops::DerefMut)"
+    text_edits = ["""
+    use core::ops::DerefMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "DestructFailureGuarantee"
+    completion_label_path = "(use core::circuit::DestructFailureGuarantee)"
+    text_edits = ["""
+    use core::circuit::DestructFailureGuarantee;
+
+    """]
+
+    [[completions]]
+    completion_label = "DestructOption"
+    completion_label_path = "(use core::option::DestructOption)"
+    text_edits = ["""
+    use core::option::DestructOption;
+
+    """]
+
+    [[completions]]
     completion_label = "DestructWith"
     completion_label_path = "(use core::internal::DestructWith)"
     text_edits = ["""
     use core::internal::DestructWith;
+
+    """]
+
+    [[completions]]
+    completion_label = "Display"
+    completion_label_path = "(use core::fmt::Display)"
+    text_edits = ["""
+    use core::fmt::Display;
+
+    """]
+
+    [[completions]]
+    completion_label = "DivAssign"
+    completion_label_path = "(use core::ops::DivAssign)"
+    text_edits = ["""
+    use core::ops::DivAssign;
+
+    """]
+
+    [[completions]]
+    completion_label = "DivEq"
+    completion_label_path = "(use core::traits::DivEq)"
+    text_edits = ["""
+    use core::traits::DivEq;
+
+    """]
+
+    [[completions]]
+    completion_label = "DivRem"
+    completion_label_path = "(use core::num::traits::DivRem)"
+    text_edits = ["""
+    use core::num::traits::DivRem;
+
+    """]
+
+    [[completions]]
+    completion_label = "DivRemHelper"
+    completion_label_path = "(use core::internal::bounded_int::DivRemHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::DivRemHelper;
 
     """]
 
@@ -400,10 +878,42 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "EcPointImpl"
+    completion_label_path = "(use core::ec::EcPointImpl)"
+    text_edits = ["""
+    use core::ec::EcPointImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "EcPointTrait"
+    completion_label_path = "(use core::ec::EcPointTrait)"
+    text_edits = ["""
+    use core::ec::EcPointTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "EcState"
     completion_label_path = "(use core::ec::EcState)"
     text_edits = ["""
     use core::ec::EcState;
+
+    """]
+
+    [[completions]]
+    completion_label = "EcStateImpl"
+    completion_label_path = "(use core::ec::EcStateImpl)"
+    text_edits = ["""
+    use core::ec::EcStateImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "EcStateTrait"
+    completion_label_path = "(use core::ec::EcStateTrait)"
+    text_edits = ["""
+    use core::ec::EcStateTrait;
 
     """]
 
@@ -424,10 +934,74 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "EthAddressIntoFelt252"
+    completion_label_path = "(use starknet::eth_address::EthAddressIntoFelt252)"
+    text_edits = ["""
+    use starknet::eth_address::EthAddressIntoFelt252;
+
+    """]
+
+    [[completions]]
+    completion_label = "EthAddressPrintImpl"
+    completion_label_path = "(use starknet::eth_address::EthAddressPrintImpl)"
+    text_edits = ["""
+    use starknet::eth_address::EthAddressPrintImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "EthAddressSerde"
+    completion_label_path = "(use starknet::eth_address::EthAddressSerde)"
+    text_edits = ["""
+    use starknet::eth_address::EthAddressSerde;
+
+    """]
+
+    [[completions]]
+    completion_label = "EvalCircuitImpl"
+    completion_label_path = "(use core::circuit::EvalCircuitImpl)"
+    text_edits = ["""
+    use core::circuit::EvalCircuitImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "EvalCircuitTrait"
+    completion_label_path = "(use core::circuit::EvalCircuitTrait)"
+    text_edits = ["""
+    use core::circuit::EvalCircuitTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Event"
+    completion_label_path = "(use starknet::Event)"
+    text_edits = ["""
+    use starknet::Event;
+
+    """]
+
+    [[completions]]
+    completion_label = "EventEmitter"
+    completion_label_path = "(use starknet::event::EventEmitter)"
+    text_edits = ["""
+    use starknet::event::EventEmitter;
+
+    """]
+
+    [[completions]]
     completion_label = "ExecutionInfo"
     completion_label_path = "(use starknet::ExecutionInfo)"
     text_edits = ["""
     use starknet::ExecutionInfo;
+
+    """]
+
+    [[completions]]
+    completion_label = "Extend"
+    completion_label_path = "(use core::iter::Extend)"
+    text_edits = ["""
+    use core::iter::Extend;
 
     """]
 
@@ -448,6 +1022,38 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "Felt252DictEntryTrait"
+    completion_label_path = "(use core::dict::Felt252DictEntryTrait)"
+    text_edits = ["""
+    use core::dict::Felt252DictEntryTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoClassHash"
+    completion_label_path = "(use starknet::class_hash::Felt252TryIntoClassHash)"
+    text_edits = ["""
+    use starknet::class_hash::Felt252TryIntoClassHash;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoContractAddress"
+    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
+    text_edits = ["""
+    use starknet::contract_address::Felt252TryIntoContractAddress;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoEthAddress"
+    completion_label_path = "(use starknet::eth_address::Felt252TryIntoEthAddress)"
+    text_edits = ["""
+    use starknet::eth_address::Felt252TryIntoEthAddress;
+
+    """]
+
+    [[completions]]
     completion_label = "FlattenedStorage"
     completion_label_path = "(use starknet::storage::FlattenedStorage)"
     text_edits = ["""
@@ -456,10 +1062,42 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "Fn"
+    completion_label_path = "(use core::ops::Fn)"
+    text_edits = ["""
+    use core::ops::Fn;
+
+    """]
+
+    [[completions]]
+    completion_label = "FnOnce"
+    completion_label_path = "(use core::ops::FnOnce)"
+    text_edits = ["""
+    use core::ops::FnOnce;
+
+    """]
+
+    [[completions]]
+    completion_label = "FormatAsByteArray"
+    completion_label_path = "(use core::to_byte_array::FormatAsByteArray)"
+    text_edits = ["""
+    use core::to_byte_array::FormatAsByteArray;
+
+    """]
+
+    [[completions]]
     completion_label = "Formatter"
     completion_label_path = "(use core::fmt::Formatter)"
     text_edits = ["""
     use core::fmt::Formatter;
+
+    """]
+
+    [[completions]]
+    completion_label = "ForwardingClassHash"
+    completion_label_path = "(use starknet::ForwardingClassHash)"
+    text_edits = ["""
+    use starknet::ForwardingClassHash;
 
     """]
 
@@ -488,6 +1126,30 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "Get"
+    completion_label_path = "(use core::ops::Get)"
+    text_edits = ["""
+    use core::ops::Get;
+
+    """]
+
+    [[completions]]
+    completion_label = "Hash"
+    completion_label_path = "(use core::hash::Hash)"
+    text_edits = ["""
+    use core::hash::Hash;
+
+    """]
+
+    [[completions]]
+    completion_label = "HashImpl"
+    completion_label_path = "(use core::hash::into_felt252_based::HashImpl)"
+    text_edits = ["""
+    use core::hash::into_felt252_based::HashImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "HashState"
     completion_label_path = "(use core::pedersen::HashState)"
     text_edits = ["""
@@ -500,6 +1162,54 @@ fn let_type_annotation_empty() {
     completion_label_path = "(use core::poseidon::HashState)"
     text_edits = ["""
     use core::poseidon::HashState;
+
+    """]
+
+    [[completions]]
+    completion_label = "HashStateExTrait"
+    completion_label_path = "(use core::hash::HashStateExTrait)"
+    text_edits = ["""
+    use core::hash::HashStateExTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "HashStateTrait"
+    completion_label_path = "(use core::hash::HashStateTrait)"
+    text_edits = ["""
+    use core::hash::HashStateTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Index"
+    completion_label_path = "(use core::ops::Index)"
+    text_edits = ["""
+    use core::ops::Index;
+
+    """]
+
+    [[completions]]
+    completion_label = "Index"
+    completion_label_path = "(use core::traits::Index)"
+    text_edits = ["""
+    use core::traits::Index;
+
+    """]
+
+    [[completions]]
+    completion_label = "IndexView"
+    completion_label_path = "(use core::ops::IndexView)"
+    text_edits = ["""
+    use core::ops::IndexView;
+
+    """]
+
+    [[completions]]
+    completion_label = "IndexView"
+    completion_label_path = "(use core::traits::IndexView)"
+    text_edits = ["""
+    use core::traits::IndexView;
 
     """]
 
@@ -520,6 +1230,22 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "IntoIterRange"
+    completion_label_path = "(use starknet::storage::IntoIterRange)"
+    text_edits = ["""
+    use starknet::storage::IntoIterRange;
+
+    """]
+
+    [[completions]]
+    completion_label = "LegacyHash"
+    completion_label_path = "(use core::hash::LegacyHash)"
+    text_edits = ["""
+    use core::hash::LegacyHash;
+
+    """]
+
+    [[completions]]
     completion_label = "LoopResult"
     completion_label_path = "(use core::internal::LoopResult)"
     text_edits = ["""
@@ -528,10 +1254,50 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "LowerHex"
+    completion_label_path = "(use core::fmt::LowerHex)"
+    text_edits = ["""
+    use core::fmt::LowerHex;
+
+    """]
+
+    [[completions]]
+    completion_label = "LowerHexImpl"
+    completion_label_path = "(use core::fmt::into_felt252_based::LowerHexImpl)"
+    text_edits = ["""
+    use core::fmt::into_felt252_based::LowerHexImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "Map"
     completion_label_path = "(use starknet::storage::Map)"
     text_edits = ["""
     use starknet::storage::Map;
+
+    """]
+
+    [[completions]]
+    completion_label = "MulAssign"
+    completion_label_path = "(use core::ops::MulAssign)"
+    text_edits = ["""
+    use core::ops::MulAssign;
+
+    """]
+
+    [[completions]]
+    completion_label = "MulEq"
+    completion_label_path = "(use core::traits::MulEq)"
+    text_edits = ["""
+    use core::traits::MulEq;
+
+    """]
+
+    [[completions]]
+    completion_label = "MulHelper"
+    completion_label_path = "(use core::internal::bounded_int::MulHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::MulHelper;
 
     """]
 
@@ -552,10 +1318,50 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "MutableVecTrait"
+    completion_label_path = "(use starknet::storage::MutableVecTrait)"
+    text_edits = ["""
+    use starknet::storage::MutableVecTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "NegateHelper"
+    completion_label_path = "(use core::internal::bounded_int::NegateHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::NegateHelper;
+
+    """]
+
+    [[completions]]
     completion_label = "NonZeroEcPoint"
     completion_label_path = "(use core::ec::NonZeroEcPoint)"
     text_edits = ["""
     use core::ec::NonZeroEcPoint;
+
+    """]
+
+    [[completions]]
+    completion_label = "NullableImpl"
+    completion_label_path = "(use core::nullable::NullableImpl)"
+    text_edits = ["""
+    use core::nullable::NullableImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "NumericLiteral"
+    completion_label_path = "(use core::integer::NumericLiteral)"
+    text_edits = ["""
+    use core::integer::NumericLiteral;
+
+    """]
+
+    [[completions]]
+    completion_label = "One"
+    completion_label_path = "(use core::num::traits::One)"
+    text_edits = ["""
+    use core::num::traits::One;
 
     """]
 
@@ -576,10 +1382,66 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "OptionTraitImpl"
+    completion_label_path = "(use core::option::OptionTraitImpl)"
+    text_edits = ["""
+    use core::option::OptionTraitImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "OverflowingAdd"
+    completion_label_path = "(use core::num::traits::OverflowingAdd)"
+    text_edits = ["""
+    use core::num::traits::OverflowingAdd;
+
+    """]
+
+    [[completions]]
+    completion_label = "OverflowingMul"
+    completion_label_path = "(use core::num::traits::OverflowingMul)"
+    text_edits = ["""
+    use core::num::traits::OverflowingMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "OverflowingSub"
+    completion_label_path = "(use core::num::traits::OverflowingSub)"
+    text_edits = ["""
+    use core::num::traits::OverflowingSub;
+
+    """]
+
+    [[completions]]
     completion_label = "Pedersen"
     completion_label_path = "(use core::pedersen::Pedersen)"
     text_edits = ["""
     use core::pedersen::Pedersen;
+
+    """]
+
+    [[completions]]
+    completion_label = "PedersenImpl"
+    completion_label_path = "(use core::pedersen::PedersenImpl)"
+    text_edits = ["""
+    use core::pedersen::PedersenImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "PedersenTrait"
+    completion_label_path = "(use core::pedersen::PedersenTrait)"
+    text_edits = ["""
+    use core::pedersen::PedersenTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "PeekableTrait"
+    completion_label_path = "(use core::iter::PeekableTrait)"
+    text_edits = ["""
+    use core::iter::PeekableTrait;
 
     """]
 
@@ -592,10 +1454,58 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "PendingStoragePathTrait"
+    completion_label_path = "(use starknet::storage::PendingStoragePathTrait)"
+    text_edits = ["""
+    use starknet::storage::PendingStoragePathTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "Poseidon"
     completion_label_path = "(use core::poseidon::Poseidon)"
     text_edits = ["""
     use core::poseidon::Poseidon;
+
+    """]
+
+    [[completions]]
+    completion_label = "PoseidonImpl"
+    completion_label_path = "(use core::poseidon::PoseidonImpl)"
+    text_edits = ["""
+    use core::poseidon::PoseidonImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "PoseidonTrait"
+    completion_label_path = "(use core::poseidon::PoseidonTrait)"
+    text_edits = ["""
+    use core::poseidon::PoseidonTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Pow"
+    completion_label_path = "(use core::num::traits::Pow)"
+    text_edits = ["""
+    use core::num::traits::Pow;
+
+    """]
+
+    [[completions]]
+    completion_label = "Product"
+    completion_label_path = "(use core::iter::Product)"
+    text_edits = ["""
+    use core::iter::Product;
+
+    """]
+
+    [[completions]]
+    completion_label = "QM31Trait"
+    completion_label_path = "(use core::qm31::QM31Trait)"
+    text_edits = ["""
+    use core::qm31::QM31Trait;
 
     """]
 
@@ -640,10 +1550,42 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "RangeInclusiveTrait"
+    completion_label_path = "(use core::ops::RangeInclusiveTrait)"
+    text_edits = ["""
+    use core::ops::RangeInclusiveTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "RangeIterator"
     completion_label_path = "(use core::ops::RangeIterator)"
     text_edits = ["""
     use core::ops::RangeIterator;
+
+    """]
+
+    [[completions]]
+    completion_label = "RangeTrait"
+    completion_label_path = "(use core::ops::RangeTrait)"
+    text_edits = ["""
+    use core::ops::RangeTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "RemAssign"
+    completion_label_path = "(use core::ops::RemAssign)"
+    text_edits = ["""
+    use core::ops::RemAssign;
+
+    """]
+
+    [[completions]]
+    completion_label = "RemEq"
+    completion_label_path = "(use core::traits::RemEq)"
+    text_edits = ["""
+    use core::traits::RemEq;
 
     """]
 
@@ -656,10 +1598,82 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "ResultTraitImpl"
+    completion_label_path = "(use core::result::ResultTraitImpl)"
+    text_edits = ["""
+    use core::result::ResultTraitImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "SaturatingAdd"
+    completion_label_path = "(use core::num::traits::SaturatingAdd)"
+    text_edits = ["""
+    use core::num::traits::SaturatingAdd;
+
+    """]
+
+    [[completions]]
+    completion_label = "SaturatingMul"
+    completion_label_path = "(use core::num::traits::SaturatingMul)"
+    text_edits = ["""
+    use core::num::traits::SaturatingMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "SaturatingSub"
+    completion_label_path = "(use core::num::traits::SaturatingSub)"
+    text_edits = ["""
+    use core::num::traits::SaturatingSub;
+
+    """]
+
+    [[completions]]
+    completion_label = "Secp256PointTrait"
+    completion_label_path = "(use starknet::secp256_trait::Secp256PointTrait)"
+    text_edits = ["""
+    use starknet::secp256_trait::Secp256PointTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Secp256Trait"
+    completion_label_path = "(use starknet::secp256_trait::Secp256Trait)"
+    text_edits = ["""
+    use starknet::secp256_trait::Secp256Trait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Secp256k1Impl"
+    completion_label_path = "(use starknet::secp256k1::Secp256k1Impl)"
+    text_edits = ["""
+    use starknet::secp256k1::Secp256k1Impl;
+
+    """]
+
+    [[completions]]
     completion_label = "Secp256k1Point"
     completion_label_path = "(use starknet::secp256k1::Secp256k1Point)"
     text_edits = ["""
     use starknet::secp256k1::Secp256k1Point;
+
+    """]
+
+    [[completions]]
+    completion_label = "Secp256k1PointImpl"
+    completion_label_path = "(use starknet::secp256k1::Secp256k1PointImpl)"
+    text_edits = ["""
+    use starknet::secp256k1::Secp256k1PointImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "Secp256r1Impl"
+    completion_label_path = "(use starknet::secp256r1::Secp256r1Impl)"
+    text_edits = ["""
+    use starknet::secp256r1::Secp256r1Impl;
 
     """]
 
@@ -672,10 +1686,26 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "Secp256r1PointImpl"
+    completion_label_path = "(use starknet::secp256r1::Secp256r1PointImpl)"
+    text_edits = ["""
+    use starknet::secp256r1::Secp256r1PointImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "SegmentArena"
     completion_label_path = "(use core::SegmentArena)"
     text_edits = ["""
     use core::SegmentArena;
+
+    """]
+
+    [[completions]]
+    completion_label = "SerdeImpl"
+    completion_label_path = "(use core::serde::into_felt252_based::SerdeImpl)"
+    text_edits = ["""
+    use core::serde::into_felt252_based::SerdeImpl;
 
     """]
 
@@ -688,10 +1718,34 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "SpanImpl"
+    completion_label_path = "(use core::array::SpanImpl)"
+    text_edits = ["""
+    use core::array::SpanImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "SpanIndex"
+    completion_label_path = "(use core::array::SpanIndex)"
+    text_edits = ["""
+    use core::array::SpanIndex;
+
+    """]
+
+    [[completions]]
     completion_label = "SpanIter"
     completion_label_path = "(use core::array::SpanIter)"
     text_edits = ["""
     use core::array::SpanIter;
+
+    """]
+
+    [[completions]]
+    completion_label = "Sqrt"
+    completion_label_path = "(use core::num::traits::Sqrt)"
+    text_edits = ["""
+    use core::num::traits::Sqrt;
 
     """]
 
@@ -704,10 +1758,50 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "SquashedFelt252DictImpl"
+    completion_label_path = "(use core::dict::SquashedFelt252DictImpl)"
+    text_edits = ["""
+    use core::dict::SquashedFelt252DictImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "SquashedFelt252DictTrait"
+    completion_label_path = "(use core::dict::SquashedFelt252DictTrait)"
+    text_edits = ["""
+    use core::dict::SquashedFelt252DictTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorableStoragePointerReadAccess"
+    completion_label_path = "(use starknet::storage::StorableStoragePointerReadAccess)"
+    text_edits = ["""
+    use starknet::storage::StorableStoragePointerReadAccess;
+
+    """]
+
+    [[completions]]
     completion_label = "StorageAddress"
     completion_label_path = "(use starknet::StorageAddress)"
     text_edits = ["""
     use starknet::StorageAddress;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageAsPath"
+    completion_label_path = "(use starknet::storage::StorageAsPath)"
+    text_edits = ["""
+    use starknet::storage::StorageAsPath;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageAsPointer"
+    completion_label_path = "(use starknet::storage::StorageAsPointer)"
+    text_edits = ["""
+    use starknet::storage::StorageAsPointer;
 
     """]
 
@@ -728,10 +1822,74 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "StorageMapReadAccess"
+    completion_label_path = "(use starknet::storage::StorageMapReadAccess)"
+    text_edits = ["""
+    use starknet::storage::StorageMapReadAccess;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageMapWriteAccess"
+    completion_label_path = "(use starknet::storage::StorageMapWriteAccess)"
+    text_edits = ["""
+    use starknet::storage::StorageMapWriteAccess;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageNode"
+    completion_label_path = "(use starknet::storage::StorageNode)"
+    text_edits = ["""
+    use starknet::storage::StorageNode;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageNodeDeref"
+    completion_label_path = "(use starknet::storage::StorageNodeDeref)"
+    text_edits = ["""
+    use starknet::storage::StorageNodeDeref;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageNodeMut"
+    completion_label_path = "(use starknet::storage::StorageNodeMut)"
+    text_edits = ["""
+    use starknet::storage::StorageNodeMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageNodeMutDeref"
+    completion_label_path = "(use starknet::storage::StorageNodeMutDeref)"
+    text_edits = ["""
+    use starknet::storage::StorageNodeMutDeref;
+
+    """]
+
+    [[completions]]
     completion_label = "StoragePath"
     completion_label_path = "(use starknet::storage::StoragePath)"
     text_edits = ["""
     use starknet::storage::StoragePath;
+
+    """]
+
+    [[completions]]
+    completion_label = "StoragePathEntry"
+    completion_label_path = "(use starknet::storage::StoragePathEntry)"
+    text_edits = ["""
+    use starknet::storage::StoragePathEntry;
+
+    """]
+
+    [[completions]]
+    completion_label = "StoragePathMutableConversion"
+    completion_label_path = "(use starknet::storage::StoragePathMutableConversion)"
+    text_edits = ["""
+    use starknet::storage::StoragePathMutableConversion;
 
     """]
 
@@ -752,10 +1910,178 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "StoragePointerReadAccess"
+    completion_label_path = "(use starknet::storage::StoragePointerReadAccess)"
+    text_edits = ["""
+    use starknet::storage::StoragePointerReadAccess;
+
+    """]
+
+    [[completions]]
+    completion_label = "StoragePointerWriteAccess"
+    completion_label_path = "(use starknet::storage::StoragePointerWriteAccess)"
+    text_edits = ["""
+    use starknet::storage::StoragePointerWriteAccess;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageTrait"
+    completion_label_path = "(use starknet::storage::StorageTrait)"
+    text_edits = ["""
+    use starknet::storage::StorageTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageTraitMut"
+    completion_label_path = "(use starknet::storage::StorageTraitMut)"
+    text_edits = ["""
+    use starknet::storage::StorageTraitMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "Store"
+    completion_label_path = "(use starknet::Store)"
+    text_edits = ["""
+    use starknet::Store;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorePacking"
+    completion_label_path = "(use starknet::storage_access::StorePacking)"
+    text_edits = ["""
+    use starknet::storage_access::StorePacking;
+
+    """]
+
+    [[completions]]
+    completion_label = "StringLiteral"
+    completion_label_path = "(use core::string::StringLiteral)"
+    text_edits = ["""
+    use core::string::StringLiteral;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubAssign"
+    completion_label_path = "(use core::ops::SubAssign)"
+    text_edits = ["""
+    use core::ops::SubAssign;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubEq"
+    completion_label_path = "(use core::traits::SubEq)"
+    text_edits = ["""
+    use core::traits::SubEq;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubHelper"
+    completion_label_path = "(use core::internal::bounded_int::SubHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::SubHelper;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointers"
+    completion_label_path = "(use starknet::storage::SubPointers)"
+    text_edits = ["""
+    use starknet::storage::SubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointersDeref"
+    completion_label_path = "(use starknet::storage::SubPointersDeref)"
+    text_edits = ["""
+    use starknet::storage::SubPointersDeref;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointersForward"
+    completion_label_path = "(use starknet::storage::SubPointersForward)"
+    text_edits = ["""
+    use starknet::storage::SubPointersForward;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointersMut"
+    completion_label_path = "(use starknet::storage::SubPointersMut)"
+    text_edits = ["""
+    use starknet::storage::SubPointersMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointersMutDeref"
+    completion_label_path = "(use starknet::storage::SubPointersMutDeref)"
+    text_edits = ["""
+    use starknet::storage::SubPointersMutDeref;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointersMutForward"
+    completion_label_path = "(use starknet::storage::SubPointersMutForward)"
+    text_edits = ["""
+    use starknet::storage::SubPointersMutForward;
+
+    """]
+
+    [[completions]]
+    completion_label = "Sum"
+    completion_label_path = "(use core::iter::Sum)"
+    text_edits = ["""
+    use core::iter::Sum;
+
+    """]
+
+    [[completions]]
     completion_label = "SyscallResult"
     completion_label_path = "(use starknet::SyscallResult)"
     text_edits = ["""
     use starknet::SyscallResult;
+
+    """]
+
+    [[completions]]
+    completion_label = "SyscallResultTrait"
+    completion_label_path = "(use starknet::SyscallResultTrait)"
+    text_edits = ["""
+    use starknet::SyscallResultTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "ToByteSpanTrait"
+    completion_label_path = "(use core::byte_array::ToByteSpanTrait)"
+    text_edits = ["""
+    use core::byte_array::ToByteSpanTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "TrimMaxHelper"
+    completion_label_path = "(use core::internal::bounded_int::TrimMaxHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::TrimMaxHelper;
+
+    """]
+
+    [[completions]]
+    completion_label = "TrimMinHelper"
+    completion_label_path = "(use core::internal::bounded_int::TrimMinHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::TrimMinHelper;
 
     """]
 
@@ -768,6 +2094,14 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "TypeEqual"
+    completion_label_path = "(use core::metaprogramming::TypeEqual)"
+    text_edits = ["""
+    use core::metaprogramming::TypeEqual;
+
+    """]
+
+    [[completions]]
     completion_label = "U128MulGuarantee"
     completion_label_path = "(use core::integer::U128MulGuarantee)"
     text_edits = ["""
@@ -776,10 +2110,26 @@ fn let_type_annotation_empty() {
     """]
 
     [[completions]]
+    completion_label = "U256IntoEthAddress"
+    completion_label_path = "(use starknet::eth_address::U256IntoEthAddress)"
+    text_edits = ["""
+    use starknet::eth_address::U256IntoEthAddress;
+
+    """]
+
+    [[completions]]
     completion_label = "UnitInt"
     completion_label_path = "(use core::internal::bounded_int::UnitInt)"
     text_edits = ["""
     use core::internal::bounded_int::UnitInt;
+
+    """]
+
+    [[completions]]
+    completion_label = "ValidStorageTypeTrait"
+    completion_label_path = "(use starknet::storage::ValidStorageTypeTrait)"
+    text_edits = ["""
+    use starknet::storage::ValidStorageTypeTrait;
 
     """]
 
@@ -796,6 +2146,62 @@ fn let_type_annotation_empty() {
     completion_label_path = "(use starknet::storage::VecIter)"
     text_edits = ["""
     use starknet::storage::VecIter;
+
+    """]
+
+    [[completions]]
+    completion_label = "VecTrait"
+    completion_label_path = "(use starknet::storage::VecTrait)"
+    text_edits = ["""
+    use starknet::storage::VecTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "WideMul"
+    completion_label_path = "(use core::num::traits::WideMul)"
+    text_edits = ["""
+    use core::num::traits::WideMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "WideSquare"
+    completion_label_path = "(use core::num::traits::WideSquare)"
+    text_edits = ["""
+    use core::num::traits::WideSquare;
+
+    """]
+
+    [[completions]]
+    completion_label = "WrappingAdd"
+    completion_label_path = "(use core::num::traits::WrappingAdd)"
+    text_edits = ["""
+    use core::num::traits::WrappingAdd;
+
+    """]
+
+    [[completions]]
+    completion_label = "WrappingMul"
+    completion_label_path = "(use core::num::traits::WrappingMul)"
+    text_edits = ["""
+    use core::num::traits::WrappingMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "WrappingSub"
+    completion_label_path = "(use core::num::traits::WrappingSub)"
+    text_edits = ["""
+    use core::num::traits::WrappingSub;
+
+    """]
+
+    [[completions]]
+    completion_label = "Zero"
+    completion_label_path = "(use core::num::traits::Zero)"
+    text_edits = ["""
+    use core::num::traits::Zero;
 
     """]
 
@@ -1469,6 +2875,9 @@ fn let_type_annotation_partial() {
     completion_label = "FooStruct"
 
     [[completions]]
+    completion_label = "FooTrait"
+
+    [[completions]]
     completion_label = "bool"
 
     [[completions]]
@@ -1476,6 +2885,14 @@ fn let_type_annotation_partial() {
     completion_label_path = "(use dep::Foo)"
     text_edits = ["""
     use dep::Foo;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoContractAddress"
+    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
+    text_edits = ["""
+    use starknet::contract_address::Felt252TryIntoContractAddress;
 
     """]
 
@@ -1513,6 +2930,10 @@ fn let_type_annotation_module_path() {
     completion_label_path = "(use module::FooStruct)"
 
     [[completions]]
+    completion_label = "FooTrait"
+    completion_label_path = "(use module::FooTrait)"
+
+    [[completions]]
     completion_label = "nested"
     completion_label_path = "(use module::nested)"
     "#);
@@ -1536,6 +2957,9 @@ fn return_type_partial() {
     completion_label = "FooStruct"
 
     [[completions]]
+    completion_label = "FooTrait"
+
+    [[completions]]
     completion_label = "bool"
 
     [[completions]]
@@ -1543,6 +2967,14 @@ fn return_type_partial() {
     completion_label_path = "(use dep::Foo)"
     text_edits = ["""
     use dep::Foo;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoContractAddress"
+    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
+    text_edits = ["""
+    use starknet::contract_address::Felt252TryIntoContractAddress;
 
     """]
 
@@ -1572,37 +3004,139 @@ fn return_type_empty() {
     completion_label = "hello"
 
     [[completions]]
+    completion_label = "Add"
+
+    [[completions]]
     completion_label = "Array"
+
+    [[completions]]
+    completion_label = "ArrayTrait"
 
     [[completions]]
     completion_label = "Box"
 
     [[completions]]
+    completion_label = "BoxTrait"
+
+    [[completions]]
     completion_label = "ByteArray"
+
+    [[completions]]
+    completion_label = "ByteArrayTrait"
+
+    [[completions]]
+    completion_label = "Bytes31Trait"
+
+    [[completions]]
+    completion_label = "Clone"
+
+    [[completions]]
+    completion_label = "Copy"
+
+    [[completions]]
+    completion_label = "Default"
+
+    [[completions]]
+    completion_label = "Deref"
+
+    [[completions]]
+    completion_label = "Destruct"
+
+    [[completions]]
+    completion_label = "Div"
+
+    [[completions]]
+    completion_label = "DivRem"
+
+    [[completions]]
+    completion_label = "Drop"
+
+    [[completions]]
+    completion_label = "Felt252DictTrait"
+
+    [[completions]]
+    completion_label = "Felt252DictValue"
+
+    [[completions]]
+    completion_label = "FromIterator"
+
+    [[completions]]
+    completion_label = "Into"
+
+    [[completions]]
+    completion_label = "IntoIterator"
+
+    [[completions]]
+    completion_label = "Iterator"
+
+    [[completions]]
+    completion_label = "Mul"
+
+    [[completions]]
+    completion_label = "Neg"
 
     [[completions]]
     completion_label = "NonZero"
 
     [[completions]]
+    completion_label = "Not"
+
+    [[completions]]
     completion_label = "Nullable"
+
+    [[completions]]
+    completion_label = "NullableTrait"
 
     [[completions]]
     completion_label = "Option"
 
     [[completions]]
+    completion_label = "OptionTrait"
+
+    [[completions]]
     completion_label = "Panic"
+
+    [[completions]]
+    completion_label = "PanicDestruct"
 
     [[completions]]
     completion_label = "PanicResult"
 
     [[completions]]
+    completion_label = "PartialEq"
+
+    [[completions]]
+    completion_label = "PartialOrd"
+
+    [[completions]]
+    completion_label = "Rem"
+
+    [[completions]]
     completion_label = "Result"
+
+    [[completions]]
+    completion_label = "ResultTrait"
+
+    [[completions]]
+    completion_label = "Serde"
 
     [[completions]]
     completion_label = "Span"
 
     [[completions]]
+    completion_label = "SpanTrait"
+
+    [[completions]]
+    completion_label = "Sub"
+
+    [[completions]]
     completion_label = "System"
+
+    [[completions]]
+    completion_label = "ToSpanTrait"
+
+    [[completions]]
+    completion_label = "TryInto"
 
     [[completions]]
     completion_label = "bool"
@@ -1664,6 +3198,14 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "AccountContract"
+    completion_label_path = "(use starknet::AccountContract)"
+    text_edits = ["""
+    use starknet::AccountContract;
+
+    """]
+
+    [[completions]]
     completion_label = "AccountContractDispatcher"
     completion_label_path = "(use starknet::account::AccountContractDispatcher)"
     text_edits = ["""
@@ -1684,6 +3226,14 @@ fn return_type_empty() {
     completion_label_path = "(use starknet::account::AccountContractDispatcherSubPointersMut)"
     text_edits = ["""
     use starknet::account::AccountContractDispatcherSubPointersMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "AccountContractDispatcherTrait"
+    completion_label_path = "(use starknet::account::AccountContractDispatcherTrait)"
+    text_edits = ["""
+    use starknet::account::AccountContractDispatcherTrait;
 
     """]
 
@@ -1736,6 +3286,14 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "AccountContractSafeDispatcherTrait"
+    completion_label_path = "(use starknet::account::AccountContractSafeDispatcherTrait)"
+    text_edits = ["""
+    use starknet::account::AccountContractSafeDispatcherTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "AccountContractSafeLibraryDispatcher"
     completion_label_path = "(use starknet::account::AccountContractSafeLibraryDispatcher)"
     text_edits = ["""
@@ -1760,10 +3318,50 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "AddAssign"
+    completion_label_path = "(use core::ops::AddAssign)"
+    text_edits = ["""
+    use core::ops::AddAssign;
+
+    """]
+
+    [[completions]]
+    completion_label = "AddEq"
+    completion_label_path = "(use core::traits::AddEq)"
+    text_edits = ["""
+    use core::traits::AddEq;
+
+    """]
+
+    [[completions]]
+    completion_label = "AddHelper"
+    completion_label_path = "(use core::internal::bounded_int::AddHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::AddHelper;
+
+    """]
+
+    [[completions]]
     completion_label = "AddInputResult"
     completion_label_path = "(use core::circuit::AddInputResult)"
     text_edits = ["""
     use core::circuit::AddInputResult;
+
+    """]
+
+    [[completions]]
+    completion_label = "AddInputResultImpl"
+    completion_label_path = "(use core::circuit::AddInputResultImpl)"
+    text_edits = ["""
+    use core::circuit::AddInputResultImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "AddInputResultTrait"
+    completion_label_path = "(use core::circuit::AddInputResultTrait)"
+    text_edits = ["""
+    use core::circuit::AddInputResultTrait;
 
     """]
 
@@ -1776,10 +3374,66 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "AppendFormattedToByteArray"
+    completion_label_path = "(use core::to_byte_array::AppendFormattedToByteArray)"
+    text_edits = ["""
+    use core::to_byte_array::AppendFormattedToByteArray;
+
+    """]
+
+    [[completions]]
+    completion_label = "ArrayImpl"
+    completion_label_path = "(use core::array::ArrayImpl)"
+    text_edits = ["""
+    use core::array::ArrayImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "ArrayIter"
     completion_label_path = "(use core::array::ArrayIter)"
     text_edits = ["""
     use core::array::ArrayIter;
+
+    """]
+
+    [[completions]]
+    completion_label = "BitAnd"
+    completion_label_path = "(use core::traits::BitAnd)"
+    text_edits = ["""
+    use core::traits::BitAnd;
+
+    """]
+
+    [[completions]]
+    completion_label = "BitNot"
+    completion_label_path = "(use core::traits::BitNot)"
+    text_edits = ["""
+    use core::traits::BitNot;
+
+    """]
+
+    [[completions]]
+    completion_label = "BitOr"
+    completion_label_path = "(use core::traits::BitOr)"
+    text_edits = ["""
+    use core::traits::BitOr;
+
+    """]
+
+    [[completions]]
+    completion_label = "BitSize"
+    completion_label_path = "(use core::num::traits::BitSize)"
+    text_edits = ["""
+    use core::num::traits::BitSize;
+
+    """]
+
+    [[completions]]
+    completion_label = "BitXor"
+    completion_label_path = "(use core::traits::BitXor)"
+    text_edits = ["""
+    use core::traits::BitXor;
 
     """]
 
@@ -1800,6 +3454,38 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "BoolImpl"
+    completion_label_path = "(use core::boolean::BoolImpl)"
+    text_edits = ["""
+    use core::boolean::BoolImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "BoolTrait"
+    completion_label_path = "(use core::boolean::BoolTrait)"
+    text_edits = ["""
+    use core::boolean::BoolTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Bounded"
+    completion_label_path = "(use core::num::traits::Bounded)"
+    text_edits = ["""
+    use core::num::traits::Bounded;
+
+    """]
+
+    [[completions]]
+    completion_label = "BoundedInt"
+    completion_label_path = "(use core::integer::BoundedInt)"
+    text_edits = ["""
+    use core::integer::BoundedInt;
+
+    """]
+
+    [[completions]]
     completion_label = "BoundedInt"
     completion_label_path = "(use core::internal::bounded_int::BoundedInt)"
     text_edits = ["""
@@ -1808,10 +3494,26 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "BoxImpl"
+    completion_label_path = "(use core::box::BoxImpl)"
+    text_edits = ["""
+    use core::box::BoxImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "BuiltinCosts"
     completion_label_path = "(use core::gas::BuiltinCosts)"
     text_edits = ["""
     use core::gas::BuiltinCosts;
+
+    """]
+
+    [[completions]]
+    completion_label = "ByteArrayImpl"
+    completion_label_path = "(use core::byte_array::ByteArrayImpl)"
+    text_edits = ["""
+    use core::byte_array::ByteArrayImpl;
 
     """]
 
@@ -1832,10 +3534,34 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "ByteSpanImpl"
+    completion_label_path = "(use core::byte_array::ByteSpanImpl)"
+    text_edits = ["""
+    use core::byte_array::ByteSpanImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "ByteSpanIter"
     completion_label_path = "(use core::byte_array::ByteSpanIter)"
     text_edits = ["""
     use core::byte_array::ByteSpanIter;
+
+    """]
+
+    [[completions]]
+    completion_label = "ByteSpanTrait"
+    completion_label_path = "(use core::byte_array::ByteSpanTrait)"
+    text_edits = ["""
+    use core::byte_array::ByteSpanTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Bytes31Impl"
+    completion_label_path = "(use core::bytes_31::Bytes31Impl)"
+    text_edits = ["""
+    use core::bytes_31::Bytes31Impl;
 
     """]
 
@@ -1848,10 +3574,42 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "CheckedAdd"
+    completion_label_path = "(use core::num::traits::CheckedAdd)"
+    text_edits = ["""
+    use core::num::traits::CheckedAdd;
+
+    """]
+
+    [[completions]]
+    completion_label = "CheckedMul"
+    completion_label_path = "(use core::num::traits::CheckedMul)"
+    text_edits = ["""
+    use core::num::traits::CheckedMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "CheckedSub"
+    completion_label_path = "(use core::num::traits::CheckedSub)"
+    text_edits = ["""
+    use core::num::traits::CheckedSub;
+
+    """]
+
+    [[completions]]
     completion_label = "Circuit"
     completion_label_path = "(use core::circuit::Circuit)"
     text_edits = ["""
     use core::circuit::Circuit;
+
+    """]
+
+    [[completions]]
+    completion_label = "CircuitDefinition"
+    completion_label_path = "(use core::circuit::CircuitDefinition)"
+    text_edits = ["""
+    use core::circuit::CircuitDefinition;
 
     """]
 
@@ -1864,10 +3622,50 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "CircuitElementCopy"
+    completion_label_path = "(use core::circuit::CircuitElementCopy)"
+    text_edits = ["""
+    use core::circuit::CircuitElementCopy;
+
+    """]
+
+    [[completions]]
+    completion_label = "CircuitElementDrop"
+    completion_label_path = "(use core::circuit::CircuitElementDrop)"
+    text_edits = ["""
+    use core::circuit::CircuitElementDrop;
+
+    """]
+
+    [[completions]]
+    completion_label = "CircuitElementTrait"
+    completion_label_path = "(use core::circuit::CircuitElementTrait)"
+    text_edits = ["""
+    use core::circuit::CircuitElementTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "CircuitInput"
     completion_label_path = "(use core::circuit::CircuitInput)"
     text_edits = ["""
     use core::circuit::CircuitInput;
+
+    """]
+
+    [[completions]]
+    completion_label = "CircuitInputs"
+    completion_label_path = "(use core::circuit::CircuitInputs)"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
+
+    [[completions]]
+    completion_label = "CircuitInputsImpl"
+    completion_label_path = "(use core::circuit::CircuitInputsImpl)"
+    text_edits = ["""
+    use core::circuit::CircuitInputsImpl;
 
     """]
 
@@ -1880,10 +3678,26 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "CircuitOutputsTrait"
+    completion_label_path = "(use core::circuit::CircuitOutputsTrait)"
+    text_edits = ["""
+    use core::circuit::CircuitOutputsTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "ClassHash"
     completion_label_path = "(use starknet::ClassHash)"
     text_edits = ["""
     use starknet::ClassHash;
+
+    """]
+
+    [[completions]]
+    completion_label = "ClassHashIntoFelt252"
+    completion_label_path = "(use starknet::class_hash::ClassHashIntoFelt252)"
+    text_edits = ["""
+    use starknet::class_hash::ClassHashIntoFelt252;
 
     """]
 
@@ -1904,10 +3718,42 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "ConstrainHelper"
+    completion_label_path = "(use core::internal::bounded_int::ConstrainHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::ConstrainHelper;
+
+    """]
+
+    [[completions]]
     completion_label = "ContractAddress"
     completion_label_path = "(use starknet::ContractAddress)"
     text_edits = ["""
     use starknet::ContractAddress;
+
+    """]
+
+    [[completions]]
+    completion_label = "ContractAddressIntoFelt252"
+    completion_label_path = "(use starknet::contract_address::ContractAddressIntoFelt252)"
+    text_edits = ["""
+    use starknet::contract_address::ContractAddressIntoFelt252;
+
+    """]
+
+    [[completions]]
+    completion_label = "Debug"
+    completion_label_path = "(use core::fmt::Debug)"
+    text_edits = ["""
+    use core::fmt::Debug;
+
+    """]
+
+    [[completions]]
+    completion_label = "DebugImpl"
+    completion_label_path = "(use core::fmt::into_felt252_based::DebugImpl)"
+    text_edits = ["""
+    use core::fmt::into_felt252_based::DebugImpl;
 
     """]
 
@@ -1920,10 +3766,74 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "DerefMut"
+    completion_label_path = "(use core::ops::DerefMut)"
+    text_edits = ["""
+    use core::ops::DerefMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "DestructFailureGuarantee"
+    completion_label_path = "(use core::circuit::DestructFailureGuarantee)"
+    text_edits = ["""
+    use core::circuit::DestructFailureGuarantee;
+
+    """]
+
+    [[completions]]
+    completion_label = "DestructOption"
+    completion_label_path = "(use core::option::DestructOption)"
+    text_edits = ["""
+    use core::option::DestructOption;
+
+    """]
+
+    [[completions]]
     completion_label = "DestructWith"
     completion_label_path = "(use core::internal::DestructWith)"
     text_edits = ["""
     use core::internal::DestructWith;
+
+    """]
+
+    [[completions]]
+    completion_label = "Display"
+    completion_label_path = "(use core::fmt::Display)"
+    text_edits = ["""
+    use core::fmt::Display;
+
+    """]
+
+    [[completions]]
+    completion_label = "DivAssign"
+    completion_label_path = "(use core::ops::DivAssign)"
+    text_edits = ["""
+    use core::ops::DivAssign;
+
+    """]
+
+    [[completions]]
+    completion_label = "DivEq"
+    completion_label_path = "(use core::traits::DivEq)"
+    text_edits = ["""
+    use core::traits::DivEq;
+
+    """]
+
+    [[completions]]
+    completion_label = "DivRem"
+    completion_label_path = "(use core::num::traits::DivRem)"
+    text_edits = ["""
+    use core::num::traits::DivRem;
+
+    """]
+
+    [[completions]]
+    completion_label = "DivRemHelper"
+    completion_label_path = "(use core::internal::bounded_int::DivRemHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::DivRemHelper;
 
     """]
 
@@ -1952,10 +3862,42 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "EcPointImpl"
+    completion_label_path = "(use core::ec::EcPointImpl)"
+    text_edits = ["""
+    use core::ec::EcPointImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "EcPointTrait"
+    completion_label_path = "(use core::ec::EcPointTrait)"
+    text_edits = ["""
+    use core::ec::EcPointTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "EcState"
     completion_label_path = "(use core::ec::EcState)"
     text_edits = ["""
     use core::ec::EcState;
+
+    """]
+
+    [[completions]]
+    completion_label = "EcStateImpl"
+    completion_label_path = "(use core::ec::EcStateImpl)"
+    text_edits = ["""
+    use core::ec::EcStateImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "EcStateTrait"
+    completion_label_path = "(use core::ec::EcStateTrait)"
+    text_edits = ["""
+    use core::ec::EcStateTrait;
 
     """]
 
@@ -1976,10 +3918,74 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "EthAddressIntoFelt252"
+    completion_label_path = "(use starknet::eth_address::EthAddressIntoFelt252)"
+    text_edits = ["""
+    use starknet::eth_address::EthAddressIntoFelt252;
+
+    """]
+
+    [[completions]]
+    completion_label = "EthAddressPrintImpl"
+    completion_label_path = "(use starknet::eth_address::EthAddressPrintImpl)"
+    text_edits = ["""
+    use starknet::eth_address::EthAddressPrintImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "EthAddressSerde"
+    completion_label_path = "(use starknet::eth_address::EthAddressSerde)"
+    text_edits = ["""
+    use starknet::eth_address::EthAddressSerde;
+
+    """]
+
+    [[completions]]
+    completion_label = "EvalCircuitImpl"
+    completion_label_path = "(use core::circuit::EvalCircuitImpl)"
+    text_edits = ["""
+    use core::circuit::EvalCircuitImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "EvalCircuitTrait"
+    completion_label_path = "(use core::circuit::EvalCircuitTrait)"
+    text_edits = ["""
+    use core::circuit::EvalCircuitTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Event"
+    completion_label_path = "(use starknet::Event)"
+    text_edits = ["""
+    use starknet::Event;
+
+    """]
+
+    [[completions]]
+    completion_label = "EventEmitter"
+    completion_label_path = "(use starknet::event::EventEmitter)"
+    text_edits = ["""
+    use starknet::event::EventEmitter;
+
+    """]
+
+    [[completions]]
     completion_label = "ExecutionInfo"
     completion_label_path = "(use starknet::ExecutionInfo)"
     text_edits = ["""
     use starknet::ExecutionInfo;
+
+    """]
+
+    [[completions]]
+    completion_label = "Extend"
+    completion_label_path = "(use core::iter::Extend)"
+    text_edits = ["""
+    use core::iter::Extend;
 
     """]
 
@@ -2000,6 +4006,38 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "Felt252DictEntryTrait"
+    completion_label_path = "(use core::dict::Felt252DictEntryTrait)"
+    text_edits = ["""
+    use core::dict::Felt252DictEntryTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoClassHash"
+    completion_label_path = "(use starknet::class_hash::Felt252TryIntoClassHash)"
+    text_edits = ["""
+    use starknet::class_hash::Felt252TryIntoClassHash;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoContractAddress"
+    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
+    text_edits = ["""
+    use starknet::contract_address::Felt252TryIntoContractAddress;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoEthAddress"
+    completion_label_path = "(use starknet::eth_address::Felt252TryIntoEthAddress)"
+    text_edits = ["""
+    use starknet::eth_address::Felt252TryIntoEthAddress;
+
+    """]
+
+    [[completions]]
     completion_label = "FlattenedStorage"
     completion_label_path = "(use starknet::storage::FlattenedStorage)"
     text_edits = ["""
@@ -2008,10 +4046,42 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "Fn"
+    completion_label_path = "(use core::ops::Fn)"
+    text_edits = ["""
+    use core::ops::Fn;
+
+    """]
+
+    [[completions]]
+    completion_label = "FnOnce"
+    completion_label_path = "(use core::ops::FnOnce)"
+    text_edits = ["""
+    use core::ops::FnOnce;
+
+    """]
+
+    [[completions]]
+    completion_label = "FormatAsByteArray"
+    completion_label_path = "(use core::to_byte_array::FormatAsByteArray)"
+    text_edits = ["""
+    use core::to_byte_array::FormatAsByteArray;
+
+    """]
+
+    [[completions]]
     completion_label = "Formatter"
     completion_label_path = "(use core::fmt::Formatter)"
     text_edits = ["""
     use core::fmt::Formatter;
+
+    """]
+
+    [[completions]]
+    completion_label = "ForwardingClassHash"
+    completion_label_path = "(use starknet::ForwardingClassHash)"
+    text_edits = ["""
+    use starknet::ForwardingClassHash;
 
     """]
 
@@ -2040,6 +4110,30 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "Get"
+    completion_label_path = "(use core::ops::Get)"
+    text_edits = ["""
+    use core::ops::Get;
+
+    """]
+
+    [[completions]]
+    completion_label = "Hash"
+    completion_label_path = "(use core::hash::Hash)"
+    text_edits = ["""
+    use core::hash::Hash;
+
+    """]
+
+    [[completions]]
+    completion_label = "HashImpl"
+    completion_label_path = "(use core::hash::into_felt252_based::HashImpl)"
+    text_edits = ["""
+    use core::hash::into_felt252_based::HashImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "HashState"
     completion_label_path = "(use core::pedersen::HashState)"
     text_edits = ["""
@@ -2052,6 +4146,54 @@ fn return_type_empty() {
     completion_label_path = "(use core::poseidon::HashState)"
     text_edits = ["""
     use core::poseidon::HashState;
+
+    """]
+
+    [[completions]]
+    completion_label = "HashStateExTrait"
+    completion_label_path = "(use core::hash::HashStateExTrait)"
+    text_edits = ["""
+    use core::hash::HashStateExTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "HashStateTrait"
+    completion_label_path = "(use core::hash::HashStateTrait)"
+    text_edits = ["""
+    use core::hash::HashStateTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Index"
+    completion_label_path = "(use core::ops::Index)"
+    text_edits = ["""
+    use core::ops::Index;
+
+    """]
+
+    [[completions]]
+    completion_label = "Index"
+    completion_label_path = "(use core::traits::Index)"
+    text_edits = ["""
+    use core::traits::Index;
+
+    """]
+
+    [[completions]]
+    completion_label = "IndexView"
+    completion_label_path = "(use core::ops::IndexView)"
+    text_edits = ["""
+    use core::ops::IndexView;
+
+    """]
+
+    [[completions]]
+    completion_label = "IndexView"
+    completion_label_path = "(use core::traits::IndexView)"
+    text_edits = ["""
+    use core::traits::IndexView;
 
     """]
 
@@ -2072,6 +4214,22 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "IntoIterRange"
+    completion_label_path = "(use starknet::storage::IntoIterRange)"
+    text_edits = ["""
+    use starknet::storage::IntoIterRange;
+
+    """]
+
+    [[completions]]
+    completion_label = "LegacyHash"
+    completion_label_path = "(use core::hash::LegacyHash)"
+    text_edits = ["""
+    use core::hash::LegacyHash;
+
+    """]
+
+    [[completions]]
     completion_label = "LoopResult"
     completion_label_path = "(use core::internal::LoopResult)"
     text_edits = ["""
@@ -2080,10 +4238,50 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "LowerHex"
+    completion_label_path = "(use core::fmt::LowerHex)"
+    text_edits = ["""
+    use core::fmt::LowerHex;
+
+    """]
+
+    [[completions]]
+    completion_label = "LowerHexImpl"
+    completion_label_path = "(use core::fmt::into_felt252_based::LowerHexImpl)"
+    text_edits = ["""
+    use core::fmt::into_felt252_based::LowerHexImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "Map"
     completion_label_path = "(use starknet::storage::Map)"
     text_edits = ["""
     use starknet::storage::Map;
+
+    """]
+
+    [[completions]]
+    completion_label = "MulAssign"
+    completion_label_path = "(use core::ops::MulAssign)"
+    text_edits = ["""
+    use core::ops::MulAssign;
+
+    """]
+
+    [[completions]]
+    completion_label = "MulEq"
+    completion_label_path = "(use core::traits::MulEq)"
+    text_edits = ["""
+    use core::traits::MulEq;
+
+    """]
+
+    [[completions]]
+    completion_label = "MulHelper"
+    completion_label_path = "(use core::internal::bounded_int::MulHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::MulHelper;
 
     """]
 
@@ -2104,10 +4302,50 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "MutableVecTrait"
+    completion_label_path = "(use starknet::storage::MutableVecTrait)"
+    text_edits = ["""
+    use starknet::storage::MutableVecTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "NegateHelper"
+    completion_label_path = "(use core::internal::bounded_int::NegateHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::NegateHelper;
+
+    """]
+
+    [[completions]]
     completion_label = "NonZeroEcPoint"
     completion_label_path = "(use core::ec::NonZeroEcPoint)"
     text_edits = ["""
     use core::ec::NonZeroEcPoint;
+
+    """]
+
+    [[completions]]
+    completion_label = "NullableImpl"
+    completion_label_path = "(use core::nullable::NullableImpl)"
+    text_edits = ["""
+    use core::nullable::NullableImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "NumericLiteral"
+    completion_label_path = "(use core::integer::NumericLiteral)"
+    text_edits = ["""
+    use core::integer::NumericLiteral;
+
+    """]
+
+    [[completions]]
+    completion_label = "One"
+    completion_label_path = "(use core::num::traits::One)"
+    text_edits = ["""
+    use core::num::traits::One;
 
     """]
 
@@ -2128,10 +4366,66 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "OptionTraitImpl"
+    completion_label_path = "(use core::option::OptionTraitImpl)"
+    text_edits = ["""
+    use core::option::OptionTraitImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "OverflowingAdd"
+    completion_label_path = "(use core::num::traits::OverflowingAdd)"
+    text_edits = ["""
+    use core::num::traits::OverflowingAdd;
+
+    """]
+
+    [[completions]]
+    completion_label = "OverflowingMul"
+    completion_label_path = "(use core::num::traits::OverflowingMul)"
+    text_edits = ["""
+    use core::num::traits::OverflowingMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "OverflowingSub"
+    completion_label_path = "(use core::num::traits::OverflowingSub)"
+    text_edits = ["""
+    use core::num::traits::OverflowingSub;
+
+    """]
+
+    [[completions]]
     completion_label = "Pedersen"
     completion_label_path = "(use core::pedersen::Pedersen)"
     text_edits = ["""
     use core::pedersen::Pedersen;
+
+    """]
+
+    [[completions]]
+    completion_label = "PedersenImpl"
+    completion_label_path = "(use core::pedersen::PedersenImpl)"
+    text_edits = ["""
+    use core::pedersen::PedersenImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "PedersenTrait"
+    completion_label_path = "(use core::pedersen::PedersenTrait)"
+    text_edits = ["""
+    use core::pedersen::PedersenTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "PeekableTrait"
+    completion_label_path = "(use core::iter::PeekableTrait)"
+    text_edits = ["""
+    use core::iter::PeekableTrait;
 
     """]
 
@@ -2144,10 +4438,58 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "PendingStoragePathTrait"
+    completion_label_path = "(use starknet::storage::PendingStoragePathTrait)"
+    text_edits = ["""
+    use starknet::storage::PendingStoragePathTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "Poseidon"
     completion_label_path = "(use core::poseidon::Poseidon)"
     text_edits = ["""
     use core::poseidon::Poseidon;
+
+    """]
+
+    [[completions]]
+    completion_label = "PoseidonImpl"
+    completion_label_path = "(use core::poseidon::PoseidonImpl)"
+    text_edits = ["""
+    use core::poseidon::PoseidonImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "PoseidonTrait"
+    completion_label_path = "(use core::poseidon::PoseidonTrait)"
+    text_edits = ["""
+    use core::poseidon::PoseidonTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Pow"
+    completion_label_path = "(use core::num::traits::Pow)"
+    text_edits = ["""
+    use core::num::traits::Pow;
+
+    """]
+
+    [[completions]]
+    completion_label = "Product"
+    completion_label_path = "(use core::iter::Product)"
+    text_edits = ["""
+    use core::iter::Product;
+
+    """]
+
+    [[completions]]
+    completion_label = "QM31Trait"
+    completion_label_path = "(use core::qm31::QM31Trait)"
+    text_edits = ["""
+    use core::qm31::QM31Trait;
 
     """]
 
@@ -2192,10 +4534,42 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "RangeInclusiveTrait"
+    completion_label_path = "(use core::ops::RangeInclusiveTrait)"
+    text_edits = ["""
+    use core::ops::RangeInclusiveTrait;
+
+    """]
+
+    [[completions]]
     completion_label = "RangeIterator"
     completion_label_path = "(use core::ops::RangeIterator)"
     text_edits = ["""
     use core::ops::RangeIterator;
+
+    """]
+
+    [[completions]]
+    completion_label = "RangeTrait"
+    completion_label_path = "(use core::ops::RangeTrait)"
+    text_edits = ["""
+    use core::ops::RangeTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "RemAssign"
+    completion_label_path = "(use core::ops::RemAssign)"
+    text_edits = ["""
+    use core::ops::RemAssign;
+
+    """]
+
+    [[completions]]
+    completion_label = "RemEq"
+    completion_label_path = "(use core::traits::RemEq)"
+    text_edits = ["""
+    use core::traits::RemEq;
 
     """]
 
@@ -2208,10 +4582,82 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "ResultTraitImpl"
+    completion_label_path = "(use core::result::ResultTraitImpl)"
+    text_edits = ["""
+    use core::result::ResultTraitImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "SaturatingAdd"
+    completion_label_path = "(use core::num::traits::SaturatingAdd)"
+    text_edits = ["""
+    use core::num::traits::SaturatingAdd;
+
+    """]
+
+    [[completions]]
+    completion_label = "SaturatingMul"
+    completion_label_path = "(use core::num::traits::SaturatingMul)"
+    text_edits = ["""
+    use core::num::traits::SaturatingMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "SaturatingSub"
+    completion_label_path = "(use core::num::traits::SaturatingSub)"
+    text_edits = ["""
+    use core::num::traits::SaturatingSub;
+
+    """]
+
+    [[completions]]
+    completion_label = "Secp256PointTrait"
+    completion_label_path = "(use starknet::secp256_trait::Secp256PointTrait)"
+    text_edits = ["""
+    use starknet::secp256_trait::Secp256PointTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Secp256Trait"
+    completion_label_path = "(use starknet::secp256_trait::Secp256Trait)"
+    text_edits = ["""
+    use starknet::secp256_trait::Secp256Trait;
+
+    """]
+
+    [[completions]]
+    completion_label = "Secp256k1Impl"
+    completion_label_path = "(use starknet::secp256k1::Secp256k1Impl)"
+    text_edits = ["""
+    use starknet::secp256k1::Secp256k1Impl;
+
+    """]
+
+    [[completions]]
     completion_label = "Secp256k1Point"
     completion_label_path = "(use starknet::secp256k1::Secp256k1Point)"
     text_edits = ["""
     use starknet::secp256k1::Secp256k1Point;
+
+    """]
+
+    [[completions]]
+    completion_label = "Secp256k1PointImpl"
+    completion_label_path = "(use starknet::secp256k1::Secp256k1PointImpl)"
+    text_edits = ["""
+    use starknet::secp256k1::Secp256k1PointImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "Secp256r1Impl"
+    completion_label_path = "(use starknet::secp256r1::Secp256r1Impl)"
+    text_edits = ["""
+    use starknet::secp256r1::Secp256r1Impl;
 
     """]
 
@@ -2224,10 +4670,26 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "Secp256r1PointImpl"
+    completion_label_path = "(use starknet::secp256r1::Secp256r1PointImpl)"
+    text_edits = ["""
+    use starknet::secp256r1::Secp256r1PointImpl;
+
+    """]
+
+    [[completions]]
     completion_label = "SegmentArena"
     completion_label_path = "(use core::SegmentArena)"
     text_edits = ["""
     use core::SegmentArena;
+
+    """]
+
+    [[completions]]
+    completion_label = "SerdeImpl"
+    completion_label_path = "(use core::serde::into_felt252_based::SerdeImpl)"
+    text_edits = ["""
+    use core::serde::into_felt252_based::SerdeImpl;
 
     """]
 
@@ -2240,10 +4702,34 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "SpanImpl"
+    completion_label_path = "(use core::array::SpanImpl)"
+    text_edits = ["""
+    use core::array::SpanImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "SpanIndex"
+    completion_label_path = "(use core::array::SpanIndex)"
+    text_edits = ["""
+    use core::array::SpanIndex;
+
+    """]
+
+    [[completions]]
     completion_label = "SpanIter"
     completion_label_path = "(use core::array::SpanIter)"
     text_edits = ["""
     use core::array::SpanIter;
+
+    """]
+
+    [[completions]]
+    completion_label = "Sqrt"
+    completion_label_path = "(use core::num::traits::Sqrt)"
+    text_edits = ["""
+    use core::num::traits::Sqrt;
 
     """]
 
@@ -2256,10 +4742,50 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "SquashedFelt252DictImpl"
+    completion_label_path = "(use core::dict::SquashedFelt252DictImpl)"
+    text_edits = ["""
+    use core::dict::SquashedFelt252DictImpl;
+
+    """]
+
+    [[completions]]
+    completion_label = "SquashedFelt252DictTrait"
+    completion_label_path = "(use core::dict::SquashedFelt252DictTrait)"
+    text_edits = ["""
+    use core::dict::SquashedFelt252DictTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorableStoragePointerReadAccess"
+    completion_label_path = "(use starknet::storage::StorableStoragePointerReadAccess)"
+    text_edits = ["""
+    use starknet::storage::StorableStoragePointerReadAccess;
+
+    """]
+
+    [[completions]]
     completion_label = "StorageAddress"
     completion_label_path = "(use starknet::StorageAddress)"
     text_edits = ["""
     use starknet::StorageAddress;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageAsPath"
+    completion_label_path = "(use starknet::storage::StorageAsPath)"
+    text_edits = ["""
+    use starknet::storage::StorageAsPath;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageAsPointer"
+    completion_label_path = "(use starknet::storage::StorageAsPointer)"
+    text_edits = ["""
+    use starknet::storage::StorageAsPointer;
 
     """]
 
@@ -2280,10 +4806,74 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "StorageMapReadAccess"
+    completion_label_path = "(use starknet::storage::StorageMapReadAccess)"
+    text_edits = ["""
+    use starknet::storage::StorageMapReadAccess;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageMapWriteAccess"
+    completion_label_path = "(use starknet::storage::StorageMapWriteAccess)"
+    text_edits = ["""
+    use starknet::storage::StorageMapWriteAccess;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageNode"
+    completion_label_path = "(use starknet::storage::StorageNode)"
+    text_edits = ["""
+    use starknet::storage::StorageNode;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageNodeDeref"
+    completion_label_path = "(use starknet::storage::StorageNodeDeref)"
+    text_edits = ["""
+    use starknet::storage::StorageNodeDeref;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageNodeMut"
+    completion_label_path = "(use starknet::storage::StorageNodeMut)"
+    text_edits = ["""
+    use starknet::storage::StorageNodeMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageNodeMutDeref"
+    completion_label_path = "(use starknet::storage::StorageNodeMutDeref)"
+    text_edits = ["""
+    use starknet::storage::StorageNodeMutDeref;
+
+    """]
+
+    [[completions]]
     completion_label = "StoragePath"
     completion_label_path = "(use starknet::storage::StoragePath)"
     text_edits = ["""
     use starknet::storage::StoragePath;
+
+    """]
+
+    [[completions]]
+    completion_label = "StoragePathEntry"
+    completion_label_path = "(use starknet::storage::StoragePathEntry)"
+    text_edits = ["""
+    use starknet::storage::StoragePathEntry;
+
+    """]
+
+    [[completions]]
+    completion_label = "StoragePathMutableConversion"
+    completion_label_path = "(use starknet::storage::StoragePathMutableConversion)"
+    text_edits = ["""
+    use starknet::storage::StoragePathMutableConversion;
 
     """]
 
@@ -2304,10 +4894,178 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "StoragePointerReadAccess"
+    completion_label_path = "(use starknet::storage::StoragePointerReadAccess)"
+    text_edits = ["""
+    use starknet::storage::StoragePointerReadAccess;
+
+    """]
+
+    [[completions]]
+    completion_label = "StoragePointerWriteAccess"
+    completion_label_path = "(use starknet::storage::StoragePointerWriteAccess)"
+    text_edits = ["""
+    use starknet::storage::StoragePointerWriteAccess;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageTrait"
+    completion_label_path = "(use starknet::storage::StorageTrait)"
+    text_edits = ["""
+    use starknet::storage::StorageTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorageTraitMut"
+    completion_label_path = "(use starknet::storage::StorageTraitMut)"
+    text_edits = ["""
+    use starknet::storage::StorageTraitMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "Store"
+    completion_label_path = "(use starknet::Store)"
+    text_edits = ["""
+    use starknet::Store;
+
+    """]
+
+    [[completions]]
+    completion_label = "StorePacking"
+    completion_label_path = "(use starknet::storage_access::StorePacking)"
+    text_edits = ["""
+    use starknet::storage_access::StorePacking;
+
+    """]
+
+    [[completions]]
+    completion_label = "StringLiteral"
+    completion_label_path = "(use core::string::StringLiteral)"
+    text_edits = ["""
+    use core::string::StringLiteral;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubAssign"
+    completion_label_path = "(use core::ops::SubAssign)"
+    text_edits = ["""
+    use core::ops::SubAssign;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubEq"
+    completion_label_path = "(use core::traits::SubEq)"
+    text_edits = ["""
+    use core::traits::SubEq;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubHelper"
+    completion_label_path = "(use core::internal::bounded_int::SubHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::SubHelper;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointers"
+    completion_label_path = "(use starknet::storage::SubPointers)"
+    text_edits = ["""
+    use starknet::storage::SubPointers;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointersDeref"
+    completion_label_path = "(use starknet::storage::SubPointersDeref)"
+    text_edits = ["""
+    use starknet::storage::SubPointersDeref;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointersForward"
+    completion_label_path = "(use starknet::storage::SubPointersForward)"
+    text_edits = ["""
+    use starknet::storage::SubPointersForward;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointersMut"
+    completion_label_path = "(use starknet::storage::SubPointersMut)"
+    text_edits = ["""
+    use starknet::storage::SubPointersMut;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointersMutDeref"
+    completion_label_path = "(use starknet::storage::SubPointersMutDeref)"
+    text_edits = ["""
+    use starknet::storage::SubPointersMutDeref;
+
+    """]
+
+    [[completions]]
+    completion_label = "SubPointersMutForward"
+    completion_label_path = "(use starknet::storage::SubPointersMutForward)"
+    text_edits = ["""
+    use starknet::storage::SubPointersMutForward;
+
+    """]
+
+    [[completions]]
+    completion_label = "Sum"
+    completion_label_path = "(use core::iter::Sum)"
+    text_edits = ["""
+    use core::iter::Sum;
+
+    """]
+
+    [[completions]]
     completion_label = "SyscallResult"
     completion_label_path = "(use starknet::SyscallResult)"
     text_edits = ["""
     use starknet::SyscallResult;
+
+    """]
+
+    [[completions]]
+    completion_label = "SyscallResultTrait"
+    completion_label_path = "(use starknet::SyscallResultTrait)"
+    text_edits = ["""
+    use starknet::SyscallResultTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "ToByteSpanTrait"
+    completion_label_path = "(use core::byte_array::ToByteSpanTrait)"
+    text_edits = ["""
+    use core::byte_array::ToByteSpanTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "TrimMaxHelper"
+    completion_label_path = "(use core::internal::bounded_int::TrimMaxHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::TrimMaxHelper;
+
+    """]
+
+    [[completions]]
+    completion_label = "TrimMinHelper"
+    completion_label_path = "(use core::internal::bounded_int::TrimMinHelper)"
+    text_edits = ["""
+    use core::internal::bounded_int::TrimMinHelper;
 
     """]
 
@@ -2320,6 +5078,14 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "TypeEqual"
+    completion_label_path = "(use core::metaprogramming::TypeEqual)"
+    text_edits = ["""
+    use core::metaprogramming::TypeEqual;
+
+    """]
+
+    [[completions]]
     completion_label = "U128MulGuarantee"
     completion_label_path = "(use core::integer::U128MulGuarantee)"
     text_edits = ["""
@@ -2328,10 +5094,26 @@ fn return_type_empty() {
     """]
 
     [[completions]]
+    completion_label = "U256IntoEthAddress"
+    completion_label_path = "(use starknet::eth_address::U256IntoEthAddress)"
+    text_edits = ["""
+    use starknet::eth_address::U256IntoEthAddress;
+
+    """]
+
+    [[completions]]
     completion_label = "UnitInt"
     completion_label_path = "(use core::internal::bounded_int::UnitInt)"
     text_edits = ["""
     use core::internal::bounded_int::UnitInt;
+
+    """]
+
+    [[completions]]
+    completion_label = "ValidStorageTypeTrait"
+    completion_label_path = "(use starknet::storage::ValidStorageTypeTrait)"
+    text_edits = ["""
+    use starknet::storage::ValidStorageTypeTrait;
 
     """]
 
@@ -2348,6 +5130,62 @@ fn return_type_empty() {
     completion_label_path = "(use starknet::storage::VecIter)"
     text_edits = ["""
     use starknet::storage::VecIter;
+
+    """]
+
+    [[completions]]
+    completion_label = "VecTrait"
+    completion_label_path = "(use starknet::storage::VecTrait)"
+    text_edits = ["""
+    use starknet::storage::VecTrait;
+
+    """]
+
+    [[completions]]
+    completion_label = "WideMul"
+    completion_label_path = "(use core::num::traits::WideMul)"
+    text_edits = ["""
+    use core::num::traits::WideMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "WideSquare"
+    completion_label_path = "(use core::num::traits::WideSquare)"
+    text_edits = ["""
+    use core::num::traits::WideSquare;
+
+    """]
+
+    [[completions]]
+    completion_label = "WrappingAdd"
+    completion_label_path = "(use core::num::traits::WrappingAdd)"
+    text_edits = ["""
+    use core::num::traits::WrappingAdd;
+
+    """]
+
+    [[completions]]
+    completion_label = "WrappingMul"
+    completion_label_path = "(use core::num::traits::WrappingMul)"
+    text_edits = ["""
+    use core::num::traits::WrappingMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "WrappingSub"
+    completion_label_path = "(use core::num::traits::WrappingSub)"
+    text_edits = ["""
+    use core::num::traits::WrappingSub;
+
+    """]
+
+    [[completions]]
+    completion_label = "Zero"
+    completion_label_path = "(use core::num::traits::Zero)"
+    text_edits = ["""
+    use core::num::traits::Zero;
 
     """]
 
@@ -3019,6 +5857,9 @@ fn type_alias_partial() {
     completion_label = "FooStruct"
 
     [[completions]]
+    completion_label = "FooTrait"
+
+    [[completions]]
     completion_label = "bool"
 
     [[completions]]
@@ -3026,6 +5867,14 @@ fn type_alias_partial() {
     completion_label_path = "(use dep::Foo)"
     text_edits = ["""
     use dep::Foo;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoContractAddress"
+    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
+    text_edits = ["""
+    use starknet::contract_address::Felt252TryIntoContractAddress;
 
     """]
 
@@ -3061,6 +5910,10 @@ fn type_alias_module_path() {
     completion_label_path = "(use module::FooStruct)"
 
     [[completions]]
+    completion_label = "FooTrait"
+    completion_label_path = "(use module::FooTrait)"
+
+    [[completions]]
     completion_label = "nested"
     completion_label_path = "(use module::nested)"
     "#);
@@ -3086,6 +5939,9 @@ fn let_type_annotation_tuple() {
     completion_label = "FooStruct"
 
     [[completions]]
+    completion_label = "FooTrait"
+
+    [[completions]]
     completion_label = "bool"
 
     [[completions]]
@@ -3093,6 +5949,14 @@ fn let_type_annotation_tuple() {
     completion_label_path = "(use dep::Foo)"
     text_edits = ["""
     use dep::Foo;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoContractAddress"
+    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
+    text_edits = ["""
+    use starknet::contract_address::Felt252TryIntoContractAddress;
 
     """]
 
@@ -3124,6 +5988,9 @@ fn return_type_tuple() {
     completion_label = "FooStruct"
 
     [[completions]]
+    completion_label = "FooTrait"
+
+    [[completions]]
     completion_label = "bool"
 
     [[completions]]
@@ -3131,6 +5998,14 @@ fn return_type_tuple() {
     completion_label_path = "(use dep::Foo)"
     text_edits = ["""
     use dep::Foo;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoContractAddress"
+    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
+    text_edits = ["""
+    use starknet::contract_address::Felt252TryIntoContractAddress;
 
     """]
 
@@ -3162,6 +6037,9 @@ fn type_alias_tuple() {
     completion_label = "FooStruct"
 
     [[completions]]
+    completion_label = "FooTrait"
+
+    [[completions]]
     completion_label = "bool"
 
     [[completions]]
@@ -3169,6 +6047,14 @@ fn type_alias_tuple() {
     completion_label_path = "(use dep::Foo)"
     text_edits = ["""
     use dep::Foo;
+
+    """]
+
+    [[completions]]
+    completion_label = "Felt252TryIntoContractAddress"
+    completion_label_path = "(use starknet::contract_address::Felt252TryIntoContractAddress)"
+    text_edits = ["""
+    use starknet::contract_address::Felt252TryIntoContractAddress;
 
     """]
 
@@ -3193,7 +6079,30 @@ fn let_type_annotation_no_params_and_variables() {
     caret = """
         let x: fo<caret> = 1;
     """
-    completions = []
+
+    [[completions]]
+    completion_label = "OverflowingAdd"
+    completion_label_path = "(use core::num::traits::OverflowingAdd)"
+    text_edits = ["""
+    use core::num::traits::OverflowingAdd;
+
+    """]
+
+    [[completions]]
+    completion_label = "OverflowingMul"
+    completion_label_path = "(use core::num::traits::OverflowingMul)"
+    text_edits = ["""
+    use core::num::traits::OverflowingMul;
+
+    """]
+
+    [[completions]]
+    completion_label = "OverflowingSub"
+    completion_label_path = "(use core::num::traits::OverflowingSub)"
+    text_edits = ["""
+    use core::num::traits::OverflowingSub;
+
+    """]
     "#);
 }
 
@@ -3213,6 +6122,14 @@ fn let_type_annotation_no_inline_macros() {
 
     [[completions]]
     completion_label = "Span"
+
+    [[completions]]
+    completion_label = "SpanImpl"
+    completion_label_path = "(use core::array::SpanImpl)"
+    text_edits = ["""
+    use core::array::SpanImpl;
+
+    """]
 
     [[completions]]
     completion_label = "SpanIter"
@@ -3298,5 +6215,53 @@ fn impl_path_in_let_type_annotation() {
 
     [[completions]]
     completion_label = "Bar"
+    "#);
+}
+
+#[test]
+fn impl_in_let_type_annotation() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        type Bar;
+    }
+
+    impl MyImpl of MyTrait {
+        type Bar = u32;
+    }
+
+    fn a() {
+        let a: MyIm<caret> = 1;
+    }
+    ",@r#"
+    caret = """
+        let a: MyIm<caret> = 1;
+    """
+
+    [[completions]]
+    completion_label = "MyImpl"
+    "#);
+}
+
+#[test]
+fn trait_in_let_type_annotation() {
+    test_transform_plain!(Completion, completion_fixture(), "
+    trait MyTrait {
+        type Bar;
+    }
+
+    impl MyImpl of MyTrait {
+        type Bar = u32;
+    }
+
+    fn a() {
+        let a: MyTr<caret> = 1;
+    }
+    ",@r#"
+    caret = """
+        let a: MyTr<caret> = 1;
+    """
+
+    [[completions]]
+    completion_label = "MyTrait"
     "#);
 }
