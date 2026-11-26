@@ -18,7 +18,7 @@ use function::params::params_completions;
 use function::variables::variables_completions;
 use itertools::Itertools;
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
-use path::path_suffix_completions;
+use path::{is_on_type_clause_path, path_suffix_completions};
 use pattern::{enum_pattern_completions, struct_pattern_completions};
 use self_completions::self_completions;
 use struct_constructor::struct_constructor_completions;
@@ -150,12 +150,15 @@ fn complete_ex<'db>(
     completions.extend(attribute_completions(db, node, crate_id, cursor_position));
     completions.extend(derive_completions(db, node, crate_id, cursor_position));
     completions.extend(mod_completions(db, node));
-    completions.extend(params_completions(db, &ctx, was_node_corrected));
-    completions.extend(variables_completions(db, &ctx, was_node_corrected));
     completions.extend(struct_pattern_completions(db, &ctx));
     completions.extend(enum_pattern_completions(db, &ctx));
-    completions.extend(expr_inline_macro_completions(db, &ctx, was_node_corrected));
-    completions.extend(top_level_inline_macro_completions(db, &ctx, was_node_corrected));
+    // Only types are allowed in type positions, so skip values and inline macros there.
+    if !is_on_type_clause_path(db, &ctx) {
+        completions.extend(params_completions(db, &ctx, was_node_corrected));
+        completions.extend(variables_completions(db, &ctx, was_node_corrected));
+        completions.extend(expr_inline_macro_completions(db, &ctx, was_node_corrected));
+        completions.extend(top_level_inline_macro_completions(db, &ctx, was_node_corrected));
+    }
     completions.extend(doc_link_completions(db, &ctx, cursor_position));
 
     if trigger_kind != CompletionTriggerKind::TRIGGER_FOR_INCOMPLETE_COMPLETIONS
