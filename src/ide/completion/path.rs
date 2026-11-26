@@ -313,11 +313,13 @@ pub fn is_on_type_clause_path<'db>(db: &'db AnalysisDatabase, ctx: &AnalysisCont
     }
 }
 
-/// Returns `true` if `importable` is a type.
+/// Returns `true` if `importable` is a type or a module/crate leading to one.
 fn is_allowed_in_type_clause(importable: &ImportableId) -> bool {
     matches!(
         importable,
-        ImportableId::Struct(_)
+        ImportableId::Submodule(_)
+            | ImportableId::Crate(_)
+            | ImportableId::Struct(_)
             | ImportableId::Enum(_)
             | ImportableId::ExternType(_)
             | ImportableId::TypeAlias(_)
