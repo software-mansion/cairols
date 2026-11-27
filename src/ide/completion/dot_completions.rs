@@ -24,7 +24,7 @@ use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::import_edit_for_trait_if_needed;
-use crate::lang::methods::find_methods_for_type;
+use crate::lang::methods::{MethodOrigin, find_methods_for_type};
 use crate::lang::text_matching::text_matches;
 
 pub fn dot_completions<'db>(
@@ -96,10 +96,10 @@ fn dot_completions_ex<'db>(
         // Find relevant methods for type.
         let relevant_methods = find_methods_for_type(db, &mut resolver, ty, stable_ptr)
             .into_iter()
-            .filter(|method| text_matches(method.name(db).to_string(db), &typed));
+            .filter(|(method, _)| text_matches(method.name(db).to_string(db), &typed));
 
-        for trait_function in relevant_methods {
-            let Some(completion) = completion_for_method(db, ctx, trait_function) else {
+        for (trait_function, origin) in relevant_methods {
+            let Some(completion) = completion_for_method(db, ctx, trait_function, origin) else {
                 continue;
             };
             completions.push(completion);
@@ -123,10 +123,8 @@ fn dot_completions_ex<'db>(
                             kind: Some(CompletionItemKind::FIELD),
                             ..CompletionItem::default()
                         },
-                        // We set the relevance to High as we want the members to be shown before the methods.
-                        // The [`find_methods_for_type`] function takes current crate methods first, so they will be shown
-                        // before the methods from other crates.
-                        relevance: CompletionRelevance::High,
+                        // We set the relevance to Highest as we want the members to be shown before the methods.
+                        relevance: CompletionRelevance::Highest,
                     };
                     completions.push(completion);
                 });
@@ -150,6 +148,7 @@ fn completion_for_method<'db>(
     db: &'db AnalysisDatabase,
     ctx: &AnalysisContext<'db>,
     trait_function: TraitFunctionId<'db>,
+    origin: MethodOrigin,
 ) -> Option<CompletionItemOrderable> {
     let trait_id = trait_function.trait_id(db);
     let name = trait_function.name(db).to_string(db);
@@ -177,8 +176,14 @@ fn completion_for_method<'db>(
             additional_text_edits: Some(additional_text_edits),
             ..CompletionItem::default()
         },
-        // We set the relevance to medium as we want methods to be shown after the members of the struct.
-        relevance: CompletionRelevance::Medium,
+        // Methods are always shown after the members of the struct, which have `Highest` relevance.
+        relevance: match origin {
+            MethodOrigin::CurrentScope => CompletionRelevance::High,
+            MethodOrigin::CurrentCrate => CompletionRelevance::MediumHigh,
+            MethodOrigin::Dependency => CompletionRelevance::Medium,
+            MethodOrigin::Prelude => CompletionRelevance::Low,
+            MethodOrigin::Corelib => CompletionRelevance::Lowest,
+        },
     };
     Some(completion)
 }
