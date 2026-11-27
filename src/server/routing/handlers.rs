@@ -6,6 +6,7 @@
 // +-----------------------------------------------------+
 
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+use std::path::{Path, PathBuf};
 
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::override_file_content;
@@ -44,6 +45,7 @@ use crate::server::commands::ServerCommand;
 use crate::server::panic::is_cancelled;
 use crate::state::{MetaState, State, StateSnapshot};
 use crate::toolchain::info::toolchain_info;
+use crate::toolchain::scarb::SCARB_TOML;
 use crate::{Backend, ide, lang};
 
 /// A request handler that needs mutable access to the session.
@@ -271,6 +273,19 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
             }
         }
 
+        // Reload the project model of a package if the structure of its integration tests changed.
+        for change in &params.changes {
+            let Ok(changed_file_path) = change.uri.to_file_path() else { continue };
+            if let Some(manifest_path) =
+                integration_tests_structure_change(&changed_file_path, change.typ)
+            {
+                trace!("reloading project model after integration tests structure change");
+                state
+                    .project_controller
+                    .request_reloading_package_for_file(changed_file_path, &manifest_path);
+            }
+        }
+
         state.code_lens_controller.on_did_change(
             state.db.clone(),
             state.config.clone(),
@@ -284,6 +299,40 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
 
         Ok(())
     }
+}
+
+/// Checks if the change modifies the structure of the integration tests crate of a Scarb package
+/// and returns the path to the package manifest if so.
+///
+/// Scarb reports the structure of integration tests in its metadata: whether `tests/lib.cairo`
+/// exists and, if it does not, which `tests/*.cairo` files are there. Therefore, the project model
+/// has to be reloaded if:
+/// - `tests/lib.cairo` is created,
+/// - `tests/lib.cairo` is deleted,
+/// - `tests/*.cairo` is created and there is no `tests/lib.cairo`.
+fn integration_tests_structure_change(path: &Path, typ: FileChangeType) -> Option<PathBuf> {
+    if path.extension()? != "cairo" {
+        return None;
+    }
+
+    let tests_dir = path.parent()?;
+    if tests_dir.file_name()? != "tests" {
+        return None;
+    }
+
+    let manifest_path = tests_dir.parent()?.join(SCARB_TOML);
+    if !manifest_path.is_file() {
+        return None;
+    }
+
+    let is_lib = path.file_name()? == "lib.cairo";
+    let changes_structure = match typ {
+        FileChangeType::CREATED | FileChangeType::DELETED if is_lib => true,
+        FileChangeType::CREATED => !tests_dir.join("lib.cairo").is_file(),
+        _ => false,
+    };
+
+    changes_structure.then_some(manifest_path)
 }
 
 impl SyncNotificationHandler for DidCloseTextDocument {

@@ -1,0 +1,231 @@
+---
+source: tests/e2e/scarb/integration_tests_change.rs
+description: "// → Scarb.toml\n[package]\nname = \"test_package\"\nversion = \"0.1.0\"\nedition = \"2025_12\"\n\n// → src/lib.cairo\n"
+expression: "IntegrationTestsChangeResult\n{\n    diff_after_creating_test_file_without_lib:\n    diff(&analyzed_crates, &after_creating_test_file),\n    diff_after_creating_tests_lib:\n    diff(&after_creating_test_file, &after_creating_tests_lib),\n    diff_after_deleting_tests_lib:\n    diff(&after_creating_tests_lib, &after_deleting_tests_lib),\n    analyzed_crates,\n}"
+---
+analyzed_crates = '''
+# Analyzed Crates
+---
+```json
+{
+  "name": "core",
+  "source_paths": [
+    "[SCARB_REGISTRY_STD]/core/src/lib.cairo"
+  ],
+  "settings": {
+    "name": "core",
+    "edition": "2025_12",
+    "version": "2.21.0",
+    "cfg_set": [
+      [
+        "target",
+        "lib"
+      ],
+      [
+        "target",
+        "test"
+      ]
+    ],
+    "dependencies": {
+      "core": {
+        "discriminator": null
+      }
+    },
+    "experimental_features": {
+      "negative_impls": true,
+      "associated_item_constraints": true,
+      "coupons": true,
+      "user_defined_inline_macros": true,
+      "repr_ptrs": false
+    }
+  },
+  "linter_configuration": "Off",
+  "plugins": {
+    "builtin_plugins": [
+      "AssertMacros",
+      "Executable",
+      "CairoTest"
+    ]
+  }
+}
+
+{
+  "name": "test_package",
+  "source_paths": [
+    "[ROOT]/src/lib.cairo"
+  ],
+  "settings": {
+    "name": "test_package",
+    "edition": "2025_12",
+    "version": "0.1.0",
+    "cfg_set": [
+      [
+        "target",
+        "lib"
+      ],
+      [
+        "target",
+        "test"
+      ],
+      "test"
+    ],
+    "dependencies": {
+      "core": {
+        "discriminator": null
+      },
+      "test_package": {
+        "discriminator": "test_package 0.1.0 (path+[ROOT_URL]Scarb.toml)"
+      }
+    },
+    "experimental_features": {
+      "negative_impls": false,
+      "associated_item_constraints": false,
+      "coupons": false,
+      "user_defined_inline_macros": false,
+      "repr_ptrs": false
+    }
+  },
+  "linter_configuration": "Off",
+  "plugins": {}
+}
+```'''
+diff_after_creating_test_file_without_lib = '''
+@@ -70,16 +70,52 @@
+       "test_package": {
+         "discriminator": "test_package 0.1.0 (path+[ROOT_URL]Scarb.toml)"
+       }
+     },
+     "experimental_features": {
+       "negative_impls": false,
+       "associated_item_constraints": false,
+       "coupons": false,
+       "user_defined_inline_macros": false,
+       "repr_ptrs": false
+     }
+   },
+   "linter_configuration": "Off",
+   "plugins": {}
+ }
++
++{
++  "name": "test_package_integrationtest",
++  "source_paths": [
++    "[ROOT]/tests/a.cairo"
++  ],
++  "settings": {
++    "name": "test_package_integrationtest",
++    "edition": "2025_12",
++    "version": "0.1.0",
++    "cfg_set": [
++      [
++        "target",
++        "test"
++      ],
++      "test"
++    ],
++    "dependencies": {
++      "core": {
++        "discriminator": null
++      },
++      "test_package": {
++        "discriminator": "test_package 0.1.0 (path+[ROOT_URL]Scarb.toml)"
++      }
++    },
++    "experimental_features": {
++      "negative_impls": false,
++      "associated_item_constraints": false,
++      "coupons": false,
++      "user_defined_inline_macros": false,
++      "repr_ptrs": false
++    }
++  },
++  "linter_configuration": "Off",
++  "plugins": {}
++}
+ ```
+\ No newline at end of file
+'''
+diff_after_creating_tests_lib = '''
+@@ -72,36 +72,36 @@
+       }
+     },
+     "experimental_features": {
+       "negative_impls": false,
+       "associated_item_constraints": false,
+       "coupons": false,
+       "user_defined_inline_macros": false,
+       "repr_ptrs": false
+     }
+   },
+   "linter_configuration": "Off",
+   "plugins": {}
+ }
+ 
+ {
+-  "name": "test_package_integrationtest",
++  "name": "test_package_tests",
+   "source_paths": [
+-    "[ROOT]/tests/a.cairo"
++    "[ROOT]/tests/lib.cairo"
+   ],
+   "settings": {
+-    "name": "test_package_integrationtest",
++    "name": "test_package_tests",
+     "edition": "2025_12",
+     "version": "0.1.0",
+     "cfg_set": [
+       [
+         "target",
+         "test"
+       ],
+       "test"
+     ],
+     "dependencies": {
+       "core": {
+         "discriminator": null
+       },
+       "test_package": {
+         "discriminator": "test_package 0.1.0 (path+[ROOT_URL]Scarb.toml)"
+'''
+diff_after_deleting_tests_lib = '''
+@@ -72,36 +72,36 @@
+       }
+     },
+     "experimental_features": {
+       "negative_impls": false,
+       "associated_item_constraints": false,
+       "coupons": false,
+       "user_defined_inline_macros": false,
+       "repr_ptrs": false
+     }
+   },
+   "linter_configuration": "Off",
+   "plugins": {}
+ }
+ 
+ {
+-  "name": "test_package_tests",
++  "name": "test_package_integrationtest",
+   "source_paths": [
+-    "[ROOT]/tests/lib.cairo"
++    "[ROOT]/tests/a.cairo"
+   ],
+   "settings": {
+-    "name": "test_package_tests",
++    "name": "test_package_integrationtest",
+     "edition": "2025_12",
+     "version": "0.1.0",
+     "cfg_set": [
+       [
+         "target",
+         "test"
+       ],
+       "test"
+     ],
+     "dependencies": {
+       "core": {
+         "discriminator": null
+       },
+       "test_package": {
+         "discriminator": "test_package 0.1.0 (path+[ROOT_URL]Scarb.toml)"
+'''

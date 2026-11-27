@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 
 use cairo_lang_filesystem::db::files_group_input;
 use cairo_lang_filesystem::ids::CrateInput;
+use cairo_lang_filesystem::set_crate_config;
+use cairo_lang_utils::Intern;
 use salsa::Setter;
 
 pub use self::configs_registry::{ConfigsRegistry, PackageConfig};
@@ -87,6 +89,7 @@ impl ProjectModel {
             })
             .collect();
 
+        let mut crates_to_remove_from_db = vec![];
         if let Some(old_crates) = self.loaded_workspaces.get(&workspace_dir) {
             if old_crates == &workspace_crates {
                 return;
@@ -94,9 +97,25 @@ impl ProjectModel {
 
             // Static because the borrow checker.
             ProjectModel::remove_crates(&mut self.loaded_crates, &workspace_dir, old_crates);
+
+            // Crates that are no longer a part of any loaded workspace, e.g. an integration tests
+            // crate that changed its name after a reload of this workspace.
+            crates_to_remove_from_db.extend(
+                old_crates
+                    .keys()
+                    .filter(|cr| {
+                        !workspace_crates.contains_key(*cr) && !self.loaded_crates.contains_key(*cr)
+                    })
+                    .cloned(),
+            );
         };
 
         self.add_crates(workspace_crates, &workspace_dir);
+
+        for cr in crates_to_remove_from_db {
+            let crate_id = cr.into_crate_long_id(db).intern(db);
+            set_crate_config!(db, crate_id, None);
+        }
 
         self.apply_changes_to_db(db, proc_macro_controller);
     }

@@ -6,7 +6,7 @@ mod invalid;
 mod removing_dependency;
 mod removing_member;
 
-fn caps(base: ClientCapabilities) -> ClientCapabilities {
+pub(super) fn caps(base: ClientCapabilities) -> ClientCapabilities {
     ClientCapabilities {
         text_document: base.text_document.or_else(Default::default),
         workspace: base.workspace.or_else(Default::default).map(|it| WorkspaceClientCapabilities {
