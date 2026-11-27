@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use cairo_lang_compiler::db::validate_corelib;
@@ -107,7 +107,22 @@ impl ProjectController {
         self.send_request(ProjectUpdateRequest {
             file_path,
             loaded_manifests: self.model.loaded_manifests(),
+            force_reload: false,
         })
+    }
+
+    /// Requests reloading the project model of the already loaded Scarb package which owns the
+    /// given file, even though its workspace is already loaded.
+    ///
+    /// Only the workspace containing the package is reloaded, other loaded workspaces are kept
+    /// intact. Does nothing if the package is not a member of any loaded workspace.
+    pub fn request_reloading_package_for_file(&self, file_path: PathBuf, manifest_path: &Path) {
+        let loaded_manifests = self.model.loaded_manifests();
+        if !loaded_manifests.contains(manifest_path) {
+            return;
+        }
+
+        self.send_request(ProjectUpdateRequest { file_path, loaded_manifests, force_reload: true })
     }
 
     pub fn clear_loaded_workspaces(&mut self) {
@@ -314,7 +329,9 @@ impl ProjectControllerThread {
             &self.notifier,
         ) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                if project_update_request.loaded_manifests.contains(&manifest_path) {
+                if !project_update_request.force_reload
+                    && project_update_request.loaded_manifests.contains(&manifest_path)
+                {
                     debug!("scarb project is already loaded: {}", manifest_path.display());
                     return None;
                 }
@@ -388,6 +405,8 @@ impl ProjectControllerThread {
 struct ProjectUpdateRequest {
     file_path: PathBuf,
     loaded_manifests: Snapshot<HashSet<PathBuf>>,
+    /// If `true`, the project is reloaded even if its manifest is already loaded.
+    force_reload: bool,
 }
 
 fn contains_core_from_scarb_cache(
