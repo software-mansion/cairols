@@ -225,6 +225,11 @@ fn with_deref_starknet() {
     completion_label_type_info = "starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>"
 
     [[completions]]
+    completion_label = "internal_func()"
+    completion_label_type_info = "fn(ref self: ContractState) -> ()"
+    insert_text = "internal_func()"
+
+    [[completions]]
     completion_label = "clone()"
     completion_label_type_info = "fn(self: @T) -> T"
     insert_text = "clone()"
@@ -238,11 +243,6 @@ fn with_deref_starknet() {
     completion_label = "destruct()"
     completion_label_type_info = "fn(self: T) -> () nopanic"
     insert_text = "destruct()"
-
-    [[completions]]
-    completion_label = "internal_func()"
-    completion_label_type_info = "fn(ref self: ContractState) -> ()"
-    insert_text = "internal_func()"
 
     [[completions]]
     completion_label = "into()"
@@ -430,6 +430,11 @@ fn with_not_imported_return_type() {
     """
 
     [[completions]]
+    completion_label = "make()"
+    completion_label_type_info = "fn(self: T) -> Long"
+    insert_text = "make()"
+
+    [[completions]]
     completion_label = "into()"
     completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
@@ -438,11 +443,6 @@ fn with_not_imported_return_type() {
     completion_label = "try_into()"
     completion_label_type_info = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
-
-    [[completions]]
-    completion_label = "make()"
-    completion_label_type_info = "fn(self: T) -> Long"
-    insert_text = "make()"
 
     [[completions]]
     completion_label = "get_descriptor()"
@@ -519,14 +519,14 @@ fn with_already_typed_parens_and_no_method_chars() {
     """
 
     [[completions]]
-    completion_label = "into()"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "into"
-
-    [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
     insert_text = "make"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into"
 
     [[completions]]
     completion_label = "try_into()"
@@ -576,14 +576,14 @@ fn with_already_typed_parens_with_single_argument_and_no_method_chars() {
     """
 
     [[completions]]
-    completion_label = "into()"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "into"
-
-    [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T, a: u32) -> Long"
     insert_text = "make"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into"
 
     [[completions]]
     completion_label = "try_into()"
@@ -1288,14 +1288,14 @@ fn pub_impl_method_dot_completion_multiple_methods() {
     insert_text = "increment()"
 
     [[completions]]
-    completion_label = "into()"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "into()"
-
-    [[completions]]
     completion_label = "reset()"
     completion_label_type_info = "fn(self: T) -> felt252"
     insert_text = "reset()"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into()"
 
     [[completions]]
     completion_label = "try_into()"

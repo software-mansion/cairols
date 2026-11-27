@@ -389,29 +389,9 @@ fn methods_order_with_scope_crate_deps_and_core() {
     completion_label_type_info = "felt252"
 
     [[completions]]
-    completion_label = "destruct()"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "destruct()"
-
-    [[completions]]
-    completion_label = "into()"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "into()"
-
-    [[completions]]
-    completion_label = "panic_destruct()"
-    completion_label_type_info = "fn(self: T, ref panic: Panic) -> () nopanic"
-    insert_text = "panic_destruct(${1:panic})"
-
-    [[completions]]
     completion_label = "scoped_method()"
     completion_label_type_info = "fn(self: T) -> felt252"
     insert_text = "scoped_method()"
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into()"
 
     [[completions]]
     completion_label = "crate_method()"
@@ -428,6 +408,92 @@ fn methods_order_with_scope_crate_deps_and_core() {
     text_edits = ["""
     use dep::DepTrait;
     """]
+
+    [[completions]]
+    completion_label = "destruct()"
+    completion_label_type_info = "fn(self: T) -> () nopanic"
+    insert_text = "destruct()"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into()"
+
+    [[completions]]
+    completion_label = "panic_destruct()"
+    completion_label_type_info = "fn(self: T, ref panic: Panic) -> () nopanic"
+    insert_text = "panic_destruct(${1:panic})"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs()"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+    """]
+    "#);
+}
+
+#[test]
+fn prelude_methods_order_below_deps_and_above_corelib() {
+    test_transform_plain!(Completion, completion_fixture_with_dep_methods(), "
+    use core::traits::Into;
+
+    #[derive(Drop)]
+    struct Foo {
+        member: felt252
+    }
+
+    fn test() {
+        let foo = Foo { member: 0 };
+        foo.<caret>
+    }
+    ",@r#"
+    caret = """
+        foo.<caret>
+    """
+
+    [[completions]]
+    completion_label = "member"
+    completion_label_type_info = "felt252"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into()"
+
+    [[completions]]
+    completion_label = "dep_method()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "dep_method()"
+    text_edits = ["""
+    use dep::DepTrait;
+    """]
+
+    [[completions]]
+    completion_label = "destruct()"
+    completion_label_type_info = "fn(self: T) -> () nopanic"
+    insert_text = "destruct()"
+
+    [[completions]]
+    completion_label = "panic_destruct()"
+    completion_label_type_info = "fn(self: T, ref panic: Panic) -> () nopanic"
+    insert_text = "panic_destruct(${1:panic})"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
 
     [[completions]]
     completion_label = "get_descriptor()"

@@ -47,7 +47,7 @@ pub fn suggest_similar_method<'db>(
         // Build list of suggestions with optional import edit per suggestion
         let suggestions: Vec<(String, Option<TextEdit>)> = method_candidates
             .into_iter()
-            .filter_map(|function_id| {
+            .filter_map(|(function_id, _)| {
                 let fn_name = function_id.long(db).name(db).to_string(db);
                 let matches = text_matches(&fn_name, typed_fn_name);
                 if !matches {
