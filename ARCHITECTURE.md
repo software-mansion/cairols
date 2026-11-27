@@ -92,7 +92,6 @@ Three facts about how Salsa is used here shape the rest of this document:
 
 ```mermaid
 flowchart TB
-    db[("AnalysisDatabase")]
     subgraph ls ["CairoLS groups (src/lang)"]
         lssyntax["LsSyntaxGroup"]
         lssemantic["LsSemanticGroup"]
@@ -104,13 +103,13 @@ flowchart TB
     subgraph compiler ["Cairo compiler (cairo-lang-*)"]
         files["FilesGroup"] --> parser["ParserGroup"] --> defs["DefsGroup"] --> semantic["SemanticGroup"] --> lowering["LoweringGroup"]
     end
-    db --> ls & common & lint
     ls & lint --> common
     ls & common & lint --> compiler
 ```
 
 `AnalysisDatabase` is a single Salsa database that holds only storage.
-All functionality comes from extension traits ("groups") implemented for any Salsa database.
+All functionality comes from extension traits ("groups") with blanket impls for any Salsa database,
+so `AnalysisDatabase` gets every group in the diagram.
 Arrows mean "builds on".
 The LS-specific groups are:
 
