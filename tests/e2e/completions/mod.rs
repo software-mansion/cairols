@@ -88,6 +88,35 @@ fn completion_fixture_with_pub_dep_items() -> Fixture {
     }
 }
 
+fn completion_fixture_with_dep_methods() -> Fixture {
+    fixture! {
+        "cairo_project.toml" => indoc!(r#"
+            [crate_roots]
+            hello = "src"
+            dep = "dep"
+
+            [config.override.hello]
+            edition = "2025_12"
+            [config.override.dep]
+            edition = "2025_12"
+
+            [config.override.hello.dependencies]
+            dep = { discriminator = "dep" }
+        "#),
+        "dep/lib.cairo" => indoc!("
+            pub trait DepTrait<T> {
+                fn dep_method(self: T) -> felt252;
+            }
+
+            impl DepImpl<T, +Drop<T>> of DepTrait<T> {
+                fn dep_method(self: T) -> felt252 {
+                    0
+                }
+            }
+        ")
+    }
+}
+
 fn sorting_dep_fixture() -> Fixture {
     fixture! {
         "cairo_project.toml" => indoc!(r#"

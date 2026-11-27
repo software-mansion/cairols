@@ -31,14 +31,19 @@ fn simple_struct() {
     completion_label_type_info = "felt252"
 
     [[completions]]
-    completion_label = "get_descriptor()"
-    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor()"
-
-    [[completions]]
     completion_label = "into()"
     completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "new_inputs()"
@@ -48,11 +53,6 @@ fn simple_struct() {
     use core::circuit::CircuitInputs;
 
     """]
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into()"
     "#);
 }
 
@@ -82,14 +82,19 @@ fn simple_struct_semicolon() {
     completion_label_type_info = "felt252"
 
     [[completions]]
-    completion_label = "get_descriptor()"
-    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor()"
-
-    [[completions]]
     completion_label = "into()"
     completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "new_inputs()"
@@ -99,11 +104,6 @@ fn simple_struct_semicolon() {
     use core::circuit::CircuitInputs;
 
     """]
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into()"
     "#);
 }
 
@@ -156,14 +156,19 @@ fn with_deref() {
     insert_text = "deref()"
 
     [[completions]]
-    completion_label = "get_descriptor()"
-    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor()"
-
-    [[completions]]
     completion_label = "into()"
     completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "new_inputs()"
@@ -173,11 +178,6 @@ fn with_deref() {
     use core::circuit::CircuitInputs;
 
     """]
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into()"
     "#);
 }
 
@@ -235,6 +235,31 @@ fn with_deref_starknet() {
     insert_text = "deref()"
 
     [[completions]]
+    completion_label = "destruct()"
+    completion_label_type_info = "fn(self: T) -> () nopanic"
+    insert_text = "destruct()"
+
+    [[completions]]
+    completion_label = "internal_func()"
+    completion_label_type_info = "fn(ref self: ContractState) -> ()"
+    insert_text = "internal_func()"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into()"
+
+    [[completions]]
+    completion_label = "panic_destruct()"
+    completion_label_type_info = "fn(self: T, ref panic: Panic) -> () nopanic"
+    insert_text = "panic_destruct(${1:panic})"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+
+    [[completions]]
     completion_label = "deref_mut()"
     completion_label_type_info = "fn(ref self: T) -> Self::Target"
     insert_text = "deref_mut()"
@@ -242,11 +267,6 @@ fn with_deref_starknet() {
     use core::ops::DerefMut;
 
     """]
-
-    [[completions]]
-    completion_label = "destruct()"
-    completion_label_type_info = "fn(self: T) -> () nopanic"
-    insert_text = "destruct()"
 
     [[completions]]
     completion_label = "emit()"
@@ -263,16 +283,6 @@ fn with_deref_starknet() {
     insert_text = "get_descriptor()"
 
     [[completions]]
-    completion_label = "internal_func()"
-    completion_label_type_info = "fn(ref self: ContractState) -> ()"
-    insert_text = "internal_func()"
-
-    [[completions]]
-    completion_label = "into()"
-    completion_label_type_info = "fn(self: T) -> S"
-    insert_text = "into()"
-
-    [[completions]]
     completion_label = "new_inputs()"
     completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs()"
@@ -282,11 +292,6 @@ fn with_deref_starknet() {
     """]
 
     [[completions]]
-    completion_label = "panic_destruct()"
-    completion_label_type_info = "fn(self: T, ref panic: Panic) -> () nopanic"
-    insert_text = "panic_destruct(${1:panic})"
-
-    [[completions]]
     completion_label = "storage_mut()"
     completion_label_type_info = "fn(self: FlattenedStorage<Mutable<T>>) -> Self::BaseType"
     insert_text = "storage_mut()"
@@ -294,11 +299,6 @@ fn with_deref_starknet() {
     use starknet::storage::StorageTraitMut;
 
     """]
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into()"
     "#);
 }
 
@@ -430,19 +430,24 @@ fn with_not_imported_return_type() {
     """
 
     [[completions]]
-    completion_label = "get_descriptor()"
-    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor()"
-
-    [[completions]]
     completion_label = "into()"
     completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
 
     [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+
+    [[completions]]
     completion_label = "make()"
     completion_label_type_info = "fn(self: T) -> Long"
     insert_text = "make()"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "new_inputs()"
@@ -451,11 +456,6 @@ fn with_not_imported_return_type() {
     text_edits = ["""
     use core::circuit::CircuitInputs;
     """]
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into()"
     "#);
 }
 
@@ -519,11 +519,6 @@ fn with_already_typed_parens_and_no_method_chars() {
     """
 
     [[completions]]
-    completion_label = "get_descriptor()"
-    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor"
-
-    [[completions]]
     completion_label = "into()"
     completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into"
@@ -534,6 +529,16 @@ fn with_already_typed_parens_and_no_method_chars() {
     insert_text = "make"
 
     [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor"
+
+    [[completions]]
     completion_label = "new_inputs()"
     completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs"
@@ -541,11 +546,6 @@ fn with_already_typed_parens_and_no_method_chars() {
     use core::circuit::CircuitInputs;
 
     """]
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into"
     "#);
 }
 
@@ -576,11 +576,6 @@ fn with_already_typed_parens_with_single_argument_and_no_method_chars() {
     """
 
     [[completions]]
-    completion_label = "get_descriptor()"
-    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor"
-
-    [[completions]]
     completion_label = "into()"
     completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into"
@@ -591,6 +586,16 @@ fn with_already_typed_parens_with_single_argument_and_no_method_chars() {
     insert_text = "make"
 
     [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor"
+
+    [[completions]]
     completion_label = "new_inputs()"
     completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
     insert_text = "new_inputs"
@@ -598,11 +603,6 @@ fn with_already_typed_parens_with_single_argument_and_no_method_chars() {
     use core::circuit::CircuitInputs;
 
     """]
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into"
     "#);
 }
 
@@ -817,14 +817,19 @@ fn on_method_call_result() {
     insert_text = "bar()"
 
     [[completions]]
-    completion_label = "get_descriptor()"
-    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor()"
-
-    [[completions]]
     completion_label = "into()"
     completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into()"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
 
     [[completions]]
     completion_label = "new_inputs()"
@@ -834,11 +839,6 @@ fn on_method_call_result() {
     use core::circuit::CircuitInputs;
 
     """]
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into()"
     "#);
 }
 
@@ -1283,11 +1283,6 @@ fn pub_impl_method_dot_completion_multiple_methods() {
     insert_text = "decrement()"
 
     [[completions]]
-    completion_label = "get_descriptor()"
-    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor()"
-
-    [[completions]]
     completion_label = "increment()"
     completion_label_type_info = "fn(self: T) -> felt252"
     insert_text = "increment()"
@@ -1298,15 +1293,6 @@ fn pub_impl_method_dot_completion_multiple_methods() {
     insert_text = "into()"
 
     [[completions]]
-    completion_label = "new_inputs()"
-    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
-    insert_text = "new_inputs()"
-    text_edits = ["""
-    use core::circuit::CircuitInputs;
-
-    """]
-
-    [[completions]]
     completion_label = "reset()"
     completion_label_type_info = "fn(self: T) -> felt252"
     insert_text = "reset()"
@@ -1315,6 +1301,20 @@ fn pub_impl_method_dot_completion_multiple_methods() {
     completion_label = "try_into()"
     completion_label_type_info = "fn(self: T) -> Option<S>"
     insert_text = "try_into()"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs()"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
+
+    """]
     "#);
 }
 
@@ -1341,6 +1341,11 @@ fn pub_impl_generic_with_constraints_dot_completion() {
     """
 
     [[completions]]
+    completion_label = "sort()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "sort()"
+
+    [[completions]]
     completion_label = "is_non_one()"
     completion_label_type_info = "fn(self: @T) -> bool"
     insert_text = "is_non_one()"
@@ -1371,11 +1376,6 @@ fn pub_impl_generic_with_constraints_dot_completion() {
     use core::num::traits::One;
 
     """]
-
-    [[completions]]
-    completion_label = "sort()"
-    completion_label_type_info = "fn(self: T) -> felt252"
-    insert_text = "sort()"
     "#);
 }
 
@@ -1402,6 +1402,11 @@ fn impl_generic_with_constraints_dot_completion() {
     """
 
     [[completions]]
+    completion_label = "sort()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "sort()"
+
+    [[completions]]
     completion_label = "is_non_one()"
     completion_label_type_info = "fn(self: @T) -> bool"
     insert_text = "is_non_one()"
@@ -1432,11 +1437,6 @@ fn impl_generic_with_constraints_dot_completion() {
     use core::num::traits::One;
 
     """]
-
-    [[completions]]
-    completion_label = "sort()"
-    completion_label_type_info = "fn(self: T) -> felt252"
-    insert_text = "sort()"
     "#);
 }
 
@@ -1592,14 +1592,19 @@ fn method_after_dot_with_unclosed_empty_arguments() {
     insert_text = "do_something"
 
     [[completions]]
-    completion_label = "get_descriptor()"
-    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor"
-
-    [[completions]]
     completion_label = "into()"
     completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor"
 
     [[completions]]
     completion_label = "new_inputs()"
@@ -1609,11 +1614,6 @@ fn method_after_dot_with_unclosed_empty_arguments() {
     use core::circuit::CircuitInputs;
 
     """]
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into"
     "#);
 }
 
@@ -1644,14 +1644,19 @@ fn method_after_dot_with_unclosed_arguments() {
     insert_text = "do_something"
 
     [[completions]]
-    completion_label = "get_descriptor()"
-    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
-    insert_text = "get_descriptor"
-
-    [[completions]]
     completion_label = "into()"
     completion_label_type_info = "fn(self: T) -> S"
     insert_text = "into"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into"
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor"
 
     [[completions]]
     completion_label = "new_inputs()"
@@ -1661,11 +1666,6 @@ fn method_after_dot_with_unclosed_arguments() {
     use core::circuit::CircuitInputs;
 
     """]
-
-    [[completions]]
-    completion_label = "try_into()"
-    completion_label_type_info = "fn(self: T) -> Option<S>"
-    insert_text = "try_into"
     "#);
 }
 

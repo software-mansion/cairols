@@ -1,7 +1,8 @@
 use lsp_types::request::Completion;
 
 use crate::{
-    completions::completion_fixture_with_pub_dep_items, support::insta::test_transform_plain,
+    completions::{completion_fixture_with_dep_methods, completion_fixture_with_pub_dep_items},
+    support::insta::test_transform_plain,
 };
 
 #[test]
@@ -336,6 +337,109 @@ fn prelude_ordering() {
     text_edits = ["""
     use core::result;
 
+    """]
+    "#);
+}
+
+#[test]
+fn methods_order_with_scope_crate_deps_and_core() {
+    test_transform_plain!(Completion, completion_fixture_with_dep_methods(), "
+    mod scoped {
+        pub trait ScopedTrait<T> {
+            fn scoped_method(self: T) -> felt252;
+        }
+
+        impl ScopedImpl<T, +Drop<T>> of ScopedTrait<T> {
+            fn scoped_method(self: T) -> felt252 {
+                0
+            }
+        }
+    }
+
+    mod not_scoped {
+        pub trait CrateTrait<T> {
+            fn crate_method(self: T) -> felt252;
+        }
+
+        impl CrateImpl<T, +Drop<T>> of CrateTrait<T> {
+            fn crate_method(self: T) -> felt252 {
+                0
+            }
+        }
+    }
+
+    use scoped::ScopedTrait;
+
+    #[derive(Drop)]
+    struct Foo {
+        member: felt252
+    }
+
+    fn test() {
+        let foo = Foo { member: 0 };
+        foo.<caret>
+    }
+    ",@r#"
+    caret = """
+        foo.<caret>
+    """
+
+    [[completions]]
+    completion_label = "member"
+    completion_label_type_info = "felt252"
+
+    [[completions]]
+    completion_label = "destruct()"
+    completion_label_type_info = "fn(self: T) -> () nopanic"
+    insert_text = "destruct()"
+
+    [[completions]]
+    completion_label = "into()"
+    completion_label_type_info = "fn(self: T) -> S"
+    insert_text = "into()"
+
+    [[completions]]
+    completion_label = "panic_destruct()"
+    completion_label_type_info = "fn(self: T, ref panic: Panic) -> () nopanic"
+    insert_text = "panic_destruct(${1:panic})"
+
+    [[completions]]
+    completion_label = "scoped_method()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "scoped_method()"
+
+    [[completions]]
+    completion_label = "try_into()"
+    completion_label_type_info = "fn(self: T) -> Option<S>"
+    insert_text = "try_into()"
+
+    [[completions]]
+    completion_label = "crate_method()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "crate_method()"
+    text_edits = ["""
+    use not_scoped::CrateTrait;
+    """]
+
+    [[completions]]
+    completion_label = "dep_method()"
+    completion_label_type_info = "fn(self: T) -> felt252"
+    insert_text = "dep_method()"
+    text_edits = ["""
+    use dep::DepTrait;
+    """]
+
+    [[completions]]
+    completion_label = "get_descriptor()"
+    completion_label_type_info = "fn(self: CES) -> CircuitDescriptor<CD::CircuitType>"
+    insert_text = "get_descriptor()"
+
+    [[completions]]
+    completion_label = "new_inputs()"
+    completion_label_type_info = "fn(self: CES) -> AddInputResult<CD::CircuitType>"
+    insert_text = "new_inputs()"
+    text_edits = ["""
+    use core::circuit::CircuitInputs;
     """]
     "#);
 }

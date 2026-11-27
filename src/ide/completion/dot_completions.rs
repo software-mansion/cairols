@@ -24,7 +24,7 @@ use crate::ide::format::types::format_type;
 use crate::lang::analysis_context::AnalysisContext;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::importer::import_edit_for_trait_if_needed;
-use crate::lang::methods::find_methods_for_type;
+use crate::lang::methods::{MethodOrigin, find_methods_for_type, method_origin};
 use crate::lang::text_matching::text_matches;
 
 pub fn dot_completions<'db>(
@@ -124,8 +124,6 @@ fn dot_completions_ex<'db>(
                             ..CompletionItem::default()
                         },
                         // We set the relevance to High as we want the members to be shown before the methods.
-                        // The [`find_methods_for_type`] function takes current crate methods first, so they will be shown
-                        // before the methods from other crates.
                         relevance: CompletionRelevance::High,
                     };
                     completions.push(completion);
@@ -177,8 +175,13 @@ fn completion_for_method<'db>(
             additional_text_edits: Some(additional_text_edits),
             ..CompletionItem::default()
         },
-        // We set the relevance to medium as we want methods to be shown after the members of the struct.
-        relevance: CompletionRelevance::Medium,
+        // Methods are always shown after the members of the struct, which have `High` relevance.
+        relevance: match method_origin(db, ctx.module_id, trait_function) {
+            MethodOrigin::CurrentScope => CompletionRelevance::MediumHigh,
+            MethodOrigin::CurrentCrate => CompletionRelevance::Medium,
+            MethodOrigin::Dependency => CompletionRelevance::Low,
+            MethodOrigin::Corelib => CompletionRelevance::Lowest,
+        },
     };
     Some(completion)
 }

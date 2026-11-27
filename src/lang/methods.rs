@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{NamedLanguageElementId, TraitFunctionId};
+use cairo_lang_defs::ids::{LanguageElementId, ModuleId, NamedLanguageElementId, TraitFunctionId};
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId};
 use cairo_lang_semantic::db::SemanticGroup;
@@ -18,11 +18,54 @@ use tracing::debug;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
+/// Describes where a method comes from, relative to the module it is looked up from.
+///
+/// Variants are ordered from the most to the least relevant one.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum MethodOrigin {
+    /// The trait of the method is in scope of the current module.
+    CurrentScope,
+    /// The trait of the method is defined in the current crate, but it is not in scope.
+    CurrentCrate,
+    /// The trait of the method is defined in a dependency other than the corelib.
+    Dependency,
+    /// The trait of the method is defined in the corelib.
+    Corelib,
+}
+
+/// Returns the [`MethodOrigin`] of `trait_function` when looked up from `module_id`.
+pub fn method_origin<'db>(
+    db: &'db AnalysisDatabase,
+    module_id: ModuleId<'db>,
+    trait_function: TraitFunctionId<'db>,
+) -> MethodOrigin {
+    let trait_id = trait_function.trait_id(db);
+
+    // A trait is in scope if it is visible from the module without a path qualifier.
+    let is_in_scope = db
+        .visible_traits_from_module(module_id)
+        .and_then(|traits| traits.get(&trait_id).map(|path| !path.contains("::")))
+        .unwrap_or_default();
+
+    let trait_crate = trait_id.parent_module(db).owning_crate(db);
+
+    if is_in_scope {
+        MethodOrigin::CurrentScope
+    } else if trait_crate == module_id.owning_crate(db) {
+        MethodOrigin::CurrentCrate
+    } else if trait_crate == CrateId::core(db) {
+        MethodOrigin::Corelib
+    } else {
+        MethodOrigin::Dependency
+    }
+}
+
 /// Finds all methods that can be called on a type.
-/// The order of which the methods are searched is:
-/// 1. Methods in the current crate.
-/// 2. Methods in corelib (if not already included in the dependencies).
-/// 3. Methods in other dependencies.
+/// The methods are ordered by their [`MethodOrigin`]:
+/// 1. Methods in the current scope.
+/// 2. Methods in the current crate.
+/// 3. Methods in dependencies other than the corelib.
+/// 4. Methods in the corelib.
 pub fn find_methods_for_type<'db>(
     db: &'db AnalysisDatabase,
     resolver: &mut Resolver<'db>,
@@ -86,7 +129,14 @@ pub fn find_methods_for_type<'db>(
             relevant_methods.push(trait_function);
         }
     }
-    relevant_methods.iter().unique().copied().collect()
+    let module_id = resolver.data.module_id;
+
+    relevant_methods
+        .into_iter()
+        .unique()
+        // The sort is stable, so methods with the same origin keep the order they were found in.
+        .sorted_by_cached_key(|method| method_origin(db, module_id, *method))
+        .collect()
 }
 
 /// Finds all available traits with method.
